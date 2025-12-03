@@ -1,0 +1,34 @@
+# Environment
+.env
+
+# Logs
+logs/
+*.log
+
+# SSL Certificates (don't commit private keys!)
+docker/nginx/certs/*.pem
+docker/nginx/certs/*.key
+docker/nginx/certs/*.crt
+
+# Composer
+vendor/
+
+# Xdebug artifacts
+package.xml
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Docker
+.docker/
+
+# Data directories
+data/

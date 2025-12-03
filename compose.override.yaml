@@ -1,0 +1,7 @@
+# ./compose.overwrite.yaml
+# Docker Compose Development Environment
+
+services:
+  php:
+    volumes:
+      - ./docker/php/conf.d/xdebug.ini:/usr/local/etc/php/conf.d/zz-xdebug.ini:ro

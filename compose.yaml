@@ -1,0 +1,53 @@
+# ./compose.yaml
+# Docker Compose Default Environment
+
+services:
+  nginx:
+    build:
+      context: .
+      dockerfile: docker/nginx/Dockerfile
+    ports:
+      - "${NGINX_PORT:-8080}:80"
+    volumes:
+      - ./docker/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./docker/nginx/conf.d:/etc/nginx/conf.d:ro
+      - ./app/public:/var/www/html/app/public:ro
+      - ${LOG_DIR:-./logs}/nginx:/var/log/nginx
+    depends_on:
+      - php
+    networks:
+      - app-network
+    restart: unless-stopped
+
+  php:
+    build:
+      context: .
+      dockerfile: docker/php/Dockerfile
+      args:
+        ENV: ${ENV:-production}
+        USER_ID: ${USER_ID:-1000}
+        GROUP_ID: ${GROUP_ID:-1000}
+    volumes:
+      - ./:/var/www/html
+      - ${DATA_DIR:-./data}:/var/www/html/data
+      - vendor-data:/var/www/html/vendor
+      - ./docker/php/php.ini:/usr/local/etc/php/php.ini:ro
+      - ./docker/php/conf.d/${ENV}.ini:/usr/local/etc/php/conf.d/zz-env.ini:ro
+      - ./docker/php/php-fpm.conf:/usr/local/etc/php-fpm.d/zz-custom.conf:ro
+      - ${LOG_DIR:-./logs}/app:/var/log/app
+      - ${LOG_DIR:-./logs}/php:/var/log/php
+    environment:
+      - ENV=${ENV:-production}
+    networks:
+      - app-network
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    restart: unless-stopped
+
+networks:
+  app-network:
+    driver: bridge
+
+volumes:
+  vendor-data:
+    driver: local
