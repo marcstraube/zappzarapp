@@ -1,16 +1,26 @@
-.PHONY: help build up down restart logs clean setup
+.PHONY: help build up down restart logs logs-nginx logs-php shell-php shell-nginx composer clean rebuild init setup hooks-install test analyse cs-check cs-fix check
 
 help: ## Show this help
 	@echo -e "\033[0;34mAvailable commands:\033[0m"
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[0;32m%-15s\033[0m %s\n", $$1, $$2}'
 
-setup: ## Create necessary directories and .env file
-	@echo -e "\033[0;33mCreating project structure...\033[0m"
+init: ## Initialize project (copy .env) - Run this first!
+	@echo -e "\033[0;33mInitializing configuration...\033[0m"
 	@if [ ! -f .env ]; then \
 		cp .env.example .env; \
-		echo -e "\033[0;32m.env file created. Please adjust settings!\033[0m"; \
+		echo -e "\033[0;32m.env file created from example.\033[0m"; \
+		echo -e "\033[0;31mIMPORTANT: Please edit .env before running 'make setup'!\033[0m"; \
+	else \
+		echo -e "\033[0;34m.env file already exists. Skipped.\033[0m"; \
 	fi
-	@. ./.env && mkdir -p $${DATA_DIR:-./data} $${LOG_DIR:-./logs}/{app,nginx,php} app/src vendor
+
+setup: ## Create directories based on .env configuration
+	@if [ ! -f .env ]; then \
+		echo -e "\033[0;31mError: .env file not found. Please run 'make init' first.\033[0m"; \
+		exit 1; \
+	fi
+	@echo -e "\033[0;33mCreating project structure...\033[0m"
+	@. ./.env && mkdir -p $${DATA_DIR:-./data} $${LOG_DIR:-./logs}/{app,nginx,php} app/src tests vendor
 	@echo -e "\033[0;32mSetup completed!\033[0m"
 
 build: ## Build Docker images
@@ -61,3 +71,33 @@ clean: ## Remove containers, volumes and images
 	@echo -e "\033[0;32mCleanup completed!\033[0m"
 
 rebuild: clean build up ## Complete rebuild
+
+# --- Quality Assurance ---
+
+hooks-install: ## Install Git hooks using CaptainHook
+	@if [ ! -f vendor/bin/captainhook ]; then \
+		echo -e "\033[0;31mError: CaptainHook not found. Please ensure vendor dependencies are installed.\033[0m"; \
+		exit 1; \
+	fi
+	@echo -e "\033[0;33mInstalling Git hooks with CaptainHook...\033[0m"
+	@vendor/bin/captainhook install
+	@echo -e "\033[0;32mGit hooks installed successfully in .git/hooks/!\033[0m"
+
+test: ## Run PHPUnit tests
+	@echo -e "\033[0;33mRunning PHPUnit...\033[0m"
+	@docker compose exec php composer test
+
+analyse: ## Run PHPStan static analysis
+	@echo -e "\033[0;33mRunning PHPStan...\033[0m"
+	@docker compose exec php composer analyse
+
+cs-check: ## Check coding style (dry-run)
+	@echo -e "\033[0;33mChecking Coding Style...\033[0m"
+	@docker compose exec php composer cs-check
+
+cs-fix: ## Fix coding style automatically
+	@echo -e "\033[0;33mFixing Coding Style...\033[0m"
+	@docker compose exec php composer cs-fix
+
+check: cs-check analyse test ## Run all checks (CI simulation)
+	@echo -e "\033[0;32mAll checks passed!\033[0m"

@@ -1,0 +1,5 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="Run App in Browser" type="PhpWebAppRunConfigurationType" factoryName="PHP Web Application" server_name="Docker">
+    <method v="2" />
+  </configuration>
+</component>

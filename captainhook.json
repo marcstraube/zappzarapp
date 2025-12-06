@@ -1,0 +1,46 @@
+{
+  "commit-msg": {
+    "enabled": true,
+    "actions": []
+  },
+  "pre-commit": {
+    "enabled": true,
+    "actions": [
+      {
+        "action": "vendor/bin/php-cs-fixer fix --diff --config=.php-cs-fixer.dist.php --dry-run",
+        "options": [],
+        "type": "cli",
+        "description": "Check for styling issues with PHP-CS-Fixer (Dry-Run)"
+      },
+      {
+        "action": "git diff --name-only --cached | grep .php$ | xargs -r -n1 php -l",
+        "options": [],
+        "type": "cli",
+        "description": "Check for basic PHP syntax errors (Linting)"
+      }
+    ]
+  },
+  "pre-push": {
+    "enabled": true,
+    "actions": [
+      {
+        "action": "vendor/bin/phpstan analyse --configuration=phpstan.neon --memory-limit=1G",
+        "options": [],
+        "type": "cli",
+        "description": "Run PHPStan (Level 5) before pushing to remote"
+      }
+    ]
+  },
+  "post-checkout": {
+    "enabled": true,
+    "actions": []
+  },
+  "post-merge": {
+    "enabled": true,
+    "actions": []
+  },
+  "post-rewrite": {
+    "enabled": true,
+    "actions": []
+  }
+}

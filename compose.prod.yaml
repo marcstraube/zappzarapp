@@ -1,2 +1,11 @@
 # ./compose.prod.yaml
 # Docker Compose Production Environment
+
+services:
+  nginx:
+    build:
+      target: production
+
+  php:
+    build:
+      target: production
