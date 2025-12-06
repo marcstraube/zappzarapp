@@ -1,0 +1,21 @@
+# Git
+.git
+.gitignore
+
+# Docker / IDE / Configs
+.docker
+.idea
+.vscode
+docker-compose*
+compose*
+Dockerfile
+Makefile
+README.md
+
+# Dependencies (werden im Build neu installiert)
+vendor
+
+# Local Environment & Logs
+.env
+logs
+tests

@@ -17,11 +17,28 @@ vendor/
 package.xml
 
 # IDE
-.idea/
 .vscode/
 *.swp
 *.swo
 *~
+
+# JetBrains IDE
+# Ignore user-specific workspace and tasks
+.idea/**/workspace.xml
+.idea/**/tasks.xml
+.idea/**/usage.statistics.xml
+.idea/**/dictionaries
+.idea/**/shelf
+
+# Ignore caches and generated files
+.idea/**/contentModel.xml
+.idea/**/dataSources.local.xml
+.idea/**/sqlDataSources.xml
+.idea/**/dynamic.xml
+.idea/**/uiDesigner.xml
+.idea/**/gradle.xml
+.idea/**/libraries
+.idea/**/mongoSettings.xml
 
 # OS
 .DS_Store
@@ -32,3 +49,9 @@ Thumbs.db
 
 # Data directories
 data/
+
+# Tool Caches
+.phpunit.cache
+.php-cs-fixer.cache
+.phpstan.cache
+.rector.cache
