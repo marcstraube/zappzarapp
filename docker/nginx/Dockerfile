@@ -1,5 +1,8 @@
+ARG NGINX_VERSION=1.29
+ARG ALPINE_VERSION=3.22
+
 # --- 1. BASE STAGE (Shared) ---
-FROM nginx:1.29-alpine3.22 AS base
+FROM nginx:${NGINX_VERSION}-alpine${ALPINE_VERSION} AS base
 
 # Setup Permissions & PID File
 RUN mkdir -p /var/cache/nginx /var/log/nginx /tmp/nginx && \
@@ -35,14 +38,13 @@ ARG GROUP_ID=1000
 
 # Install shadow to modify user ID matching the host user
 # This ensures that the nginx user has write access to mounted host volumes (logs, code)
-RUN apk add --no-cache --virtual .user-deps shadow && \
-    if [ "$USER_ID" != "101" ]; then \
+RUN if [ "$USER_ID" != "101" ]; then \
+        apk add --no-cache --virtual .user-deps shadow && \
         usermod -u $USER_ID nginx && \
-        groupmod -g $GROUP_ID nginx; \
+        groupmod -g $GROUP_ID nginx && \
+        apk del .user-deps ; \
     fi && \
-    # Re-apply permissions to nginx directories after ID change
-    chown -R nginx:nginx /var/cache/nginx /var/log/nginx /etc/nginx/conf.d /var/run/nginx.pid /tmp/nginx && \
-    apk del .user-deps
+    chown -R nginx:nginx /var/cache/nginx /var/log/nginx /etc/nginx/conf.d /var/run/nginx.pid /tmp/nginx
 
 USER nginx
 
