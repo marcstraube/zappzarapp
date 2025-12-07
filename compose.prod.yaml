@@ -14,10 +14,6 @@ services:
       - no-new-privileges:true
     cap_drop:
       - ALL
-    cap_add:
-      - CHOWN
-      - SETUID
-      - SETGID
     logging:
       driver: "json-file"
       options:
@@ -38,6 +34,8 @@ services:
     read_only: true
     tmpfs:
       - /tmp:mode=0770,uid=82,gid=82,size=1G
+      - /var/log/app:mode=0770,uid=82,gid=82,size=32M
+      - /var/log/php:mode=0770,uid=82,gid=82,size=32M
     security_opt:
       - no-new-privileges:true
     cap_drop:

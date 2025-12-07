@@ -20,9 +20,14 @@ services:
         USER_ID: ${USER_ID:-82}
         GROUP_ID: ${GROUP_ID:-82}
     volumes:
-      - ./:/var/www/html
-      - ./docker/php/conf.d/development.ini:/usr/local/etc/php/conf.d/zz-env.ini:ro
-      - ./docker/php/conf.d/xdebug.ini:/usr/local/etc/php/conf.d/zz-xdebug.ini:ro
+        - ./:/var/www/html
+        - ./docker/php/php.ini:/usr/local/etc/php/php.ini:ro
+        - ./docker/php/php-fpm.conf:/usr/local/etc/php-fpm.d/zz-custom.conf:ro
+        - ./docker/php/conf.d/development.ini:/usr/local/etc/php/conf.d/zz-env.ini:ro
+        - ./docker/php/conf.d/xdebug.ini:/usr/local/etc/php/conf.d/zz-xdebug.ini:ro
+        - ${DATA_DIR:-./data}:/var/www/html/data
+        - ${LOG_DIR:-./logs}/app:/var/log/app
+        - ${LOG_DIR:-./logs}/php:/var/log/php
     extra_hosts:
       - "host.docker.internal:host-gateway"
     environment:
