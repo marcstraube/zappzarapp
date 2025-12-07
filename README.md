@@ -559,3 +559,60 @@ request_terminate_timeout = 300s  # Adjust for long-running processes
 
 Proprietary - All rights reserved. This software is the property of **[Your Company Name]** and may not be distributed, 
 modified, or used without explicit permission.
+
+
+
+
+## Dependency Management and Auto-Updates (Renovate)
+
+This project utilizes **Renovate** to automatically manage dependency updates across the primary ecosystems: PHP (Composer), Node.js (npm), and Docker.
+The core functionality is configured in the `renovate.json` file and includes:
+- **Grouping**: Multiple small updates are grouped into a single Pull Request (PR) to reduce notification noise.
+- **Automerge**: Patch-level updates are automatically merged once CI/tests have completed successfully.
+- **Exclusion**: Critical components (such as major frameworks) are excluded from automatic grouping for individual manual review.
+**For detailed help and advanced options, please refer to the official Renovate documentation: https://docs.renovatebot.com/**
+
+### Running the Scanner (`make renovate`)
+
+The `make renovate` command encapsulates the Docker execution of the scanner and automatically distinguishes between two modes, based on the environment variables defined in your `.env` file.
+
+#### 1. Platform Mode (CI/CD Automation)
+
+This mode connects to your Git host (GitHub, GitLab) and creates Pull Requests (PRs) for updates. It is intended for automated execution within CI/CD pipelines.
+
+⚙️ Configuration (in .env):
+
+To enable this mode, the following variables must be set:
+
+| Variable              | Example Value                    | Description                                                          |
+|-----------------------|----------------------------------|----------------------------------------------------------------------|
+| `RENOVATE_PLATFORM`   | `github`                         | The Git platform being used (`github`, `gitlab`, etc.).              |
+| `RENOVATE_REPO_SLUG`  | `your-organization/your-project` | The full name of the repository.                                     |
+| `GITHUB_COM_TOKEN`    | `ghp_...`                        | The Personal Access Token (PAT) with write access to the repository. |
+
+#### Execution:
+
+When the necessary variables are set, the `make renovate` command will detect the platform, authenticate, and create all necessary PRs.
+```
+make renovate
+```
+
+### 2. Local Filesystem Mode (Manual Update)
+
+This is the **default mode** (fallback) when the variables `RENOVATE_PLATFORM` and `RENOVATE_REPO_SLUG` in the `.env` are empty.
+
+- The scanner runs against the local code clone.
+- It modifies files directly (`composer.json`, `package.json`, etc.) in your local branch. 
+- No Pull Requests are created.
+
+#### Workflow:
+
+This mode is ideal for manual reviews. Always run it on a new branch:
+
+1. `git checkout -b renovate-updates` 
+2. `make renovate` 
+3. Review the changes (`git diff`) and commit/push them manually.
+
+```
+make renovate
+```
