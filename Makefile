@@ -94,14 +94,23 @@ build: ## Build Docker images
 	fi
 	@echo -e "\033[0;32mBuild completed!\033[0m"
 
-up: ## Start containers
+up: ## Start core containers (Nginx, PHP)
+	@$(MAKE) up-core
+
+up-db: ## Start core containers PLUS Database
+	@$(MAKE) up-core SERVICES="db"
+
+up-node: ## Start core containers PLUS Node (e.g., for watch tasks)
+	@$(MAKE) up-core SERVICES="node"
+
+up-core:
 	@if [ ! -f .env ]; then echo -e "\033[0;31mError: .env not found. Run 'make init' first.\033[0m"; exit 1; fi
-	@. ./.env && echo -e "\033[0;33mStarting containers in $${ENV^^:-production} mode...\033[0m"
+	@. ./.env && echo -e "\033[0;33mStarting containers in $${ENV^^:-development} mode...\033[0m"
 	@. ./.env && mkdir -p $${LOG_DIR:-./logs}/{app,nginx,php}
 	@. ./.env && if [ "$$ENV" = "production" ]; then \
-		docker compose -f compose.yaml -f compose.prod.yaml up -d; \
+		docker compose -f compose.yaml -f compose.prod.yaml up -d nginx php $(SERVICES); \
 	else \
-		docker compose up -d; \
+		docker compose up -d nginx php $(SERVICES); \
 	fi
 	@echo -e "\033[0;32mContainers started!\033[0m"
 	@. ./.env && echo -e "\033[0;34mNginx is running at http://localhost:$${NGINX_PORT:-8080}\033[0m"
