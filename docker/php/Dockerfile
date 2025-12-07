@@ -87,6 +87,10 @@ CMD ["php-fpm"]
 # --- 3. PRODUCTION STAGE ---
 FROM base AS production
 
+# Copy configuration files
+COPY docker/php/php.ini /usr/local/etc/php/php.ini
+COPY docker/php/php-fpm.conf /usr/local/etc/php-fpm.d/zz-custom.conf
+
 # Install Composer temporarily for dependency installation
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 

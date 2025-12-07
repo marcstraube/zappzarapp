@@ -26,12 +26,8 @@ services:
       target: production
     container_name: ${COMPOSE_PROJECT_NAME:-docker-webdev}-php
     restart: unless-stopped
-    volumes:
-      - ${DATA_DIR:-./data}:/var/www/html/data
-      - ${LOG_DIR:-./logs}/app:/var/log/app
-      - ${LOG_DIR:-./logs}/php:/var/log/php
-      - ./docker/php/php.ini:/usr/local/etc/php/php.ini:ro
-      - ./docker/php/php-fpm.conf:/usr/local/etc/php-fpm.d/zz-custom.conf:ro
+    expose:
+      - "9000"
     environment:
       - ENV=${ENV:-production}
     networks:
