@@ -1,25 +1,31 @@
 # ./compose.yaml
-# Docker Compose Default Environment
+# Docker Compose Base Configuration
 
 services:
   nginx:
     build:
       context: .
       dockerfile: docker/nginx/Dockerfile
+      target: production
+    #container_name: ${COMPOSE_PROJECT_NAME:-docker-webdev}-nginx
+    restart: unless-stopped
     ports:
       - "${NGINX_PORT:-8080}:8080"
     volumes:
       - ${LOG_DIR:-./logs}/nginx:/var/log/nginx
     depends_on:
-      - php
+      php:
+        condition: service_healthy
     networks:
       - app-network
-    restart: unless-stopped
 
   php:
     build:
       context: .
       dockerfile: docker/php/Dockerfile
+      target: production
+    #container_name: ${COMPOSE_PROJECT_NAME:-docker-webdev}-php
+    restart: unless-stopped
     volumes:
       - ${DATA_DIR:-./data}:/var/www/html/data
       - ${LOG_DIR:-./logs}/app:/var/log/app
@@ -30,8 +36,14 @@ services:
       - ENV=${ENV:-production}
     networks:
       - app-network
-    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "SCRIPT_NAME=/ping SCRIPT_FILENAME=/ping REQUEST_METHOD=GET cgi-fcgi -bind -connect 127.0.0.1:9000 || exit 1"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 40s
 
 networks:
   app-network:
     driver: bridge
+    #name: ${COMPOSE_PROJECT_NAME:-docker-webdev}-network

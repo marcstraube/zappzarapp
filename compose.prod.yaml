@@ -5,7 +5,53 @@ services:
   nginx:
     build:
       target: production
+    read_only: true
+    tmpfs:
+      - /var/cache/nginx:mode=0770,uid=101,gid=101,size=64M
+      - /tmp/nginx:mode=0770,uid=101,gid=101,size=32M
+      - /var/run:mode=0770,uid=101,gid=101,size=16M
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    cap_add:
+      - CHOWN
+      - SETUID
+      - SETGID
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 256M
+        reservations:
+          cpus: '0.25'
+          memory: 128M
 
   php:
     build:
       target: production
+    read_only: true
+    tmpfs:
+      - /tmp:mode=0770,uid=82,gid=82,size=1G
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "5"
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 2G
+        reservations:
+          cpus: '1.0'
+          memory: 1G
