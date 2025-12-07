@@ -35,6 +35,6 @@ $csp_value = implode('; ', $csp_directives) . ';';*/
 // 4. STORE NONCE FOR ACCESS IN TEMPLATES
 //define('CSP_NONCE', $nonce);
 
-echo "<h1>Initial Setup Successful!</h1>";
+echo "<h1 style='text-align:center;'>Initial Setup Successful!</h1>";
 
 phpinfo();
