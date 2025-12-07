@@ -1,8 +1,10 @@
-.PHONY: help build up down restart logs logs-nginx logs-php shell-php shell-nginx composer clean rebuild init setup hooks-install test analyse cs-check cs-fix check
+.PHONY: help build up down restart logs logs-nginx logs-php shell-php shell-nginx composer clean rebuild init setup dev-deps hooks-install test analyse cs-check cs-fix check security-scan security-config
 
 help: ## Show this help
 	@echo -e "\033[0;34mAvailable commands:\033[0m"
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[0;32m%-15s\033[0m %s\n", $$1, $$2}'
+
+##@ Setup
 
 init: ## Initialize project (copy .env) - Run this first!
 	@echo -e "\033[0;33mInitializing configuration...\033[0m"
@@ -23,13 +25,44 @@ setup: ## Create directories based on .env configuration
 	@. ./.env && mkdir -p $${DATA_DIR:-./data} $${LOG_DIR:-./logs}/{app,nginx,php} app/src tests vendor
 	@echo -e "\033[0;32mSetup completed!\033[0m"
 
+dev-deps: ## Install/update Composer dependencies (uses local composer if available)
+	@echo -e "\033[0;33mManaging Composer dependencies...\033[0m"
+	@if command -v composer >/dev/null 2>&1; then \
+		echo "Using local Composer..."; \
+		if [ ! -f "vendor/autoload.php" ]; then \
+			composer install --prefer-dist --no-interaction; \
+		else \
+			composer install --prefer-dist --no-interaction --no-scripts; \
+		fi; \
+	else \
+		echo "Local Composer not found, using Docker..."; \
+		XDEBUG_MODE=off docker compose run --rm --no-TTY php sh -c '\
+			if [ ! -f "vendor/autoload.php" ]; then \
+				composer install --prefer-dist --no-interaction; \
+			else \
+				composer install --prefer-dist --no-interaction --no-scripts; \
+			fi'; \
+	fi
+	@echo -e "\033[0;32mDependencies ready!\033[0m"
+
+##@ Docker
+
 build: ## Build Docker images
 	@echo -e "\033[0;33mBuilding Docker images...\033[0m"
-	@docker compose build
+	@if [ -f .env ]; then \
+		. ./.env && if [ "$$ENV" = "production" ]; then \
+			docker compose -f compose.yaml -f compose.prod.yaml build; \
+		else \
+			docker compose build; \
+		fi; \
+	else \
+		docker compose build; \
+	fi
 	@echo -e "\033[0;32mBuild completed!\033[0m"
 
 up: ## Start containers
-	@. ./.env && echo -e "\033[0;33mStarting containers in $${ENV^^} mode...\033[0m"
+	@if [ ! -f .env ]; then echo -e "\033[0;31mError: .env not found. Run 'make init' first.\033[0m"; exit 1; fi
+	@. ./.env && echo -e "\033[0;33mStarting containers in $${ENV^^:-production} mode...\033[0m"
 	@. ./.env && mkdir -p $${LOG_DIR:-./logs}/{app,nginx,php}
 	@. ./.env && if [ "$$ENV" = "production" ]; then \
 		docker compose -f compose.yaml -f compose.prod.yaml up -d; \
@@ -37,17 +70,33 @@ up: ## Start containers
 		docker compose up -d; \
 	fi
 	@echo -e "\033[0;32mContainers started!\033[0m"
-	@echo -e "\033[0;34mNginx is running at http://localhost:$${NGINX_PORT:-8080}\033[0m"
+	@. ./.env && echo -e "\033[0;34mNginx is running at http://localhost:$${NGINX_PORT:-8080}\033[0m"
 
 down: ## Stop containers
 	@echo -e "\033[0;33mStopping containers...\033[0m"
-	@docker compose down
+	@if [ -f .env ]; then \
+		. ./.env && if [ "$$ENV" = "production" ]; then \
+			docker compose -f compose.yaml -f compose.prod.yaml down; \
+		else \
+			docker compose down; \
+		fi; \
+	else \
+		docker compose down; \
+	fi
 	@echo -e "\033[0;32mContainers stopped!\033[0m"
 
 restart: down up ## Restart containers
 
 logs: ## Show logs of all containers
-	@docker compose logs -f
+	@if [ -f .env ]; then \
+		. ./.env && if [ "$$ENV" = "production" ]; then \
+			docker compose -f compose.yaml -f compose.prod.yaml logs -f; \
+		else \
+			docker compose logs -f; \
+		fi; \
+	else \
+		docker compose logs -f; \
+	fi
 
 logs-nginx: ## Show Nginx logs only
 	@docker compose logs -f nginx
@@ -66,13 +115,21 @@ composer: ## Execute Composer command (e.g. make composer CMD="require vendor/pa
 
 clean: ## Remove containers, volumes and images
 	@echo -e "\033[0;33mCleaning up...\033[0m"
-	@docker compose down -v
+	@if [ -f .env ]; then \
+		. ./.env && if [ "$$ENV" = "production" ]; then \
+			docker compose -f compose.yaml -f compose.prod.yaml down -v; \
+		else \
+			docker compose down -v; \
+		fi; \
+	else \
+		docker compose down -v; \
+	fi
 	@docker system prune -f
 	@echo -e "\033[0;32mCleanup completed!\033[0m"
 
 rebuild: clean build up ## Complete rebuild
 
-# --- Quality Assurance ---
+##@ Quality Assurance
 
 hooks-install: ## Install Git hooks using CaptainHook
 	@if [ ! -f vendor/bin/captainhook ]; then \
@@ -101,3 +158,28 @@ cs-fix: ## Fix coding style automatically
 
 check: cs-check analyse test ## Run all checks (CI simulation)
 	@echo -e "\033[0;32mAll checks passed!\033[0m"
+
+##@ Security
+
+security-scan: ## Scan Docker images for vulnerabilities
+	@echo -e "\033[0;33mScanning images for vulnerabilities...\033[0m"
+	@if [ -f .env ]; then \
+		. ./.env && \
+		echo "Scanning PHP image..." && \
+		docker run --rm -v /var/run/docker.sock:/var/run/docker.sock \
+			aquasec/trivy:latest image --severity HIGH,CRITICAL \
+			$${COMPOSE_PROJECT_NAME:-docker-webdev}-php:latest 2>/dev/null || \
+			echo "⚠️  Image not found. Run 'make build' first." && \
+		echo "\nScanning Nginx image..." && \
+		docker run --rm -v /var/run/docker.sock:/var/run/docker.sock \
+			aquasec/trivy:latest image --severity HIGH,CRITICAL \
+			$${COMPOSE_PROJECT_NAME:-docker-webdev}-nginx:latest 2>/dev/null || \
+			echo "⚠️  Image not found. Run 'make build' first."; \
+	fi
+	@echo -e "\033[0;32mSecurity scan completed!\033[0m"
+
+security-config: ## Check Dockerfiles for misconfigurations
+	@echo -e "\033[0;33mScanning Dockerfiles for security issues...\033[0m"
+	@docker run --rm -v $$(pwd):/project \
+		aquasec/trivy:latest config /project/docker
+	@echo -e "\033[0;32mConfiguration scan completed!\033[0m"
