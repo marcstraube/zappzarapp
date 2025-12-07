@@ -1,8 +1,30 @@
-.PHONY: help build up down restart logs logs-nginx logs-php shell-php shell-nginx composer clean rebuild init setup dev-deps hooks-install test analyse cs-check cs-fix check security-scan security-config falco-run
+.PHONY: help init setup dev-deps hooks-install build up down restart logs logs-nginx logs-php shell-php shell-nginx \
+	composer clean prune rebuild status test coverage analyse cs-check cs-fix check lint-config security-scan \
+	security-config security-sbom falco-run
 
 help: ## Show this help
-	@echo -e "\033[0;34mAvailable commands:\033[0m"
-	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[0;32m%-15s\033[0m %s\n", $$1, $$2}'
+	@awk 'BEGIN { \
+		FS = ":.*?## "; \
+		printf "\033[0;34m\nAvailable commands:\n\033[0m"; \
+	} \
+	/^##@/ { \
+		if (length(cmds) > 0) { \
+			print cmds | "sort"; \
+			close("sort"); \
+			cmds = ""; \
+		} \
+		print "\n\033[0;34m" substr($$0, 5) "\033[0m"; \
+		next; \
+	} \
+	/^[a-zA-Z_-]+:.*?## / { \
+		cmds = cmds $$1 "\t" $$2 "\n"; \
+	} \
+	END { \
+		if (length(cmds) > 0) { \
+			print cmds | "sort"; \
+			close("sort"); \
+		} \
+	}' $(MAKEFILE_LIST) | awk 'BEGIN {FS="\t"} {printf "  \033[0;32m%-15s\033[0m %s\n", $$1, $$2}'
 
 ##@ Setup
 
@@ -16,14 +38,16 @@ init: ## Initialize project (copy .env) - Run this first!
 		echo -e "\033[0;34m.env file already exists. Skipped.\033[0m"; \
 	fi
 
-setup: ## Create directories based on .env configuration
+setup: ## Create directories, install dev dependencies and ensure structure
 	@if [ ! -f .env ]; then \
 		echo -e "\033[0;31mError: .env file not found. Please run 'make init' first.\033[0m"; \
 		exit 1; \
 	fi
 	@echo -e "\033[0;33mCreating project structure...\033[0m"
 	@. ./.env && mkdir -p $${DATA_DIR:-./data} $${LOG_DIR:-./logs}/{app,nginx,php} app/src tests vendor
-	@echo -e "\033[0;32mSetup completed!\033[0m"
+	@echo -e "\033[0;32mProject structure created!\033[0m"
+	@$(MAKE) dev-deps
+	@echo -e "\033[0;32mSetup completed (directories + dependencies)!\033[0m"
 
 dev-deps: ## Install/update Composer dependencies (uses local composer if available)
 	@echo -e "\033[0;33mManaging Composer dependencies...\033[0m"
@@ -44,6 +68,15 @@ dev-deps: ## Install/update Composer dependencies (uses local composer if availa
 			fi'; \
 	fi
 	@echo -e "\033[0;32mDependencies ready!\033[0m"
+
+hooks-install: ## Install Git hooks using CaptainHook
+	@if [ ! -f vendor/bin/captainhook ]; then \
+		echo -e "\033[0;31mError: CaptainHook not found. Please ensure vendor dependencies are installed.\033[0m"; \
+		exit 1; \
+	fi
+	@echo -e "\033[0;33mInstalling Git hooks with CaptainHook...\033[0m"
+	@vendor/bin/captainhook install
+	@echo -e "\033[0;32mGit hooks installed successfully in .git/hooks/!\033[0m"
 
 ##@ Docker
 
@@ -127,22 +160,28 @@ clean: ## Remove containers, volumes and images
 	@docker system prune -f
 	@echo -e "\033[0;32mCleanup completed!\033[0m"
 
+prune: ## Remove untagged/dangling images related to this project
+	@echo -e "\033[0;33mPruning dangling images...\033[0m"
+	@. ./.env && docker image prune -f --filter "label=com.docker.compose.project=$$COMPOSE_PROJECT_NAME"
+
 rebuild: clean build up ## Complete rebuild
 
-##@ Quality Assurance
+status: ## Show running containers status and image disk usage
+	@echo -e "\033[0;33mContainer Status:\033[0m"
+	@docker compose ps
+	@echo -e "\033[0;33m\nImage Disk Usage:\033[0m"
+	@docker images | grep $(COMPOSE_PROJECT_NAME:-docker-webdev)
 
-hooks-install: ## Install Git hooks using CaptainHook
-	@if [ ! -f vendor/bin/captainhook ]; then \
-		echo -e "\033[0;31mError: CaptainHook not found. Please ensure vendor dependencies are installed.\033[0m"; \
-		exit 1; \
-	fi
-	@echo -e "\033[0;33mInstalling Git hooks with CaptainHook...\033[0m"
-	@vendor/bin/captainhook install
-	@echo -e "\033[0;32mGit hooks installed successfully in .git/hooks/!\033[0m"
+##@ Quality Assurance
 
 test: ## Run PHPUnit tests
 	@echo -e "\033[0;33mRunning PHPUnit...\033[0m"
 	@docker compose exec php composer test
+
+coverage: ## Run PHPUnit and generate a Code Coverage report (HTML in build/coverage)
+	@echo -e "\033[0;33mRunning PHPUnit with coverage report...\033[0m"
+	@docker compose exec php composer test -- --coverage-html build/coverage
+	@echo -e "\033[0;32mCoverage report generated in build/coverage!\033[0m"
 
 analyse: ## Run PHPStan static analysis
 	@echo -e "\033[0;33mRunning PHPStan...\033[0m"
@@ -158,6 +197,17 @@ cs-fix: ## Fix coding style automatically
 
 check: cs-check analyse test ## Run all checks (CI simulation)
 	@echo -e "\033[0;32mAll checks passed!\033[0m"
+
+lint-config: ## Validate YAML configuration files
+	@echo -e "\033[0;33mValidating YAML configuration...\033[0m"
+	@if command -v yamllint >/dev/null 2>&1; then \
+		echo "Using local yamllint..."; \
+		yamllint ./**/*.yaml; \
+	else \
+		echo "Local yamllint not found, using Docker container..."; \
+		docker run --rm -v $$(pwd):/app -w /app cytopia/yamllint:latest ./**/*.yaml; \
+	fi
+	@echo -e "\033[0;32mYAML configuration check completed!\033[0m"
 
 ##@ Security
 
@@ -183,6 +233,16 @@ security-config: ## Check Dockerfiles for misconfigurations
 	@docker run --rm -v $$(pwd):/project \
 		aquasec/trivy:latest config /project/docker
 	@echo -e "\033[0;32mConfiguration scan completed!\033[0m"
+
+security-sbom: ## Generate a Software Bill of Materials (SBOM) using Trivy
+	@echo -e "\033[0;33mGenerating SBOM for PHP image...\033[0m"
+	@if [ -f .env ]; then \
+		. ./.env && \
+		docker run --rm -v /var/run/docker.sock:/var/run/docker.sock \
+			aquasec/trivy:latest image --format cyclonedx --output build/sbom-php.json \
+			$${COMPOSE_PROJECT_NAME:-docker-webdev}-php:latest; \
+	fi
+	@echo -e "\033[0;32mSBOM generated in build/sbom-php.json!\033[0m"
 
 falco-run: ## Start Falco for Runtime Security Monitoring (requires root/sudo on Linux)
 	@echo -e "\033[0;33mStarting Falco for runtime monitoring...\033[0m"
