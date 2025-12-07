@@ -228,6 +228,28 @@ check-health: ## Check application health by container status, PHP-FPM and Nginx
 
 rebuild: clean build up ## Complete rebuild
 
+renovate: ## Run Renovate dependency scanner
+	@echo -e "\033[0;33mRunning Renovate dependency scanner...\033[0m"
+	@if [ ! -f .env ]; then echo -e "\033[0;31mError: .env not found. Run 'make init' first.\033[0m"; exit 1; fi
+	@. ./.env; \
+	RENOVATE_MANAGER=$${RENOVATE_PLATFORM:-filesystem}; \
+	RENOVATE_REPO=$${RENOVATE_REPO_SLUG}; \
+	RENOVATE_BASEDIR=/app; \
+	echo -e "\033[0;34mRenovate Mode: $${RENOVATE_MANAGER}\033[0m"; \
+	docker run \
+		--rm \
+		--volume "$$(pwd):$${RENOVATE_BASEDIR}" \
+		-e GITHUB_COM_TOKEN="$${GITHUB_COM_TOKEN}" \
+		-e GITLAB_COM_TOKEN="$${GITLAB_COM_TOKEN}" \
+		renovate/renovate \
+			--manager=$${RENOVATE_MANAGER} \
+			--baseDir="$${RENOVATE_BASEDIR}" \
+			--baseDirIs="$${RENOVATE_BASEDIR}" \
+			--hostRules=[] \
+			--dryRun=false \
+			$${RENOVATE_REPO}
+	@echo -e "\033[0;32mRenovate run completed.\033[0m"
+
 ##@ Quality Assurance
 
 analyse: ## Run PHPStan static analysis

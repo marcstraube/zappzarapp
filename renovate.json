@@ -1,0 +1,68 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "description": "Renovate All-Purpose Config for PHP/Node/Docker projects. For detailed help and options, see: https://docs.renovatebot.com/",
+  "extends": [
+    "config:base"
+  ],
+  "schedule": [
+    "at any time"
+  ],
+  "labels": [
+    "renovate",
+    "dependencies"
+  ],
+  "automerge": true,
+  "packageRules": [
+    {
+      "description": "Docker Base Image Updates (Prefer stable versions)",
+      "matchManagers": [
+        "dockerfile"
+      ],
+      "groupName": "Docker Base Image Updates",
+      "groupLimit": 1,
+      "separateMajor": true,
+      "automerge": true
+    },
+    {
+      "description": "PHP Composer Updates - Exclude major application frameworks for individual review.",
+      "matchManagers": [
+        "composer"
+      ],
+      "groupName": "PHP Composer Dependencies",
+      "automerge": true,
+      "excludePackageNames": [
+        "laravel/framework",
+        "symfony/framework-bundle"
+      ]
+    },
+    {
+      "description": "Node.js (PNPM) Updates",
+      "matchManagers": [
+        "pnpm"
+      ],
+      "groupName": "Node Dependencies",
+      "automerge": true
+    },
+    {
+      "description": "Node.js Dev Dependencies Grouping",
+      "matchManagers": [
+        "pnpm"
+      ],
+      "matchDepTypes": [
+        "devDependencies"
+      ],
+      "groupName": "Node Dev Dependencies"
+    },
+    {
+      "description": "Immediate merge of security patches (High Priority)",
+      "matchUpdateTypes": [
+        "patch"
+      ],
+      "schedule": [
+        "at any time"
+      ],
+      "groupLimit": 1,
+      "automerge": true
+    }
+  ]
+}
