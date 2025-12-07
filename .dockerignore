@@ -1,21 +1,53 @@
 # Git
 .git
 .gitignore
+.gitattributes
 
-# Docker / IDE / Configs
-.docker
+# IDE
 .idea
 .vscode
-docker-compose*
-compose*
-Dockerfile
-Makefile
-README.md
+*.swp
+*.swo
 
-# Dependencies (werden im Build neu installiert)
-vendor
-
-# Local Environment & Logs
+# Environment & Secrets
 .env
-logs
-tests
+.env.*
+!.env.example
+
+# Dependencies
+vendor/
+node_modules/
+
+# Development
+tests/
+.phpunit.result.cache
+.php-cs-fixer.cache
+
+# Logs
+logs/
+*.log
+
+# Documentation
+README.md
+*.md
+!composer.json
+!composer.lock
+
+# Docker
+docker-compose*.yml
+compose*.yaml
+Dockerfile
+.dockerignore
+
+# CI/CD
+.github/
+.gitlab-ci.yml
+
+# Configs
+Makefile
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+*.cache

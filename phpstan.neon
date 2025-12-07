@@ -3,3 +3,11 @@ parameters:
     paths:
         - app/src
         - tests
+
+    # Performance
+    parallel:
+        jobSize: 20
+        maximumNumberOfProcesses: 4
+
+    # Type Coverage
+    reportUnmatchedIgnoredErrors: true
