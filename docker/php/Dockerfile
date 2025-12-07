@@ -1,48 +1,70 @@
 ARG PHP_VERSION=8.4
 ARG ALPINE_VERSION=3.22
 
-# --- 1. BASE STAGE (Shared) ---
-FROM php:${PHP_VERSION}-fpm-alpine${ALPINE_VERSION} AS base
+# --- 1. PHP BUILDER STAGE (Compilation) ---
+# This stage installs all build dependencies and compiles the extensions.
+FROM php:${PHP_VERSION}-fpm-alpine${ALPINE_VERSION} AS php-builder
 
-# Install System Dependencies (Runtime only)
+# Install ALL necessary dependencies to compile extensions
+# We do NOT use --virtual here, as we will discard the builder stage later.
 RUN apk add --no-cache \
-    fcgi \
-    graphicsmagick \
-    libzip \
-    libpng \
-    libjpeg-turbo \
-    libwebp \
-    libavif \
-    freetype \
-    libgomp \
-    icu-libs \
-    openssl
-
-# Install Build Dependencies, Compile Extensions, then Cleanup
-RUN apk add --no-cache --virtual .build-deps \
+    # General Build Toolchain (Required for all compilations)
     $PHPIZE_DEPS \
     libtool \
     linux-headers \
-    graphicsmagick-dev \
+    libgomp \
+    # Dependencies for GD (Extension)
+    freetype \
     freetype-dev \
+    libjpeg-turbo \
     libjpeg-turbo-dev \
+    libpng \
     libpng-dev \
+    libwebp \
     libwebp-dev \
+    libavif \
     libavif-dev \
-    libzip-dev \
+    # Dependencies for gmagick (Extension)
+    graphicsmagick \
+    graphicsmagick-dev \
+    # Dependencies for intl (Extension)
+    icu-libs \
     icu-dev \
-    && docker-php-ext-install zip \
+    # Dependencies for zip (Extension)
+    libzip \
+    libzip-dev \
+    # Compilation and installation of extensions
+    && docker-php-ext-install exif intl opcache zip \
     && docker-php-ext-configure gd \
         --with-freetype \
         --with-jpeg \
         --with-webp \
         --with-avif \
     && docker-php-ext-install -j$(nproc) gd \
-    && docker-php-ext-install exif intl opcache \
     && pecl install gmagick-2.0.6RC1 \
     && docker-php-ext-enable gmagick \
-    && apk del .build-deps \
     && rm -rf /tmp/pear
+
+# --- 2. BASE STAGE (Shared Runtime Image - Small & Fast) ---
+FROM php:${PHP_VERSION}-fpm-alpine${ALPINE_VERSION} AS base
+
+# Install only the system dependencies required at runtime.
+RUN apk add --no-cache \
+    fcgi \
+    openssl \
+    libgomp \
+    freetype \
+    libjpeg-turbo \
+    libpng \
+    libwebp \
+    libavif \
+    graphicsmagick \
+    icu-libs \
+    libzip
+
+# Copy the compiled extensions and configuration files from the builder
+COPY --from=php-builder /usr/local/etc/php/conf.d/ /usr/local/etc/php/conf.d/
+COPY --from=php-builder /usr/local/lib/php/extensions/ /usr/local/lib/php/extensions/
 
 # Health Check
 HEALTHCHECK --interval=30s --timeout=3s --start-period=40s --retries=3 \
@@ -55,16 +77,13 @@ RUN mkdir -p /var/log/{app,php} && \
 # Set Working Directory
 WORKDIR /var/www/html
 
-# --- 2. DEVELOPMENT STAGE ---
+# --- 3. DEVELOPMENT STAGE ---
 FROM base AS development
 
 ARG USER_ID=1000
 ARG GROUP_ID=1000
 
 # Install development utilities and build tools
-# - git, unzip: Required for Composer
-# - $PHPIZE_DEPS & linux-headers: Required to compile Xdebug or other extensions from source
-# - shadow: Required for usermod/groupmod to change UID/GID matching the host user
 RUN apk add --no-cache git unzip $PHPIZE_DEPS linux-headers && \
     if [ "$USER_ID" != "82" ]; then \
         apk add --no-cache --virtual .user-deps shadow && \
@@ -88,7 +107,7 @@ USER www-data
 
 CMD ["php-fpm"]
 
-# --- 3. PRODUCTION STAGE ---
+# --- 4. PRODUCTION STAGE ---
 FROM base AS production
 
 # Copy configuration files
