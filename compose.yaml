@@ -25,7 +25,6 @@ services:
       - ${LOG_DIR:-./logs}/app:/var/log/app
       - ${LOG_DIR:-./logs}/php:/var/log/php
       - ./docker/php/php.ini:/usr/local/etc/php/php.ini:ro
-      - ./docker/php/conf.d/${ENV}.ini:/usr/local/etc/php/conf.d/zz-env.ini:ro
       - ./docker/php/php-fpm.conf:/usr/local/etc/php-fpm.d/zz-custom.conf:ro
     environment:
       - ENV=${ENV:-production}
