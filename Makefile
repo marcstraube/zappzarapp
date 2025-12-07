@@ -1,6 +1,7 @@
-.PHONY: help init setup dev-deps hooks-install build up down restart logs logs-nginx logs-php shell-php shell-nginx \
-	composer clean prune rebuild status test coverage analyse cs-check cs-fix check lint-config security-scan \
-	security-config security-sbom falco-run
+SHELL := /bin/bash
+.SHELLFLAGS := -c
+
+.PHONY: $(shell awk '/^[a-zA-Z_-]+:.*?## / { print $$1 }' $(MAKEFILE_LIST) | sed 's/://')
 
 help: ## Show this help
 	@awk 'BEGIN { \
@@ -116,6 +117,7 @@ down: ## Stop containers
 	else \
 		docker compose down; \
 	fi
+	@docker system prune -f
 	@echo -e "\033[0;32mContainers stopped!\033[0m"
 
 restart: down up ## Restart containers
@@ -164,28 +166,72 @@ prune: ## Remove untagged/dangling images related to this project
 	@echo -e "\033[0;33mPruning dangling images...\033[0m"
 	@. ./.env && docker image prune -f --filter "label=com.docker.compose.project=$$COMPOSE_PROJECT_NAME"
 
-rebuild: clean build up ## Complete rebuild
-
 status: ## Show running containers status and image disk usage
 	@echo -e "\033[0;33mContainer Status:\033[0m"
 	@docker compose ps
 	@echo -e "\033[0;33m\nImage Disk Usage:\033[0m"
-	@docker images | grep $(COMPOSE_PROJECT_NAME:-docker-webdev)
+	@docker images | grep "$(COMPOSE_PROJECT_NAME:-docker-webdev)"
+
+##@ Workflow
+
+fresh: clean rebuild ## Complete clean slate rebuild, removing all data volumes (DANGEROUS!)
+	@echo -e "\033[0;31m!!! WARNING: You are about to remove all containers, images, AND data volumes (e.g. database). !!!\033[0m"
+	@read -p "Are you sure you want to proceed? Type 'YES' to confirm: " CONFIRM_FRESH; \
+	if [ "$$CONFIRM_FRESH" != "YES" ]; then \
+		echo -e "\033[0;34mOperation cancelled.\033[0m"; \
+		exit 1; \
+	fi
+	@echo -e "\033[0;33mProceeding with fresh rebuild...\033[0m"
+	@if [ -f .env ]; then \
+		. ./.env && if [ "$$ENV" = "production" ]; then \
+			docker compose -f compose.yaml -f compose.prod.yaml down -v --rmi all; \
+		else \
+			docker compose down -v --rmi all; \
+		fi; \
+	else \
+		docker compose down -v --rmi all; \
+	fi
+	@$(MAKE) build
+	@$(MAKE) up
+
+check-health: ## Check application health by container status, PHP-FPM and Nginx HTTP response
+	@echo -e "\033[0;33mChecking Container Health Status (PHP-FPM & Nginx)...\033[0m"
+	@if [ "$$(docker inspect --format='{{.State.Health.Status}}' $$(docker compose ps -q php))" = "healthy" ]; then \
+		echo -e "\033[0;32m✅ PHP-FPM Service is Healthy (Container Status).\033[0m"; \
+	else \
+		echo -e "\033[0;31m❌ PHP-FPM Service is Not Healthy (Container Status). Run 'docker inspect $$(docker compose ps -q php)' for details.\033[0m"; \
+		exit 1; \
+	fi
+	@echo -e "\n\033[0;33mChecking HTTP Health (Nginx)...\033[0m"
+	@if [ -f .env ]; then . ./.env; fi; \
+	NGINX_PORT=$${NGINX_PORT:-8080}; \
+	if command -v curl >/dev/null 2>&1; then \
+		HTTP_CODE=$$(curl -s -o /dev/null -w "%{http_code}" http://localhost:$$NGINX_PORT); \
+		if [ "$$HTTP_CODE" = "200" ]; then \
+			echo -e "\033[0;32m✅ Nginx/Application is running and returns 200 OK on port $$NGINX_PORT.\033[0m"; \
+		else \
+			echo -e "\033[0;31m❌ Error: Application returned HTTP code $$HTTP_CODE on port $$NGINX_PORT.\033[0m"; \
+			exit 1; \
+		fi; \
+	else \
+		echo -e "\033[0;31m❌ Error: 'curl' not found. Cannot perform HTTP health check.\033[0m"; \
+	fi
+
+rebuild: clean build up ## Complete rebuild
 
 ##@ Quality Assurance
 
-test: ## Run PHPUnit tests
-	@echo -e "\033[0;33mRunning PHPUnit...\033[0m"
-	@docker compose exec php composer test
+analyse: ## Run PHPStan static analysis
+	@echo -e "\033[0;33mRunning PHPStan...\033[0m"
+	@docker compose exec php composer analyse
+
+check: cs-check analyse test ## Run all checks (CI simulation)
+	@echo -e "\033[0;32mAll checks passed!\033[0m"
 
 coverage: ## Run PHPUnit and generate a Code Coverage report (HTML in build/coverage)
 	@echo -e "\033[0;33mRunning PHPUnit with coverage report...\033[0m"
 	@docker compose exec php composer test -- --coverage-html build/coverage
 	@echo -e "\033[0;32mCoverage report generated in build/coverage!\033[0m"
-
-analyse: ## Run PHPStan static analysis
-	@echo -e "\033[0;33mRunning PHPStan...\033[0m"
-	@docker compose exec php composer analyse
 
 cs-check: ## Check coding style (dry-run)
 	@echo -e "\033[0;33mChecking Coding Style...\033[0m"
@@ -194,9 +240,6 @@ cs-check: ## Check coding style (dry-run)
 cs-fix: ## Fix coding style automatically
 	@echo -e "\033[0;33mFixing Coding Style...\033[0m"
 	@docker compose exec php composer cs-fix
-
-check: cs-check analyse test ## Run all checks (CI simulation)
-	@echo -e "\033[0;32mAll checks passed!\033[0m"
 
 lint-config: ## Validate YAML configuration files
 	@echo -e "\033[0;33mValidating YAML configuration...\033[0m"
@@ -209,7 +252,60 @@ lint-config: ## Validate YAML configuration files
 	fi
 	@echo -e "\033[0;32mYAML configuration check completed!\033[0m"
 
+outdated: ## Check for outdated Composer dependencies (local or container)
+	@echo -e "\033[0;33mChecking Composer for outdated packages...\033[0m"
+	@if command -v composer >/dev/null 2>&1; then \
+		echo "Using local Composer..."; \
+		composer outdated; \
+	else \
+		echo "Local Composer not found, using Docker..."; \
+		docker compose exec php composer outdated; \
+	fi
+	@echo -e "\033[0;32mOutdated check completed!\033[0m"
+
+test: ## Run PHPUnit tests
+	@echo -e "\033[0;33mRunning PHPUnit...\033[0m"
+	@docker compose exec php composer test
+
 ##@ Security
+
+falco-run: ## Start Falco for Runtime Security Monitoring (requires root/sudo on Linux)
+	@echo -e "\033[0;33mStarting Falco for runtime monitoring...\033[0m"
+	@echo -e "\033[0;31mNote: Falco runs with --privileged and monitors ALL containers on the host.\033[0m"
+	@docker run --rm -it \
+		--name falco-monitor \
+		--privileged \
+		-v /var/run/docker.sock:/host/var/run/docker.sock \
+		-v /dev:/host/dev \
+		-v /proc:/host/proc:ro \
+		falcosecurity/falco:latest
+
+security-config: ## Check Dockerfiles for misconfigurations
+	@echo -e "\033[0;33mScanning Dockerfiles for security issues...\033[0m"
+	@docker run --rm -v $$(pwd):/project \
+		aquasec/trivy:latest config /project/docker
+	@echo -e "\033[0;32mConfiguration scan completed!\033[0m"
+
+security-deps: ## Scan Composer dependencies for known vulnerabilities (local or container)
+	@echo -e "\033[0;33mScanning Composer dependencies...\033[0m"
+	@if command -v security-check >/dev/null 2>&1; then \
+		echo "Using local security-check..."; \
+		security-check; \
+	else \
+		echo "Local security-check not found, using Docker..."; \
+		docker compose exec php composer security-check; \
+	fi
+	@echo -e "\033[0;32mDependency scan completed!\033[0m"
+
+security-sbom: ## Generate a Software Bill of Materials (SBOM) using Trivy
+	@echo -e "\033[0;33mGenerating SBOM for PHP image...\033[0m"
+	@if [ -f .env ]; then \
+		. ./.env && \
+		docker run --rm -v /var/run/docker.sock:/var/run/docker.sock \
+			aquasec/trivy:latest image --format cyclonedx --output build/sbom-php.json \
+			$${COMPOSE_PROJECT_NAME:-docker-webdev}-php:latest; \
+	fi
+	@echo -e "\033[0;32mSBOM generated in build/sbom-php.json!\033[0m"
 
 security-scan: ## Scan Docker images for vulnerabilities
 	@echo -e "\033[0;33mScanning images for vulnerabilities...\033[0m"
@@ -227,30 +323,3 @@ security-scan: ## Scan Docker images for vulnerabilities
 			echo "⚠️  Image not found. Run 'make build' first."; \
 	fi
 	@echo -e "\033[0;32mSecurity scan completed!\033[0m"
-
-security-config: ## Check Dockerfiles for misconfigurations
-	@echo -e "\033[0;33mScanning Dockerfiles for security issues...\033[0m"
-	@docker run --rm -v $$(pwd):/project \
-		aquasec/trivy:latest config /project/docker
-	@echo -e "\033[0;32mConfiguration scan completed!\033[0m"
-
-security-sbom: ## Generate a Software Bill of Materials (SBOM) using Trivy
-	@echo -e "\033[0;33mGenerating SBOM for PHP image...\033[0m"
-	@if [ -f .env ]; then \
-		. ./.env && \
-		docker run --rm -v /var/run/docker.sock:/var/run/docker.sock \
-			aquasec/trivy:latest image --format cyclonedx --output build/sbom-php.json \
-			$${COMPOSE_PROJECT_NAME:-docker-webdev}-php:latest; \
-	fi
-	@echo -e "\033[0;32mSBOM generated in build/sbom-php.json!\033[0m"
-
-falco-run: ## Start Falco for Runtime Security Monitoring (requires root/sudo on Linux)
-	@echo -e "\033[0;33mStarting Falco for runtime monitoring...\033[0m"
-	@echo -e "\033[0;31mNote: Falco runs with --privileged and monitors ALL containers on the host.\033[0m"
-	@docker run --rm -it \
-		--name falco-monitor \
-		--privileged \
-		-v /var/run/docker.sock:/host/var/run/docker.sock \
-		-v /dev:/host/dev \
-		-v /proc:/host/proc:ro \
-		falcosecurity/falco:latest
