@@ -21,6 +21,7 @@ services:
         GROUP_ID: ${GROUP_ID:-82}
     volumes:
       - ./:/var/www/html
+      - ./docker/php/conf.d/development.ini:/usr/local/etc/php/conf.d/zz-env.ini:ro
       - ./docker/php/conf.d/xdebug.ini:/usr/local/etc/php/conf.d/zz-xdebug.ini:ro
     extra_hosts:
       - "host.docker.internal:host-gateway"
