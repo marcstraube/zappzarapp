@@ -1,5 +1,8 @@
+ARG PHP_VERSION=8.4
+ARG ALPINE_VERSION=3.22
+
 # --- 1. BASE STAGE (Shared) ---
-FROM php:8.4-fpm-alpine3.22 AS base
+FROM php:${PHP_VERSION}-fpm-alpine${ALPINE_VERSION} AS base
 
 # Install System Dependencies (Runtime only)
 RUN apk add --no-cache \
@@ -12,7 +15,8 @@ RUN apk add --no-cache \
     libavif \
     freetype \
     libgomp \
-    icu-libs
+    icu-libs \
+    openssl
 
 # Install Build Dependencies, Compile Extensions, then Cleanup
 RUN apk add --no-cache --virtual .build-deps \
