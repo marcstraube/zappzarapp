@@ -1,4 +1,4 @@
-.PHONY: help build up down restart logs logs-nginx logs-php shell-php shell-nginx composer clean rebuild init setup dev-deps hooks-install test analyse cs-check cs-fix check security-scan security-config
+.PHONY: help build up down restart logs logs-nginx logs-php shell-php shell-nginx composer clean rebuild init setup dev-deps hooks-install test analyse cs-check cs-fix check security-scan security-config falco-run
 
 help: ## Show this help
 	@echo -e "\033[0;34mAvailable commands:\033[0m"
@@ -183,3 +183,14 @@ security-config: ## Check Dockerfiles for misconfigurations
 	@docker run --rm -v $$(pwd):/project \
 		aquasec/trivy:latest config /project/docker
 	@echo -e "\033[0;32mConfiguration scan completed!\033[0m"
+
+falco-run: ## Start Falco for Runtime Security Monitoring (requires root/sudo on Linux)
+	@echo -e "\033[0;33mStarting Falco for runtime monitoring...\033[0m"
+	@echo -e "\033[0;31mNote: Falco runs with --privileged and monitors ALL containers on the host.\033[0m"
+	@docker run --rm -it \
+		--name falco-monitor \
+		--privileged \
+		-v /var/run/docker.sock:/host/var/run/docker.sock \
+		-v /dev:/host/dev \
+		-v /proc:/host/proc:ro \
+		falcosecurity/falco:latest
