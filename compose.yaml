@@ -7,7 +7,7 @@ services:
       context: .
       dockerfile: docker/nginx/Dockerfile
       target: production
-    #container_name: ${COMPOSE_PROJECT_NAME:-docker-webdev}-nginx
+    container_name: ${COMPOSE_PROJECT_NAME:-docker-webdev}-nginx
     restart: unless-stopped
     ports:
       - "${NGINX_PORT:-8080}:8080"
@@ -24,7 +24,7 @@ services:
       context: .
       dockerfile: docker/php/Dockerfile
       target: production
-    #container_name: ${COMPOSE_PROJECT_NAME:-docker-webdev}-php
+    container_name: ${COMPOSE_PROJECT_NAME:-docker-webdev}-php
     restart: unless-stopped
     volumes:
       - ${DATA_DIR:-./data}:/var/www/html/data
@@ -46,4 +46,4 @@ services:
 networks:
   app-network:
     driver: bridge
-    #name: ${COMPOSE_PROJECT_NAME:-docker-webdev}-network
+    name: ${COMPOSE_PROJECT_NAME:-docker-webdev}-network
