@@ -54,9 +54,9 @@ FROM base AS production
 USER root
 
 # Copy Public Assets
-COPY --chown=nginx:nginx app/public /var/www/html/app/public
+COPY --chown=nginx:nginx public/ /var/www/html/public/
 
 # Harden permissions (read-only)
-RUN chmod -R 555 /var/www/html/app/public
+RUN chmod -R 555 /var/www/html/public
 
 USER nginx

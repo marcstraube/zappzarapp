@@ -39,21 +39,21 @@ services:
       retries: 3
       start_period: 40s
 
-  node:
-    build:
-      context: .
-      dockerfile: docker/node/Dockerfile
-      # Conditionally set the build target based on the environment variable,
-      # defaulting to the secure 'asset-server' stage (the idle state).
-      target: ${NODE_TARGET:-asset-server}
-    image: ${COMPOSE_PROJECT_NAME:-docker-webdev}-node:latest
-    container_name: ${COMPOSE_PROJECT_NAME:-docker-webdev}-node
-    restart: unless-stopped
-    # Expose port 3000 if Node runs as an upstream server for Nginx or is accessed directly.
-    expose:
-      - "3000"
-    networks:
-      - app-network
+#  node:
+#    build:
+#      context: .
+#      dockerfile: docker/node/Dockerfile
+#      # Conditionally set the build target based on the environment variable,
+#      # defaulting to the secure 'asset-server' stage (the idle state).
+#      target: ${NODE_TARGET:-asset-server}
+#    image: ${COMPOSE_PROJECT_NAME:-docker-webdev}-node:latest
+#    container_name: ${COMPOSE_PROJECT_NAME:-docker-webdev}-node
+#    restart: unless-stopped
+#    # Expose port 3000 if Node runs as an upstream server for Nginx or is accessed directly.
+#    expose:
+#      - "3000"
+#    networks:
+#      - app-network
 
 networks:
   app-network:

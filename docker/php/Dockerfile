@@ -120,14 +120,13 @@ COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 # Install unzip temporarily (required by composer)
 RUN apk add --no-cache --virtual .composer-deps unzip
 
-# Copy Dependencies first (Layer Caching optimization)
+# Copy composer files and install dependencies
 COPY --chown=www-data:www-data composer.json composer.lock ./
-
-# Install Dependencies (No Dev, Optimized)
 RUN composer install --no-dev --no-scripts --no-autoloader --prefer-dist
 
-# Copy Application Code
-COPY --chown=www-data:www-data . .
+# Copy application source code and public files
+COPY --chown=www-data:www-data src/ ./src
+COPY --chown=www-data:www-data public/ ./public
 
 # Optimize Autoloader & Cleanup
 RUN composer dump-autoload --optimize --no-dev --classmap-authoritative && \
