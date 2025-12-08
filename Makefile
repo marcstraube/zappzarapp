@@ -29,28 +29,7 @@ help: ## Show this help
 
 ##@ Setup
 
-init: ## Initialize project (copy .env) - Run this first!
-	@echo -e "\033[0;33mInitializing configuration...\033[0m"
-	@if [ ! -f .env ]; then \
-		cp .env.example .env; \
-		echo -e "\033[0;32m.env file created from example.\033[0m"; \
-		echo -e "\033[0;31mIMPORTANT: Please edit .env before running 'make setup'!\033[0m"; \
-	else \
-		echo -e "\033[0;34m.env file already exists. Skipped.\033[0m"; \
-	fi
-
-setup: ## Create directories, install dev dependencies and ensure structure
-	@if [ ! -f .env ]; then \
-		echo -e "\033[0;31mError: .env file not found. Please run 'make init' first.\033[0m"; \
-		exit 1; \
-	fi
-	@echo -e "\033[0;33mCreating project structure...\033[0m"
-	@. ./.env && mkdir -p $${DATA_DIR:-./data} $${LOG_DIR:-./logs}/{app,nginx,php} app/src tests vendor
-	@echo -e "\033[0;32mProject structure created!\033[0m"
-	@$(MAKE) dev-deps
-	@echo -e "\033[0;32mSetup completed (directories + dependencies)!\033[0m"
-
-dev-deps: ## Install/update Composer dependencies (uses local composer if available)
+dev-deps: ## Install/update Composer dependencies (uses local Composer if available)
 	@echo -e "\033[0;33mManaging Composer dependencies...\033[0m"
 	@if command -v composer >/dev/null 2>&1; then \
 		echo "Using local Composer..."; \
@@ -60,7 +39,7 @@ dev-deps: ## Install/update Composer dependencies (uses local composer if availa
 			composer install --prefer-dist --no-interaction --no-scripts; \
 		fi; \
 	else \
-		echo "Local Composer not found, using Docker..."; \
+		echo "Local Composer not found, using Docker container..."; \
 		XDEBUG_MODE=off docker compose run --rm --no-TTY php sh -c '\
 			if [ ! -f "vendor/autoload.php" ]; then \
 				composer install --prefer-dist --no-interaction; \
@@ -79,6 +58,27 @@ hooks-install: ## Install Git hooks using CaptainHook
 	@vendor/bin/captainhook install
 	@echo -e "\033[0;32mGit hooks installed successfully in .git/hooks/!\033[0m"
 
+init: ## Initialize project (copy .env) - Run this first!
+	@echo -e "\033[0;33mInitializing configuration...\033[0m"
+	@if [ ! -f .env ]; then \
+		cp .env.example .env; \
+		echo -e "\033[0;32m.env file created from example.\033[0m"; \
+		echo -e "\033[0;31mIMPORTANT: Please edit .env before running 'make setup'!\033[0m"; \
+	else \
+		echo -e "\033[0;34m.env file already exists. Skipped.\033[0m"; \
+	fi
+
+setup: ## Create directories, install dev dependencies and ensure structure
+	@if [ ! -f .env ]; then \
+		echo -e "\033[0;31mError: .env file not found. Please run 'make init' first.\033[0m"; \
+		exit 1; \
+	fi
+	@echo -e "\033[0;33mCreating project structure...\033[0m"
+	@. ./.env && mkdir -p $${DATA_DIR:-./data} $${LOG_DIR:-./logs}/{app,nginx,php} app/src tests vendor
+	@echo -e "\033[0;32mProject structure created!\033[0m"
+	@$(MAKE) --silent dev-deps
+	@echo -e "\033[0;32mSetup completed (directories + dependencies)!\033[0m"
+
 ##@ Docker
 
 build: ## Build Docker images
@@ -94,26 +94,22 @@ build: ## Build Docker images
 	fi
 	@echo -e "\033[0;32mBuild completed!\033[0m"
 
-up: ## Start core containers (Nginx, PHP)
-	@$(MAKE) up-core
-
-up-db: ## Start core containers PLUS Database
-	@$(MAKE) up-core SERVICES="db"
-
-up-node: ## Start core containers PLUS Node (e.g., for watch tasks)
-	@$(MAKE) up-core SERVICES="node"
-
-up-core:
-	@if [ ! -f .env ]; then echo -e "\033[0;31mError: .env not found. Run 'make init' first.\033[0m"; exit 1; fi
-	@. ./.env && echo -e "\033[0;33mStarting containers in $${ENV^^:-development} mode...\033[0m"
-	@. ./.env && mkdir -p $${LOG_DIR:-./logs}/{app,nginx,php}
-	@. ./.env && if [ "$$ENV" = "production" ]; then \
-		docker compose -f compose.yaml -f compose.prod.yaml up -d nginx php $(SERVICES); \
+clean: ## Remove containers, networks and dangling images (keeps data volumes)
+	@echo -e "\033[0;33mCleaning up...\033[0m"
+	@if [ -f .env ]; then \
+		. ./.env && if [ "$$ENV" = "production" ]; then \
+			docker compose -f compose.yaml -f compose.prod.yaml down; \
+		else \
+			docker compose down; \
+		fi; \
 	else \
-		docker compose up -d nginx php $(SERVICES); \
+		docker compose down; \
 	fi
-	@echo -e "\033[0;32mContainers started!\033[0m"
-	@. ./.env && echo -e "\033[0;34mNginx is running at http://localhost:$${NGINX_PORT:-8080}\033[0m"
+	@docker system prune -f
+	@echo -e "\033[0;32mCleanup completed!\033[0m"
+
+composer: ## Execute Composer command (e.g. make composer CMD="require vendor/package")
+	@docker compose exec php composer $(CMD)
 
 down: ## Stop containers
 	@echo -e "\033[0;33mStopping containers...\033[0m"
@@ -126,10 +122,7 @@ down: ## Stop containers
 	else \
 		docker compose down; \
 	fi
-	@docker system prune -f
 	@echo -e "\033[0;32mContainers stopped!\033[0m"
-
-restart: down up ## Restart containers
 
 logs: ## Show logs of all containers
 	@if [ -f .env ]; then \
@@ -143,37 +136,38 @@ logs: ## Show logs of all containers
 	fi
 
 logs-nginx: ## Show Nginx logs only
-	@docker compose logs -f nginx
-
-logs-php: ## Show PHP logs only
-	@docker compose logs -f php
-
-shell-php: ## Open shell in PHP container
-	@docker compose exec php sh
-
-shell-nginx: ## Open shell in Nginx container
-	@docker compose exec nginx sh
-
-composer: ## Execute Composer command (e.g. make composer CMD="require vendor/package")
-	@docker compose exec php composer $(CMD)
-
-clean: ## Remove containers, volumes and images
-	@echo -e "\033[0;33mCleaning up...\033[0m"
 	@if [ -f .env ]; then \
 		. ./.env && if [ "$$ENV" = "production" ]; then \
-			docker compose -f compose.yaml -f compose.prod.yaml down -v; \
+			docker compose -f compose.yaml -f compose.prod.yaml logs -f nginx; \
 		else \
-			docker compose down -v; \
+			docker compose logs -f nginx; \
 		fi; \
 	else \
-		docker compose down -v; \
+		docker compose logs -f nginx; \
 	fi
-	@docker system prune -f
-	@echo -e "\033[0;32mCleanup completed!\033[0m"
+
+logs-php: ## Show PHP logs only
+	@if [ -f .env ]; then \
+		. ./.env && if [ "$$ENV" = "production" ]; then \
+			docker compose -f compose.yaml -f compose.prod.yaml logs -f php; \
+		else \
+			docker compose logs -f php; \
+		fi; \
+	else \
+		docker compose logs -f php; \
+	fi
 
 prune: ## Remove untagged/dangling images related to this project
 	@echo -e "\033[0;33mPruning dangling images...\033[0m"
 	@. ./.env && docker image prune -f --filter "label=com.docker.compose.project=$$COMPOSE_PROJECT_NAME"
+
+restart: down up ## Restart containers
+
+shell-nginx: ## Open shell in Nginx container
+	@docker compose exec nginx sh
+
+shell-php: ## Open shell in PHP container
+	@docker compose exec php sh
 
 status: ## Show running containers status and image disk usage
 	@echo -e "\033[0;33mContainer Status:\033[0m"
@@ -181,27 +175,47 @@ status: ## Show running containers status and image disk usage
 	@echo -e "\033[0;33m\nImage Disk Usage:\033[0m"
 	@docker images | grep "$(COMPOSE_PROJECT_NAME:-docker-webdev)"
 
-##@ Workflow
+up: ## Start core containers (Nginx, PHP)
+	@$(MAKE) --silent up-core
 
-fresh: clean rebuild ## Complete clean slate rebuild, removing all data volumes (DANGEROUS!)
-	@echo -e "\033[0;31m!!! WARNING: You are about to remove all containers, images, AND data volumes (e.g. database). !!!\033[0m"
-	@read -p "Are you sure you want to proceed? Type 'YES' to confirm: " CONFIRM_FRESH; \
-	if [ "$$CONFIRM_FRESH" != "YES" ]; then \
-		echo -e "\033[0;34mOperation cancelled.\033[0m"; \
-		exit 1; \
-	fi
-	@echo -e "\033[0;33mProceeding with fresh rebuild...\033[0m"
-	@if [ -f .env ]; then \
-		. ./.env && if [ "$$ENV" = "production" ]; then \
-			docker compose -f compose.yaml -f compose.prod.yaml down -v --rmi all; \
-		else \
-			docker compose down -v --rmi all; \
-		fi; \
+up-core:
+	@if [ ! -f .env ]; then echo -e "\033[0;31mError: .env not found. Run 'make init' first.\033[0m"; exit 1; fi
+	@. ./.env && echo -e "\033[0;33mStarting containers in $${ENV^^:-production} mode...\033[0m"
+	@. ./.env && mkdir -p $${LOG_DIR:-./logs}/{app,nginx,php}
+	@. ./.env && if [ "$$ENV" = "production" ]; then \
+		docker compose -f compose.yaml -f compose.prod.yaml up -d nginx php $(SERVICES); \
 	else \
-		docker compose down -v --rmi all; \
+		docker compose up -d nginx php $(SERVICES); \
 	fi
-	@$(MAKE) build
-	@$(MAKE) up
+	@echo -e "\033[0;32mContainers started!\033[0m"
+	@. ./.env && echo -e "\033[0;34mNginx is running at http://localhost:$${NGINX_PORT:-8080}\033[0m"
+
+up-db: ## Start core containers PLUS Database
+	@$(MAKE) --silent up-core SERVICES="db"
+
+up-node: ## Start core containers PLUS Node (e.g., for watch tasks)
+	@$(MAKE) --silent up-core SERVICES="node"
+
+##@ Node Commands
+
+node-build: ## Executes the frontend build inside the Node container (uses 'build' stage)
+	@echo -e "\033[0;33mExecuting frontend build...\033[0m"
+	@docker compose run --rm --build --target build node pnpm run build
+
+node-shell: ## Starts a shell in the Node container (Development Target)
+	@docker compose exec node /bin/sh
+
+node-up: ## Starts the Node service alongside the standard stack (Uses the default 'asset-server' target)
+	@echo -e "\033[0;33mStarting Node service (asset-server target)...\033[0m"
+	# NODE_TARGET is unset, so compose.yaml defaults to the 'asset-server' target (sleep infinity).
+	@$(MAKE) up SERVICES="nginx php node"
+
+node-app-server-up: ## Starts the Node.js App Server (long-running, uses 'app-server' target) alongside the stack
+	@echo -e "\033[0;33mStarting Node.js App Server (app-server target)...\033[0m"
+	# Sets NODE_TARGET environment variable to switch the build target to 'app-server'.
+	@NODE_TARGET="app-server" $(MAKE) up SERVICES="nginx php node"
+
+##@ Workflow
 
 check-health: ## Check application health by container status, PHP-FPM and Nginx HTTP response
 	@echo -e "\033[0;33mChecking Container Health Status (PHP-FPM & Nginx)...\033[0m"
@@ -225,6 +239,26 @@ check-health: ## Check application health by container status, PHP-FPM and Nginx
 	else \
 		echo -e "\033[0;31m❌ Error: 'curl' not found. Cannot perform HTTP health check.\033[0m"; \
 	fi
+
+fresh: ## Complete clean slate rebuild, removing all data volumes (DANGEROUS!)
+	@echo -e "\033[0;31m!!! WARNING: You are about to remove all containers, images, AND data volumes (e.g. database). !!!\033[0m"
+	@read -p "Are you sure you want to proceed? Type 'YES' to confirm: " CONFIRM_FRESH; \
+	if [ "$$CONFIRM_FRESH" != "YES" ]; then \
+		echo -e "\033[0;34mOperation cancelled.\033[0m"; \
+		exit 1; \
+	fi
+	@echo -e "\033[0;33mProceeding with fresh rebuild...\033[0m"
+	@if [ -f .env ]; then \
+		. ./.env && if [ "$$ENV" = "production" ]; then \
+			docker compose -f compose.yaml -f compose.prod.yaml down -v --rmi all; \
+		else \
+			docker compose down -v --rmi all; \
+		fi; \
+	else \
+		docker compose down -v --rmi all; \
+	fi
+	@$(MAKE) --silent build
+	@$(MAKE) --silent up
 
 rebuild: clean build up ## Complete rebuild
 
@@ -268,28 +302,32 @@ cs-check: ## Check coding style (dry-run)
 	@echo -e "\033[0;33mChecking Coding Style...\033[0m"
 	@docker compose exec php composer cs-check
 
-cs-fix: ## Fix coding style automatically
+cs-fix: ## Fix coding style automatically (uses composer alias)
 	@echo -e "\033[0;33mFixing Coding Style...\033[0m"
 	@docker compose exec php composer cs-fix
 
-lint-config: ## Validate YAML configuration files
+cs-fix-all: ## Fix coding style aggressively on all files (forces fix on source dir)
+	@echo -e "\033[0;33mFixing Coding Style aggressively on all files...\033[0m"
+	@docker compose exec php vendor/bin/php-cs-fixer fix /var/www/html/app/
+
+lint-config: ## Validate YAML configuration files (uses local YAMLlint if available)
 	@echo -e "\033[0;33mValidating YAML configuration...\033[0m"
 	@if command -v yamllint >/dev/null 2>&1; then \
-		echo "Using local yamllint..."; \
+		echo "Using local YAMLlint..."; \
 		yamllint ./**/*.yaml; \
 	else \
-		echo "Local yamllint not found, using Docker container..."; \
+		echo "Local YAMLlint not found, using Docker container..."; \
 		docker run --rm -v $$(pwd):/app -w /app cytopia/yamllint:latest ./**/*.yaml; \
 	fi
 	@echo -e "\033[0;32mYAML configuration check completed!\033[0m"
 
-outdated: ## Check for outdated Composer dependencies (local or container)
+outdated: ## Check for outdated Composer dependencies (uses local Composer if available)
 	@echo -e "\033[0;33mChecking Composer for outdated packages...\033[0m"
 	@if command -v composer >/dev/null 2>&1; then \
 		echo "Using local Composer..."; \
 		composer outdated; \
 	else \
-		echo "Local Composer not found, using Docker..."; \
+		echo "Local Composer not found, using Docker container..."; \
 		docker compose exec php composer outdated; \
 	fi
 	@echo -e "\033[0;32mOutdated check completed!\033[0m"
@@ -297,6 +335,21 @@ outdated: ## Check for outdated Composer dependencies (local or container)
 test: ## Run PHPUnit tests
 	@echo -e "\033[0;33mRunning PHPUnit...\033[0m"
 	@docker compose exec php composer test
+
+test-debug: ## Run PHPUnit tests with Xdebug enabled
+	@echo -e "\033[0;33mRunning PHPUnit with Xdebug (Step Debugging)...\033[0m"
+	@docker compose exec php sh -c 'XDEBUG_MODE=develop,debug composer test'
+
+validate: ## Validate composer.json and composer.lock files (uses local Composer if available)
+	@echo -e "\033[0;33mValidating Composer configuration...\033[0m"
+	@if command -v composer >/dev/null 2>&1; then \
+		echo "Using local Composer..."; \
+		composer validate --strict; \
+	else \
+		echo "Local Composer not found, using Docker..."; \
+		docker compose exec php composer validate --strict; \
+	fi
+	@echo -e "\033[0;32mComposer configuration is valid!\033[0m"
 
 ##@ Security
 
@@ -317,7 +370,7 @@ security-config: ## Check Dockerfiles for misconfigurations
 		aquasec/trivy:latest config /project/docker
 	@echo -e "\033[0;32mConfiguration scan completed!\033[0m"
 
-security-deps: ## Scan Composer dependencies for known vulnerabilities (local or container)
+security-deps: ## Scan Composer dependencies for known vulnerabilities (uses local security-check if available)
 	@echo -e "\033[0;33mScanning Composer dependencies...\033[0m"
 	@if command -v security-check >/dev/null 2>&1; then \
 		echo "Using local security-check..."; \

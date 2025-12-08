@@ -17,16 +17,16 @@ services:
     logging:
       driver: "json-file"
       options:
-        max-size: "10m"
-        max-file: "3"
+        max-size: "50m"
+        max-file: "5"
     deploy:
       resources:
         limits:
-          cpus: '0.5'
-          memory: 256M
+          cpus: '2.0'
+          memory: 2G
         reservations:
-          cpus: '0.25'
-          memory: 128M
+          cpus: '1.0'
+          memory: 1G
 
   php:
     build:
@@ -53,3 +53,25 @@ services:
         reservations:
           cpus: '1.0'
           memory: 1G
+
+  node:
+    read_only: true
+    tmpfs:
+      - /tmp:mode=0770,uid=50000,gid=50000,size=256M
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+        reservations:
+          cpus: '0.25'
+          memory: 256M

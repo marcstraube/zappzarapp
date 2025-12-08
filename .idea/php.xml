@@ -183,7 +183,7 @@
       <server host="localhost" id="36a56aa4-f359-4573-858e-c1511935c363" name="localhost" port="8080" />
     </servers>
   </component>
-  <component name="PhpProjectSharedConfiguration" php_language_level="8.5">
+  <component name="PhpProjectSharedConfiguration" php_language_level="8.4">
     <option name="suggestChangeDefaultLanguageLevel" value="false" />
   </component>
   <component name="PhpStan">
