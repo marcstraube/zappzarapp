@@ -3,7 +3,6 @@
 declare(strict_types=1);
 
 /**
- * =========================================================================
  * SECURITY UPGRADE: CONTENT SECURITY POLICY (CSP)
  * * The Nginx server provides a basic CSP for compatibility.
  * * !!! TO ACHIEVE MAXIMUM SECURITY (Strict-Dynamic CSP):
@@ -13,11 +12,10 @@ declare(strict_types=1);
  * 3. Use the defined 'CSP_NONCE' constant in all your inline <script> and
  * <style> tags.
  * * See the documentation for a full explanation of the 'strict-dynamic' policy.
- * =========================================================================
  */
 
 // 1. GENERATE NONCE
-//$nonce = base64_encode(random_bytes(16));
+// $nonce = base64_encode(random_bytes(16));
 
 // 2. CREATE CSP HEADER
 /*$csp_directives = [
@@ -30,10 +28,10 @@ declare(strict_types=1);
 $csp_value = implode('; ', $csp_directives) . ';';*/
 
 // 3. SEND CSP HEADER
-//header("Content-Security-Policy: {$csp_value}");
+// header("Content-Security-Policy: {$csp_value}");
 
 // 4. STORE NONCE FOR ACCESS IN TEMPLATES
-//define('CSP_NONCE', $nonce);
+// define('CSP_NONCE', $nonce);
 
 echo "<h1 style='text-align:center;'>Initial Setup Successful!</h1>";
 
