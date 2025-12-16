@@ -21,14 +21,19 @@ FROM base AS development
 ARG USER_ID=1000
 ARG GROUP_ID=1000
 
-RUN addgroup -g ${GROUP_ID} appgroup && adduser -u ${USER_ID} -G appgroup -s /bin/sh -D appuser && \
-    chown -R ${USER_ID}:${GROUP_ID} /app /usr/local/bin/pnpm
+RUN if [ "$USER_ID" != "1000" ]; then \
+        apk add --no-cache --virtual .user-deps shadow && \
+        usermod -u $USER_ID node && \
+        groupmod -g $GROUP_ID node && \
+        apk del .user-deps; \
+    fi && \
+    chown -R node:node /app /usr/local/bin/pnpm
 
 # Health Check: Verifies that the source code volume is mounted correctly.
 HEALTHCHECK --interval=30s --timeout=5s --start-period=5s --retries=3 \
     CMD test -f /app/package.json
 
-USER appuser
+USER node
 
 # Default command: A long sleep to keep the container available for Exec commands
 CMD ["sleep", "infinity"]
@@ -37,13 +42,14 @@ CMD ["sleep", "infinity"]
 FROM base AS build
 
 # Using a high, non-conflicting UID for maximum security in production.
-ARG USER_ID=50000
-ARG GROUP_ID=50000
+RUN apk add --no-cache --virtual .user-deps shadow && \
+        usermod -u 50000 node && \
+        groupmod -g 50000 node && \
+        apk del .user-deps; \
+    fi && \
+    chown -R node:node /home/node /app /usr/local/bin/pnpm
 
-RUN addgroup -g ${GROUP_ID} appgroup && adduser -u ${USER_ID} -G appgroup -s /bin/sh -D appuser && \
-    chown -R ${USER_ID}:${GROUP_ID} /app /usr/local/bin/pnpm
-
-USER appuser
+USER node
 
 # Copy dependency files
 COPY package.json pnpm-lock.yaml ./
@@ -68,7 +74,7 @@ FROM build AS asset-server
 HEALTHCHECK --interval=30s --timeout=5s --start-period=5s --retries=3 \
     CMD test -f /app/package.json
 
-USER appuser
+USER node
 
 # --- Optional Slimming/Artifact Copy (Uncomment if using a slimmer base image above) ---
 # COPY --from=build /etc/passwd /etc/group /etc/
@@ -91,7 +97,7 @@ FROM build AS app-server
 HEALTHCHECK --interval=15s --timeout=3s --start-period=10s --retries=3 \
     CMD curl --fail http://localhost:3000 || exit 1
 
-USER appuser
+USER node
 
 # --- Optional Slimming/Artifact Copy (Uncomment if using a slimmer base image) ---
 # COPY --from=build /etc/passwd /etc/group /etc/

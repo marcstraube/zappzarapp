@@ -190,12 +190,6 @@ up-core:
 	@echo -e "\033[0;32mContainers started!\033[0m"
 	@. ./.env && echo -e "\033[0;34mNginx is running at http://localhost:$${NGINX_PORT:-8080}\033[0m"
 
-up-db: ## Start core containers PLUS Database
-	@$(MAKE) --silent up-core SERVICES="db"
-
-up-node: ## Start core containers PLUS Node (e.g., for watch tasks)
-	@$(MAKE) --silent up-core SERVICES="node"
-
 ##@ Node Commands
 
 node-build: ## Executes the frontend build inside the Node container (uses 'build' stage)
@@ -208,12 +202,12 @@ node-shell: ## Starts a shell in the Node container (Development Target)
 node-up: ## Starts the Node service alongside the standard stack (Uses the default 'asset-server' target)
 	@echo -e "\033[0;33mStarting Node service (asset-server target)...\033[0m"
 	# NODE_TARGET is unset, so compose.yaml defaults to the 'asset-server' target (sleep infinity).
-	@$(MAKE) up SERVICES="nginx php node"
+	@$(MAKE) --silent up-core SERVICES="node"
 
 node-app-server-up: ## Starts the Node.js App Server (long-running, uses 'app-server' target) alongside the stack
 	@echo -e "\033[0;33mStarting Node.js App Server (app-server target)...\033[0m"
 	# Sets NODE_TARGET environment variable to switch the build target to 'app-server'.
-	@NODE_TARGET="app-server" $(MAKE) up SERVICES="nginx php node"
+	@NODE_TARGET="app-server" $(MAKE) --silent up-core SERVICES="node"
 
 ##@ Workflow
 
