@@ -125,8 +125,10 @@ COPY --chown=www-data:www-data composer.json composer.lock ./
 RUN composer install --no-dev --no-scripts --no-autoloader --prefer-dist
 
 # Copy application source code and public files
-COPY --chown=www-data:www-data src/ ./src
+COPY --chown=www-data:www-data config ./config
 COPY --chown=www-data:www-data public/ ./public
+COPY --chown=www-data:www-data src/php ./src/php
+COPY --chown=www-data:www-data templates ./templates
 
 # Optimize Autoloader & Cleanup
 RUN composer dump-autoload --optimize --no-dev --classmap-authoritative && \
@@ -136,12 +138,14 @@ RUN composer dump-autoload --optimize --no-dev --classmap-authoritative && \
 # Permission Hardening
 RUN chown -R root:root /var/www/html && \
     chmod -R 555 /var/www/html && \
-    mkdir -p /var/www/html/data && \
-    chown -R www-data:www-data /var/www/html/data && \
-    chmod 770 /var/www/html/data && \
-    find /var/www/html/data -type f -exec chmod 660 {} \; 2>/dev/null || true
+    mkdir -p /var/www/html/storage && \
+    chown -R www-data:www-data /var/www/html/storage && \
+    chmod 770 /var/www/html/storage && \
+    find /var/www/html/storage -type f -exec chmod 660 {} \; 2>/dev/null || true
 
 # Switch to App User
 USER www-data
 
 CMD ["php-fpm"]
+
+# @TODO Where do we uninstall composer?

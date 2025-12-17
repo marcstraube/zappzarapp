@@ -74,7 +74,7 @@ setup: ## Create directories, install dev dependencies and ensure structure
 		exit 1; \
 	fi
 	@echo -e "\033[0;33mCreating project structure...\033[0m"
-	@. ./.env && mkdir -p $${DATA_DIR:-./data} $${LOG_DIR:-./logs}/{app,nginx,php} app/src tests vendor
+	@. ./.env && mkdir -p $${STORAGE_DIR:-./storage} $${LOG_DIR:-./logs}/{app,nginx,php} src/{php,node} resources/{js,css,images} public/build tests vendor
 	@echo -e "\033[0;32mProject structure created!\033[0m"
 	@$(MAKE) --silent dev-deps
 	@echo -e "\033[0;32mSetup completed (directories + dependencies)!\033[0m"

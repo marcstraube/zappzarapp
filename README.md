@@ -47,8 +47,8 @@ NGINX_PORT=8080
 # Log Directory
 LOG_DIR=./logs
 
-# Data Directory (for application data storage)
-DATA_DIR=./data
+# Storage Directory (for application data storage)
+STORAGE_DIR=./storage
 
 # User/Group IDs (recommended: set to your host user)
 USER_ID=1000
@@ -92,7 +92,7 @@ Your application is now available at `http://localhost:8080`.
 │   ├── public/          # Document Root (web-accessible files)
 │   │   └── index.php
 │   └── src/             # Application logic (classes, services)
-├── data/                # Application data storage (mounted to /var/www/html/data)
+├── storage/             # Application data storage (mounted to /var/www/html/storage)
 ├── logs/
 │   ├── app/             # Application logs
 │   ├── nginx/           # Nginx access and error logs

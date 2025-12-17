@@ -27,7 +27,7 @@ RUN if [ "$USER_ID" != "1000" ]; then \
         groupmod -g $GROUP_ID node && \
         apk del .user-deps; \
     fi && \
-    chown -R node:node /app /usr/local/bin/pnpm
+    chown -R node:node /home/node /app /usr/local/bin/pnpm
 
 # Health Check: Verifies that the source code volume is mounted correctly.
 HEALTHCHECK --interval=30s --timeout=5s --start-period=5s --retries=3 \

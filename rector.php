@@ -9,7 +9,7 @@ use Rector\Set\ValueObject\SetList;
 return static function (RectorConfig $rectorConfig): void {
     // Paths to analyze
     $rectorConfig->paths([
-        __DIR__ . '/app/src',
+        __DIR__ . '/src/php',
         __DIR__ . '/tests',
     ]);
 

@@ -31,6 +31,9 @@ services:
   php:
     build:
       target: production
+    volumes:
+      # Persistent Storage for Uploads and generated files
+      - ${STORAGE_DIR:-./storage}:/var/www/html/storage:rw
     read_only: true
     tmpfs:
       - /tmp:mode=0770,uid=82,gid=82,size=1G

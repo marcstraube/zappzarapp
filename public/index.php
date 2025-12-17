@@ -2,6 +2,9 @@
 
 declare(strict_types=1);
 
+// Load Composer Autoloader
+require_once __DIR__ . '/../vendor/autoload.php';
+
 /**
  * SECURITY UPGRADE: CONTENT SECURITY POLICY (CSP)
  * * The Nginx server provides a basic CSP for compatibility.
