@@ -37,12 +37,12 @@ services:
     read_only: true
     tmpfs:
       - /tmp:mode=0770,uid=82,gid=82,size=1G
-      - /var/log/app:mode=0770,uid=82,gid=82,size=32M
-      - /var/log/php:mode=0770,uid=82,gid=82,size=32M
     security_opt:
       - no-new-privileges:true
     cap_drop:
       - ALL
+    environment:
+      - NODE_ENV=production
     logging:
       driver: "json-file"
       options:
@@ -57,24 +57,24 @@ services:
           cpus: '1.0'
           memory: 1G
 
-#  node:
-#    read_only: true
-#    tmpfs:
-#      - /tmp:mode=0770,uid=50000,gid=50000,size=256M
-#    security_opt:
-#      - no-new-privileges:true
-#    cap_drop:
-#      - ALL
-#    logging:
-#      driver: "json-file"
-#      options:
-#        max-size: "10m"
-#        max-file: "3"
-#    deploy:
-#      resources:
-#        limits:
-#          cpus: '0.5'
-#          memory: 512M
-#        reservations:
-#          cpus: '0.25'
-#          memory: 256M
+  node:
+    read_only: true
+    tmpfs:
+      - /tmp:mode=0770,uid=50000,gid=50000,size=256M
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+        reservations:
+          cpus: '0.25'
+          memory: 256M

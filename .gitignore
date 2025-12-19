@@ -4,19 +4,30 @@
 .env.*.local
 
 # Logs
-logs/
 *.log
+/logs/*
+!/logs/.gitkeep
 
 # SSL Certificates (don't commit private keys!)
 docker/nginx/certs/*.pem
 docker/nginx/certs/*.key
 docker/nginx/certs/*.crt
 
-# Composer
-vendor/
+# Build outputs
+/public/build/*
+!/public/build/.gitkeep
+/dist/
+
+# Dependencies
+/node_modules/
+/vendor/
 
 # Xdebug artifacts
 package.xml
+
+# OS
+.DS_Store
+Thumbs.db
 
 # IDE
 .vscode/
@@ -49,10 +60,17 @@ Thumbs.db
 # Docker
 .docker/
 
-# Data directories
-data/
+# Storage
+/storage/app/*
+!/storage/app/.gitkeep
+/storage/cache/*
+!/storage/cache/.gitkeep
+/storage/sessions/*
+!/storage/sessions/.gitkeep
 
 # Tool Caches
+/build/coverage/
+.phpunit.result.cache
 .phpunit.cache
 .php-cs-fixer.cache
 .phpstan.cache

@@ -1,0 +1,11 @@
+# Client-Side JavaScript
+#
+# JavaScript that runs in the user's browser.
+#
+# Build tool: Vite
+# Build output: public/build/
+#
+# Development: make node-dev (HMR on port 5173)
+# Production: make node-build
+#
+# Supports: Vue, React, Alpine.js, Svelte, Vanilla JS

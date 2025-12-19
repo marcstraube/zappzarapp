@@ -29,25 +29,29 @@ help: ## Show this help
 
 ##@ Setup
 
-dev-deps: ## Install/update Composer dependencies (uses local Composer if available)
-	@echo -e "\033[0;33mManaging Composer dependencies...\033[0m"
+dev-deps: ## Install/update Composer dependencies (Docker - guaranteed consistency)
+	@echo -e "\033[0;33mManaging Composer dependencies (Docker)...\033[0m"
+	@if [ ! -f "vendor/autoload.php" ]; then \
+		XDEBUG_MODE=off docker compose run --rm --no-TTY php composer install --prefer-dist --no-interaction; \
+	else \
+		XDEBUG_MODE=off docker compose run --rm --no-TTY php composer install --prefer-dist --no-interaction --no-scripts; \
+	fi
+	@echo -e "\033[0;32mDependencies ready!\033[0m"
+
+dev-deps-local: ## Install/update Composer dependencies (Local - faster, but version may differ)
 	@if command -v composer >/dev/null 2>&1; then \
-		echo "Using local Composer..."; \
+		echo -e "\033[0;33m⚠️  Using local Composer (version may differ from Docker).\033[0m"; \
+		echo -e "\033[0;34mFor guaranteed consistency, use 'make dev-deps' instead.\033[0m"; \
 		if [ ! -f "vendor/autoload.php" ]; then \
 			composer install --prefer-dist --no-interaction; \
 		else \
 			composer install --prefer-dist --no-interaction --no-scripts; \
 		fi; \
+		echo -e "\033[0;32mDependencies installed!\033[0m"; \
 	else \
-		echo "Local Composer not found, using Docker container..."; \
-		XDEBUG_MODE=off docker compose run --rm --no-TTY php sh -c '\
-			if [ ! -f "vendor/autoload.php" ]; then \
-				composer install --prefer-dist --no-interaction; \
-			else \
-				composer install --prefer-dist --no-interaction --no-scripts; \
-			fi'; \
+		echo -e "\033[0;31mError: Local Composer not found. Use 'make dev-deps' instead.\033[0m"; \
+		exit 1; \
 	fi
-	@echo -e "\033[0;32mDependencies ready!\033[0m"
 
 hooks-install: ## Install Git hooks using CaptainHook
 	@if [ ! -f vendor/bin/captainhook ]; then \
@@ -74,7 +78,28 @@ setup: ## Create directories, install dev dependencies and ensure structure
 		exit 1; \
 	fi
 	@echo -e "\033[0;33mCreating project structure...\033[0m"
-	@. ./.env && mkdir -p $${STORAGE_DIR:-./storage} $${LOG_DIR:-./logs}/{app,nginx,php} src/{php,node} resources/{js,css,images} public/build tests vendor
+	@. ./.env && mkdir -p vendor
+
+	# Source directories
+	@mkdir -p src/php/{Http/{Controller,Middleware},Domain,Infrastructure/{Database,Cache}}
+	@mkdir -p src/node/{routes,controllers,services,middleware}
+
+	# Resources directories (Frontend source)
+	@mkdir -p resources/{js/components,css/components,images,fonts}
+
+	# Public directory (Web root)
+	@mkdir -p public/build
+
+	# Tests
+	@mkdir -p tests/{Unit,Feature}
+
+	# Config & Templates
+	@mkdir -p config templates
+
+	# Storage (Runtime data) - Set permissions
+	@. ./.env && mkdir -p $${STORAGE_DIR:-./storage}/{app/{uploads,generated},cache,sessions}
+	@. ./.env && chmod 770 $${STORAGE_DIR:-./storage} -R
+
 	@echo -e "\033[0;32mProject structure created!\033[0m"
 	@$(MAKE) --silent dev-deps
 	@echo -e "\033[0;32mSetup completed (directories + dependencies)!\033[0m"
@@ -108,7 +133,7 @@ clean: ## Remove containers, networks and dangling images (keeps data volumes)
 	@docker system prune -f
 	@echo -e "\033[0;32mCleanup completed!\033[0m"
 
-composer: ## Execute Composer command (e.g. make composer CMD="require vendor/package")
+composer: ## Execute Composer command in running container (e.g. make composer CMD="require vendor/package")
 	@docker compose exec php composer $(CMD)
 
 down: ## Stop containers
@@ -157,6 +182,20 @@ logs-php: ## Show PHP logs only
 		docker compose logs -f php; \
 	fi
 
+logs-node: ## Show Node.js logs only
+	@if [ -f .env ]; then \
+		. ./.env && if [ "$$ENV" = "production" ]; then \
+			docker compose -f compose.yaml -f compose.prod.yaml logs -f node; \
+		else \
+			docker compose logs -f node; \
+		fi; \
+	else \
+		docker compose logs -f node; \
+	fi
+
+pnpm: ## Execute pnpm command in running container (e.g. make pnpm CMD="add vue")
+	@docker compose exec node pnpm $(CMD)
+
 prune: ## Remove untagged/dangling images related to this project
 	@echo -e "\033[0;33mPruning dangling images...\033[0m"
 	@. ./.env && docker image prune -f --filter "label=com.docker.compose.project=$$COMPOSE_PROJECT_NAME"
@@ -181,7 +220,6 @@ up: ## Start core containers (Nginx, PHP)
 up-core:
 	@if [ ! -f .env ]; then echo -e "\033[0;31mError: .env not found. Run 'make init' first.\033[0m"; exit 1; fi
 	@. ./.env && echo -e "\033[0;33mStarting containers in $${ENV^^:-production} mode...\033[0m"
-	@. ./.env && mkdir -p $${LOG_DIR:-./logs}/{app,nginx,php}
 	@. ./.env && if [ "$$ENV" = "production" ]; then \
 		docker compose -f compose.yaml -f compose.prod.yaml up -d nginx php $(SERVICES); \
 	else \
@@ -191,6 +229,23 @@ up-core:
 	@. ./.env && echo -e "\033[0;34mNginx is running at http://localhost:$${NGINX_PORT:-8080}\033[0m"
 
 ##@ Node Commands
+
+node-install: ## Install Node.js dependencies (Docker - guaranteed consistency)
+	@echo -e "\033[0;33mInstalling Node.js dependencies (Docker)...\033[0m"
+	@echo -e "\033[0;34mInitializing node_modules volume with correct permissions...\033[0m"
+	@docker compose run --rm --user root node sh -c "chown -R node:node /app/node_modules && su node -s /bin/sh -c 'pnpm install'"
+	@echo -e "\033[0;32mDependencies installed!\033[0m"
+
+node-install-local: ## Install Node.js dependencies (Local - faster, but version may differ)
+	@if command -v pnpm >/dev/null 2>&1; then \
+		echo -e "\033[0;33m⚠️  Using local pnpm (version may differ from Docker).\033[0m"; \
+		echo -e "\033[0;34mFor guaranteed consistency, use 'make node-install' instead.\033[0m"; \
+		pnpm install; \
+		echo -e "\033[0;32mDependencies installed!\033[0m"; \
+	else \
+		echo -e "\033[0;31mError: Local pnpm not found. Use 'make node-install' instead.\033[0m"; \
+		exit 1; \
+	fi
 
 node-build: ## Executes the frontend build inside the Node container (uses 'build' stage)
 	@echo -e "\033[0;33mExecuting frontend build...\033[0m"
@@ -208,6 +263,22 @@ node-app-server-up: ## Starts the Node.js App Server (long-running, uses 'app-se
 	@echo -e "\033[0;33mStarting Node.js App Server (app-server target)...\033[0m"
 	# Sets NODE_TARGET environment variable to switch the build target to 'app-server'.
 	@NODE_TARGET="app-server" $(MAKE) --silent up-core SERVICES="node"
+
+node-dev: ## Start Vite dev server with HMR (Hot Module Replacement)
+	@echo -e "\033[0;33mStarting Vite dev server with HMR...\033[0m"
+	@echo -e "\033[0;34mAccess: http://localhost:5173\033[0m"
+	@echo -e "\033[0;34mProxy via Nginx: http://localhost:8080\033[0m"
+	@docker compose exec node pnpm run dev
+
+node-server-dev: ## Start Node.js backend in development watch mode (tsx watch)
+	@echo -e "\033[0;33mStarting Node.js backend in watch mode...\033[0m"
+	@echo -e "\033[0;34mAccess: http://localhost:3000/health\033[0m"
+	@docker compose exec node pnpm run server:dev
+
+node-server-build: ## Build Node.js backend (TypeScript -> JavaScript)
+	@echo -e "\033[0;33mBuilding Node.js backend...\033[0m"
+	@docker compose exec node pnpm run server:build
+	@echo -e "\033[0;32mBackend built successfully! Output: dist/server.js\033[0m"
 
 ##@ Workflow
 
@@ -302,7 +373,7 @@ cs-fix: ## Fix coding style automatically (uses composer alias)
 
 cs-fix-all: ## Fix coding style aggressively on all files (forces fix on source dir)
 	@echo -e "\033[0;33mFixing Coding Style aggressively on all files...\033[0m"
-	@docker compose exec php vendor/bin/php-cs-fixer fix /var/www/html/app/
+	@docker compose exec php vendor/bin/php-cs-fixer fix /var/www/html/src/php/
 
 lint-config: ## Validate YAML configuration files (uses local YAMLlint if available)
 	@echo -e "\033[0;33mValidating YAML configuration...\033[0m"

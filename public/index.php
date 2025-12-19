@@ -2,40 +2,76 @@
 
 declare(strict_types=1);
 
+/**
+ * Application Entry Point
+ *
+ * This file is the entry point for all HTTP requests routed through Nginx.
+ */
+
 // Load Composer Autoloader
 require_once __DIR__ . '/../vendor/autoload.php';
 
 /**
- * SECURITY UPGRADE: CONTENT SECURITY POLICY (CSP)
- * * The Nginx server provides a basic CSP for compatibility.
- * * !!! TO ACHIEVE MAXIMUM SECURITY (Strict-Dynamic CSP):
- * 1. REMOVE the static 'add_header Content-Security-Policy' line from your Nginx config.
- * 2. UNCOMMENT and INTEGRATE this PHP logic into your application's bootstrap
- * BEFORE any output is sent.
- * 3. Use the defined 'CSP_NONCE' constant in all your inline <script> and
- * <style> tags.
- * * See the documentation for a full explanation of the 'strict-dynamic' policy.
+ * ============================================================================
+ * CONTENT SECURITY POLICY (CSP) - NONCE-BASED (OPTIONAL)
+ * ============================================================================
+ *
+ * CURRENT STATE:
+ * A basic CSP is configured in docker/nginx/conf.d/default.conf with
+ * 'unsafe-inline' for immediate compatibility.
+ *
+ * FOR MAXIMUM SECURITY (Production):
+ * 1. REMOVE the static CSP header from Nginx config
+ * 2. UNCOMMENT the code below (lines 27-47)
+ * 3. Use CSP_NONCE constant in your inline <script> and <style> tags:
+ *    <script nonce="<?= CSP_NONCE ?>">...</script>
+ *    <style nonce="<?= CSP_NONCE ?>">...</style>
+ *
+ * BENEFITS:
+ * - Blocks XSS attacks by only allowing scripts/styles with valid nonce
+ * - 'strict-dynamic' allows dynamically loaded scripts from trusted sources
+ * - No need to maintain a whitelist of script sources
+ *
+ * MORE INFO:
+ * https://developer.mozilla.org/en-US/docs/Web/HTTP/CSP
+ * https://web.dev/articles/csp
  */
 
-// 1. GENERATE NONCE
-// $nonce = base64_encode(random_bytes(16));
+/*
+// 1. Generate Cryptographically Secure Nonce
+$nonce = base64_encode(random_bytes(16));
 
-// 2. CREATE CSP HEADER
-/*$csp_directives = [
+// 2. Build CSP Header
+$csp_directives = [
     "default-src 'self'",
     "script-src 'self' 'nonce-{$nonce}' 'strict-dynamic'",
     "style-src 'self' 'nonce-{$nonce}'",
+    "img-src 'self' data: https:",
+    "font-src 'self'",
     "connect-src 'self'",
     "frame-ancestors 'self'",
+    "base-uri 'self'",
+    "form-action 'self'",
 ];
-$csp_value = implode('; ', $csp_directives) . ';';*/
+$csp_header = implode('; ', $csp_directives);
 
-// 3. SEND CSP HEADER
-// header("Content-Security-Policy: {$csp_value}");
+// 3. Send CSP Header (before any output!)
+header("Content-Security-Policy: {$csp_header}");
 
-// 4. STORE NONCE FOR ACCESS IN TEMPLATES
-// define('CSP_NONCE', $nonce);
+// 4. Define Constant for Template Access
+define('CSP_NONCE', $nonce);
+*/
 
-echo "<h1 style='text-align:center;'>Initial Setup Successful!</h1>";
+// Simple Routing Example
+use App\Http\Router;
+use App\Http\Controller\ExampleController;
 
-phpinfo();
+$router = new Router();
+$controller = new ExampleController();
+
+// Routes
+$router->get('/', [$controller, 'index']);
+$router->get('/api/health', [$controller, 'health']);
+
+// Dispatch
+$router->dispatch();

@@ -1,0 +1,17 @@
+# PHP Backend Code
+#
+# This directory contains server-side PHP code that runs in PHP-FPM.
+#
+# Example structure:
+#   src/php/
+#   ├── Http/
+#   │   ├── Controller/
+#   │   └── Middleware/
+#   ├── Domain/
+#   └── Infrastructure/
+#
+# Namespace: App\
+# Autoloading: PSR-4 via composer.json
+#
+# If you're not using PHP, delete this directory and remove
+# PHP service from compose.yaml.

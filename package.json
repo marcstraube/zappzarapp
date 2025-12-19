@@ -1,0 +1,33 @@
+{
+  "name": "docker-webdev",
+  "version": "1.0.0",
+  "description": "Flexible Docker boilerplate for PHP and Node.js development",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "type-check": "tsc --noEmit",
+    "server:build": "tsc --project tsconfig.json",
+    "server:dev": "tsx watch src/node/server.ts",
+    "server:start": "node dist/server.js"
+  },
+  "dependencies": {
+    "express": "^4.21.2"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.6",
+    "@types/node": "^22.10.5",
+    "autoprefixer": "^10.4.23",
+    "postcss": "^8.5.6",
+    "tsx": "^4.21.0",
+    "typescript": "^5.9.3",
+    "vite": "^6.0.6"
+  },
+  "engines": {
+    "node": ">=24.0.0",
+    "pnpm": ">=9.0.0"
+  },
+  "packageManager": "pnpm@9.15.1"
+}

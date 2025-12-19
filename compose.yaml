@@ -11,8 +11,6 @@ services:
     restart: unless-stopped
     ports:
       - "${NGINX_PORT:-8080}:8080"
-    volumes:
-      - ${LOG_DIR:-./logs}/nginx:/var/log/nginx
     depends_on:
       php:
         condition: service_healthy

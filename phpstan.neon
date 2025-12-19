@@ -2,7 +2,8 @@ parameters:
     level: 5
     paths:
         - src/php
-        - tests
+        # tests directory will be added when test files exist
+        # - tests
 
     # Performance
     parallel:

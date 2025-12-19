@@ -4,6 +4,9 @@ ARG ALPINE_VERSION=3.22
 # --- 1. BASE STAGE (Shared) ---
 FROM nginx:${NGINX_VERSION}-alpine${ALPINE_VERSION} AS base
 
+# Install Brotli Module (Optional - Uncomment if you want to use Brotli instead of Gzip)
+# RUN apk add --no-cache nginx-mod-http-brotli
+
 # Setup Permissions & PID File
 RUN mkdir -p /var/cache/nginx /var/log/nginx /tmp/nginx && \
     touch /var/run/nginx.pid && \
@@ -24,7 +27,7 @@ EXPOSE 8080
 
 # Health Check
 HEALTHCHECK --interval=30s --timeout=3s --start-period=10s --retries=3 \
-    CMD wget --no-verbose --tries=1 --spider http://localhost:8080/health || exit 1
+    CMD wget --no-verbose --tries=1 --spider http://127.0.0.1:8080/health || exit 1
 
 CMD ["nginx", "-g", "daemon off;"]
 

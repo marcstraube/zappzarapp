@@ -33,10 +33,12 @@ services:
       - ./tests:/var/www/html/tests
       - ./vendor:/var/www/html/vendor
 
+      # Quality Assurance Tools Config
+      - ./phpstan.neon:/var/www/html/phpstan.neon:ro
+      - ./.php-cs-fixer.dist.php:/var/www/html/.php-cs-fixer.dist.php:ro
+
       # Runtime Data (Read-Write)
       - ${STORAGE_DIR:-./storage}:/var/www/html/storage
-      - ${LOG_DIR:-./logs}/app:/var/log/app
-      - ${LOG_DIR:-./logs}/php:/var/log/php
 
       # PHP Configuration (Read-Only)
       - ./docker/php/php.ini:/usr/local/etc/php/php.ini:ro
@@ -54,14 +56,14 @@ services:
       args:
         USER_ID: ${USER_ID:-50000}
         GROUP_ID: ${GROUP_ID:-50000}
+    ports:
+      - "${VITE_PORT:-5173}:5173"
+      - "${NODE_PORT:-3000}:3000"
     volumes:
       - .:/app
-      #- ./resources:/app/resources:ro
-      #- ./public/build:/app/public/build:rw
-      #- ./package.json:/app/package.json:ro
-      #- ./vite.config.js:/app/vite.config.js:ro
-      #- ./pnpm-lock.yaml:/app/pnpm-lock.yaml:ro
       - node_modules:/app/node_modules
+    environment:
+      - NODE_ENV=development
     tty: true
 
 volumes:

@@ -1,0 +1,22 @@
+# Node.js Backend Code
+#
+# This directory contains server-side Node.js code.
+# Only used when NODE_TARGET=app-server in docker-compose.
+#
+# Example structure:
+#   src/node/
+#   ├── routes/
+#   ├── controllers/
+#   ├── services/
+#   └── server.ts
+#
+# Build output: dist/
+# Runtime: Node.js container (port 3000)
+#
+# Usage:
+#   - Set NODE_TARGET=app-server in .env
+#   - make node-server-build
+#   - make node-app-server-up
+#
+# If you're only using Node.js for frontend builds,
+# delete this directory.

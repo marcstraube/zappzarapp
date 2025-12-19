@@ -43,69 +43,65 @@ FROM base AS build
 
 # Using a high, non-conflicting UID for maximum security in production.
 RUN apk add --no-cache --virtual .user-deps shadow && \
-        usermod -u 50000 node && \
-        groupmod -g 50000 node && \
-        apk del .user-deps; \
-    fi && \
+    usermod -u 50000 node && \
+    groupmod -g 50000 node && \
+    apk del .user-deps && \
     chown -R node:node /home/node /app /usr/local/bin/pnpm
 
 USER node
 
 # Copy dependency files
-COPY package.json pnpm-lock.yaml ./
+COPY --chown=node:node package.json pnpm-lock.yaml ./
 
-# Install ONLY production dependencies
-RUN pnpm install --frozen-lockfile --prod
+# Install ALL dependencies (including devDependencies for build)
+RUN pnpm install --frozen-lockfile
 
-# Copy all application code
-COPY . .
+# Copy ONLY necessary source files
+COPY --chown=node:node vite.config.js ./
+COPY --chown=node:node tsconfig.json ./
+COPY --chown=node:node postcss.config.js ./
+COPY --chown=node:node resources/ ./resources/
+COPY --chown=node:node src/node/ ./src/node/
 
-# Execute the actual build command (e.g., for Webpack, Vite, etc.)
-# This assumes a "build" script is defined in package.json
+# Execute the build command
 RUN pnpm run build
 
-# --- 4. PRODUCTION ASSET SERVER STAGE (Final for static assets/proxy) ---
-# Default target: Inherits from 'build'.
-# For image slimming, uncomment the 'FROM' and 'COPY' lines below.
-FROM build AS asset-server
-# OPTIONAL SLIMMING: FROM node:${NODE_VERSION}-alpine-slim${ALPINE_VERSION} AS asset-server
+# Image Slimming - Remove DevDependencies
+RUN pnpm prune --prod
+
+# --- 4. PRODUCTION ASSET SERVER STAGE ---
+FROM base AS asset-server
+
+# Copy user/group from build stage
+COPY --from=build /etc/passwd /etc/group /etc/
 
 # Health Check: Verifies that the build artifacts are present.
 HEALTHCHECK --interval=30s --timeout=5s --start-period=5s --retries=3 \
     CMD test -f /app/package.json
 
+# Copy only build artifacts
+COPY --from=build --chown=node:node /app/public/build /app/public/build
+COPY --from=build --chown=node:node /app/package.json /app/package.json
+
 USER node
 
-# --- Optional Slimming/Artifact Copy (Uncomment if using a slimmer base image above) ---
-# COPY --from=build /etc/passwd /etc/group /etc/
-# COPY --from=build /app/node_modules /app/node_modules
-# COPY --from=build /app/dist /app/dist
-
-# Cleanup step: Remove non-essential files to reduce final image size.
-RUN rm -rf /app/pnpm-lock.yaml /app/.git* /app/docker /app/Makefile
-
-# Standard command: Keep the container alive but idle.
 CMD ["sleep", "infinity"]
 
-# --- 5. PRODUCTION APP SERVER STAGE (Final for long-running Node.js process) ---
-# Inherits from 'build' and defines the server start CMD.
-FROM build AS app-server
-# OPTIONAL SLIMMING: FROM node:${NODE_VERSION}-alpine-slim${ALPINE_VERSION} AS asset-server
+# --- 5. PRODUCTION APP SERVER STAGE ---
+FROM base AS app-server
+
+# Copy user/group from build stage
+COPY --from=build /etc/passwd /etc/group /etc/
 
 # Health Check: Pings the running Node.js server to ensure it is responsive.
-# Assumes the server runs on port 3000.
 HEALTHCHECK --interval=15s --timeout=3s --start-period=10s --retries=3 \
-    CMD curl --fail http://localhost:3000 || exit 1
+    CMD curl --fail http://localhost:3000/health || exit 1
+
+# Copy production dependencies and built application
+COPY --from=build --chown=node:node /app/node_modules /app/node_modules
+COPY --from=build --chown=node:node /app/dist /app/dist
+COPY --from=build --chown=node:node /app/package.json /app/package.json
 
 USER node
 
-# --- Optional Slimming/Artifact Copy (Uncomment if using a slimmer base image) ---
-# COPY --from=build /etc/passwd /etc/group /etc/
-# COPY --from=build /app/node_modules /app/node_modules
-# COPY --from=build /app/dist /app/dist
-
-# Cleanup step: Remove non-essential files to reduce final image size.
-RUN rm -rf /app/pnpm-lock.yaml /app/.git* /app/docker /app/Makefile
-
-# Starts the long-running Node.js server process.
 CMD ["node", "dist/server.js"]

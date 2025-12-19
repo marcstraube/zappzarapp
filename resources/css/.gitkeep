@@ -1,0 +1,12 @@
+# Stylesheets
+#
+# CSS/SCSS/SASS files for the frontend.
+#
+# Build tool: Vite + PostCSS
+# Build output: public/build/
+#
+# Supports:
+#   - Plain CSS
+#   - SCSS/SASS
+#   - PostCSS (autoprefixer, nesting)
+#   - Tailwind CSS
