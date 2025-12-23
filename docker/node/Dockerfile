@@ -27,6 +27,7 @@ RUN if [ "$USER_ID" != "1000" ]; then \
         groupmod -g $GROUP_ID node && \
         apk del .user-deps; \
     fi && \
+    mkdir -p /home/node/.cache/node/corepack && \
     chown -R node:node /home/node /app /usr/local/bin/pnpm
 
 # Health Check: Verifies that the source code volume is mounted correctly.
@@ -46,6 +47,7 @@ RUN apk add --no-cache --virtual .user-deps shadow && \
     usermod -u 50000 node && \
     groupmod -g 50000 node && \
     apk del .user-deps && \
+    mkdir -p /home/node/.cache/node/corepack && \
     chown -R node:node /home/node /app /usr/local/bin/pnpm
 
 USER node
@@ -75,6 +77,10 @@ FROM base AS asset-server
 # Copy user/group from build stage
 COPY --from=build /etc/passwd /etc/group /etc/
 
+# Create cache directory with correct permissions for the node user (UID 50000 from build stage)
+RUN mkdir -p /home/node/.cache/node/corepack && \
+    chown -R 50000:50000 /home/node
+
 # Health Check: Verifies that the build artifacts are present.
 HEALTHCHECK --interval=30s --timeout=5s --start-period=5s --retries=3 \
     CMD test -f /app/package.json
@@ -92,6 +98,10 @@ FROM base AS app-server
 
 # Copy user/group from build stage
 COPY --from=build /etc/passwd /etc/group /etc/
+
+# Create cache directory with correct permissions for the node user (UID 50000 from build stage)
+RUN mkdir -p /home/node/.cache/node/corepack && \
+    chown -R 50000:50000 /home/node
 
 # Health Check: Pings the running Node.js server to ensure it is responsive.
 HEALTHCHECK --interval=15s --timeout=3s --start-period=10s --retries=3 \

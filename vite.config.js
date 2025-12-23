@@ -6,8 +6,8 @@ export default defineConfig({
     // Root directory for source files
     root: 'resources',
 
-    // Public base path
-    base: '/build/',
+    // Public base path - only used in production
+    base: process.env.NODE_ENV === 'production' ? '/build/' : '/',
 
     // Build configuration
     build: {
@@ -54,8 +54,11 @@ export default defineConfig({
             interval: 100,
         },
 
-        // CORS
-        cors: true,
+        // CORS - explicitly allow localhost:8080
+        cors: {
+            origin: '*',
+            credentials: true,
+        },
 
         // HMR configuration
         hmr: {
@@ -63,6 +66,9 @@ export default defineConfig({
             port: 5173,
             protocol: 'ws',
         },
+
+        // Serve index.html for SPA routing
+        strictPort: true,
 
         // Proxy API requests to PHP backend
         proxy: {

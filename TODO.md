@@ -2406,13 +2406,88 @@ curl http://localhost:3000/health
 
 ---
 
-**Erstellt:** 2025-12-17
-**Letzte Aktualisierung:** 2025-12-19 (Nginx Health-Check & Dynamic DNS Resolution Fix)
-**Version:** 2.7
+**Erstellt:** 2025-12-19
+**Letzte Aktualisierung:** 2025-12-19 (Complete Test Matrix functional)
+**Version:** 2.9
 
 ---
 
 ## Changelog
+
+### Version 2.9 (2025-12-19)
+- ✅ **Vite HMR (Hot Module Replacement) CORS-Probleme behoben**
+  - **Problem:** Browser blockierte Vite Dev Server mit CORS-Fehlern
+    - `Cross-Origin Request blocked: CORS request failed`
+    - `Module source URI is not allowed in this document`
+    - Grund: Browser versuchte von `localhost:8080` (NGINX) auf `localhost:5173` (Vite) zuzugreifen
+  - **Lösung 1: Explizite CORS-Konfiguration in Vite**
+    - `vite.config.js:58-61`: CORS aktiviert mit `origin: '*'` und `credentials: true`
+    - `vite.config.js:71`: `strictPort: true` hinzugefügt für stabilen Port
+  - **Lösung 2: Dynamic base path für Development vs Production**
+    - `vite.config.js:10`: `base: process.env.NODE_ENV === 'production' ? '/build/' : '/'`
+    - Development: Root-Path `/` für direkte Vite-Server Zugriffe
+    - Production: `/build/` für statische Assets
+  - **Dateien geändert:**
+    - `vite.config.js` (Zeilen 10, 58-61, 71)
+    - `public/vite-helper.php` (Zeile 22: `viteDevServerUrl = 'http://localhost:5173'`)
+  - **Ergebnis:** Vite HMR lädt jetzt korrekt mit CORS-Headern
+
+- ✅ **ViteHelper.php Entry Points korrigiert**
+  - **Problem:** Entry Points stimmten nicht mit Vite-Root überein
+    - ViteHelper verwendete `resources/js/app.js`
+    - Vite Config hat `root: 'resources'`, daher sollte es `js/app.js` sein
+  - **Lösung:** Entry Points in allen Methoden angepasst
+    - `public/vite-helper.php:98`: `renderScriptTags()` default: `'js/app.js'`
+    - `public/vite-helper.php:126`: `renderCssTags()` default: `'js/app.js'`
+    - Kommentare in `getAssetUrl()` und `getCssUrl()` aktualisiert
+  - **Dateien geändert:**
+    - `public/vite-helper.php` (Zeilen 64-65, 86, 98, 126)
+  - **Ergebnis:** Assets werden jetzt korrekt geladen
+
+- ✅ **node_modules Permission-Problem in Development Mode behoben**
+  - **Problem:** `make node-install` schlug fehl mit `EACCES: permission denied, mkdir '/app/node_modules/.pnpm'`
+    - Ursache: Docker Volume `node_modules` wurde mit `root:root` erstellt
+    - Node User (UID 1000) hatte keine Schreibrechte
+  - **Lösung:** Permissions-Fix vor pnpm install
+    - `Makefile:246-247`: `chown -R node:node /app/node_modules` als root vor pnpm install
+    - Ausgabe: "Fixing node_modules permissions..." für Transparenz
+  - **Dateien geändert:**
+    - `Makefile` (Zeilen 246-247)
+  - **Ergebnis:** Dependencies installieren jetzt erfolgreich in Development Mode
+
+- ✅ **Vollständige Test-Matrix: Alle 6 Szenarien erfolgreich**
+  - **ENV=production:**
+    - ✅ Test 1: PHP-only Mode (nginx + php)
+    - ✅ Test 2: Asset-Server Mode (nginx + php + node:asset-server mit Build-Artefakten)
+    - ✅ Test 3: App-Server Mode (nginx + php + node:app-server mit Backend auf Port 3000)
+  - **ENV=development:**
+    - ✅ Test 4: PHP-only Mode (nginx + php)
+    - ✅ Test 5: Asset-Server Mode mit HMR (nginx + php + node + Vite Dev Server auf Port 5173)
+    - ✅ Test 6: App-Server Mode (nginx + php + node + Backend in watch mode)
+  - **Test-Befehle für Development:**
+    ```bash
+    # Test 5: ENV=development, asset-server + HMR
+    make fresh
+    make node-up
+    make node-install  # Permissions werden automatisch korrigiert
+    make node-dev      # Vite läuft auf Port 5173
+    # Zugriff: http://localhost:8080/test.php
+
+    # Test 6: ENV=development, app-server
+    make fresh
+    make node-app-server-up
+    make node-install
+    make node-server-dev  # Backend läuft auf Port 3000
+    curl http://localhost:3000/health  # ✅ {"status":"ok"}
+    ```
+  - **Dynamische ENV-Erkennung funktioniert:**
+    - `public/test.php` zeigt automatisch Development (🔧 Vite HMR) oder Production (🚀 Built Assets)
+    - `public/vite-helper.php` lädt korrekt basierend auf `$_ENV['ENV']`
+
+- 🔧 **Bekannte Einschränkungen:**
+  - Vite HMR WebSocket muss von Browser zu `localhost:5173` direkt verbinden können
+  - In Docker-Netzwerk-Setups ohne Port-Forwarding muss `hmr.host` angepasst werden
+  - Production Mode erfordert `make build` vor `make up` (Build-Artefakte werden in Image kopiert)
 
 ### Version 2.8 (2025-12-19)
 - ✅ **Container Logging auf 12-Factor App Best Practices umgestellt**

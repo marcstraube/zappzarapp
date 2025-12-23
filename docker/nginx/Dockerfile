@@ -59,6 +59,10 @@ USER root
 # Copy Public Assets
 COPY --chown=nginx:nginx public/ /var/www/html/public/
 
+# Copy built frontend assets from Node build stage
+# This allows NGINX to serve production-built Vite assets directly
+COPY --from=docker-webdev-node:latest --chown=nginx:nginx /app/public/build/ /var/www/html/public/build/
+
 # Harden permissions (read-only)
 RUN chmod -R 555 /var/www/html/public
 

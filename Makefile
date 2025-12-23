@@ -110,6 +110,9 @@ build: ## Build Docker images
 	@echo -e "\033[0;33mBuilding Docker images...\033[0m"
 	@if [ -f .env ]; then \
 		. ./.env && if [ "$$ENV" = "production" ]; then \
+			echo -e "\033[0;34mBuilding Node image first (required by PHP and NGINX)...\033[0m" && \
+			docker compose -f compose.yaml -f compose.prod.yaml build node && \
+			echo -e "\033[0;34mBuilding remaining images...\033[0m" && \
 			docker compose -f compose.yaml -f compose.prod.yaml build; \
 		else \
 			docker compose build; \
@@ -230,10 +233,19 @@ up-core:
 
 ##@ Node Commands
 
-node-install: ## Install Node.js dependencies (Docker - guaranteed consistency)
+node-install: ## Install Node.js dependencies (Docker - requires ENV=development)
 	@echo -e "\033[0;33mInstalling Node.js dependencies (Docker)...\033[0m"
-	@echo -e "\033[0;34mInitializing node_modules volume with correct permissions...\033[0m"
-	@docker compose run --rm --user root node sh -c "chown -R node:node /app/node_modules && su node -s /bin/sh -c 'pnpm install'"
+	@if [ -f .env ]; then \
+		. ./.env && if [ "$$ENV" = "production" ]; then \
+			echo -e "\033[0;31mError: node-install requires ENV=development in .env file.\033[0m"; \
+			echo -e "\033[0;34mFor production builds, dependencies are installed during 'make build' (see Dockerfile build stage).\033[0m"; \
+			echo -e "\033[0;34mTo use node-install, temporarily set ENV=development in .env, or use 'make node-install-local'.\033[0m"; \
+			exit 1; \
+		fi; \
+	fi
+	@echo -e "\033[0;34mFixing node_modules permissions...\033[0m"
+	@docker compose exec --user root node chown -R node:node /app/node_modules
+	@docker compose exec node sh -c 'TMPDIR=/tmp pnpm install'
 	@echo -e "\033[0;32mDependencies installed!\033[0m"
 
 node-install-local: ## Install Node.js dependencies (Local - faster, but version may differ)

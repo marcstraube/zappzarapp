@@ -130,6 +130,10 @@ COPY --chown=www-data:www-data public/ ./public
 COPY --chown=www-data:www-data src/php ./src/php
 COPY --chown=www-data:www-data templates ./templates
 
+# Copy built frontend assets from Node build stage
+# This allows serving production-built Vite assets via NGINX
+COPY --from=docker-webdev-node:latest --chown=www-data:www-data /app/public/build/ ./public/build/
+
 # Optimize Autoloader & Cleanup
 RUN composer dump-autoload --optimize --no-dev --classmap-authoritative && \
     rm -rf /usr/bin/composer /home/www-data/.composer /tmp/* && \
