@@ -14,6 +14,7 @@ services:
     depends_on:
       php:
         condition: service_healthy
+        required: false
     networks:
       - app-network
 
@@ -24,6 +25,7 @@ services:
       target: production
     container_name: ${COMPOSE_PROJECT_NAME:-docker-webdev}-php
     restart: unless-stopped
+    profiles: ["php"]
     expose:
       - "9000"
     environment:
@@ -47,13 +49,100 @@ services:
     image: ${COMPOSE_PROJECT_NAME:-docker-webdev}-node:latest
     container_name: ${COMPOSE_PROJECT_NAME:-docker-webdev}-node
     restart: unless-stopped
+    profiles: ["node"]
     # Expose port 3000 if Node runs as an upstream server for Nginx or is accessed directly.
     expose:
       - "3000"
     networks:
       - app-network
+    depends_on:
+      redis:
+        condition: service_healthy
+        required: false
+
+  redis:
+    image: redis:7.4-alpine3.22
+    container_name: ${COMPOSE_PROJECT_NAME:-docker-webdev}-redis
+    restart: unless-stopped
+    profiles: ["redis"]
+    expose:
+      - "6379"
+    command: >
+      redis-server
+      --appendonly yes
+      --appendfsync everysec
+      --maxmemory 256mb
+      --maxmemory-policy allkeys-lru
+    volumes:
+      - redis-data:/data
+    networks:
+      - app-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+      start_period: 5s
+
+  postgres:
+    image: postgres:17.7-alpine3.22
+    container_name: ${COMPOSE_PROJECT_NAME:-docker-webdev}-postgres
+    restart: unless-stopped
+    profiles: ["postgres"]
+    expose:
+      - "5432"
+    environment:
+      POSTGRES_DB: ${DB_NAME:-app}
+      POSTGRES_USER: ${DB_USER:-app}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-secret}
+      POSTGRES_INITDB_ARGS: "--encoding=UTF8 --locale=C"
+      PGDATA: /var/lib/postgresql/data/pgdata
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    networks:
+      - app-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-app} -d ${DB_NAME:-app}"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+      start_period: 10s
+
+  mariadb:
+    image: mariadb:12.1
+    container_name: ${COMPOSE_PROJECT_NAME:-docker-webdev}-mariadb
+    restart: unless-stopped
+    profiles: ["mariadb"]
+    expose:
+      - "3306"
+    environment:
+      MARIADB_DATABASE: ${DB_NAME:-app}
+      MARIADB_USER: ${DB_USER:-app}
+      MARIADB_PASSWORD: ${DB_PASSWORD:-secret}
+      MARIADB_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-rootsecret}
+    volumes:
+      - mariadb-data:/var/lib/mysql
+    networks:
+      - app-network
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+      start_period: 10s
 
 networks:
   app-network:
     driver: bridge
     name: ${COMPOSE_PROJECT_NAME:-docker-webdev}-network
+
+volumes:
+  redis-data:
+    driver: local
+    name: ${COMPOSE_PROJECT_NAME:-docker-webdev}-redis-data
+  postgres-data:
+    driver: local
+    name: ${COMPOSE_PROJECT_NAME:-docker-webdev}-postgres-data
+  mariadb-data:
+    driver: local
+    name: ${COMPOSE_PROJECT_NAME:-docker-webdev}-mariadb-data

@@ -8,6 +8,9 @@
 // Import main CSS
 import '../css/app.css';
 
+// Import SCSS (demonstrates SCSS/SASS support)
+import '../css/test.scss';
+
 // Example: Fetch API data
 async function fetchHealth() {
     try {

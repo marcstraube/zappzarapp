@@ -65,13 +65,21 @@ define('CSP_NONCE', $nonce);
 // Simple Routing Example
 use App\Http\Router;
 use App\Http\Controller\ExampleController;
+use App\Http\Controller\WelcomeController;
+use App\Http\Controller\StatusController;
 
 $router = new Router();
-$controller = new ExampleController();
+
+// Controllers
+$exampleController = new ExampleController();
+$welcomeController = new WelcomeController();
+$statusController = new StatusController();
 
 // Routes
-$router->get('/', [$controller, 'index']);
-$router->get('/api/health', [$controller, 'health']);
+$router->get('/', [$welcomeController, 'index']);          // Main landing page
+$router->get('/welcome', [$welcomeController, 'index']);   // Alias for /
+$router->get('/status', [$statusController, 'index']);     // JSON health check
+$router->get('/api/health', [$exampleController, 'health']); // Legacy health endpoint
 
 // Dispatch
 $router->dispatch();

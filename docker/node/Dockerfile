@@ -30,14 +30,18 @@ RUN if [ "$USER_ID" != "1000" ]; then \
     mkdir -p /home/node/.cache/node/corepack && \
     chown -R node:node /home/node /app /usr/local/bin/pnpm
 
+# Copy entrypoint script
+COPY --chown=node:node docker/node/entrypoint.sh /usr/local/bin/entrypoint.sh
+RUN chmod +x /usr/local/bin/entrypoint.sh
+
 # Health Check: Verifies that the source code volume is mounted correctly.
 HEALTHCHECK --interval=30s --timeout=5s --start-period=5s --retries=3 \
     CMD test -f /app/package.json
 
 USER node
 
-# Default command: A long sleep to keep the container available for Exec commands
-CMD ["sleep", "infinity"]
+# Use entrypoint to handle NODE_MODE-based service startup
+ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
 
 # --- 3. PRODUCTION BUILD STAGE (Secure Asset Build) ---
 FROM base AS build

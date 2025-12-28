@@ -398,11 +398,12 @@ XDEBUG_TRIGGER=PHPSTORM
 
 ```bash
 # In development mode
-docker compose exec php php -m | grep xdebug
+make php-exec CMD="php -m | grep xdebug"
+# Or: docker compose exec php php -m | grep xdebug
 # Should output: xdebug
 
 # In production mode
-docker compose exec php php -m | grep xdebug
+make php-exec CMD="php -m | grep xdebug"
 # Should output: nothing
 ```
 
@@ -479,7 +480,8 @@ make shell-php
 composer install
 
 # Clear Composer cache
-docker compose exec php composer clear-cache
+make composer CMD="clear-cache"
+# Or: docker compose exec php composer clear-cache
 
 # Update dependencies
 make composer CMD="update"

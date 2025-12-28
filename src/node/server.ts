@@ -1,7 +1,7 @@
 /**
  * Node.js Backend Server
  *
- * This is an example Express.js server.
+ * This is an example Express.js server with structured logging (Pino).
  * Only used when NODE_TARGET=app-server in docker-compose.
  *
  * Build output: dist/server.js
@@ -9,22 +9,57 @@
  */
 
 import express, { Express, Request, Response, NextFunction } from 'express';
-import { createServer } from 'http';
+import { createServer, Server } from 'http';
+import pino from 'pino';
+import pinoHttpImport from 'pino-http';
+
+// TypeScript workaround for pino-http CommonJS module
+const pinoHttp = pinoHttpImport as unknown as typeof pinoHttpImport.default;
 
 const app: Express = express();
 const PORT = process.env.PORT || 3000;
 const NODE_ENV = process.env.NODE_ENV || 'production';
+const LOG_LEVEL = process.env.LOG_LEVEL || 'info';
+const LOG_FORMAT = process.env.LOG_FORMAT || 'json';
+
+// Configure Pino logger (structured logging)
+const logger = pino({
+    level: LOG_LEVEL,
+    transport: LOG_FORMAT === 'pretty' ? {
+        target: 'pino-pretty',
+        options: {
+            colorize: true,
+            translateTime: 'HH:MM:ss Z',
+            ignore: 'pid,hostname',
+        },
+    } : undefined,
+    formatters: {
+        level: (label: string) => {
+            return { level: label.toUpperCase() };
+        },
+    },
+    timestamp: pino.stdTimeFunctions.isoTime,
+});
+
+// HTTP request logging middleware
+app.use(pinoHttp({
+    logger,
+    customLogLevel: (_req: Request, res: Response, err?: Error) => {
+        if (res.statusCode >= 500 || err) return 'error';
+        if (res.statusCode >= 400) return 'warn';
+        return 'info';
+    },
+    customSuccessMessage: (req: Request, res: Response) => {
+        return `${req.method} ${req.url} ${res.statusCode}`;
+    },
+    customErrorMessage: (_req: Request, _res: Response, err: Error) => {
+        return `Request error: ${err.message}`;
+    },
+}));
 
 // Middleware
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-
-// Request logging
-app.use((req: Request, _res: Response, next: NextFunction): void => {
-    const timestamp = new Date().toISOString();
-    console.log(`[${timestamp}] ${req.method} ${req.path}`);
-    next();
-});
 
 // CORS (if needed)
 app.use((req: Request, res: Response, next: NextFunction): void => {
@@ -87,8 +122,12 @@ app.use((req: Request, res: Response): void => {
 });
 
 // Error Handler
-app.use((err: Error, _req: Request, res: Response, _next: NextFunction): void => {
-    console.error('Error:', err);
+app.use((err: Error, req: Request, res: Response, _next: NextFunction): void => {
+    logger.error({
+        err,
+        url: req.url,
+        method: req.method,
+    }, 'Request error');
 
     res.status(500).json({
         error: NODE_ENV === 'development' ? err.message : 'Internal Server Error',
@@ -97,33 +136,33 @@ app.use((err: Error, _req: Request, res: Response, _next: NextFunction): void =>
 });
 
 // Start Server
-const server: any = createServer(app);
+const server: Server = createServer(app);
 
 server.listen(PORT, (): void => {
-    console.log('==========================================');
-    console.log(`🚀 Node.js server running`);
-    console.log(`   Port: ${PORT}`);
-    console.log(`   Environment: ${NODE_ENV}`);
-    console.log(`   Health: http://localhost:${PORT}/health`);
-    console.log('==========================================');
+    logger.info({
+        port: PORT,
+        environment: NODE_ENV,
+        logLevel: LOG_LEVEL,
+        logFormat: LOG_FORMAT,
+        healthUrl: `http://localhost:${PORT}/health`,
+    }, '🚀 Node.js server started');
 });
 
 // Graceful Shutdown
 const shutdown: () => void = (): void => {
-    console.log('\nShutting down gracefully...');
+    logger.info('Received shutdown signal, closing server gracefully...');
+
     server.close(() => {
-        console.log('Server closed');
+        logger.info('Server closed successfully');
         process.exit(0);
     });
 
     // Force shutdown after 10s
     setTimeout((): void => {
-        console.error('Forced shutdown');
+        logger.error('Forced shutdown after timeout');
         process.exit(1);
     }, 10000);
 };
 
 process.on('SIGTERM', shutdown);
 process.on('SIGINT', shutdown);
-
-export default app;

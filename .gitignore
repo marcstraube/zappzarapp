@@ -70,6 +70,7 @@ Thumbs.db
 
 # Tool Caches
 /build/coverage/
+/.pnpm-store/
 .phpunit.result.cache
 .phpunit.cache
 .php-cs-fixer.cache

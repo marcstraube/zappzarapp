@@ -25,11 +25,11 @@ help: ## Show this help
 			print cmds | "sort"; \
 			close("sort"); \
 		} \
-	}' $(MAKEFILE_LIST) | awk 'BEGIN {FS="\t"} {printf "  \033[0;32m%-15s\033[0m %s\n", $$1, $$2}'
+	}' $(MAKEFILE_LIST) | awk 'BEGIN {FS="\t"} {printf "  \033[0;32m%-20s\033[0m %s\n", $$1, $$2}'
 
 ##@ Setup
 
-dev-deps: ## Install/update Composer dependencies (Docker - guaranteed consistency)
+composer-install: ## Install/update Composer dependencies (Docker - guaranteed consistency)
 	@echo -e "\033[0;33mManaging Composer dependencies (Docker)...\033[0m"
 	@if [ ! -f "vendor/autoload.php" ]; then \
 		XDEBUG_MODE=off docker compose run --rm --no-TTY php composer install --prefer-dist --no-interaction; \
@@ -38,10 +38,10 @@ dev-deps: ## Install/update Composer dependencies (Docker - guaranteed consisten
 	fi
 	@echo -e "\033[0;32mDependencies ready!\033[0m"
 
-dev-deps-local: ## Install/update Composer dependencies (Local - faster, but version may differ)
+composer-install-local: ## Install/update Composer dependencies (Local - faster, but version may differ)
 	@if command -v composer >/dev/null 2>&1; then \
 		echo -e "\033[0;33m⚠️  Using local Composer (version may differ from Docker).\033[0m"; \
-		echo -e "\033[0;34mFor guaranteed consistency, use 'make dev-deps' instead.\033[0m"; \
+		echo -e "\033[0;34mFor guaranteed consistency, use 'make composer-install' instead.\033[0m"; \
 		if [ ! -f "vendor/autoload.php" ]; then \
 			composer install --prefer-dist --no-interaction; \
 		else \
@@ -49,7 +49,7 @@ dev-deps-local: ## Install/update Composer dependencies (Local - faster, but ver
 		fi; \
 		echo -e "\033[0;32mDependencies installed!\033[0m"; \
 	else \
-		echo -e "\033[0;31mError: Local Composer not found. Use 'make dev-deps' instead.\033[0m"; \
+		echo -e "\033[0;31mError: Local Composer not found. Use 'make composer-install' instead.\033[0m"; \
 		exit 1; \
 	fi
 
@@ -101,7 +101,7 @@ setup: ## Create directories, install dev dependencies and ensure structure
 	@. ./.env && chmod 770 $${STORAGE_DIR:-./storage} -R
 
 	@echo -e "\033[0;32mProject structure created!\033[0m"
-	@$(MAKE) --silent dev-deps
+	@$(MAKE) --silent composer-install
 	@echo -e "\033[0;32mSetup completed (directories + dependencies)!\033[0m"
 
 ##@ Docker
@@ -196,6 +196,39 @@ logs-node: ## Show Node.js logs only
 		docker compose logs -f node; \
 	fi
 
+logs-redis: ## Show Redis logs only
+	@if [ -f .env ]; then \
+		. ./.env && if [ "$$ENV" = "production" ]; then \
+			docker compose -f compose.yaml -f compose.prod.yaml logs -f redis; \
+		else \
+			docker compose logs -f redis; \
+		fi; \
+	else \
+		docker compose logs -f redis; \
+	fi
+
+logs-postgres: ## Show PostgreSQL logs only
+	@if [ -f .env ]; then \
+		. ./.env && if [ "$$ENV" = "production" ]; then \
+			docker compose -f compose.yaml -f compose.prod.yaml logs -f postgres; \
+		else \
+			docker compose logs -f postgres; \
+		fi; \
+	else \
+		docker compose logs -f postgres; \
+	fi
+
+logs-mariadb: ## Show MariaDB logs only
+	@if [ -f .env ]; then \
+		. ./.env && if [ "$$ENV" = "production" ]; then \
+			docker compose -f compose.yaml -f compose.prod.yaml logs -f mariadb; \
+		else \
+			docker compose logs -f mariadb; \
+		fi; \
+	else \
+		docker compose logs -f mariadb; \
+	fi
+
 pnpm: ## Execute pnpm command in running container (e.g. make pnpm CMD="add vue")
 	@docker compose exec node pnpm $(CMD)
 
@@ -211,27 +244,62 @@ shell-nginx: ## Open shell in Nginx container
 shell-php: ## Open shell in PHP container
 	@docker compose exec php sh
 
+shell-node: ## Open shell in Node container
+	@docker compose exec node sh
+
+shell-redis: ## Open shell in Redis container
+	@docker compose exec redis sh
+
+shell-postgres: ## Open shell in PostgreSQL container
+	@docker compose exec postgres sh
+
+shell-mariadb: ## Open shell in MariaDB container
+	@docker compose exec mariadb sh
+
 status: ## Show running containers status and image disk usage
 	@echo -e "\033[0;33mContainer Status:\033[0m"
 	@docker compose ps
 	@echo -e "\033[0;33m\nImage Disk Usage:\033[0m"
 	@docker images | grep "$(COMPOSE_PROJECT_NAME:-docker-webdev)"
 
-up: ## Start core containers (Nginx, PHP)
+up: ## Start enabled containers (based on .env ENABLE_* flags)
 	@$(MAKE) --silent up-core
 
 up-core:
 	@if [ ! -f .env ]; then echo -e "\033[0;31mError: .env not found. Run 'make init' first.\033[0m"; exit 1; fi
-	@. ./.env && echo -e "\033[0;33mStarting containers in $${ENV^^:-production} mode...\033[0m"
-	@. ./.env && if [ "$$ENV" = "production" ]; then \
-		docker compose -f compose.yaml -f compose.prod.yaml up -d nginx php $(SERVICES); \
+	@. ./.env && \
+	PROFILES="--profile $${DB_TYPE:-postgres}"; \
+	SERVICES="nginx"; \
+	if [ "$${ENABLE_PHP:-true}" = "true" ]; then PROFILES="$$PROFILES --profile php"; SERVICES="$$SERVICES php"; fi; \
+	if [ "$${ENABLE_NODE:-true}" = "true" ]; then PROFILES="$$PROFILES --profile node"; SERVICES="$$SERVICES node"; fi; \
+	if [ "$${ENABLE_REDIS:-true}" = "true" ]; then PROFILES="$$PROFILES --profile redis"; SERVICES="$$SERVICES redis"; fi; \
+	echo -e "\033[0;33mStarting containers in $${ENV^^:-production} mode...\033[0m"; \
+	echo -e "\033[0;34mActive services: $$SERVICES\033[0m"; \
+	echo -e "\033[0;34mDatabase: $${DB_TYPE:-postgres}\033[0m"; \
+	if [ "$$ENV" = "production" ]; then \
+		docker compose -f compose.yaml -f compose.prod.yaml $$PROFILES up -d $$SERVICES $(SERVICES); \
 	else \
-		docker compose up -d nginx php $(SERVICES); \
+		docker compose $$PROFILES up -d $$SERVICES $(SERVICES); \
 	fi
 	@echo -e "\033[0;32mContainers started!\033[0m"
 	@. ./.env && echo -e "\033[0;34mNginx is running at http://localhost:$${NGINX_PORT:-8080}\033[0m"
 
-##@ Node Commands
+##@ Node.js Development
+
+node-dev-full: ## Start full-stack development (Vite + Node.js backend with PM2)
+	@echo -e "\033[0;33mStarting full-stack development environment...\033[0m"
+	@echo -e "\033[0;34mVite HMR: http://localhost:5173\033[0m"
+	@echo -e "\033[0;34mNode.js API: http://localhost:3000\033[0m"
+	@echo -e "\033[0;34mNginx Proxy: http://localhost:8080\033[0m"
+	@docker compose exec node pnpm run dev:full
+
+node-dev-frontend: ## Start only Vite dev server with PM2
+	@echo -e "\033[0;33mStarting Vite dev server...\033[0m"
+	@docker compose exec node pnpm run dev:frontend
+
+node-dev-backend: ## Start only Node.js backend with PM2
+	@echo -e "\033[0;33mStarting Node.js backend server...\033[0m"
+	@docker compose exec node pnpm run dev:backend
 
 node-install: ## Install Node.js dependencies (Docker - requires ENV=development)
 	@echo -e "\033[0;33mInstalling Node.js dependencies (Docker)...\033[0m"
@@ -263,9 +331,6 @@ node-build: ## Executes the frontend build inside the Node container (uses 'buil
 	@echo -e "\033[0;33mExecuting frontend build...\033[0m"
 	@docker compose run --rm --build --target build node pnpm run build
 
-node-shell: ## Starts a shell in the Node container (Development Target)
-	@docker compose exec node /bin/sh
-
 node-up: ## Starts the Node service alongside the standard stack (Uses the default 'asset-server' target)
 	@echo -e "\033[0;33mStarting Node service (asset-server target)...\033[0m"
 	# NODE_TARGET is unset, so compose.yaml defaults to the 'asset-server' target (sleep infinity).
@@ -292,30 +357,113 @@ node-server-build: ## Build Node.js backend (TypeScript -> JavaScript)
 	@docker compose exec node pnpm run server:build
 	@echo -e "\033[0;32mBackend built successfully! Output: dist/server.js\033[0m"
 
-##@ Workflow
+node-pm2-status: ## Show PM2 process status
+	@docker compose exec node pnpm run pm2:status
 
-check-health: ## Check application health by container status, PHP-FPM and Nginx HTTP response
-	@echo -e "\033[0;33mChecking Container Health Status (PHP-FPM & Nginx)...\033[0m"
-	@if [ "$$(docker inspect --format='{{.State.Health.Status}}' $$(docker compose ps -q php))" = "healthy" ]; then \
-		echo -e "\033[0;32m✅ PHP-FPM Service is Healthy (Container Status).\033[0m"; \
+node-pm2-logs: ## Show PM2 logs
+	@docker compose exec node pnpm run pm2:logs
+
+node-pm2-restart: ## Restart PM2 processes
+	@docker compose exec node pnpm run pm2:restart
+
+node-pm2-stop: ## Stop PM2 processes
+	@docker compose exec node pnpm run pm2:stop
+
+##@ Database & Cache
+
+redis-cli: ## Open Redis CLI
+	@docker compose exec redis redis-cli
+
+redis-flush: ## Flush all Redis data (DANGEROUS!)
+	@echo -e "\033[0;31m⚠️  WARNING: This will delete ALL data in Redis!\033[0m"
+	@read -p "Type 'YES' to confirm: " CONFIRM; \
+	if [ "$$CONFIRM" = "YES" ]; then \
+		docker compose exec redis redis-cli FLUSHALL; \
+		echo -e "\033[0;32mRedis flushed!\033[0m"; \
 	else \
-		echo -e "\033[0;31m❌ PHP-FPM Service is Not Healthy (Container Status). Run 'docker inspect $$(docker compose ps -q php)' for details.\033[0m"; \
+		echo -e "\033[0;34mOperation cancelled.\033[0m"; \
+	fi
+
+redis-monitor: ## Monitor Redis commands in real-time
+	@docker compose exec redis redis-cli MONITOR
+
+postgres-cli: ## Open PostgreSQL CLI (psql)
+	@. ./.env && docker compose exec postgres psql -U $${DB_USER:-app} -d $${DB_NAME:-app}
+
+postgres-dump: ## Create database backup (dump.sql)
+	@echo -e "\033[0;33mCreating database backup...\033[0m"
+	@. ./.env && docker compose exec postgres pg_dump -U $${DB_USER:-app} -d $${DB_NAME:-app} > dump.sql
+	@echo -e "\033[0;32mBackup saved to dump.sql\033[0m"
+
+postgres-restore: ## Restore database from dump.sql
+	@if [ ! -f dump.sql ]; then \
+		echo -e "\033[0;31mError: dump.sql not found!\033[0m"; \
 		exit 1; \
 	fi
-	@echo -e "\n\033[0;33mChecking HTTP Health (Nginx)...\033[0m"
+	@echo -e "\033[0;33mRestoring database from dump.sql...\033[0m"
+	@. ./.env && docker compose exec -T postgres psql -U $${DB_USER:-app} -d $${DB_NAME:-app} < dump.sql
+	@echo -e "\033[0;32mDatabase restored!\033[0m"
+
+mariadb-cli: ## Open MariaDB CLI
+	@. ./.env && docker compose exec mariadb mariadb -u $${DB_USER:-app} -p$${DB_PASSWORD:-secret} $${DB_NAME:-app}
+
+mariadb-dump: ## Create MariaDB database backup (dump.sql)
+	@echo -e "\033[0;33mCreating MariaDB database backup...\033[0m"
+	@. ./.env && docker compose exec mariadb mariadb-dump -u $${DB_USER:-app} -p$${DB_PASSWORD:-secret} $${DB_NAME:-app} > dump.sql
+	@echo -e "\033[0;32mBackup saved to dump.sql\033[0m"
+
+mariadb-restore: ## Restore MariaDB database from dump.sql
+	@if [ ! -f dump.sql ]; then \
+		echo -e "\033[0;31mError: dump.sql not found!\033[0m"; \
+		exit 1; \
+	fi
+	@echo -e "\033[0;33mRestoring MariaDB database from dump.sql...\033[0m"
+	@. ./.env && docker compose exec -T mariadb mariadb -u $${DB_USER:-app} -p$${DB_PASSWORD:-secret} $${DB_NAME:-app} < dump.sql
+	@echo -e "\033[0;32mMariaDB database restored!\033[0m"
+
+##@ Workflow
+
+check-health: ## Check application health by container status for all services
+	@echo -e "\033[0;33mChecking Container Health Status...\033[0m\n"
+
+	@echo -e "\033[0;34m📦 PHP-FPM:\033[0m"
+	@if [ "$$(docker inspect --format='{{.State.Health.Status}}' $$(docker compose ps -q php) 2>/dev/null)" = "healthy" ]; then \
+		echo -e "\033[0;32m  ✅ Healthy\033[0m"; \
+	else \
+		echo -e "\033[0;31m  ❌ Unhealthy or not running\033[0m"; \
+	fi
+
+	@echo -e "\n\033[0;34m💾 Database:\033[0m"
+	@if [ -f .env ]; then . ./.env; fi; \
+	DB_TYPE=$${DB_TYPE:-postgres}; \
+	if [ "$$(docker inspect --format='{{.State.Health.Status}}' $$(docker compose ps -q $$DB_TYPE) 2>/dev/null)" = "healthy" ]; then \
+		echo -e "\033[0;32m  ✅ $$DB_TYPE is Healthy\033[0m"; \
+	else \
+		echo -e "\033[0;31m  ❌ $$DB_TYPE is Unhealthy or not running\033[0m"; \
+	fi
+
+	@echo -e "\n\033[0;34m🔴 Redis:\033[0m"
+	@if [ "$$(docker inspect --format='{{.State.Health.Status}}' $$(docker compose ps -q redis) 2>/dev/null)" = "healthy" ]; then \
+		echo -e "\033[0;32m  ✅ Healthy\033[0m"; \
+	else \
+		echo -e "\033[0;31m  ❌ Unhealthy or not running\033[0m"; \
+	fi
+
+	@echo -e "\n\033[0;34m🌐 Nginx HTTP:\033[0m"
 	@if [ -f .env ]; then . ./.env; fi; \
 	NGINX_PORT=$${NGINX_PORT:-8080}; \
 	if command -v curl >/dev/null 2>&1; then \
-		HTTP_CODE=$$(curl -s -o /dev/null -w "%{http_code}" http://localhost:$$NGINX_PORT); \
+		HTTP_CODE=$$(curl -s -o /dev/null -w "%{http_code}" http://localhost:$$NGINX_PORT 2>/dev/null); \
 		if [ "$$HTTP_CODE" = "200" ]; then \
-			echo -e "\033[0;32m✅ Nginx/Application is running and returns 200 OK on port $$NGINX_PORT.\033[0m"; \
+			echo -e "\033[0;32m  ✅ HTTP 200 OK (port $$NGINX_PORT)\033[0m"; \
 		else \
-			echo -e "\033[0;31m❌ Error: Application returned HTTP code $$HTTP_CODE on port $$NGINX_PORT.\033[0m"; \
-			exit 1; \
+			echo -e "\033[0;31m  ❌ HTTP $$HTTP_CODE (port $$NGINX_PORT)\033[0m"; \
 		fi; \
 	else \
-		echo -e "\033[0;31m❌ Error: 'curl' not found. Cannot perform HTTP health check.\033[0m"; \
+		echo -e "\033[0;33m  ⚠️  curl not found, skipping HTTP check\033[0m"; \
 	fi
+
+	@echo ""
 
 fresh: ## Complete clean slate rebuild, removing all data volumes (DANGEROUS!)
 	@echo -e "\033[0;31m!!! WARNING: You are about to remove all containers, images, AND data volumes (e.g. database). !!!\033[0m"

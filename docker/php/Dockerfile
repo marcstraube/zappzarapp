@@ -33,8 +33,11 @@ RUN apk add --no-cache \
     # Dependencies for zip (Extension)
     libzip \
     libzip-dev \
+    # Dependencies for PostgreSQL PDO (Extension)
+    postgresql-dev \
+    postgresql-libs \
     # Compilation and installation of extensions
-    && docker-php-ext-install exif intl opcache zip \
+    && docker-php-ext-install exif intl opcache zip pdo_pgsql pdo_mysql \
     && docker-php-ext-configure gd \
         --with-freetype \
         --with-jpeg \
@@ -42,7 +45,8 @@ RUN apk add --no-cache \
         --with-avif \
     && docker-php-ext-install -j$(nproc) gd \
     && pecl install gmagick-2.0.6RC1 \
-    && docker-php-ext-enable gmagick \
+    && pecl install redis \
+    && docker-php-ext-enable gmagick redis \
     && rm -rf /tmp/pear
 
 # --- 2. BASE STAGE (Shared Runtime Image - Small & Fast) ---
@@ -60,7 +64,8 @@ RUN apk add --no-cache \
     libavif \
     graphicsmagick \
     icu-libs \
-    libzip
+    libzip \
+    postgresql-libs
 
 # Copy the compiled extensions and configuration files from the builder
 COPY --from=php-builder /usr/local/etc/php/conf.d/ /usr/local/etc/php/conf.d/

@@ -2407,12 +2407,641 @@ curl http://localhost:3000/health
 ---
 
 **Erstellt:** 2025-12-19
-**Letzte Aktualisierung:** 2025-12-19 (Complete Test Matrix functional)
-**Version:** 2.9
+**Letzte Aktualisierung:** 2025-12-28 (Makefile Konsistenz und Formatierung)
+**Version:** 2.10
 
 ---
 
 ## Changelog
+
+### Version 2.10 (2025-12-23)
+- ✅ **Multi-Database Support mit Docker Compose Profiles**
+  - **PostgreSQL 17.7-alpine als Standard (empfohlen)**
+    - Image: `postgres:17.7-alpine` (Minor-Version fixiert)
+    - Profile: `["postgres"]`
+    - Healthcheck mit `pg_isready`
+    - Production-optimierte Settings (shared_buffers, max_connections, etc.)
+  - **MariaDB 12.1 als optionale Alternative**
+    - Image: `mariadb:12.1` (12.1.x-Debian, Minor-Version fixiert)
+    - Profile: `["mariadb"]`
+    - Healthcheck mit `healthcheck.sh --connect --innodb_initialized`
+    - InnoDB-optimierte Settings
+  - **MySQL entfernt**
+    - Grund: Keine offizielle Alpine-Version verfügbar
+    - MySQL hatte nur Debian-Images (gegen Alpine-Konsistenz)
+  - **Percona entfernt**
+    - Grund: Entwicklung eingestellt
+  - **Konfiguration:**
+    - `.env`: `DB_TYPE=postgres` oder `DB_TYPE=mariadb`
+    - Automatische Profile-Aktivierung via `docker compose --profile ${DB_TYPE}`
+    - Makefile erweitert mit DB-spezifischen Commands
+  - **Best Practices - Konsistente Minor-Version Pinning:**
+    - **Alle Images mit fixen Minor-Versionen** (keine `latest`- oder Major-only-Tags)
+    - **PostgreSQL:** `17.7-alpine` (Minor fixiert, erlaubt automatische Patch-Updates 17.7.x)
+    - **MariaDB:** `12.1` (Minor fixiert, erlaubt automatische Patch-Updates 12.1.x)
+    - **Redis:** `7.4-alpine` (Minor fixiert, erlaubt automatische Patch-Updates 7.4.x)
+    - **Vorteil:** Balance zwischen Sicherheit (automatische Patches) und Stabilität (keine Breaking Changes)
+    - **Verhindert:** Unerwartete Minor-Updates mit Breaking Changes (z.B. 17.0 → 17.1)
+  - **Dateien geändert:**
+    - `compose.yaml`: PostgreSQL 17.7-alpine, MariaDB 12.1, Redis 7.4-alpine (alle Minor-fixiert)
+    - `compose.prod.yaml`: Production-Optimierungen für beide DBs
+    - `compose.override.yaml`: Development-Settings (verbose logging, exposed ports)
+    - `.env.example`: `DB_TYPE`, Datenbank-URLs, Port-Konfigurationen
+    - `.env`: `DB_TYPE=postgres` als Standard
+    - `Makefile`: `up-core` mit Profile-Support, DB-spezifische CLI-Commands
+  - **Getestet mit aktuellen Versionen:**
+    - PostgreSQL 17.7: Konnektivität, Tabellen-Erstellung, CRUD-Operationen ✅
+    - MariaDB 12.1.2: Konnektivität, Tabellen-Erstellung, CRUD-Operationen ✅
+    - Redis 7.4.7: PING/PONG, GET/SET Operationen ✅
+    - Node.js Backend mit PostgreSQL ✅
+    - Alle Services healthy und voll funktionsfähig ✅
+
+- ✅ **Granulare Service-Aktivierung mit ENABLE_* Flags**
+  - **Problem:** Bisherige Architektur startete immer alle Services (PHP, Node, Redis)
+    - Verschwendung von Ressourcen für ungenutzte Services
+    - Keine Flexibilität für unterschiedliche Stack-Typen (Pure PHP, Pure Node.js, Static)
+    - Nginx war der einzige wirklich essenzielle Service
+  - **Lösung:** Docker Compose Profiles für jeden Service
+    - PHP: `profiles: ["php"]`, aktivierbar via `ENABLE_PHP=true`
+    - Node: `profiles: ["node"]`, aktivierbar via `ENABLE_NODE=true`
+    - Redis: `profiles: ["redis"]`, aktivierbar via `ENABLE_REDIS=true`
+    - Nginx: Immer aktiv (Entry Point, ohne Profile)
+    - Database: Weiterhin via `DB_TYPE` gesteuert (postgres/mariadb)
+  - **Konfiguration in .env:**
+    ```bash
+    ENABLE_PHP=true      # PHP-FPM Service
+    ENABLE_NODE=true     # Node.js (Vite + Backend)
+    ENABLE_REDIS=true    # Redis Cache/Sessions
+    DB_TYPE=postgres     # Database Selection
+    ```
+  - **Vordefinierte Presets in .env.example:**
+    - **Full-Stack** (Default): PHP + Node.js + Redis + Database
+    - **Pure PHP Stack**: PHP + Redis + Database (kein Node.js)
+    - **Pure Node.js Stack**: Node.js + Redis + Database (kein PHP)
+    - **Static/JAMstack**: Nur Nginx (keine Backend-Services)
+    - **Minimal Node.js**: Nur Node.js (kein Database/Redis)
+    - **Custom**: Beliebige Kombination
+  - **Makefile-Integration:**
+    - `make up` liest `.env` und aktiviert nur gewählte Services
+    - Dynamischer Profil-Aufbau: `--profile postgres --profile php --profile node --profile redis`
+    - Output zeigt aktive Services: `Active services: nginx php node redis`
+  - **Zukunftssicherheit:**
+    - Einfache Erweiterung für neue Services (z.B. ENABLE_RABBITMQ, ENABLE_ELASTICSEARCH)
+    - Skaliert linear: N Services = N Variablen (statt N! Kombinationen)
+    - Microservice-Prinzip: Jeder Service einzeln steuerbar
+  - **Dateien geändert:**
+    - `compose.yaml`: Profiles für php, node, redis hinzugefügt; depends_on auf `required: false`
+    - `.env`: `ENABLE_PHP`, `ENABLE_NODE`, `ENABLE_REDIS` hinzugefügt (alle true)
+    - `.env.example`: Ausführliche Dokumentation + 5 vordefinierte Presets
+    - `Makefile`: `up-core` dynamische Profile-Aktivierung basierend auf ENABLE_* Flags
+  - **Getestet:**
+    - Full-Stack (PHP + Node + Redis + PostgreSQL): ✅ Alle Services gestartet
+    - Node-only (nur Node.js + Nginx): ✅ PHP und Redis nicht gestartet
+    - Static/JAMstack (nur Nginx): ✅ Alle Backend-Services deaktiviert
+    - Service-Kombinationen funktionieren wie erwartet ✅
+
+- ✅ **NODE_MODE Auto-Start Implementation mit Entrypoint-Script**
+  - **Problem:** Node.js Container führte NODE_MODE nicht aus
+    - Container startete nur mit `sleep infinity` (development stage)
+    - NODE_MODE-Variable (`full-stack`, `vite-only`, `backend-only`, `none`) war in .env dokumentiert, aber nicht implementiert
+    - PM2-Config (`ecosystem.config.cjs`) und npm-Scripts existierten, wurden aber nie ausgeführt
+    - Vite Dev Server lief nicht → **CORS-Fehler** bei HMR (localhost:5173 nicht erreichbar)
+    - Regression des in Version 2.9 behobenen CORS-Problems
+  - **Root Cause:**
+    - Dockerfile development stage hatte kein ENTRYPOINT, nur `CMD ["sleep", "infinity"]`
+    - Keine Logik für Dependency-Installation (`pnpm install`)
+    - Keine Logik für automatischen Service-Start basierend auf NODE_MODE
+  - **Lösung - Entrypoint Script erstellt:** `docker/node/entrypoint.sh`
+    - **Dependency Installation:**
+      - Prüft ob `node_modules` existiert oder leer ist
+      - Führt `pnpm install --frozen-lockfile` aus wenn nötig
+      - Überspringt Installation wenn Dependencies bereits vorhanden (Performance)
+    - **Service-Start basierend auf NODE_MODE:**
+      - `NODE_MODE=full-stack` → `pnpm run dev:full` (PM2 mit Vite + Express)
+      - `NODE_MODE=vite-only` → `pnpm run dev:frontend` (PM2 nur Vite)
+      - `NODE_MODE=backend-only` → `pnpm run dev:backend` (PM2 nur Express)
+      - `NODE_MODE=none` → `sleep infinity` (Idle Container für manuelle Commands)
+    - **Logging:** Debug-Output für Startup-Status
+  - **Dockerfile-Änderungen:**
+    - Entrypoint-Script kopiert: `COPY --chown=node:node docker/node/entrypoint.sh /usr/local/bin/`
+    - Ausführbar gemacht: `RUN chmod +x /usr/local/bin/entrypoint.sh`
+    - Als ENTRYPOINT gesetzt: `ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]`
+    - Ersetzt bisheriges `CMD ["sleep", "infinity"]`
+  - **compose.override.yaml erweitert:**
+    - `NODE_MODE=${NODE_MODE:-full-stack}` Environment-Variable hinzugefügt
+    - Wird aus .env gelesen und an Container übergeben
+  - **PM2 Prozess-Management (via ecosystem.config.cjs):**
+    - **vite:** Läuft auf Port 5173 mit `--host 0.0.0.0` für Docker-Zugriff
+    - **backend:** Express Server auf Port 3000 via `tsx` (TypeScript-Execution)
+    - Beide mit Auto-Restart, Watch-Mode, Graceful Shutdown
+    - JSON-Logs für strukturiertes Logging
+  - **Dateien geändert:**
+    - `docker/node/entrypoint.sh`: Neu erstellt (36 Zeilen)
+    - `docker/node/Dockerfile`: ENTRYPOINT hinzugefügt (Zeilen 33-44)
+    - `compose.override.yaml`: NODE_MODE env-var hinzugefügt (Zeile 68)
+  - **Testing & Verification:**
+    - Container-Rebuild: `docker compose build node` ✅
+    - Container-Start: `docker compose up -d node` ✅
+    - pnpm install: Erfolgreich (Dependencies in 1.2s installiert) ✅
+    - PM2 Status: Beide Prozesse online (`vite:0`, `backend:1`) ✅
+    - Vite Dev Server: Läuft auf http://localhost:5173 ✅
+    - Express Backend: Läuft auf http://localhost:3000/health ✅
+    - HMR funktioniert: Vite Client erreichbar (`/@vite/client` liefert JS) ✅
+    - CORS korrekt konfiguriert: `origin: '*'` in vite.config.js ✅
+    - test.php zeigt HMR-Modus: Script-Tags verweisen auf localhost:5173 ✅
+  - **Erwartetes Verhalten bei verschiedenen Modi:**
+    ```bash
+    # Full-Stack Mode (Default)
+    NODE_MODE=full-stack → PM2 startet Vite (5173) + Express (3000)
+
+    # Vite-Only Mode (nur Frontend-Entwicklung)
+    NODE_MODE=vite-only → PM2 startet nur Vite (5173)
+
+    # Backend-Only Mode (nur API-Entwicklung)
+    NODE_MODE=backend-only → PM2 startet nur Express (3000)
+
+    # Idle Mode (manuelles Exec)
+    NODE_MODE=none → Container läuft idle, manuelle Commands via docker compose exec
+    ```
+  - **Vorteile:**
+    - Automatischer Start ohne manuelle Eingriffe
+    - Zero-Config HMR für Frontend-Entwicklung
+    - Konsistente Entwicklungsumgebung (Dev-Parity)
+    - Flexible Modi für unterschiedliche Entwicklungs-Workflows
+    - Transparente Logs für Debugging
+
+- ✅ **PHP Infrastruktur-Refactoring: ViteHelper und HealthCheck Klassen**
+  - **Problem:** `public/vite-helper.php` lag außerhalb der Codebase-Struktur
+    - Keine Nutzung des Composer Autoloaders (PSR-4)
+    - Keine Trennung von Public-Dateien und Business-Logik
+    - Keine zentrale Service-Status-Prüfung
+    - Developer musste Routing/Framework selbst implementieren
+  - **Lösung 1: ViteHelper als Infrastructure-Klasse**
+    - **Verschoben:** `public/vite-helper.php` → `src/php/Infrastructure/ViteHelper.php`
+    - **Namespace:** `App\Infrastructure\ViteHelper`
+    - **Autoloading:** Via Composer PSR-4 (`"App\\": "src/php/"`)
+    - **Manifest-Path angepasst:** `__DIR__ . '/../../../public/build/.vite/manifest.json'`
+    - **Alle Funktionen erhalten:** Development HMR, Production Assets, CORS-Config
+  - **Lösung 2: HealthCheck-Klasse für Service-Monitoring**
+    - **Neue Klasse:** `src/php/Infrastructure/HealthCheck.php`
+    - **Features:**
+      - Prüft alle Services: PHP-FPM, Node Backend, Redis, Database (PostgreSQL/MariaDB)
+      - Liest ENV-Variablen: `ENABLE_PHP`, `ENABLE_NODE`, `ENABLE_REDIS`, `DB_TYPE`, `NODE_MODE`
+      - Gibt Gesamtstatus zurück: `ok`, `degraded`, `error`
+      - Zeigt Service-Versionen: PHP 8.4.16, Node v24.12.0, PostgreSQL 17.7, etc.
+    - **Service-Checks:**
+      - **PHP-FPM:** Immer OK (Code läuft bereits)
+      - **Node Backend:** HTTP-Request zu `http://node:3000/health` (JSON-Parsing)
+      - **Redis:** Verbindung + PING-Test via PHP Redis Extension
+      - **Database:** PDO-Verbindung + Version-Query (postgres/mariadb)
+    - **Error Handling:** Bei fehlenden Extensions (Redis, PDO) wird Status als "error" mit Message zurückgegeben
+  - **Lösung 3: MVC-Controller für Routing**
+    - **Neue Controller:**
+      - `src/php/Http/Controller/WelcomeController.php` - Landing Page mit Service-Dashboard
+      - `src/php/Http/Controller/StatusController.php` - JSON Health Endpoint
+    - **Template:** `templates/welcome.php` - HTML-Template für Dashboard
+    - **Routes in `public/index.php`:**
+      - `GET /` → WelcomeController (Dashboard)
+      - `GET /welcome` → WelcomeController (Alias)
+      - `GET /status` → StatusController (JSON Health Check)
+      - `GET /api/health` → ExampleController (Legacy Endpoint)
+    - **Hybrid-Ansatz:** Router + direkte Dateien
+      - `/` via Router (Clean URLs)
+      - `/welcome.php` direkt (HMR Demo ohne Router)
+  - **Lösung 4: test.php → welcome.php umbenennen**
+    - **Verschoben:** `public/test.php` → `public/welcome.php`
+    - **Aktualisiert:** Nutzt nun `App\Infrastructure\ViteHelper` via Autoloader
+    - **Funktion:** HMR-Demo-Page mit direktem File-Access (ohne Router)
+  - **compose.override.yaml erweitert:**
+    - PHP-Container erhält alle ENV-Variablen für HealthCheck:
+      ```yaml
+      environment:
+        - ENV=${ENV:-development}
+        - ENABLE_PHP=${ENABLE_PHP:-true}
+        - ENABLE_NODE=${ENABLE_NODE:-true}
+        - ENABLE_REDIS=${ENABLE_REDIS:-true}
+        - NODE_MODE=${NODE_MODE:-full-stack}
+        - DB_TYPE=${DB_TYPE:-postgres}
+        - DB_NAME=${DB_NAME:-app}
+        - DB_USER=${DB_USER:-app}
+        - DB_PASSWORD=${DB_PASSWORD:-secret}
+      ```
+  - **Dateien geändert/erstellt:**
+    - **Erstellt:** `src/php/Infrastructure/ViteHelper.php` (159 Zeilen)
+    - **Erstellt:** `src/php/Infrastructure/HealthCheck.php` (310 Zeilen)
+    - **Erstellt:** `src/php/Http/Controller/WelcomeController.php` (28 Zeilen)
+    - **Erstellt:** `src/php/Http/Controller/StatusController.php` (24 Zeilen)
+    - **Erstellt:** `templates/welcome.php` (136 Zeilen)
+    - **Geändert:** `public/index.php` (Routes erweitert)
+    - **Verschoben:** `public/test.php` → `public/welcome.php` (aktualisiert)
+    - **Gelöscht:** `public/vite-helper.php` (alte Version)
+    - **Geändert:** `compose.override.yaml` (PHP ENV-Variablen hinzugefügt, Zeilen 51-60)
+  - **Testing & Verification:**
+    - Composer Autoloader regeneriert: `composer dump-autoload -o` ✅
+    - PHP-Container neu erstellt: `docker compose up -d php` ✅
+    - ENV-Variablen korrekt geladen: `printenv | grep ENABLE` ✅
+    - **Endpoint-Tests:**
+      - `GET /` - Dashboard mit Service-Tabelle ✅
+      - `GET /welcome` - Alias für / ✅
+      - `GET /status` - JSON mit allen Services ✅
+      - `GET /api/health` - Legacy JSON ✅
+      - `GET /welcome.php` - HMR Demo direkt ✅
+    - **Service Status (Vor Extension-Installation):**
+      - PHP-FPM: ✅ OK (v8.4.16)
+      - Node Backend: ✅ OK (v24.12.0, uptime 6800s, mode: full-stack)
+      - Redis: ⚠️ Error (Extension nicht installiert)
+      - Database: ⚠️ Error (PDO Extension nicht installiert)
+    - **Overall Status:** `degraded` (wegen fehlender Extensions)
+    - **Hinweis:** Extensions wurden später hinzugefügt (siehe nächster Changelog-Eintrag)
+  - **Vorteile:**
+    - **Framework-Agnostic:** Dev kann später Laravel, Symfony, Slim, etc. nutzen
+    - **Clean Architecture:** Business-Logik in `src/`, Public-Dateien in `public/`
+    - **PSR-4 Autoloading:** Kein manuelles `require_once` mehr
+    - **Testbar:** Klassen können via PHPUnit getestet werden
+    - **Monitoring:** Zentraler HealthCheck für Docker Healthchecks und Uptime-Monitoring
+    - **Transparency:** Dashboard zeigt alle aktiven Features und Service-Status
+    - **Hybrid Routing:** Dev kann Router nutzen oder direkte Dateien (maximale Flexibilität)
+
+- ✅ **PHP Extensions installiert: Redis, PDO PostgreSQL, PDO MySQL**
+  - **Problem:** HealthCheck zeigte "degraded" Status
+    - Redis Extension fehlte → HealthCheck-Fehler: "Redis PHP extension not installed"
+    - PDO PostgreSQL Extension fehlte → HealthCheck-Fehler: "PDO PostgreSQL extension not installed"
+    - health.php war kaputt → Leere weiße Seite (Bug: prüfte REQUEST_URI === '/health' statt '/health.php')
+    - User-Frustration: "Warum ist Status degraded wenn Services laufen?"
+  - **User-Feedback:**
+    - "Sollten wir REDIS und PDO nicht, wie z.B. auch GraphicsMagick, bereits vorinstallieren?"
+    - "Damit sofort alles lauffähig ist und ein Dev nicht erst herausfinden muss, wie man die Extension installiert"
+  - **Entscheidung:** Extensions vorinstallieren (wie GraphicsMagick)
+    - **Philosophie:** Boilerplate sollte "out of the box" funktionieren
+    - Dev kann später Extensions entfernen (einfach), aber hinzufügen ist frustrierend
+    - Wenn Services (Redis, PostgreSQL) verfügbar sind, sollten Extensions auch da sein
+  - **Lösung 1: Redis Extension via PECL**
+    - Im `php-builder` Stage: `pecl install redis`
+    - Extension aktiviert: `docker-php-ext-enable redis`
+    - Keine zusätzlichen System-Dependencies nötig
+  - **Lösung 2: PDO PostgreSQL Extension**
+    - Build-Dependencies: `postgresql-dev` (Compiler-Headers)
+    - Runtime-Dependencies: `postgresql-libs` (Shared Libraries)
+    - Installation: `docker-php-ext-install pdo_pgsql`
+  - **Lösung 3: PDO MySQL Extension**
+    - Keine zusätzlichen Dependencies (Built-in in PHP)
+    - Installation: `docker-php-ext-install pdo_mysql`
+  - **Lösung 4: health.php repariert**
+    - **Problem:** `if ($_SERVER['REQUEST_URI'] === '/health')` prüfte falsche URI
+    - **Aufruf war:** `http://localhost:8080/health.php`
+    - **Geprüft wurde:** `/health` (nie true → leere Seite)
+    - **Fix:** Bedingung entfernt, direktes JSON-Output
+    - **Zweck:** Minimal-Simple Health Check für Docker HEALTHCHECK
+    - **Format:** `{"status":"ok","service":"php-fpm","timestamp":"2025-12-24T13:55:35+01:00"}`
+  - **Dateien geändert:**
+    - `docker/php/Dockerfile` (Zeilen 36-40, 48-49, 68):
+      - `postgresql-dev postgresql-libs` hinzugefügt
+      - `pdo_pgsql pdo_mysql` in docker-php-ext-install
+      - `pecl install redis && docker-php-ext-enable redis`
+    - `public/health.php` (Zeilen 1-19): URI-Check entfernt, direktes JSON-Output
+  - **Testing & Verification:**
+    - PHP Container neu gebaut: `docker compose build php` ✅
+    - Extensions geladen: `php -m | grep -E "redis|pdo_pgsql|pdo_mysql"` ✅
+    - **Service Status:**
+      - PHP-FPM: ✅ OK (v8.4.16)
+      - Node Backend: ✅ OK (v24.12.0, full-stack mode)
+      - Redis: ✅ OK (v7.4.7) - **JETZT GRÜN!**
+      - PostgreSQL: ✅ OK (PostgreSQL 17.7) - **JETZT GRÜN!**
+    - **Overall Status:** `"ok"` (vorher "degraded") ✅
+    - Dashboard zeigt grünes "OK" ✅
+    - `/health.php` gibt JSON zurück ✅
+    - `/status` gibt vollständigen Service-Status ✅
+  - **Vorteile:**
+    - **Zero-Config:** Alle Services sofort nutzbar ohne Extension-Installation
+    - **Better DX:** Developer muss nicht nach Dockerfile-Anleitung suchen
+    - **Consistency:** Wenn Service verfügbar ist, ist Extension auch da
+    - **Production-Ready:** Image kann direkt deployed werden
+  - **Image-Size Impact:** ~3 MB (Redis ~1 MB, PDO PostgreSQL ~2 MB - vernachlässigbar)
+
+- ✅ **Redundante welcome.php entfernt und Endpoint-Dokumentation verbessert**
+  - **Problem:** Verwirrende Redundanz bei Endpoints
+    - `GET /` (Router) → Dashboard ✅
+    - `GET /welcome` (Router) → Selbes Dashboard ✅
+    - `GET /welcome.php` (direkte Datei) → Ähnlicher Inhalt ❌ **REDUNDANT**
+    - User-Verwirrung: "Welchen Endpoint soll ich nutzen?"
+    - health.php als "Legacy" bezeichnet, obwohl perfekt für Docker HEALTHCHECK
+  - **User-Feedback:**
+    - "welcome.php scheint mir jetzt ziemlich redundant zu sein"
+    - "health.php ist auf der Startseite als Legacy beschrieben, ggf. Hinweis, das für Docker HEALTHCHECK genutzt"
+  - **Lösung 1: welcome.php gelöscht**
+    - Redundanz eliminiert
+    - Nur noch Clean URLs via Router: `/` und `/welcome`
+    - `health.php` bleibt als Beispiel für "direkte PHP-Datei ohne Router"
+  - **Lösung 2: Endpoint-Dokumentation im Dashboard verbessert**
+    - **Vorher (verwirrend):**
+      - `GET /health.php` - Legacy PHP health check (direct file)
+      - `GET /welcome.php` - HMR Demo Page (direct file)
+    - **Nachher (klar):**
+      - `GET /` - Service dashboard with live status (via Router)
+      - `GET /welcome` - Alias for / (via Router)
+      - `GET /status` - Detailed JSON health check (all services)
+      - `GET /api/health` - Simple JSON health (PHP-FPM only)
+      - `GET /health.php` - Minimal health check for Docker HEALTHCHECK
+    - **Tip hinzugefügt:**
+      - "Use `/health.php` for Docker HEALTHCHECK (minimal overhead)"
+      - "Use `/status` for monitoring dashboards (detailed service info)"
+  - **Dateien geändert:**
+    - **Gelöscht:** `public/welcome.php` (redundant)
+    - **Geändert:** `templates/welcome.php` (Zeilen 79-95): Endpoint-Liste neu strukturiert, Tip hinzugefügt
+  - **Testing & Verification:**
+    - `GET /` → Dashboard ✅
+    - `GET /welcome` → Dashboard (Alias) ✅
+    - `GET /welcome.php` → 404 Not Found ✅ (wie erwartet)
+    - `GET /health.php` → Minimal JSON ✅
+    - `GET /status` → Detailed JSON ✅
+  - **Vorteile:**
+    - **Clarity:** Jeder Endpoint hat klaren Zweck, keine Redundanz
+    - **Best Practices:** Dokumentation zeigt wann welcher Endpoint genutzt werden sollte
+    - **Developer Experience:** Keine Verwirrung mehr über "welchen Endpoint nutze ich?"
+    - **Clean:** Weniger Dateien = weniger Maintenance
+
+- ✅ **TypeScript Fehler in src/node/server.ts behoben**
+  - **Problem:** Implizite `any`-Types und Import-Probleme
+    - `pino-http` CommonJS/ESM Interop-Fehler: `TS2349: This expression is not callable`
+    - Implizite `any` in Callback-Parametern (customLogLevel, customSuccessMessage, etc.)
+    - `server: any` ohne korrekte Typisierung
+    - Unused default export
+  - **Lösung:**
+    - **pino-http Import-Fix:** `import pinoHttpImport from 'pino-http'` + Workaround
+      ```typescript
+      const pinoHttp = pinoHttpImport as unknown as typeof pinoHttpImport.default;
+      ```
+    - **Explizite Types für Callbacks:**
+      - `customLogLevel: (_req: Request, res: Response, err?: Error) => {...}`
+      - `customSuccessMessage: (req: Request, res: Response) => {...}`
+      - `customErrorMessage: (_req: Request, _res: Response, err: Error) => {...}`
+    - **Server Type:** `const server: Server = createServer(app);` (statt `any`)
+    - **Label Type:** `level: (label: string) => {...}` in Pino formatter
+    - **Logger-Referenz:** `req.log.error` → `logger.error` im Error Handler
+    - **Unused Export entfernt:** `export default app` gelöscht
+  - **Dateien geändert:**
+    - `src/node/server.ts` (Zeilen 11-17, 34, 42-55, 138, 125)
+  - **Verification:**
+    - TypeScript Compilation: ✅ Keine Fehler (`pnpm run type-check`)
+    - Server läuft: ✅ API antwortet korrekt auf `/api/node/health`
+  - **Hinweis:** IDE-Diagnostics (TS2307, TS2580) sind normal - node_modules nur im Container
+
+- ✅ **SCSS/SASS Support implementiert**
+  - **Dependency hinzugefügt:**
+    - `sass@^1.97.1` in `devDependencies`
+    - Installiert via `pnpm add -D sass`
+  - **Vite Config:** Bereits vorbereitet mit `preprocessorOptions.scss` (Zeile 92-96)
+  - **Test-SCSS erstellt:** `resources/css/test.scss`
+    - **Moderne SASS-Modules:**
+      - `@use 'sass:math'` für `math.div()` (statt deprecated `/`)
+      - `@use 'sass:color'` für `color.adjust()` (statt deprecated `darken()`, `lighten()`)
+    - **Features demonstriert:**
+      - Variablen: `$primary-color`, `$secondary-color`, `$spacing`, etc.
+      - Nesting: `.scss-test__header`, `.scss-test__content`, `.scss-test__footer`
+      - Mixins: `@mixin flex-center`, `@mixin card-shadow($opacity)`
+      - Color-Funktionen: `color.adjust($primary-color, $lightness: -10%)`
+      - Math-Funktionen: `math.div($spacing, 2)`
+      - Media Queries: `@media (max-width: 768px)`
+  - **Integration:** `resources/js/app.js` importiert `import '../css/test.scss'`
+  - **Build-Output:**
+    - Kompiliertes CSS: `public/build/assets/app-ByQwGoR5.css` (3.06 kB)
+    - Keine Deprecation-Warnings ✅
+    - Vite Manifest: CSS korrekt verlinkt
+  - **Dateien geändert:**
+    - `package.json`: `sass@^1.97.1` hinzugefügt
+    - `resources/css/test.scss`: Neue Test-Datei mit SCSS-Features
+    - `resources/js/app.js`: SCSS-Import hinzugefügt (Zeile 12)
+  - **Getestet:**
+    - Build: ✅ Erfolgreich ohne Warnings (`pnpm run build`)
+    - Dev-Server: ✅ HMR funktioniert mit SCSS
+    - CSS-Output: ✅ Alle SCSS-Features korrekt kompiliert
+
+- ✅ **Node.js Environment Support erweitert**
+  - **Jetzt unterstützt:**
+    - CSS (native)
+    - PostCSS mit Autoprefixer
+    - **SCSS/SASS** mit allen modernen Features (neu!)
+  - **Vite HMR:** Hot Module Replacement für alle CSS/SCSS-Dateien
+
+- ✅ **Dokumentation und UX-Verbesserungen (5 Punkte vor Commit)**
+  - **1. Quick Start Optimierung in Welcome-Dashboard**
+    - **Problem:** Quick Start zeigte nur generische make-Commands ohne Kontext
+      - Kein Unterschied zwischen "erstem Setup" und "täglicher Entwicklung"
+      - User musste selbst herausfinden welche Commands wann relevant sind
+      - Verwirrung für neue Developer: "Was muss ich als erstes tun?"
+      - **Inkonsistenz:** Zeigte `cp .env.example .env` statt `make init`
+    - **Lösung:** Quick Start in zwei Abschnitte unterteilt mit konsistenten Commands
+      - **🚀 Initial Setup (First Time):**
+        ```bash
+        make init    # Initialize project (copy .env.example to .env)
+        # Edit .env: Set ENV=development
+        make setup   # Create project structure (directories, dependencies)
+        make fresh   # Build and start all services
+        ```
+      - **💻 Daily Development:**
+        ```bash
+        make up      # Start services
+        make down    # Stop services
+        make build   # Rebuild images
+        ```
+    - **Dateien geändert:**
+      - `templates/welcome.php` (Zeilen 100-114): Quick Start neu strukturiert mit 4-Schritt-Flow
+      - `.env.example` (Zeilen 7-11): Quick Start Header aktualisiert
+      - `.env` (Zeilen 7-11): Quick Start Header aktualisiert
+    - **Vorteile:**
+      - Klare Trennung: Einmaliges Setup vs tägliche Nutzung
+      - Konsistente make-Commands (keine direkten bash-Befehle)
+      - Neue Developer wissen sofort was zu tun ist
+      - Reduziert Support-Anfragen und Onboarding-Zeit
+
+  - **2. make commands Konsistenz (statt docker exec)**
+    - **Problem:** Dokumentation zeigte inkonsistente Commands
+      - README.md: Mix aus `make` und `docker compose exec`
+      - entrypoint.sh: Nur `docker compose exec` in Hilfe-Texten
+      - User musste beide Syntaxen kennen
+      - Verwirrung: "Welche Methode soll ich nutzen?"
+    - **Lösung:** Überall make commands als primäre Methode
+      - **README.md aktualisiert:** `make php-exec CMD="php -m | grep xdebug"`
+        - Mit Fallback: `# Or: docker compose exec php php -m | grep xdebug`
+      - **entrypoint.sh aktualisiert:** Hilfe-Text zeigt make commands
+        ```bash
+        echo "[entrypoint]   - Via make: 'make node-exec CMD=\"pnpm run <command>\"'"
+        echo "[entrypoint]   - Direct:   'docker compose exec node pnpm run <command>'"
+        ```
+    - **Dateien geändert:**
+      - `README.md` (Zeilen 399-407): make commands als Primär-Methode
+      - `docker/node/entrypoint.sh` (Zeilen 37-38): make-Command-Hinweise
+    - **Vorteile:**
+      - Konsistente Developer Experience
+      - make abstrahiert Docker-Komplexität
+      - Einfacher für Anfänger
+      - Weniger kognitive Last (nur eine Methode merken)
+
+  - **3. Emoji-Symbole in .env Dateien korrigiert**
+    - **Problem:** PhpStorm zeigte Emojis falsch an
+      - Nummerierung mit 1️⃣ 2️⃣ 3️⃣ (Emoji Keycap Digits)
+      - PhpStorm-Rendering: Falsche Darstellung oder Boxen
+      - User-Feedback: "bessere Symbole bei Nummerierung in .env.example nutzen"
+    - **Lösung:** ASCII-Formatierung mit Brackets
+      - `1️⃣` → `[1]`
+      - `2️⃣` → `[2]`
+      - `3️⃣` → `[3]`
+      - etc.
+    - **Dateien geändert:**
+      - `.env.example` (Zeilen 44-68): Alle Preset-Nummerierungen
+      - `.env` (Zeilen 44-68): Alle Preset-Nummerierungen
+    - **Vorteile:**
+      - Universelle Kompatibilität (alle IDEs und Editoren)
+      - Bessere Lesbarkeit in PhpStorm
+      - ASCII-only (keine Unicode-Probleme)
+
+  - **4. Redis Session Handler Konfiguration hinzugefügt**
+    - **Problem:** Redis für Sessions nicht dokumentiert
+      - User fragte: "Ist Redis ready2go oder erfordert es weitere Anpassungen?"
+      - Unklar ob zwischen Redis und file-based Sessions gewechselt werden kann
+      - Keine Anleitung wie Redis-Sessions aktiviert werden
+      - **Falsche Platzierung:** development.ini würde nur in Development ENV geladen
+    - **Lösung:** Dokumentierte Konfiguration in **php.ini** (Base-Config für alle Environments)
+      - **Default:** File-based Sessions (kein Code-Change nötig)
+      - **Optional:** Redis Sessions (auskommentiert mit Anleitung)
+      - **Warnung hinzugefügt:** Redis erfordert Code-Anpassungen:
+        - Session-Daten müssen serializable sein
+        - Kein File-Locking (Redis Transactions nutzen)
+        - Memory-Policy in redis.conf setzen (maxmemory)
+      - **Beispiele für Production und Development:**
+        ```ini
+        ; Production (mit Auth):
+        ; session.save_path = "tcp://redis:6379?auth=your_redis_password&timeout=2.5&database=0"
+
+        ; Development (ohne Auth):
+        ; session.save_path = "tcp://redis:6379?timeout=2.5&database=0"
+        ```
+    - **Dateien geändert:**
+      - `docker/php/php.ini` (Zeilen 28-44): Redis Session-Handler Dokumentation hinzugefügt
+      - `docker/php/conf.d/development.ini`: Redis-Config entfernt (war falsche Stelle)
+    - **Vorteile:**
+      - **Richtige Platzierung:** php.ini gilt für alle Environments (development + production)
+      - Transparenz: User weiß was Redis erfordert
+      - Quick-Switch: Zeilen auskommentieren für Redis-Sessions
+      - Best Practices: Production mit Auth, Development ohne
+      - Warnung verhindert Frustration bei Session-Problemen
+
+  - **5. Alpine-Versionen in Compose-Dateien fixiert**
+    - **Problem:** Inkonsistente Versionierung bei Docker Images
+      - `redis:7.4-alpine` - Alpine-Version nicht fixiert (könnte 3.19, 3.20, 3.21, 3.22 sein)
+      - `postgres:17.7-alpine` - Alpine-Version nicht fixiert
+      - Dockerfiles nutzten `alpine:3.22` (explizit)
+      - Inkonsistenz: Build-Images mit 3.22, Runtime-Images mit variablem Alpine
+      - Potenzial für Breaking Changes bei Alpine-Updates
+    - **Lösung:** Explizite Alpine 3.22 Versionen **direkt in compose.yaml**
+      - **Redis:** `redis:7.4-alpine` → `redis:7.4-alpine3.22`
+      - **PostgreSQL:** `postgres:17.7-alpine` → `postgres:17.7-alpine3.22`
+      - **MariaDB:** Keine Änderung (nutzt Debian/Ubuntu, nicht Alpine)
+      - **Keine .env Variablen:** Versionen bleiben hardcoded in compose.yaml
+        - Grund: Keine Wiederverwendung (jeder Image-String kommt nur 1x vor)
+        - Dockerfiles nutzen ARG (DRY: `alpine:${ALPINE_VERSION}` mehrfach verwendet)
+        - compose.yaml: Fixe Versionen (bessere Lesbarkeit, Renovate-Kompatibilität)
+    - **Dateien geändert:**
+      - `compose.yaml` (Zeile 64): redis Image auf `redis:7.4-alpine3.22`
+      - `compose.yaml` (Zeile 88): postgres Image auf `postgres:17.7-alpine3.22`
+    - **Vorteile:**
+      - **Konsistenz:** Alle Services nutzen Alpine 3.22
+      - **Vorhersagbarkeit:** Kein unerwartetes Alpine-Update von 3.22 → 3.23
+      - **Reproduzierbarkeit:** Gleiche Builds in 6 Monaten
+      - **Lesbarkeit:** `redis:7.4-alpine3.22` klarer als `redis:${REDIS_VERSION}-alpine${ALPINE_VERSION}`
+      - **Renovate-Kompatibilität:** Dependency-Scanner können fixe Versionen direkt erkennen
+      - **Best Practice:** ENV-Variablen für Konfiguration, nicht für Versionen
+
+  - **6. Makefile Konsistenz und Formatierung verbessert**
+    - **Problem:** Fehlende und inkonsistente Commands
+      - **Inkonsistente Dependency-Installation:** PHP nutzte `dev-deps`, Node nutzte `node-install`
+      - **Fehlende logs-* Commands:** logs-redis, logs-postgres, logs-mariadb existierten nicht
+      - **Fehlende shell-* Commands:** shell-node, shell-redis, shell-postgres, shell-mariadb fehlten
+      - **Inkonsistente Benennung:** `node-shell` statt `shell-node` (nicht konsistent mit shell-nginx, shell-php)
+      - **Formatierung:** Command-Beschreibungen mit ungleichem Abstand (15 Zeichen zu kurz für längste Commands)
+      - **Database-Emoji:** Falsches Symbol mit extra Leerzeichen in check-health
+      - **Überflüssige Commands:** MySQL-Commands (mysql-cli, mysql-dump, mysql-restore) obwohl MySQL-Service entfernt wurde
+    - **Lösung 1: MySQL Commands entfernt**
+      - `mysql-cli`, `mysql-dump`, `mysql-restore` gelöscht
+      - Grund: MySQL Service existiert nicht mehr (nur PostgreSQL und MariaDB)
+      - MariaDB Commands beibehalten (Service existiert in compose.yaml)
+    - **Lösung 2: Fehlende logs-* Commands hinzugefügt**
+      - `logs-redis` (Zeile 199): Show Redis logs only
+      - `logs-postgres` (Zeile 210): Show PostgreSQL logs only
+      - `logs-mariadb` (Zeile 221): Show MariaDB logs only
+      - Konsistente Implementierung wie logs-nginx, logs-php, logs-node
+      - Unterstützt automatisch production/development ENV-Detection
+    - **Lösung 3: Composer Commands mit Node.js konsistent benannt**
+      - **Problem:** PHP nutzte `dev-deps` / `dev-deps-local`, Node nutzte `node-install` / `node-install-local`
+      - **Umbenennung:**
+        - `dev-deps` → `composer-install` (Zeile 32)
+        - `dev-deps-local` → `composer-install-local` (Zeile 41)
+      - **Alle Referenzen aktualisiert:**
+        - `setup` Target: Ruft jetzt `composer-install` auf (Zeile 104)
+        - Fehlermeldungen: Zeigen jetzt `make composer-install` (Zeilen 44, 52)
+      - **Konsistentes Naming:** `<package-manager>-install` / `<package-manager>-install-local`
+        - Composer: `composer-install` / `composer-install-local`
+        - Node.js: `node-install` / `node-install-local`
+    - **Lösung 4: Shell Commands konsistent gemacht**
+      - **Neue Commands:**
+        - `shell-node` (Zeile 247): Open shell in Node container
+        - `shell-redis` (Zeile 250): Open shell in Redis container
+        - `shell-postgres` (Zeile 253): Open shell in PostgreSQL container
+        - `shell-mariadb` (Zeile 256): Open shell in MariaDB container
+      - **Gelöscht:** `node-shell` (Zeile 289) → ersetzt durch `shell-node`
+      - **Konsistentes Pattern:** Alle shell-* Commands in Docker-Sektion gruppiert
+    - **Lösung 5: Formatierung verbessert**
+      - Command-Breite von `%-15s` auf `%-20s` erhöht (Zeile 28)
+      - Grund: Längste Commands sind 18 Zeichen (`node-install-local`, `node-app-server-up`)
+      - Alle Beschreibungen jetzt perfekt ausgerichtet bei `make help`
+    - **Lösung 6: Database-Emoji korrigiert**
+      - Altes Symbol: `🗄️` (File Cabinet) mit extra Leerzeichen und falscher Breite
+      - Neues Symbol: `💾` (Floppy Disk - klassisches Datenspeicher-Symbol)
+      - Konsistente Breite und Abstand zu anderen Symbolen (📦 PHP-FPM, 🔴 Redis, 🌐 Nginx)
+    - **Dateien geändert:**
+      - `Makefile` (Zeile 28): help-Formatierung %-20s
+      - `Makefile` (Zeilen 32, 41): dev-deps → composer-install, dev-deps-local → composer-install-local
+      - `Makefile` (Zeilen 44, 52, 104): Alle dev-deps Referenzen auf composer-install aktualisiert
+      - `Makefile` (Zeilen 199-230): logs-redis, logs-postgres, logs-mariadb hinzugefügt
+      - `Makefile` (Zeilen 247-257): shell-node, shell-redis, shell-postgres, shell-mariadb hinzugefügt
+      - `Makefile` (Zeile 365-381): mysql-cli, mysql-dump, mysql-restore entfernt
+      - `Makefile` (Zeile 289): node-shell entfernt
+      - `Makefile` (Zeile 436): Database-Emoji auf 💾 geändert
+    - **Testing & Verification:**
+      - `make help`: Alle Commands perfekt formatiert, composer-install und composer-install-local sichtbar ✅
+      - `make composer-install`: Installiert Composer Dependencies im Container ✅
+      - `make logs-redis`: Zeigt Redis-Logs ✅
+      - `make shell-postgres`: Öffnet PostgreSQL-Shell ✅
+      - `make check-health`: Database-Emoji 💾 konsistente Breite ✅
+    - **Vorteile:**
+      - **Vollständigkeit:** Alle Services haben logs-* und shell-* Commands
+      - **Konsistenz:**
+        - Einheitliches Naming-Schema (shell-*, logs-*, *-install)
+        - Composer und Node.js nutzen gleiches Pattern: `<tool>-install` / `<tool>-install-local`
+      - **Lesbarkeit:** Perfekt formatierte Help-Ausgabe
+      - **Klarheit:** Keine überflüssigen Commands für nicht-existierende Services
+      - **UX:** Developer findet jeden Command intuitiv ohne Dokumentation zu lesen
+
+  - **7. compose.override.yaml ENV Variable auf development hardcoded**
+    - **Problem:** Unnötige Fallback-Logik in Development-only File
+      - `ENV=${ENV:-development}` in compose.override.yaml (Zeile 51)
+      - compose.override.yaml wird NUR in Development verwendet (nie in Production)
+      - Production nutzt: `docker compose -f compose.yaml -f compose.prod.yaml` (ohne override)
+      - Inkonsistenz: NODE_ENV war bereits hardcoded (`NODE_ENV=development`), aber ENV hatte Fallback
+    - **Lösung:** ENV auf development hardcoded (analog zu NODE_ENV)
+      - `ENV=${ENV:-development}` → `ENV=development`
+      - Konsistent mit `NODE_ENV=development` (Zeile 75)
+    - **Begründung:**
+      - compose.override.yaml ist Development-spezifisch (per Docker Compose Convention)
+      - Fallback-Logik `${ENV:-development}` macht nur in Base-Files Sinn (compose.yaml)
+      - Hardcoded values in Override-Files sind Best Practice
+    - **Dateien geändert:**
+      - `compose.override.yaml` (Zeile 51): ENV=development (hardcoded)
+    - **Vorteile:**
+      - **Klarheit:** Keine Verwirrung ob ENV dynamisch oder fix ist
+      - **Konsistenz:** Beide ENV-Variablen (ENV, NODE_ENV) jetzt hardcoded
+      - **Best Practice:** Override-Files sollten explizite Werte haben, keine Fallbacks
+      - **Einfachheit:** Weniger Variablen-Substituierung = schnelleres Startup
 
 ### Version 2.9 (2025-12-19)
 - ✅ **Vite HMR (Hot Module Replacement) CORS-Probleme behoben**
