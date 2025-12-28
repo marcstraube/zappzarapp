@@ -104,7 +104,8 @@ app.get('/api/hello', (req: Request, res: Response): void => {
     });
 });
 
-// Example POST endpoint
+// Echo endpoint (POST only - REST-compliant)
+// Test with: curl -X POST http://localhost:8080/api/node/echo -H "Content-Type: application/json" -d '{"test": "data"}'
 app.post('/api/echo', (req: Request, res: Response): void => {
     res.json({
         echo: req.body,

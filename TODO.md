@@ -2407,12 +2407,54 @@ curl http://localhost:3000/health
 ---
 
 **Erstellt:** 2025-12-19
-**Letzte Aktualisierung:** 2025-12-28 (Makefile Konsistenz und Formatierung)
-**Version:** 2.10
+**Letzte Aktualisierung:** 2025-12-28 (Dependency Workflow und Node.js Endpoints)
+**Version:** 2.12
 
 ---
 
 ## Changelog
+
+### Version 2.12 (2025-12-28)
+- ✅ **Dependency Management: Workflow-Klarheit für Composer und Node.js**
+  - **Problem:** Unklare Verwendungszwecke der lokalen vs. Container-basierten Dependency-Installation
+    - `composer-install-local` und `node-install-local` könnten als "schnellere Alternative" missverstanden werden
+    - Intention war unklar: Wann sollte man welchen Befehl verwenden?
+  - **Lösung: Makefile-Kommentare präzisiert**
+    - **composer-install-local:** Kommentar geändert zu "IDE code completion only" (Makefile:41)
+    - **node-install-local:** Kommentar geändert zu "IDE code completion only" (Makefile:319)
+    - **Best Practice:** Container-Installation für Runtime/CI/CD, lokale Installation NUR für IDE-Support
+  - **Vorteile:**
+    - Klare Trennung: Production-Konsistenz vs. Development-Convenience
+    - Verhindert Versions-Konflikte durch klarere Intention
+
+- ✅ **Node.js Backend: API Endpoint REST-Konformität**
+  - **Problem:** Endpoint-Definition und REST-Semantik
+    - `/api/echo` war POST-only → Browser-Tests nicht möglich
+    - Zwischenlösung mit `app.all()` war nicht REST-konform
+  - **Finale Lösung: REST-konforme Endpoints**
+    - `/api/hello` → GET (korrekt: Daten abrufen)
+    - `/api/echo` → POST (korrekt: Daten senden/zurückwerfen)
+    - Curl-Beispiel im Code-Kommentar für einfaches Testen (server.ts:108)
+  - **Routing über Nginx:**
+    - `localhost:8080/api/node/hello` → `node:3000/api/hello` (GET) ✅
+    - `localhost:8080/api/node/echo` → `node:3000/api/echo` (POST) ✅
+  - **Best Practice:** Klare HTTP-Methoden-Semantik für professionelles API-Design
+
+- ✅ **PhpStorm: Excluded Directories optimiert**
+  - **Problem:** Unvollständige Exclude-Konfiguration führt zu Performance-Problemen
+    - `build/` (PHPUnit Coverage) nicht excluded → IDE indexiert unnötig
+    - `dist/` (Node.js Build Output) nicht excluded → doppelte Indexierung (Source + Compiled)
+    - Fehlende Excludes verlangsamen Search, Navigation und Code-Completion
+  - **Lösung: Build- und Cache-Directories excluded (.idea/docker-webdev.iml:12-13)**
+    - `build/` - PHPUnit Coverage Reports, Tool Caches
+    - `dist/` - TypeScript Build Output (transpilierter Code)
+  - **Bereits korrekt excluded:**
+    - `vendor/` - Composer Dependencies (nur für Completion geladen)
+    - `node_modules/` - NPM Dependencies (nur für Completion geladen)
+    - `storage/` - Runtime-Daten (Uploads, Cache, Sessions)
+    - `.pnpm-store/` - pnpm Cache
+    - `public/build/` - Vite Build Output
+  - **Resultat:** Schnellere Indexierung, bessere IDE-Performance
 
 ### Version 2.11 (2025-12-28)
 - ✅ **PHP Code Quality Improvements: PSR-4 Compliance und Dependency Management**

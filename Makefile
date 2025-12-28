@@ -38,7 +38,7 @@ composer-install: ## Install/update Composer dependencies (Docker - guaranteed c
 	fi
 	@echo -e "\033[0;32mDependencies ready!\033[0m"
 
-composer-install-local: ## Install/update Composer dependencies (Local - faster, but version may differ)
+composer-install-local: ## Install/update Composer dependencies (Local - IDE code completion only)
 	@if command -v composer >/dev/null 2>&1; then \
 		echo -e "\033[0;33m⚠️  Using local Composer (version may differ from Docker).\033[0m"; \
 		echo -e "\033[0;34mFor guaranteed consistency, use 'make composer-install' instead.\033[0m"; \
@@ -316,7 +316,7 @@ node-install: ## Install Node.js dependencies (Docker - requires ENV=development
 	@docker compose exec node sh -c 'TMPDIR=/tmp pnpm install'
 	@echo -e "\033[0;32mDependencies installed!\033[0m"
 
-node-install-local: ## Install Node.js dependencies (Local - faster, but version may differ)
+node-install-local: ## Install Node.js dependencies (Local - IDE code completion only)
 	@if command -v pnpm >/dev/null 2>&1; then \
 		echo -e "\033[0;33m⚠️  Using local pnpm (version may differ from Docker).\033[0m"; \
 		echo -e "\033[0;34mFor guaranteed consistency, use 'make node-install' instead.\033[0m"; \

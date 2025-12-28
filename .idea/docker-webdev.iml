@@ -9,6 +9,8 @@
       <sourceFolder url="file://$MODULE_DIR$/src/php" isTestSource="false" packagePrefix="App\" />
       <excludeFolder url="file://$MODULE_DIR$/storage" />
       <excludeFolder url="file://$MODULE_DIR$/.pnpm-store" />
+      <excludeFolder url="file://$MODULE_DIR$/build" />
+      <excludeFolder url="file://$MODULE_DIR$/dist" />
       <excludeFolder url="file://$MODULE_DIR$/node_modules" />
       <excludeFolder url="file://$MODULE_DIR$/public/build" />
       <excludeFolder url="file://$MODULE_DIR$/vendor" />
