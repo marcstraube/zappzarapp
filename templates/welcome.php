@@ -1,3 +1,15 @@
+<?php
+/**
+ * Welcome Page Template
+ *
+ * This template is rendered by WelcomeController and expects the following variables:
+ * @var \App\Infrastructure\ViteHelper $vite - Vite asset helper for HMR and production builds
+ * @var array $env - Environment configuration from HealthCheck
+ * @var array $status - Service health status from HealthCheck
+ */
+
+declare(strict_types=1);
+?>
 <!DOCTYPE html>
 <html lang="de">
 <head>

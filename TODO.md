@@ -2414,6 +2414,57 @@ curl http://localhost:3000/health
 
 ## Changelog
 
+### Version 2.11 (2025-12-28)
+- ✅ **PHP Code Quality Improvements: PSR-4 Compliance und Dependency Management**
+  - **Problem:** IDE-Warnungen und fehlende Extension-Deklarationen
+    - `ext-pdo` fehlte in composer.json, obwohl HealthCheck.php PDO verwendet
+    - `ext-json` war implizit verwendet, aber nicht deklariert
+    - IDE-Warnungen in ViteHelper.php: "Cannot resolve file/directory" für sprintf() Platzhalter
+    - Unnötige Redundanz in Conditional-Checks (null + empty)
+  - **Lösung 1: Composer Dependencies vervollständigt**
+    - **ext-pdo hinzugefügt:** Erforderlich für PostgreSQL/MariaDB Verbindungen in HealthCheck
+    - **ext-json hinzugefügt:** Verwendet in Router, ExampleController, StatusController (JSON_THROW_ON_ERROR)
+    - **Best Practice:** Explizite Deklaration aller verwendeten Extensions verhindert Runtime-Fehler
+  - **Lösung 2: IDE-Warnungen in ViteHelper.php behoben**
+    - **@noinspection HtmlUnknownTarget Annotations hinzugefügt**
+      - renderScriptTags() Zeile 108: Unterdrückt Warnung für dynamische Vite Dev Server URLs
+      - renderScriptTags() Zeile 125: Unterdrückt Warnung für Production Build-Assets
+      - renderCssTags() Zeile 148: Unterdrückt Warnung für CSS-Dateien aus Manifest
+    - **Code-Redundanz entfernt:**
+      - Zeile 142: `if (empty($cssUrls))` ersetzt `if ($cssUrls === null || empty($cssUrls))`
+      - Grund: `empty()` prüft bereits auf null, array, und Leerheit
+    - **Warum diese Warnungen auftraten:**
+      - PHPStorm versucht, String-Formatierungen in sprintf() zu validieren
+      - `%s` Platzhalter wurden als tatsächliche Dateipfade interpretiert
+      - Warnungen waren harmlos, aber störend für Code-Quality-Metriken
+  - **Lösung 3: Template-Variable-Dokumentation in welcome.php**
+    - **Problem:** PhpStorm meldete "Undefined variable" für $vite, $env, $status
+      - Variablen werden von WelcomeController via include übergeben
+      - IDE konnte nicht erkennen, dass Variablen im Template-Scope verfügbar sind
+    - **PHPDoc-Header hinzugefügt (Zeilen 1-12):**
+      - `@var \App\Infrastructure\ViteHelper $vite` - Vite asset helper
+      - `@var array $env` - Environment configuration
+      - `@var array $status` - Service health status
+      - `declare(strict_types=1)` für Type-Safety
+    - **Vorteile:**
+      - IDE-Autocomplete für Template-Variablen funktioniert
+      - Type-Hinting für bessere Code-Navigation
+      - Dokumentiert erwartete Variablen für Template-Engine-Integration
+      - Best Practice für PHP-Template-Dateien
+  - **Dateien geändert:**
+    - `composer.json`: ext-pdo und ext-json hinzugefügt (Zeilen 16-17), license Kleinschreibung (Zeile 5)
+    - `src/php/Infrastructure/ViteHelper.php`: @noinspection Annotations, Code-Cleanup (Zeilen 108, 125, 142, 148)
+    - `templates/welcome.php`: PHPDoc-Header mit @var Annotations (Zeilen 1-12)
+  - **Ergebnis:**
+    - ✅ Alle IDE-Warnungen in src/php/* und templates/* behoben
+    - ✅ Composer Dependencies vollständig deklariert
+    - ✅ Code Quality verbessert (keine redundanten Checks)
+    - ✅ Template-Variablen dokumentiert mit Type-Hints
+    - ✅ PSR-4 Namespaces bereits korrekt (keine Änderungen nötig)
+  - **Nächste Schritte:**
+    - Autoloader bereits regeneriert (`composer dump-autoload -o`)
+    - Bei anhaltenden Namespace-Warnungen: PhpStorm Cache invalidieren (`File` → `Invalidate Caches`)
+
 ### Version 2.10 (2025-12-23)
 - ✅ **Multi-Database Support mit Docker Compose Profiles**
   - **PostgreSQL 17.7-alpine als Standard (empfohlen)**

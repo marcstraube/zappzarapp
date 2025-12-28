@@ -105,6 +105,7 @@ class ViteHelper
     {
         if ($this->isDevelopment()) {
             // Development mode: Load Vite Dev Server with HMR
+            /** @noinspection HtmlUnknownTarget */
             return sprintf(
                 '<script type="module" src="%s/@vite/client"></script>' . "\n" .
                 '    <script type="module" src="%s/%s"></script>',
@@ -121,6 +122,7 @@ class ViteHelper
             return '<!-- Vite manifest not found or entry not found -->';
         }
 
+        /** @noinspection HtmlUnknownTarget */
         return sprintf('<script type="module" src="%s"></script>', $assetUrl);
     }
 
@@ -137,12 +139,13 @@ class ViteHelper
         // Production mode: Load built CSS
         $cssUrls = $this->getCssUrl($entry);
 
-        if ($cssUrls === null || empty($cssUrls)) {
+        if (empty($cssUrls)) {
             return '<!-- No CSS found in manifest -->';
         }
 
         $tags = [];
         foreach ($cssUrls as $url) {
+            /** @noinspection HtmlUnknownTarget */
             $tags[] = sprintf('<link rel="stylesheet" href="%s">', $url);
         }
 

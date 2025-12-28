@@ -53,10 +53,6 @@ Thumbs.db
 .idea/**/libraries
 .idea/**/mongoSettings.xml
 
-# OS
-.DS_Store
-Thumbs.db
-
 # Docker
 .docker/
 

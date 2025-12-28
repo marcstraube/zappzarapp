@@ -2,7 +2,7 @@
     "name": "your-org/project-name",
     "description": "A generic PHP 8.4 dockerized application template",
     "type": "project",
-    "license": "Proprietary",
+    "license": "proprietary",
     "authors": [
         {
             "name": "Your Name",
@@ -12,7 +12,9 @@
     "require": {
         "php": "^8.4",
         "ext-ctype": "*",
-        "ext-iconv": "*"
+        "ext-iconv": "*",
+        "ext-json": "*",
+        "ext-pdo": "*"
     },
     "require-dev": {
         "captainhook/captainhook": "^5.27",
