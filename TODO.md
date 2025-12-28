@@ -2407,12 +2407,362 @@ curl http://localhost:3000/health
 ---
 
 **Erstellt:** 2025-12-19
-**Letzte Aktualisierung:** 2025-12-28 (Dependency Workflow und Node.js Endpoints)
-**Version:** 2.12
+**Letzte Aktualisierung:** 2025-12-29 (Node.js Quality-of-Life Tools)
+**Version:** 2.13
 
 ---
 
 ## Changelog
+
+### Version 2.13 (2025-12-29)
+- ✅ **Node.js: Quality-of-Life Tooling (Testing, Linting, Formatting)**
+  - **Problem:** Node.js-Stack hatte keine Quality-Tools wie PHP (PHPUnit, PHPStan, PHP-CS-Fixer)
+    - Kein Testing-Framework → Keine automatisierten Tests
+    - Kein Linter → Keine statische Code-Analyse
+    - Kein Formatter → Inkonsistente Code-Formatierung
+    - Keine Git-Hooks für Node.js → Manuelle Quality-Checks
+  - **Lösung: Vollständiges QoL-Tooling analog zu PHP-Stack**
+    - **Testing: Vitest** (PHPUnit-Äquivalent)
+      - Vitest 2.1.8 mit Native Vite-Integration
+      - Coverage Reports (V8): HTML, LCOV, Text → `build/coverage/`
+      - Vitest UI für interaktive Test-Entwicklung
+      - Test-Verzeichnisstruktur: `tests/node/{unit,integration}/` (symmetrisch zu PHP `tests/php/{Unit,Feature}/`)
+      - Coverage-Thresholds: 80% (Lines, Functions, Branches, Statements)
+      - Konfiguration: `vitest.config.ts` mit Path-Aliases (@node, @tests)
+    - **Linting: ESLint + TypeScript-ESLint** (PHPStan-Äquivalent)
+      - ESLint 9.18.0 mit Flat Config Format (eslint.config.js)
+      - TypeScript-ESLint 8.20.0 für Type-Aware Linting
+      - Strict Rules: no-explicit-any, no-floating-promises, strict-boolean-expressions
+      - TypeScript Type-Checking ähnlich PHPStan Level 5
+    - **Formatting: Prettier** (PHP-CS-Fixer-Äquivalent)
+      - Prettier 3.4.2 mit eslint-plugin-prettier Integration
+      - Sane Defaults: Single Quotes, 100 Print Width, LF Line Endings
+      - .prettierrc.json + .prettierignore für konsistente Formatierung
+      - Konfliktfreie Integration mit ESLint (eslint-config-prettier)
+    - **Git Hooks: CaptainHook erweitert**
+      - **pre-commit:** Prettier Check, ESLint, TypeScript Type-Check
+      - **pre-push:** Vitest Tests (analog zu PHPStan für PHP)
+      - Hooks laufen automatisch bei Git-Operationen (captainhook.json:21-38, 50-55)
+    - **Package.json Scripts:** Vollständiges Script-Arsenal (package.json:22-30)
+      - `pnpm test` → Vitest run
+      - `pnpm test:watch` → Watch mode
+      - `pnpm test:coverage` → Coverage Report
+      - `pnpm lint` / `pnpm lint:fix` → ESLint
+      - `pnpm format` / `pnpm format:check` → Prettier
+      - `pnpm quality` → Alle Checks (Format, Lint, Type-Check, Test)
+    - **Makefile Integration:** setup-Target erweitert (Makefile:94-98, 106)
+      - `tests/php/{Unit,Feature}` und `tests/node/{unit,integration}` Verzeichnisse (Symmetrie wie src/)
+      - `build/{coverage,vitest-report}` für Reports
+      - `node-install` automatisch nach `composer-install`
+  - **Code Refactoring für Testbarkeit:**
+    - Express-App nach `src/node/app.ts` extrahiert (app.ts:1-152)
+    - `server.ts` nur noch Server-Startup (server.ts:1-56)
+    - `createApp()` exportiert für Tests ohne Server-Start
+    - Logger exportiert für Test-Mocking
+  - **Beispiel-Tests:**
+    - **Unit-Tests:** `tests/node/unit/math.test.ts` (Utility-Funktionen)
+    - **Integration-Tests:** `tests/node/integration/api.test.ts` (API-Endpoints mit supertest)
+    - Security Headers, CORS, 404/500 Error Handling getestet
+  - **Dependencies hinzugefügt:** (package.json:40-58)
+    - Testing: vitest, @vitest/ui, @vitest/coverage-v8, supertest
+    - Linting: eslint, @typescript-eslint/eslint-plugin, @typescript-eslint/parser
+    - Formatting: prettier, eslint-plugin-prettier, eslint-config-prettier
+    - Types: @types/supertest
+  - **Dokumentation:** `tests/node/README.md` mit Struktur, Beispielen, Thresholds
+
+- ✅ **Test-Verzeichnisstruktur: Vollständige Symmetrie PHP ↔ Node.js**
+  - **Problem:** Inkonsistente Test-Verzeichnisstruktur
+    - Source-Code getrennt: `src/php/` und `src/node/` ✓
+    - Tests gemischt: `tests/Unit`, `tests/Feature`, `tests/unit`, `tests/integration` ✗
+    - Keine klare Trennung zwischen PHP- und Node.js-Tests
+    - PhpStorm-Konfiguration nur für gemischtes `tests/` Verzeichnis
+  - **Lösung: Spiegelsymmetrische Struktur wie in src/**
+    - **Migration durchgeführt:**
+      - `tests/Unit/` → `tests/php/Unit/` (PHPUnit Unit-Tests)
+      - `tests/Feature/` → `tests/php/Feature/` (PHPUnit Feature-Tests)
+      - `tests/unit/` → `tests/node/unit/` (Vitest Unit-Tests)
+      - `tests/integration/` → `tests/node/integration/` (Vitest Integration-Tests)
+    - **PhpStorm IDE-Konfiguration aktualisiert (.idea/docker-webdev.iml:5-8)**
+      - `src/php` (Source) + `tests/php` (Test Source mit Namespace App\Tests\)
+      - `src/node` (Source) + `tests/node` (Test Source)
+      - IDE erkennt nun beide Sprach-Stacks korrekt
+    - **Vitest-Konfiguration isoliert (vitest.config.ts:10-11)**
+      - `include: ['tests/node/**/*.{test,spec}.{ts,js}']`
+      - `exclude: ['tests/php']` → Keine Konflikte mit PHP-Tests
+      - Path-Alias `@tests` → `./tests/node`
+    - **Makefile setup-Target (Makefile:94-95)**
+      - Erstellt beide Strukturen parallel
+      - Kommentar: "separated by language like src/"
+  - **Best Practice: Vollständige Symmetrie zwischen PHP- und Node.js-Stack**
+    - **Tools:** PHP: PHPUnit, PHPStan, PHP-CS-Fixer | Node.js: Vitest, ESLint+TS, Prettier
+    - **Struktur:** `src/php/` + `tests/php/` | `src/node/` + `tests/node/`
+    - **Workflow:** Gleiche Integration (CaptainHook, Makefile)
+    - **Coverage:** Gleiche Anforderungen (80%)
+    - **IDE:** Beide Stacks korrekt als Source/Test markiert
+
+- ✅ **Test-Dokumentation & Makefile-Integration: Konsistenz PHP ↔ Node.js**
+  - **Problem:** Inkonsistente Dokumentation und fehlende Makefile-Abstraktion
+    - `tests/node/README.md` vorhanden, aber `tests/php/README.md` fehlte
+    - `.gitkeep` Dateien in `tests/php/` unnötig (durch `make setup` erstellt)
+    - Node.js README verwendete direkt `pnpm` Commands statt `make`
+    - Keine einheitlichen Makefile-Targets für beide Test-Stacks
+  - **Lösung: Symmetrische Dokumentation und Makefile-Targets**
+    - **tests/php/README.md erstellt** (analog zu tests/node/README.md)
+      - Struktur-Übersicht mit Verweis auf tests/node/
+      - Makefile-Commands als primäre Schnittstelle
+      - Composer-Commands als Alternative dokumentiert
+      - Test-Beispiele für Unit und Feature Tests
+      - Quality-Tools (PHPStan, PHP-CS-Fixer) dokumentiert
+      - Coverage-Thresholds: 80% (symmetrisch zu Node.js)
+    - **tests/node/README.md aktualisiert**
+      - Makefile-Commands als primäre Schnittstelle (Makefile:560-592)
+      - pnpm-Commands als Alternative dokumentiert
+      - Quality-Tools-Sektion hinzugefügt (ESLint, Prettier, pnpm quality)
+      - Symmetrisch zur PHP-README strukturiert
+    - **.gitkeep Dateien entfernt** (tests/php/Unit/.gitkeep, tests/php/Feature/.gitkeep)
+      - Unnötig, da `make setup` Verzeichnisse erstellt (Makefile:94-95)
+      - Reduziert Dateien-Clutter
+    - **Makefile Test-Targets erweitert (Makefile:560-592)**
+      - `make test` → Führt beide Stacks aus (test-php + test-node)
+      - `make test-coverage` → Beide Coverage-Reports
+      - **PHP-Tests:**
+        - `make test-php` → PHPUnit Tests
+        - `make test-php-debug` → Mit Xdebug
+        - `make test-coverage-php` → Coverage Report
+      - **Node.js-Tests:**
+        - `make test-node` → Vitest Tests
+        - `make test-node-watch` → Watch Mode
+        - `make test-coverage-node` → Coverage Report
+    - **Vorteil: Einheitliche Schnittstelle**
+      - Entwickler müssen nicht wissen, ob PHP oder Node.js
+      - `make test` führt alle Tests aus
+      - Beide READMEs haben identische Struktur
+      - Gleiche Abstraktionsebene (Makefile statt direkte Tool-Calls)
+
+- ✅ **Beispiel-Tests & TypeScript-Konfiguration: Vollständige Symmetrie**
+  - **Problem:** Asymmetrische Test-Beispiele und Path-Alias-Fehler
+    - Node.js hatte Beispiel-Tests (math.test.ts, api.test.ts), PHP nicht
+    - Node.js hatte Beispiel-Utilities (src/node/utils/math.ts), PHP nicht
+    - TypeScript Path-Aliases (@node/*, @tests/*) funktionierten nicht in Tests
+    - IDE konnte Importe nicht auflösen → Entwickler-Erfahrung schlecht
+    - `make test-php` und `make test` funktionierten nicht (mehrere Fehler)
+  - **Lösung: Symmetrische Beispiele und korrekte TypeScript-Konfiguration**
+    - **TypeScript-Konfiguration erweitert (tsconfig.json:16-23, 47-57)**
+      - Path-Aliases hinzugefügt: `@/*`, `@node/*`, `@tests/*`
+      - `baseUrl: "."` für Alias-Auflösung
+      - `include: ["tests/node/**/*"]` → Tests werden von TypeScript erkannt
+      - `exclude: ["tests/php"]` → Keine PHP-Dateien in TypeScript
+      - `rootDir` entfernt → Flexibilität für src/ und tests/
+      - IDE erkennt nun alle Importe korrekt
+    - **PHP Beispiel-Utilities erstellt (src/php/Utils/Calculator.php)**
+      - Analog zu src/node/utils/math.ts
+      - Funktionen: add(), multiply(), divide(), isEven()
+      - Type-Hints und DivisionByZeroError
+      - Namespace: App\Utils
+    - **PHP Unit-Tests erstellt (tests/php/Unit/CalculatorTest.php)**
+      - Analog zu tests/node/unit/math.test.ts
+      - Testet alle Calculator-Methoden
+      - setUp() Methode für Test-Fixture
+      - Gruppierung nach Funktionalität (Addition, Multiplication, etc.)
+      - Exception-Testing für Division durch Null
+    - **PHP Feature-Tests erstellt (tests/php/Feature/CalculatorIntegrationTest.php)**
+      - Analog zu tests/node/integration/api.test.ts
+      - Testet komplexe Workflows über mehrere Methoden
+      - Error-Handling-Workflows
+      - Chained Calculations (mehrere Operationen nacheinander)
+      - Demonstriert Feature-Test-Pattern
+  - **Ergebnis: Perfekte Symmetrie zwischen PHP und Node.js**
+    - **PHP:** src/php/Utils/Calculator.php → tests/php/Unit/CalculatorTest.php + tests/php/Feature/CalculatorIntegrationTest.php
+    - **Node.js:** src/node/utils/math.ts → tests/node/unit/math.test.ts + tests/node/integration/api.test.ts
+    - Beide Sprachen haben lauffähige Beispiel-Tests
+    - Entwickler können `make test` ausführen → Alle Tests laufen
+    - Path-Aliases funktionieren in IDE und Tests
+    - Beide Test-Suites haben identische Struktur
+
+- ✅ **PHPUnit-Konfiguration & Test-Infrastruktur-Fixes**
+  - **Problem:** `make test-php` und `make test` funktionierten nicht
+    - Kein phpunit.xml.dist → PHPUnit fand keine Konfiguration
+    - composer.json autoload-dev hatte falschen Pfad (`tests/` statt `tests/php/`)
+    - phpunit.xml.dist nicht in Docker-Volume gemountet (compose.override.yaml)
+    - composer test Script lief mit Coverage, aber Xdebug nicht im Coverage-Modus
+    - Datei-Permissions zu restriktiv (600 statt 644)
+  - **Lösung: Vollständige PHPUnit-Infrastruktur**
+    - **phpunit.xml.dist erstellt** mit korrekter Konfiguration
+      - Test-Suites: Unit (tests/php/Unit) und Feature (tests/php/Feature)
+      - Source-Code für Coverage: src/php/ (exclude: Infrastructure/)
+      - Coverage-Konfiguration entfernt aus XML (wird via CLI aktiviert)
+      - Cache-Directory: build/.phpunit.cache
+      - **Coverage-Generierung via Makefile:**
+        - `make test-coverage-php` setzt XDEBUG_MODE=coverage
+        - Generiert HTML Report: build/coverage/index.html
+        - Generiert Clover XML: build/coverage/clover.xml
+        - Keine Coverage-Warnungen bei normalen Tests
+    - **composer.json fixes (composer.json:51, 55)**
+      - autoload-dev: `"App\\Tests\\": "tests/php/"` (war: tests/)
+      - test script: `phpunit` (ohne Coverage-Zwang)
+      - → Tests laufen schnell ohne Coverage-Overhead
+      - → Coverage über separates Target: `make test-coverage-php` mit XDEBUG_MODE=coverage
+    - **compose.override.yaml erweitert (compose.override.yaml:39)**
+      - phpunit.xml.dist Volume-Mount hinzugefügt
+      - Read-only Mount für Konfigurationsdatei
+      - Analog zu phpstan.neon und .php-cs-fixer.dist.php
+    - **Workflow-Fix:**
+      - Container-Neustarts nach Konfigurationsänderungen erforderlich
+      - File-Permissions: 644 für Test-Dateien (nicht 600)
+      - composer dump-autoload nach autoload-dev Änderungen
+  - **Resultat: Beide Test-Suites laufen erfolgreich**
+    - `make test-php` → 17 Tests, 32 Assertions ✅
+    - `make test-node` → 30+ Tests (math + API integration) ✅
+    - `make test` → Beide Test-Suites zusammen ✅
+    - Coverage-Reports: `make test-coverage` (beide Sprachen)
+
+- ✅ **PHPMD (PHP Mess Detector): Code Quality & Complexity Analysis**
+  - **Problem:** Fehlende Code-Quality-Metriken im PHP-Stack
+    - Nur PHPStan (Static Analysis) und PHP-CS-Fixer (Code Style)
+    - Keine Complexity-Analyse (Cyclomatic Complexity, NPath)
+    - Keine Detection von Code Smells (Long Methods, Too Many Parameters)
+    - Keine Warnung bei ungenutztem Code (Unused Variables, Dead Code)
+    - Node.js-Stack hatte mit ESLint bereits Complexity-Checks
+  - **Lösung: PHPMD für vollständige Code-Quality-Abdeckung**
+    - **PHPMD 2.15.0 installiert** (composer.json:22)
+      - Dependency: pdepend/pdepend für Metriken-Berechnung
+      - Composer Script: `composer phpmd` (composer.json:58)
+      - Makefile-Target: `make phpmd` (Makefile:523-525)
+    - **phpmd.xml.dist Konfiguration** mit ausgewogenen Regeln
+      - **Clean Code Rules:** Detect code smells (disabled: ElseExpression, StaticAccess)
+      - **Code Size Rules (Complexity):**
+        - Cyclomatic Complexity: Max 15 (Warnung bei zu verschachteltem Code)
+        - NPath Complexity: Max 250 (Max Ausführungspfade)
+        - Excessive Method Length: Max 100 Zeilen
+        - Excessive Class Length: Max 500 Zeilen
+        - Excessive Parameter List: Max 10 Parameter
+        - Too Many Fields: Max 20 Felder
+        - Too Many Methods: Max 25 Methoden
+      - **Design Rules:** Coupling, Depth of Inheritance (disabled: ExitExpression für CLI)
+      - **Naming Rules:** Short/Long Variable Names (min 2 chars, exceptions: i,j,k,e,id,x,y,a,b)
+      - **Unused Code Detection:** Unused Variables, Parameters, Private Methods
+      - **Controversial Rules:** Deaktiviert (zu opinionated)
+    - **Docker-Integration** (compose.override.yaml:38)
+      - phpmd.xml.dist Volume-Mount hinzugefügt
+      - Read-only Mount analog zu anderen QA-Tools
+    - **Make-Target erweitert:**
+      - `make check` führt jetzt auch PHPMD aus (Makefile:527)
+      - CI-Simulation: cs-check + analyse + phpmd + test
+  - **Ergebnis: Vollständige PHP Quality-Tool-Chain**
+    - **Static Analysis:** PHPStan (Level 5)
+    - **Code Style:** PHP-CS-Fixer
+    - **Complexity & Design:** PHPMD (NEU)
+    - **Testing:** PHPUnit
+    - Symmetrie zu Node.js: ESLint deckt Complexity + Linting ab, PHPMD tut das Gleiche für PHP
+
+- ✅ **Vitest-Konfiguration & TypeScript Path-Alias-Fixes**
+  - **Problem:** TypeScript-Fehler in vitest.config.ts und Test-Imports
+    - vitest.config.ts Zeile 28: "No overload matches this call" (Coverage Thresholds)
+    - vitest.config.ts Zeile 37: "reporter does not exist" (sollte "reporters" sein)
+    - api.test.ts Zeile 3: "Cannot find module @node/app"
+    - math.test.ts Zeile 2: "Cannot find module @node/utils/math"
+    - Tests liefen, aber IDE zeigte Fehler → Schlechte Developer Experience
+  - **Lösung: Korrekte Vitest- und TypeScript-Konfiguration**
+    - **vitest.config.ts fixes (vitest.config.ts:28-33, 37)**
+      - Coverage Thresholds müssen unter `thresholds` Property genested sein
+      - `reporter` → `reporters` (Plural) für korrekte Vitest API
+      - Vorher: `lines: 80, functions: 80, ...` direkt in coverage
+      - Nachher: `thresholds: { lines: 80, functions: 80, ... }`
+    - **tsconfig.vitest.json erstellt** für Vitest-spezifische TypeScript-Config
+      - Erweitert tsconfig.json mit Vitest-spezifischen Types
+      - `"types": ["vitest/globals", "node"]` für globale Test-Funktionen
+      - `"include": ["tests/node/**/*", "vitest.config.ts"]`
+      - Separates TypeScript-Projekt für Tests (composite: true)
+    - **Path-Alias-Auflösung funktioniert jetzt vollständig**
+      - tsconfig.json hatte bereits baseUrl und paths konfiguriert
+      - vitest.config.ts resolve.alias mappte @node → src/node
+      - IDE erkennt nun alle Importe korrekt (keine roten Wellenlinien mehr)
+    - **tsconfig.json moduleResolution fix (tsconfig.json:6-7)**
+      - `module: "NodeNext"` → `module: "ESNext"` (für Vite/Vitest Kompatibilität)
+      - `moduleResolution: "NodeNext"` → `moduleResolution: "bundler"`
+      - NodeNext erforderte .js Dateiendungen in Imports → PhpStorm-Fehler in server.ts:12
+      - bundler-Strategie ist optimal für Vite-basierte Projekte
+      - Löst PhpStorm-Fehler ohne .js Extensions in allen Imports
+  - **Resultat: Alle Tests laufen erfolgreich ohne TypeScript-Fehler**
+    - `make test-php` → 17 Tests, 32 Assertions ✅
+    - `make test-node` → 25 Tests (13 Math Unit + 12 API Integration) ✅
+    - `make test` → 42 Tests gesamt (PHP + Node.js) ✅
+    - Keine TypeScript-Diagnostics-Fehler mehr in IDE
+    - Coverage-Reports funktionieren korrekt
+    - HTML Reports: build/coverage/ (PHP) und build/vitest-report.html (Node.js)
+
+- ✅ **Security & Code Quality Maintenance**
+  - **Problem:** Verschiedene Warnungen und Sicherheitslücken
+    - .prettierignore: Redundanter Eintrag `public/build` (bereits durch `build` abgedeckt)
+    - package.json: pm2 5.4.3 hat CVE-2025-5891 (Severity 4.3) - ReDoS in Config.js
+    - pnpm 9.15.1 verfügbar für Update auf 10.26.2 (Major-Version)
+  - **Lösung: Security-Update und Code-Bereinigung**
+    - **.prettierignore bereinigt (.prettierignore:5-7)**
+      - `public/build` Eintrag entfernt (redundant zu `build` Glob-Pattern)
+      - Reduziert false-positive Warnungen in IDE
+    - **pm2 Security-Update (package.json:50)**
+      - pm2 5.4.3 → 6.0.14 (behebt CVE-2025-5891)
+      - ReDoS-Schwachstelle in Config.js geschlossen
+      - Alle Tests laufen nach Update erfolgreich (25 Tests ✅)
+    - **pnpm Major-Update durchgeführt (package.json:62-64)**
+      - pnpm 9.15.1 → 10.26.2 (Major-Update)
+      - packageManager in package.json aktualisiert
+      - engines.pnpm Requirement: >=9.0.0 → >=10.0.0
+      - Alle 25 Tests laufen erfolgreich mit pnpm 10 ✅
+      - Keine Breaking Changes bei unserem Setup
+
+- ✅ **PhpStorm IDE-Konfiguration: Vollständige Source/Test Folder Markierung**
+  - **Problem:** Inkonsistente PhpStorm Source/Test Folder Konfiguration
+    - src/php und tests/php korrekt als Source/Test markiert ✅
+    - src/node NICHT als Source Folder markiert ❌
+    - tests/node NICHT als Test Folder markiert ❌
+    - Veraltete tests/ Markierung noch vorhanden (überflüssig)
+    - TypeScript Autocomplete und Navigation unvollständig
+  - **Lösung: Symmetrische IDE-Konfiguration für beide Stacks**
+    - **.idea/docker-webdev.iml aktualisiert (Zeilen 5-8)**
+      - **Source Folders:**
+        - `src/php` (packagePrefix: App\)
+        - `src/node` (NEU hinzugefügt)
+      - **Test Folders:**
+        - `tests/php` (packagePrefix: App\Tests\)
+        - `tests/node` (NEU hinzugefügt)
+      - Veraltete `tests/` Markierung entfernt
+    - **Exclude Folders sortiert** (Zeilen 9-15)
+      - Alphabetische Sortierung für bessere Übersicht
+      - .pnpm-store, build, dist, node_modules, public/build, storage, vendor
+  - **Resultat: Vollständige IDE-Integration**
+    - PhpStorm erkennt beide Sprach-Stacks korrekt
+    - TypeScript Autocomplete funktioniert für src/node/**/*
+    - Test-Runner erkennt beide Test-Stacks
+    - Navigation und Refactoring für PHP und Node.js
+    - Symmetrie zwischen PHP- und Node.js-Entwicklung
+
+- ✅ **PHPUnit XML-Konfiguration: Schema-Konformität**
+  - **Problem:** phpunit.xml.dist Schema-Fehler in PhpStorm
+    - `restrictDeprecations`, `restrictNotices`, `restrictWarnings` waren ursprünglich im `<source>` Element
+    - PhpStorm-Fehler: "Attribute not allowed to appear in element"
+    - Fehler durch falsche Platzierung der Attribute
+  - **Lösung: Korrekte Attribut-Platzierung nach offizieller Dokumentation**
+    - **Quelle:** https://docs.phpunit.de/en/12.5/configuration.html
+    - **`restrictNotices="true"`** im `<source>` Element (phpunit.xml.dist:24)
+      - Beschränkt Reporting von E_STRICT, E_NOTICE, E_USER_NOTICE auf Projekt-Source-Code
+      - Ignoriert Notices aus Vendor-Dependencies
+    - **`restrictWarnings="true"`** im `<source>` Element (phpunit.xml.dist:24)
+      - Beschränkt Reporting von E_WARNING, E_USER_WARNING auf Projekt-Source-Code
+      - Ignoriert Warnings aus Vendor-Dependencies
+    - **`restrictDeprecations` existiert NICHT** in PHPUnit 12.5
+      - Stattdessen: `ignoreSelfDeprecations`, `ignoreDirectDeprecations`, `ignoreIndirectDeprecations`
+      - Nicht verwendet, da wir alle Deprecations sehen wollen
+    - **Strikte Testeinstellungen im `<phpunit>` Root-Element:**
+      - `failOnWarning="true"` - Tests schlagen bei Warnungen fehl
+      - `failOnRisky="true"` - Tests schlagen bei Risky Tests fehl
+      - `beStrictAboutOutputDuringTests="true"` - Kein Output während Tests
+      - `beStrictAboutCoverageMetadata="true"` - Strikte Coverage-Metadaten
+  - **Resultat: Schema-konforme und strikte Konfiguration**
+    - Alle 17 PHP Tests laufen erfolgreich ✅
+    - XML validiert gegen PHPUnit 12.5 Schema
+    - Notices/Warnings aus Dependencies werden ignoriert
+    - Alle Fehler im eigenen Code werden erkannt
 
 ### Version 2.12 (2025-12-28)
 - ✅ **Dependency Management: Workflow-Klarheit für Composer und Node.js**

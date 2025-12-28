@@ -17,6 +17,24 @@
         "options": [],
         "type": "cli",
         "description": "Check for basic PHP syntax errors (Linting)"
+      },
+      {
+        "action": "pnpm exec prettier --check 'src/**/*.{ts,js,json}'",
+        "options": [],
+        "type": "cli",
+        "description": "Check Node.js code formatting with Prettier"
+      },
+      {
+        "action": "pnpm exec eslint 'src/**/*.{ts,js}' --max-warnings=0",
+        "options": [],
+        "type": "cli",
+        "description": "Lint Node.js code with ESLint (TypeScript-aware)"
+      },
+      {
+        "action": "pnpm run type-check",
+        "options": [],
+        "type": "cli",
+        "description": "Check TypeScript types (similar to PHPStan)"
       }
     ]
   },
@@ -28,6 +46,12 @@
         "options": [],
         "type": "cli",
         "description": "Run PHPStan (Level 5) before pushing to remote"
+      },
+      {
+        "action": "pnpm test",
+        "options": [],
+        "type": "cli",
+        "description": "Run Vitest tests (Node.js unit & integration tests)"
       }
     ]
   },

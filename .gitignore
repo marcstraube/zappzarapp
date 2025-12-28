@@ -64,11 +64,12 @@ Thumbs.db
 /storage/sessions/*
 !/storage/sessions/.gitkeep
 
-# Tool Caches
-/build/coverage/
+# Tool Caches & Build Outputs
+/build/
 /.pnpm-store/
 .phpunit.result.cache
 .phpunit.cache
 .php-cs-fixer.cache
 .phpstan.cache
 .rector.cache
+.eslintcache

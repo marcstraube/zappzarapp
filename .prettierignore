@@ -1,0 +1,39 @@
+# Dependencies
+node_modules
+vendor
+
+# Build outputs
+dist
+build
+
+# Coverage reports
+coverage
+.nyc_output
+
+# Cache
+.cache
+.vite
+
+# IDE
+.idea
+.vscode
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
+
+# Environment
+.env
+.env.*
+
+# Lock files
+package-lock.json
+pnpm-lock.yaml
+composer.lock

@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<phpunit xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:noNamespaceSchemaLocation="https://schema.phpunit.de/12.5/phpunit.xsd"
+         bootstrap="vendor/autoload.php"
+         colors="true"
+         cacheDirectory="build/.phpunit.cache"
+         displayDetailsOnTestsThatTriggerWarnings="true"
+         failOnWarning="true"
+         failOnRisky="true"
+         beStrictAboutOutputDuringTests="true"
+         beStrictAboutCoverageMetadata="true">
+
+    <!-- Test Suites -->
+    <testsuites>
+        <testsuite name="Unit">
+            <directory>tests/php/Unit</directory>
+        </testsuite>
+        <testsuite name="Feature">
+            <directory>tests/php/Feature</directory>
+        </testsuite>
+    </testsuites>
+
+    <!-- Source Code for Coverage (activated via CLI options) -->
+    <source restrictNotices="true" restrictWarnings="true">
+        <include>
+            <directory>src/php</directory>
+        </include>
+        <exclude>
+            <directory>src/php/Infrastructure</directory>
+        </exclude>
+    </source>
+
+    <!-- PHP Configuration -->
+    <php>
+        <ini name="display_errors" value="1"/>
+        <ini name="error_reporting" value="-1"/>
+        <ini name="memory_limit" value="-1"/>
+
+        <!-- Environment Variables for Testing -->
+        <env name="APP_ENV" value="testing"/>
+    </php>
+</phpunit>

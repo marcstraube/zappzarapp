@@ -19,6 +19,7 @@
     "require-dev": {
         "captainhook/captainhook": "^5.27",
         "friendsofphp/php-cs-fixer": "^3.91",
+        "phpmd/phpmd": "^2.15",
         "phpstan/phpstan": "^2.1",
         "phpunit/phpunit": "^12.4",
         "rector/rector": "^2.2",
@@ -48,12 +49,13 @@
     },
     "autoload-dev": {
         "psr-4": {
-            "App\\Tests\\": "tests/"
+            "App\\Tests\\": "tests/php/"
         }
     },
     "scripts": {
         "test": "phpunit",
         "analyse": "phpstan analyse",
+        "phpmd": "phpmd src/php text phpmd.xml.dist",
         "cs-fix": "php-cs-fixer fix",
         "cs-check": "php-cs-fixer fix --dry-run --diff"
     }

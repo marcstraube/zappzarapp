@@ -1,0 +1,115 @@
+<?xml version="1.0"?>
+<ruleset name="PHPMD Rules"
+         xmlns="http://pmd.sf.net/ruleset/1.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://pmd.sf.net/ruleset/1.0.0 http://pmd.sf.net/ruleset_xml_schema.xsd"
+         xsi:noNamespaceSchemaLocation="http://pmd.sf.net/ruleset_xml_schema.xsd">
+    <description>
+        PHP Mess Detector configuration for code quality analysis.
+        Detects code smells, complexity issues, and design problems.
+    </description>
+
+    <!-- Clean Code Rules -->
+    <rule ref="rulesets/cleancode.xml">
+        <!-- Allow else expressions for readability -->
+        <exclude name="ElseExpression"/>
+        <!-- Allow static access (common in frameworks) -->
+        <exclude name="StaticAccess"/>
+    </rule>
+
+    <!-- Code Size Rules (Complexity) -->
+    <rule ref="rulesets/codesize.xml">
+        <!-- Adjust complexity thresholds -->
+        <exclude name="CyclomaticComplexity"/>
+        <exclude name="NPathComplexity"/>
+        <exclude name="ExcessiveMethodLength"/>
+        <exclude name="ExcessiveClassLength"/>
+    </rule>
+
+    <!-- Custom Complexity Thresholds -->
+    <rule ref="rulesets/codesize.xml/CyclomaticComplexity">
+        <properties>
+            <!-- Max cyclomatic complexity per method -->
+            <property name="reportLevel" value="15"/>
+        </properties>
+    </rule>
+
+    <rule ref="rulesets/codesize.xml/NPathComplexity">
+        <properties>
+            <!-- Max number of possible execution paths -->
+            <property name="minimum" value="250"/>
+        </properties>
+    </rule>
+
+    <rule ref="rulesets/codesize.xml/ExcessiveMethodLength">
+        <properties>
+            <!-- Max lines per method (excluding comments) -->
+            <property name="minimum" value="100"/>
+        </properties>
+    </rule>
+
+    <rule ref="rulesets/codesize.xml/ExcessiveClassLength">
+        <properties>
+            <!-- Max lines per class (excluding comments) -->
+            <property name="minimum" value="500"/>
+        </properties>
+    </rule>
+
+    <rule ref="rulesets/codesize.xml/ExcessiveParameterList">
+        <properties>
+            <!-- Max parameters per method -->
+            <property name="minimum" value="10"/>
+        </properties>
+    </rule>
+
+    <rule ref="rulesets/codesize.xml/TooManyFields">
+        <properties>
+            <!-- Max fields per class -->
+            <property name="maxfields" value="20"/>
+        </properties>
+    </rule>
+
+    <rule ref="rulesets/codesize.xml/TooManyMethods">
+        <properties>
+            <!-- Max methods per class -->
+            <property name="maxmethods" value="25"/>
+        </properties>
+    </rule>
+
+    <!-- Design Rules -->
+    <rule ref="rulesets/design.xml">
+        <!-- Allow exit() for CLI tools -->
+        <exclude name="ExitExpression"/>
+    </rule>
+
+    <!-- Naming Rules -->
+    <rule ref="rulesets/naming.xml">
+        <!-- Allow short variable names in loops -->
+        <exclude name="ShortVariable"/>
+        <exclude name="LongVariable"/>
+    </rule>
+
+    <!-- Custom Naming Rules -->
+    <rule ref="rulesets/naming.xml/ShortVariable">
+        <properties>
+            <!-- Allow 1-char variables like $i, $e in specific contexts -->
+            <property name="minimum" value="2"/>
+            <property name="exceptions" value="i,j,k,e,id,x,y,a,b"/>
+        </properties>
+    </rule>
+
+    <rule ref="rulesets/naming.xml/LongVariable">
+        <properties>
+            <!-- Max variable name length -->
+            <property name="maximum" value="30"/>
+        </properties>
+    </rule>
+
+    <!-- Unused Code Detection -->
+    <rule ref="rulesets/unusedcode.xml">
+        <!-- Keep all unused code rules - they're important -->
+    </rule>
+
+    <!-- Controversial Rules (Disabled - too opinionated) -->
+    <!-- <rule ref="rulesets/controversial.xml"/> -->
+</ruleset>

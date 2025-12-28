@@ -90,8 +90,12 @@ setup: ## Create directories, install dev dependencies and ensure structure
 	# Public directory (Web root)
 	@mkdir -p public/build
 
-	# Tests
-	@mkdir -p tests/{Unit,Feature}
+	# Tests (separated by language like src/)
+	@mkdir -p tests/php/{Unit,Feature}
+	@mkdir -p tests/node/{unit,integration}
+
+	# Build & Coverage directories (excluded from IDE indexing)
+	@mkdir -p build/{coverage,vitest-report}
 
 	# Config & Templates
 	@mkdir -p config templates
@@ -102,6 +106,7 @@ setup: ## Create directories, install dev dependencies and ensure structure
 
 	@echo -e "\033[0;32mProject structure created!\033[0m"
 	@$(MAKE) --silent composer-install
+	@$(MAKE) --silent node-install
 	@echo -e "\033[0;32mSetup completed (directories + dependencies)!\033[0m"
 
 ##@ Docker
@@ -515,13 +520,12 @@ analyse: ## Run PHPStan static analysis
 	@echo -e "\033[0;33mRunning PHPStan...\033[0m"
 	@docker compose exec php composer analyse
 
-check: cs-check analyse test ## Run all checks (CI simulation)
-	@echo -e "\033[0;32mAll checks passed!\033[0m"
+phpmd: ## Run PHPMD (PHP Mess Detector) for code quality analysis
+	@echo -e "\033[0;33mRunning PHPMD (Mess Detector)...\033[0m"
+	@docker compose exec php composer phpmd
 
-coverage: ## Run PHPUnit and generate a Code Coverage report (HTML in build/coverage)
-	@echo -e "\033[0;33mRunning PHPUnit with coverage report...\033[0m"
-	@docker compose exec php composer test -- --coverage-html build/coverage
-	@echo -e "\033[0;32mCoverage report generated in build/coverage!\033[0m"
+check: cs-check analyse phpmd test ## Run all checks (CI simulation)
+	@echo -e "\033[0;32mAll checks passed!\033[0m"
 
 cs-check: ## Check coding style (dry-run)
 	@echo -e "\033[0;33mChecking Coding Style...\033[0m"
@@ -557,13 +561,40 @@ outdated: ## Check for outdated Composer dependencies (uses local Composer if av
 	fi
 	@echo -e "\033[0;32mOutdated check completed!\033[0m"
 
-test: ## Run PHPUnit tests
-	@echo -e "\033[0;33mRunning PHPUnit...\033[0m"
+test: test-php test-node ## Run all tests (PHP + Node.js)
+	@echo -e "\033[0;32mAll tests completed!\033[0m"
+
+test-coverage: test-coverage-php test-coverage-node ## Generate coverage reports for PHP and Node.js
+	@echo -e "\033[0;32mAll coverage reports generated!\033[0m"
+	@echo -e "\033[0;34mPHP Coverage: build/coverage/index.html (PHPUnit)\033[0m"
+	@echo -e "\033[0;34mNode.js Coverage: build/coverage/index.html (Vitest)\033[0m"
+	@echo -e "\033[0;33mNote: Both reports use the same directory. Run separately to avoid conflicts.\033[0m"
+
+test-php: ## Run PHPUnit tests
+	@echo -e "\033[0;33mRunning PHPUnit tests...\033[0m"
 	@docker compose exec php composer test
 
-test-debug: ## Run PHPUnit tests with Xdebug enabled
+test-php-debug: ## Run PHPUnit tests with Xdebug enabled
 	@echo -e "\033[0;33mRunning PHPUnit with Xdebug (Step Debugging)...\033[0m"
 	@docker compose exec php sh -c 'XDEBUG_MODE=develop,debug composer test'
+
+test-coverage-php: ## Generate PHPUnit coverage report (HTML in build/coverage)
+	@echo -e "\033[0;33mRunning PHPUnit with coverage report...\033[0m"
+	@docker compose exec php sh -c 'XDEBUG_MODE=coverage vendor/bin/phpunit --coverage-html build/coverage --coverage-clover build/coverage/clover.xml'
+	@echo -e "\033[0;32mPHP coverage report generated in build/coverage/index.html!\033[0m"
+
+test-node: ## Run Vitest tests
+	@echo -e "\033[0;33mRunning Vitest tests...\033[0m"
+	@docker compose exec node pnpm test
+
+test-node-watch: ## Run Vitest in watch mode
+	@echo -e "\033[0;33mRunning Vitest in watch mode...\033[0m"
+	@docker compose exec node pnpm test:watch
+
+test-coverage-node: ## Generate Vitest coverage report (HTML in build/coverage)
+	@echo -e "\033[0;33mRunning Vitest with coverage report...\033[0m"
+	@docker compose exec node pnpm test:coverage
+	@echo -e "\033[0;32mNode.js coverage report generated in build/coverage!\033[0m"
 
 validate: ## Validate composer.json and composer.lock files (uses local Composer if available)
 	@echo -e "\033[0;33mValidating Composer configuration...\033[0m"

@@ -35,7 +35,9 @@ services:
 
       # Quality Assurance Tools Config
       - ./phpstan.neon:/var/www/html/phpstan.neon:ro
+      - ./phpmd.xml.dist:/var/www/html/phpmd.xml.dist:ro
       - ./.php-cs-fixer.dist.php:/var/www/html/.php-cs-fixer.dist.php:ro
+      - ./phpunit.xml.dist:/var/www/html/phpunit.xml.dist:ro
 
       # Runtime Data (Read-Write)
       - ${STORAGE_DIR:-./storage}:/var/www/html/storage

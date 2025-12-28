@@ -3,16 +3,23 @@
     /* Language and Environment */
     "target": "ES2022",
     "lib": ["ES2022"],
-    "module": "NodeNext",
-    "moduleResolution": "NodeNext",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
 
     /* Emit */
     "outDir": "./dist",
-    "rootDir": "./src/node",
     "removeComments": true,
     "sourceMap": true,
     "declaration": true,
     "declarationMap": true,
+
+    /* Path Mapping */
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./src/*"],
+      "@node/*": ["./src/node/*"],
+      "@tests/*": ["./tests/node/*"]
+    },
 
     /* Type Checking */
     "strict": true,
@@ -37,11 +44,14 @@
     "resolveJsonModule": true
   },
   "include": [
-    "src/node/**/*"
+    "src/node/**/*",
+    "tests/node/**/*"
   ],
   "exclude": [
     "node_modules",
     "dist",
-    "vendor"
+    "vendor",
+    "build",
+    "tests/php"
   ]
 }

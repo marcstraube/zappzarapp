@@ -9,10 +9,19 @@
   </component>
   <component name="MessDetector">
     <phpmd_settings>
-      <phpmd_by_interpreter asDefaultInterpreter="true" interpreter_id="1ef21539-aa4a-4259-8254-efa66309f8d0" timeout="30000" />
+      <MessDetectorConfiguration tool_path="$PROJECT_DIR$/vendor/bin/phpmd" />
+      <phpmd_by_interpreter asDefaultInterpreter="true" interpreter_id="1ef21539-aa4a-4259-8254-efa66309f8d0" tool_path="/var/www/html/vendor/bin/phpmd" timeout="30000" />
     </phpmd_settings>
   </component>
   <component name="MessDetectorOptionsConfiguration">
+    <option name="customRulesets">
+      <list>
+        <RulesetDescriptor>
+          <option name="name" value="PHPMD Rules" />
+          <option name="path" value="$PROJECT_DIR$/phpmd.xml.dist" />
+        </RulesetDescriptor>
+      </list>
+    </option>
     <option name="transferred" value="true" />
   </component>
   <component name="PHPCSFixerOptionsConfiguration">
@@ -26,13 +35,16 @@
   <component name="PhpCSFixer">
     <phpcsfixer_settings>
       <PhpCSFixerConfiguration tool_path="$PROJECT_DIR$/vendor/bin/php-cs-fixer" />
-      <phpcs_fixer_by_interpreter asDefaultInterpreter="true" interpreter_id="1ef21539-aa4a-4259-8254-efa66309f8d0" standards="DoctrineAnnotation;PER;PER-CS;PER-CS1.0;PER-CS1x0;PER-CS2.0;PER-CS2x0;PER-CS3.0;PER-CS3x0;PHP54Migration;PHP56Migration;PHP5x4Migration;PHP5x6Migration;PHP70Migration;PHP71Migration;PHP73Migration;PHP74Migration;PHP7x0Migration;PHP7x1Migration;PHP7x3Migration;PHP7x4Migration;PHP80Migration;PHP81Migration;PHP82Migration;PHP83Migration;PHP84Migration;PHP85Migration;PHP8x0Migration;PHP8x1Migration;PHP8x2Migration;PHP8x3Migration;PHP8x4Migration;PHP8x5Migration;PHPUnit100Migration;PHPUnit10x0Migration;PHPUnit30Migration;PHPUnit32Migration;PHPUnit35Migration;PHPUnit3x0Migration;PHPUnit3x2Migration;PHPUnit3x5Migration;PHPUnit43Migration;PHPUnit48Migration;PHPUnit4x3Migration;PHPUnit4x8Migration;PHPUnit50Migration;PHPUnit52Migration;PHPUnit54Migration;PHPUnit55Migration;PHPUnit56Migration;PHPUnit57Migration;PHPUnit5x0Migration;PHPUnit5x2Migration;PHPUnit5x4Migration;PHPUnit5x5Migration;PHPUnit5x6Migration;PHPUnit5x7Migration;PHPUnit60Migration;PHPUnit6x0Migration;PHPUnit75Migration;PHPUnit7x5Migration;PHPUnit84Migration;PHPUnit8x4Migration;PHPUnit91Migration;PHPUnit9x1Migration;PSR1;PSR12;PSR2;PhpCsFixer;Symfony;auto;autoPHPMigration;autoPHPUnitMigration" tool_path="/var/www/html/vendor/bin/php-cs-fixer" timeout="30000" />
+      <phpcs_fixer_by_interpreter asDefaultInterpreter="true" interpreter_id="1ef21539-aa4a-4259-8254-efa66309f8d0" standards="DoctrineAnnotation;PER;PER-CS;PER-CS1.0;PER-CS1x0;PER-CS2.0;PER-CS2x0;PER-CS3.0;PER-CS3x0;PHP54Migration;PHP56Migration;PHP5x4Migration;PHP5x6Migration;PHP70Migration;PHP71Migration;PHP73Migration;PHP74Migration;PHP7x0Migration;PHP7x1Migration;PHP7x3Migration;PHP7x4Migration;PHP80Migration;PHP81Migration;PHP82Migration;PHP83Migration;PHP84Migration;PHP85Migration;PHP8x0Migration;PHP8x1Migration;PHP8x2Migration;PHP8x3Migration;PHP8x4Migration;PHP8x5Migration;PHPUnit100Migration;PHPUnit10x0Migration;PHPUnit11x0Migration;PHPUnit30Migration;PHPUnit32Migration;PHPUnit35Migration;PHPUnit3x0Migration;PHPUnit3x2Migration;PHPUnit3x5Migration;PHPUnit43Migration;PHPUnit48Migration;PHPUnit4x3Migration;PHPUnit4x8Migration;PHPUnit50Migration;PHPUnit52Migration;PHPUnit54Migration;PHPUnit55Migration;PHPUnit56Migration;PHPUnit57Migration;PHPUnit5x0Migration;PHPUnit5x2Migration;PHPUnit5x4Migration;PHPUnit5x5Migration;PHPUnit5x6Migration;PHPUnit5x7Migration;PHPUnit60Migration;PHPUnit6x0Migration;PHPUnit75Migration;PHPUnit7x5Migration;PHPUnit84Migration;PHPUnit8x4Migration;PHPUnit91Migration;PHPUnit9x1Migration;PSR1;PSR12;PSR2;PhpCsFixer;Symfony;auto;autoPHPMigration;autoPHPUnitMigration" tool_path="/var/www/html/vendor/bin/php-cs-fixer" timeout="30000" />
     </phpcsfixer_settings>
   </component>
   <component name="PhpCodeSniffer">
     <phpcs_settings>
       <phpcs_by_interpreter asDefaultInterpreter="true" interpreter_id="1ef21539-aa4a-4259-8254-efa66309f8d0" timeout="30000" />
     </phpcs_settings>
+  </component>
+  <component name="PhpExternalFormatter">
+    <option name="externalFormatter" value="PHP_CS_FIXER" />
   </component>
   <component name="PhpIncludePathManager">
     <include_path>
@@ -102,6 +114,11 @@
       <path value="$PROJECT_DIR$/vendor/theseer/tokenizer" />
       <path value="$PROJECT_DIR$/vendor/sebastian/global-state" />
       <path value="$PROJECT_DIR$/vendor/sebastian/complexity" />
+      <path value="$PROJECT_DIR$/vendor/phpmd/phpmd" />
+      <path value="$PROJECT_DIR$/vendor/symfony/dependency-injection" />
+      <path value="$PROJECT_DIR$/vendor/symfony/config" />
+      <path value="$PROJECT_DIR$/vendor/symfony/var-exporter" />
+      <path value="$PROJECT_DIR$/vendor/pdepend/pdepend" />
     </include_path>
   </component>
   <component name="PhpInterpreters">
@@ -193,8 +210,8 @@
   </component>
   <component name="PhpStan">
     <PhpStan_settings>
-      <phpstan_by_interpreter asDefaultInterpreter="true" interpreter_id="1ef21539-aa4a-4259-8254-efa66309f8d0" tool_path="/var/www/html/vendor/bin/phpstan" timeout="60000" />
       <PhpStanConfiguration tool_path="$PROJECT_DIR$/vendor/bin/phpstan" />
+      <phpstan_by_interpreter asDefaultInterpreter="true" interpreter_id="1ef21539-aa4a-4259-8254-efa66309f8d0" tool_path="/var/www/html/vendor/bin/phpstan" timeout="60000" />
     </PhpStan_settings>
   </component>
   <component name="PhpStanOptionsConfiguration">
@@ -203,7 +220,7 @@
   </component>
   <component name="PhpUnit">
     <phpunit_settings>
-      <PhpUnitSettings custom_loader_path="$PROJECT_DIR$/vendor/autoload.php" />
+      <phpunit_by_interpreter interpreter_id="1ef21539-aa4a-4259-8254-efa66309f8d0" custom_loader_path="/var/www/html/vendor/autoload.php" phpunit_phar_path="" />
     </phpunit_settings>
   </component>
   <component name="Psalm">
