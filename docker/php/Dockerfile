@@ -1,5 +1,5 @@
 ARG PHP_VERSION=8.4
-ARG ALPINE_VERSION=3.22
+ARG ALPINE_VERSION=3.23
 
 # --- 1. PHP BUILDER STAGE (Compilation) ---
 # This stage installs all build dependencies and compiles the extensions.

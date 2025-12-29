@@ -1,12 +1,16 @@
-ARG NGINX_VERSION=1.29
-ARG ALPINE_VERSION=3.22
+ARG ALPINE_VERSION=3.23
 
 # --- 1. BASE STAGE (Shared) ---
-FROM nginx:${NGINX_VERSION}-alpine${ALPINE_VERSION} AS base
+# Using Alpine 3.23 directly for version-matched nginx + brotli module
+# Alpine 3.23 provides nginx 1.28.0-r8 and nginx-mod-http-brotli 1.28.0-r8 (version-matched)
+FROM alpine:${ALPINE_VERSION} AS base
 
-# Install Brotli Module & Setup Permissions
-RUN apk add --no-cache nginx-mod-http-brotli && \
-    mkdir -p /var/cache/nginx /var/log/nginx /tmp/nginx && \
+# Install Nginx with Brotli module & Setup
+RUN apk add --no-cache \
+        nginx \
+        nginx-mod-http-brotli \
+        wget && \
+    mkdir -p /var/cache/nginx /var/log/nginx /tmp/nginx /var/www/html /etc/nginx/conf.d && \
     touch /var/run/nginx.pid && \
     chown -R nginx:nginx /var/cache/nginx /var/log/nginx /etc/nginx/conf.d /var/run/nginx.pid /tmp/nginx
 

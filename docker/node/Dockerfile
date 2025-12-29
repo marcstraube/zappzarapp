@@ -1,5 +1,5 @@
 ARG NODE_VERSION=24
-ARG ALPINE_VERSION=3.22
+ARG ALPINE_VERSION=3.23
 
 # --- 1. BASE STAGE (Shared Foundation) ---
 # Installs pnpm and curl.
@@ -9,6 +9,7 @@ FROM node:${NODE_VERSION}-alpine${ALPINE_VERSION} AS base
 # Install pnpm globally and add curl for health checks, git for commitlint
 ENV PNPM_HOME="/usr/local/bin/pnpm"
 ENV PATH="$PNPM_HOME:$PATH"
+ENV COREPACK_ENABLE_DOWNLOAD_PROMPT=0
 RUN corepack enable && corepack prepare pnpm@latest --activate && \
     apk add --no-cache curl git
 

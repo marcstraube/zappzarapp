@@ -2407,7 +2407,7 @@ curl http://localhost:3000/health
 ---
 
 **Erstellt:** 2025-12-19
-**Letzte Aktualisierung:** 2025-12-29 (Brotli Compression)
+**Letzte Aktualisierung:** 2025-12-29 (Brotli + Alpine 3.23 Upgrade)
 **Version:** 2.16
 
 ---
@@ -2415,37 +2415,52 @@ curl http://localhost:3000/health
 ## Changelog
 
 ### Version 2.16 (2025-12-29)
-- ✅ **Nginx: Brotli Compression aktiviert (Dual-Compression-Strategie)**
+- ✅ **Alpine Linux: Upgrade auf 3.23 (alle Services)**
+    - **Grund:** Version-Matching für Nginx + Brotli-Modul
+    - **Geänderte Dockerfiles:**
+        - `docker/nginx/Dockerfile`: Alpine 3.22 → 3.23
+        - `docker/php/Dockerfile`: Alpine 3.22 → 3.23
+        - `docker/node/Dockerfile`: Alpine 3.22 → 3.23
+            - **Fix:** `COREPACK_ENABLE_DOWNLOAD_PROMPT=0` hinzugefügt
+            - **Grund:** Alpine 3.23 / Node 24 - Corepack fragt interaktiv nach Download-Bestätigung
+            - **Lösung:** Environment-Variable deaktiviert interaktive Prompts
+    - **Vorteile:**
+        - Neueste Sicherheitsupdates (Alpine 3.23, Dezember 2024)
+        - Konsistente Alpine-Version über alle Services
+        - Garantiertes Version-Matching zwischen nginx und Modulen
+
+- ✅ **Nginx: Brotli-Kompression aktiviert (Dual-Compression-Strategie)**
     - **Problem:** Nur Gzip-Kompression aktiv, moderne Brotli-Kompression nicht genutzt
-        - Brotli-Modul war nur kommentiert im Dockerfile
-        - nginx.conf hatte nur Gzip aktiv, Brotli auskommentiert
-        - Inkonsistenz zur "production-ready"-Philosophie des Projekts
-        - Andere Performance-Features (Security Headers, Rate Limiting, OPcache) sind alle aktiv by default
-        - Suboptimale Kompression für moderne Clients (Brotli 10-20% effizienter als Gzip)
-    - **Lösung: Brotli UND Gzip parallel aktiviert (Dual-Compression)**
-        - **Dockerfile (Zeile 7-11):**
-            - Vorher: `# RUN apk add --no-cache nginx-mod-http-brotli` (auskommentiert, separater RUN-Command)
-            - Nachher: `RUN apk add --no-cache nginx-mod-http-brotli && \` (kombiniert mit Permissions-Setup)
-            - Layer-Optimierung: Brotli-Installation mit Permissions-Setup kombiniert (1 Layer statt 2)
-            - Kommentar aktualisiert: "Install Brotli Module & Setup Permissions"
-        - **nginx.conf (Zeile 47-68):**
-            - **Brotli aktiviert:**
-                - `brotli on;`
-                - `brotli_comp_level 6;` (balanced compression/speed)
+        - Brotli bietet 10-20% bessere Kompression als Gzip
+        - Offizielle nginx Docker-Images haben Version-Mismatch mit Alpine Brotli-Paketen
+        - Inkonsistenz zur "production-ready modern defaults"-Philosophie
+    - **Lösung: Nginx direkt aus Alpine-Repository + Brotli + Gzip parallel aktiviert**
+        - **Dockerfile-Strategie-Wechsel:**
+            - **Vorher:** `FROM nginx:1.29-alpine3.22` (offizielles nginx Docker-Image)
+            - **Nachher:** `FROM alpine:3.23` + Installation von nginx aus Alpine-Repo
+            - **Warum:** Garantiert Version-Matching zwischen nginx und nginx-mod-http-brotli
+            - Alpine 3.23 liefert: `nginx-1.28.0-r8` + `nginx-mod-http-brotli-1.28.0-r8` (perfekt matched)
+        - **nginx.conf (Zeile 1-3, 51-72):**
+            - **Module laden:**
+                - `load_module modules/ngx_http_brotli_filter_module.so;`
+                - `load_module modules/ngx_http_brotli_static_module.so;`
+            - **Brotli Compression (Primary - Modern browsers):**
+                - `brotli on;` mit Level 6 (balanced compression/speed)
                 - Identische MIME-Types wie Gzip (text/*, application/*, fonts)
-            - **Gzip bleibt aktiv (Fallback):**
-                - `gzip on;` (weiterhin aktiv für Legacy-Browser)
+            - **Gzip Compression (Fallback - Legacy browsers):**
+                - `gzip on;` bleibt aktiv (100% Backward Compatibility)
                 - Gleiche Konfiguration wie vorher
             - **Automatische Negotiation:**
-                - Nginx wählt Brotli für moderne Clients (Chrome, Firefox, Safari, Edge)
+                - Nginx wählt Brotli für moderne Clients (Chrome 50+, Firefox 44+, Safari 11+, Edge 15+)
                 - Gzip für Legacy-Clients (alte Browser, CLI-Tools ohne Brotli)
                 - Basiert auf `Accept-Encoding` HTTP-Header
         - **Vorteile:**
-            - 10-20% bessere Kompression für moderne Clients
-            - 100% Backward Compatibility (Gzip als Fallback)
-            - Konsistent mit Projekt-Philosophie: "Production-ready modern defaults"
-            - Zero Configuration nötig
-            - Image-Size-Impact: ~1-2 MB (nginx-mod-http-brotli Paket)
+            - ✅ 10-20% bessere Kompression für moderne Clients (Brotli)
+            - ✅ 100% Backward Compatibility (Gzip Fallback)
+            - ✅ Konsistent mit Projekt-Philosophie: "Production-ready modern defaults"
+            - ✅ Zero Configuration nötig (funktioniert out-of-the-box)
+            - ✅ Version-Matching garantiert (Alpine managed Dependencies)
+            - ✅ Kein Build-Overhead (alpine packages, keine Source-Compilation)
         - **Browser-Support:**
             - Brotli: Chrome 50+, Firefox 44+, Safari 11+, Edge 15+ (99%+ Coverage)
             - Gzip: Universal (alle Browser seit 1990er)
