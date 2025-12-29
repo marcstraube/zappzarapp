@@ -25,7 +25,8 @@
     <option name="transferred" value="true" />
   </component>
   <component name="PHPCSFixerOptionsConfiguration">
-    <option name="codingStandard" value="PhpCsFixer" />
+    <option name="allowRiskyRules" value="true" />
+    <option name="codingStandard" value="PER-CS" />
     <option name="transferred" value="true" />
   </component>
   <component name="PHPCodeSnifferOptionsConfiguration">

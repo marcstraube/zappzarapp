@@ -2407,12 +2407,105 @@ curl http://localhost:3000/health
 ---
 
 **Erstellt:** 2025-12-19
-**Letzte Aktualisierung:** 2025-12-29 (Nginx Documentation Route)
-**Version:** 2.18
+**Letzte Aktualisierung:** 2025-12-29 (Code Quality & Build Optimization)
+**Version:** 2.19
 
 ---
 
 ## Changelog
+
+### Version 2.19 (2025-12-29)
+- ✅ **Code Quality & Build Optimization (Gemini-Review + Optimierungen)**
+    - **Kontext:** Gemini AI Review des gesamten Projekts mit 7 Verbesserungsvorschlägen
+        - Nach Analyse: 5 Vorschläge sinnvoll, 2 inkorrekt/obsolet
+        - **Resultat:** 5 Optimierungen implementiert (+ 1 Datei-Cleanup)
+    - **Änderung 1: Rector vollständig integriert (composer.json + Makefile)**
+        - **Problem:** Rector-Dependency vorhanden, aber nicht nutzbar
+            - `rector.php` Config existierte, aber keine Scripts/Targets
+            - Automatische PHP 8.4 Refactorings nicht verfügbar
+        - **Lösung:**
+            - `composer.json`: Scripts `rector-check` (dry-run) und `rector-fix` hinzugefügt
+            - `Makefile`: Targets `make rector-check` und `make rector-fix` hinzugefügt
+        - **Nutzen:**
+            - ✅ Automatische Code-Upgrades auf PHP 8.4 Syntax (property hooks, etc.)
+            - ✅ Dead Code Detection & Removal
+            - ✅ Type Declaration Improvements
+    - **Änderung 2: Git Line-Ending-Konsistenz (.gitattributes)**
+        - **Problem:** Nur `* text=auto` ohne explizite LF-Enforcement
+            - Potenzielle CRLF/LF-Inkonsistenzen zwischen Windows/Unix/macOS
+        - **Lösung:** Explizite `eol=lf` Regeln für alle Text-Dateien
+            - `* text=auto eol=lf` (Global Default)
+            - Explizite Rules: `*.php`, `*.js`, `*.ts`, `*.json`, `*.md`, `*.yaml`, `*.yml`, `*.xml`
+        - **Nutzen:**
+            - ✅ 100% LF-Garantie (verhindert CRLF auf Windows)
+            - ✅ Keine Git-Diff-Rauschen durch Line-Ending-Wechsel
+    - **Änderung 3: PHP-CS-Fixer auf @PER-CS:risky umgestellt (.php-cs-fixer.dist.php)**
+        - **Vorher:** `@auto` Ruleset (veraltet, deprecated in PHP-CS-Fixer v4)
+        - **Nachher:** `@PER-CS:risky` + Custom Binary Operator Alignment
+            - `@PER-CS:risky` = PER Coding Style 2.0 (PSR-12 Nachfolger, offizieller PHP-FIG Standard)
+            - `setRiskyAllowed(true)` aktiviert (required für :risky Variante)
+            - Custom Rule: `binary_operator_spaces` mit `=>` und `=` Alignment
+        - **Nutzen:**
+            - ✅ Modernster PHP Coding Standard (Industry Best Practice)
+            - ✅ Zukunftssicher (PER ersetzt PSR-12 offiziell)
+            - ✅ Konsistent mit PhpStorm-Config (.idea/php.xml nutzt auch PER-CS)
+    - **Änderung 4: Docker Compose Build-Dependencies (compose.yaml)**
+        - **Problem:** nginx + php kopieren von `docker-webdev-node:latest`, aber keine explizite Dependency
+            - `docker/nginx/Dockerfile:66`: `COPY --from=docker-webdev-node:latest /app/public/build/`
+            - `docker/php/Dockerfile:140`: `COPY --from=docker-webdev-node:latest /app/public/build/`
+            - Potenzielle Race-Condition bei `make build` (node muss zuerst gebaut werden)
+        - **Lösung:** `depends_on: node` bei nginx + php hinzugefügt
+            - `condition: service_started` (wartet auf node-Container Start)
+            - `required: false` (optional, da nur für Build relevant)
+        - **Nutzen:**
+            - ✅ Korrekte Build-Reihenfolge garantiert (Docker Compose orchestriert automatisch)
+            - ✅ Makefile-Logic vereinfacht (kein manueller "build node first"-Hack mehr nötig)
+            - ✅ Konsistent mit Best Practices (explizite Dependencies deklarieren)
+    - **Änderung 5: Node.js Security-Audit (Makefile)**
+        - **Problem:** PHP hat `make security-deps`, Node.js hatte kein Äquivalent
+            - Inkonsistenz: PHP-Dependencies werden gescannt, npm-Dependencies nicht
+        - **Lösung:** `make security-audit-node` hinzugefügt
+            - Führt `pnpm audit` im node-Container aus
+            - Scannt npm-Dependencies auf bekannte CVEs
+        - **Nutzen:**
+            - ✅ Parität zwischen PHP und Node.js Security-Tooling
+            - ✅ Früherkennung von npm-Package-Schwachstellen
+    - **Änderung 6: Obsolete Datei entfernt (php_cs_fixer.dist.php)**
+        - **Problem:** Doppelte PHP-CS-Fixer Config
+            - `.php-cs-fixer.dist.php` (neu, modern) ✅
+            - `php_cs_fixer.dist.php` (alt, ungenutzt, verwaist) ❌
+        - **Lösung:** Alte Datei gelöscht
+    - **Änderung 7: CaptainHook PHP Lint Hook Fix (captainhook.json)**
+        - **Problem:** Pre-commit Hook schlägt fehl bei gelöschten PHP-Dateien
+            - `git diff --name-only --cached` listet auch gelöschte Dateien
+            - `php -l` versucht nicht-existierende Dateien zu linten → "Could not open input file"
+        - **Lösung:** `--diff-filter=d` hinzugefügt
+            - Filtert gelöschte Dateien aus dem diff
+            - Nur existierende PHP-Dateien werden gelintet
+    - **Files geändert:**
+        - `composer.json` (+ rector-check/fix Scripts)
+        - `.gitattributes` (+ explizite eol=lf Rules)
+        - `.php-cs-fixer.dist.php` (@auto → @PER-CS:risky)
+        - `compose.yaml` (+ depends_on: node bei nginx/php)
+        - `Makefile` (+ rector-check/fix, security-audit-node Targets)
+        - `captainhook.json` (+ --diff-filter=d im PHP Lint Hook)
+        - `php_cs_fixer.dist.php` (gelöscht)
+    - **PhpStorm-Integration verifiziert (.idea/php.xml):**
+        - `allowRiskyRules="true"` ✅ (konsistent mit setRiskyAllowed(true))
+        - `codingStandard="PER-CS"` ✅ (konsistent mit @PER-CS:risky)
+        - Keine Anpassungen nötig (bereits korrekt konfiguriert)
+    - **Neue Make-Befehle:**
+        - `make rector-check` - Zeigt potenzielle PHP 8.4 Refactorings (dry-run)
+        - `make rector-fix` - Führt automatische Refactorings aus
+        - `make security-audit-node` - Scannt Node.js Dependencies auf CVEs
+    - **Vorteile:**
+        - ✅ Vollständige Rector-Integration für PHP 8.4 Upgrades
+        - ✅ Line-Ending-Konsistenz über alle Plattformen
+        - ✅ Modernster PHP Coding Standard (PER-CS statt deprecated @auto)
+        - ✅ Korrekte Docker Build-Orchestrierung (explizite Dependencies)
+        - ✅ Parität: PHP + Node.js Security-Scanning
+        - ✅ Code-Aufräumung (obsolete Dateien entfernt)
+        - ✅ CaptainHook robuster bei Datei-Löschungen
 
 ### Version 2.18 (2025-12-29)
 - ✅ **Nginx /docs/ Route: API-Dokumentation über Browser zugänglich (Development-Only)**

@@ -12,6 +12,9 @@ services:
     ports:
       - "${NGINX_PORT:-8080}:8080"
     depends_on:
+      node:
+        condition: service_started
+        required: false
       php:
         condition: service_healthy
         required: false
@@ -28,6 +31,10 @@ services:
     profiles: ["php"]
     expose:
       - "9000"
+    depends_on:
+      node:
+        condition: service_started
+        required: false
     environment:
       - ENV=${ENV:-production}
     networks:

@@ -20,7 +20,7 @@
         "description": "Check for styling issues with PHP-CS-Fixer (Dry-Run)"
       },
       {
-        "action": "git diff --name-only --cached | grep .php$ | xargs -r -I {} docker compose exec -T php php -l /var/www/html/{}",
+        "action": "git diff --name-only --cached --diff-filter=d | grep .php$ | xargs -r -I {} docker compose exec -T php php -l /var/www/html/{}",
         "options": [],
         "type": "cli",
         "description": "Check for basic PHP syntax errors (Linting)"

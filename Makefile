@@ -527,6 +527,14 @@ phpmd: ## Run PHPMD (PHP Mess Detector) for code quality analysis
 	@echo -e "\033[0;33mRunning PHPMD (Mess Detector)...\033[0m"
 	@docker compose exec php composer phpmd
 
+rector-check: ## Run Rector for automated refactoring analysis (dry-run)
+	@echo -e "\033[0;33mRunning Rector analysis (dry-run)...\033[0m"
+	@docker compose exec php composer rector-check
+
+rector-fix: ## Apply Rector refactorings automatically
+	@echo -e "\033[0;33mApplying Rector refactorings...\033[0m"
+	@docker compose exec php composer rector-fix
+
 check: cs-check analyse phpmd test ## Run all checks (CI simulation)
 	@echo -e "\033[0;32mAll checks passed!\033[0m"
 
@@ -666,6 +674,10 @@ security-scan: ## Scan Docker images for vulnerabilities
 			echo "⚠️  Image not found. Run 'make build' first."; \
 	fi
 	@echo -e "\033[0;32mSecurity scan completed!\033[0m"
+
+security-audit-node: ## Scan Node.js dependencies for known vulnerabilities
+	@echo -e "\033[0;33mScanning Node.js dependencies with pnpm audit...\033[0m"
+	@docker compose exec node pnpm audit
 
 ##@ Documentation
 
