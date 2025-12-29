@@ -11,6 +11,12 @@ services:
     restart: unless-stopped
     ports:
       - "${NGINX_PORT:-8080}:8080"
+      # Uncomment for HTTPS/SSL (requires SSL setup, see docker/nginx/certs/)
+      # - "${NGINX_SSL_PORT:-8443}:8443"
+    # Uncomment for HTTPS/SSL (mount development SSL config and certificates)
+    # volumes:
+    #   - ./docker/nginx/conf.d/ssl-development.conf:/etc/nginx/conf.d/ssl.conf:ro
+    #   - ./docker/nginx/certs:/etc/nginx/certs:ro
     depends_on:
       node:
         condition: service_started

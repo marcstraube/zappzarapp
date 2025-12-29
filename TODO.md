@@ -9,6 +9,51 @@
 
 ## 📋 Changelog (Recent Changes)
 
+### Version 3.1 (2025-12-29) - SSL/TLS Integration
+**Comprehensive SSL/TLS support for all services with zero-config philosophy:**
+
+#### Added
+- **SSL Certificate Management**:
+  - Self-signed certificate generator (`docker/nginx/certs/generate-selfsigned.sh`)
+  - Let's Encrypt setup script (`docker/nginx/certs/setup-letsencrypt.sh`)
+  - Makefile commands: `ssl-selfsigned`, `ssl-letsencrypt`, `ssl-renew`, `ssl-info`, `ssl-clean`
+  - Comprehensive SSL documentation (`docker/nginx/certs/README.md`)
+- **Nginx SSL Configurations**:
+  - `ssl-development.conf`: Zero-config SSL für Development (localhost, self-signed)
+  - `ssl-production.conf.example`: Production template mit HSTS, OCSP Stapling, strenger CSP
+  - Separate Configs für Development/Production Parität
+- **Database SSL Support**:
+  - PostgreSQL: SSL connection configuration in `compose.prod.yaml` (optional)
+  - MariaDB: SSL connection configuration in `compose.prod.yaml` (optional)
+  - Certificate mounting via volumes (commented, ready to uncomment)
+- **Node.js SSL Support**:
+  - Documentation für HTTPS server setup (`docker/node/ssl-example.md`)
+  - Szenarien: Nginx Reverse Proxy (default) vs. Direct Exposure
+- **Environment Variables**:
+  - `NGINX_SSL_PORT` für SSL Port Configuration (default: 8443)
+
+#### Changed
+- **Directory Structure**: SSL certificate directory via `make setup` statt .gitkeep
+- **Compose Files**:
+  - `compose.yaml`: SSL volumes für development (commented)
+  - `compose.prod.yaml`: SSL volumes für production (commented)
+- **Zero-Config Philosophy**: Development SSL funktioniert out-of-the-box nach `make ssl-selfsigned`
+
+#### Removed
+- Obsolete `.gitkeep` files (alle Directories werden via `make setup` erstellt):
+  - `src/php/.gitkeep`, `src/node/.gitkeep`
+  - `resources/js/.gitkeep`, `resources/css/.gitkeep`, `resources/images/.gitkeep`
+  - `config/.gitkeep`, `templates/.gitkeep`
+  - `storage/app/.gitkeep`, `storage/cache/.gitkeep`, `storage/sessions/.gitkeep`
+
+#### Security
+- Modern TLS configuration (Mozilla Intermediate Profile)
+- TLSv1.2/1.3 only, strong cipher suites
+- HSTS, OCSP Stapling in production config
+- Strikte CSP in production SSL config
+
+---
+
 ### Version 3.0 (2025-12-29) - Quality & CI/CD Integration
 **Peer Review Improvements based on comprehensive code review:**
 

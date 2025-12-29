@@ -5,9 +5,11 @@ services:
   nginx:
     build:
       target: production
-    # Optional: Mount production CSP config (uncomment if needed)
+    # Optional: Mount production configs and SSL certificates (uncomment if needed)
     # volumes:
     #   - ./docker/nginx/conf.d/csp-production.conf:/etc/nginx/conf.d/csp.conf:ro
+    #   - ./docker/nginx/conf.d/ssl-production.conf:/etc/nginx/conf.d/ssl.conf:ro
+    #   - ./docker/nginx/certs:/etc/nginx/certs:ro
     read_only: true
     tmpfs:
       - /var/cache/nginx:mode=0770,uid=101,gid=101,size=64M
@@ -125,6 +127,10 @@ services:
     cap_drop:
       - ALL
     shm_size: 256mb
+    # Optional: Mount SSL certificates for encrypted connections (uncomment if needed)
+    # volumes:
+    #   - ./docker/nginx/certs/cert.crt:/var/lib/postgresql/server.crt:ro
+    #   - ./docker/nginx/certs/cert.key:/var/lib/postgresql/server.key:ro
     command: >
       postgres
       -c shared_buffers=256MB
@@ -142,6 +148,10 @@ services:
       -c log_destination=stderr
       -c logging_collector=off
       -c log_min_duration_statement=1000
+      # Uncomment to enable SSL (requires certificates mounted above)
+      # -c ssl=on
+      # -c ssl_cert_file=/var/lib/postgresql/server.crt
+      # -c ssl_key_file=/var/lib/postgresql/server.key
     logging:
       driver: "json-file"
       options:
@@ -166,6 +176,10 @@ services:
     cap_drop:
       - ALL
     shm_size: 256mb
+    # Optional: Mount SSL certificates for encrypted connections (uncomment if needed)
+    # volumes:
+    #   - ./docker/nginx/certs/cert.crt:/etc/mysql/certs/server.crt:ro
+    #   - ./docker/nginx/certs/cert.key:/etc/mysql/certs/server.key:ro
     command: >
       --innodb-buffer-pool-size=256M
       --max-connections=100
@@ -175,6 +189,11 @@ services:
       --slow-query-log=1
       --slow-query-log-file=/var/log/mysql/slow.log
       --long-query-time=1
+      # Uncomment to enable SSL (requires certificates mounted above)
+      # --ssl-ca=/etc/mysql/certs/server.crt
+      # --ssl-cert=/etc/mysql/certs/server.crt
+      # --ssl-key=/etc/mysql/certs/server.key
+      # --require-secure-transport=ON
     logging:
       driver: "json-file"
       options:

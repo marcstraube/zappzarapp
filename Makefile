@@ -100,6 +100,9 @@ setup: ## Create directories, install dev dependencies and ensure structure
 	# Config & Templates
 	@mkdir -p config templates
 
+	# SSL/TLS Certificates
+	@mkdir -p docker/nginx/certs
+
 	# Documentation Output
 	@mkdir -p docs/api/{php,node}
 
@@ -708,3 +711,66 @@ docs-clean: ## Remove generated documentation
 	@echo -e "\033[0;33mCleaning documentation...\033[0m"
 	@rm -rf docs/ .phpdoc/ tools/
 	@echo -e "\033[0;32mDocumentation cleaned!\033[0m"
+
+##@ SSL/TLS
+
+ssl-selfsigned: ## Generate self-signed SSL certificate for development
+	@echo -e "\033[0;33mGenerating self-signed SSL certificate...\033[0m"
+	@if [ ! -f docker/nginx/certs/generate-selfsigned.sh ]; then \
+		echo -e "\033[0;31mError: generate-selfsigned.sh not found!\033[0m"; \
+		exit 1; \
+	fi
+	@bash docker/nginx/certs/generate-selfsigned.sh localhost
+	@echo -e "\033[0;32mSelf-signed certificate generated!\033[0m"
+	@echo -e "\033[0;34mTo enable HTTPS (Development):\033[0m"
+	@echo -e "\033[0;34m  1. Uncomment SSL port and volumes in compose.yaml\033[0m"
+	@echo -e "\033[0;34m  2. Restart: make restart\033[0m"
+
+ssl-letsencrypt: ## Setup Let's Encrypt SSL certificate (production)
+	@echo -e "\033[0;33mSetting up Let's Encrypt certificate...\033[0m"
+	@if [ ! -f docker/nginx/certs/setup-letsencrypt.sh ]; then \
+		echo -e "\033[0;31mError: setup-letsencrypt.sh not found!\033[0m"; \
+		exit 1; \
+	fi
+	@read -p "Enter your domain (e.g., example.com): " DOMAIN; \
+	read -p "Enter your email (for renewal notifications): " EMAIL; \
+	bash docker/nginx/certs/setup-letsencrypt.sh $$DOMAIN $$EMAIL
+	@echo -e "\033[0;34mTo enable HTTPS (Production):\033[0m"
+	@echo -e "\033[0;34m  1. Copy ssl-production.conf.example to ssl-production.conf\033[0m"
+	@echo -e "\033[0;34m  2. Update domain in ssl-production.conf\033[0m"
+	@echo -e "\033[0;34m  3. Uncomment SSL volumes in compose.prod.yaml\033[0m"
+	@echo -e "\033[0;34m  4. Deploy: docker compose -f compose.yaml -f compose.prod.yaml up -d\033[0m"
+
+ssl-renew: ## Renew Let's Encrypt certificate
+	@echo -e "\033[0;33mRenewing Let's Encrypt certificate...\033[0m"
+	@if command -v certbot >/dev/null 2>&1; then \
+		sudo certbot renew --deploy-hook 'docker compose restart nginx'; \
+	else \
+		docker run --rm --name certbot \
+			-v $$(pwd)/docker/nginx/certs/letsencrypt:/etc/letsencrypt \
+			-v $$(pwd)/public:/var/www/html \
+			-p 80:80 \
+			certbot/certbot renew \
+			--deploy-hook 'docker compose restart nginx'; \
+	fi
+	@echo -e "\033[0;32mCertificate renewed!\033[0m"
+
+ssl-info: ## Show SSL certificate information
+	@echo -e "\033[0;33mSSL Certificate Information:\033[0m"
+	@if [ -f docker/nginx/certs/cert.crt ]; then \
+		openssl x509 -in docker/nginx/certs/cert.crt -text -noout | grep -E "Subject:|Issuer:|Not Before|Not After|DNS:"; \
+	else \
+		echo -e "\033[0;31mNo certificate found. Generate one with:\033[0m"; \
+		echo -e "\033[0;34m  - make ssl-selfsigned (development)\033[0m"; \
+		echo -e "\033[0;34m  - make ssl-letsencrypt (production)\033[0m"; \
+	fi
+
+ssl-clean: ## Remove all SSL certificates (WARNING: Destructive!)
+	@echo -e "\033[0;31m⚠️  WARNING: This will delete all SSL certificates!\033[0m"
+	@read -p "Type 'YES' to confirm: " CONFIRM; \
+	if [ "$$CONFIRM" = "YES" ]; then \
+		rm -rf docker/nginx/certs/*.crt docker/nginx/certs/*.key docker/nginx/certs/*.pem docker/nginx/certs/letsencrypt; \
+		echo -e "\033[0;32mSSL certificates removed!\033[0m"; \
+	else \
+		echo -e "\033[0;34mOperation cancelled.\033[0m"; \
+	fi
