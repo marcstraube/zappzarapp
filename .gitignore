@@ -73,3 +73,8 @@ Thumbs.db
 .phpstan.cache
 .rector.cache
 .eslintcache
+
+# Documentation
+/docs/
+/.phpdoc/
+/tools/

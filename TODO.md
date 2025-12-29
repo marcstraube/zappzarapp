@@ -2407,12 +2407,55 @@ curl http://localhost:3000/health
 ---
 
 **Erstellt:** 2025-12-19
-**Letzte Aktualisierung:** 2025-12-29 (Brotli + Alpine 3.23 Upgrade)
-**Version:** 2.16
+**Letzte Aktualisierung:** 2025-12-29 (Documentation Generation Setup)
+**Version:** 2.17
 
 ---
 
 ## Changelog
+
+### Version 2.17 (2025-12-29)
+- ✅ **Documentation Generation: PHP + Node/TypeScript (Production-Ready Setup)**
+    - **Problem:** Keine automatische API-Dokumentations-Generierung vorhanden
+        - Manual documentation ist fehleranfällig und veraltet schnell
+        - Keine Parität zwischen PHP und Node.js Tooling
+        - Inkonsistent mit "production-ready boilerplate"-Philosophie
+    - **Lösung: Pre-konfigurierte Documentation-Tools für beide Stacks**
+        - **PHP: phpDocumentor v3.9.1 (PHAR standalone)**
+            - **Installation:** Auto-Download on first use (Makefile lädt PHAR bei Bedarf herunter)
+            - **Warum PHAR:** Vermeidet Composer-Dependency-Konflikte (phpDocumentor v3 requires Monolog v2, wir nutzen v3)
+            - **Warum Download-on-Demand:** Kein 25MB Binary im Repo (tools/ ist in .gitignore)
+            - **Config:** `phpdoc.xml` (scannt `src/php/`, Output: `docs/api/php/`)
+            - **Features:** Class diagrams, inheritance graphs, Markdown support, responsive UI
+            - **Script:** `composer docs` → `php tools/phpdoc.phar --config=phpdoc.xml`
+            - **Makefile-Logic:** `make docs-php` prüft ob PHAR existiert, downloadet sie sonst automatisch
+        - **Node/TypeScript: TypeDoc**
+            - **Installation:** `pnpm add -D typedoc` (package.json devDependencies)
+            - **Config:** `typedoc.json` (scannt `src/node/`, Output: `docs/api/node/`)
+            - **Features:** TypeScript-native, type inference, cross-referenced navigation
+            - **Script:** `pnpm run docs` → `typedoc`
+        - **Makefile-Targets:**
+            - `make docs` - Generiert PHP + Node Dokumentation
+            - `make docs-php` - Nur PHP API Docs
+            - `make docs-node` - Nur Node/TypeScript API Docs
+            - `make docs-clean` - Löscht generierte Dokumentation
+        - **Files geändert:**
+            - `phpdoc.xml` (neu) - phpDocumentor Konfiguration
+            - `typedoc.json` (neu) - TypeDoc Konfiguration
+            - `composer.json` (Script: `docs`)
+            - `package.json` (Script: `docs`, DevDep: `typedoc`)
+            - `.gitignore` (ignoriert `docs/`, `.phpdoc/` Cache, `tools/`)
+            - `Makefile` (neue Documentation-Section mit Auto-Download-Logic)
+            - `README.md` (umfassende "Documentation Generation"-Sektion mit Examples, Best Practices, CI/CD Integration)
+            - `tools/` (git-ignored, PHAR wird on-demand downloaded)
+    - **Vorteile:**
+        - ✅ Zero-Config Documentation Generation (out-of-the-box)
+        - ✅ PHP + Node Parität (beide Stacks haben Tools)
+        - ✅ Konsistent mit Projekt-Philosophie: "Production-ready modern defaults"
+        - ✅ PHPDoc & TSDoc Best Practices demonstriert
+        - ✅ CI/CD Integration-Example in README
+        - ✅ Keine Composer-Dependency-Konflikte (PHAR-Ansatz)
+        - ✅ Makefile-Integration für einfache Nutzung
 
 ### Version 2.16 (2025-12-29)
 - ✅ **Alpine Linux: Upgrade auf 3.23 (alle Services)**

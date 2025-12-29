@@ -27,10 +27,12 @@ services:
       - ./composer.json:/var/www/html/composer.json
       - ./composer.lock:/var/www/html/composer.lock
       - ./config:/var/www/html/config
+      - ./docs:/var/www/html/docs
       - ./public:/var/www/html/public
       - ./src/php:/var/www/html/src/php
       - ./templates:/var/www/html/templates
       - ./tests/php:/var/www/html/tests/php
+      - ./tools:/var/www/html/tools
       - ./vendor:/var/www/html/vendor
 
       # Quality Assurance Tools Config
@@ -38,6 +40,9 @@ services:
       - ./phpmd.xml.dist:/var/www/html/phpmd.xml.dist:ro
       - ./.php-cs-fixer.dist.php:/var/www/html/.php-cs-fixer.dist.php:ro
       - ./phpunit.xml.dist:/var/www/html/phpunit.xml.dist:ro
+
+      # Documentation Config
+      - ./phpdoc.xml:/var/www/html/phpdoc.xml:ro
 
       # Runtime Data (Read-Write)
       - ${STORAGE_DIR:-./storage}:/var/www/html/storage
@@ -80,6 +85,7 @@ services:
       - ./resources:/app/resources
       - ./dist:/app/dist
       - node_modules:/app/node_modules
+      - ./docs:/app/docs
 
       # Build & Config
       - ./vite.config.js:/app/vite.config.js:ro
@@ -94,6 +100,9 @@ services:
       - ./.prettierrc.json:/app/.prettierrc.json:ro
       - ./.prettierignore:/app/.prettierignore:ro
       - ./commitlint.config.js:/app/commitlint.config.js:ro
+
+      # Documentation Config
+      - ./typedoc.json:/app/typedoc.json:ro
 
       # Git repository (for commitlint)
       - ./.git:/app/.git:ro

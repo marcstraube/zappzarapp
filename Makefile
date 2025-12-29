@@ -100,6 +100,9 @@ setup: ## Create directories, install dev dependencies and ensure structure
 	# Config & Templates
 	@mkdir -p config templates
 
+	# Documentation Output
+	@mkdir -p docs/api/{php,node}
+
 	# Storage (Runtime data) - Set permissions
 	@. ./.env && mkdir -p $${STORAGE_DIR:-./storage}/{app/{uploads,generated},cache,sessions}
 	@. ./.env && chmod 770 $${STORAGE_DIR:-./storage} -R
@@ -663,3 +666,33 @@ security-scan: ## Scan Docker images for vulnerabilities
 			echo "⚠️  Image not found. Run 'make build' first."; \
 	fi
 	@echo -e "\033[0;32mSecurity scan completed!\033[0m"
+
+##@ Documentation
+
+PHPDOC_VERSION := 3.9.1
+PHPDOC_URL := https://github.com/phpDocumentor/phpDocumentor/releases/download/v$(PHPDOC_VERSION)/phpDocumentor.phar
+PHPDOC_PHAR := tools/phpdoc.phar
+
+docs: docs-php docs-node ## Generate all API documentation (PHP + Node)
+
+$(PHPDOC_PHAR):
+	@echo -e "\033[0;33mDownloading phpDocumentor v$(PHPDOC_VERSION)...\033[0m"
+	@mkdir -p tools
+	@curl -L $(PHPDOC_URL) -o $(PHPDOC_PHAR)
+	@chmod +x $(PHPDOC_PHAR)
+	@echo -e "\033[0;32mphpDocumentor downloaded to $(PHPDOC_PHAR)\033[0m"
+
+docs-php: $(PHPDOC_PHAR) ## Generate PHP API documentation using phpDocumentor
+	@echo -e "\033[0;33mGenerating PHP API documentation...\033[0m"
+	@docker compose exec php composer docs
+	@echo -e "\033[0;32mPHP documentation generated in docs/api/php/\033[0m"
+
+docs-node: ## Generate Node/TypeScript API documentation using TypeDoc
+	@echo -e "\033[0;33mGenerating Node/TypeScript API documentation...\033[0m"
+	@docker compose exec node pnpm run docs
+	@echo -e "\033[0;32mNode documentation generated in docs/api/node/\033[0m"
+
+docs-clean: ## Remove generated documentation
+	@echo -e "\033[0;33mCleaning documentation...\033[0m"
+	@rm -rf docs/ .phpdoc/ tools/
+	@echo -e "\033[0;32mDocumentation cleaned!\033[0m"
