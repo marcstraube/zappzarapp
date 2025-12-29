@@ -95,6 +95,9 @@ services:
       - ./.prettierignore:/app/.prettierignore:ro
       - ./commitlint.config.js:/app/commitlint.config.js:ro
 
+      # Git repository (for commitlint)
+      - ./.git:/app/.git:ro
+
       # Build Output
       - ./build:/app/build
     environment:

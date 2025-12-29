@@ -2407,12 +2407,65 @@ curl http://localhost:3000/health
 ---
 
 **Erstellt:** 2025-12-19
-**Letzte Aktualisierung:** 2025-12-29 (Monolog & Conventional Commits)
-**Version:** 2.14
+**Letzte Aktualisierung:** 2025-12-29 (Git Hook Containerisierung)
+**Version:** 2.15
 
 ---
 
 ## Changelog
+
+### Version 2.15 (2025-12-29)
+- ✅ **Git Hooks: Vollständige Containerisierung für 100% Version-Parität**
+    - **Problem:** Git Hooks liefen auf lokalen Host-Tools
+        - CaptainHook nutzte lokales PHP (8.5.1) statt Container-PHP (8.4)
+        - pnpm/node Commands nutzten lokales Node statt Container-Node
+        - Abhängigkeit von lokaler Entwickler-Installation
+        - Xdebug-Versionskonflikt-Warnungen
+        - Inkonsistenz zwischen Hook-Umgebung und Production-Container
+    - **Lösung: Alle Hook-Commands in Containern ausführen**
+        - **captainhook.json komplett überarbeitet**
+            - **commit-msg Hook:**
+                - Vorher: `pnpm exec commitlint --edit $1`
+                - Nachher: `docker compose exec -T node pnpm exec commitlint --edit /app/.git/COMMIT_EDITMSG`
+                - Benötigt .git Mount im Node-Container
+            - **pre-commit Hook (5 Actions):**
+                - PHP-CS-Fixer: `docker compose exec -T php vendor/bin/php-cs-fixer fix --diff --config=.php-cs-fixer.dist.php --dry-run`
+                - PHP Syntax Check: `git diff --name-only --cached | grep .php$ | xargs -r -I {} docker compose exec -T php php -l /var/www/html/{}`
+                - Prettier: `docker compose exec -T node pnpm exec prettier --check 'src/**/*.{ts,js,json}'`
+                - ESLint: `docker compose exec -T node pnpm exec eslint 'src/**/*.{ts,js}' --max-warnings=0`
+                - TypeScript: `docker compose exec -T node pnpm run type-check`
+            - **pre-push Hook (2 Actions):**
+                - PHPStan: `docker compose exec -T php vendor/bin/phpstan analyse --configuration=phpstan.neon --memory-limit=1G`
+                - Vitest: `docker compose exec -T node pnpm test`
+        - **compose.override.yaml: Node-Container Anpassungen (Zeilen 99, 73-82)**
+            - **Git-Zugriff für commitlint:**
+                - Neu: `./.git:/app/.git:ro` (read-only mount)
+                - Ermöglicht commitlint Zugriff auf Git-Metadaten
+            - **Volume-Mounts vereinheitlicht:**
+                - Vorher: `.:/app` (gesamtes Projekt gemountet, inkonsistent zu PHP)
+                - Nachher: Spezifische Files/Directories wie bei PHP-Container
+                - Neue Mounts: package.json, pnpm-lock.yaml, src/node, tests/node, public, resources, dist, vite.config.js, tsconfig.json, eslint.config.js, commitlint.config.js, etc.
+                - Konsistenz: Beide Container (PHP + Node) nutzen identisches Mount-Pattern
+        - **Ausführliche Descriptions wiederhergestellt**
+            - Alle captainhook.json Actions haben aussagekräftige Beschreibungen
+            - Statt "(in container)" nun: "Validate commit message format against Conventional Commits standard", "Check for styling issues with PHP-CS-Fixer (Dry-Run)", etc.
+        - **`-T` Flag verwendet:** Deaktiviert TTY allocation (Git Hooks nicht interaktiv)
+        - **Hooks neu installiert:** `vendor/bin/captainhook install -f`
+    - **Vorteile:**
+        - **100% Version-Parität:** PHP 8.4, Node 24, pnpm 10.26.2 exakt wie in Containern
+        - **Keine lokalen Dependencies:** Nur Git, Docker, Make erforderlich
+        - **Reproduzierbar:** Jeder Developer hat identisches Environment
+        - **Konsistent:** Alle Development-Tools laufen in Containern
+        - **Keine Versionskonflikt-Warnungen:** Host-PHP spielt keine Rolle mehr
+        - **"Container als venv":** Makefile + containerisierte Hooks = vollständige Isolation
+        - **Einheitliche Volume-Struktur:** PHP und Node nutzen identisches Mount-Pattern
+    - **Trade-off akzeptiert:**
+        - Container müssen laufen (ist beim Development sowieso gegeben)
+        - Minimal höhere Latenz (~100ms) durch Docker exec (nicht spürbar bei Commits)
+    - **Dependencies aktualisiert:**
+        - `@eslint/js@^9.18.0` zu devDependencies hinzugefügt (package.json:40)
+        - Erforderlich für ESLint 9.x Flat Config System (eslint.config.js:1)
+        - pnpm-lock.yaml automatisch regeneriert
 
 ### Version 2.14 (2025-12-29)
 - ✅ **Monolog für PHP: Strukturiertes Logging**

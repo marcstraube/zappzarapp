@@ -6,11 +6,11 @@ ARG ALPINE_VERSION=3.22
 # Use a recent Node.js LTS version on Alpine for a slim image
 FROM node:${NODE_VERSION}-alpine${ALPINE_VERSION} AS base
 
-# Install pnpm globally and add curl for health checks
+# Install pnpm globally and add curl for health checks, git for commitlint
 ENV PNPM_HOME="/usr/local/bin/pnpm"
 ENV PATH="$PNPM_HOME:$PATH"
 RUN corepack enable && corepack prepare pnpm@latest --activate && \
-    apk add --no-cache curl
+    apk add --no-cache curl git
 
 # Set Working Directory
 WORKDIR /app

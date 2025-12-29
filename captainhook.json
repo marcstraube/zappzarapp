@@ -3,10 +3,10 @@
     "enabled": true,
     "actions": [
       {
-        "action": "pnpm exec commitlint --edit $1",
+        "action": "docker compose exec -T node pnpm exec commitlint --edit /app/.git/COMMIT_EDITMSG",
         "options": [],
         "type": "cli",
-        "description": "Validate commit message format with commitlint"
+        "description": "Validate commit message format against Conventional Commits standard"
       }
     ]
   },
@@ -14,34 +14,34 @@
     "enabled": true,
     "actions": [
       {
-        "action": "vendor/bin/php-cs-fixer fix --diff --config=.php-cs-fixer.dist.php --dry-run",
+        "action": "docker compose exec -T php vendor/bin/php-cs-fixer fix --diff --config=.php-cs-fixer.dist.php --dry-run",
         "options": [],
         "type": "cli",
         "description": "Check for styling issues with PHP-CS-Fixer (Dry-Run)"
       },
       {
-        "action": "git diff --name-only --cached | grep .php$ | xargs -r -n1 php -l",
+        "action": "git diff --name-only --cached | grep .php$ | xargs -r -I {} docker compose exec -T php php -l /var/www/html/{}",
         "options": [],
         "type": "cli",
         "description": "Check for basic PHP syntax errors (Linting)"
       },
       {
-        "action": "pnpm exec prettier --check 'src/**/*.{ts,js,json}'",
+        "action": "docker compose exec -T node pnpm exec prettier --check 'src/**/*.{ts,js,json}'",
         "options": [],
         "type": "cli",
         "description": "Check Node.js code formatting with Prettier"
       },
       {
-        "action": "pnpm exec eslint 'src/**/*.{ts,js}' --max-warnings=0",
+        "action": "docker compose exec -T node pnpm exec eslint 'src/**/*.{ts,js}' --max-warnings=0",
         "options": [],
         "type": "cli",
-        "description": "Lint Node.js code with ESLint (TypeScript-aware)"
+        "description": "Lint Node.js code with ESLint (TypeScript-aware, zero warnings)"
       },
       {
-        "action": "pnpm run type-check",
+        "action": "docker compose exec -T node pnpm run type-check",
         "options": [],
         "type": "cli",
-        "description": "Check TypeScript types (similar to PHPStan)"
+        "description": "Check TypeScript types (similar to PHPStan for type safety)"
       }
     ]
   },
@@ -49,13 +49,13 @@
     "enabled": true,
     "actions": [
       {
-        "action": "vendor/bin/phpstan analyse --configuration=phpstan.neon --memory-limit=1G",
+        "action": "docker compose exec -T php vendor/bin/phpstan analyse --configuration=phpstan.neon --memory-limit=1G",
         "options": [],
         "type": "cli",
-        "description": "Run PHPStan (Level 5) before pushing to remote"
+        "description": "Run PHPStan static analysis (Level 5) before pushing to remote"
       },
       {
-        "action": "pnpm test",
+        "action": "docker compose exec -T node pnpm test",
         "options": [],
         "type": "cli",
         "description": "Run Vitest tests (Node.js unit & integration tests)"
