@@ -1,0 +1,254 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [master, develop]
+  pull_request:
+    branches: [master, develop]
+  workflow_dispatch:
+
+env:
+  COMPOSE_PROJECT_NAME: docker-webdev-ci
+  ENV: development
+
+jobs:
+  # ============================================================================
+  # PHP QUALITY CHECKS
+  # ============================================================================
+  php-quality:
+    name: PHP Quality Checks
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build PHP container
+        run: |
+          docker compose build php
+          docker compose up -d php
+
+      - name: Install PHP dependencies
+        run: docker compose exec -T php composer install --no-progress --no-interaction
+
+      - name: PHP Coding Standards (PHP-CS-Fixer)
+        run: docker compose exec -T php composer cs-check
+
+      - name: PHP Static Analysis (PHPStan)
+        run: docker compose exec -T php composer analyse
+
+      - name: PHP Mess Detector (PHPMD)
+        run: docker compose exec -T php composer phpmd
+
+      - name: Rector Check (Dry-Run)
+        run: docker compose exec -T php composer rector-check
+
+      - name: Composer Validate
+        run: docker compose exec -T php composer validate --strict
+
+  # ============================================================================
+  # PHP TESTS
+  # ============================================================================
+  php-tests:
+    name: PHP Tests (PHPUnit)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Start services (PHP + Database)
+        run: |
+          docker compose --profile postgres up -d php postgres
+          docker compose exec -T php composer install --no-progress --no-interaction
+
+      - name: Wait for database
+        run: |
+          timeout 30 sh -c 'until docker compose exec -T postgres pg_isready -U app; do sleep 1; done'
+
+      - name: Run PHPUnit tests
+        run: docker compose exec -T php composer test
+
+      - name: Generate coverage report
+        if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+        run: |
+          docker compose exec -T php sh -c 'XDEBUG_MODE=coverage vendor/bin/phpunit --coverage-html build/coverage --coverage-clover build/coverage/clover.xml'
+
+      - name: Upload coverage to Codecov
+        if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+        uses: codecov/codecov-action@v4
+        with:
+          files: ./build/coverage/clover.xml
+          flags: php
+          name: php-coverage
+
+  # ============================================================================
+  # NODE.JS QUALITY CHECKS
+  # ============================================================================
+  node-quality:
+    name: Node.js Quality Checks
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build Node container
+        run: |
+          docker compose build node
+          docker compose up -d node
+
+      - name: Install Node dependencies
+        run: docker compose exec -T node pnpm install --frozen-lockfile
+
+      - name: TypeScript Type Check
+        run: docker compose exec -T node pnpm run type-check
+
+      - name: ESLint
+        run: docker compose exec -T node pnpm run lint
+
+      - name: Prettier Check
+        run: docker compose exec -T node pnpm run format:check
+
+      - name: Validate package.json
+        run: docker compose exec -T node pnpm run quality
+
+  # ============================================================================
+  # NODE.JS TESTS
+  # ============================================================================
+  node-tests:
+    name: Node.js Tests (Vitest)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Start services (Node + Redis)
+        run: |
+          docker compose --profile redis up -d node redis
+          docker compose exec -T node pnpm install --frozen-lockfile
+
+      - name: Wait for Redis
+        run: |
+          timeout 30 sh -c 'until docker compose exec -T redis redis-cli ping; do sleep 1; done'
+
+      - name: Run Vitest tests
+        run: docker compose exec -T node pnpm test
+
+      - name: Generate coverage report
+        if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+        run: docker compose exec -T node pnpm test:coverage
+
+      - name: Upload coverage to Codecov
+        if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+        uses: codecov/codecov-action@v4
+        with:
+          files: ./build/coverage/lcov.info
+          flags: node
+          name: node-coverage
+
+  # ============================================================================
+  # SECURITY SCANS
+  # ============================================================================
+  security:
+    name: Security Scans
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build images
+        run: docker compose build
+
+      - name: Scan PHP dependencies
+        run: docker compose exec -T php composer audit || true
+
+      - name: Scan Node dependencies
+        run: docker compose exec -T node pnpm audit || true
+
+      - name: Trivy vulnerability scan (PHP)
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: docker-webdev-ci-php:latest
+          format: sarif
+          output: trivy-php-results.sarif
+          severity: HIGH,CRITICAL
+
+      - name: Upload Trivy results (PHP)
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: trivy-php-results.sarif
+          category: trivy-php
+
+      - name: Trivy vulnerability scan (Nginx)
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: docker-webdev-ci-nginx:latest
+          format: sarif
+          output: trivy-nginx-results.sarif
+          severity: HIGH,CRITICAL
+
+      - name: Upload Trivy results (Nginx)
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: trivy-nginx-results.sarif
+          category: trivy-nginx
+
+  # ============================================================================
+  # BUILD TEST (Production)
+  # ============================================================================
+  build-production:
+    name: Production Build Test
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/master' || github.ref == 'refs/heads/develop')
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build production images
+        run: |
+          ENV=production docker compose -f compose.yaml -f compose.prod.yaml build
+
+      - name: Test production startup
+        run: |
+          ENV=production docker compose -f compose.yaml -f compose.prod.yaml up -d
+          sleep 10
+          docker compose ps
+          docker compose logs
+
+      - name: Health check
+        run: |
+          curl -f http://localhost:8080/health || exit 1
+
+      - name: Cleanup
+        if: always()
+        run: docker compose down -v

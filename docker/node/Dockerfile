@@ -35,9 +35,10 @@ RUN if [ "$USER_ID" != "1000" ]; then \
 COPY --chown=node:node docker/node/entrypoint.sh /usr/local/bin/entrypoint.sh
 RUN chmod +x /usr/local/bin/entrypoint.sh
 
-# Health Check: Verifies that the source code volume is mounted correctly.
+# Health Check: Verifies that at least one service (Vite or Backend) is running.
+# Falls back to file check for idle mode.
 HEALTHCHECK --interval=30s --timeout=5s --start-period=5s --retries=3 \
-    CMD test -f /app/package.json
+    CMD curl -sf http://localhost:5173 >/dev/null || curl -sf http://localhost:3000 >/dev/null || test -f /app/package.json
 
 USER node
 

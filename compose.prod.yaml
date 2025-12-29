@@ -5,6 +5,9 @@ services:
   nginx:
     build:
       target: production
+    # Optional: Mount production CSP config (uncomment if needed)
+    # volumes:
+    #   - ./docker/nginx/conf.d/csp-production.conf:/etc/nginx/conf.d/csp.conf:ro
     read_only: true
     tmpfs:
       - /var/cache/nginx:mode=0770,uid=101,gid=101,size=64M

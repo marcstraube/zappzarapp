@@ -156,5 +156,3 @@ RUN chown -R root:root /var/www/html && \
 USER www-data
 
 CMD ["php-fpm"]
-
-# @TODO Where do we uninstall composer?

@@ -24,5 +24,6 @@
     "TypeAlias",
     "Function",
     "Variable"
-  ]
+  ],
+  "theme": "default"
 }
