@@ -2407,12 +2407,48 @@ curl http://localhost:3000/health
 ---
 
 **Erstellt:** 2025-12-19
-**Letzte Aktualisierung:** 2025-12-29 (Git Hook Containerisierung)
-**Version:** 2.15
+**Letzte Aktualisierung:** 2025-12-29 (Brotli Compression)
+**Version:** 2.16
 
 ---
 
 ## Changelog
+
+### Version 2.16 (2025-12-29)
+- ✅ **Nginx: Brotli Compression aktiviert (Dual-Compression-Strategie)**
+    - **Problem:** Nur Gzip-Kompression aktiv, moderne Brotli-Kompression nicht genutzt
+        - Brotli-Modul war nur kommentiert im Dockerfile
+        - nginx.conf hatte nur Gzip aktiv, Brotli auskommentiert
+        - Inkonsistenz zur "production-ready"-Philosophie des Projekts
+        - Andere Performance-Features (Security Headers, Rate Limiting, OPcache) sind alle aktiv by default
+        - Suboptimale Kompression für moderne Clients (Brotli 10-20% effizienter als Gzip)
+    - **Lösung: Brotli UND Gzip parallel aktiviert (Dual-Compression)**
+        - **Dockerfile (Zeile 7-11):**
+            - Vorher: `# RUN apk add --no-cache nginx-mod-http-brotli` (auskommentiert, separater RUN-Command)
+            - Nachher: `RUN apk add --no-cache nginx-mod-http-brotli && \` (kombiniert mit Permissions-Setup)
+            - Layer-Optimierung: Brotli-Installation mit Permissions-Setup kombiniert (1 Layer statt 2)
+            - Kommentar aktualisiert: "Install Brotli Module & Setup Permissions"
+        - **nginx.conf (Zeile 47-68):**
+            - **Brotli aktiviert:**
+                - `brotli on;`
+                - `brotli_comp_level 6;` (balanced compression/speed)
+                - Identische MIME-Types wie Gzip (text/*, application/*, fonts)
+            - **Gzip bleibt aktiv (Fallback):**
+                - `gzip on;` (weiterhin aktiv für Legacy-Browser)
+                - Gleiche Konfiguration wie vorher
+            - **Automatische Negotiation:**
+                - Nginx wählt Brotli für moderne Clients (Chrome, Firefox, Safari, Edge)
+                - Gzip für Legacy-Clients (alte Browser, CLI-Tools ohne Brotli)
+                - Basiert auf `Accept-Encoding` HTTP-Header
+        - **Vorteile:**
+            - 10-20% bessere Kompression für moderne Clients
+            - 100% Backward Compatibility (Gzip als Fallback)
+            - Konsistent mit Projekt-Philosophie: "Production-ready modern defaults"
+            - Zero Configuration nötig
+            - Image-Size-Impact: ~1-2 MB (nginx-mod-http-brotli Paket)
+        - **Browser-Support:**
+            - Brotli: Chrome 50+, Firefox 44+, Safari 11+, Edge 15+ (99%+ Coverage)
+            - Gzip: Universal (alle Browser seit 1990er)
 
 ### Version 2.15 (2025-12-29)
 - ✅ **Git Hooks: Vollständige Containerisierung für 100% Version-Parität**

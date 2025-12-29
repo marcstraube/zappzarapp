@@ -4,11 +4,9 @@ ARG ALPINE_VERSION=3.22
 # --- 1. BASE STAGE (Shared) ---
 FROM nginx:${NGINX_VERSION}-alpine${ALPINE_VERSION} AS base
 
-# Install Brotli Module (Optional - Uncomment if you want to use Brotli instead of Gzip)
-# RUN apk add --no-cache nginx-mod-http-brotli
-
-# Setup Permissions & PID File
-RUN mkdir -p /var/cache/nginx /var/log/nginx /tmp/nginx && \
+# Install Brotli Module & Setup Permissions
+RUN apk add --no-cache nginx-mod-http-brotli && \
+    mkdir -p /var/cache/nginx /var/log/nginx /tmp/nginx && \
     touch /var/run/nginx.pid && \
     chown -R nginx:nginx /var/cache/nginx /var/log/nginx /etc/nginx/conf.d /var/run/nginx.pid /tmp/nginx
 
