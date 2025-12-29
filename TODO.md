@@ -2407,12 +2407,50 @@ curl http://localhost:3000/health
 ---
 
 **Erstellt:** 2025-12-19
-**Letzte Aktualisierung:** 2025-12-29 (Documentation Generation Setup)
-**Version:** 2.17
+**Letzte Aktualisierung:** 2025-12-29 (Nginx Documentation Route)
+**Version:** 2.18
 
 ---
 
 ## Changelog
+
+### Version 2.18 (2025-12-29)
+- ✅ **Nginx /docs/ Route: API-Dokumentation über Browser zugänglich (Development-Only)**
+    - **Problem:** Generierte API-Dokumentation ist lokal vorhanden, aber nicht im Browser abrufbar
+        - `make docs` generiert Dokumentation in `docs/`, aber kein Web-Zugriff
+        - Entwickler müssen Dateien direkt im Filesystem öffnen
+        - Inkonsistent mit Dashboard-Integration der anderen Endpoints
+    - **Lösung: Nginx Route + Dashboard-Integration (nur Development)**
+        - **Nginx `/docs/` Location Block (`docker/nginx/conf.d/default.conf`):**
+            - `location ^~ /docs/` - Prefix-Match mit `^~` modifier (verhindert Regex-Matching)
+            - `alias /var/www/html/docs/` - Serve-Pfad
+            - `autoindex on` - Directory-Listing für Übersichtsseite
+            - `try_files $uri $uri/ =404` - File-Serving-Logik
+            - `add_header Cache-Control "no-cache, must-revalidate"` - Verhindert veraltete Docs
+            - **Warum `^~` modifier:** Verhindert, dass Regex-Location `~* \.(css|js|...)` CSS/JS-Files in docs/ abfängt
+        - **Redirect `/docs` → `/docs/`:**
+            - `location = /docs { return 301 /docs/; }` - Trailing Slash Normalization
+        - **Volume Mount (compose.override.yaml):**
+            - `- ./docs:/var/www/html/docs:ro` (Read-Only, nur Development)
+            - **Sicherheit:** In Production nicht gemountet → 404 für `/docs/` (intended behavior)
+        - **Dashboard-Integration (`templates/welcome.php`):**
+            - Neue Sektion "📖 API Documentation" (nur Development: `if ($vite->isDevelopment())`)
+            - Links zu `/docs/`, `/docs/api/php/`, `/docs/api/node/`
+            - Hinweis: "Run `make docs` to generate/update API documentation"
+    - **Endpoints:**
+        - `http://localhost:8080/docs/` - Dokumentations-Übersicht (Directory Listing)
+        - `http://localhost:8080/docs/api/php/` - PHP API Docs (phpDocumentor)
+        - `http://localhost:8080/docs/api/node/` - Node/TypeScript API Docs (TypeDoc)
+    - **Files geändert:**
+        - `docker/nginx/conf.d/default.conf` (neue `/docs/` Location Blocks)
+        - `compose.override.yaml` (docs/ Volume Mount für nginx Service)
+        - `templates/welcome.php` (neue "API Documentation" Sektion)
+    - **Vorteile:**
+        - ✅ Entwickler können API-Docs direkt im Browser öffnen
+        - ✅ Dashboard zeigt alle verfügbaren Endpoints inkl. Dokumentation
+        - ✅ Development-Only Feature (Production-sicher)
+        - ✅ CSS/JS-Files funktionieren korrekt (`^~` modifier verhindert Konflikte)
+        - ✅ Konsistent mit "production-ready boilerplate"-Philosophie
 
 ### Version 2.17 (2025-12-29)
 - ✅ **Documentation Generation: PHP + Node/TypeScript (Production-Ready Setup)**

@@ -11,6 +11,7 @@ services:
     volumes:
       # Application
       - ./public:/var/www/html/public:ro
+      - ./docs:/var/www/html/docs:ro
 
       # Nginx Configuration (Read-Only)
       - ./docker/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
