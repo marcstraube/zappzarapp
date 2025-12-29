@@ -16,7 +16,7 @@ return (new Config())
         (new Finder())
             ->in([
                 __DIR__ . '/src/php',
-                __DIR__ . '/tests',
+                __DIR__ . '/tests/php',
                 __DIR__ . '/public',
             ])
             ->name('*.php')

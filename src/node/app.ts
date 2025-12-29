@@ -7,14 +7,11 @@
 
 import express, { Express, Request, Response, NextFunction } from 'express';
 import pino from 'pino';
-import pinoHttpImport from 'pino-http';
+import pinoHttp from 'pino-http';
 
-// TypeScript workaround for pino-http CommonJS module
-const pinoHttp = pinoHttpImport as unknown as typeof pinoHttpImport.default;
-
-const NODE_ENV = process.env.NODE_ENV || 'production';
-const LOG_LEVEL = process.env.LOG_LEVEL || 'info';
-const LOG_FORMAT = process.env.LOG_FORMAT || 'json';
+const NODE_ENV = process.env.NODE_ENV ?? 'production';
+const LOG_LEVEL = process.env.LOG_LEVEL ?? 'info';
+const LOG_FORMAT = process.env.LOG_FORMAT ?? 'json';
 
 // Configure Pino logger (structured logging)
 export const logger = pino({
@@ -102,7 +99,8 @@ export function createApp(): Express {
   });
 
   app.get('/api/hello', (req: Request, res: Response): void => {
-    const name = req.query.name || 'World';
+    const nameParam = req.query.name;
+    const name = typeof nameParam === 'string' && nameParam.length > 0 ? nameParam : 'World';
     res.json({
       message: `Hello, ${name}!`,
       timestamp: new Date().toISOString(),
@@ -113,8 +111,9 @@ export function createApp(): Express {
   // Echo endpoint (POST only - REST-compliant)
   // Test with: curl -X POST http://localhost:8080/api/node/echo -H "Content-Type: application/json" -d '{"test": "data"}'
   app.post('/api/echo', (req: Request, res: Response): void => {
+    const body: unknown = req.body;
     res.json({
-      echo: req.body,
+      echo: body,
       timestamp: new Date().toISOString(),
     });
   });

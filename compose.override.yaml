@@ -30,7 +30,7 @@ services:
       - ./public:/var/www/html/public
       - ./src/php:/var/www/html/src/php
       - ./templates:/var/www/html/templates
-      - ./tests:/var/www/html/tests
+      - ./tests/php:/var/www/html/tests/php
       - ./vendor:/var/www/html/vendor
 
       # Quality Assurance Tools Config
@@ -71,8 +71,32 @@ services:
       - "${VITE_PORT:-5173}:5173"
       - "${NODE_PORT:-3000}:3000"
     volumes:
-      - .:/app
+      # Application
+      - ./package.json:/app/package.json
+      - ./pnpm-lock.yaml:/app/pnpm-lock.yaml
+      - ./src/node:/app/src/node
+      - ./tests/node:/app/tests/node
+      - ./public:/app/public
+      - ./resources:/app/resources
+      - ./dist:/app/dist
       - node_modules:/app/node_modules
+
+      # Build & Config
+      - ./vite.config.js:/app/vite.config.js:ro
+      - ./tsconfig.json:/app/tsconfig.json:ro
+      - ./tsconfig.vitest.json:/app/tsconfig.vitest.json:ro
+      - ./vitest.config.ts:/app/vitest.config.ts:ro
+      - ./postcss.config.js:/app/postcss.config.js:ro
+      - ./ecosystem.config.cjs:/app/ecosystem.config.cjs:ro
+
+      # Quality Assurance Tools Config
+      - ./eslint.config.js:/app/eslint.config.js:ro
+      - ./.prettierrc.json:/app/.prettierrc.json:ro
+      - ./.prettierignore:/app/.prettierignore:ro
+      - ./commitlint.config.js:/app/commitlint.config.js:ro
+
+      # Build Output
+      - ./build:/app/build
     environment:
       - NODE_ENV=development
       - NODE_MODE=${NODE_MODE:-full-stack}

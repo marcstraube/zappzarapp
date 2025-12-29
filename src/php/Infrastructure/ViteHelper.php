@@ -107,8 +107,8 @@ class ViteHelper
             // Development mode: Load Vite Dev Server with HMR
             /** @noinspection HtmlUnknownTarget */
             return sprintf(
-                '<script type="module" src="%s/@vite/client"></script>' . "\n" .
-                '    <script type="module" src="%s/%s"></script>',
+                '<script type="module" src="%s/@vite/client"></script>' . "\n"
+                . '    <script type="module" src="%s/%s"></script>',
                 $this->viteDevServerUrl,
                 $this->viteDevServerUrl,
                 $entry

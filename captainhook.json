@@ -1,7 +1,14 @@
 {
   "commit-msg": {
     "enabled": true,
-    "actions": []
+    "actions": [
+      {
+        "action": "pnpm exec commitlint --edit $1",
+        "options": [],
+        "type": "cli",
+        "description": "Validate commit message format with commitlint"
+      }
+    ]
   },
   "pre-commit": {
     "enabled": true,

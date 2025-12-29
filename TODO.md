@@ -2407,12 +2407,213 @@ curl http://localhost:3000/health
 ---
 
 **Erstellt:** 2025-12-19
-**Letzte Aktualisierung:** 2025-12-29 (Node.js Quality-of-Life Tools)
-**Version:** 2.13
+**Letzte Aktualisierung:** 2025-12-29 (Monolog & Conventional Commits)
+**Version:** 2.14
 
 ---
 
 ## Changelog
+
+### Version 2.14 (2025-12-29)
+- ✅ **Monolog für PHP: Strukturiertes Logging**
+  - **Problem:** PHP hatte kein Logging-Framework, während Node.js bereits Pino hatte
+    - Keine strukturierte Log-Ausgabe für PHP-Anwendungen
+    - Inkonsistenz zwischen PHP- und Node.js-Stack
+    - Developer müssten selbst Logging-Lösung wählen/implementieren
+  - **Lösung: Monolog als Standard-Logger (analog zu Pino für Node.js)**
+    - **Monolog 3.9.0 installiert** (composer.json:17, composer.lock)
+    - **PSR-3 Standard:** Framework-agnostisch, kompatibel mit Laravel, Symfony, etc.
+    - **Verwendung:**
+      ```php
+      use Monolog\Logger;
+      use Monolog\Handler\StreamHandler;
+
+      $log = new Logger('app');
+      $log->pushHandler(new StreamHandler('/var/www/html/storage/logs/app.log', Logger::DEBUG));
+
+      $log->info('User logged in', ['user_id' => 123]);
+      $log->error('Database connection failed', ['error' => $e->getMessage()]);
+      ```
+    - **Logs:** Standard-Pfad `storage/logs/app.log` (konfigurierbar)
+    - **Vorteile:**
+      - Strukturierte Logs mit Context-Daten
+      - Mehrere Handler möglich (File, Syslog, Slack, etc.)
+      - Production-ready mit Rotation-Support
+      - Vollständige Symmetrie zu Node.js Pino-Setup
+
+- ✅ **Conventional Commits: Automatisierte Commit-Validierung**
+  - **Problem:** Keine einheitliche Commit-Message-Struktur
+    - Inkonsistente Commit-Messages erschweren Changelog-Generierung
+    - Keine Kategorisierung von Änderungen (feat, fix, refactor, etc.)
+    - Keine automatische Validierung → Manuelle Code-Reviews nötig
+  - **Lösung: Commitlint mit Conventional Commits Standard**
+    - **Dependencies installiert (package.json:38-39)**
+      - `@commitlint/cli 20.2.0`
+      - `@commitlint/config-conventional 20.2.0`
+    - **Git Commit Template (.gitmessage)**
+      - Interaktive Vorlage mit allen Commit-Typen
+      - Erklärt Format, Scope, Subject, Body, Footer
+      - Verwendung: `git config commit.template .gitmessage`
+      - Zeigt Best-Practices bei jedem Commit
+    - **Commitlint Konfiguration (commitlint.config.js)**
+      - Extends `@commitlint/config-conventional`
+      - **Erlaubte Typen:** feat, fix, refactor, style, docs, test, chore, perf, ci, build, revert
+      - **Rules:**
+        - Subject: Lowercase, kein Punkt, max 100 Zeichen
+        - Body/Footer: Max 100 Zeichen pro Zeile
+        - Leere Zeile zwischen Subject und Body erzwungen
+      - **Format:** `<type>(<scope>): <subject>`
+        - Beispiel: `feat(auth): add JWT token validation`
+        - Beispiel: `fix(api): correct user endpoint response format`
+    - **CaptainHook Integration (captainhook.json:2-11)**
+      - **commit-msg Hook:** Validiert jede Commit-Message
+      - Command: `pnpm exec commitlint --edit $1`
+      - Automatische Ablehnung bei ungültigen Messages
+      - Hilfreiche Fehlermeldungen mit Korrekturvorschlägen
+    - **Hooks neu installiert:** `vendor/bin/captainhook install -f`
+      - Alle Hooks aktiv: commit-msg, pre-commit, pre-push, etc.
+    - **Vorteile:**
+      - Automatische Changelog-Generierung möglich
+      - Klare Kategorisierung (Breaking Changes, Features, Fixes)
+      - Verbesserte Code-Review-Effizienz
+      - Semantic Versioning Support
+
+- ✅ **TypeScript Type-Safety: Eliminierung unsicherer eslint-disable Workarounds**
+  - **Problem:** Pre-Commit Hook scheiterte wegen ESLint-Fehlern in TypeScript-Dateien
+    - `@typescript-eslint/no-unsafe-assignment` bei pino-http Import
+    - `@typescript-eslint/no-unsafe-call` bei pinoHttp Aufruf
+    - `@typescript-eslint/strict-boolean-expressions` bei env vars (|| statt ??)
+    - `@typescript-eslint/no-base-to-string` bei req.query.name
+    - `@typescript-eslint/restrict-template-expressions` bei Template-Literals
+    - Unsichere Workarounds mit `eslint-disable` Kommentaren
+  - **Lösung: Typsichere Implementierung statt eslint-disable**
+    - **pino-http Import korrigiert (src/node/app.ts:10)**
+      ```typescript
+      // Vorher (unsicher):
+      import pinoHttpImport from 'pino-http';
+      const pinoHttp = pinoHttpImport as unknown as typeof pinoHttpImport.default;
+
+      // Nachher (typsicher):
+      import pinoHttp from 'pino-http';
+      ```
+    - **Environment Variables mit Nullish Coalescing (src/node/app.ts:12-14, server.ts:14-17)**
+      ```typescript
+      // Vorher: || (falsy check)
+      const NODE_ENV = process.env.NODE_ENV || 'production';
+
+      // Nachher: ?? (null/undefined check)
+      const NODE_ENV = process.env.NODE_ENV ?? 'production';
+      ```
+    - **req.query.name Type-Guard (src/node/app.ts:107-108)**
+      ```typescript
+      // Vorher (unsicher):
+      const name = req.query.name || 'World';
+
+      // Nachher (typsicher):
+      const nameParam = req.query.name;
+      const name = typeof nameParam === 'string' && nameParam.length > 0 ? nameParam : 'World';
+      ```
+    - **req.body explizit als unknown (src/node/app.ts:114)**
+      ```typescript
+      // Vorher (unsicher):
+      res.json({ echo: req.body });
+
+      // Nachher (typsicher):
+      const body: unknown = req.body;
+      res.json({ echo: body });
+      ```
+    - **PORT als String Type (server.ts:14)**
+      ```typescript
+      const PORT = process.env.PORT ?? '3000';
+      ```
+  - **Verifikation:**
+    - ESLint: 0 Fehler, 0 Warnungen (--max-warnings=0)
+    - TypeScript: tsc --noEmit ohne Fehler
+    - Prettier: Alle Dateien korrekt formatiert
+    - Tests: 25/25 bestanden
+  - **Vorteile:**
+    - Keine eslint-disable Kommentare mehr nötig
+    - Vollständige Type-Safety ohne Ausnahmen
+    - Bessere IDE-Unterstützung und Autocomplete
+    - Verhindert Runtime-Fehler durch strikte Typisierung
+    - Pre-Commit Hook läuft ohne Fehler durch
+
+- ✅ **Docker Compose: Volume-Mounts konsistent und PHP-Test-Pfad korrigiert**
+  - **Problem:** Inkonsistente Volume-Mount-Strategie zwischen PHP und Node
+    - PHP-Container: Gezielte Mounts für jede Datei/Verzeichnis
+    - Node-Container: Komplettes Projekt-Root (`.:/app`)
+    - PHP-Container: `./tests:/var/www/html/tests` statt `./tests/php:/var/www/html/tests/php`
+    - PHP-CS-Fixer: `__DIR__ . '/tests'` statt `__DIR__ . '/tests/php'`
+    - Inkonsistenz mit Verzeichnisstruktur `tests/php/` und `tests/node/`
+  - **Lösung: Gezielte Mounts für beide Container + korrekte Pfade**
+    - **compose.override.yaml - PHP (Zeile 33)**
+      - Vorher: `./tests:/var/www/html/tests`
+      - Nachher: `./tests/php:/var/www/html/tests/php`
+    - **compose.override.yaml - Node (Zeilen 73-99)**
+      - Vorher: `.:/app` (alles gemountet)
+      - Nachher: Gezielte Mounts analog zu PHP
+        ```yaml
+        # Application
+        - ./package.json:/app/package.json
+        - ./pnpm-lock.yaml:/app/pnpm-lock.yaml
+        - ./src/node:/app/src/node
+        - ./tests/node:/app/tests/node
+        - ./public:/app/public
+        - ./resources:/app/resources
+        - ./dist:/app/dist
+        - node_modules:/app/node_modules
+
+        # Build & Config (read-only)
+        - ./vite.config.js:/app/vite.config.js:ro
+        - ./tsconfig.json:/app/tsconfig.json:ro
+        - ./vitest.config.ts:/app/vitest.config.ts:ro
+        # ... weitere Konfigs
+
+        # Quality Assurance Tools Config (read-only)
+        - ./eslint.config.js:/app/eslint.config.js:ro
+        - ./commitlint.config.js:/app/commitlint.config.js:ro
+        # ... weitere QA-Konfigs
+
+        # Build Output
+        - ./build:/app/build
+        ```
+    - **.php-cs-fixer.dist.php (Zeile 19)**
+      - Vorher: `__DIR__ . '/tests'`
+      - Nachher: `__DIR__ . '/tests/php'`
+  - **Vorteile:**
+    - **Konsistenz:** Beide Container verwenden gleiche Mount-Strategie
+    - **Sicherheit:** Keine ungewollten Dateien im Container (`.git`, `.env`, etc.)
+    - **Read-Only:** Konfigurationsdateien mit `:ro` Flag geschützt
+    - **Explizit:** Klar erkennbar welche Dateien gemountet werden
+    - **Performance:** Weniger Dateien = schnelleres File-Watching
+    - **Dokumentation:** Kommentare zeigen Zweck jeder Mount-Gruppe
+    - **Korrekte Pfade:** PHP-Tools arbeiten nur mit PHP-Tests
+
+- ✅ **Docker Image-Tags korrigiert: Redis und PostgreSQL Alpine-Versionen**
+  - **Problem:** Fehlerhafte Image-Tags aus Version 2.13 verhinderten `make fresh`
+    - `redis:7.4-alpine3.22` - **Tag existiert nicht!** (manifest unknown)
+    - `postgres:17.7-alpine3.22` - **Tag existiert nicht!** (manifest unknown)
+    - Redis und PostgreSQL verwenden **nicht** das Tagging-Format `-alpine3.22`
+    - Alpine-Version kann bei offiziellen Images nicht im Tag spezifiziert werden
+  - **Lösung: Korrekte offizielle Image-Tags verwenden**
+    - **compose.yaml (Zeile 64)**
+      - Vorher: `redis:7.4-alpine3.22` ❌
+      - Nachher: `redis:7.4-alpine` ✅
+    - **compose.yaml (Zeile 88)**
+      - Vorher: `postgres:17.7-alpine3.22` ❌
+      - Nachher: `postgres:17-alpine` ✅ (PostgreSQL nutzt Major-Versionen)
+    - **Hinweis:** Alpine-Version wird vom Image-Maintainer bestimmt
+      - Redis und Postgres verwenden `-alpine` ohne Versionssuffix
+      - Alpine-Version ist typischerweise aktuellste stabile Version
+      - Fixierung nur über vollständigen Digest möglich (nicht praktikabel)
+      - Nur bei Custom-Dockerfiles: `FROM alpine:3.22` möglich
+  - **Verifikation:**
+    - `docker compose config` ohne Fehler
+    - Images erfolgreich gepullt
+    - `make fresh` läuft fehlerfrei durch
+  - **Changelog TODO.md korrigiert:**
+    - Version 2.13 Eintrag "Alpine-Versionen fixiert" aktualisiert
+    - Dokumentiert warum Alpine-Version-Tags nicht funktionieren
 
 ### Version 2.13 (2025-12-29)
 - ✅ **Node.js: Quality-of-Life Tooling (Testing, Linting, Formatting)**
@@ -3369,31 +3570,32 @@ curl http://localhost:3000/health
       - Best Practices: Production mit Auth, Development ohne
       - Warnung verhindert Frustration bei Session-Problemen
 
-  - **5. Alpine-Versionen in Compose-Dateien fixiert**
-    - **Problem:** Inkonsistente Versionierung bei Docker Images
-      - `redis:7.4-alpine` - Alpine-Version nicht fixiert (könnte 3.19, 3.20, 3.21, 3.22 sein)
-      - `postgres:17.7-alpine` - Alpine-Version nicht fixiert
-      - Dockerfiles nutzten `alpine:3.22` (explizit)
-      - Inkonsistenz: Build-Images mit 3.22, Runtime-Images mit variablem Alpine
-      - Potenzial für Breaking Changes bei Alpine-Updates
-    - **Lösung:** Explizite Alpine 3.22 Versionen **direkt in compose.yaml**
-      - **Redis:** `redis:7.4-alpine` → `redis:7.4-alpine3.22`
-      - **PostgreSQL:** `postgres:17.7-alpine` → `postgres:17.7-alpine3.22`
-      - **MariaDB:** Keine Änderung (nutzt Debian/Ubuntu, nicht Alpine)
+  - **5. Image-Versionen in Compose-Dateien standardisiert**
+    - **Problem:** Inkonsistente und teilweise falsche Image-Tags
+      - `postgres:17.7-alpine` - Falscher Tag (PostgreSQL nutzt Major-Versionen: `17-alpine`)
+      - Images hatten keine konsistente Versionierung
+      - .env Variablen waren unnötig (jeder Image-String kommt nur 1x vor)
+    - **Lösung:** Korrekte und konsistente Image-Tags **direkt in compose.yaml**
+      - **Redis:** `redis:7.4-alpine` (Alpine 3.22+ wird automatisch verwendet)
+      - **PostgreSQL:** `postgres:17.7-alpine` → `postgres:17-alpine` (korrekt)
+      - **MariaDB:** `mariadb:12.1` (nutzt Debian/Ubuntu, nicht Alpine)
       - **Keine .env Variablen:** Versionen bleiben hardcoded in compose.yaml
         - Grund: Keine Wiederverwendung (jeder Image-String kommt nur 1x vor)
         - Dockerfiles nutzen ARG (DRY: `alpine:${ALPINE_VERSION}` mehrfach verwendet)
         - compose.yaml: Fixe Versionen (bessere Lesbarkeit, Renovate-Kompatibilität)
     - **Dateien geändert:**
-      - `compose.yaml` (Zeile 64): redis Image auf `redis:7.4-alpine3.22`
-      - `compose.yaml` (Zeile 88): postgres Image auf `postgres:17.7-alpine3.22`
+      - `compose.yaml` (Zeile 64): redis Image `redis:7.4-alpine`
+      - `compose.yaml` (Zeile 88): postgres Image `postgres:17-alpine`
+    - **Hinweis:** Alpine-Version im Tag nicht spezifizierbar
+      - Redis und Postgres verwenden `-alpine` ohne Versionssuffix
+      - Alpine-Version wird vom Image-Maintainer bestimmt
+      - Typischerweise aktuellste stabile Alpine-Version
+      - Fixierung nur über vollständigen Digest möglich (nicht praktikabel)
     - **Vorteile:**
-      - **Konsistenz:** Alle Services nutzen Alpine 3.22
-      - **Vorhersagbarkeit:** Kein unerwartetes Alpine-Update von 3.22 → 3.23
-      - **Reproduzierbarkeit:** Gleiche Builds in 6 Monaten
-      - **Lesbarkeit:** `redis:7.4-alpine3.22` klarer als `redis:${REDIS_VERSION}-alpine${ALPINE_VERSION}`
-      - **Renovate-Kompatibilität:** Dependency-Scanner können fixe Versionen direkt erkennen
-      - **Best Practice:** ENV-Variablen für Konfiguration, nicht für Versionen
+      - **Korrekte Tags:** PostgreSQL verwendet Major-Versionen
+      - **Reproduzierbarkeit:** Gleiche Builds über Zeit
+      - **Lesbarkeit:** Klare, dokumentierte Versionen
+      - **Renovate-Kompatibilität:** Dependency-Scanner können Versionen erkennen
 
   - **6. Makefile Konsistenz und Formatierung verbessert**
     - **Problem:** Fehlende und inkonsistente Commands
