@@ -81,8 +81,9 @@ setup: ## Create directories, install dev dependencies and ensure structure
 	@. ./.env && mkdir -p vendor
 
 	# Source directories
-	@mkdir -p src/php/{Http/{Controller,Middleware},Domain,Infrastructure/{Database,Cache}}
-	@mkdir -p src/node/{routes,controllers,services,middleware}
+	@mkdir -p src/php/App/{Http/{Controller,Middleware},Domain,Infrastructure/{Database,Cache}}
+	@mkdir -p src/node/App/{routes,controllers,services,middleware}
+	@mkdir -p src/php/DevDashboard/{Controllers,Services,Views}
 
 	# Resources directories (Frontend source)
 	@mkdir -p resources/{js/components,css/components,images,fonts}
@@ -91,8 +92,9 @@ setup: ## Create directories, install dev dependencies and ensure structure
 	@mkdir -p public/build
 
 	# Tests (separated by language like src/)
-	@mkdir -p tests/php/{Unit,Feature}
-	@mkdir -p tests/node/{unit,integration}
+	@mkdir -p tests/php/App/{Unit,Feature}
+	@mkdir -p tests/node/App/{unit,integration}
+	@mkdir -p tests/php/DevDashboard/{Services,Controllers}
 
 	# Build & Coverage directories (excluded from IDE indexing)
 	@mkdir -p build/{coverage,vitest-report}
@@ -551,7 +553,7 @@ cs-fix: ## Fix coding style automatically (uses composer alias)
 
 cs-fix-all: ## Fix coding style aggressively on all files (forces fix on source dir)
 	@echo -e "\033[0;33mFixing Coding Style aggressively on all files...\033[0m"
-	@docker compose exec php vendor/bin/php-cs-fixer fix /var/www/html/src/php/
+	@docker compose exec php vendor/bin/php-cs-fixer fix /var/www/html/src/php/ --allow-risky=yes
 
 lint-config: ## Validate YAML configuration files (uses local YAMLlint if available)
 	@echo -e "\033[0;33mValidating YAML configuration...\033[0m"

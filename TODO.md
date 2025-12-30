@@ -9,6 +9,61 @@
 
 ## 📋 Changelog (Recent Changes)
 
+### Version 3.3 (2025-12-30) - Development Dashboard
+**Comprehensive development dashboard for real-time system monitoring and insights:**
+
+#### Added - Development Dashboard (`/_dev`)
+- **Dashboard Pages**:
+  - Main Dashboard (`/_dev`): System overview with health status, git info, quick actions
+  - Health Checks (`/_dev/health`): Container status, database connections, service monitoring, SSL certificate info
+  - System Info (`/_dev/system`): PHP version, loaded extensions (160+), environment variables, phpinfo() viewer
+  - Placeholder Pages: Quality metrics, Database tools, Log viewer (to be implemented)
+
+- **Core Services**:
+  - `HealthCheckService`: Real-time health monitoring via TCP socket checks
+    - Container checks: nginx, php, node, redis, postgres (based on enabled services)
+    - Database connections: PostgreSQL/MariaDB (based on DB_TYPE)
+    - Service checks: PHP-FPM, Node.js, Nginx
+    - SSL certificate validation with expiry warnings
+  - `SystemInfoService`: System information aggregation
+    - PHP version, SAPI, Zend version
+    - 160+ loaded extensions with version info
+    - Environment variables with sensitive data masking
+    - Git repository status (branch, commit, uncommitted changes)
+
+- **Technical Implementation**:
+  - Simple function-based routing under `/_dev` prefix
+  - Server-side rendered PHP views with inline CSS (CSP-compliant, no external CDN)
+  - Environment-based enable/disable (`ENABLE_DEV_DASHBOARD=false` for production)
+  - Comprehensive test coverage: 19 tests, 123 assertions (100% passing)
+
+- **API Endpoints**:
+  - `/_dev/api/health-check`: Overall system health status (JSON)
+  - `/_dev/api/container-status`: Detailed container status (JSON)
+
+#### Changed - Infrastructure
+- **Makefile**: Add DevDashboard directory structure in `make setup`
+  - `src/php/DevDashboard/{Controllers,Services,Views}`
+  - `tests/php/DevDashboard/{Controllers,Services}`
+
+- **Docker Nginx Configuration**:
+  - Fixed config mounting: Only copy base configs into image (default.conf, csp-production.conf)
+  - SSL configs now properly opt-in via compose.yaml volumes (not baked into image)
+  - Resolved restart loop issue caused by missing SSL certs with mounted config
+
+- **PHPUnit Configuration**:
+  - Added DevDashboard test suite to phpunit.xml.dist
+
+- **Public Entry Point**:
+  - Integrated DevDashboard routing before app routes
+  - Dashboard only loads when path starts with `/_dev`
+
+#### Technical Details
+- **Health Check Strategy**: TCP socket connectivity checks instead of Docker CLI (works inside containers)
+- **Environment Awareness**: Only checks enabled services (ENABLE_PHP, ENABLE_NODE, ENABLE_REDIS, DB_TYPE)
+- **Security**: Sensitive environment variables (PASSWORD, SECRET, KEY) are masked in display
+- **Styling**: Self-contained inline CSS (~190 lines) for zero external dependencies
+
 ### Version 3.2 (2025-12-30) - IDE Integration (VS Code & PhpStorm)
 **Complete IDE configurations for both Visual Studio Code and PhpStorm with full feature parity:**
 

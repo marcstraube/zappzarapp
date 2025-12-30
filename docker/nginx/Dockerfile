@@ -16,7 +16,9 @@ RUN apk add --no-cache \
 
 # Copy Config
 COPY docker/nginx/nginx.conf /etc/nginx/nginx.conf
-COPY docker/nginx/conf.d /etc/nginx/conf.d
+# Copy only base configs (SSL configs are mounted via volumes when enabled)
+COPY docker/nginx/conf.d/default.conf /etc/nginx/conf.d/default.conf
+COPY docker/nginx/conf.d/csp-production.conf /etc/nginx/conf.d/csp-production.conf
 
 # Switch to non-root user
 USER nginx

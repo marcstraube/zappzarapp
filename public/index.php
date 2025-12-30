@@ -13,6 +13,26 @@ require_once __DIR__ . '/../vendor/autoload.php';
 
 /**
  * ============================================================================
+ * DEVELOPMENT DASHBOARD ROUTING
+ * ============================================================================
+ *
+ * The Development Dashboard is accessible at /_dev
+ * It provides system info, health checks, logs, and more.
+ *
+ * To disable in production: Set ENABLE_DEV_DASHBOARD=false in .env
+ */
+
+$requestPath = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH);
+
+if (str_starts_with($requestPath, '/_dev')) {
+    if (file_exists(__DIR__ . '/../src/php/DevDashboard/routes.php')) {
+        require_once __DIR__ . '/../src/php/DevDashboard/routes.php';
+    }
+    // If we reach here, dashboard route didn't match - fall through to 404
+}
+
+/**
+ * ============================================================================
  * CONTENT SECURITY POLICY (CSP) - NONCE-BASED (OPTIONAL)
  * ============================================================================
  *

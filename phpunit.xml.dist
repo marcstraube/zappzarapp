@@ -18,6 +18,9 @@
         <testsuite name="Feature">
             <directory>tests/php/Feature</directory>
         </testsuite>
+        <testsuite name="DevDashboard">
+            <directory>tests/php/DevDashboard</directory>
+        </testsuite>
     </testsuites>
 
     <!-- Source Code for Coverage (activated via CLI options) -->
