@@ -12,7 +12,7 @@ declare(strict_types=1);
 namespace DevDashboard;
 
 // Only enable dashboard in development or when explicitly enabled
-$isProduction = (getenv('APP_ENV') ?? 'development') === 'production';
+$isProduction     = (getenv('APP_ENV') ?? 'development') === 'production';
 $dashboardEnabled = getenv('ENABLE_DEV_DASHBOARD') !== 'false';
 
 if ($isProduction && !$dashboardEnabled) {
@@ -26,7 +26,7 @@ if ($isProduction && !$dashboardEnabled) {
 function route(string $method, string $path, callable $handler): void
 {
     $requestMethod = $_SERVER['REQUEST_METHOD'] ?? 'GET';
-    $requestPath = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH);
+    $requestPath   = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH);
 
     if ($requestMethod === $method && $requestPath === $path) {
         $handler();

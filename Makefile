@@ -109,7 +109,7 @@ setup: ## Create directories, install dev dependencies and ensure structure
 	@mkdir -p docs/api/{php,node}
 
 	# Storage (Runtime data) - Set permissions
-	@. ./.env && mkdir -p $${STORAGE_DIR:-./storage}/{app/{uploads,generated},cache,sessions}
+	@. ./.env && mkdir -p $${STORAGE_DIR:-./storage}/{app/{uploads,generated},cache,sessions,logs}
 	@. ./.env && chmod 770 $${STORAGE_DIR:-./storage} -R
 
 	@echo -e "\033[0;32mProject structure created!\033[0m"

@@ -17,12 +17,12 @@ class SystemInfoService
     public function getBasicInfo(): array
     {
         return [
-            'php_version' => PHP_VERSION,
-            'php_sapi' => PHP_SAPI,
+            'php_version'     => PHP_VERSION,
+            'php_sapi'        => PHP_SAPI,
             'server_software' => $_SERVER['SERVER_SOFTWARE'] ?? 'Unknown',
-            'document_root' => $_SERVER['DOCUMENT_ROOT'] ?? 'Unknown',
-            'hostname' => gethostname(),
-            'os' => PHP_OS,
+            'document_root'   => $_SERVER['DOCUMENT_ROOT'] ?? 'Unknown',
+            'hostname'        => gethostname(),
+            'os'              => PHP_OS,
         ];
     }
 
@@ -32,13 +32,13 @@ class SystemInfoService
     public function getPhpVersion(): array
     {
         return [
-            'version' => PHP_VERSION,
-            'version_id' => PHP_VERSION_ID,
-            'major' => PHP_MAJOR_VERSION,
-            'minor' => PHP_MINOR_VERSION,
-            'release' => PHP_RELEASE_VERSION,
-            'extra' => PHP_EXTRA_VERSION,
-            'sapi' => PHP_SAPI,
+            'version'      => PHP_VERSION,
+            'version_id'   => PHP_VERSION_ID,
+            'major'        => PHP_MAJOR_VERSION,
+            'minor'        => PHP_MINOR_VERSION,
+            'release'      => PHP_RELEASE_VERSION,
+            'extra'        => PHP_EXTRA_VERSION,
+            'sapi'         => PHP_SAPI,
             'zend_version' => zend_version(),
         ];
     }
@@ -53,7 +53,7 @@ class SystemInfoService
 
         return array_map(function ($ext) {
             return [
-                'name' => $ext,
+                'name'    => $ext,
                 'version' => phpversion($ext) ?: 'N/A',
             ];
         }, $extensions);
@@ -64,7 +64,7 @@ class SystemInfoService
      */
     public function getEnvironmentVariables(): array
     {
-        $env = getenv();
+        $env      = getenv();
         $filtered = [];
 
         // Filter sensitive data
@@ -96,20 +96,20 @@ class SystemInfoService
         if (!is_dir($gitDir . '/.git')) {
             return [
                 'initialized' => false,
-                'message' => 'Not a git repository',
+                'message'     => 'Not a git repository',
             ];
         }
 
-        $branch = $this->executeCommand('git rev-parse --abbrev-ref HEAD', $gitDir);
-        $commit = $this->executeCommand('git rev-parse --short HEAD', $gitDir);
+        $branch      = $this->executeCommand('git rev-parse --abbrev-ref HEAD', $gitDir);
+        $commit      = $this->executeCommand('git rev-parse --short HEAD', $gitDir);
         $uncommitted = $this->executeCommand('git status --porcelain', $gitDir);
 
         return [
-            'initialized' => true,
-            'branch' => trim($branch),
-            'commit' => trim($commit),
+            'initialized'             => true,
+            'branch'                  => trim($branch),
+            'commit'                  => trim($commit),
             'has_uncommitted_changes' => !empty(trim($uncommitted)),
-            'uncommitted_files' => array_filter(explode("\n", trim($uncommitted))),
+            'uncommitted_files'       => array_filter(explode("\n", trim($uncommitted))),
         ];
     }
 

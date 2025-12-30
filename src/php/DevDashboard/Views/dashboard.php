@@ -4,19 +4,19 @@
         <h2 class="text-lg font-semibold text-gray-900 mb-4">System Health</h2>
         <div class="flex items-center space-x-4">
             <?php
-            $status = $healthStatus['status'] ?? 'unknown';
+            $status       = $healthStatus['status'] ?? 'unknown';
             $statusColors = [
-                'healthy' => 'text-green-600 bg-green-100',
-                'degraded' => 'text-yellow-600 bg-yellow-100',
+                'healthy'   => 'text-green-600 bg-green-100',
+                'degraded'  => 'text-yellow-600 bg-yellow-100',
                 'unhealthy' => 'text-red-600 bg-red-100',
             ];
             $statusIcons = [
-                'healthy' => '✓',
-                'degraded' => '⚠',
+                'healthy'   => '✓',
+                'degraded'  => '⚠',
                 'unhealthy' => '✗',
             ];
             $color = $statusColors[$status] ?? 'text-gray-600 bg-gray-100';
-            $icon = $statusIcons[$status] ?? '?';
+            $icon  = $statusIcons[$status] ?? '?';
             ?>
             <div class="flex-shrink-0">
                 <span class="inline-flex items-center justify-center h-12 w-12 rounded-full <?= $color ?> text-2xl">

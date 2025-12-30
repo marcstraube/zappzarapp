@@ -7,239 +7,6 @@
 
 ---
 
-## 📋 Changelog (Recent Changes)
-
-### Version 3.3 (2025-12-30) - Development Dashboard
-**Comprehensive development dashboard for real-time system monitoring and insights:**
-
-#### Added - Development Dashboard (`/_dev`)
-- **Dashboard Pages**:
-  - Main Dashboard (`/_dev`): System overview with health status, git info, quick actions
-  - Health Checks (`/_dev/health`): Container status, database connections, service monitoring, SSL certificate info
-  - System Info (`/_dev/system`): PHP version, loaded extensions (160+), environment variables, phpinfo() viewer
-  - Placeholder Pages: Quality metrics, Database tools, Log viewer (to be implemented)
-
-- **Core Services**:
-  - `HealthCheckService`: Real-time health monitoring via TCP socket checks
-    - Container checks: nginx, php, node, redis, postgres (based on enabled services)
-    - Database connections: PostgreSQL/MariaDB (based on DB_TYPE)
-    - Service checks: PHP-FPM, Node.js, Nginx
-    - SSL certificate validation with expiry warnings
-  - `SystemInfoService`: System information aggregation
-    - PHP version, SAPI, Zend version
-    - 160+ loaded extensions with version info
-    - Environment variables with sensitive data masking
-    - Git repository status (branch, commit, uncommitted changes)
-
-- **Technical Implementation**:
-  - Simple function-based routing under `/_dev` prefix
-  - Server-side rendered PHP views with inline CSS (CSP-compliant, no external CDN)
-  - Environment-based enable/disable (`ENABLE_DEV_DASHBOARD=false` for production)
-  - Comprehensive test coverage: 19 tests, 123 assertions (100% passing)
-
-- **API Endpoints**:
-  - `/_dev/api/health-check`: Overall system health status (JSON)
-  - `/_dev/api/container-status`: Detailed container status (JSON)
-
-#### Changed - Infrastructure
-- **Makefile**: Add DevDashboard directory structure in `make setup`
-  - `src/php/DevDashboard/{Controllers,Services,Views}`
-  - `tests/php/DevDashboard/{Controllers,Services}`
-
-- **Docker Nginx Configuration**:
-  - Fixed config mounting: Only copy base configs into image (default.conf, csp-production.conf)
-  - SSL configs now properly opt-in via compose.yaml volumes (not baked into image)
-  - Resolved restart loop issue caused by missing SSL certs with mounted config
-
-- **PHPUnit Configuration**:
-  - Added DevDashboard test suite to phpunit.xml.dist
-
-- **Public Entry Point**:
-  - Integrated DevDashboard routing before app routes
-  - Dashboard only loads when path starts with `/_dev`
-
-#### Technical Details
-- **Health Check Strategy**: TCP socket connectivity checks instead of Docker CLI (works inside containers)
-- **Environment Awareness**: Only checks enabled services (ENABLE_PHP, ENABLE_NODE, ENABLE_REDIS, DB_TYPE)
-- **Security**: Sensitive environment variables (PASSWORD, SECRET, KEY) are masked in display
-- **Styling**: Self-contained inline CSS (~190 lines) for zero external dependencies
-
-### Version 3.2 (2025-12-30) - IDE Integration (VS Code & PhpStorm)
-**Complete IDE configurations for both Visual Studio Code and PhpStorm with full feature parity:**
-
-#### Added - VS Code Configuration (`.vscode/`)
-- **Workspace Configuration**:
-  - `extensions.json`: 26 recommended extensions (PHP, Node.js, Docker, Git, Testing, Database)
-  - `settings.json`: Comprehensive workspace settings with tool integration
-  - `tasks.json`: 24 pre-configured tasks for all Makefile commands
-  - `launch.json`: Debug configurations for PHP (Xdebug), Node.js, Frontend, Full-Stack compounds
-  - `README.md`: Complete documentation with setup guide and troubleshooting
-
-- **PHP Development Tools**:
-  - Intelephense with PHP 8.4 support
-  - PHP CS Fixer integration (PER-CS standard, risky rules enabled)
-  - PHPStan Level 5 integration
-  - PHPMD integration
-  - PHPUnit Test Explorer
-  - Xdebug 3.5.0 debugging (port 9003)
-
-- **JavaScript/TypeScript Tools**:
-  - ESLint validation and auto-fix
-  - Prettier formatting
-  - TypeScript strict mode
-  - Vitest Test Explorer
-  - Auto imports and path updates
-
-- **Docker & Database**:
-  - Docker extension integration
-  - Remote Containers support
-  - SQL Tools with PostgreSQL and MariaDB pre-configured
-
-- **Editor Configuration**:
-  - Tab size: 4 (PHP), 2 (JS/TS)
-  - 120 char ruler, Unix line endings (LF)
-  - Format on save (PHP: CS Fixer via onsave, JS/TS/Markdown: Prettier)
-  - Real-time linting (PHPStan, PHPMD, ESLint)
-  - Code spell checker with custom dictionary
-
-#### Added - PhpStorm Configuration (`.idea/`)
-- **Run Configurations** (`runConfigurations/`):
-  - 25 pre-configured run configurations organized by category
-  - Browser: Open App
-  - Make: Up, Down, Restart, Fresh Build, Rebuild
-  - PHP: CS Fixer, PHPStan, PHPMD, Run Tests, Coverage Report
-  - Node: ESLint, Prettier, Type Check, Run Tests, Coverage Report
-  - Quality: Run All Checks, Fix All
-  - Test: Run All Tests
-  - Docs: Generate API Documentation
-  - SSL: Generate Self-Signed, Show Certificate Info
-  - Logs: View All
-  - Shell: PHP Container, Node Container
-
-- **Database Connections** (`dataSources.xml`):
-  - PostgreSQL (Docker): localhost:5432/app
-  - MariaDB (Docker): localhost:3306/app
-
-- **Documentation** (`README.md`):
-  - Complete setup guide
-  - Troubleshooting section
-  - Feature comparison with VS Code
-
-#### Changed
-- **VS Code Configuration**:
-  - Fixed `cSpell.enableFiletypes` → `cSpell.enabledFileTypes` (deprecated syntax)
-  - Renamed tasks for consistency with PhpStorm: `Docker: *` → `Make: *`
-    - `Docker: Up` → `Make: Up`
-    - `Docker: Down` → `Make: Down`
-    - `Docker: Restart` → `Make: Restart`
-    - `Docker: Fresh Build` → `Make: Fresh Build`
-    - `Docker: Rebuild` → `Make: Rebuild`
-- **PhpStorm Run Configurations**:
-  - Renamed `Rebuild_Docker_Images.xml` → `Make__Rebuild.xml` (consistent naming)
-  - Renamed `Run_App_in_Browser.xml` → `Browser__Open_App.xml`
-  - Removed `Docker.xml` (redundant, all Docker operations via Make)
-- **.gitignore**: Updated to allow VS Code workspace config (like PhpStorm .idea)
-  - Only ignore user-specific files (*.code-workspace, .history/)
-
-#### Feature Parity (Both IDEs)
-Complete feature parity between VS Code and PhpStorm:
-- ✅ PHP Interpreter via Docker Compose
-- ✅ Code Style: PHP CS Fixer (PER-CS)
-- ✅ Static Analysis: PHPStan Level 5
-- ✅ Mess Detection: PHPMD
-- ✅ Testing: PHPUnit, Vitest
-- ✅ Debugging: Xdebug 3.5.0
-- ✅ Database Tools: PostgreSQL, MariaDB connections
-- ✅ Run Configurations/Tasks for all Make commands
-- ✅ Comprehensive documentation (README.md in both .vscode/ and .idea/)
-
----
-
-### Version 3.1 (2025-12-29) - SSL/TLS Integration
-**Comprehensive SSL/TLS support for all services with zero-config philosophy:**
-
-#### Added
-- **SSL Certificate Management**:
-  - Self-signed certificate generator (`docker/nginx/certs/generate-selfsigned.sh`)
-  - Let's Encrypt setup script (`docker/nginx/certs/setup-letsencrypt.sh`)
-  - Makefile commands: `ssl-selfsigned`, `ssl-letsencrypt`, `ssl-renew`, `ssl-info`, `ssl-clean`
-  - Comprehensive SSL documentation (`docker/nginx/certs/README.md`)
-- **Nginx SSL Configurations**:
-  - `ssl-development.conf`: Zero-config SSL für Development (localhost, self-signed)
-  - `ssl-production.conf.example`: Production template mit HSTS, OCSP Stapling, strenger CSP
-  - Separate Configs für Development/Production Parität
-- **Database SSL Support**:
-  - PostgreSQL: SSL connection configuration in `compose.prod.yaml` (optional)
-  - MariaDB: SSL connection configuration in `compose.prod.yaml` (optional)
-  - Certificate mounting via volumes (commented, ready to uncomment)
-- **Node.js SSL Support**:
-  - Documentation für HTTPS server setup (`docker/node/ssl-example.md`)
-  - Szenarien: Nginx Reverse Proxy (default) vs. Direct Exposure
-- **Environment Variables**:
-  - `NGINX_SSL_PORT` für SSL Port Configuration (default: 8443)
-
-#### Changed
-- **Directory Structure**: SSL certificate directory via `make setup` statt .gitkeep
-- **Compose Files**:
-  - `compose.yaml`: SSL volumes für development (commented)
-  - `compose.prod.yaml`: SSL volumes für production (commented)
-- **Zero-Config Philosophy**: Development SSL funktioniert out-of-the-box nach `make ssl-selfsigned`
-
-#### Removed
-- Obsolete `.gitkeep` files (alle Directories werden via `make setup` erstellt):
-  - `src/php/.gitkeep`, `src/node/.gitkeep`
-  - `resources/js/.gitkeep`, `resources/css/.gitkeep`, `resources/images/.gitkeep`
-  - `config/.gitkeep`, `templates/.gitkeep`
-  - `storage/app/.gitkeep`, `storage/cache/.gitkeep`, `storage/sessions/.gitkeep`
-
-#### Security
-- Modern TLS configuration (Mozilla Intermediate Profile)
-- TLSv1.2/1.3 only, strong cipher suites
-- HSTS, OCSP Stapling in production config
-- Strikte CSP in production SSL config
-
----
-
-### Version 3.0 (2025-12-29) - Quality & CI/CD Integration
-**Peer Review Improvements based on comprehensive code review:**
-
-#### Added
-- **CI/CD Templates**:
-  - GitHub Actions workflow (`.github/workflows/ci.yml`) mit 6 Jobs:
-    - php-quality: CS-Fixer, PHPStan, PHPMD, Rector
-    - php-tests: PHPUnit mit Coverage (80% threshold)
-    - node-quality: ESLint, Prettier, TypeScript
-    - node-tests: Vitest mit Coverage (80% threshold)
-    - security: Trivy Scans für Docker Images, Dependency Audits
-    - build-production: Production Build Validation
-  - GitLab CI pipeline (`.gitlab-ci.yml`) mit 15+ Jobs über 5 Stages
-- **Security**:
-  - Production CSP Config (`docker/nginx/conf.d/csp-production.conf`)
-  - Strict Content-Security-Policy ohne unsafe-inline/unsafe-eval
-  - Optional als Volume in `compose.prod.yaml` (kommentiert)
-- **Configuration**:
-  - Composer `platform-check: true` für PHP Version Consistency
-  - TypeDoc `theme: "default"` explizit konfiguriert
-
-#### Changed
-- **Health Checks**: Node.js Development Health Check verbessert
-  - Alt: `test -f /app/package.json` (nur File-Check)
-  - Neu: Prüft auf laufende Services (Vite:5173 oder Backend:3000)
-  - Fallback auf File-Check für idle Mode
-- **Documentation**: compose.prod.yaml mit CSP Config Mount Beispiel
-
-#### Removed
-- Obsoleter TODO Kommentar in `docker/php/Dockerfile` (Composer wurde bereits korrekt deinstalliert in Zeile 144)
-
-#### Quality Notes
-- Projekt-Status nach Peer Review: **AUSGEZEICHNET (9.5/10)**
-- PhpStorm Settings bereits perfekt konfiguriert (Docker Interpreter, PHPStan Level 5, CS-Fixer, PHPMD)
-- Komplette PHP ↔ Node.js Parität bei allen Quality Tools
-- Zero-Config Readiness validiert
-- 12-Factor App Compliance vollständig
-
----
-
 ## Übersicht
 
 Dieses Projekt wird umstrukturiert zu einem flexiblen Boilerplate, das folgende Modi unterstützt:
@@ -2640,12 +2407,377 @@ curl http://localhost:3000/health
 ---
 
 **Erstellt:** 2025-12-19
-**Letzte Aktualisierung:** 2025-12-29 (Code Quality & Build Optimization)
-**Version:** 2.19
+**Letzte Aktualisierung:** 2025-12-30 (Development Dashboard Completion)
+**Version:** 3.4
 
 ---
 
 ## Changelog
+
+### Version 3.4 (2025-12-30) - Development Dashboard Completion
+**Complete implementation of all dashboard pages with proper autoloading, volume mounts, and production safety:**
+
+#### Completed - Dashboard Pages
+- **Quality Page (`/_dev/quality`)**:
+  - PHP quality tools status: PHPStan Level 8, PHPMD, PHP CS Fixer (properly detected)
+  - Node.js quality tools status: ESLint, Prettier, TypeScript (detected via volume mounts)
+  - Code statistics: Accurate file counts for PHP/Node source and test files
+  - Test coverage reports for PHP (PHPUnit) and Node.js (Vitest)
+  - Quick action commands: Run quality checks, auto-fix code style, generate coverage
+
+- **Logs Page (`/_dev/logs`)**:
+  - Log statistics: File count, total size, available sources
+  - Application logs detection (requires `make setup` to create storage/logs)
+  - Available log sources: Docker Compose logs, per-service logs, application logs
+  - CLI commands with examples for log viewing (docker compose logs, tail, grep)
+  - Usage tips: Real-time monitoring, filtering, searching patterns
+  - Makefile integration documentation
+
+- **Database Page (`/_dev/database`)**:
+  - Database overview: Type, version, table count, total size
+  - Connection pool statistics: Total, active, idle connections
+  - Tables list: Row counts, sizes, schemas (PostgreSQL/MariaDB support)
+  - CLI commands: psql/mysql access, dump, restore, exec
+  - Database client recommendations: pgAdmin, DBeaver, TablePlus, DataGrip
+  - Error handling for disconnected databases
+
+- **System Page Improvements**:
+  - Fixed phpinfo() button toggle (removed duplicate "Hide" link)
+  - phpinfo() logos display correctly (fixed CSP to allow data: URIs)
+  - Improved phpinfo() display with scrollable container
+
+- **Dashboard Page Enhancements**:
+  - Git status working correctly (branch, commit, uncommitted changes)
+  - System health monitoring with status indicators
+  - Quick actions for common tasks
+
+#### Fixed - Critical Issues
+- **PHP Autoloading**: Removed all `require_once` statements from DashboardController
+  - Added `DevDashboard\` namespace to composer.json PSR-4 autoload
+  - Added `Tests\DevDashboard\` namespace to composer.json PSR-4 autoload-dev
+  - Eliminates "does not comply with psr-4" warnings during composer dump-autoload
+
+- **CSP Security**: Fixed Content-Security-Policy blocking phpinfo() images
+  - Added `img-src 'self' data:` to development CSP in nginx default.conf
+  - Allows base64-encoded images (PHP logo, Zend logo) to display correctly
+
+- **Production Safety**: Dashboard now only available in development environment
+  - Checks `ENV=development` in public/index.php (not a separate variable)
+  - Prevents accidental exposure in production of sensitive data:
+    - Environment variables and secrets
+    - Database credentials
+    - phpinfo() system details
+    - Git repository information
+
+- **UI/UX Fixes**:
+  - Added explicit spacing in header (gap-4 between sections, gap-2 within)
+  - Fixed list styling with consistent bullet points (removed double bullets)
+  - Removed duplicate "Hide phpinfo()" link in System page
+
+#### Added - Architecture Improvements (DEV-only)
+- **Volume Mounts** (compose.override.yaml):
+  - Node.js config files: eslint.config.js, .prettierrc.json, tsconfig.json
+  - Git repository: .git/ (read-only) for git status functionality
+  - Node.js source: src/node/, tests/node/ for accurate code statistics
+  - Entrypoint script: docker/php/entrypoint.dev.sh
+
+- **Git Integration**:
+  - Created entrypoint.dev.sh to configure git safe.directory automatically
+  - Resolves "dubious ownership" errors in Docker container
+  - Enables Git status detection in dashboard
+
+- **Quality Detection**:
+  - QualityService now properly checks for config files (no assumptions)
+  - Node.js tools detected via volume-mounted configs
+  - PHP tools detected from phpstan.neon, phpmd.xml.dist, .php-cs-fixer.dist.php
+
+#### Changed - IDE Integration
+- **.idea/docker-webdev.iml**:
+  - Corrected sourceFolders: `src/php/App`, `src/php/DevDashboard` (not generic `src/php`)
+  - Corrected test folders: `tests/php/App`, `tests/php/DevDashboard`
+  - Added Node.js folders: `src/node`, `tests/node`
+
+- **.idea/phpunit.xml**:
+  - Fixed directories: `$PROJECT_DIR$/tests/php` (not generic `tests`)
+
+- **.vscode/settings.json**:
+  - Updated PHPStan level to 8 (was 5)
+  - Updated PHPStan configFile to phpstan.neon (was phpstan.neon.dist)
+
+- **phpstan.neon**:
+  - Upgraded from Level 5 to Level 8 for stricter type checking
+
+- **Makefile**:
+  - Added `storage/logs` to directories created by `make setup`
+  - Ensures Application Logs feature works after setup
+
+- **composer.json**:
+  - Added DevDashboard and Tests\DevDashboard namespaces to autoload
+
+#### Services Implementation
+- **QualityService**: Code quality metrics aggregation
+  - Detects PHP tools: PHPStan, PHPMD, PHP CS Fixer
+  - Detects Node.js tools: ESLint, Prettier, TypeScript
+  - Counts source files and test files for both PHP and Node.js
+  - Checks for test coverage reports
+
+- **LogService**: Log viewing and aggregation
+  - Lists available log sources (Docker, application, per-service)
+  - Provides CLI commands for log viewing
+  - Calculates log file statistics
+
+- **DatabaseService**: Database introspection
+  - Database overview with type-specific queries (PostgreSQL/MariaDB)
+  - Tables list with row counts and sizes
+  - Connection pool statistics
+  - CLI commands for database operations
+
+#### Testing
+- ✅ All 6 dashboard pages return HTTP 200
+- ✅ phpinfo() images display correctly (2 logos present)
+- ✅ Application Logs shows as "Available" after make setup
+- ✅ Node.js quality tools detected correctly
+- ✅ Git status shows branch and commit info
+- ✅ No composer autoloading warnings
+- ✅ PHPUnit DevDashboard suite: 19 tests, 131 assertions - OK
+- ✅ Proper PHP autoloading working (no require_once needed)
+
+#### Security Notes
+- Dashboard only accessible when `ENV=development`
+- Volume mounts for .git and Node.js configs are DEV-only (compose.override.yaml)
+- Sensitive environment variables masked in display
+- phpinfo() only available in development
+
+### Version 3.3 (2025-12-30) - Development Dashboard
+**Comprehensive development dashboard for real-time system monitoring and insights:**
+
+#### Added - Development Dashboard (`/_dev`)
+- **Dashboard Pages**:
+    - Main Dashboard (`/_dev`): System overview with health status, git info, quick actions
+    - Health Checks (`/_dev/health`): Container status, database connections, service monitoring, SSL certificate info
+    - System Info (`/_dev/system`): PHP version, loaded extensions (160+), environment variables, phpinfo() viewer
+    - Placeholder Pages: Quality metrics, Database tools, Log viewer (to be implemented)
+
+- **Core Services**:
+    - `HealthCheckService`: Real-time health monitoring via TCP socket checks
+        - Container checks: nginx, php, node, redis, postgres (based on enabled services)
+        - Database connections: PostgreSQL/MariaDB (based on DB_TYPE)
+        - Service checks: PHP-FPM, Node.js, Nginx
+        - SSL certificate validation with expiry warnings
+    - `SystemInfoService`: System information aggregation
+        - PHP version, SAPI, Zend version
+        - 160+ loaded extensions with version info
+        - Environment variables with sensitive data masking
+        - Git repository status (branch, commit, uncommitted changes)
+
+- **Technical Implementation**:
+    - Simple function-based routing under `/_dev` prefix
+    - Server-side rendered PHP views with inline CSS (CSP-compliant, no external CDN)
+    - Environment-based enable/disable (`ENABLE_DEV_DASHBOARD=false` for production)
+    - Comprehensive test coverage: 19 tests, 123 assertions (100% passing)
+
+- **API Endpoints**:
+    - `/_dev/api/health-check`: Overall system health status (JSON)
+    - `/_dev/api/container-status`: Detailed container status (JSON)
+
+#### Changed - Infrastructure
+- **Makefile**: Add DevDashboard directory structure in `make setup`
+    - `src/php/DevDashboard/{Controllers,Services,Views}`
+    - `tests/php/DevDashboard/{Controllers,Services}`
+
+- **Docker Nginx Configuration**:
+    - Fixed config mounting: Only copy base configs into image (default.conf, csp-production.conf)
+    - SSL configs now properly opt-in via compose.yaml volumes (not baked into image)
+    - Resolved restart loop issue caused by missing SSL certs with mounted config
+
+- **PHPUnit Configuration**:
+    - Added DevDashboard test suite to phpunit.xml.dist
+
+- **Public Entry Point**:
+    - Integrated DevDashboard routing before app routes
+    - Dashboard only loads when path starts with `/_dev`
+
+#### Technical Details
+- **Health Check Strategy**: TCP socket connectivity checks instead of Docker CLI (works inside containers)
+- **Environment Awareness**: Only checks enabled services (ENABLE_PHP, ENABLE_NODE, ENABLE_REDIS, DB_TYPE)
+- **Security**: Sensitive environment variables (PASSWORD, SECRET, KEY) are masked in display
+- **Styling**: Self-contained inline CSS (~190 lines) for zero external dependencies
+
+### Version 3.2 (2025-12-30) - IDE Integration (VS Code & PhpStorm)
+**Complete IDE configurations for both Visual Studio Code and PhpStorm with full feature parity:**
+
+#### Added - VS Code Configuration (`.vscode/`)
+- **Workspace Configuration**:
+    - `extensions.json`: 26 recommended extensions (PHP, Node.js, Docker, Git, Testing, Database)
+    - `settings.json`: Comprehensive workspace settings with tool integration
+    - `tasks.json`: 24 pre-configured tasks for all Makefile commands
+    - `launch.json`: Debug configurations for PHP (Xdebug), Node.js, Frontend, Full-Stack compounds
+    - `README.md`: Complete documentation with setup guide and troubleshooting
+
+- **PHP Development Tools**:
+    - Intelephense with PHP 8.4 support
+    - PHP CS Fixer integration (PER-CS standard, risky rules enabled)
+    - PHPStan Level 5 integration
+    - PHPMD integration
+    - PHPUnit Test Explorer
+    - Xdebug 3.5.0 debugging (port 9003)
+
+- **JavaScript/TypeScript Tools**:
+    - ESLint validation and auto-fix
+    - Prettier formatting
+    - TypeScript strict mode
+    - Vitest Test Explorer
+    - Auto imports and path updates
+
+- **Docker & Database**:
+    - Docker extension integration
+    - Remote Containers support
+    - SQL Tools with PostgreSQL and MariaDB pre-configured
+
+- **Editor Configuration**:
+    - Tab size: 4 (PHP), 2 (JS/TS)
+    - 120 char ruler, Unix line endings (LF)
+    - Format on save (PHP: CS Fixer via onsave, JS/TS/Markdown: Prettier)
+    - Real-time linting (PHPStan, PHPMD, ESLint)
+    - Code spell checker with custom dictionary
+
+#### Added - PhpStorm Configuration (`.idea/`)
+- **Run Configurations** (`runConfigurations/`):
+    - 25 pre-configured run configurations organized by category
+    - Browser: Open App
+    - Make: Up, Down, Restart, Fresh Build, Rebuild
+    - PHP: CS Fixer, PHPStan, PHPMD, Run Tests, Coverage Report
+    - Node: ESLint, Prettier, Type Check, Run Tests, Coverage Report
+    - Quality: Run All Checks, Fix All
+    - Test: Run All Tests
+    - Docs: Generate API Documentation
+    - SSL: Generate Self-Signed, Show Certificate Info
+    - Logs: View All
+    - Shell: PHP Container, Node Container
+
+- **Database Connections** (`dataSources.xml`):
+    - PostgreSQL (Docker): localhost:5432/app
+    - MariaDB (Docker): localhost:3306/app
+
+- **Documentation** (`README.md`):
+    - Complete setup guide
+    - Troubleshooting section
+    - Feature comparison with VS Code
+
+#### Changed
+- **VS Code Configuration**:
+    - Fixed `cSpell.enableFiletypes` → `cSpell.enabledFileTypes` (deprecated syntax)
+    - Renamed tasks for consistency with PhpStorm: `Docker: *` → `Make: *`
+        - `Docker: Up` → `Make: Up`
+        - `Docker: Down` → `Make: Down`
+        - `Docker: Restart` → `Make: Restart`
+        - `Docker: Fresh Build` → `Make: Fresh Build`
+        - `Docker: Rebuild` → `Make: Rebuild`
+- **PhpStorm Run Configurations**:
+    - Renamed `Rebuild_Docker_Images.xml` → `Make__Rebuild.xml` (consistent naming)
+    - Renamed `Run_App_in_Browser.xml` → `Browser__Open_App.xml`
+    - Removed `Docker.xml` (redundant, all Docker operations via Make)
+- **.gitignore**: Updated to allow VS Code workspace config (like PhpStorm .idea)
+    - Only ignore user-specific files (*.code-workspace, .history/)
+
+#### Feature Parity (Both IDEs)
+Complete feature parity between VS Code and PhpStorm:
+- ✅ PHP Interpreter via Docker Compose
+- ✅ Code Style: PHP CS Fixer (PER-CS)
+- ✅ Static Analysis: PHPStan Level 5
+- ✅ Mess Detection: PHPMD
+- ✅ Testing: PHPUnit, Vitest
+- ✅ Debugging: Xdebug 3.5.0
+- ✅ Database Tools: PostgreSQL, MariaDB connections
+- ✅ Run Configurations/Tasks for all Make commands
+- ✅ Comprehensive documentation (README.md in both .vscode/ and .idea/)
+
+---
+
+### Version 3.1 (2025-12-29) - SSL/TLS Integration
+**Comprehensive SSL/TLS support for all services with zero-config philosophy:**
+
+#### Added
+- **SSL Certificate Management**:
+    - Self-signed certificate generator (`docker/nginx/certs/generate-selfsigned.sh`)
+    - Let's Encrypt setup script (`docker/nginx/certs/setup-letsencrypt.sh`)
+    - Makefile commands: `ssl-selfsigned`, `ssl-letsencrypt`, `ssl-renew`, `ssl-info`, `ssl-clean`
+    - Comprehensive SSL documentation (`docker/nginx/certs/README.md`)
+- **Nginx SSL Configurations**:
+    - `ssl-development.conf`: Zero-config SSL für Development (localhost, self-signed)
+    - `ssl-production.conf.example`: Production template mit HSTS, OCSP Stapling, strenger CSP
+    - Separate Configs für Development/Production Parität
+- **Database SSL Support**:
+    - PostgreSQL: SSL connection configuration in `compose.prod.yaml` (optional)
+    - MariaDB: SSL connection configuration in `compose.prod.yaml` (optional)
+    - Certificate mounting via volumes (commented, ready to uncomment)
+- **Node.js SSL Support**:
+    - Documentation für HTTPS server setup (`docker/node/ssl-example.md`)
+    - Szenarien: Nginx Reverse Proxy (default) vs. Direct Exposure
+- **Environment Variables**:
+    - `NGINX_SSL_PORT` für SSL Port Configuration (default: 8443)
+
+#### Changed
+- **Directory Structure**: SSL certificate directory via `make setup` statt .gitkeep
+- **Compose Files**:
+    - `compose.yaml`: SSL volumes für development (commented)
+    - `compose.prod.yaml`: SSL volumes für production (commented)
+- **Zero-Config Philosophy**: Development SSL funktioniert out-of-the-box nach `make ssl-selfsigned`
+
+#### Removed
+- Obsolete `.gitkeep` files (alle Directories werden via `make setup` erstellt):
+    - `src/php/.gitkeep`, `src/node/.gitkeep`
+    - `resources/js/.gitkeep`, `resources/css/.gitkeep`, `resources/images/.gitkeep`
+    - `config/.gitkeep`, `templates/.gitkeep`
+    - `storage/app/.gitkeep`, `storage/cache/.gitkeep`, `storage/sessions/.gitkeep`
+
+#### Security
+- Modern TLS configuration (Mozilla Intermediate Profile)
+- TLSv1.2/1.3 only, strong cipher suites
+- HSTS, OCSP Stapling in production config
+- Strikte CSP in production SSL config
+
+---
+
+### Version 3.0 (2025-12-29) - Quality & CI/CD Integration
+**Peer Review Improvements based on comprehensive code review:**
+
+#### Added
+- **CI/CD Templates**:
+    - GitHub Actions workflow (`.github/workflows/ci.yml`) mit 6 Jobs:
+        - php-quality: CS-Fixer, PHPStan, PHPMD, Rector
+        - php-tests: PHPUnit mit Coverage (80% threshold)
+        - node-quality: ESLint, Prettier, TypeScript
+        - node-tests: Vitest mit Coverage (80% threshold)
+        - security: Trivy Scans für Docker Images, Dependency Audits
+        - build-production: Production Build Validation
+    - GitLab CI pipeline (`.gitlab-ci.yml`) mit 15+ Jobs über 5 Stages
+- **Security**:
+    - Production CSP Config (`docker/nginx/conf.d/csp-production.conf`)
+    - Strict Content-Security-Policy ohne unsafe-inline/unsafe-eval
+    - Optional als Volume in `compose.prod.yaml` (kommentiert)
+- **Configuration**:
+    - Composer `platform-check: true` für PHP Version Consistency
+    - TypeDoc `theme: "default"` explizit konfiguriert
+
+#### Changed
+- **Health Checks**: Node.js Development Health Check verbessert
+    - Alt: `test -f /app/package.json` (nur File-Check)
+    - Neu: Prüft auf laufende Services (Vite:5173 oder Backend:3000)
+    - Fallback auf File-Check für idle Mode
+- **Documentation**: compose.prod.yaml mit CSP Config Mount Beispiel
+
+#### Removed
+- Obsoleter TODO Kommentar in `docker/php/Dockerfile` (Composer wurde bereits korrekt deinstalliert in Zeile 144)
+
+#### Quality Notes
+- Projekt-Status nach Peer Review: **AUSGEZEICHNET (9.5/10)**
+- PhpStorm Settings bereits perfekt konfiguriert (Docker Interpreter, PHPStan Level 5, CS-Fixer, PHPMD)
+- Komplette PHP ↔ Node.js Parität bei allen Quality Tools
+- Zero-Config Readiness validiert
+- 12-Factor App Compliance vollständig
+
+---
 
 ### Version 2.19 (2025-12-29)
 - ✅ **Code Quality & Build Optimization (Gemini-Review + Optimierungen)**

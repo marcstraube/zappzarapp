@@ -25,7 +25,12 @@ services:
       args:
         USER_ID: ${USER_ID:-82}
         GROUP_ID: ${GROUP_ID:-82}
+    entrypoint: ["/entrypoint.dev.sh"]
+    command: ["php-fpm"]
     volumes:
+      # Entrypoint Script
+      - ./docker/php/entrypoint.dev.sh:/entrypoint.dev.sh:ro
+
       # Application
       - ./composer.json:/var/www/html/composer.json
       - ./composer.lock:/var/www/html/composer.lock
@@ -38,11 +43,23 @@ services:
       - ./tools:/var/www/html/tools
       - ./vendor:/var/www/html/vendor
 
-      # Quality Assurance Tools Config
+      # Quality Assurance Tools Config (PHP)
       - ./phpstan.neon:/var/www/html/phpstan.neon:ro
       - ./phpmd.xml.dist:/var/www/html/phpmd.xml.dist:ro
       - ./.php-cs-fixer.dist.php:/var/www/html/.php-cs-fixer.dist.php:ro
       - ./phpunit.xml.dist:/var/www/html/phpunit.xml.dist:ro
+
+      # Quality Assurance Tools Config (Node.js - for Dashboard visibility)
+      - ./eslint.config.js:/var/www/html/eslint.config.js:ro
+      - ./.prettierrc.json:/var/www/html/.prettierrc.json:ro
+      - ./tsconfig.json:/var/www/html/tsconfig.json:ro
+
+      # Node.js source for code statistics
+      - ./src/node:/var/www/html/src/node:ro
+      - ./tests/node:/var/www/html/tests/node:ro
+
+      # Git repository (for git status in Dashboard)
+      - ./.git:/var/www/html/.git:ro
 
       # Documentation Config
       - ./phpdoc.xml:/var/www/html/phpdoc.xml:ro

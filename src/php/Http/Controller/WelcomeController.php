@@ -16,9 +16,9 @@ class WelcomeController
 {
     public function index(): void
     {
-        $vite = new ViteHelper();
+        $vite   = new ViteHelper();
         $health = new HealthCheck();
-        $env = $health->getEnvironment();
+        $env    = $health->getEnvironment();
         $status = $health->checkAll();
 
         // Set header for HTML

@@ -93,6 +93,7 @@ declare(strict_types=1);
         <ul style="list-style: disc; padding-left: 1.5rem;">
             <li><a href="/" style="color: #007bff; text-decoration: none;"><strong>GET /</strong></a> - Service dashboard with live status (via Router)</li>
             <li><a href="/welcome" style="color: #007bff; text-decoration: none;"><strong>GET /welcome</strong></a> - Alias for / (via Router)</li>
+            <li><a href="/_dev" style="color: #007bff; text-decoration: none;"><strong>GET /_dev</strong></a> - 🛠️ Development Dashboard (System Health, Monitoring & Tools)</li>
             <li><a href="/status" style="color: #007bff; text-decoration: none;"><strong>GET /status</strong></a> - Detailed JSON health check (all services)</li>
             <li><a href="/api/health" style="color: #007bff; text-decoration: none;"><strong>GET /api/health</strong></a> - Simple JSON health (PHP-FPM only)</li>
             <li><a href="/health.php" style="color: #007bff; text-decoration: none;"><strong>GET /health.php</strong></a> - Minimal health check for Docker HEALTHCHECK</li>

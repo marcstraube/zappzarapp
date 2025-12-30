@@ -27,8 +27,8 @@ class Router
     private function addRoute(string $method, string $path, callable $handler): void
     {
         $this->routes[] = [
-            'method' => $method,
-            'path' => $path,
+            'method'  => $method,
+            'path'    => $path,
             'handler' => $handler,
         ];
     }
@@ -36,7 +36,7 @@ class Router
     public function dispatch(): void
     {
         $requestMethod = $_SERVER['REQUEST_METHOD'] ?? 'GET';
-        $requestPath = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH);
+        $requestPath   = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH);
 
         foreach ($this->routes as $route) {
             if ($route['method'] === $requestMethod && $this->matchPath($route['path'], $requestPath)) {

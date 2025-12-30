@@ -84,11 +84,13 @@
         .flex { display: flex; }
         .items-center { align-items: center; }
         .justify-between { justify-content: space-between; }
+        .justify-center { justify-content: center; }
         .gap-4 { gap: 1rem; }
         .border { border: 1px solid #e5e7eb; }
         .border-t { border-top: 1px solid #e5e7eb; }
         .rounded { border-radius: 0.25rem; }
         .rounded-lg { border-radius: 0.5rem; }
+        .rounded-full { border-radius: 9999px; }
         .p-2 { padding: 0.5rem; }
         .p-4 { padding: 1rem; }
         .p-6 { padding: 1.5rem; }
@@ -192,8 +194,8 @@
     <!-- Header -->
     <header>
         <div class="container">
-            <div class="flex items-center justify-between">
-                <div class="flex items-center">
+            <div class="flex items-center justify-between gap-4">
+                <div class="flex items-center gap-2">
                     <h1>🛠️ Dev Dashboard</h1>
                     <span class="env-badge">Development</span>
                 </div>

@@ -20,7 +20,7 @@ class ViteHelper
     public function __construct()
     {
         // Determine environment from ENV variable, default to production
-        $this->env = $_ENV['ENV'] ?? getenv('ENV') ?: 'production';
+        $this->env          = $_ENV['ENV'] ?? getenv('ENV') ?: 'production';
         $this->manifestPath = __DIR__ . '/../../../public/build/.vite/manifest.json';
         // Use localhost:5173 for Vite Dev Server with CORS enabled
         $this->viteDevServerUrl = 'http://localhost:5173';
@@ -47,7 +47,7 @@ class ViteHelper
             return null;
         }
 
-        $content = file_get_contents($this->manifestPath);
+        $content        = file_get_contents($this->manifestPath);
         $this->manifest = json_decode($content, true);
 
         return $this->manifest;

@@ -15,10 +15,10 @@ class ExampleController
     {
         header('Content-Type: application/json');
         echo json_encode([
-            'message' => 'Hello from PHP!',
-            'timestamp' => time(),
+            'message'     => 'Hello from PHP!',
+            'timestamp'   => time(),
             'php_version' => PHP_VERSION,
-            'server' => 'PHP-FPM 8.4',
+            'server'      => 'PHP-FPM 8.4',
         ], JSON_THROW_ON_ERROR);
     }
 
@@ -27,8 +27,8 @@ class ExampleController
         header('Content-Type: application/json');
         http_response_code(200);
         echo json_encode([
-            'status' => 'ok',
-            'service' => 'php-backend',
+            'status'    => 'ok',
+            'service'   => 'php-backend',
             'timestamp' => date('c'),
         ], JSON_THROW_ON_ERROR);
     }

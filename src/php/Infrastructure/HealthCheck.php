@@ -22,12 +22,12 @@ class HealthCheck
     {
         // Load environment variables
         $this->env = [
-            'ENV' => $_ENV['ENV'] ?? getenv('ENV') ?: 'production',
-            'ENABLE_PHP' => $this->parseBool($_ENV['ENABLE_PHP'] ?? getenv('ENABLE_PHP') ?: 'true'),
-            'ENABLE_NODE' => $this->parseBool($_ENV['ENABLE_NODE'] ?? getenv('ENABLE_NODE') ?: 'false'),
+            'ENV'          => $_ENV['ENV'] ?? getenv('ENV') ?: 'production',
+            'ENABLE_PHP'   => $this->parseBool($_ENV['ENABLE_PHP'] ?? getenv('ENABLE_PHP') ?: 'true'),
+            'ENABLE_NODE'  => $this->parseBool($_ENV['ENABLE_NODE'] ?? getenv('ENABLE_NODE') ?: 'false'),
             'ENABLE_REDIS' => $this->parseBool($_ENV['ENABLE_REDIS'] ?? getenv('ENABLE_REDIS') ?: 'false'),
-            'DB_TYPE' => $_ENV['DB_TYPE'] ?? getenv('DB_TYPE') ?: null,
-            'NODE_MODE' => $_ENV['NODE_MODE'] ?? getenv('NODE_MODE') ?: 'none',
+            'DB_TYPE'      => $_ENV['DB_TYPE'] ?? getenv('DB_TYPE') ?: null,
+            'NODE_MODE'    => $_ENV['NODE_MODE'] ?? getenv('NODE_MODE') ?: 'none',
         ];
     }
 
@@ -45,16 +45,16 @@ class HealthCheck
     public function checkAll(): array
     {
         $this->status = [
-            'timestamp' => date('c'),
-            'environment' => $this->env['ENV'],
+            'timestamp'      => date('c'),
+            'environment'    => $this->env['ENV'],
             'overall_status' => 'ok',
-            'services' => [],
-            'features' => $this->env,
+            'services'       => [],
+            'features'       => $this->env,
         ];
 
         // PHP-FPM is always running (otherwise this code wouldn't execute)
         $this->status['services']['php-fpm'] = [
-            'status' => 'ok',
+            'status'  => 'ok',
             'version' => PHP_VERSION,
             'enabled' => $this->env['ENABLE_PHP'],
         ];
@@ -64,7 +64,7 @@ class HealthCheck
             $this->checkNodeBackend();
         } else {
             $this->status['services']['node-backend'] = [
-                'status' => 'disabled',
+                'status'  => 'disabled',
                 'enabled' => false,
             ];
         }
@@ -74,7 +74,7 @@ class HealthCheck
             $this->checkRedis();
         } else {
             $this->status['services']['redis'] = [
-                'status' => 'disabled',
+                'status'  => 'disabled',
                 'enabled' => false,
             ];
         }
@@ -84,7 +84,7 @@ class HealthCheck
             $this->checkDatabase();
         } else {
             $this->status['services']['database'] = [
-                'status' => 'disabled',
+                'status'  => 'disabled',
                 'enabled' => false,
             ];
         }
@@ -107,10 +107,10 @@ class HealthCheck
     {
         try {
             // Use internal Docker network hostname
-            $url = 'http://node:3000/health';
+            $url     = 'http://node:3000/health';
             $context = stream_context_create([
                 'http' => [
-                    'timeout' => 2,
+                    'timeout'       => 2,
                     'ignore_errors' => true,
                 ],
             ]);
@@ -119,10 +119,10 @@ class HealthCheck
 
             if ($response === false) {
                 $this->status['services']['node-backend'] = [
-                    'status' => 'error',
+                    'status'  => 'error',
                     'message' => 'Node backend not reachable',
                     'enabled' => true,
-                    'mode' => $this->env['NODE_MODE'],
+                    'mode'    => $this->env['NODE_MODE'],
                 ];
                 return;
             }
@@ -130,19 +130,19 @@ class HealthCheck
             $data = json_decode($response, true);
 
             $this->status['services']['node-backend'] = [
-                'status' => $data['status'] ?? 'unknown',
-                'version' => $data['node_version'] ?? 'unknown',
-                'uptime' => $data['uptime'] ?? null,
+                'status'      => $data['status'] ?? 'unknown',
+                'version'     => $data['node_version'] ?? 'unknown',
+                'uptime'      => $data['uptime'] ?? null,
                 'environment' => $data['environment'] ?? 'unknown',
-                'enabled' => true,
-                'mode' => $this->env['NODE_MODE'],
+                'enabled'     => true,
+                'mode'        => $this->env['NODE_MODE'],
             ];
         } catch (\Exception $e) {
             $this->status['services']['node-backend'] = [
-                'status' => 'error',
+                'status'  => 'error',
                 'message' => $e->getMessage(),
                 'enabled' => true,
-                'mode' => $this->env['NODE_MODE'],
+                'mode'    => $this->env['NODE_MODE'],
             ];
         }
     }
@@ -154,7 +154,7 @@ class HealthCheck
     {
         if (!extension_loaded('redis')) {
             $this->status['services']['redis'] = [
-                'status' => 'error',
+                'status'  => 'error',
                 'message' => 'Redis PHP extension not installed',
                 'enabled' => true,
             ];
@@ -162,12 +162,12 @@ class HealthCheck
         }
 
         try {
-            $redis = new \Redis();
+            $redis     = new \Redis();
             $connected = @$redis->connect('redis', 6379, 2);
 
             if (!$connected) {
                 $this->status['services']['redis'] = [
-                    'status' => 'error',
+                    'status'  => 'error',
                     'message' => 'Could not connect to Redis',
                     'enabled' => true,
                 ];
@@ -178,7 +178,7 @@ class HealthCheck
             $info = $redis->info('SERVER');
 
             $this->status['services']['redis'] = [
-                'status' => ($pong === '+PONG' || $pong === true) ? 'ok' : 'error',
+                'status'  => ($pong === '+PONG' || $pong === true) ? 'ok' : 'error',
                 'version' => $info['redis_version'] ?? 'unknown',
                 'enabled' => true,
             ];
@@ -186,7 +186,7 @@ class HealthCheck
             $redis->close();
         } catch (\Exception $e) {
             $this->status['services']['redis'] = [
-                'status' => 'error',
+                'status'  => 'error',
                 'message' => $e->getMessage(),
                 'enabled' => true,
             ];
@@ -206,7 +206,7 @@ class HealthCheck
             $this->checkMariaDB();
         } else {
             $this->status['services']['database'] = [
-                'status' => 'error',
+                'status'  => 'error',
                 'message' => 'Unknown database type: ' . $dbType,
                 'enabled' => true,
             ];
@@ -220,8 +220,8 @@ class HealthCheck
     {
         if (!extension_loaded('pdo_pgsql')) {
             $this->status['services']['database'] = [
-                'status' => 'error',
-                'type' => 'postgres',
+                'status'  => 'error',
+                'type'    => 'postgres',
                 'message' => 'PDO PostgreSQL extension not installed',
                 'enabled' => true,
             ];
@@ -242,15 +242,15 @@ class HealthCheck
             $version = $pdo->query('SELECT version()')->fetchColumn();
 
             $this->status['services']['database'] = [
-                'status' => 'ok',
-                'type' => 'postgres',
+                'status'  => 'ok',
+                'type'    => 'postgres',
                 'version' => $version,
                 'enabled' => true,
             ];
         } catch (\Exception $e) {
             $this->status['services']['database'] = [
-                'status' => 'error',
-                'type' => 'postgres',
+                'status'  => 'error',
+                'type'    => 'postgres',
                 'message' => $e->getMessage(),
                 'enabled' => true,
             ];
@@ -264,8 +264,8 @@ class HealthCheck
     {
         if (!extension_loaded('pdo_mysql')) {
             $this->status['services']['database'] = [
-                'status' => 'error',
-                'type' => 'mariadb',
+                'status'  => 'error',
+                'type'    => 'mariadb',
                 'message' => 'PDO MySQL extension not installed',
                 'enabled' => true,
             ];
@@ -286,15 +286,15 @@ class HealthCheck
             $version = $pdo->query('SELECT VERSION()')->fetchColumn();
 
             $this->status['services']['database'] = [
-                'status' => 'ok',
-                'type' => 'mariadb',
+                'status'  => 'ok',
+                'type'    => 'mariadb',
                 'version' => $version,
                 'enabled' => true,
             ];
         } catch (\Exception $e) {
             $this->status['services']['database'] = [
-                'status' => 'error',
-                'type' => 'mariadb',
+                'status'  => 'error',
+                'type'    => 'mariadb',
                 'message' => $e->getMessage(),
                 'enabled' => true,
             ];

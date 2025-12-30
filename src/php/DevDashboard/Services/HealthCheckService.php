@@ -17,9 +17,9 @@ class HealthCheckService
     public function getOverallStatus(): array
     {
         $containers = $this->getContainerStatus();
-        $databases = $this->getDatabaseStatus();
+        $databases  = $this->getDatabaseStatus();
 
-        $healthy = 0;
+        $healthy   = 0;
         $unhealthy = 0;
 
         foreach ($containers as $container) {
@@ -39,10 +39,10 @@ class HealthCheckService
         }
 
         return [
-            'status' => $unhealthy === 0 ? 'healthy' : 'degraded',
-            'healthy_count' => $healthy,
+            'status'          => $unhealthy === 0 ? 'healthy' : 'degraded',
+            'healthy_count'   => $healthy,
             'unhealthy_count' => $unhealthy,
-            'timestamp' => date('Y-m-d H:i:s'),
+            'timestamp'       => date('Y-m-d H:i:s'),
         ];
     }
 
@@ -89,30 +89,30 @@ class HealthCheckService
     {
         // Map container names to their service checks
         $checks = [
-            'php' => fn() => $this->checkPhpFpm(),
-            'node' => fn() => $this->checkNode(),
-            'nginx' => fn() => $this->checkNginx(),
+            'php'      => fn() => $this->checkPhpFpm(),
+            'node'     => fn() => $this->checkNode(),
+            'nginx'    => fn() => $this->checkNginx(),
             'postgres' => fn() => $this->checkPostgresConnection(),
-            'mariadb' => fn() => $this->checkMariadbConnection(),
-            'redis' => fn() => $this->checkRedisConnection(),
+            'mariadb'  => fn() => $this->checkMariadbConnection(),
+            'redis'    => fn() => $this->checkRedisConnection(),
         ];
 
         if (!isset($checks[$containerName])) {
             return [
-                'name' => $containerName,
-                'status' => 'unknown',
-                'health' => 'unknown',
+                'name'    => $containerName,
+                'status'  => 'unknown',
+                'health'  => 'unknown',
                 'message' => 'Unknown container',
             ];
         }
 
         $checkResult = $checks[$containerName]();
-        $isRunning = $checkResult['running'] ?? $checkResult['connected'] ?? false;
+        $isRunning   = $checkResult['running'] ?? $checkResult['connected'] ?? false;
 
         return [
-            'name' => $containerName,
-            'status' => $isRunning ? 'running' : 'not_running',
-            'health' => $isRunning ? 'healthy' : 'unhealthy',
+            'name'    => $containerName,
+            'status'  => $isRunning ? 'running' : 'not_running',
+            'health'  => $isRunning ? 'healthy' : 'unhealthy',
             'details' => $checkResult,
         ];
     }
@@ -191,10 +191,10 @@ class HealthCheckService
      */
     private function checkPostgresql(): array
     {
-        $host = getenv('DB_HOST') ?: 'postgres';
-        $port = getenv('DB_PORT') ?: '5432';
-        $dbname = getenv('DB_NAME') ?: 'app';
-        $user = getenv('DB_USER') ?: 'app';
+        $host     = getenv('DB_HOST') ?: 'postgres';
+        $port     = getenv('DB_PORT') ?: '5432';
+        $dbname   = getenv('DB_NAME') ?: 'app';
+        $user     = getenv('DB_USER') ?: 'app';
         $password = getenv('DB_PASSWORD') ?: 'secret';
 
         try {
@@ -208,17 +208,17 @@ class HealthCheckService
 
             return [
                 'connected' => true,
-                'host' => $host,
-                'port' => $port,
-                'database' => $dbname,
-                'version' => $version,
+                'host'      => $host,
+                'port'      => $port,
+                'database'  => $dbname,
+                'version'   => $version,
             ];
         } catch (\PDOException $e) {
             return [
                 'connected' => false,
-                'host' => $host,
-                'port' => $port,
-                'error' => $e->getMessage(),
+                'host'      => $host,
+                'port'      => $port,
+                'error'     => $e->getMessage(),
             ];
         }
     }
@@ -228,10 +228,10 @@ class HealthCheckService
      */
     private function checkMariadb(): array
     {
-        $host = getenv('DB_HOST') ?: 'mariadb';
-        $port = getenv('DB_PORT') ?: '3306';
-        $dbname = getenv('DB_NAME') ?: 'app';
-        $user = getenv('DB_USER') ?: 'app';
+        $host     = getenv('DB_HOST') ?: 'mariadb';
+        $port     = getenv('DB_PORT') ?: '3306';
+        $dbname   = getenv('DB_NAME') ?: 'app';
+        $user     = getenv('DB_USER') ?: 'app';
         $password = getenv('DB_PASSWORD') ?: 'secret';
 
         try {
@@ -245,17 +245,17 @@ class HealthCheckService
 
             return [
                 'connected' => true,
-                'host' => $host,
-                'port' => $port,
-                'database' => $dbname,
-                'version' => $version,
+                'host'      => $host,
+                'port'      => $port,
+                'database'  => $dbname,
+                'version'   => $version,
             ];
         } catch (\PDOException $e) {
             return [
                 'connected' => false,
-                'host' => $host,
-                'port' => $port,
-                'error' => $e->getMessage(),
+                'host'      => $host,
+                'port'      => $port,
+                'error'     => $e->getMessage(),
             ];
         }
     }
@@ -267,8 +267,8 @@ class HealthCheckService
     {
         return [
             'php_fpm' => $this->checkPhpFpm(),
-            'node' => $this->checkNode(),
-            'nginx' => $this->checkNginx(),
+            'node'    => $this->checkNode(),
+            'nginx'   => $this->checkNginx(),
         ];
     }
 
@@ -282,7 +282,7 @@ class HealthCheckService
 
         return [
             'running' => $isFpm,
-            'sapi' => PHP_SAPI,
+            'sapi'    => PHP_SAPI,
             'version' => PHP_VERSION,
         ];
     }
@@ -300,14 +300,14 @@ class HealthCheckService
             fclose($socket);
             return [
                 'running' => true,
-                'host' => $host,
-                'port' => $port,
+                'host'    => $host,
+                'port'    => $port,
             ];
         }
 
         return [
             'running' => false,
-            'error' => $errstr ?: 'Service not reachable',
+            'error'   => $errstr ?: 'Service not reachable',
         ];
     }
 
@@ -322,14 +322,14 @@ class HealthCheckService
             fclose($socket);
             return [
                 'running' => true,
-                'host' => 'nginx',
-                'port' => 8080,
+                'host'    => 'nginx',
+                'port'    => 8080,
             ];
         }
 
         return [
             'running' => false,
-            'error' => $errstr ?: 'Service not reachable',
+            'error'   => $errstr ?: 'Service not reachable',
         ];
     }
 
@@ -342,7 +342,7 @@ class HealthCheckService
 
         if (!file_exists($certPath)) {
             return [
-                'exists' => false,
+                'exists'  => false,
                 'message' => 'No SSL certificate found',
             ];
         }
@@ -351,26 +351,26 @@ class HealthCheckService
 
         if (!$certData) {
             return [
-                'exists' => true,
-                'valid' => false,
+                'exists'  => true,
+                'valid'   => false,
                 'message' => 'Invalid certificate',
             ];
         }
 
-        $now = time();
-        $validFrom = $certData['validFrom_time_t'];
-        $validTo = $certData['validTo_time_t'];
+        $now             = time();
+        $validFrom       = $certData['validFrom_time_t'];
+        $validTo         = $certData['validTo_time_t'];
         $daysUntilExpiry = floor(($validTo - $now) / 86400);
 
         return [
-            'exists' => true,
-            'valid' => $now >= $validFrom && $now <= $validTo,
-            'subject' => $certData['subject']['CN'] ?? 'Unknown',
-            'issuer' => $certData['issuer']['CN'] ?? 'Unknown',
-            'valid_from' => date('Y-m-d H:i:s', $validFrom),
-            'valid_to' => date('Y-m-d H:i:s', $validTo),
+            'exists'            => true,
+            'valid'             => $now >= $validFrom && $now <= $validTo,
+            'subject'           => $certData['subject']['CN'] ?? 'Unknown',
+            'issuer'            => $certData['issuer']['CN'] ?? 'Unknown',
+            'valid_from'        => date('Y-m-d H:i:s', $validFrom),
+            'valid_to'          => date('Y-m-d H:i:s', $validTo),
             'days_until_expiry' => $daysUntilExpiry,
-            'expires_soon' => $daysUntilExpiry < 30,
+            'expires_soon'      => $daysUntilExpiry < 30,
         ];
     }
 

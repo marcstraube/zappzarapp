@@ -137,11 +137,11 @@ class SystemInfoServiceTest extends TestCase
     {
         // Set various sensitive environment variables
         $sensitiveKeys = [
-            'DB_PASSWORD' => 'secret123',
-            'API_KEY' => 'key123',
+            'DB_PASSWORD'  => 'secret123',
+            'API_KEY'      => 'key123',
             'SECRET_TOKEN' => 'token123',
-            'PRIVATE_KEY' => 'private123',
-            'NORMAL_VAR' => 'public_value',
+            'PRIVATE_KEY'  => 'private123',
+            'NORMAL_VAR'   => 'public_value',
         ];
 
         foreach ($sensitiveKeys as $key => $value) {

@@ -13,18 +13,25 @@ require_once __DIR__ . '/../vendor/autoload.php';
 
 /**
  * ============================================================================
- * DEVELOPMENT DASHBOARD ROUTING
+ * DEVELOPMENT DASHBOARD ROUTING (DEV-ONLY)
  * ============================================================================
  *
  * The Development Dashboard is accessible at /_dev
- * It provides system info, health checks, logs, and more.
+ * It provides system info, health checks, logs, quality metrics, and more.
  *
- * To disable in production: Set ENABLE_DEV_DASHBOARD=false in .env
+ * IMPORTANT: Only available in development environment (ENV=development)
+ * This is enforced because:
+ * - Volume mounts for .git, Node.js configs are DEV-only (compose.override.yaml)
+ * - Exposes sensitive information (env vars, phpinfo, database details)
+ * - Git status and Node.js quality tools require DEV volume mounts
  */
 
 $requestPath = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH);
 
-if (str_starts_with($requestPath, '/_dev')) {
+// Development Dashboard - Only enabled in development environment
+$isDevelopment = getenv('ENV') === 'development';
+
+if ($isDevelopment && str_starts_with($requestPath, '/_dev')) {
     if (file_exists(__DIR__ . '/../src/php/DevDashboard/routes.php')) {
         require_once __DIR__ . '/../src/php/DevDashboard/routes.php';
     }
@@ -93,7 +100,7 @@ $router = new Router();
 // Controllers
 $exampleController = new ExampleController();
 $welcomeController = new WelcomeController();
-$statusController = new StatusController();
+$statusController  = new StatusController();
 
 // Routes
 $router->get('/', [$welcomeController, 'index']);          // Main landing page

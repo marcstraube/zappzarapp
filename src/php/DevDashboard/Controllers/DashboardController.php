@@ -4,7 +4,10 @@ declare(strict_types=1);
 
 namespace DevDashboard\Controllers;
 
+use DevDashboard\Services\DatabaseService;
 use DevDashboard\Services\HealthCheckService;
+use DevDashboard\Services\LogService;
+use DevDashboard\Services\QualityService;
 use DevDashboard\Services\SystemInfoService;
 
 /**
@@ -16,14 +19,17 @@ class DashboardController
 {
     private HealthCheckService $healthCheckService;
     private SystemInfoService $systemInfoService;
+    private QualityService $qualityService;
+    private LogService $logService;
+    private DatabaseService $databaseService;
 
     public function __construct()
     {
-        require_once __DIR__ . '/../Services/HealthCheckService.php';
-        require_once __DIR__ . '/../Services/SystemInfoService.php';
-
         $this->healthCheckService = new HealthCheckService();
-        $this->systemInfoService = new SystemInfoService();
+        $this->systemInfoService  = new SystemInfoService();
+        $this->qualityService     = new QualityService();
+        $this->logService         = new LogService();
+        $this->databaseService    = new DatabaseService();
     }
 
     /**
@@ -32,10 +38,10 @@ class DashboardController
     public function index(): void
     {
         $data = [
-            'title' => 'Development Dashboard',
+            'title'        => 'Development Dashboard',
             'healthStatus' => $this->healthCheckService->getOverallStatus(),
-            'systemInfo' => $this->systemInfoService->getBasicInfo(),
-            'gitStatus' => $this->systemInfoService->getGitStatus(),
+            'systemInfo'   => $this->systemInfoService->getBasicInfo(),
+            'gitStatus'    => $this->systemInfoService->getGitStatus(),
         ];
 
         $this->render('dashboard', $data);
@@ -47,10 +53,10 @@ class DashboardController
     public function system(): void
     {
         $data = [
-            'title' => 'System Information',
-            'phpVersion' => $this->systemInfoService->getPhpVersion(),
-            'extensions' => $this->systemInfoService->getPhpExtensions(),
-            'envVars' => $this->systemInfoService->getEnvironmentVariables(),
+            'title'       => 'System Information',
+            'phpVersion'  => $this->systemInfoService->getPhpVersion(),
+            'extensions'  => $this->systemInfoService->getPhpExtensions(),
+            'envVars'     => $this->systemInfoService->getEnvironmentVariables(),
             'showPhpInfo' => $_GET['phpinfo'] ?? false,
         ];
 
@@ -63,11 +69,11 @@ class DashboardController
     public function health(): void
     {
         $data = [
-            'title' => 'Health Checks',
+            'title'      => 'Health Checks',
             'containers' => $this->healthCheckService->getContainerStatus(),
-            'databases' => $this->healthCheckService->getDatabaseStatus(),
-            'services' => $this->healthCheckService->getServiceStatus(),
-            'ssl' => $this->healthCheckService->getSslInfo(),
+            'databases'  => $this->healthCheckService->getDatabaseStatus(),
+            'services'   => $this->healthCheckService->getServiceStatus(),
+            'ssl'        => $this->healthCheckService->getSslInfo(),
         ];
 
         $this->render('health', $data);
@@ -78,9 +84,15 @@ class DashboardController
      */
     public function quality(): void
     {
+        $metrics = $this->qualityService->getQualityMetrics();
+
         $data = [
-            'title' => 'Code Quality',
-            'message' => 'Quality metrics will be implemented in the next iteration',
+            'title'         => 'Code Quality',
+            'php_quality'   => $metrics['php'],
+            'node_quality'  => $metrics['node'],
+            'code_stats'    => $metrics['code_stats'],
+            'test_coverage' => $metrics['test_coverage'],
+            'quick_actions' => $this->qualityService->getQuickActions(),
         ];
 
         $this->render('quality', $data);
@@ -92,8 +104,11 @@ class DashboardController
     public function database(): void
     {
         $data = [
-            'title' => 'Database Tools',
-            'message' => 'Database tools will be implemented in the next iteration',
+            'title'            => 'Database Tools',
+            'overview'         => $this->databaseService->getDatabaseOverview(),
+            'tables'           => $this->databaseService->getTables(),
+            'connection_stats' => $this->databaseService->getConnectionStats(),
+            'commands'         => $this->databaseService->getDatabaseCommands(),
         ];
 
         $this->render('database', $data);
@@ -105,8 +120,10 @@ class DashboardController
     public function logs(): void
     {
         $data = [
-            'title' => 'Logs Viewer',
-            'message' => 'Log viewer will be implemented in the next iteration',
+            'title'        => 'Logs Viewer',
+            'log_sources'  => $this->logService->getAvailableLogSources(),
+            'log_commands' => $this->logService->getLogCommands(),
+            'log_stats'    => $this->logService->getLogStatistics(),
         ];
 
         $this->render('logs', $data);
@@ -136,7 +153,7 @@ class DashboardController
     private function render(string $view, array $data = []): void
     {
         extract($data);
-        $viewPath = __DIR__ . '/../Views/' . $view . '.php';
+        $viewPath   = __DIR__ . '/../Views/' . $view . '.php';
         $layoutPath = __DIR__ . '/../Views/layout.php';
 
         if (!file_exists($viewPath)) {

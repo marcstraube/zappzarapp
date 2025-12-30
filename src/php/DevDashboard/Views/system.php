@@ -17,19 +17,22 @@
             </div>
         </div>
         <div class="mt-4">
-            <a href="/_dev/system?phpinfo=1" class="inline-flex items-center px-4 py-2 border border-blue-300 text-sm font-medium rounded text-blue-700 bg-blue-50 hover:bg-blue-100 transition">
-                View Full phpinfo()
-            </a>
+            <?php if ($showPhpInfo): ?>
+                <a href="/_dev/system" class="inline-flex items-center px-4 py-2 border border-blue-300 text-sm font-medium rounded text-blue-700 bg-blue-50 hover:bg-blue-100 transition">
+                    Hide phpinfo()
+                </a>
+            <?php else: ?>
+                <a href="/_dev/system?phpinfo=1" class="inline-flex items-center px-4 py-2 border border-blue-300 text-sm font-medium rounded text-blue-700 bg-blue-50 hover:bg-blue-100 transition">
+                    View Full phpinfo()
+                </a>
+            <?php endif; ?>
         </div>
     </div>
 
     <?php if ($showPhpInfo): ?>
     <!-- Full phpinfo() Output -->
     <div class="bg-white rounded-lg shadow p-6">
-        <div class="flex justify-between items-center mb-4">
-            <h2 class="text-lg font-semibold text-gray-900">📋 Full PHP Info</h2>
-            <a href="/_dev/system" class="text-sm text-blue-600 hover:text-blue-800">Hide phpinfo()</a>
-        </div>
+        <h2 class="text-lg font-semibold text-gray-900 mb-4">📋 Full PHP Info</h2>
         <div class="border border-gray-200 rounded overflow-hidden">
             <div style="max-height: 600px; overflow-y: auto;">
                 <?php ob_start();

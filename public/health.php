@@ -13,7 +13,7 @@ http_response_code(200);
 header('Content-Type: application/json');
 
 echo json_encode([
-    'status' => 'ok',
-    'service' => 'php-fpm',
+    'status'    => 'ok',
+    'service'   => 'php-fpm',
     'timestamp' => date('c'),
 ], JSON_THROW_ON_ERROR);

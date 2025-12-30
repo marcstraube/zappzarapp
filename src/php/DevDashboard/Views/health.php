@@ -9,10 +9,10 @@
                         <h3 class="font-medium text-gray-900"><?= ucfirst($name) ?></h3>
                         <?php
                         $statusBadge = match ($container['status']) {
-                            'running' => 'badge-green',
-                            'exited' => 'badge-red',
+                            'running'     => 'badge-green',
+                            'exited'      => 'badge-red',
                             'not_running' => 'badge-gray',
-                            default => 'badge-yellow'
+                            default       => 'badge-yellow'
                         };
                 ?>
                         <span class="badge <?= $statusBadge ?>">
@@ -24,10 +24,10 @@
                             <span class="text-gray-500">Health:</span>
                             <?php
                     $healthBadge = match ($container['health']) {
-                        'healthy' => 'badge-green',
-                        'unhealthy' => 'badge-red',
+                        'healthy'        => 'badge-green',
+                        'unhealthy'      => 'badge-red',
                         'no_healthcheck' => 'badge-gray',
-                        default => 'badge-yellow'
+                        default          => 'badge-yellow'
                     };
                 ?>
                             <span class="badge <?= $healthBadge ?>">

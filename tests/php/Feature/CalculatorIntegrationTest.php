@@ -36,7 +36,7 @@ class CalculatorIntegrationTest extends TestCase
     public function testMultipleOperationsWithValidation(): void
     {
         $values = [2, 4, 6, 8, 10];
-        $sum = 0;
+        $sum    = 0;
 
         // Add all values
         foreach ($values as $value) {
@@ -55,7 +55,7 @@ class CalculatorIntegrationTest extends TestCase
 
     public function testWorkflowWithErrorHandling(): void
     {
-        $numerator = 100;
+        $numerator   = 100;
         $denominator = 0;
 
         // Test that the workflow properly handles errors
