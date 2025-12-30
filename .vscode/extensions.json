@@ -1,0 +1,31 @@
+{
+  "recommendations": [
+    "bmewburn.vscode-intelephense-client",
+    "zobo.php-intellisense",
+    "felixfbecker.php-debug",
+    "junstyle.php-cs-fixer",
+    "swordev.phpstan",
+    "ecodes.vscode-phpmd",
+    "dbaeumer.vscode-eslint",
+    "esbenp.prettier-vscode",
+    "ms-azuretools.vscode-docker",
+    "ms-vscode-remote.remote-containers",
+    "hbenl.vscode-test-explorer",
+    "recca0120.vscode-phpunit",
+    "vitest.explorer",
+    "eamodio.gitlens",
+    "mhutchie.git-graph",
+    "editorconfig.editorconfig",
+    "streetsidesoftware.code-spell-checker",
+    "gruntfuggly.todo-tree",
+    "wayou.vscode-todo-highlight",
+    "aaron-bond.better-comments",
+    "mtxr.sqltools",
+    "mtxr.sqltools-driver-pg",
+    "mtxr.sqltools-driver-mysql",
+    "yzhang.markdown-all-in-one",
+    "davidanson.vscode-markdownlint",
+    "redhat.vscode-yaml"
+  ],
+  "unwantedRecommendations": []
+}

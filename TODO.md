@@ -9,6 +9,97 @@
 
 ## 📋 Changelog (Recent Changes)
 
+### Version 3.2 (2025-12-30) - IDE Integration (VS Code & PhpStorm)
+**Complete IDE configurations for both Visual Studio Code and PhpStorm with full feature parity:**
+
+#### Added - VS Code Configuration (`.vscode/`)
+- **Workspace Configuration**:
+  - `extensions.json`: 26 recommended extensions (PHP, Node.js, Docker, Git, Testing, Database)
+  - `settings.json`: Comprehensive workspace settings with tool integration
+  - `tasks.json`: 24 pre-configured tasks for all Makefile commands
+  - `launch.json`: Debug configurations for PHP (Xdebug), Node.js, Frontend, Full-Stack compounds
+  - `README.md`: Complete documentation with setup guide and troubleshooting
+
+- **PHP Development Tools**:
+  - Intelephense with PHP 8.4 support
+  - PHP CS Fixer integration (PER-CS standard, risky rules enabled)
+  - PHPStan Level 5 integration
+  - PHPMD integration
+  - PHPUnit Test Explorer
+  - Xdebug 3.5.0 debugging (port 9003)
+
+- **JavaScript/TypeScript Tools**:
+  - ESLint validation and auto-fix
+  - Prettier formatting
+  - TypeScript strict mode
+  - Vitest Test Explorer
+  - Auto imports and path updates
+
+- **Docker & Database**:
+  - Docker extension integration
+  - Remote Containers support
+  - SQL Tools with PostgreSQL and MariaDB pre-configured
+
+- **Editor Configuration**:
+  - Tab size: 4 (PHP), 2 (JS/TS)
+  - 120 char ruler, Unix line endings (LF)
+  - Format on save (PHP: CS Fixer via onsave, JS/TS/Markdown: Prettier)
+  - Real-time linting (PHPStan, PHPMD, ESLint)
+  - Code spell checker with custom dictionary
+
+#### Added - PhpStorm Configuration (`.idea/`)
+- **Run Configurations** (`runConfigurations/`):
+  - 25 pre-configured run configurations organized by category
+  - Browser: Open App
+  - Make: Up, Down, Restart, Fresh Build, Rebuild
+  - PHP: CS Fixer, PHPStan, PHPMD, Run Tests, Coverage Report
+  - Node: ESLint, Prettier, Type Check, Run Tests, Coverage Report
+  - Quality: Run All Checks, Fix All
+  - Test: Run All Tests
+  - Docs: Generate API Documentation
+  - SSL: Generate Self-Signed, Show Certificate Info
+  - Logs: View All
+  - Shell: PHP Container, Node Container
+
+- **Database Connections** (`dataSources.xml`):
+  - PostgreSQL (Docker): localhost:5432/app
+  - MariaDB (Docker): localhost:3306/app
+
+- **Documentation** (`README.md`):
+  - Complete setup guide
+  - Troubleshooting section
+  - Feature comparison with VS Code
+
+#### Changed
+- **VS Code Configuration**:
+  - Fixed `cSpell.enableFiletypes` → `cSpell.enabledFileTypes` (deprecated syntax)
+  - Renamed tasks for consistency with PhpStorm: `Docker: *` → `Make: *`
+    - `Docker: Up` → `Make: Up`
+    - `Docker: Down` → `Make: Down`
+    - `Docker: Restart` → `Make: Restart`
+    - `Docker: Fresh Build` → `Make: Fresh Build`
+    - `Docker: Rebuild` → `Make: Rebuild`
+- **PhpStorm Run Configurations**:
+  - Renamed `Rebuild_Docker_Images.xml` → `Make__Rebuild.xml` (consistent naming)
+  - Renamed `Run_App_in_Browser.xml` → `Browser__Open_App.xml`
+  - Removed `Docker.xml` (redundant, all Docker operations via Make)
+- **.gitignore**: Updated to allow VS Code workspace config (like PhpStorm .idea)
+  - Only ignore user-specific files (*.code-workspace, .history/)
+
+#### Feature Parity (Both IDEs)
+Complete feature parity between VS Code and PhpStorm:
+- ✅ PHP Interpreter via Docker Compose
+- ✅ Code Style: PHP CS Fixer (PER-CS)
+- ✅ Static Analysis: PHPStan Level 5
+- ✅ Mess Detection: PHPMD
+- ✅ Testing: PHPUnit, Vitest
+- ✅ Debugging: Xdebug 3.5.0
+- ✅ Database Tools: PostgreSQL, MariaDB connections
+- ✅ Run Configurations/Tasks for all Make commands
+- ✅ Comprehensive documentation (README.md in both .vscode/ and .idea/)
+
+---
+
 ### Version 3.1 (2025-12-29) - SSL/TLS Integration
 **Comprehensive SSL/TLS support for all services with zero-config philosophy:**
 

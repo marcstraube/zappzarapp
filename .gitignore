@@ -30,10 +30,14 @@ package.xml
 Thumbs.db
 
 # IDE
-.vscode/
 *.swp
 *.swo
 *~
+
+# VS Code
+# Ignore user-specific files, keep workspace configuration
+.vscode/*.code-workspace
+.vscode/.history/
 
 # JetBrains IDE
 # Ignore user-specific workspace and tasks
