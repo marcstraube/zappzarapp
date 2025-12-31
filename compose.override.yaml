@@ -27,13 +27,29 @@ services:
         GROUP_ID: ${GROUP_ID:-82}
     entrypoint: ["/entrypoint.dev.sh"]
     command: ["php-fpm"]
+    develop:
+      watch:
+        # Rebuild when dependencies change
+        - action: rebuild
+          path: ./composer.json
+        - action: rebuild
+          path: ./composer.lock
+        # Sync source code changes (no rebuild needed)
+        - action: sync
+          path: ./src/php
+          target: /var/www/html/src/php
+        - action: sync
+          path: ./public
+          target: /var/www/html/public
+        - action: sync
+          path: ./templates
+          target: /var/www/html/templates
     volumes:
       # Entrypoint Script
       - ./docker/php/entrypoint.dev.sh:/entrypoint.dev.sh:ro
 
-      # Application
+      # Application (lock file NOT mounted - managed by Docker Compose Watch)
       - ./composer.json:/var/www/html/composer.json
-      - ./composer.lock:/var/www/html/composer.lock
       - ./config:/var/www/html/config
       - ./docs:/var/www/html/docs
       - ./public:/var/www/html/public
@@ -41,7 +57,7 @@ services:
       - ./templates:/var/www/html/templates
       - ./tests/php:/var/www/html/tests/php
       - ./tools:/var/www/html/tools
-      - ./vendor:/var/www/html/vendor
+      - php_vendor:/var/www/html/vendor
 
       # Quality Assurance Tools Config (PHP)
       - ./phpstan.neon:/var/www/html/phpstan.neon:ro
@@ -95,10 +111,26 @@ services:
     ports:
       - "${VITE_PORT:-5173}:5173"
       - "${NODE_PORT:-3000}:3000"
+    develop:
+      watch:
+        # Rebuild when dependencies change
+        - action: rebuild
+          path: ./package.json
+        - action: rebuild
+          path: ./pnpm-lock.yaml
+        # Sync source code changes (no rebuild needed)
+        - action: sync
+          path: ./src/node
+          target: /app/src/node
+        - action: sync
+          path: ./tests/node
+          target: /app/tests/node
+        - action: sync
+          path: ./resources
+          target: /app/resources
     volumes:
-      # Application
+      # Application (lock file NOT mounted - managed by Docker Compose Watch)
       - ./package.json:/app/package.json
-      - ./pnpm-lock.yaml:/app/pnpm-lock.yaml
       - ./src/node:/app/src/node
       - ./tests/node:/app/tests/node
       - ./public:/app/public
@@ -172,4 +204,6 @@ services:
 
 volumes:
   node_modules:
+    driver: local
+  php_vendor:
     driver: local

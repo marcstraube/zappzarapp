@@ -41,7 +41,6 @@ composer-install: ## Install/update Composer dependencies (Docker - guaranteed c
 composer-install-local: ## Install/update Composer dependencies (Local - IDE code completion only)
 	@if command -v composer >/dev/null 2>&1; then \
 		echo -e "\033[0;33m⚠️  Using local Composer (version may differ from Docker).\033[0m"; \
-		echo -e "\033[0;34mFor guaranteed consistency, use 'make composer-install' instead.\033[0m"; \
 		if [ ! -f "vendor/autoload.php" ]; then \
 			composer install --prefer-dist --no-interaction; \
 		else \
@@ -78,7 +77,6 @@ setup: ## Create directories, install dev dependencies and ensure structure
 		exit 1; \
 	fi
 	@echo -e "\033[0;33mCreating project structure...\033[0m"
-	@. ./.env && mkdir -p vendor
 
 	# Source directories
 	@mkdir -p src/php/App/{Http/{Controller,Middleware},Domain,Infrastructure/{Database,Cache}}
@@ -107,15 +105,21 @@ setup: ## Create directories, install dev dependencies and ensure structure
 
 	# Documentation Output
 	@mkdir -p docs/api/{php,node}
+	@mkdir -p tools
 
 	# Storage (Runtime data) - Set permissions
 	@. ./.env && mkdir -p $${STORAGE_DIR:-./storage}/{app/{uploads,generated},cache,sessions,logs}
 	@. ./.env && chmod 770 $${STORAGE_DIR:-./storage} -R
 
 	@echo -e "\033[0;32mProject structure created!\033[0m"
-	@$(MAKE) --silent composer-install
-	@$(MAKE) --silent node-install
-	@echo -e "\033[0;32mSetup completed (directories + dependencies)!\033[0m"
+	@echo -e "\033[0;33mStarting containers (dependencies will install automatically)...\033[0m"
+	@$(MAKE) --silent up
+	@echo -e "\033[0;33mWaiting for dependencies to install (30-60 seconds)...\033[0m"
+	@sleep 45
+	@echo -e "\033[0;33mSyncing lock files from containers to host...\033[0m"
+	@$(MAKE) --silent sync-lockfiles
+	@echo -e "\033[0;32mSetup completed (directories + dependencies + lock files)!\033[0m"
+	@echo -e "\033[0;34mNote: For IDE code completion, run 'make composer-install-local' and 'make node-install-local'\033[0m"
 
 ##@ Docker
 
@@ -155,10 +159,15 @@ composer: ## Execute Composer command in running container (e.g. make composer C
 down: ## Stop containers
 	@echo -e "\033[0;33mStopping containers...\033[0m"
 	@if [ -f .env ]; then \
-		. ./.env && if [ "$$ENV" = "production" ]; then \
-			docker compose -f compose.yaml -f compose.prod.yaml down; \
+		. ./.env && \
+		PROFILES="--profile $${DB_TYPE:-postgres}"; \
+		if [ "$${ENABLE_PHP:-true}" = "true" ]; then PROFILES="$$PROFILES --profile php"; fi; \
+		if [ "$${ENABLE_NODE:-true}" = "true" ]; then PROFILES="$$PROFILES --profile node"; fi; \
+		if [ "$${ENABLE_REDIS:-true}" = "true" ]; then PROFILES="$$PROFILES --profile redis"; fi; \
+		if [ "$$ENV" = "production" ]; then \
+			docker compose -f compose.yaml -f compose.prod.yaml $$PROFILES down; \
 		else \
-			docker compose down; \
+			docker compose $$PROFILES down; \
 		fi; \
 	else \
 		docker compose down; \
@@ -282,7 +291,7 @@ up-core:
 	@if [ ! -f .env ]; then echo -e "\033[0;31mError: .env not found. Run 'make init' first.\033[0m"; exit 1; fi
 	@. ./.env && \
 	PROFILES="--profile $${DB_TYPE:-postgres}"; \
-	SERVICES="nginx"; \
+	SERVICES="nginx $${DB_TYPE:-postgres}"; \
 	if [ "$${ENABLE_PHP:-true}" = "true" ]; then PROFILES="$$PROFILES --profile php"; SERVICES="$$SERVICES php"; fi; \
 	if [ "$${ENABLE_NODE:-true}" = "true" ]; then PROFILES="$$PROFILES --profile node"; SERVICES="$$SERVICES node"; fi; \
 	if [ "$${ENABLE_REDIS:-true}" = "true" ]; then PROFILES="$$PROFILES --profile redis"; SERVICES="$$SERVICES redis"; fi; \
@@ -332,13 +341,26 @@ node-install: ## Install Node.js dependencies (Docker - requires ENV=development
 node-install-local: ## Install Node.js dependencies (Local - IDE code completion only)
 	@if command -v pnpm >/dev/null 2>&1; then \
 		echo -e "\033[0;33m⚠️  Using local pnpm (version may differ from Docker).\033[0m"; \
-		echo -e "\033[0;34mFor guaranteed consistency, use 'make node-install' instead.\033[0m"; \
 		pnpm install; \
 		echo -e "\033[0;32mDependencies installed!\033[0m"; \
 	else \
 		echo -e "\033[0;31mError: Local pnpm not found. Use 'make node-install' instead.\033[0m"; \
 		exit 1; \
 	fi
+
+sync-lockfiles: ## Sync lock files from containers to host (for IDE/Git)
+	@echo -e "\033[0;33mSynchronizing lock files from containers...\033[0m"
+	@if docker compose ps node | grep -q "Up"; then \
+		docker cp $$(docker compose ps -q node):/app/pnpm-lock.yaml ./ 2>/dev/null && \
+		echo -e "\033[0;32m✓ pnpm-lock.yaml synced\033[0m" || \
+		echo -e "\033[0;33m⚠ pnpm-lock.yaml not found in container\033[0m"; \
+	fi
+	@if docker compose ps php | grep -q "Up"; then \
+		docker cp $$(docker compose ps -q php):/var/www/html/composer.lock ./ 2>/dev/null && \
+		echo -e "\033[0;32m✓ composer.lock synced\033[0m" || \
+		echo -e "\033[0;33m⚠ composer.lock not found in container\033[0m"; \
+	fi
+	@echo -e "\033[0;32mLock files synchronized!\033[0m"
 
 node-build: ## Executes the frontend build inside the Node container (uses 'build' stage)
 	@echo -e "\033[0;33mExecuting frontend build...\033[0m"
@@ -612,7 +634,7 @@ test-coverage-node: ## Generate Vitest coverage report (HTML in build/coverage)
 	@docker compose exec node pnpm test:coverage
 	@echo -e "\033[0;32mNode.js coverage report generated in build/coverage!\033[0m"
 
-validate: ## Validate composer.json and composer.lock files (uses local Composer if available)
+validate: ## Validate composer.json/lock and package.json/lock files
 	@echo -e "\033[0;33mValidating Composer configuration...\033[0m"
 	@if command -v composer >/dev/null 2>&1; then \
 		echo "Using local Composer..."; \
@@ -621,7 +643,20 @@ validate: ## Validate composer.json and composer.lock files (uses local Composer
 		echo "Local Composer not found, using Docker..."; \
 		docker compose exec php composer validate --strict; \
 	fi
-	@echo -e "\033[0;32mComposer configuration is valid!\033[0m"
+	@echo -e "\033[0;32m✓ Composer configuration is valid!\033[0m"
+	@echo ""
+	@echo -e "\033[0;33mValidating pnpm lockfile...\033[0m"
+	@if [ ! -f package.json ]; then \
+		echo -e "\033[0;31mError: package.json not found\033[0m"; \
+		exit 1; \
+	fi
+	@if [ ! -f pnpm-lock.yaml ]; then \
+		echo -e "\033[0;31mError: pnpm-lock.yaml not found\033[0m"; \
+		exit 1; \
+	fi
+	@echo "✓ package.json exists"
+	@echo "✓ pnpm-lock.yaml exists"
+	@echo -e "\033[0;32m✓ pnpm lockfile is present!\033[0m"
 
 ##@ Security
 

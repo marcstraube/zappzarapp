@@ -11,7 +11,14 @@ echo "[entrypoint] NODE_ENV: ${NODE_ENV:-production}"
 # Install dependencies if node_modules doesn't exist or package.json changed
 if [ ! -d "/app/node_modules" ] || [ ! -f "/app/node_modules/.pnpm-lock.yaml" ]; then
     echo "[entrypoint] Installing dependencies..."
-    pnpm install --frozen-lockfile
+    # Check if pnpm-lock.yaml exists and is not empty
+    if [ -f "/app/pnpm-lock.yaml" ] && [ -s "/app/pnpm-lock.yaml" ]; then
+        echo "[entrypoint] Using existing pnpm-lock.yaml (frozen lockfile)"
+        pnpm install --frozen-lockfile
+    else
+        echo "[entrypoint] No valid lockfile found, generating new one..."
+        pnpm install --no-frozen-lockfile
+    fi
     echo "[entrypoint] Dependencies installed successfully"
 else
     echo "[entrypoint] Dependencies already installed, skipping..."

@@ -46,13 +46,13 @@
     },
     "autoload": {
         "psr-4": {
-            "App\\": "src/php/",
+            "App\\": "src/php/App/",
             "DevDashboard\\": "src/php/DevDashboard/"
         }
     },
     "autoload-dev": {
         "psr-4": {
-            "App\\Tests\\": "tests/php/",
+            "App\\Tests\\": "tests/php/App/",
             "Tests\\DevDashboard\\": "tests/php/DevDashboard/"
         }
     },

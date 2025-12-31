@@ -107,8 +107,8 @@ COPY --from=ghcr.io/php/pie:bin /pie /usr/bin/pie
 # Install Xdebug
 RUN pie install xdebug/xdebug
 
-# Switch to App User
-USER www-data
+# Keep as root for entrypoint (entrypoint will handle permissions and su to www-data)
+# PHP-FPM will still run as www-data (configured in php-fpm.conf)
 
 CMD ["php-fpm"]
 

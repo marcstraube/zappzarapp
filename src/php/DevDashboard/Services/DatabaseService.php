@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace DevDashboard\Services;
 
+use PDO;
+use PDOException;
+
 /**
  * Database Service
  *
@@ -21,17 +24,43 @@ class DatabaseService
     public function __construct()
     {
         $this->dbType     = getenv('DB_TYPE') ?: 'postgres';
-        $this->dbHost     = getenv('DB_HOST') ?: ($this->dbType === 'postgres' ? 'postgres' : 'mariadb');
-        $this->dbPort     = getenv('DB_PORT') ?: ($this->dbType === 'postgres' ? '5432' : '3306');
+        $this->dbHost     = $this->getDefaultHost();
+        $this->dbPort     = $this->getDefaultPort();
         $this->dbName     = getenv('DB_NAME') ?: 'app';
         $this->dbUser     = getenv('DB_USER') ?: 'app';
         $this->dbPassword = getenv('DB_PASSWORD') ?: 'secret';
     }
 
     /**
+     * Get default database host based on DB type
+     */
+    private function getDefaultHost(): string
+    {
+        $host = getenv('DB_HOST');
+        if ($host !== false && $host !== '') {
+            return $host;
+        }
+
+        return $this->dbType === 'postgres' ? 'postgres' : 'mariadb';
+    }
+
+    /**
+     * Get default database port based on DB type
+     */
+    private function getDefaultPort(): string
+    {
+        $port = getenv('DB_PORT');
+        if ($port !== false && $port !== '') {
+            return $port;
+        }
+
+        return $this->dbType === 'postgres' ? '5432' : '3306';
+    }
+
+    /**
      * Get database connection
      */
-    private function getConnection(): ?\PDO
+    private function getConnection(): ?PDO
     {
         try {
             if ($this->dbType === 'postgres') {
@@ -40,11 +69,11 @@ class DatabaseService
                 $dsn = sprintf('mysql:host=%s;port=%s;dbname=%s', $this->dbHost, $this->dbPort, $this->dbName);
             }
 
-            return new \PDO($dsn, $this->dbUser, $this->dbPassword, [
-                \PDO::ATTR_TIMEOUT => 3,
-                \PDO::ATTR_ERRMODE => \PDO::ERRMODE_EXCEPTION,
+            return new PDO($dsn, $this->dbUser, $this->dbPassword, [
+                PDO::ATTR_TIMEOUT => 3,
+                PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
             ]);
-        } catch (\PDOException $e) {
+        } catch (PDOException $e) {
             return null;
         }
     }

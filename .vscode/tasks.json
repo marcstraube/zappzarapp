@@ -56,6 +56,16 @@
       }
     },
     {
+      "label": "Make: Sync Lock Files",
+      "type": "shell",
+      "command": "make sync-lockfiles",
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "new"
+      }
+    },
+    {
       "label": "PHP: CS Fixer",
       "type": "shell",
       "command": "make php-cs-fix",

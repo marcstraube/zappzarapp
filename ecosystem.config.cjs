@@ -43,7 +43,7 @@ module.exports = {
     },
     {
       name: 'backend',
-      script: 'src/node/server.ts',
+      script: 'src/node/App/server.ts',
       interpreter: 'node',
       interpreter_args: '--import tsx',
       cwd: '/app',

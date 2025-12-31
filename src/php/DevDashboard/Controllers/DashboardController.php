@@ -167,6 +167,11 @@ class DashboardController
         include $viewPath;
         $content = ob_get_clean();
 
+        // Ensure content is string (prevent PHPMD false positive - variable used in layout.php)
+        if ($content === false) {
+            $content = '';
+        }
+
         // Render with layout
         include $layoutPath;
     }

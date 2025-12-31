@@ -25,6 +25,6 @@ class WelcomeController
         header('Content-Type: text/html; charset=utf-8');
 
         // Render template
-        include __DIR__ . '/../../../../templates/welcome.php';
+        include __DIR__ . '/../../../../../templates/welcome.php';
     }
 }

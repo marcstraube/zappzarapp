@@ -2414,6 +2414,116 @@ curl http://localhost:3000/health
 
 ## Changelog
 
+### Version 3.5 (2025-12-31) - Docker Compose Watch, Vitest 4, App Structure Migration
+**Modern development workflow with Docker Compose Watch (2025 standard), Vitest 4 upgrade, and improved project structure:**
+
+#### Added - Docker Compose Watch (2025 Standard)
+- **Lock File Synchronization Strategy**:
+  - Named volumes for dependencies: `php_vendor` (prevents permission issues)
+  - Lock files excluded from bind mounts (generated in containers)
+  - `develop.watch` configured for both PHP and Node.js services
+  - `action: rebuild` triggers on composer.json/package.json/lock file changes
+  - `action: sync` for real-time source code updates (src/php, src/node)
+  - Manual sync via `make sync-lockfiles` (uses `docker cp`)
+
+- **Makefile Commands**:
+  - `make sync-lockfiles`: Copies lock files from containers to host (for Git tracking)
+  - `make validate`: Extended to check both Composer and pnpm lockfile presence
+  - `make setup`: Now creates `tools/` directory (fixes `make docs` permission issues)
+  - `make up`: Automatically starts database based on `DB_TYPE` environment variable
+  - `make down`: Now uses same profiles as `make up` (stops all enabled services correctly)
+
+#### Changed - Vitest Upgrade (2.1.8 → 4.0.16)
+- **Dependencies Updated**:
+  - `vitest`: ^2.1.8 → ^4.0.16
+  - `@vitest/coverage-v8`: ^2.1.8 → ^4.0.16
+  - `@vitest/ui`: ^2.1.8 → ^4.0.16
+  - Added: `@types/ws` ^8.5.13, `ws` ^8.18.0 (for future WebSocket live-logs)
+
+- **Configuration Improvements** (vitest.config.ts):
+  - Fixed TypeScript import: `import * as path from 'path'` (was causing TS1259 error)
+  - Simplified coverage include/exclude (Vitest 4 fixed pattern matching)
+  - Updated alias: `'@node': './src/node/App'` (reflects new App/ structure)
+  - Comment clarifies: "Vitest 4.x: Fixed include/exclude handling (no longer needs workarounds)"
+
+#### Changed - App/ Directory Structure Migration
+- **PHP Source Files**:
+  - Moved: `src/php/*.php` → `src/php/App/` (preserves subdirectory structure)
+  - Examples: `Http/Router.php`, `Http/Controller/*.php`, `Infrastructure/*.php`, `Utils/*.php`
+  - Updated composer.json PSR-4: `"App\\": "src/php/App/"` (was `"App\\": "src/php/"`)
+  - Updated composer.json PSR-4 dev: `"App\\Tests\\": "tests/php/App/"` (was `"tests/php/"`)
+
+- **PHP Test Files**:
+  - Moved: `tests/php/*.php` → `tests/php/App/`
+  - Examples: `Feature/CalculatorIntegrationTest.php`, `Unit/CalculatorTest.php`
+
+- **Node.js Source Files**:
+  - Moved: `src/node/*.ts` → `src/node/App/`
+  - Examples: `app.ts`, `server.ts`, `utils/math.ts`
+  - Updated tsconfig.json paths: `"@node/*": ["./src/node/App/*"]`
+
+- **Node.js Test Files**:
+  - Moved: `tests/node/*.test.ts` → `tests/node/App/`
+  - Examples: `integration/api.test.ts`, `unit/math.test.ts`
+  - Updated vitest.config.ts include: `tests/node/**/*.{test,spec}.{ts,js}`
+
+- **Template Path Fix**:
+  - `WelcomeController.php`: Added extra `../` for new directory nesting level
+  - Path: `__DIR__ . '/../../../../../templates/welcome.php'` (was 5 levels, now 6)
+
+#### Changed - IDE Integration Updates
+- **.idea/docker-webdev.iml**: Updated sourceFolders and testFolders for App/ structure
+- **.idea/phpunit.xml**: Corrected test directories path
+- **ecosystem.config.cjs**: Updated Node.js app paths to src/node/App/
+- **phpunit.xml.dist**: Updated test suite directories to tests/php/App/
+
+#### Fixed - Git Status on DevDashboard
+- **Problem**: Git commands failed for www-data user with "dubious ownership" error
+- **Root Cause**: Repository owned by host user (UID 1000), but PHP-FPM runs as www-data (UID 82)
+- **Solution**: Changed `git config --global` to `git config --system` in docker/php/entrypoint.dev.sh
+  - System-wide config (`/etc/gitconfig`) accessible to all users
+  - Global config (`/root/.gitconfig`) only accessible to root
+- **Result**: Dashboard now correctly displays:
+  - Current branch (e.g., "node-testing-backup")
+  - Latest commit hash (e.g., "8f2a806")
+  - Uncommitted changes count with status badge
+
+#### Fixed - Makefile Issues
+- **Database Auto-Start**: `make up` now includes database in SERVICES variable
+  - Changed: `SERVICES="nginx ${DB_TYPE:-postgres}"` (was `SERVICES="nginx"`)
+  - Database type controlled by `DB_TYPE` env var (postgres/mariadb), not separate flag
+
+- **make down Profile Handling**: Now uses same profiles as `make up`
+  - Previously only stopped nginx, left other containers running
+  - Now correctly stops all enabled services (php, node, redis, postgres/mariadb)
+
+- **Confusing Hints Removed**: Deleted "For guaranteed consistency, use 'make ...-install'" messages
+  - Messages appeared on `*-install-local` targets but were misleading
+  - Lock files now managed via Docker Compose Watch strategy
+
+#### Fixed - PHP Entrypoint (docker/php/entrypoint.dev.sh)
+- **composer.lock Check**: Added lockfile existence check to install condition
+  - Before: Only checked `vendor/` directory and `autoload.php`
+  - After: Also checks for `composer.lock` existence
+  - Ensures lockfile is generated on first `make setup` run
+  - Condition: `if [ ! -d vendor ] || [ ! -f vendor/autoload.php ] || [ ! -f composer.lock ]`
+
+#### Testing
+- ✅ Fresh developer workflow: `make init` → `make setup` → `make up` (tested from clean slate)
+- ✅ PHPUnit: 36 tests, 163 assertions passing
+- ✅ Vitest: 25 tests passing
+- ✅ All endpoints functional: localhost:8080, /_dev, /_dev/system, etc.
+- ✅ Git Status displays correctly on DevDashboard (branch, commit, uncommitted changes)
+- ✅ make docs working (tools/ directory created by setup)
+- ✅ make validate checks both composer.json and pnpm-lock.yaml
+- ✅ make down stops all services (verified with make status)
+- ✅ Database starts automatically with make up
+
+#### Documentation
+- Removed confusing lockfile consistency hints from Makefile
+- Added Vitest 4.x comment explaining simplified coverage config
+- Git safe.directory comment updated to clarify system-wide vs global scope
+
 ### Version 3.4 (2025-12-30) - Development Dashboard Completion
 **Complete implementation of all dashboard pages with proper autoloading, volume mounts, and production safety:**
 
