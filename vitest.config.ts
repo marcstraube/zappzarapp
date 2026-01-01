@@ -50,7 +50,7 @@ export default defineConfig({
     alias: {
       '@': path.resolve(__dirname, './src'),
       '@node': path.resolve(__dirname, './src/node/App'),
-      '@tests': path.resolve(__dirname, './tests/node'),
+      '@tests': path.resolve(__dirname, './tests/node/App'),
     },
   },
 });

@@ -18,7 +18,7 @@
     "paths": {
       "@/*": ["./src/*"],
       "@node/*": ["./src/node/App/*"],
-      "@tests/*": ["./tests/node/*"]
+      "@tests/*": ["./tests/node/App/*"]
     },
 
     /* Type Checking */

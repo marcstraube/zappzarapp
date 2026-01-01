@@ -2407,12 +2407,41 @@ curl http://localhost:3000/health
 ---
 
 **Erstellt:** 2025-12-19
-**Letzte Aktualisierung:** 2025-12-30 (Development Dashboard Completion)
-**Version:** 3.4
+**Letzte Aktualisierung:** 2025-12-31 (Granular Service Control & Makefile Optimization)
+**Version:** 3.6
 
 ---
 
 ## Changelog
+
+### Version 3.6 (2025-12-31) - Granular Service Control & Makefile Optimization
+**Introduced optional database control, simplified Makefile logic, and improved health checks for better visibility:**
+
+#### Added - Optional Database Control
+- **`ENABLE_DATABASE` Environment Variable**:
+  - New granular control flag in `.env` and `.env.example` (default: `true`)
+  - Allows running stack without database (e.g., for external DB connections)
+  - Consistent with existing `ENABLE_PHP`, `ENABLE_NODE`, `ENABLE_REDIS` pattern
+  - Added Preset [6]: "Minimal PHP (PHP only, no Database/Redis)"
+
+#### Changed - Makefile Simplification
+- **Profile-Based Service Management**:
+  - Removed redundant `SERVICES` variable (was duplicating `PROFILES` functionality)
+  - Now uses Docker Compose profiles idiomatically: `docker compose $PROFILES up -d`
+  - Cleaner, more maintainable code following Docker Compose best practices
+  - Reduced code complexity in `up-core` and `down` targets
+
+- **Enhanced `check-health` Command**:
+  - Now displays **all services** regardless of state (enabled/disabled)
+  - Added `⚪ Disabled (ENABLE_*=false)` status for deactivated services
+  - Provides complete stack overview at a glance
+  - Distinguishes between "disabled by config" vs "unhealthy/not running"
+
+#### Fixed - Path Configuration
+- **TypeScript Path Mappings**:
+  - Fixed `tsconfig.json`: `@tests/*` now correctly points to `./tests/node/App/*`
+  - Fixed `vitest.config.ts`: `@tests` alias updated to `./tests/node/App`
+  - Aligns with App/ directory structure introduced in v3.5
 
 ### Version 3.5 (2025-12-31) - Docker Compose Watch, Vitest 4, App Structure Migration
 **Modern development workflow with Docker Compose Watch (2025 standard), Vitest 4 upgrade, and improved project structure:**

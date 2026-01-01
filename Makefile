@@ -160,7 +160,10 @@ down: ## Stop containers
 	@echo -e "\033[0;33mStopping containers...\033[0m"
 	@if [ -f .env ]; then \
 		. ./.env && \
-		PROFILES="--profile $${DB_TYPE:-postgres}"; \
+		PROFILES=""; \
+		if [ "$${ENABLE_DATABASE:-true}" = "true" ]; then \
+			PROFILES="$$PROFILES --profile $${DB_TYPE:-postgres}"; \
+		fi; \
 		if [ "$${ENABLE_PHP:-true}" = "true" ]; then PROFILES="$$PROFILES --profile php"; fi; \
 		if [ "$${ENABLE_NODE:-true}" = "true" ]; then PROFILES="$$PROFILES --profile node"; fi; \
 		if [ "$${ENABLE_REDIS:-true}" = "true" ]; then PROFILES="$$PROFILES --profile redis"; fi; \
@@ -290,18 +293,18 @@ up: ## Start enabled containers (based on .env ENABLE_* flags)
 up-core:
 	@if [ ! -f .env ]; then echo -e "\033[0;31mError: .env not found. Run 'make init' first.\033[0m"; exit 1; fi
 	@. ./.env && \
-	PROFILES="--profile $${DB_TYPE:-postgres}"; \
-	SERVICES="nginx $${DB_TYPE:-postgres}"; \
-	if [ "$${ENABLE_PHP:-true}" = "true" ]; then PROFILES="$$PROFILES --profile php"; SERVICES="$$SERVICES php"; fi; \
-	if [ "$${ENABLE_NODE:-true}" = "true" ]; then PROFILES="$$PROFILES --profile node"; SERVICES="$$SERVICES node"; fi; \
-	if [ "$${ENABLE_REDIS:-true}" = "true" ]; then PROFILES="$$PROFILES --profile redis"; SERVICES="$$SERVICES redis"; fi; \
+	PROFILES=""; \
+	if [ "$${ENABLE_DATABASE:-true}" = "true" ]; then \
+		PROFILES="$$PROFILES --profile $${DB_TYPE:-postgres}"; \
+	fi; \
+	if [ "$${ENABLE_PHP:-true}" = "true" ]; then PROFILES="$$PROFILES --profile php"; fi; \
+	if [ "$${ENABLE_NODE:-true}" = "true" ]; then PROFILES="$$PROFILES --profile node"; fi; \
+	if [ "$${ENABLE_REDIS:-true}" = "true" ]; then PROFILES="$$PROFILES --profile redis"; fi; \
 	echo -e "\033[0;33mStarting containers in $${ENV^^:-production} mode...\033[0m"; \
-	echo -e "\033[0;34mActive services: $$SERVICES\033[0m"; \
-	echo -e "\033[0;34mDatabase: $${DB_TYPE:-postgres}\033[0m"; \
 	if [ "$$ENV" = "production" ]; then \
-		docker compose -f compose.yaml -f compose.prod.yaml $$PROFILES up -d $$SERVICES $(SERVICES); \
+		docker compose -f compose.yaml -f compose.prod.yaml $$PROFILES up -d; \
 	else \
-		docker compose $$PROFILES up -d $$SERVICES $(SERVICES); \
+		docker compose $$PROFILES up -d; \
 	fi
 	@echo -e "\033[0;32mContainers started!\033[0m"
 	@. ./.env && echo -e "\033[0;34mNginx is running at http://localhost:$${NGINX_PORT:-8080}\033[0m"
@@ -462,29 +465,46 @@ check-health: ## Check application health by container status for all services
 	@echo -e "\033[0;33mChecking Container Health Status...\033[0m\n"
 
 	@echo -e "\033[0;34m📦 PHP-FPM:\033[0m"
-	@if [ "$$(docker inspect --format='{{.State.Health.Status}}' $$(docker compose ps -q php) 2>/dev/null)" = "healthy" ]; then \
-		echo -e "\033[0;32m  ✅ Healthy\033[0m"; \
-	else \
-		echo -e "\033[0;31m  ❌ Unhealthy or not running\033[0m"; \
-	fi
-
-	@echo -e "\n\033[0;34m💾 Database:\033[0m"
 	@if [ -f .env ]; then . ./.env; fi; \
-	DB_TYPE=$${DB_TYPE:-postgres}; \
-	if [ "$$(docker inspect --format='{{.State.Health.Status}}' $$(docker compose ps -q $$DB_TYPE) 2>/dev/null)" = "healthy" ]; then \
-		echo -e "\033[0;32m  ✅ $$DB_TYPE is Healthy\033[0m"; \
+	if [ "$${ENABLE_PHP:-true}" = "true" ]; then \
+		if [ "$$(docker inspect --format='{{.State.Health.Status}}' $$(docker compose ps -q php) 2>/dev/null)" = "healthy" ]; then \
+			echo -e "\033[0;32m  ✅ Healthy\033[0m"; \
+		else \
+			echo -e "\033[0;31m  ❌ Unhealthy or not running\033[0m"; \
+		fi; \
 	else \
-		echo -e "\033[0;31m  ❌ $$DB_TYPE is Unhealthy or not running\033[0m"; \
+		echo -e "\033[0;37m  ⚪ Disabled (ENABLE_PHP=false)\033[0m"; \
 	fi
+	@echo ""
 
-	@echo -e "\n\033[0;34m🔴 Redis:\033[0m"
-	@if [ "$$(docker inspect --format='{{.State.Health.Status}}' $$(docker compose ps -q redis) 2>/dev/null)" = "healthy" ]; then \
-		echo -e "\033[0;32m  ✅ Healthy\033[0m"; \
+	@echo -e "\033[0;34m💾 Database:\033[0m"
+	@if [ -f .env ]; then . ./.env; fi; \
+	if [ "$${ENABLE_DATABASE:-true}" = "true" ]; then \
+		DB_TYPE=$${DB_TYPE:-postgres}; \
+		if [ "$$(docker inspect --format='{{.State.Health.Status}}' $$(docker compose ps -q $$DB_TYPE) 2>/dev/null)" = "healthy" ]; then \
+			echo -e "\033[0;32m  ✅ $$DB_TYPE is Healthy\033[0m"; \
+		else \
+			echo -e "\033[0;31m  ❌ $$DB_TYPE is Unhealthy or not running\033[0m"; \
+		fi; \
 	else \
-		echo -e "\033[0;31m  ❌ Unhealthy or not running\033[0m"; \
+		echo -e "\033[0;37m  ⚪ Disabled (ENABLE_DATABASE=false)\033[0m"; \
 	fi
+	@echo ""
 
-	@echo -e "\n\033[0;34m🌐 Nginx HTTP:\033[0m"
+	@echo -e "\033[0;34m🔴 Redis:\033[0m"
+	@if [ -f .env ]; then . ./.env; fi; \
+	if [ "$${ENABLE_REDIS:-true}" = "true" ]; then \
+		if [ "$$(docker inspect --format='{{.State.Health.Status}}' $$(docker compose ps -q redis) 2>/dev/null)" = "healthy" ]; then \
+			echo -e "\033[0;32m  ✅ Healthy\033[0m"; \
+		else \
+			echo -e "\033[0;31m  ❌ Unhealthy or not running\033[0m"; \
+		fi; \
+	else \
+		echo -e "\033[0;37m  ⚪ Disabled (ENABLE_REDIS=false)\033[0m"; \
+	fi
+	@echo ""
+
+	@echo -e "\033[0;34m🌐 Nginx HTTP:\033[0m"
 	@if [ -f .env ]; then . ./.env; fi; \
 	NGINX_PORT=$${NGINX_PORT:-8080}; \
 	if command -v curl >/dev/null 2>&1; then \
