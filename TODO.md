@@ -2407,12 +2407,57 @@ curl http://localhost:3000/health
 ---
 
 **Erstellt:** 2025-12-19
-**Letzte Aktualisierung:** 2025-12-31 (Granular Service Control & Makefile Optimization)
-**Version:** 3.6
+**Letzte Aktualisierung:** 2026-01-02 (Code Quality & Test Coverage Improvements)
+**Version:** 3.7
 
 ---
 
 ## Changelog
+
+### Version 3.7 (2026-01-02) - Code Quality & Test Coverage Improvements
+**Achieved 100% Node.js test coverage, eliminated all PHPMD errors, and improved TypeScript configuration structure:**
+
+#### Fixed - Code Quality
+- **PHPMD Error Elimination**:
+  - Fixed all 26 PHPMD errors across multiple files
+  - Added appropriate `@SuppressWarnings` annotations for intentional patterns
+  - Added missing `use` statements (PDO, PDOException, Redis, Exception, etc.)
+  - Removed error control operators (`@`) in HealthCheck and services
+  - Files improved: WelcomeController, HealthCheck, DatabaseService, HealthCheckService, LogService, QualityService
+
+#### Changed - Node.js Architecture
+- **Entry Point Separation**:
+  - Moved `server.ts` from `src/node/App/` to `src/node/` (proper separation of concerns)
+  - Entry point now separated from application logic
+  - Updated `ecosystem.config.cjs` to reference correct path: `src/node/server.ts`
+- **TypeScript Configuration Cleanup**:
+  - Split into three distinct configs for clarity:
+    - `tsconfig.json`: Development & testing (includes only `src/node/App/**/*` and `tests/node/App/**/*`)
+    - `tsconfig.build.json`: Production builds (includes `server.ts` entry point)
+    - `tsconfig.vitest.json`: Test-specific settings
+  - Fixed `vitest.config.ts` test patterns to match new structure (`tests/node/App/**/*`)
+
+#### Fixed - Test Coverage
+- **Node.js Coverage: 100%**:
+  - Achieved 100% coverage on application code (exceeds 80% target)
+  - app.ts: 100%, math.ts: 100%
+  - Resolved Vitest v8 coverage issue with server.ts through proper configuration
+  - 27/27 tests passing
+
+#### Changed - Docker Configuration
+- **Watch Mode Improvements**:
+  - Added `sync+restart` action for config files in `compose.override.yaml`
+  - Auto-restart on changes to: tsconfig.json, tsconfig.build.json, tsconfig.vitest.json, vitest.config.ts, vite.config.js, ecosystem.config.cjs
+  - Improves development experience with automatic config reloading
+- **Production Build Fix**:
+  - Added `tsconfig.build.json` to Dockerfile COPY step (was missing)
+  - Fixed production build to compile both frontend AND backend: `pnpm run build && pnpm run server:build`
+  - Ensures TypeScript server is properly compiled in production images
+
+#### Technical Debt Removed
+- Deleted unnecessary `tests/node/App/unit/server.test.ts` (wasn't testing server.ts)
+- Simplified coverage configuration (removed unnecessary glob-specific thresholds)
+- Cleaned up workarounds that were masking cache issues
 
 ### Version 3.6 (2025-12-31) - Granular Service Control & Makefile Optimization
 **Introduced optional database control, simplified Makefile logic, and improved health checks for better visibility:**

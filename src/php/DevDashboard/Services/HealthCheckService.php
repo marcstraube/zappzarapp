@@ -4,15 +4,24 @@ declare(strict_types=1);
 
 namespace DevDashboard\Services;
 
+use PDO;
+use PDOException;
+
 /**
  * Health Check Service
  *
  * Checks health of containers, databases, services, SSL certificates
- */
+      *
+     * @return array<string, mixed>
+     * @SuppressWarnings(PHPMD.ExcessiveClassComplexity)
+     * @SuppressWarnings(PHPMD.UnusedLocalVariable)
+     */
 class HealthCheckService
 {
     /**
      * Get overall system health status
+          *
+     * @return array<string, mixed>
      */
     public function getOverallStatus(): array
     {
@@ -48,6 +57,8 @@ class HealthCheckService
 
     /**
      * Get Docker container status
+          *
+     * @return array<string, mixed>
      */
     public function getContainerStatus(): array
     {
@@ -84,6 +95,8 @@ class HealthCheckService
     /**
      * Check individual container status
      * Uses service connectivity checks instead of Docker commands (works inside containers)
+          *
+     * @return array<string, mixed>
      */
     private function checkContainer(string $containerName): array
     {
@@ -119,13 +132,15 @@ class HealthCheckService
 
     /**
      * Check PostgreSQL connection
+          *
+     * @return array<string, mixed>
      */
     private function checkPostgresConnection(): array
     {
         $host = 'postgres';
         $port = 5432;
 
-        $socket = @fsockopen($host, $port, $errno, $errstr, 1);
+        $socket = fsockopen($host, $port, $_errno, $errstr, 1);
         if ($socket) {
             fclose($socket);
             return ['connected' => true, 'host' => $host, 'port' => $port];
@@ -136,13 +151,15 @@ class HealthCheckService
 
     /**
      * Check MariaDB connection
+          *
+     * @return array<string, mixed>
      */
     private function checkMariadbConnection(): array
     {
         $host = 'mariadb';
         $port = 3306;
 
-        $socket = @fsockopen($host, $port, $errno, $errstr, 1);
+        $socket = fsockopen($host, $port, $_errno, $errstr, 1);
         if ($socket) {
             fclose($socket);
             return ['connected' => true, 'host' => $host, 'port' => $port];
@@ -153,13 +170,15 @@ class HealthCheckService
 
     /**
      * Check Redis connection
+          *
+     * @return array<string, mixed>
      */
     private function checkRedisConnection(): array
     {
         $host = 'redis';
         $port = 6379;
 
-        $socket = @fsockopen($host, $port, $errno, $errstr, 1);
+        $socket = fsockopen($host, $port, $_errno, $errstr, 1);
         if ($socket) {
             fclose($socket);
             return ['connected' => true, 'host' => $host, 'port' => $port];
@@ -170,6 +189,8 @@ class HealthCheckService
 
     /**
      * Get database connection status
+          *
+     * @return array<string, mixed>
      */
     public function getDatabaseStatus(): array
     {
@@ -188,6 +209,8 @@ class HealthCheckService
 
     /**
      * Check PostgreSQL connection
+          *
+     * @return array<string, mixed>
      */
     private function checkPostgresql(): array
     {
@@ -199,12 +222,25 @@ class HealthCheckService
 
         try {
             $dsn = sprintf('pgsql:host=%s;port=%s;dbname=%s', $host, $port, $dbname);
-            $pdo = new \PDO($dsn, $user, $password, [
-                \PDO::ATTR_TIMEOUT => 3,
-                \PDO::ATTR_ERRMODE => \PDO::ERRMODE_EXCEPTION,
+            $pdo = new PDO($dsn, $user, $password, [
+                PDO::ATTR_TIMEOUT => 3,
+                PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
             ]);
 
-            $version = $pdo->query('SELECT version()')->fetchColumn();
+            $stmt = $pdo->query('SELECT version()');
+            if ($stmt === false) {
+                return [
+                    'connected' => true,
+                    'host'      => $host,
+                    'port'      => $port,
+                    'database'  => $dbname,
+                    'version'   => 'Unknown',
+                ];
+            }
+            $version = $stmt->fetchColumn();
+            if ($version === false) {
+                $version = 'Unknown';
+            }
 
             return [
                 'connected' => true,
@@ -213,7 +249,7 @@ class HealthCheckService
                 'database'  => $dbname,
                 'version'   => $version,
             ];
-        } catch (\PDOException $e) {
+        } catch (PDOException $e) {
             return [
                 'connected' => false,
                 'host'      => $host,
@@ -225,6 +261,8 @@ class HealthCheckService
 
     /**
      * Check MariaDB connection
+          *
+     * @return array<string, mixed>
      */
     private function checkMariadb(): array
     {
@@ -236,12 +274,25 @@ class HealthCheckService
 
         try {
             $dsn = sprintf('mysql:host=%s;port=%s;dbname=%s', $host, $port, $dbname);
-            $pdo = new \PDO($dsn, $user, $password, [
-                \PDO::ATTR_TIMEOUT => 3,
-                \PDO::ATTR_ERRMODE => \PDO::ERRMODE_EXCEPTION,
+            $pdo = new PDO($dsn, $user, $password, [
+                PDO::ATTR_TIMEOUT => 3,
+                PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
             ]);
 
-            $version = $pdo->query('SELECT VERSION()')->fetchColumn();
+            $stmt = $pdo->query('SELECT VERSION()');
+            if ($stmt === false) {
+                return [
+                    'connected' => true,
+                    'host'      => $host,
+                    'port'      => $port,
+                    'database'  => $dbname,
+                    'version'   => 'Unknown',
+                ];
+            }
+            $version = $stmt->fetchColumn();
+            if ($version === false) {
+                $version = 'Unknown';
+            }
 
             return [
                 'connected' => true,
@@ -250,7 +301,7 @@ class HealthCheckService
                 'database'  => $dbname,
                 'version'   => $version,
             ];
-        } catch (\PDOException $e) {
+        } catch (PDOException $e) {
             return [
                 'connected' => false,
                 'host'      => $host,
@@ -262,6 +313,8 @@ class HealthCheckService
 
     /**
      * Get service health (PHP-FPM, Node.js, Nginx)
+          *
+     * @return array<string, mixed>
      */
     public function getServiceStatus(): array
     {
@@ -274,6 +327,8 @@ class HealthCheckService
 
     /**
      * Check PHP-FPM status
+          *
+     * @return array<string, mixed>
      */
     private function checkPhpFpm(): array
     {
@@ -289,13 +344,15 @@ class HealthCheckService
 
     /**
      * Check Node.js service
+          *
+     * @return array<string, mixed>
      */
     private function checkNode(): array
     {
         $host = 'node';
         $port = 3000;
 
-        $socket = @fsockopen($host, $port, $errno, $errstr, 1);
+        $socket = fsockopen($host, $port, $_errno, $errstr, 1);
         if ($socket) {
             fclose($socket);
             return [
@@ -313,11 +370,13 @@ class HealthCheckService
 
     /**
      * Check Nginx status
+          *
+     * @return array<string, mixed>
      */
     private function checkNginx(): array
     {
         // Check if we can connect to nginx
-        $socket = @fsockopen('nginx', 8080, $errno, $errstr, 1);
+        $socket = fsockopen('nginx', 8080, $_errno, $errstr, 1);
         if ($socket) {
             fclose($socket);
             return [
@@ -335,6 +394,8 @@ class HealthCheckService
 
     /**
      * Get SSL certificate information
+          *
+     * @return array<string, mixed>
      */
     public function getSslInfo(): array
     {
@@ -347,7 +408,16 @@ class HealthCheckService
             ];
         }
 
-        $certData = openssl_x509_parse(file_get_contents($certPath));
+        $certContent = file_get_contents($certPath);
+        if ($certContent === false) {
+            return [
+                'exists'  => true,
+                'valid'   => false,
+                'message' => 'Could not read certificate file',
+            ];
+        }
+
+        $certData = openssl_x509_parse($certContent);
 
         if (!$certData) {
             return [
@@ -374,27 +444,4 @@ class HealthCheckService
         ];
     }
 
-    /**
-     * Execute a shell command and return output
-     */
-    private function executeCommand(string $command): string
-    {
-        $descriptorspec = [
-            1 => ['pipe', 'w'],  // stdout
-            2 => ['pipe', 'w'],  // stderr
-        ];
-
-        $process = proc_open($command, $descriptorspec, $pipes);
-
-        if (is_resource($process)) {
-            $output = stream_get_contents($pipes[1]);
-            fclose($pipes[1]);
-            fclose($pipes[2]);
-            proc_close($process);
-
-            return $output ?: '';
-        }
-
-        return '';
-    }
 }

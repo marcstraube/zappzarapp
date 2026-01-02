@@ -4,11 +4,15 @@ declare(strict_types=1);
 
 namespace DevDashboard\Services;
 
+use SplFileObject;
+
 /**
  * Log Service
  *
  * Provides access to application and service logs
- */
+      *
+     * @return array<string, mixed>
+     */
 class LogService
 {
     private string $projectRoot;
@@ -22,6 +26,8 @@ class LogService
 
     /**
      * Get available log sources
+          *
+     * @return array<string, mixed>
      */
     public function getAvailableLogSources(): array
     {
@@ -68,6 +74,8 @@ class LogService
 
     /**
      * Get application log files from storage
+          *
+     * @return array<int, array<string, mixed>>
      */
     private function getApplicationLogs(): array
     {
@@ -77,6 +85,10 @@ class LogService
 
         $logs  = [];
         $files = glob($this->storageDir . '*.log');
+
+        if ($files === false) {
+            return [];
+        }
 
         foreach ($files as $file) {
             $logs[] = [
@@ -95,6 +107,8 @@ class LogService
 
     /**
      * Read log file content
+          *
+     * @return array<string, mixed>
      */
     public function readLogFile(string $filename, int $lines = 100): array
     {
@@ -123,7 +137,7 @@ class LogService
      */
     private function tail(string $filepath, int $lines = 100): string
     {
-        $file = new \SplFileObject($filepath, 'r');
+        $file = new SplFileObject($filepath, 'r');
         $file->seek(PHP_INT_MAX);
         $lastLine = $file->key();
 
@@ -140,6 +154,8 @@ class LogService
 
     /**
      * Get log viewing commands for CLI
+          *
+     * @return array<int, array<string, string>>
      */
     public function getLogCommands(): array
     {
@@ -174,6 +190,8 @@ class LogService
 
     /**
      * Get log statistics
+          *
+     * @return array<string, mixed>
      */
     public function getLogStatistics(): array
     {
@@ -194,7 +212,7 @@ class LogService
     private function formatBytes(int $bytes): string
     {
         $units  = ['B', 'KB', 'MB', 'GB'];
-        $factor = floor((strlen((string) $bytes) - 1) / 3);
+        $factor = (int) floor((strlen((string) $bytes) - 1) / 3);
 
         return sprintf('%.2f %s', $bytes / (1024 ** $factor), $units[$factor]);
     }

@@ -113,11 +113,30 @@ services:
       - "${NODE_PORT:-3000}:3000"
     develop:
       watch:
-        # Rebuild when dependencies change
+        # Rebuild when dependencies or config change
         - action: rebuild
           path: ./package.json
         - action: rebuild
           path: ./pnpm-lock.yaml
+        # Sync config files (restart container to pick up changes)
+        - action: sync+restart
+          path: ./tsconfig.json
+          target: /app/tsconfig.json
+        - action: sync+restart
+          path: ./tsconfig.build.json
+          target: /app/tsconfig.build.json
+        - action: sync+restart
+          path: ./tsconfig.vitest.json
+          target: /app/tsconfig.vitest.json
+        - action: sync+restart
+          path: ./vitest.config.ts
+          target: /app/vitest.config.ts
+        - action: sync+restart
+          path: ./vite.config.js
+          target: /app/vite.config.js
+        - action: sync+restart
+          path: ./ecosystem.config.cjs
+          target: /app/ecosystem.config.cjs
         # Sync source code changes (no rebuild needed)
         - action: sync
           path: ./src/node
@@ -142,6 +161,7 @@ services:
       # Build & Config
       - ./vite.config.js:/app/vite.config.js:ro
       - ./tsconfig.json:/app/tsconfig.json:ro
+      - ./tsconfig.build.json:/app/tsconfig.build.json:ro
       - ./tsconfig.vitest.json:/app/tsconfig.vitest.json:ro
       - ./vitest.config.ts:/app/vitest.config.ts:ro
       - ./postcss.config.js:/app/postcss.config.js:ro

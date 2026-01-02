@@ -149,6 +149,8 @@ class DashboardController
 
     /**
      * Render a view with layout
+     *
+     * @param array<string, mixed> $data
      */
     private function render(string $view, array $data = []): void
     {

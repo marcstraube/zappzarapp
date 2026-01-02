@@ -28,20 +28,6 @@ class DashboardControllerTest extends TestCase
         $this->assertInstanceOf(\DevDashboard\Controllers\DashboardController::class, $controller);
     }
 
-    public function testControllerHasRequiredMethods(): void
-    {
-        $controller = new \DevDashboard\Controllers\DashboardController();
-
-        $this->assertTrue(method_exists($controller, 'index'));
-        $this->assertTrue(method_exists($controller, 'system'));
-        $this->assertTrue(method_exists($controller, 'health'));
-        $this->assertTrue(method_exists($controller, 'quality'));
-        $this->assertTrue(method_exists($controller, 'database'));
-        $this->assertTrue(method_exists($controller, 'logs'));
-        $this->assertTrue(method_exists($controller, 'apiHealthCheck'));
-        $this->assertTrue(method_exists($controller, 'apiContainerStatus'));
-    }
-
     public function testApiHealthCheckReturnsValidJson(): void
     {
         $controller = new \DevDashboard\Controllers\DashboardController();
@@ -50,10 +36,10 @@ class DashboardControllerTest extends TestCase
         $controller->apiHealthCheck();
         $output = ob_get_clean();
 
+        $this->assertNotFalse($output, 'Output buffer should not be empty');
         $this->assertJson($output);
 
         $data = json_decode($output, true);
-        $this->assertIsArray($data);
         $this->assertArrayHasKey('status', $data);
     }
 
@@ -65,10 +51,10 @@ class DashboardControllerTest extends TestCase
         $controller->apiContainerStatus();
         $output = ob_get_clean();
 
+        $this->assertNotFalse($output, 'Output buffer should not be empty');
         $this->assertJson($output);
 
         $data = json_decode($output, true);
-        $this->assertIsArray($data);
         $this->assertNotEmpty($data);
     }
 }

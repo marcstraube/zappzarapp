@@ -1,3 +1,11 @@
+<?php
+/**
+ * @var array<string, mixed> $overview
+ * @var array<string, mixed> $connection_stats
+ * @var array<int, array<string, mixed>> $tables
+ * @var array<string, mixed> $commands
+ */
+?>
 <?php if (!$overview['connected']): ?>
     <!-- Database Not Connected -->
     <div class="card bg-red-50 border border-red-200">

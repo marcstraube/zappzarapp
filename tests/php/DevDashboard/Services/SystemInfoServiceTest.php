@@ -25,7 +25,6 @@ class SystemInfoServiceTest extends TestCase
     {
         $info = $this->service->getBasicInfo();
 
-        $this->assertIsArray($info);
         $this->assertArrayHasKey('php_version', $info);
         $this->assertArrayHasKey('php_sapi', $info);
         $this->assertArrayHasKey('hostname', $info);
@@ -40,7 +39,6 @@ class SystemInfoServiceTest extends TestCase
     {
         $version = $this->service->getPhpVersion();
 
-        $this->assertIsArray($version);
         $this->assertArrayHasKey('version', $version);
         $this->assertArrayHasKey('major', $version);
         $this->assertArrayHasKey('minor', $version);
@@ -55,7 +53,6 @@ class SystemInfoServiceTest extends TestCase
     {
         $extensions = $this->service->getPhpExtensions();
 
-        $this->assertIsArray($extensions);
         $this->assertNotEmpty($extensions);
 
         // Check structure of first extension
@@ -76,8 +73,6 @@ class SystemInfoServiceTest extends TestCase
         putenv('TEST_PASSWORD=secret123');
 
         $envVars = $this->service->getEnvironmentVariables();
-
-        $this->assertIsArray($envVars);
 
         // Verify test variable is present
         $this->assertArrayHasKey('TEST_VAR', $envVars);
@@ -103,7 +98,6 @@ class SystemInfoServiceTest extends TestCase
 
         $status = $this->service->getGitStatus();
 
-        $this->assertIsArray($status);
         $this->assertArrayHasKey('initialized', $status);
 
         // The actual project IS a git repository, so this will be true
@@ -117,8 +111,6 @@ class SystemInfoServiceTest extends TestCase
     public function testGetGitStatusWhenInitialized(): void
     {
         $status = $this->service->getGitStatus();
-
-        $this->assertIsArray($status);
 
         if ($status['initialized']) {
             $this->assertArrayHasKey('branch', $status);

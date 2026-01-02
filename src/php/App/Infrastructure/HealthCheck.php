@@ -4,6 +4,11 @@ declare(strict_types=1);
 
 namespace App\Infrastructure;
 
+use PDO;
+use PDOException;
+use Redis;
+use Exception;
+
 /**
  * HealthCheck - Centralized service health status checker
  *
@@ -15,7 +20,10 @@ namespace App\Infrastructure;
  */
 class HealthCheck
 {
+    /** @var array<string, mixed> */
     private array $env;
+
+    /** @var array<string, mixed> */
     private array $status = [];
 
     public function __construct()
@@ -41,6 +49,8 @@ class HealthCheck
 
     /**
      * Check all services and return status array
+     *
+     * @return array<string, mixed>
      */
     public function checkAll(): array
     {
@@ -115,7 +125,7 @@ class HealthCheck
                 ],
             ]);
 
-            $response = @file_get_contents($url, false, $context);
+            $response = file_get_contents($url, false, $context);
 
             if ($response === false) {
                 $this->status['services']['node-backend'] = [
@@ -137,7 +147,7 @@ class HealthCheck
                 'enabled'     => true,
                 'mode'        => $this->env['NODE_MODE'],
             ];
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             $this->status['services']['node-backend'] = [
                 'status'  => 'error',
                 'message' => $e->getMessage(),
@@ -162,8 +172,8 @@ class HealthCheck
         }
 
         try {
-            $redis     = new \Redis();
-            $connected = @$redis->connect('redis', 6379, 2);
+            $redis     = new Redis();
+            $connected = $redis->connect('redis', 6379, 2);
 
             if (!$connected) {
                 $this->status['services']['redis'] = [
@@ -184,7 +194,7 @@ class HealthCheck
             ];
 
             $redis->close();
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             $this->status['services']['redis'] = [
                 'status'  => 'error',
                 'message' => $e->getMessage(),
@@ -234,12 +244,13 @@ class HealthCheck
             $dbPass = $_ENV['DB_PASSWORD'] ?? getenv('DB_PASSWORD') ?: 'secret';
 
             $dsn = "pgsql:host=postgres;port=5432;dbname={$dbName}";
-            $pdo = new \PDO($dsn, $dbUser, $dbPass, [
-                \PDO::ATTR_TIMEOUT => 2,
-                \PDO::ATTR_ERRMODE => \PDO::ERRMODE_EXCEPTION,
+            $pdo = new PDO($dsn, $dbUser, $dbPass, [
+                PDO::ATTR_TIMEOUT => 2,
+                PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
             ]);
 
-            $version = $pdo->query('SELECT version()')->fetchColumn();
+            $stmt    = $pdo->query('SELECT version()');
+            $version = $stmt !== false ? $stmt->fetchColumn() : 'unknown';
 
             $this->status['services']['database'] = [
                 'status'  => 'ok',
@@ -247,7 +258,7 @@ class HealthCheck
                 'version' => $version,
                 'enabled' => true,
             ];
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             $this->status['services']['database'] = [
                 'status'  => 'error',
                 'type'    => 'postgres',
@@ -278,12 +289,13 @@ class HealthCheck
             $dbPass = $_ENV['DB_PASSWORD'] ?? getenv('DB_PASSWORD') ?: 'secret';
 
             $dsn = "mysql:host=mariadb;port=3306;dbname={$dbName}";
-            $pdo = new \PDO($dsn, $dbUser, $dbPass, [
-                \PDO::ATTR_TIMEOUT => 2,
-                \PDO::ATTR_ERRMODE => \PDO::ERRMODE_EXCEPTION,
+            $pdo = new PDO($dsn, $dbUser, $dbPass, [
+                PDO::ATTR_TIMEOUT => 2,
+                PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
             ]);
 
-            $version = $pdo->query('SELECT VERSION()')->fetchColumn();
+            $stmt    = $pdo->query('SELECT VERSION()');
+            $version = $stmt !== false ? $stmt->fetchColumn() : 'unknown';
 
             $this->status['services']['database'] = [
                 'status'  => 'ok',
@@ -291,7 +303,7 @@ class HealthCheck
                 'version' => $version,
                 'enabled' => true,
             ];
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             $this->status['services']['database'] = [
                 'status'  => 'error',
                 'type'    => 'mariadb',
@@ -315,6 +327,8 @@ class HealthCheck
 
     /**
      * Get all services status
+     *
+     * @return array<string, mixed>
      */
     public function getServices(): array
     {
@@ -327,6 +341,8 @@ class HealthCheck
 
     /**
      * Get environment info
+     *
+     * @return array<string, mixed>
      */
     public function getEnvironment(): array
     {

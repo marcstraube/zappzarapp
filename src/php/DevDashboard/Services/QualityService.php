@@ -4,11 +4,17 @@ declare(strict_types=1);
 
 namespace DevDashboard\Services;
 
+use RecursiveIteratorIterator;
+use RecursiveDirectoryIterator;
+use Exception;
+
 /**
  * Quality Service
  *
  * Aggregates code quality metrics from various tools
- */
+      *
+     * @return array<string, mixed>
+     */
 class QualityService
 {
     private string $projectRoot;
@@ -20,6 +26,8 @@ class QualityService
 
     /**
      * Get overall quality metrics
+          *
+     * @return array<string, mixed>
      */
     public function getQualityMetrics(): array
     {
@@ -33,6 +41,8 @@ class QualityService
 
     /**
      * Get PHP quality metrics (PHPStan, PHPMD, PHP CS Fixer)
+          *
+     * @return array<string, mixed>
      */
     private function getPhpQualityMetrics(): array
     {
@@ -45,6 +55,8 @@ class QualityService
 
     /**
      * Get Node.js quality metrics (ESLint, Prettier, TypeScript)
+          *
+     * @return array<string, mixed>
      */
     private function getNodeQualityMetrics(): array
     {
@@ -57,6 +69,8 @@ class QualityService
 
     /**
      * Get PHPStan status and metrics
+          *
+     * @return array<string, mixed>
      */
     private function getPhpStanStatus(): array
     {
@@ -71,6 +85,9 @@ class QualityService
 
         // Extract level from config
         $config = file_get_contents($configFile);
+        if ($config === false) {
+            return ['enabled' => false, 'message' => 'Could not read config'];
+        }
         preg_match('/level:\s*(\d+)/', $config, $matches);
         $level = $matches[1] ?? 'unknown';
 
@@ -85,6 +102,8 @@ class QualityService
 
     /**
      * Get PHPMD status
+          *
+     * @return array<string, mixed>
      */
     private function getPhpMdStatus(): array
     {
@@ -107,6 +126,8 @@ class QualityService
 
     /**
      * Get PHP CS Fixer status
+          *
+     * @return array<string, mixed>
      */
     private function getCsFixerStatus(): array
     {
@@ -129,6 +150,8 @@ class QualityService
 
     /**
      * Get ESLint status
+          *
+     * @return array<string, mixed>
      */
     private function getEslintStatus(): array
     {
@@ -151,6 +174,8 @@ class QualityService
 
     /**
      * Get Prettier status
+          *
+     * @return array<string, mixed>
      */
     private function getPrettierStatus(): array
     {
@@ -173,6 +198,8 @@ class QualityService
 
     /**
      * Get TypeScript compiler status
+          *
+     * @return array<string, mixed>
      */
     private function getTypeScriptStatus(): array
     {
@@ -195,6 +222,8 @@ class QualityService
 
     /**
      * Get code statistics
+          *
+     * @return array<string, mixed>
      */
     private function getCodeStatistics(): array
     {
@@ -214,6 +243,9 @@ class QualityService
 
     /**
      * Count files in a directory
+          *
+     * @param array<int, string> $extensions
+     * @return array<string, mixed>
      */
     private function countFiles(string $directory, array $extensions): array
     {
@@ -226,9 +258,9 @@ class QualityService
         $count = 0;
 
         try {
-            $iterator = new \RecursiveIteratorIterator(
-                new \RecursiveDirectoryIterator($path, \RecursiveDirectoryIterator::SKIP_DOTS),
-                \RecursiveIteratorIterator::SELF_FIRST
+            $iterator = new RecursiveIteratorIterator(
+                new RecursiveDirectoryIterator($path, RecursiveDirectoryIterator::SKIP_DOTS),
+                RecursiveIteratorIterator::SELF_FIRST
             );
 
             foreach ($iterator as $file) {
@@ -239,7 +271,7 @@ class QualityService
                     }
                 }
             }
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             return ['count' => 0, 'exists' => false, 'error' => $e->getMessage()];
         }
 
@@ -248,6 +280,8 @@ class QualityService
 
     /**
      * Get test coverage information
+          *
+     * @return array<string, mixed>
      */
     private function getTestCoverage(): array
     {
@@ -262,6 +296,8 @@ class QualityService
 
     /**
      * Get PHP test coverage
+          *
+     * @return array<string, mixed>
      */
     private function getPhpTestCoverage(): array
     {
@@ -283,6 +319,8 @@ class QualityService
 
     /**
      * Get Node.js test coverage
+          *
+     * @return array<string, mixed>
      */
     private function getNodeTestCoverage(): array
     {
@@ -304,6 +342,8 @@ class QualityService
 
     /**
      * Get quick actions for quality checks
+          *
+     * @return array<int, array<string, mixed>>
      */
     public function getQuickActions(): array
     {

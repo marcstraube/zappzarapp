@@ -1,3 +1,10 @@
+<?php
+/**
+ * @var array<string, mixed> $log_stats
+ * @var array<string, array<string, mixed>> $log_sources
+ * @var array<int, array<string, string>> $log_commands
+ */
+?>
 <div class="space-y-6">
     <!-- Log Statistics -->
     <div class="card">

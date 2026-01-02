@@ -12,7 +12,7 @@ declare(strict_types=1);
 namespace DevDashboard;
 
 // Only enable dashboard in development or when explicitly enabled
-$isProduction     = (getenv('APP_ENV') ?? 'development') === 'production';
+$isProduction     = (getenv('APP_ENV') ?: 'development') === 'production';
 $dashboardEnabled = getenv('ENABLE_DEV_DASHBOARD') !== 'false';
 
 if ($isProduction && !$dashboardEnabled) {

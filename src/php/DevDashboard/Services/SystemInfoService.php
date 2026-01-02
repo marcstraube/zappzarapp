@@ -8,11 +8,15 @@ namespace DevDashboard\Services;
  * System Information Service
  *
  * Provides system information like PHP version, extensions, git status, etc.
- */
+      *
+     * @return array<string, mixed>
+     */
 class SystemInfoService
 {
     /**
      * Get basic system information
+          *
+     * @return array<string, mixed>
      */
     public function getBasicInfo(): array
     {
@@ -28,6 +32,8 @@ class SystemInfoService
 
     /**
      * Get PHP version information
+          *
+     * @return array<string, mixed>
      */
     public function getPhpVersion(): array
     {
@@ -45,6 +51,8 @@ class SystemInfoService
 
     /**
      * Get loaded PHP extensions
+          *
+     * @return array<int, array<string, mixed>>
      */
     public function getPhpExtensions(): array
     {
@@ -61,6 +69,8 @@ class SystemInfoService
 
     /**
      * Get environment variables (filtered for security)
+          *
+     * @return array<string, mixed>
      */
     public function getEnvironmentVariables(): array
     {
@@ -88,6 +98,8 @@ class SystemInfoService
 
     /**
      * Get Git repository status
+          *
+     * @return array<string, mixed>
      */
     public function getGitStatus(): array
     {

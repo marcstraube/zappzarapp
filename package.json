@@ -12,7 +12,7 @@
     "build": "vite build",
     "preview": "vite preview",
     "type-check": "tsc --noEmit",
-    "server:build": "tsc --project tsconfig.json",
+    "server:build": "tsc --project tsconfig.build.json",
     "server:dev": "tsx watch src/node/server.ts",
     "server:start": "node dist/server.js",
     "pm2:status": "pm2 status",

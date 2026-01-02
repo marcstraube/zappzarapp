@@ -11,15 +11,17 @@ use PDOException;
  * Database Service
  *
  * Provides database introspection and statistics
- */
+      *
+     * @SuppressWarnings(PHPMD.ExcessiveClassComplexity)
+     */
 class DatabaseService
 {
     private string $dbType;
-    private ?string $dbHost;
-    private ?string $dbPort;
-    private ?string $dbName;
-    private ?string $dbUser;
-    private ?string $dbPassword;
+    private string $dbHost;
+    private string $dbPort;
+    private string $dbName;
+    private string $dbUser;
+    private string $dbPassword;
 
     public function __construct()
     {
@@ -32,9 +34,9 @@ class DatabaseService
     }
 
     /**
-     * Get default database host based on DB type
+     * Get defaultHost
      */
-    private function getDefaultHost(): string
+    function getDefaultHost(): string
     {
         $host = getenv('DB_HOST');
         if ($host !== false && $host !== '') {
@@ -45,9 +47,9 @@ class DatabaseService
     }
 
     /**
-     * Get default database port based on DB type
+     * Get defaultPort
      */
-    private function getDefaultPort(): string
+    function getDefaultPort(): string
     {
         $port = getenv('DB_PORT');
         if ($port !== false && $port !== '') {
@@ -58,9 +60,9 @@ class DatabaseService
     }
 
     /**
-     * Get database connection
+     * Get connection
      */
-    private function getConnection(): ?PDO
+    function getConnection(): ?PDO
     {
         try {
             if ($this->dbType === 'postgres') {
@@ -80,6 +82,8 @@ class DatabaseService
 
     /**
      * Get database overview
+          *
+     * @return array<string, mixed>
      */
     public function getDatabaseOverview(): array
     {
@@ -105,20 +109,30 @@ class DatabaseService
     }
 
     /**
-     * Get database version
+     * Get databaseVersion
      */
-    private function getDatabaseVersion(\PDO $pdo): string
+    function getDatabaseVersion(\PDO $pdo): string
     {
         try {
             if ($this->dbType === 'postgres') {
-                $stmt    = $pdo->query('SELECT version()');
+                $stmt = $pdo->query('SELECT version()');
+                if ($stmt === false) {
+                    return 'Unknown';
+                }
                 $version = $stmt->fetchColumn();
+                if (!is_string($version)) {
+                    return 'Unknown';
+                }
                 // Extract just the version number
                 preg_match('/PostgreSQL ([\d.]+)/', $version, $matches);
                 return $matches[1] ?? $version;
             } else {
                 $stmt = $pdo->query('SELECT VERSION()');
-                return $stmt->fetchColumn();
+                if ($stmt === false) {
+                    return 'Unknown';
+                }
+                $result = $stmt->fetchColumn();
+                return is_string($result) ? $result : 'Unknown';
             }
         } catch (\PDOException $e) {
             return 'Unknown';
@@ -126,9 +140,9 @@ class DatabaseService
     }
 
     /**
-     * Get number of tables
+     * Get tableCount
      */
-    private function getTableCount(\PDO $pdo): int
+    function getTableCount(\PDO $pdo): int
     {
         try {
             if ($this->dbType === 'postgres') {
@@ -143,6 +157,10 @@ class DatabaseService
                 );
             }
 
+            if ($stmt === false) {
+                return 0;
+            }
+
             return (int) $stmt->fetchColumn();
         } catch (\PDOException $e) {
             return 0;
@@ -150,26 +168,32 @@ class DatabaseService
     }
 
     /**
-     * Get database size
+     * Get databaseSize
      */
-    private function getDatabaseSize(\PDO $pdo): string
+    function getDatabaseSize(\PDO $pdo): string
     {
         try {
             if ($this->dbType === 'postgres') {
                 $stmt = $pdo->query(
                     "SELECT pg_size_pretty(pg_database_size('{$this->dbName}'))"
                 );
+                if ($stmt === false) {
+                    return 'Unknown';
+                }
+                $result = $stmt->fetchColumn();
+                return $result !== false ? (string)$result : '0 bytes';
             } else {
                 $stmt = $pdo->query(
                     "SELECT ROUND(SUM(data_length + index_length) / 1024 / 1024, 2) AS size_mb
                     FROM information_schema.tables
                     WHERE table_schema = '{$this->dbName}'"
                 );
+                if ($stmt === false) {
+                    return 'Unknown';
+                }
                 $sizeMb = $stmt->fetchColumn();
-                return $sizeMb ? $sizeMb . ' MB' : '0 MB';
+                return $sizeMb !== false ? $sizeMb . ' MB' : '0 MB';
             }
-
-            return $stmt->fetchColumn() ?: '0 bytes';
         } catch (\PDOException $e) {
             return 'Unknown';
         }
@@ -177,6 +201,8 @@ class DatabaseService
 
     /**
      * Get list of tables with details
+          *
+     * @return array<int, array<string, mixed>>
      */
     public function getTables(): array
     {
@@ -208,6 +234,10 @@ class DatabaseService
                 );
             }
 
+            if ($stmt === false) {
+                return [];
+            }
+
             $tables = [];
             while ($row = $stmt->fetch(\PDO::FETCH_ASSOC)) {
                 if ($this->dbType === 'postgres') {
@@ -233,12 +263,15 @@ class DatabaseService
     }
 
     /**
-     * Get row count for a table
+     * Get tableRowCount
      */
-    private function getTableRowCount(\PDO $pdo, string $tableName): int
+    function getTableRowCount(\PDO $pdo, string $tableName): int
     {
         try {
             $stmt = $pdo->query("SELECT COUNT(*) FROM " . $pdo->quote($tableName));
+            if ($stmt === false) {
+                return 0;
+            }
             return (int) $stmt->fetchColumn();
         } catch (\PDOException $e) {
             return 0;
@@ -247,6 +280,8 @@ class DatabaseService
 
     /**
      * Get connection pool statistics
+          *
+     * @return array<string, mixed>
      */
     public function getConnectionStats(): array
     {
@@ -269,7 +304,13 @@ class DatabaseService
                     FROM pg_stat_activity
                     WHERE datname = '{$this->dbName}'"
                 );
+                if ($stmt === false) {
+                    return ['available' => false, 'message' => 'Query failed'];
+                }
                 $stats = $stmt->fetch(\PDO::FETCH_ASSOC);
+                if ($stats === false) {
+                    return ['available' => false, 'message' => 'No data'];
+                }
 
                 return [
                     'available' => true,
@@ -278,8 +319,14 @@ class DatabaseService
                     'idle'      => $stats['idle_connections'],
                 ];
             } else {
-                $stmt      = $pdo->query('SHOW STATUS LIKE "Threads_connected"');
+                $stmt = $pdo->query('SHOW STATUS LIKE "Threads_connected"');
+                if ($stmt === false) {
+                    return ['available' => false, 'message' => 'Query failed'];
+                }
                 $connected = $stmt->fetch(\PDO::FETCH_ASSOC);
+                if ($connected === false) {
+                    return ['available' => false, 'message' => 'No data'];
+                }
 
                 return [
                     'available' => true,
@@ -298,6 +345,8 @@ class DatabaseService
 
     /**
      * Get useful database commands
+          *
+     * @return array<int, array<string, string>>
      */
     public function getDatabaseCommands(): array
     {
@@ -337,6 +386,8 @@ class DatabaseService
 
     /**
      * Get quick stats for dashboard
+          *
+     * @return array<string, mixed>
      */
     public function getQuickStats(): array
     {

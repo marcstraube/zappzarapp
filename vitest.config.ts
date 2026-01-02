@@ -1,4 +1,4 @@
-import { defineConfig } from 'vitest/config';
+import { coverageConfigDefaults, defineConfig } from 'vitest/config';
 import * as path from 'path';
 
 export default defineConfig({
@@ -6,26 +6,27 @@ export default defineConfig({
     // Test environment
     environment: 'node',
 
-    // Test file patterns (Node.js tests only in tests/node/)
-    include: ['tests/node/**/*.{test,spec}.{ts,js}', 'src/node/**/*.{test,spec}.{ts,js}'],
-    exclude: ['node_modules', 'dist', 'build', 'vendor', 'tests/php'],
+    // Test file patterns (Node.js tests only in tests/node/App/)
+    include: ['tests/node/App/**/*.{test,spec}.{ts,js}', 'src/node/App/**/*.{test,spec}.{ts,js}'],
+    exclude: ['node_modules', 'dist', 'build', 'vendor', 'tests/php', 'src/node/server.ts'],
 
-    // Coverage configuration (similar to PHPUnit)
+    // Coverage configuration (targeting 80% parity with PHPUnit)
     coverage: {
       provider: 'v8',
       reporter: ['text', 'html', 'lcov'],
       reportsDirectory: './build/coverage',
-      // Vitest 4.x: Fixed include/exclude handling (no longer needs workarounds)
-      include: ['src/node/**/*.{ts,js}'],
+      // Default: only files covered by tests are included
       exclude: [
-        '**/*.config.{js,ts,cjs,mjs}',
-        '**/*.{spec,test}.{js,ts}',
+        ...coverageConfigDefaults.exclude,
+        '**/*.test.{ts,js}',
+        '**/*.spec.{ts,js}',
       ],
+      // Coverage thresholds: 80% parity with PHP
       thresholds: {
-        lines: 60,
-        functions: 60,
-        branches: 55,
-        statements: 60,
+        lines: 80,
+        functions: 80,
+        branches: 80,
+        statements: 80,
       },
     },
 

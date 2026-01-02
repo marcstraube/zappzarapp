@@ -14,6 +14,8 @@ class ViteHelper
 {
     private string $env;
     private string $manifestPath;
+
+    /** @var array<string, mixed>|null */
     private ?array $manifest = null;
     private string $viteDevServerUrl;
 
@@ -36,6 +38,8 @@ class ViteHelper
 
     /**
      * Get the manifest file content
+     *
+     * @return array<string, mixed>|null
      */
     private function getManifest(): ?array
     {
@@ -47,7 +51,11 @@ class ViteHelper
             return null;
         }
 
-        $content        = file_get_contents($this->manifestPath);
+        $content = file_get_contents($this->manifestPath);
+        if ($content === false) {
+            return null;
+        }
+
         $this->manifest = json_decode($content, true);
 
         return $this->manifest;
@@ -77,6 +85,8 @@ class ViteHelper
 
     /**
      * Get the CSS URL for a Vite entry point in production
+     *
+     * @return array<int, string>|null
      */
     private function getCssUrl(string $entry): ?array
     {

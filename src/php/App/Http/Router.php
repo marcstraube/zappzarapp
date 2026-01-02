@@ -12,6 +12,7 @@ namespace App\Http;
  */
 class Router
 {
+    /** @var array<int, array{method: string, path: string, handler: callable}> */
     private array $routes = [];
 
     public function get(string $path, callable $handler): void
@@ -37,6 +38,11 @@ class Router
     {
         $requestMethod = $_SERVER['REQUEST_METHOD'] ?? 'GET';
         $requestPath   = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH);
+
+        // parse_url can return null, use fallback
+        if ($requestPath === null || $requestPath === false) {
+            $requestPath = '/';
+        }
 
         foreach ($this->routes as $route) {
             if ($route['method'] === $requestMethod && $this->matchPath($route['path'], $requestPath)) {

@@ -131,4 +131,24 @@ describe('API Integration Tests', () => {
       expect(response.body).toHaveProperty('method', 'GET');
     });
   });
+
+  describe('Error Handling', () => {
+    it('should handle 500 errors with error handler', async () => {
+      // /test-error route is available in non-production environments
+      const response = await request(app).get('/test-error').expect(500);
+
+      expect(response.body).toHaveProperty('error');
+      expect(response.body).toHaveProperty('timestamp');
+      expect(response.body.error).toBe('Test error message');
+    });
+
+    it('should show detailed error in development mode', async () => {
+      // In development, the /test-error route should return the actual error message
+      const response = await request(app).get('/test-error').expect(500);
+
+      // Development mode should show the actual error message
+      expect(response.body.error).toBe('Test error message');
+      expect(response.body.error).not.toBe('Internal Server Error');
+    });
+  });
 });

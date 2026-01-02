@@ -25,7 +25,6 @@ class HealthCheckServiceTest extends TestCase
     {
         $status = $this->service->getOverallStatus();
 
-        $this->assertIsArray($status);
         $this->assertArrayHasKey('status', $status);
         $this->assertArrayHasKey('healthy_count', $status);
         $this->assertArrayHasKey('unhealthy_count', $status);
@@ -40,8 +39,6 @@ class HealthCheckServiceTest extends TestCase
     public function testGetContainerStatus(): void
     {
         $containers = $this->service->getContainerStatus();
-
-        $this->assertIsArray($containers);
 
         // Verify nginx is always checked
         $this->assertArrayHasKey('nginx', $containers);
@@ -63,8 +60,6 @@ class HealthCheckServiceTest extends TestCase
     public function testGetDatabaseStatus(): void
     {
         $databases = $this->service->getDatabaseStatus();
-
-        $this->assertIsArray($databases);
 
         // Only checks the configured database type (DB_TYPE environment variable)
         // Should have at least one database checked
@@ -90,7 +85,6 @@ class HealthCheckServiceTest extends TestCase
     {
         $services = $this->service->getServiceStatus();
 
-        $this->assertIsArray($services);
         $this->assertArrayHasKey('php_fpm', $services);
         $this->assertArrayHasKey('node', $services);
         $this->assertArrayHasKey('nginx', $services);
@@ -110,7 +104,6 @@ class HealthCheckServiceTest extends TestCase
     {
         $ssl = $this->service->getSslInfo();
 
-        $this->assertIsArray($ssl);
         $this->assertArrayHasKey('exists', $ssl);
 
         if (!$ssl['exists']) {
@@ -123,7 +116,6 @@ class HealthCheckServiceTest extends TestCase
     {
         $ssl = $this->service->getSslInfo();
 
-        $this->assertIsArray($ssl);
         $this->assertArrayHasKey('exists', $ssl);
         $this->assertIsBool($ssl['exists']);
 

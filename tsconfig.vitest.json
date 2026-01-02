@@ -5,7 +5,7 @@
     "types": ["vitest/globals", "node"]
   },
   "include": [
-    "tests/node/**/*",
+    "tests/node/App/**/*",
     "vitest.config.ts"
   ]
 }

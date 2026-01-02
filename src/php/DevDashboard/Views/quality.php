@@ -1,3 +1,12 @@
+<?php
+/**
+ * @var array<string, array<string, mixed>> $php_quality
+ * @var array<string, array<string, mixed>> $node_quality
+ * @var array<string, mixed> $code_stats
+ * @var array<string, mixed> $test_coverage
+ * @var array<int, array<string, mixed>> $quick_actions
+ */
+?>
 <div class="space-y-6">
     <!-- PHP Quality Tools -->
     <div class="card">

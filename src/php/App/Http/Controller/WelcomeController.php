@@ -14,6 +14,9 @@ use App\Infrastructure\HealthCheck;
  */
 class WelcomeController
 {
+    /**
+     * @SuppressWarnings(PHPMD.UnusedLocalVariable) Variables are used in the template
+     */
     public function index(): void
     {
         $vite   = new ViteHelper();

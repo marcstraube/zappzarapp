@@ -1,3 +1,11 @@
+<?php
+/**
+ * @var array<string, mixed> $phpVersion
+ * @var bool $showPhpInfo
+ * @var array<int, array<string, mixed>> $extensions
+ * @var array<string, mixed> $envVars
+ */
+?>
 <div class="space-y-6">
     <!-- PHP Version -->
     <div class="bg-white rounded-lg shadow p-6">
@@ -37,12 +45,15 @@
             <div style="max-height: 600px; overflow-y: auto;">
                 <?php ob_start();
         phpinfo();
-        $phpinfo = ob_get_clean(); ?>
-                <?php
-        // Remove styling from phpinfo and inject Tailwind classes
-        $phpinfo = preg_replace('%^.*<body>(.*)</body>.*$%ms', '$1', $phpinfo);
-        $phpinfo = str_replace('<table', '<table class="w-full text-sm"', $phpinfo);
-        echo $phpinfo;
+        $phpinfo = ob_get_clean();
+        if ($phpinfo !== false) {
+            // Remove styling from phpinfo and inject Tailwind classes
+            $phpinfo = preg_replace('%^.*<body>(.*)</body>.*$%ms', '$1', $phpinfo);
+            if ($phpinfo !== null) {
+                $phpinfo = str_replace('<table', '<table class="w-full text-sm"', $phpinfo);
+                echo $phpinfo;
+            }
+        }
         ?>
             </div>
         </div>

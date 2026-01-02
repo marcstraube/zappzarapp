@@ -44,8 +44,9 @@
     "resolveJsonModule": true
   },
   "include": [
-    "src/node/**/*",
-    "tests/node/**/*"
+    "src/node/App/**/*",
+    "src/node/server.ts",
+    "tests/node/App/**/*"
   ],
   "exclude": [
     "node_modules",

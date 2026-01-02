@@ -1,3 +1,10 @@
+<?php
+/**
+ * @var array<string, mixed> $healthStatus
+ * @var array<string, mixed> $systemInfo
+ * @var array<string, mixed> $gitStatus
+ */
+?>
 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
     <!-- Overall Health Status -->
     <div class="bg-white rounded-lg shadow p-6 col-span-full">

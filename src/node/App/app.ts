@@ -118,6 +118,13 @@ export function createApp(): Express {
     });
   });
 
+  // Test endpoint for error handling (only for testing, not available in production)
+  if (NODE_ENV !== 'production') {
+    app.get('/test-error', (_req: Request, _res: Response, next: NextFunction): void => {
+      next(new Error('Test error message'));
+    });
+  }
+
   // 404 Handler
   app.use((req: Request, res: Response): void => {
     res.status(404).json({

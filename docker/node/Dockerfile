@@ -67,12 +67,13 @@ RUN pnpm install --frozen-lockfile
 # Copy ONLY necessary source files
 COPY --chown=node:node vite.config.js ./
 COPY --chown=node:node tsconfig.json ./
+COPY --chown=node:node tsconfig.build.json ./
 COPY --chown=node:node postcss.config.js ./
 COPY --chown=node:node resources/ ./resources/
 COPY --chown=node:node src/node/ ./src/node/
 
-# Execute the build command
-RUN pnpm run build
+# Execute the build commands (Frontend + Backend)
+RUN pnpm run build && pnpm run server:build
 
 # Image Slimming - Remove DevDependencies
 RUN pnpm prune --prod

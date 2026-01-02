@@ -1,3 +1,11 @@
+<?php
+/**
+ * @var array<string, array<string, mixed>> $containers
+ * @var array<string, array<string, mixed>> $databases
+ * @var array<string, array<string, mixed>> $services
+ * @var array<string, mixed> $ssl
+ */
+?>
 <div class="space-y-6">
     <!-- Docker Containers -->
     <div class="bg-white rounded-lg shadow p-6">
