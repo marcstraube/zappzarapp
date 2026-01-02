@@ -2407,12 +2407,23 @@ curl http://localhost:3000/health
 ---
 
 **Erstellt:** 2025-12-19
-**Letzte Aktualisierung:** 2026-01-02 (Code Quality & Test Coverage Improvements)
-**Version:** 3.7
+**Letzte Aktualisierung:** 2026-01-02 (Production Docker Compose YAML Syntax Fix)
+**Version:** 3.8
 
 ---
 
 ## Changelog
+
+### Version 3.8 (2026-01-02) - Production Docker Compose YAML Syntax Fix
+**Fixed YAML syntax errors in production compose file:**
+
+#### Fixed - Docker Configuration
+- **Production Compose YAML Syntax**:
+  - Fixed invalid YAML syntax in `compose.prod.yaml` for PostgreSQL and MariaDB services
+  - Removed inline comments from multi-line command strings (lines 134-154 for PostgreSQL, 183-196 for MariaDB)
+  - Comments inside folded multi-line strings (`>`) were being passed to database commands, causing syntax errors
+  - Moved SSL configuration comments outside command blocks as proper YAML comments
+  - Validated with `docker compose config --quiet` to ensure correctness
 
 ### Version 3.7 (2026-01-02) - Code Quality & Test Coverage Improvements
 **Achieved 100% Node.js test coverage, eliminated all PHPMD errors, and improved TypeScript configuration structure:**
