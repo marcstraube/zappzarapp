@@ -9,9 +9,9 @@
 !/logs/.gitkeep
 
 # SSL Certificates (don't commit private keys!)
-docker/nginx/certs/*.pem
-docker/nginx/certs/*.key
-docker/nginx/certs/*.crt
+docker/certs/*.pem
+docker/certs/*.key
+docker/certs/*.crt
 
 # Build outputs
 /public/build/*

@@ -11,12 +11,14 @@ services:
     restart: unless-stopped
     ports:
       - "${NGINX_PORT:-8080}:8080"
-      # Uncomment for HTTPS/SSL (requires SSL setup, see docker/nginx/certs/)
+      # Uncomment for HTTPS/SSL (requires SSL setup, see docker/certs/)
       # - "${NGINX_SSL_PORT:-8443}:8443"
-    # Uncomment for HTTPS/SSL (mount development SSL config and certificates)
-    # volumes:
-    #   - ./docker/nginx/conf.d/ssl-development.conf:/etc/nginx/conf.d/ssl.conf:ro
-    #   - ./docker/nginx/certs:/etc/nginx/certs:ro
+    volumes:
+      # Shared socket directory for PHP-FPM Unix socket communication
+      - php-fpm-socket:/var/run/php-fpm
+      # Uncomment for HTTPS/SSL (mount development SSL config and certificates)
+      # - ./docker/nginx/conf.d/ssl-development.conf:/etc/nginx/conf.d/ssl.conf:ro
+      # - ./docker/certs:/etc/nginx/certs:ro
     depends_on:
       node:
         condition: service_started
@@ -25,7 +27,8 @@ services:
         condition: service_healthy
         required: false
     networks:
-      - app-network
+      - frontend
+      - backend
 
   php:
     build:
@@ -35,8 +38,9 @@ services:
     container_name: ${COMPOSE_PROJECT_NAME:-docker-webdev}-php
     restart: unless-stopped
     profiles: ["php"]
-    expose:
-      - "9000"
+    volumes:
+      # Shared socket directory for PHP-FPM Unix socket communication
+      - php-fpm-socket:/var/run/php-fpm
     depends_on:
       node:
         condition: service_started
@@ -44,9 +48,10 @@ services:
     environment:
       - ENV=${ENV:-production}
     networks:
-      - app-network
+      - backend
+      - database
     healthcheck:
-      test: ["CMD-SHELL", "SCRIPT_NAME=/ping SCRIPT_FILENAME=/ping REQUEST_METHOD=GET cgi-fcgi -bind -connect 127.0.0.1:9000 || exit 1"]
+      test: ["CMD-SHELL", "SCRIPT_NAME=/ping SCRIPT_FILENAME=/ping REQUEST_METHOD=GET cgi-fcgi -bind -connect /var/run/php-fpm/php-fpm.sock || exit 1"]
       interval: 30s
       timeout: 3s
       retries: 3
@@ -67,7 +72,8 @@ services:
     expose:
       - "3000"
     networks:
-      - app-network
+      - backend
+      - database
     depends_on:
       redis:
         condition: service_healthy
@@ -89,7 +95,7 @@ services:
     volumes:
       - redis-data:/data
     networks:
-      - app-network
+      - database
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 10s
@@ -113,7 +119,7 @@ services:
     volumes:
       - postgres-data:/var/lib/postgresql/data
     networks:
-      - app-network
+      - database
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-app} -d ${DB_NAME:-app}"]
       interval: 10s
@@ -136,7 +142,7 @@ services:
     volumes:
       - mariadb-data:/var/lib/mysql
     networks:
-      - app-network
+      - database
     healthcheck:
       test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
       interval: 10s
@@ -145,11 +151,24 @@ services:
       start_period: 10s
 
 networks:
-  app-network:
+  # 3-Network Security Architecture for GDPR Compliance
+  # - frontend: Public-facing nginx only
+  # - backend: Application layer (nginx, php, node)
+  # - database: Data layer (databases + php/node as gateways)
+  frontend:
     driver: bridge
-    name: ${COMPOSE_PROJECT_NAME:-docker-webdev}-network
+    name: ${COMPOSE_PROJECT_NAME:-docker-webdev}-frontend
+  backend:
+    driver: bridge
+    name: ${COMPOSE_PROJECT_NAME:-docker-webdev}-backend
+  database:
+    driver: bridge
+    name: ${COMPOSE_PROJECT_NAME:-docker-webdev}-database
 
 volumes:
+  php-fpm-socket:
+    driver: local
+    name: ${COMPOSE_PROJECT_NAME:-docker-webdev}-php-fpm-socket
   redis-data:
     driver: local
     name: ${COMPOSE_PROJECT_NAME:-docker-webdev}-redis-data

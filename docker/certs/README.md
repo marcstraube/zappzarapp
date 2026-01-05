@@ -11,7 +11,7 @@ This directory contains SSL/TLS certificates for HTTPS configuration.
 make ssl-selfsigned
 
 # Or manually:
-bash docker/nginx/certs/generate-selfsigned.sh localhost
+bash docker/certs/generate-selfsigned.sh localhost
 ```
 
 ### Production (Let's Encrypt)
@@ -21,7 +21,7 @@ bash docker/nginx/certs/generate-selfsigned.sh localhost
 make ssl-letsencrypt
 
 # Or manually:
-bash docker/nginx/certs/setup-letsencrypt.sh example.com admin@example.com
+bash docker/certs/setup-letsencrypt.sh example.com admin@example.com
 ```
 
 ## Configuration Steps
@@ -73,7 +73,7 @@ services:
       - "${NGINX_SSL_PORT:-8443}:8443"
     volumes:
       - ./docker/nginx/conf.d/ssl-development.conf:/etc/nginx/conf.d/ssl.conf:ro
-      - ./docker/nginx/certs:/etc/nginx/certs:ro
+      - ./docker/certs:/etc/nginx/certs:ro
 ```
 
 **Production:**
@@ -82,7 +82,7 @@ services:
   nginx:
     volumes:
       - ./docker/nginx/conf.d/ssl-production.conf:/etc/nginx/conf.d/ssl.conf:ro
-      - ./docker/nginx/certs:/etc/nginx/certs:ro
+      - ./docker/certs:/etc/nginx/certs:ro
 ```
 
 ### 4. Update Environment Variables
@@ -101,7 +101,7 @@ services:
   nginx:
     volumes:
       - ./docker/nginx/conf.d/ssl-development.conf:/etc/nginx/conf.d/ssl.conf:ro
-      - ./docker/nginx/certs:/etc/nginx/certs:ro
+      - ./docker/certs:/etc/nginx/certs:ro
 ```
 
 **Production (`compose.prod.yaml`):**
@@ -110,7 +110,7 @@ services:
   nginx:
     volumes:
       - ./docker/nginx/conf.d/ssl-production.conf:/etc/nginx/conf.d/ssl.conf:ro
-      - ./docker/nginx/certs:/etc/nginx/certs:ro
+      - ./docker/certs:/etc/nginx/certs:ro
 ```
 
 ### 6. Restart Services
@@ -155,7 +155,7 @@ make ssl-renew
 ## File Structure
 
 ```
-docker/nginx/certs/
+docker/certs/
 ├── README.md                    # This file
 ├── generate-selfsigned.sh       # Self-signed cert generator
 ├── setup-letsencrypt.sh         # Let's Encrypt setup script
@@ -195,7 +195,7 @@ docker/nginx/conf.d/
 
 ```bash
 # Check if certificates exist
-ls -la docker/nginx/certs/
+ls -la docker/certs/
 
 # Generate certificates
 make ssl-selfsigned  # or make ssl-letsencrypt

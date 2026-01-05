@@ -48,16 +48,22 @@ services:
       # Entrypoint Script
       - ./docker/php/entrypoint.dev.sh:/entrypoint.dev.sh:ro
 
-      # Application (lock file NOT mounted - managed by Docker Compose Watch)
-      - ./composer.json:/var/www/html/composer.json
-      - ./config:/var/www/html/config
+      # Dependencies (named volume for best cross-platform performance)
+      - php_vendor:/var/www/html/vendor
+
+      # Source code (bind mounts for development, Docker Compose Watch monitors changes)
+      - ./src/php:/var/www/html/src/php
+      - ./tests/php:/var/www/html/tests/php
+      - ./templates:/var/www/html/templates
+
+      # Configuration files
+      - ./composer.json:/var/www/html/composer.json  # Read-write for composer require/update
+      - ./config:/var/www/html/config:ro
+
+      # Build outputs and docs
       - ./docs:/var/www/html/docs
       - ./public:/var/www/html/public
-      - ./src/php:/var/www/html/src/php
-      - ./templates:/var/www/html/templates
-      - ./tests/php:/var/www/html/tests/php
       - ./tools:/var/www/html/tools
-      - php_vendor:/var/www/html/vendor
 
       # Quality Assurance Tools Config (PHP)
       - ./phpstan.neon:/var/www/html/phpstan.neon:ro
@@ -85,7 +91,8 @@ services:
 
       # PHP Configuration (Read-Only)
       - ./docker/php/php.ini:/usr/local/etc/php/php.ini:ro
-      - ./docker/php/php-fpm.conf:/usr/local/etc/php-fpm.d/zz-custom.conf:ro
+      - ./docker/php/php-fpm.conf:/usr/local/etc/php-fpm.d/www.conf:ro
+      - ./docker/php/zz-docker.conf:/usr/local/etc/php-fpm.d/zz-docker.conf:ro
       - ./docker/php/conf.d/development.ini:/usr/local/etc/php/conf.d/zz-env.ini:ro
       - ./docker/php/conf.d/xdebug.ini:/usr/local/etc/php/conf.d/zz-xdebug.ini:ro
     extra_hosts:
@@ -148,17 +155,21 @@ services:
           path: ./resources
           target: /app/resources
     volumes:
-      # Application (lock file NOT mounted - managed by Docker Compose Watch)
-      - ./package.json:/app/package.json
+      # Dependencies (named volumes for best cross-platform performance)
+      - node_modules:/app/node_modules
+
+      # Source code (bind mounts for development, Docker Compose Watch monitors changes)
       - ./src/node:/app/src/node
       - ./tests/node:/app/tests/node
-      - ./public:/app/public
       - ./resources:/app/resources
+
+      # Build output and public assets
       - ./dist:/app/dist
-      - node_modules:/app/node_modules
+      - ./public:/app/public
       - ./docs:/app/docs
 
-      # Build & Config
+      # Configuration files
+      - ./package.json:/app/package.json  # Read-write for pnpm add/update
       - ./vite.config.js:/app/vite.config.js:ro
       - ./tsconfig.json:/app/tsconfig.json:ro
       - ./tsconfig.build.json:/app/tsconfig.build.json:ro

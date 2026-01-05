@@ -17,7 +17,7 @@ at Nginx. Node.js backend communicates with Nginx over HTTP internally.
 Client (HTTPS) → Nginx (SSL Termination) → Node.js (HTTP)
 ```
 
-**Configuration:** Use the Nginx SSL setup (see docker/nginx/certs/README.md)
+**Configuration:** Use the Nginx SSL setup (see docker/certs/README.md)
 
 ### Scenario B: Direct Node.js Exposure
 **Enable SSL in Node.js**
@@ -78,7 +78,7 @@ server.listen(PORT, () => {
 services:
   node:
     volumes:
-      - ./docker/nginx/certs:/app/certs:ro
+      - ./docker/certs:/app/certs:ro
     ports:
       - "${NODE_SSL_PORT:-3443}:3000"
 ```
@@ -88,7 +88,7 @@ services:
 services:
   node:
     volumes:
-      - ./docker/nginx/certs:/app/certs:ro
+      - ./docker/certs:/app/certs:ro
 ```
 
 ### 4. Environment Variables

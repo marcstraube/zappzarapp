@@ -41,6 +41,10 @@ export function startServer(): Server {
   const shutdown: () => void = (): void => {
     logger.info('Received shutdown signal, closing server gracefully...');
 
+    // Remove signal handlers to prevent multiple shutdown calls
+    process.off('SIGTERM', shutdown);
+    process.off('SIGINT', shutdown);
+
     server.close(() => {
       logger.info('Server closed successfully');
       process.exit(0);

@@ -71,9 +71,9 @@ RUN apk add --no-cache \
 COPY --from=php-builder /usr/local/etc/php/conf.d/ /usr/local/etc/php/conf.d/
 COPY --from=php-builder /usr/local/lib/php/extensions/ /usr/local/lib/php/extensions/
 
-# Health Check
+# Health Check (Unix Socket)
 HEALTHCHECK --interval=30s --timeout=3s --start-period=40s --retries=3 \
-    CMD SCRIPT_NAME=/ping SCRIPT_FILENAME=/ping REQUEST_METHOD=GET cgi-fcgi -bind -connect 127.0.0.1:9000 || exit 1
+    CMD SCRIPT_NAME=/ping SCRIPT_FILENAME=/ping REQUEST_METHOD=GET cgi-fcgi -bind -connect /var/run/php-fpm/php-fpm.sock || exit 1
 
 # Setup Log Directories
 RUN mkdir -p /var/log/{app,php} && \
@@ -107,6 +107,12 @@ COPY --from=ghcr.io/php/pie:bin /pie /usr/bin/pie
 # Install Xdebug
 RUN pie install xdebug/xdebug
 
+# Copy configuration files (same as production for consistency)
+# Use www.conf to override the default pool configuration
+COPY docker/php/php-fpm.conf /usr/local/etc/php-fpm.d/www.conf
+# Override zz-docker.conf to use Unix socket instead of TCP
+COPY docker/php/zz-docker.conf /usr/local/etc/php-fpm.d/zz-docker.conf
+
 # Keep as root for entrypoint (entrypoint will handle permissions and su to www-data)
 # PHP-FPM will still run as www-data (configured in php-fpm.conf)
 
@@ -117,7 +123,10 @@ FROM base AS production
 
 # Copy configuration files
 COPY docker/php/php.ini /usr/local/etc/php/php.ini
-COPY docker/php/php-fpm.conf /usr/local/etc/php-fpm.d/zz-custom.conf
+# Use www.conf to override the default pool configuration
+COPY docker/php/php-fpm.conf /usr/local/etc/php-fpm.d/www.conf
+# Override zz-docker.conf to use Unix socket instead of TCP
+COPY docker/php/zz-docker.conf /usr/local/etc/php-fpm.d/zz-docker.conf
 
 # Install Composer temporarily for dependency installation
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer

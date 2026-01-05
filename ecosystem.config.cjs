@@ -43,20 +43,16 @@ module.exports = {
     },
     {
       name: 'backend',
-      script: 'src/node/server.ts',
-      interpreter: 'node',
-      interpreter_args: '--import tsx',
+      script: 'node',
+      args: '--import tsx src/node/server.ts',
       cwd: '/app',
+      interpreter: 'none',
+      exec_mode: 'fork_mode',
       instances: 1,
-      exec_mode: 'fork',
       autorestart: true,
-      watch: ['src/node'],
-      ignore_watch: ['node_modules', 'dist', 'public', 'resources'],
-      watch_options: {
-        followSymlinks: false,
-        usePolling: true,
-        interval: 1000,
-      },
+      watch: false,  // Disabled in Docker: use Docker Compose Watch instead (compose.override.yaml)
+      // NOTE: PM2 watch with Docker bind mounts causes false-positive change detections
+      // Docker Compose Watch provides better file change detection for containerized apps
       max_memory_restart: '512M',
       env: {
         NODE_ENV: 'development',
@@ -66,15 +62,14 @@ module.exports = {
         NODE_ENV: 'production',
         PORT: 3000,
       },
-      // Logging configuration (JSON structured logs)
-      log_type: 'json',
+      // Logging configuration
       merge_logs: true,
-      log_date_format: 'YYYY-MM-DD HH:mm:ss Z',
-      error_file: '/dev/stderr',
-      out_file: '/dev/stdout',
+      // PM2 logs to files in Docker (streaming to /dev/std* causes ESPIPE errors)
+      error_file: '/home/node/.pm2/logs/backend-error.log',
+      out_file: '/home/node/.pm2/logs/backend-out.log',
       // Graceful shutdown
       kill_timeout: 10000,
-      wait_ready: true,
+      wait_ready: false,  // Disabled: process.send('ready') not reliable with Docker + PM2
       listen_timeout: 15000,
     },
   ],

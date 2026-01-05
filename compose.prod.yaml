@@ -5,16 +5,18 @@ services:
   nginx:
     build:
       target: production
-    # Optional: Mount production configs and SSL certificates (uncomment if needed)
-    # volumes:
-    #   - ./docker/nginx/conf.d/csp-production.conf:/etc/nginx/conf.d/csp.conf:ro
-    #   - ./docker/nginx/conf.d/ssl-production.conf:/etc/nginx/conf.d/ssl.conf:ro
-    #   - ./docker/nginx/certs:/etc/nginx/certs:ro
+    volumes:
+      # Shared socket directory for PHP-FPM Unix socket communication
+      - php-fpm-socket:/var/run/php-fpm
+      # Optional: Mount production configs and SSL certificates (uncomment if needed)
+      # - ./docker/nginx/conf.d/csp-production.conf:/etc/nginx/conf.d/csp.conf:ro
+      # - ./docker/nginx/conf.d/ssl-production.conf:/etc/nginx/conf.d/ssl.conf:ro
+      # - ./docker/certs:/etc/nginx/certs:ro
     read_only: true
     tmpfs:
       - /var/cache/nginx:mode=0770,uid=101,gid=101,size=64M
       - /tmp/nginx:mode=0770,uid=101,gid=101,size=32M
-      - /var/run:mode=0770,uid=101,gid=101,size=16M
+      - /var/run/nginx:mode=0770,uid=101,gid=101,size=16M
     security_opt:
       - no-new-privileges:true
     cap_drop:
@@ -37,6 +39,8 @@ services:
     build:
       target: production
     volumes:
+      # Shared socket directory for PHP-FPM Unix socket communication
+      - php-fpm-socket:/var/run/php-fpm
       # Persistent Storage for Uploads and generated files
       - ${STORAGE_DIR:-./storage}:/var/www/html/storage:rw
     read_only: true
@@ -48,7 +52,6 @@ services:
       - ALL
     environment:
       - ENV=production
-      - NODE_ENV=production
     logging:
       driver: "json-file"
       options:
@@ -90,10 +93,21 @@ services:
     read_only: true
     tmpfs:
       - /tmp:mode=0770,uid=999,gid=999,size=64M
+    volumes:
+      - redis-data:/data
+      # Optional: Mount SSL certificates for encrypted connections (uncomment if needed)
+      # - ./docker/certs/cert.crt:/etc/ssl/certs/redis.crt:ro
+      # - ./docker/certs/cert.key:/etc/ssl/private/redis.key:ro
     security_opt:
       - no-new-privileges:true
     cap_drop:
       - ALL
+    # To enable TLS, uncomment the SSL certificate volumes above and add these flags to command:
+    #   --tls-port 6380
+    #   --port 0
+    #   --tls-cert-file /etc/ssl/certs/redis.crt
+    #   --tls-key-file /etc/ssl/private/redis.key
+    #   --tls-auth-clients no
     command: >
       redis-server
       --appendonly yes
@@ -127,11 +141,12 @@ services:
     cap_drop:
       - ALL
     shm_size: 256mb
-    # Optional: Mount SSL certificates for encrypted connections (uncomment if needed)
-    # volumes:
-    #   - ./docker/nginx/certs/cert.crt:/var/lib/postgresql/server.crt:ro
-    #   - ./docker/nginx/certs/cert.key:/var/lib/postgresql/server.key:ro
-    # To enable SSL, uncomment the volumes above and add these flags to command:
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      # Optional: Mount SSL certificates for encrypted connections (uncomment if needed)
+      # - ./docker/certs/cert.crt:/var/lib/postgresql/server.crt:ro
+      # - ./docker/certs/cert.key:/var/lib/postgresql/server.key:ro
+    # To enable SSL, uncomment the SSL certificate volumes above and add these flags to command:
     #   -c ssl=on
     #   -c ssl_cert_file=/var/lib/postgresql/server.crt
     #   -c ssl_key_file=/var/lib/postgresql/server.key
@@ -176,11 +191,12 @@ services:
     cap_drop:
       - ALL
     shm_size: 256mb
-    # Optional: Mount SSL certificates for encrypted connections (uncomment if needed)
-    # volumes:
-    #   - ./docker/nginx/certs/cert.crt:/etc/mysql/certs/server.crt:ro
-    #   - ./docker/nginx/certs/cert.key:/etc/mysql/certs/server.key:ro
-    # To enable SSL, uncomment the volumes above and add these flags to command:
+    volumes:
+      - mariadb-data:/var/lib/mysql
+      # Optional: Mount SSL certificates for encrypted connections (uncomment if needed)
+      # - ./docker/certs/cert.crt:/etc/mysql/certs/server.crt:ro
+      # - ./docker/certs/cert.key:/etc/mysql/certs/server.key:ro
+    # To enable SSL, uncomment the SSL certificate volumes above and add these flags to command:
     #   --ssl-ca=/etc/mysql/certs/server.crt
     #   --ssl-cert=/etc/mysql/certs/server.crt
     #   --ssl-key=/etc/mysql/certs/server.key

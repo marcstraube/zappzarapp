@@ -399,7 +399,7 @@ class HealthCheckService
      */
     public function getSslInfo(): array
     {
-        $certPath = __DIR__ . '/../../../../docker/nginx/certs/cert.crt';
+        $certPath = __DIR__ . '/../../../../docker/certs/cert.crt';
 
         if (!file_exists($certPath)) {
             return [

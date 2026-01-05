@@ -28,7 +28,7 @@ if [ -z "$DOMAIN" ] || [ -z "$EMAIL" ]; then
 fi
 
 PROJECT_ROOT="$(cd "$(dirname "$0")/../../.." && pwd)"
-CERT_DIR="$PROJECT_ROOT/docker/nginx/certs"
+CERT_DIR="$PROJECT_ROOT/docker/certs"
 WEBROOT="$PROJECT_ROOT/public"
 
 echo "============================================================================"
