@@ -158,6 +158,14 @@ composer: ## Execute Composer command in running container (e.g. make composer C
 
 down: ## Stop containers
 	@echo -e "\033[0;33mStopping containers...\033[0m"
+	@# Kill docker compose watch process using saved PID
+	@if [ -f .docker-watch.pid ]; then \
+		kill -9 $$(cat .docker-watch.pid) 2>/dev/null || true; \
+		rm -f .docker-watch.pid; \
+	fi
+	@# Fallback: kill any remaining watch processes (excluding current shell)
+	@pgrep -f "docker.*compose.*watch" | grep -v $$$$ | xargs -r kill -9 2>/dev/null || true
+	@sleep 2
 	@if [ -f .env ]; then \
 		. ./.env && \
 		PROFILES=""; \
@@ -304,10 +312,13 @@ up-core:
 	if [ "$$ENV" = "production" ]; then \
 		docker compose -f compose.yaml -f compose.prod.yaml $$PROFILES up -d; \
 	else \
-		docker compose $$PROFILES up -d; \
+		echo -e "\033[0;34mStarting containers with Docker Compose Watch (cross-platform file sync)...\033[0m"; \
+		nohup docker compose $$PROFILES watch > /dev/null 2>&1 & \
+		echo $$! > .docker-watch.pid; \
 	fi
 	@echo -e "\033[0;32mContainers started!\033[0m"
 	@. ./.env && echo -e "\033[0;34mNginx is running at http://localhost:$${NGINX_PORT:-8080}\033[0m"
+	@if [ -f .docker-watch.pid ]; then echo -e "\033[0;34mDocker Compose Watch is running (PID: $$(cat .docker-watch.pid))\033[0m"; fi
 
 ##@ Node.js Development
 

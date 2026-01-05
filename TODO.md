@@ -2474,12 +2474,13 @@ curl http://localhost:3000/health
 - **Node.js Graceful Shutdown**:
   - Added `process.off()` calls to prevent multiple SIGINT/SIGTERM handlers
   - Prevents duplicate shutdown attempts during container restarts
-- **Development Volumes** (Linux/Windows Compatibility):
-  - Optimized volume configuration for cross-platform performance
+- **Development Workflow** (Cross-Platform Compatibility):
+  - Hybrid approach: COPY in Dockerfile + Docker Compose Watch for file sync
+  - Source code (src/, tests/, resources/, templates/) copied into images at build time
+  - Docker Compose Watch syncs file changes in development (~50-100ms latency)
   - Named volumes for dependencies (node_modules, vendor) - best performance on all platforms
-  - Bind mounts for source code (src/, tests/, templates/) - live reloading
-  - Read-only mounts for configuration files - stability and consistency
-  - Docker Compose Watch configured as optional enhancement (not required)
+  - Consistent performance across Linux, Windows, and macOS
+  - No manual configuration needed - works out-of-the-box on all platforms
 
 #### Security Impact
 - **GDPR Compliance**: Network segmentation addresses Art. 32 requirements

@@ -113,6 +113,11 @@ COPY docker/php/php-fpm.conf /usr/local/etc/php-fpm.d/www.conf
 # Override zz-docker.conf to use Unix socket instead of TCP
 COPY docker/php/zz-docker.conf /usr/local/etc/php-fpm.d/zz-docker.conf
 
+# Copy source code into image (Docker Compose Watch will sync changes)
+COPY --chown=www-data:www-data src/php/ ./src/php/
+COPY --chown=www-data:www-data tests/php/ ./tests/php/
+COPY --chown=www-data:www-data templates/ ./templates/
+
 # Keep as root for entrypoint (entrypoint will handle permissions and su to www-data)
 # PHP-FPM will still run as www-data (configured in php-fpm.conf)
 

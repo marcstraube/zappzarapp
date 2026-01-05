@@ -59,6 +59,7 @@ Thumbs.db
 
 # Docker
 .docker/
+.docker-watch.pid
 
 # Storage
 /storage/app/*

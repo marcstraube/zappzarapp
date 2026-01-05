@@ -19,7 +19,6 @@ vendor/
 node_modules/
 
 # Development
-tests/
 .phpunit.result.cache
 .php-cs-fixer.cache
 

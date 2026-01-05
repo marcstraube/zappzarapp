@@ -39,9 +39,6 @@ services:
           path: ./src/php
           target: /var/www/html/src/php
         - action: sync
-          path: ./public
-          target: /var/www/html/public
-        - action: sync
           path: ./templates
           target: /var/www/html/templates
     volumes:
@@ -50,11 +47,6 @@ services:
 
       # Dependencies (named volume for best cross-platform performance)
       - php_vendor:/var/www/html/vendor
-
-      # Source code (bind mounts for development, Docker Compose Watch monitors changes)
-      - ./src/php:/var/www/html/src/php
-      - ./tests/php:/var/www/html/tests/php
-      - ./templates:/var/www/html/templates
 
       # Configuration files
       - ./composer.json:/var/www/html/composer.json  # Read-write for composer require/update
@@ -120,7 +112,7 @@ services:
       - "${NODE_PORT:-3000}:3000"
     develop:
       watch:
-        # Rebuild when dependencies or config change
+        # Rebuild when dependencies change
         - action: rebuild
           path: ./package.json
         - action: rebuild
@@ -158,40 +150,22 @@ services:
       # Dependencies (named volumes for best cross-platform performance)
       - node_modules:/app/node_modules
 
-      # Source code (bind mounts for development, Docker Compose Watch monitors changes)
-      - ./src/node:/app/src/node
-      - ./tests/node:/app/tests/node
-      - ./resources:/app/resources
-
-      # Build output and public assets
+      # Build output and public assets (bind mounts for direct access)
       - ./dist:/app/dist
       - ./public:/app/public
       - ./docs:/app/docs
+      - ./build:/app/build
 
-      # Configuration files
-      - ./package.json:/app/package.json  # Read-write for pnpm add/update
-      - ./vite.config.js:/app/vite.config.js:ro
-      - ./tsconfig.json:/app/tsconfig.json:ro
-      - ./tsconfig.build.json:/app/tsconfig.build.json:ro
-      - ./tsconfig.vitest.json:/app/tsconfig.vitest.json:ro
-      - ./vitest.config.ts:/app/vitest.config.ts:ro
+      # Static config files (read-only bind mounts, rarely change)
       - ./postcss.config.js:/app/postcss.config.js:ro
-      - ./ecosystem.config.cjs:/app/ecosystem.config.cjs:ro
-
-      # Quality Assurance Tools Config
       - ./eslint.config.js:/app/eslint.config.js:ro
       - ./.prettierrc.json:/app/.prettierrc.json:ro
       - ./.prettierignore:/app/.prettierignore:ro
       - ./commitlint.config.js:/app/commitlint.config.js:ro
-
-      # Documentation Config
       - ./typedoc.json:/app/typedoc.json:ro
 
       # Git repository (for commitlint)
       - ./.git:/app/.git:ro
-
-      # Build Output
-      - ./build:/app/build
     environment:
       - NODE_ENV=development
       - NODE_MODE=${NODE_MODE:-full-stack}
