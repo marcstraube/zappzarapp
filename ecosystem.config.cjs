@@ -62,11 +62,12 @@ module.exports = {
         NODE_ENV: 'production',
         PORT: 3000,
       },
-      // Logging configuration
+      // Logging configuration (structured JSON logging)
+      log_type: 'json',
       merge_logs: true,
-      // PM2 logs to files in Docker (streaming to /dev/std* causes ESPIPE errors)
-      error_file: '/home/node/.pm2/logs/backend-error.log',
-      out_file: '/home/node/.pm2/logs/backend-out.log',
+      log_date_format: 'YYYY-MM-DD HH:mm:ss Z',
+      error_file: '/dev/stderr',
+      out_file: '/dev/stdout',
       // Graceful shutdown
       kill_timeout: 10000,
       wait_ready: false,  // Disabled: process.send('ready') not reliable with Docker + PM2

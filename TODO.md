@@ -2469,8 +2469,8 @@ curl http://localhost:3000/health
   - Changed from `interpreter` + `interpreter_args` to `script` + `args` pattern
   - Backend now starts correctly with TypeScript transpilation via tsx loader
   - Resolved endless restart loops caused by `wait_ready: true` with missing `process.send('ready')`
-  - Fixed ESPIPE errors by switching from `/dev/stderr` to file-based logging
-  - Disabled PM2 watch mode (use Docker Compose Watch instead for better file change detection)
+  - Configured structured JSON logging (consistent with project-wide logging standard)
+  - Disabled PM2 watch mode (better handled by bind mounts for file change detection)
 - **Node.js Graceful Shutdown**:
   - Added `process.off()` calls to prevent multiple SIGINT/SIGTERM handlers
   - Prevents duplicate shutdown attempts during container restarts
