@@ -42,6 +42,14 @@ Network architecture and system configuration.
 |-----------------------------------------------------|------------------------------------------------|
 | [NETWORK.md](infrastructure/NETWORK.md)             | Network segmentation and security architecture |
 
+## Setup Guides
+
+Platform-specific installation and configuration.
+
+| Document                                            | Description                                    |
+|-----------------------------------------------------|------------------------------------------------|
+| [WINDOWS.md](setup/WINDOWS.md)                      | Windows setup (WSL2 / Git Bash)                |
+
 ---
 
 ## Directory Structure
@@ -61,8 +69,10 @@ documentation/
 ├── testing/                  # Testing Guides
 │   ├── TESTING-NODE.md
 │   └── TESTING-PHP.md
-└── infrastructure/           # Architecture
-    └── NETWORK.md
+├── infrastructure/           # Architecture
+│   └── NETWORK.md
+└── setup/                    # Platform Setup
+    └── WINDOWS.md
 ```
 
 ---

@@ -10,6 +10,12 @@
 *.yaml text eol=lf
 *.yml text eol=lf
 *.xml text eol=lf
+*.sh text eol=lf
+*.sql text eol=lf
+*.env text eol=lf
+*.env.* text eol=lf
+Makefile text eol=lf
+Dockerfile text eol=lf
 
 # Exclude files from export
 /.* export-ignore
