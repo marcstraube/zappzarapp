@@ -9,8 +9,8 @@ parameters:
         jobSize: 20
         maximumNumberOfProcesses: 4
 
-    # Type Coverage
-    reportUnmatchedIgnoredErrors: true
+    # Type Coverage (false = don't warn about unused ignore patterns)
+    reportUnmatchedIgnoredErrors: false
 
     # Test assertions that PHPStan considers redundant but serve as documentation
     ignoreErrors:

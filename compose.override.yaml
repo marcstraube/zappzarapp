@@ -86,6 +86,9 @@ services:
       # Documentation Config
       - ./phpdoc.xml:/var/www/html/phpdoc.xml:ro
 
+      # SSL Certificates (for Health Check Dashboard)
+      - ./docker/certs:/var/www/html/docker/certs:ro
+
       # Runtime Data (Read-Write)
       - ${STORAGE_DIR:-./storage}:/var/www/html/storage
 

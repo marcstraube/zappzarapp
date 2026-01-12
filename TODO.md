@@ -2407,12 +2407,41 @@ curl http://localhost:3000/health
 ---
 
 **Erstellt:** 2025-12-19
-**Letzte Aktualisierung:** 2026-01-12 (Code Quality & Documentation Improvements)
-**Version:** 3.12
+**Letzte Aktualisierung:** 2026-01-12 (PhpStorm Docker Integration & Health Dashboard Fixes)
+**Version:** 3.13
 
 ---
 
 ## Changelog
+
+### Version 3.13 (2026-01-12) - PhpStorm Docker Integration & Health Dashboard Fixes
+
+#### Fixed
+- **PhpStorm Docker Quality Tools**:
+  - Corrected tool paths for PHPMD, PHP-CS-Fixer, and PHPStan to use container paths (`/var/www/html/vendor/bin/...`)
+  - Fixed `DOCKER_REMOTE_PROJECT_PATH` from `/opt/project` to `/var/www/html`
+  - Added proper remote-mappings for Docker interpreter
+  - Configured PHP-CS-Fixer `rulesetPath` for Custom config
+
+- **PHP `disable_functions`**:
+  - Enabled `parse_ini_file` in development.ini (required by PHPMD)
+
+- **Health Dashboard SSL Certificates**:
+  - Added missing volume mount for `/docker/certs` in PHP container
+  - SSL certificate info now displays correctly at `/_dev/health`
+
+#### Added
+- **Composer Dependencies**:
+  - Added `ext-redis` to required PHP extensions
+
+- **Documentation**:
+  - Moved DevDashboard README to `documentation/DEV-DASHBOARD.md`
+
+#### Changed
+- **PHPStan Configuration**:
+  - Set `reportUnmatchedIgnoredErrors: false` to keep ignore patterns for future use without warnings
+
+---
 
 ### Version 3.12 (2026-01-12) - Code Quality & Documentation Improvements
 

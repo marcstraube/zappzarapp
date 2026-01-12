@@ -16,6 +16,7 @@
         "ext-json": "*",
         "ext-openssl": "*",
         "ext-pdo": "*",
+        "ext-redis": "*",
         "monolog/monolog": "^3.9"
     },
     "require-dev": {
