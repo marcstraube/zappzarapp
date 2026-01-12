@@ -156,6 +156,8 @@ setup: ## Create directories, install dev dependencies and ensure structure
 		echo -e "\033[0;32mBACKUP_ENCRYPTION_KEY already exists.\033[0m"; \
 	fi
 
+	@echo -e "\033[0;33mBuilding Docker images...\033[0m"
+	@$(MAKE) --silent build
 	@echo -e "\033[0;33mStarting containers (dependencies will install automatically)...\033[0m"
 	@$(MAKE) --silent up
 	@echo -e "\033[0;33mWaiting for dependencies to install (30-60 seconds)...\033[0m"
@@ -170,45 +172,69 @@ setup: ## Create directories, install dev dependencies and ensure structure
 build: ## Build Docker images
 	@echo -e "\033[0;33mBuilding Docker images...\033[0m"
 	@if [ -f .env ]; then \
-		. ./.env && if [ "$$ENV" = "production" ]; then \
+		. ./.env && \
+		PROFILES=""; \
+		if [ "$${ENABLE_DATABASE:-true}" = "true" ]; then \
+			PROFILES="$$PROFILES --profile $${DB_TYPE:-postgres}"; \
+		fi; \
+		if [ "$${ENABLE_PHP:-true}" = "true" ]; then PROFILES="$$PROFILES --profile php"; fi; \
+		if [ "$${ENABLE_NODE:-true}" = "true" ]; then PROFILES="$$PROFILES --profile node"; fi; \
+		if [ "$${ENABLE_REDIS:-true}" = "true" ]; then PROFILES="$$PROFILES --profile redis"; fi; \
+		if [ "$$ENV" = "production" ]; then \
 			echo -e "\033[0;34mBuilding Node image first (required by PHP and NGINX)...\033[0m" && \
-			$(DC) -f compose.yaml -f compose.prod.yaml build node && \
+			$(DC) -f compose.yaml -f compose.prod.yaml $$PROFILES build node && \
 			echo -e "\033[0;34mBuilding remaining images...\033[0m" && \
-			$(DC) -f compose.yaml -f compose.prod.yaml build; \
+			$(DC) -f compose.yaml -f compose.prod.yaml $$PROFILES build; \
 		else \
-			$(DC) build; \
+			$(DC) $$PROFILES build; \
 		fi; \
 	else \
-		$(DC) build; \
+		$(DC) --profile php --profile node --profile redis --profile postgres build; \
 	fi
 	@echo -e "\033[0;32mBuild completed!\033[0m"
 
 build-no-cache: ## Build Docker images without cache
 	@echo -e "\033[0;33mBuilding Docker images (no cache)...\033[0m"
 	@if [ -f .env ]; then \
-		. ./.env && if [ "$$ENV" = "production" ]; then \
+		. ./.env && \
+		PROFILES=""; \
+		if [ "$${ENABLE_DATABASE:-true}" = "true" ]; then \
+			PROFILES="$$PROFILES --profile $${DB_TYPE:-postgres}"; \
+		fi; \
+		if [ "$${ENABLE_PHP:-true}" = "true" ]; then PROFILES="$$PROFILES --profile php"; fi; \
+		if [ "$${ENABLE_NODE:-true}" = "true" ]; then PROFILES="$$PROFILES --profile node"; fi; \
+		if [ "$${ENABLE_REDIS:-true}" = "true" ]; then PROFILES="$$PROFILES --profile redis"; fi; \
+		if [ "$$ENV" = "production" ]; then \
 			echo -e "\033[0;34mBuilding Node image first (required by PHP and NGINX)...\033[0m" && \
-			$(DC) -f compose.yaml -f compose.prod.yaml build --no-cache node && \
+			$(DC) -f compose.yaml -f compose.prod.yaml $$PROFILES build --no-cache node && \
 			echo -e "\033[0;34mBuilding remaining images...\033[0m" && \
-			$(DC) -f compose.yaml -f compose.prod.yaml build --no-cache; \
+			$(DC) -f compose.yaml -f compose.prod.yaml $$PROFILES build --no-cache; \
 		else \
-			$(DC) build --no-cache; \
+			$(DC) $$PROFILES build --no-cache; \
 		fi; \
 	else \
-		$(DC) build --no-cache; \
+		$(DC) --profile php --profile node --profile redis --profile postgres build --no-cache; \
 	fi
 	@echo -e "\033[0;32mBuild completed!\033[0m"
 
 clean: ## Remove containers, networks and dangling images (keeps data volumes)
 	@echo -e "\033[0;33mCleaning up...\033[0m"
 	@if [ -f .env ]; then \
-		. ./.env && if [ "$$ENV" = "production" ]; then \
-			$(DC) -f compose.yaml -f compose.prod.yaml down; \
+		. ./.env && \
+		PROFILES=""; \
+		if [ "$${ENABLE_DATABASE:-true}" = "true" ]; then \
+			PROFILES="$$PROFILES --profile $${DB_TYPE:-postgres}"; \
+		fi; \
+		if [ "$${ENABLE_PHP:-true}" = "true" ]; then PROFILES="$$PROFILES --profile php"; fi; \
+		if [ "$${ENABLE_NODE:-true}" = "true" ]; then PROFILES="$$PROFILES --profile node"; fi; \
+		if [ "$${ENABLE_REDIS:-true}" = "true" ]; then PROFILES="$$PROFILES --profile redis"; fi; \
+		if [ "$$ENV" = "production" ]; then \
+			$(DC) -f compose.yaml -f compose.prod.yaml $$PROFILES down; \
 		else \
-			$(DC) down; \
+			$(DC) $$PROFILES down; \
 		fi; \
 	else \
-		$(DC) down; \
+		$(DC) --profile php --profile node --profile redis --profile postgres down; \
 	fi
 	@docker system prune -f
 	@echo -e "\033[0;32mCleanup completed!\033[0m"
@@ -356,10 +382,27 @@ status: ## Show running containers status and image disk usage
 	@docker images | grep "$(COMPOSE_PROJECT_NAME:-docker-webdev)"
 
 up: ## Start enabled containers (based on .env ENABLE_* flags)
-	@$(MAKE) --silent up-core
-
-up-core:
 	@if [ ! -f .env ]; then echo -e "\033[0;31mError: .env not found. Run 'make init' first.\033[0m"; exit 1; fi
+	@# Check if required images exist
+	@. ./.env && \
+	MISSING=""; \
+	if [ "$${ENABLE_PHP:-true}" = "true" ] && ! docker image inspect docker-webdev-php >/dev/null 2>&1; then \
+		MISSING="$$MISSING php"; \
+	fi; \
+	if [ "$${ENABLE_NODE:-true}" = "true" ] && ! docker image inspect docker-webdev-node >/dev/null 2>&1; then \
+		MISSING="$$MISSING node"; \
+	fi; \
+	if ! docker image inspect docker-webdev-nginx >/dev/null 2>&1; then \
+		MISSING="$$MISSING nginx"; \
+	fi; \
+	if [ "$${ENABLE_DATABASE:-true}" = "true" ] && [ "$${DB_TYPE:-postgres}" = "postgres" ] && ! docker image inspect docker-webdev-postgres >/dev/null 2>&1; then \
+		MISSING="$$MISSING postgres"; \
+	fi; \
+	if [ -n "$$MISSING" ]; then \
+		echo -e "\033[0;31mError: Required images not found:$$MISSING\033[0m"; \
+		echo -e "\033[0;31mRun 'make build' first.\033[0m"; \
+		exit 1; \
+	fi
 	@. ./.env && \
 	PROFILES=""; \
 	if [ "$${ENABLE_DATABASE:-true}" = "true" ]; then \
@@ -368,7 +411,7 @@ up-core:
 	if [ "$${ENABLE_PHP:-true}" = "true" ]; then PROFILES="$$PROFILES --profile php"; fi; \
 	if [ "$${ENABLE_NODE:-true}" = "true" ]; then PROFILES="$$PROFILES --profile node"; fi; \
 	if [ "$${ENABLE_REDIS:-true}" = "true" ]; then PROFILES="$$PROFILES --profile redis"; fi; \
-	echo -e "\033[0;33mStarting containers in $${ENV^^:-production} mode...\033[0m"; \
+	echo -e "\033[0;33mStarting containers in $${ENV:-development} mode...\033[0m"; \
 	if [ "$$ENV" = "production" ]; then \
 		NODE_TARGET_AUTO="asset-server"; \
 		case "$${NODE_MODE:-full-stack}" in \
@@ -377,7 +420,9 @@ up-core:
 		export NODE_TARGET="$${NODE_TARGET:-$$NODE_TARGET_AUTO}"; \
 		$(DC) -f compose.yaml -f compose.prod.yaml $$PROFILES up -d; \
 	else \
-		echo -e "\033[0;34mStarting containers with Docker Compose Watch (cross-platform file sync)...\033[0m"; \
+		echo -e "\033[0;34mStarting containers...\033[0m"; \
+		$(DC) $$PROFILES up -d; \
+		echo -e "\033[0;34mStarting Docker Compose Watch (cross-platform file sync)...\033[0m"; \
 		setsid $(DC) $$PROFILES watch < /dev/null > /dev/null 2>&1 & \
 		echo $$! > .docker-watch.pid; \
 	fi
@@ -448,12 +493,12 @@ node-build: ## Executes the frontend build inside the Node container (uses 'buil
 node-up: ## Starts the Node service alongside the standard stack (Uses the default 'asset-server' target)
 	@echo -e "\033[0;33mStarting Node service (asset-server target)...\033[0m"
 	# NODE_TARGET is unset, so compose.yaml defaults to the 'asset-server' target (sleep infinity).
-	@$(MAKE) --silent up-core SERVICES="node"
+	@$(MAKE) --silent up
 
 node-app-server-up: ## Starts the Node.js App Server (long-running, uses 'app-server' target) alongside the stack
 	@echo -e "\033[0;33mStarting Node.js App Server (app-server target)...\033[0m"
 	# Sets NODE_TARGET environment variable to switch the build target to 'app-server'.
-	@NODE_TARGET="app-server" $(MAKE) --silent up-core SERVICES="node"
+	@NODE_TARGET="app-server" $(MAKE) --silent up
 
 node-dev: ## Start Vite dev server with HMR (Hot Module Replacement)
 	@echo -e "\033[0;33mStarting Vite dev server with HMR...\033[0m"
@@ -595,6 +640,27 @@ db-migrations: ## Run database migrations (encryption helpers, audit logs)
 	fi
 	@echo -e "\033[0;32mMigrations completed!\033[0m"
 
+db-cleanup: ## Run retention policy cleanup (delete old logs)
+	@echo -e "\033[0;33mRunning database cleanup (retention policy)...\033[0m"
+	@if [ ! -f .env ]; then \
+		echo -e "\033[0;31mError: .env not found. Run 'make init' first.\033[0m"; \
+		exit 1; \
+	fi
+	@. ./.env && \
+	RETENTION_DAYS=$${RETENTION_DAYS:-730}; \
+	if [ "$${DB_TYPE:-postgres}" = "postgres" ]; then \
+		echo -e "\033[0;34mPostgreSQL: Deleting audit_logs older than $$RETENTION_DAYS days...\033[0m"; \
+		docker compose exec -T postgres psql -U $${DB_USER:-app} -d $${DB_NAME:-app} \
+			-c "SELECT delete_old_logs('audit_logs', $$RETENTION_DAYS);" 2>/dev/null || \
+			echo -e "\033[0;31mError: Run 'make db-migrations' first to create retention functions.\033[0m"; \
+	elif [ "$${DB_TYPE:-postgres}" = "mariadb" ]; then \
+		echo -e "\033[0;34mMariaDB: Deleting audit_logs older than $$RETENTION_DAYS days...\033[0m"; \
+		docker compose exec -T mariadb mariadb -u $${DB_USER:-app} -p$${DB_PASSWORD:-secret} $${DB_NAME:-app} \
+			-e "CALL delete_old_logs('audit_logs', $$RETENTION_DAYS, @deleted); SELECT @deleted AS deleted_rows;" 2>/dev/null || \
+			echo -e "\033[0;31mError: Run 'make db-migrations' first to create retention procedures.\033[0m"; \
+	fi
+	@echo -e "\033[0;32mCleanup completed!\033[0m"
+
 ##@ Workflow
 
 check-health: ## Check application health by container status for all services
@@ -664,20 +730,21 @@ fresh: ## Complete clean slate rebuild, removing all data volumes (DANGEROUS!)
 		exit 1; \
 	fi
 	@echo -e "\033[0;33mProceeding with fresh rebuild (no cache)...\033[0m"
+	@# Stop ALL containers and rebuild ALL images regardless of profile settings (fresh = complete reset)
 	@if [ -f .env ]; then \
 		. ./.env && if [ "$$ENV" = "production" ]; then \
-			$(DC) -f compose.yaml -f compose.prod.yaml down -v --rmi all && \
+			$(DC) -f compose.yaml -f compose.prod.yaml --profile php --profile node --profile redis --profile postgres --profile mariadb down -v --rmi all && \
 			echo -e "\033[0;34mBuilding Node image first (required by PHP and NGINX)...\033[0m" && \
-			$(DC) -f compose.yaml -f compose.prod.yaml build --no-cache node && \
+			$(DC) -f compose.yaml -f compose.prod.yaml --profile php --profile node --profile redis --profile postgres --profile mariadb build --no-cache node && \
 			echo -e "\033[0;34mBuilding remaining images...\033[0m" && \
-			$(DC) -f compose.yaml -f compose.prod.yaml build --no-cache; \
+			$(DC) -f compose.yaml -f compose.prod.yaml --profile php --profile node --profile redis --profile postgres --profile mariadb build --no-cache; \
 		else \
-			$(DC) down -v --rmi all && \
-			$(DC) build --no-cache; \
+			$(DC) --profile php --profile node --profile redis --profile postgres --profile mariadb down -v --rmi all && \
+			$(DC) --profile php --profile node --profile redis --profile postgres --profile mariadb build --no-cache; \
 		fi; \
 	else \
-		$(DC) down -v --rmi all && \
-		$(DC) build --no-cache; \
+		$(DC) --profile php --profile node --profile redis --profile postgres --profile mariadb down -v --rmi all && \
+		$(DC) --profile php --profile node --profile redis --profile postgres --profile mariadb build --no-cache; \
 	fi
 	@$(MAKE) --silent up
 

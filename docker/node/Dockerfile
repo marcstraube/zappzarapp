@@ -28,7 +28,7 @@ RUN if [ "$USER_ID" != "1000" ]; then \
         groupmod -g $GROUP_ID node && \
         apk del .user-deps; \
     fi && \
-    mkdir -p /home/node/.cache/node/corepack && \
+    mkdir -p /home/node/.cache/node/corepack /app/node_modules && \
     chown -R node:node /home/node /app /usr/local/bin/pnpm
 
 # Copy entrypoint script
@@ -36,7 +36,8 @@ COPY --chown=node:node docker/node/entrypoint.sh /usr/local/bin/entrypoint.sh
 RUN chmod +x /usr/local/bin/entrypoint.sh
 
 # Copy configuration files (Docker Compose Watch will sync changes)
-COPY --chown=node:node package.json ./
+# Note: pnpm-lock.yaml* uses glob to make it optional (not all projects have it initially)
+COPY --chown=node:node package.json pnpm-lock.yaml* ./
 COPY --chown=node:node tsconfig.json ./
 COPY --chown=node:node tsconfig.build.json ./
 COPY --chown=node:node tsconfig.vitest.json ./

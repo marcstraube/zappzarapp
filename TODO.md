@@ -2407,12 +2407,56 @@ curl http://localhost:3000/health
 ---
 
 **Erstellt:** 2025-12-19
-**Letzte Aktualisierung:** 2026-01-12 (GDPR Backup Strategy & Documentation Structure)
-**Version:** 3.16
+**Letzte Aktualisierung:** 2026-01-12 (GDPR Retention Policies & Docker Stability)
+**Version:** 3.17
 
 ---
 
 ## Changelog
+
+### Version 3.17 (2026-01-12) - GDPR Retention Policies & Docker Stability
+
+#### Added
+- **GDPR Phase 2.2 - Retention Policies**:
+  - `migrations/postgresql/002_retention_policies.sql`: PostgreSQL retention functions
+  - `migrations/mariadb/002_retention_policies.sql`: MariaDB retention procedures
+  - `delete_old_logs(table, days)`: Delete logs older than retention period
+  - `anonymize_user(id, reference)`: GDPR Art. 17 user anonymization template
+  - `get_retention_status()`: Retention monitoring helper
+  - `documentation/security/RETENTION-POLICY.md`: Comprehensive retention guide
+  - `make db-cleanup`: New target for manual cleanup (default: 730 days)
+
+- **PostgreSQL pg_cron Extension**:
+  - `docker/postgres/Dockerfile`: Custom PostgreSQL 17 Alpine image with pg_cron pre-compiled
+  - `docker/postgres/entrypoint.sh`: Custom entrypoint for SSL certificate handling
+  - pg_cron pre-configured in compose files (`shared_preload_libraries`)
+
+#### Fixed
+- **Makefile Profile Handling**:
+  - `build`, `build-no-cache`, `clean`, `fresh` now correctly handle all profiles
+  - `make up` uses `docker compose up -d` before starting watch (fixes container startup)
+  - Merged redundant `up-core` into `up` target
+
+- **Node Container Stability**:
+  - Fixed restart loop caused by `node_modules` volume permissions
+  - Dockerfile now creates `/app/node_modules` with correct ownership before `USER node`
+  - Added `pnpm-lock.yaml*` glob pattern (optional for initial setup)
+
+- **PHP Dockerfile**:
+  - Added `composer.lock*` glob pattern in development stage (optional for initial setup)
+
+#### Changed
+- **Docker Image Versions**:
+  - Redis: Fixed to `redis:7.4-alpine3.21` (Alpine 3.23 not available for Redis)
+  - MariaDB: Changed to `mariadb:12.1` (Major.Minor only for auto-patch updates)
+  - PostgreSQL: Changed from `image:` to `build:` with custom Dockerfile
+
+- **Code Cleanup**:
+  - Removed duplicate ARG declarations in `docker/postgres/Dockerfile`
+  - Moved pg_cron documentation to `compose.yaml` (central location)
+  - `.gitignore`: Fixed `/tools/` entry (was incorrectly `/tools/.docker-watch.log`)
+
+---
 
 ### Version 3.16 (2026-01-12) - GDPR Backup Strategy & Documentation Structure
 

@@ -119,7 +119,8 @@ COPY docker/php/php-fpm.conf /usr/local/etc/php-fpm.d/www.conf
 COPY docker/php/zz-docker.conf /usr/local/etc/php-fpm.d/zz-docker.conf
 
 # Copy Composer files (Docker Compose Watch will sync changes)
-COPY --chown=www-data:www-data composer.json composer.lock ./
+# Note: composer.lock* uses glob to make it optional (not all projects have it initially)
+COPY --chown=www-data:www-data composer.json composer.lock* ./
 
 # Copy source code into image (Docker Compose Watch will sync changes)
 COPY --chown=www-data:www-data src/php/ ./src/php/

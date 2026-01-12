@@ -88,7 +88,7 @@ services:
         required: false
 
   redis:
-    image: redis:7.4-alpine
+    image: redis:7.4-alpine3.21
     container_name: ${COMPOSE_PROJECT_NAME:-docker-webdev}-redis
     restart: unless-stopped
     profiles: ["redis"]
@@ -111,8 +111,13 @@ services:
       retries: 3
       start_period: 5s
 
+  # PostgreSQL with pg_cron extension pre-installed for scheduled database jobs
+  # pg_cron config (shared_preload_libraries) is set via command in override files
+  # Usage: CREATE EXTENSION pg_cron; See: documentation/security/RETENTION-POLICY.md
   postgres:
-    image: postgres:17-alpine
+    build:
+      context: .
+      dockerfile: docker/postgres/Dockerfile
     container_name: ${COMPOSE_PROJECT_NAME:-docker-webdev}-postgres
     restart: unless-stopped
     profiles: ["postgres"]
