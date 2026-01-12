@@ -1,91 +1,86 @@
 # Documentation
 
-This directory contains **technical documentation** for the Docker WebDev Boilerplate.
+Technical documentation for the Docker WebDev Boilerplate.
 
 ---
 
-## Available Documentation
+## Security & Compliance
 
-### Security & Compliance
+GDPR-compliant security features and data protection.
 
-- **[SSL-CERTIFICATES.md](SSL-CERTIFICATES.md)** - SSL/TLS certificate management and renewal
-- **[ENCRYPTION.md](ENCRYPTION.md)** - Database encryption guide (GDPR Art. 32)
-- **[AUDIT-LOGGING.md](AUDIT-LOGGING.md)** - Audit logging guide (GDPR Art. 30)
-- **[NETWORK.md](NETWORK.md)** - Network segmentation and security architecture
+| Document                                            | Description                                    |
+|-----------------------------------------------------|------------------------------------------------|
+| [SSL-CERTIFICATES.md](security/SSL-CERTIFICATES.md) | SSL/TLS certificate management and renewal     |
+| [ENCRYPTION.md](security/ENCRYPTION.md)             | Database encryption guide (GDPR Art. 32)       |
+| [AUDIT-LOGGING.md](security/AUDIT-LOGGING.md)       | Audit logging guide (GDPR Art. 30)             |
+| [BACKUP.md](security/BACKUP.md)                     | Encrypted backup & restore (GDPR Art. 32)      |
 
-### Development
+## Development
 
-- **[DEV-DASHBOARD.md](DEV-DASHBOARD.md)** - Development dashboard for monitoring
-- **[XDEBUG.md](XDEBUG.md)** - Xdebug configuration for PHP debugging
+Tools and configurations for local development.
 
-### Testing & Quality
+| Document                                            | Description                                    |
+|-----------------------------------------------------|------------------------------------------------|
+| [DEV-DASHBOARD.md](development/DEV-DASHBOARD.md)    | Development dashboard for monitoring           |
+| [XDEBUG.md](development/XDEBUG.md)                  | Xdebug configuration for PHP debugging         |
+| [RENOVATE.md](development/RENOVATE.md)              | Automated dependency updates                   |
 
-- **[TESTING-PHP.md](TESTING-PHP.md)** - PHP testing guide (PHPUnit)
-- **[TESTING-NODE.md](TESTING-NODE.md)** - Node.js testing guide (Vitest)
+## Testing
 
-### Dependency Management
+Testing guides for PHP and Node.js.
 
-- **[RENOVATE.md](RENOVATE.md)** - Automated dependency updates with Renovate
+| Document                                            | Description                                    |
+|-----------------------------------------------------|------------------------------------------------|
+| [TESTING-PHP.md](testing/TESTING-PHP.md)            | PHP testing guide (PHPUnit)                    |
+| [TESTING-NODE.md](testing/TESTING-NODE.md)          | Node.js testing guide (Vitest)                 |
+
+## Infrastructure
+
+Network architecture and system configuration.
+
+| Document                                            | Description                                    |
+|-----------------------------------------------------|------------------------------------------------|
+| [NETWORK.md](infrastructure/NETWORK.md)             | Network segmentation and security architecture |
+
+---
+
+## Directory Structure
+
+```
+documentation/
+├── README.md                 # This file (index)
+├── security/                 # GDPR & Security
+│   ├── AUDIT-LOGGING.md
+│   ├── BACKUP.md
+│   ├── ENCRYPTION.md
+│   └── SSL-CERTIFICATES.md
+├── development/              # Development Tools
+│   ├── DEV-DASHBOARD.md
+│   ├── RENOVATE.md
+│   └── XDEBUG.md
+├── testing/                  # Testing Guides
+│   ├── TESTING-NODE.md
+│   └── TESTING-PHP.md
+└── infrastructure/           # Architecture
+    └── NETWORK.md
+```
 
 ---
 
 ## Related Files
 
-### User Documentation
-- **[../README.md](../README.md)** - Main project README with quick start
-
-### Internal Project Planning
-- **[../TODO.md](../TODO.md)** - Project changelog and development history
-- **[../CHANGELOG.md](../CHANGELOG.md)** - Release changelog
-- **[../GDPR-NEXT-STEPS.md](../GDPR-NEXT-STEPS.md)** - GDPR implementation roadmap
-
----
-
-## Documentation Structure
-
-```
-documentation/
-├── README.md              # This file (documentation index)
-├── SSL-CERTIFICATES.md    # SSL/TLS certificate management
-├── ENCRYPTION.md          # Database encryption guide
-├── AUDIT-LOGGING.md       # Audit logging guide
-├── NETWORK.md             # Network architecture
-├── DEV-DASHBOARD.md       # Development dashboard
-├── XDEBUG.md              # Xdebug configuration
-├── TESTING-PHP.md         # PHP testing guide
-├── TESTING-NODE.md        # Node.js testing guide
-└── RENOVATE.md            # Dependency management
-```
-
----
-
-## Quick Links
-
-### Getting Started
-1. Read the [main README](../README.md) for quick start
-2. Review [NETWORK.md](NETWORK.md) to understand the architecture
-3. Setup SSL certificates with [SSL-CERTIFICATES.md](SSL-CERTIFICATES.md)
-
-### Development Setup
-- **PHP Debugging**: See [XDEBUG.md](XDEBUG.md)
-- **Dashboard**: See [DEV-DASHBOARD.md](DEV-DASHBOARD.md)
-
-### Security Implementation
-- **SSL/TLS**: [SSL-CERTIFICATES.md](SSL-CERTIFICATES.md)
-- **Encryption**: [ENCRYPTION.md](ENCRYPTION.md)
-- **Audit Logging**: [AUDIT-LOGGING.md](AUDIT-LOGGING.md)
-- **Network Segmentation**: [NETWORK.md](NETWORK.md)
-
-### Testing & Quality
-- **PHP Testing**: [TESTING-PHP.md](TESTING-PHP.md)
-- **Node.js Testing**: [TESTING-NODE.md](TESTING-NODE.md)
+| File                                                | Description                                    |
+|-----------------------------------------------------|------------------------------------------------|
+| [../README.md](../README.md)                        | Main project README                            |
+| [../CHANGELOG.md](../CHANGELOG.md)                  | Release changelog                              |
+| [../GDPR-NEXT-STEPS.md](../GDPR-NEXT-STEPS.md)      | GDPR implementation roadmap                    |
 
 ---
 
 ## Contributing
 
 When adding new documentation:
-1. Place it in this directory (`documentation/`)
+1. Place it in the appropriate subdirectory
 2. Update this README with a link
-3. Use clear, descriptive filenames (UPPERCASE.md for major docs)
+3. Use clear, descriptive filenames (UPPERCASE.md)
 4. Include cross-references to related documentation

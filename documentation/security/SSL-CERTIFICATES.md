@@ -108,15 +108,15 @@ The `make ssl-reload-services` command restarts database containers to ensure:
 
 ## Available Make Commands
 
-| Command | Description |
-|---------|-------------|
-| `make ssl-selfsigned` | Generate self-signed certificate (dev) |
-| `make ssl-letsencrypt` | Setup Let's Encrypt certificate (prod) |
-| `make ssl-prod-enable` | Generate ssl-production.conf from template |
-| `make ssl-renew` | Renew Let's Encrypt certificate and reload services |
-| `make ssl-reload-services` | Reload all SSL-dependent services |
-| `make ssl-info` | Show certificate information |
-| `make ssl-clean` | Remove all certificates (destructive!) |
+| Command                    | Description                                         |
+|----------------------------|-----------------------------------------------------|
+| `make ssl-selfsigned`      | Generate self-signed certificate (dev)              |
+| `make ssl-letsencrypt`     | Setup Let's Encrypt certificate (prod)              |
+| `make ssl-prod-enable`     | Generate ssl-production.conf from template          |
+| `make ssl-renew`           | Renew Let's Encrypt certificate and reload services |
+| `make ssl-reload-services` | Reload all SSL-dependent services                   |
+| `make ssl-info`            | Show certificate information                        |
+| `make ssl-clean`           | Remove all certificates (destructive!)              |
 
 ## File Structure
 

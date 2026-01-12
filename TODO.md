@@ -2407,12 +2407,51 @@ curl http://localhost:3000/health
 ---
 
 **Erstellt:** 2025-12-19
-**Letzte Aktualisierung:** 2026-01-12 (Terminal Output & Entrypoint Fixes)
-**Version:** 3.15
+**Letzte Aktualisierung:** 2026-01-12 (GDPR Backup Strategy & Documentation Structure)
+**Version:** 3.16
 
 ---
 
 ## Changelog
+
+### Version 3.16 (2026-01-12) - GDPR Backup Strategy & Documentation Structure
+
+#### Added
+- **GDPR Phase 2.1 - Backup Strategy**:
+  - `docker/scripts/backup-databases.sh`: Encrypted database backups (AES-256-CBC)
+  - `docker/scripts/restore-database.sh`: Restore with auto-detection of DB type
+  - Supports PostgreSQL and MariaDB
+  - Configurable retention policy via `BACKUP_RETENTION_DAYS` in `.env`
+  - Backup logging to `storage/logs/backup.log`
+
+- **New Make Targets**:
+  - `make backup`: Create encrypted database backup
+  - `make backup RETENTION=X`: Override retention policy
+  - `make backup-list`: List available backups
+  - `make restore`: Interactive restore from backup
+  - `make db-migrations`: Run GDPR database migrations (encryption helpers, audit logs)
+
+- **Configuration**:
+  - `BACKUP_RETENTION_DAYS` in `.env.example` (default: 30 days)
+  - `backups/` directory created during `make setup`
+
+#### Changed
+- **Documentation Restructure**:
+  - Reorganized `documentation/` into thematic subdirectories:
+    - `security/`: AUDIT-LOGGING.md, BACKUP.md, ENCRYPTION.md, SSL-CERTIFICATES.md
+    - `development/`: DEV-DASHBOARD.md, RENOVATE.md, XDEBUG.md
+    - `testing/`: TESTING-NODE.md, TESTING-PHP.md
+    - `infrastructure/`: NETWORK.md
+  - Updated `documentation/README.md` with new structure and aligned tables
+
+- **Markdown Formatting**:
+  - Fixed table column alignment in all documentation files (PhpStorm compatibility)
+  - Fixed numbered list continuation with code blocks (proper indentation)
+
+#### Documentation
+- `documentation/security/BACKUP.md`: Complete backup & restore guide with GDPR compliance table
+
+---
 
 ### Version 3.15 (2026-01-12) - Terminal Output & Entrypoint Fixes
 

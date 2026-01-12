@@ -114,6 +114,10 @@ setup: ## Create directories, install dev dependencies and ensure structure
 	@. ./.env && mkdir -p $${STORAGE_DIR:-./storage}/{app/{uploads,generated},cache,sessions,logs}
 	@. ./.env && chmod 770 $${STORAGE_DIR:-./storage} -R
 
+	# Backups directory (encrypted database dumps)
+	@mkdir -p backups
+	@chmod 700 backups
+
 	@echo -e "\033[0;32mProject structure created!\033[0m"
 
 	# SSL/TLS Certificate Check
@@ -530,6 +534,66 @@ mariadb-restore: ## Restore MariaDB database from dump.sql
 	@echo -e "\033[0;33mRestoring MariaDB database from dump.sql...\033[0m"
 	@. ./.env && docker compose exec -T mariadb mariadb -u $${DB_USER:-app} -p$${DB_PASSWORD:-secret} $${DB_NAME:-app} < dump.sql
 	@echo -e "\033[0;32mMariaDB database restored!\033[0m"
+
+##@ Backup & Migrations
+
+backup: ## Create encrypted database backup (GDPR-compliant, RETENTION=days to override)
+	@echo -e "\033[0;33mCreating encrypted database backup...\033[0m"
+	@if [ -n "$(RETENTION)" ]; then \
+		bash docker/scripts/backup-databases.sh --retention $(RETENTION); \
+	else \
+		bash docker/scripts/backup-databases.sh; \
+	fi
+	@echo -e "\033[0;34mBackups are stored in ./backups/\033[0m"
+
+backup-list: ## List all available backups
+	@echo -e "\033[0;33mAvailable backups:\033[0m"
+	@if [ -d backups ]; then \
+		ls -lah backups/*.sql.gz* 2>/dev/null || echo -e "\033[0;34mNo backups found.\033[0m"; \
+	else \
+		echo -e "\033[0;34mNo backups directory. Run 'make backup' first.\033[0m"; \
+	fi
+
+restore: ## Restore database from backup (interactive)
+	@echo -e "\033[0;33mAvailable backups:\033[0m"
+	@if [ -d backups ]; then \
+		ls -1 backups/*.sql.gz* 2>/dev/null || echo "No backups found."; \
+	else \
+		echo "No backups directory."; \
+		exit 1; \
+	fi
+	@echo ""
+	@read -p "Enter backup filename (from ./backups/): " BACKUP_FILE; \
+	bash docker/scripts/restore-database.sh "backups/$$BACKUP_FILE"
+
+db-migrations: ## Run database migrations (encryption helpers, audit logs)
+	@echo -e "\033[0;33mRunning database migrations...\033[0m"
+	@if [ ! -f .env ]; then \
+		echo -e "\033[0;31mError: .env not found. Run 'make init' first.\033[0m"; \
+		exit 1; \
+	fi
+	@. ./.env && \
+	if [ "$${DB_TYPE:-postgres}" = "postgres" ]; then \
+		echo -e "\033[0;34mRunning PostgreSQL migrations...\033[0m"; \
+		for migration in migrations/postgresql/*.sql; do \
+			if [ -f "$$migration" ]; then \
+				echo -e "  Applying: $$(basename $$migration)"; \
+				docker compose exec -T postgres psql -U $${DB_USER:-app} -d $${DB_NAME:-app} -f /dev/stdin < "$$migration" 2>&1 | grep -v "^$$" || true; \
+			fi; \
+		done; \
+	elif [ "$${DB_TYPE:-postgres}" = "mariadb" ]; then \
+		echo -e "\033[0;34mRunning MariaDB migrations...\033[0m"; \
+		for migration in migrations/mariadb/*.sql; do \
+			if [ -f "$$migration" ]; then \
+				echo -e "  Applying: $$(basename $$migration)"; \
+				docker compose exec -T mariadb mariadb -u $${DB_USER:-app} -p$${DB_PASSWORD:-secret} $${DB_NAME:-app} < "$$migration" 2>&1 | grep -v "^$$" || true; \
+			fi; \
+		done; \
+	else \
+		echo -e "\033[0;31mError: Unknown DB_TYPE '$${DB_TYPE}'\033[0m"; \
+		exit 1; \
+	fi
+	@echo -e "\033[0;32mMigrations completed!\033[0m"
 
 ##@ Workflow
 

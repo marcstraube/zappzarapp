@@ -12,13 +12,13 @@ Xdebug is pre-configured for step debugging, profiling, and code coverage in the
 
 Xdebug is automatically configured in the development environment:
 
-| Setting | Value | Description |
-|---------|-------|-------------|
-| `xdebug.mode` | `develop,debug` | Improved var_dump + step debugging |
-| `xdebug.client_host` | `host.docker.internal` | Connects automatically to your IDE |
-| `xdebug.client_port` | `9003` | Default Xdebug port |
-| `xdebug.idekey` | `PHPSTORM` | IDE key for PhpStorm |
-| `xdebug.start_with_request` | `trigger` | Only starts when triggered |
+| Setting                     | Value                  | Description                        |
+|-----------------------------|------------------------|------------------------------------|
+| `xdebug.mode`               | `develop,debug`        | Improved var_dump + step debugging |
+| `xdebug.client_host`        | `host.docker.internal` | Connects automatically to your IDE |
+| `xdebug.client_port`        | `9003`                 | Default Xdebug port                |
+| `xdebug.idekey`             | `PHPSTORM`             | IDE key for PhpStorm               |
+| `xdebug.start_with_request` | `trigger`              | Only starts when triggered         |
 
 **Configuration files:**
 - `docker/php/conf.d/development.ini` - Loads Xdebug (`zend_extension=xdebug.so`)
@@ -169,10 +169,10 @@ docker compose exec php sh -c 'XDEBUG_MODE=coverage vendor/bin/phpunit --coverag
 For performance profiling:
 
 1. **Change xdebug.mode:**
-```ini
-xdebug.mode = profile
-xdebug.output_dir = /var/log/php
-```
+   ```ini
+   xdebug.mode = profile
+   xdebug.output_dir = /var/log/php
+   ```
 
 2. **Restart container:** `make restart`
 

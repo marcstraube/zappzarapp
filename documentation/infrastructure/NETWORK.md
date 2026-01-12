@@ -6,19 +6,19 @@ This boilerplate implements a **3-network segmentation** strategy for enhanced s
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│                     FRONTEND NETWORK                         │
+│                     FRONTEND NETWORK                        │
 │  - nginx (public-facing, ports 8080/8443)                   │
 └──────────────────────┬──────────────────────────────────────┘
                        │
 ┌──────────────────────▼──────────────────────────────────────┐
-│                     BACKEND NETWORK                          │
+│                     BACKEND NETWORK                         │
 │  - nginx (internal connection)                              │
 │  - php                                                      │
 │  - node                                                     │
 └──────────────────────┬──────────────────────────────────────┘
                        │
 ┌──────────────────────▼──────────────────────────────────────┐
-│                     DATABASE NETWORK                         │
+│                     DATABASE NETWORK                        │
 │  - postgres                                                 │
 │  - mariadb                                                  │
 │  - redis                                                    │
@@ -151,21 +151,21 @@ networks:
 ### Check Network Isolation
 
 1. **Start services**:
-```bash
-make up
-```
+   ```bash
+    make up
+   ```
 
 2. **Verify nginx cannot reach database**:
-```bash
-docker exec docker-webdev-nginx ping -c 1 postgres
-# Expected: ping: bad address 'postgres'
-```
+   ```bash
+    docker exec docker-webdev-nginx ping -c 1 postgres
+   # Expected: ping: bad address 'postgres'
+   ```
 
 3. **Verify php CAN reach database**:
-```bash
-docker exec docker-webdev-php ping -c 1 postgres
-# Expected: PING postgres (172.x.x.x): 56 data bytes
-```
+   ```bash
+   docker exec docker-webdev-php ping -c 1 postgres
+   # Expected: PING postgres (172.x.x.x): 56 data bytes
+   ```
 
 ### Inspect Networks
 

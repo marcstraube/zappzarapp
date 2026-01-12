@@ -24,11 +24,11 @@ This mode connects to your Git host (GitHub, GitLab) and creates Pull Requests f
 
 **Configuration in `.env`:**
 
-| Variable | Example | Description |
-|----------|---------|-------------|
-| `RENOVATE_PLATFORM` | `github` | Git platform (`github`, `gitlab`, etc.) |
-| `RENOVATE_REPO_SLUG` | `your-org/your-project` | Full repository name |
-| `GITHUB_COM_TOKEN` | `ghp_...` | Personal Access Token with repo write access |
+| Variable             | Example                 | Description                                  |
+|----------------------|-------------------------|----------------------------------------------|
+| `RENOVATE_PLATFORM`  | `github`                | Git platform (`github`, `gitlab`, etc.)      |
+| `RENOVATE_REPO_SLUG` | `your-org/your-project` | Full repository name                         |
+| `GITHUB_COM_TOKEN`   | `ghp_...`               | Personal Access Token with repo write access |
 
 **Execution:**
 ```bash
@@ -122,12 +122,12 @@ The main configuration file at the project root:
 
 Renovate automatically detects and updates:
 
-| Ecosystem | Files | Description |
-|-----------|-------|-------------|
-| **Composer** | `composer.json`, `composer.lock` | PHP dependencies |
-| **npm/pnpm** | `package.json`, `pnpm-lock.yaml` | Node.js dependencies |
-| **Docker** | `Dockerfile`, `compose.yaml` | Docker image versions |
-| **GitHub Actions** | `.github/workflows/*.yml` | Action versions |
+| Ecosystem          | Files                            | Description           |
+|--------------------|----------------------------------|-----------------------|
+| **Composer**       | `composer.json`, `composer.lock` | PHP dependencies      |
+| **npm/pnpm**       | `package.json`, `pnpm-lock.yaml` | Node.js dependencies  |
+| **Docker**         | `Dockerfile`, `compose.yaml`     | Docker image versions |
+| **GitHub Actions** | `.github/workflows/*.yml`        | Action versions       |
 
 ---
 

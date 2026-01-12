@@ -216,65 +216,65 @@ docker compose exec php sh -c 'XDEBUG_MODE=coverage vendor/bin/phpunit \
 ### Adding New Pages
 
 1. Create view file in `Views/`:
-```php
-// Views/mypage.php
-<div class="bg-white rounded-lg shadow p-6">
-    <h2><?= $title ?></h2>
-    <!-- Your content -->
-</div>
-```
+   ```php
+   // Views/mypage.php
+   <div class="bg-white rounded-lg shadow p-6">
+       <h2><?= $title ?></h2>
+       <!-- Your content -->
+   </div>
+   ```
 
 2. Add route in `routes.php`:
-```php
-route('GET', '/_dev/mypage', [$controller, 'mypage']);
-```
+   ```php
+   route('GET', '/_dev/mypage', [$controller, 'mypage']);
+   ```
 
 3. Add controller method:
-```php
-public function mypage(): void
-{
-    $this->render('mypage', ['title' => 'My Page']);
-}
-```
+   ```php
+   public function mypage(): void
+   {
+       $this->render('mypage', ['title' => 'My Page']);
+   }
+   ```
 
 4. Add navigation link in `Views/layout.php`
 
 ### Adding New Services
 
 1. Create service in `Services/`:
-```php
-namespace DevDashboard\Services;
+   ```php
+   namespace DevDashboard\Services;
 
-class MyService
-{
-    public function getData(): array
-    {
-        return ['key' => 'value'];
-    }
-}
-```
+   class MyService
+   {
+       public function getData(): array
+       {
+           return ['key' => 'value'];
+       }
+   }
+   ```
 
 2. Use in controller:
-```php
-require_once __DIR__ . '/../Services/MyService.php';
-$service = new MyService();
-$data = $service->getData();
-```
+   ```php
+   require_once __DIR__ . '/../Services/MyService.php';
+   $service = new MyService();
+   $data = $service->getData();
+   ```
 
 ## Removal
 
 To completely remove the dashboard:
 
 1. Delete directory:
-```bash
-rm -rf src/php/DevDashboard/
-rm -rf tests/php/DevDashboard/
-```
+   ```bash
+   rm -rf src/php/DevDashboard/
+   rm -rf tests/php/DevDashboard/
+   ```
 
 2. Remove from `public/index.php`:
-```php
-// Remove the dashboard routing section
-```
+   ```php
+   // Remove the dashboard routing section
+   ```
 
 3. Update `Makefile` (remove DevDashboard from setup)
 
