@@ -2407,12 +2407,51 @@ curl http://localhost:3000/health
 ---
 
 **Erstellt:** 2025-12-19
-**Letzte Aktualisierung:** 2026-01-12 (GDPR Retention Policies & Docker Stability)
-**Version:** 3.17
+**Letzte Aktualisierung:** 2026-01-12 (GDPR Security Scanning & GitLab CI)
+**Version:** 3.18
 
 ---
 
 ## Changelog
+
+### Version 3.18 (2026-01-12) - GDPR Security Scanning & GitLab CI
+
+#### Added
+- **GDPR Phase 3.2 - Automated Security Scanning**:
+  - `.github/workflows/security-scan.yml`: Comprehensive GitHub security workflow
+    - Docker image vulnerability scans (all 5 images: PHP, Node, Nginx, PostgreSQL, MariaDB)
+    - Dependency scanning (Composer + pnpm audit)
+    - Filesystem scan (IaC misconfigurations)
+    - Secret scanning (Trivy + TruffleHog)
+    - Scheduled weekly runs + manual trigger with configurable severity
+  - `.gitlab/security-scan.gitlab-ci.yml`: Equivalent GitLab CI security pipeline
+    - Same scan coverage as GitHub workflow
+    - Gitleaks for secret scanning (GitLab alternative to TruffleHog)
+    - Security summary report generation
+  - `documentation/security/SECURITY-SCANNING.md`: Security scanning guide
+    - Local scanning instructions (Trivy CLI)
+    - Best practices (version pinning, multi-stage builds, non-root users)
+    - Optional Dependabot and OWASP ZAP configuration
+
+- **GDPR Phase 2.3 & 3.1 - Access Log Monitoring Documentation**:
+  - `documentation/security/ACCESS-LOG-MONITORING.md`: Host-level monitoring guide
+    - Relevant log locations in Docker setup
+    - Tool recommendations (fail2ban, Logwatch, Prometheus/Grafana, Loki, Wazuh)
+    - Quick start recommendations by complexity
+    - Integration with application audit logging
+
+#### Changed
+- **GitHub CI Pipeline** (`.github/workflows/ci.yml`):
+  - Simplified `security` job to `dependency-audit` (only Composer + pnpm audit)
+  - Removed Trivy scans (moved to dedicated security-scan.yml)
+  - Faster CI runs, comprehensive scans run separately on schedule
+
+- **GitLab CI Pipeline** (`.gitlab-ci.yml`):
+  - Simplified security jobs to single `dependency-audit` job
+  - Removed Trivy scans (moved to dedicated security-scan.gitlab-ci.yml)
+  - Consistent with GitHub workflow structure
+
+---
 
 ### Version 3.17 (2026-01-12) - GDPR Retention Policies & Docker Stability
 

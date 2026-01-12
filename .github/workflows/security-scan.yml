@@ -1,0 +1,238 @@
+name: Security Scan
+
+on:
+  # Run on schedule (weekly on Sunday at 2 AM)
+  schedule:
+    - cron: '0 2 * * 0'
+  # Manual trigger
+  workflow_dispatch:
+    inputs:
+      severity:
+        description: 'Minimum severity to report'
+        required: false
+        default: 'HIGH,CRITICAL'
+        type: choice
+        options:
+          - CRITICAL
+          - HIGH,CRITICAL
+          - MEDIUM,HIGH,CRITICAL
+          - LOW,MEDIUM,HIGH,CRITICAL
+  # Optional: Run on push to security-related files
+  push:
+    branches: [master, develop]
+    paths:
+      - 'docker/**'
+      - 'compose*.yaml'
+      - 'composer.json'
+      - 'composer.lock'
+      - 'package.json'
+      - 'pnpm-lock.yaml'
+
+env:
+  COMPOSE_PROJECT_NAME: docker-webdev-security
+  SEVERITY: ${{ inputs.severity || 'HIGH,CRITICAL' }}
+
+jobs:
+  # ============================================================================
+  # DOCKER IMAGE VULNERABILITY SCAN
+  # ============================================================================
+  image-scan:
+    name: Docker Image Scan
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    strategy:
+      fail-fast: false
+      matrix:
+        image:
+          - name: php
+            dockerfile: docker/php/Dockerfile
+          - name: node
+            dockerfile: docker/node/Dockerfile
+          - name: nginx
+            dockerfile: docker/nginx/Dockerfile
+          - name: postgres
+            dockerfile: docker/postgres/Dockerfile
+          - name: mariadb
+            dockerfile: docker/mariadb/Dockerfile
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build ${{ matrix.image.name }} image
+        run: |
+          docker build -t ${{ env.COMPOSE_PROJECT_NAME }}-${{ matrix.image.name }}:scan \
+            -f ${{ matrix.image.dockerfile }} \
+            $(dirname ${{ matrix.image.dockerfile }})
+
+      - name: Trivy vulnerability scan (${{ matrix.image.name }})
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: ${{ env.COMPOSE_PROJECT_NAME }}-${{ matrix.image.name }}:scan
+          format: sarif
+          output: trivy-${{ matrix.image.name }}-results.sarif
+          severity: ${{ env.SEVERITY }}
+          ignore-unfixed: true
+
+      - name: Upload Trivy results (${{ matrix.image.name }})
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: trivy-${{ matrix.image.name }}-results.sarif
+          category: trivy-${{ matrix.image.name }}
+
+      - name: Trivy table output (${{ matrix.image.name }})
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: ${{ env.COMPOSE_PROJECT_NAME }}-${{ matrix.image.name }}:scan
+          format: table
+          severity: ${{ env.SEVERITY }}
+          ignore-unfixed: true
+
+  # ============================================================================
+  # DEPENDENCY VULNERABILITY SCAN
+  # ============================================================================
+  dependency-scan:
+    name: Dependency Scan
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build and start containers
+        run: |
+          docker compose build php node
+          docker compose up -d php node
+
+      - name: Install dependencies
+        run: |
+          docker compose exec -T php composer install --no-progress --no-interaction
+          docker compose exec -T node pnpm install --frozen-lockfile
+
+      - name: PHP Composer Audit
+        run: |
+          echo "## PHP Dependencies" >> $GITHUB_STEP_SUMMARY
+          docker compose exec -T php composer audit --format=summary || true
+          docker compose exec -T php composer audit --format=json > composer-audit.json || true
+
+      - name: Node pnpm Audit
+        run: |
+          echo "## Node.js Dependencies" >> $GITHUB_STEP_SUMMARY
+          docker compose exec -T node pnpm audit || true
+          docker compose exec -T node pnpm audit --json > pnpm-audit.json || true
+
+      - name: Upload audit results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: dependency-audit-results
+          path: |
+            composer-audit.json
+            pnpm-audit.json
+          retention-days: 30
+
+      - name: Cleanup
+        if: always()
+        run: docker compose down -v
+
+  # ============================================================================
+  # FILESYSTEM & CONFIG SCAN
+  # ============================================================================
+  filesystem-scan:
+    name: Filesystem Scan
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Trivy filesystem scan
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: fs
+          scan-ref: .
+          format: sarif
+          output: trivy-fs-results.sarif
+          severity: ${{ env.SEVERITY }}
+          ignore-unfixed: true
+
+      - name: Upload filesystem scan results
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: trivy-fs-results.sarif
+          category: trivy-filesystem
+
+      - name: Trivy config scan (IaC)
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: config
+          scan-ref: .
+          format: table
+          severity: ${{ env.SEVERITY }}
+          skip-dirs: node_modules,vendor
+
+  # ============================================================================
+  # SECRET SCANNING
+  # ============================================================================
+  secret-scan:
+    name: Secret Scan
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Full history for secret scanning
+
+      - name: Trivy secret scan
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: fs
+          scan-ref: .
+          scanners: secret
+          format: table
+          severity: ${{ env.SEVERITY }}
+
+      - name: TruffleHog secret scan
+        uses: trufflesecurity/trufflehog@main
+        with:
+          path: ./
+          base: ${{ github.event.repository.default_branch }}
+          extra_args: --only-verified
+
+  # ============================================================================
+  # SUMMARY
+  # ============================================================================
+  summary:
+    name: Security Summary
+    runs-on: ubuntu-latest
+    needs: [image-scan, dependency-scan, filesystem-scan, secret-scan]
+    if: always()
+
+    steps:
+      - name: Generate summary
+        run: |
+          echo "# Security Scan Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Scan Type | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "|-----------|--------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Docker Images | ${{ needs.image-scan.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Dependencies | ${{ needs.dependency-scan.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Filesystem | ${{ needs.filesystem-scan.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Secrets | ${{ needs.secret-scan.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Severity threshold: ${{ env.SEVERITY }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "View detailed results in the Security tab." >> $GITHUB_STEP_SUMMARY

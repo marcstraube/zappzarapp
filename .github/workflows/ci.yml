@@ -165,12 +165,15 @@ jobs:
           name: node-coverage
 
   # ============================================================================
-  # SECURITY SCANS
+  # DEPENDENCY AUDIT
   # ============================================================================
-  security:
-    name: Security Scans
+  # Note: Comprehensive security scans (Trivy, secrets, filesystem) run in
+  # .github/workflows/security-scan.yml on a weekly schedule.
+  # ============================================================================
+  dependency-audit:
+    name: Dependency Audit
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 10
 
     steps:
       - name: Checkout code
@@ -179,44 +182,25 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Build images
-        run: docker compose build
+      - name: Build containers
+        run: |
+          docker compose build php node
+          docker compose up -d php node
 
-      - name: Scan PHP dependencies
-        run: docker compose exec -T php composer audit || true
+      - name: Install dependencies
+        run: |
+          docker compose exec -T php composer install --no-progress --no-interaction
+          docker compose exec -T node pnpm install --frozen-lockfile
 
-      - name: Scan Node dependencies
-        run: docker compose exec -T node pnpm audit || true
+      - name: PHP Composer Audit
+        run: docker compose exec -T php composer audit
 
-      - name: Trivy vulnerability scan (PHP)
-        uses: aquasecurity/trivy-action@master
-        with:
-          image-ref: docker-webdev-ci-php:latest
-          format: sarif
-          output: trivy-php-results.sarif
-          severity: HIGH,CRITICAL
+      - name: Node pnpm Audit
+        run: docker compose exec -T node pnpm audit
 
-      - name: Upload Trivy results (PHP)
-        uses: github/codeql-action/upload-sarif@v3
+      - name: Cleanup
         if: always()
-        with:
-          sarif_file: trivy-php-results.sarif
-          category: trivy-php
-
-      - name: Trivy vulnerability scan (Nginx)
-        uses: aquasecurity/trivy-action@master
-        with:
-          image-ref: docker-webdev-ci-nginx:latest
-          format: sarif
-          output: trivy-nginx-results.sarif
-          severity: HIGH,CRITICAL
-
-      - name: Upload Trivy results (Nginx)
-        uses: github/codeql-action/upload-sarif@v3
-        if: always()
-        with:
-          sarif_file: trivy-nginx-results.sarif
-          category: trivy-nginx
+        run: docker compose down -v
 
   # ============================================================================
   # BUILD TEST (Production)

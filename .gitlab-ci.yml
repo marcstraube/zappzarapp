@@ -222,45 +222,25 @@ node:coverage:
     expire_in: 30 days
 
 # ============================================================================
-# SECURITY SCANS
+# DEPENDENCY AUDIT
 # ============================================================================
-security:composer-audit:
+# Note: Comprehensive security scans (Trivy, secrets, filesystem) are defined
+# in .gitlab/security-scan.gitlab-ci.yml and run on a weekly schedule.
+# ============================================================================
+dependency-audit:
   <<: *docker-setup
   stage: security
   dependencies:
     - build:php
-  script:
-    - docker compose up -d php
-    - docker compose exec -T php composer install --no-progress --no-interaction
-    - docker compose exec -T php composer audit || true
-  allow_failure: true
-
-security:pnpm-audit:
-  <<: *docker-setup
-  stage: security
-  dependencies:
     - build:node
   script:
-    - docker compose up -d node
+    - docker compose up -d php node
+    - docker compose exec -T php composer install --no-progress --no-interaction
     - docker compose exec -T node pnpm install --frozen-lockfile
-    - docker compose exec -T node pnpm audit || true
-  allow_failure: true
-
-security:trivy-scan:
-  image: aquasec/trivy:latest
-  stage: security
-  dependencies:
-    - build:php
-    - build:nginx
-  script:
-    - trivy image --severity HIGH,CRITICAL --format json --output trivy-php-report.json docker-webdev-ci-php:latest || true
-    - trivy image --severity HIGH,CRITICAL --format json --output trivy-nginx-report.json docker-webdev-ci-nginx:latest || true
-  artifacts:
-    reports:
-      container_scanning: trivy-php-report.json
-    paths:
-      - trivy-*.json
-    when: always
+    - docker compose exec -T php composer audit
+    - docker compose exec -T node pnpm audit
+  after_script:
+    - docker compose down -v
   allow_failure: true
 
 # ============================================================================
