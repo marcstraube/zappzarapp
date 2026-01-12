@@ -14,7 +14,7 @@ export default defineConfig({
     coverage: {
       provider: 'v8',
       reporter: ['text', 'html', 'lcov'],
-      reportsDirectory: './build/coverage',
+      reportsDirectory: './build/coverage/node',
       // Default: only files covered by tests are included
       exclude: [
         ...coverageConfigDefaults.exclude,

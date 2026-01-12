@@ -17,7 +17,7 @@ use Exception;
      */
 class QualityService
 {
-    private string $projectRoot;
+    private readonly string $projectRoot;
 
     public function __construct()
     {
@@ -88,6 +88,7 @@ class QualityService
         if ($config === false) {
             return ['enabled' => false, 'message' => 'Could not read config'];
         }
+
         preg_match('/level:\s*(\d+)/', $config, $matches);
         $level = $matches[1] ?? 'unknown';
 
@@ -96,7 +97,7 @@ class QualityService
             'level'       => (int) $level,
             'config_file' => 'phpstan.neon',
             'status'      => 'configured',
-            'message'     => "PHPStan Level {$level} is configured",
+            'message'     => sprintf('PHPStan Level %s is configured', $level),
         ];
     }
 
@@ -271,8 +272,8 @@ class QualityService
                     }
                 }
             }
-        } catch (Exception $e) {
-            return ['count' => 0, 'exists' => false, 'error' => $e->getMessage()];
+        } catch (Exception $exception) {
+            return ['count' => 0, 'exists' => false, 'error' => $exception->getMessage()];
         }
 
         return ['count' => $count, 'exists' => true];

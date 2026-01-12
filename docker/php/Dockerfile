@@ -13,6 +13,8 @@ RUN apk add --no-cache \
     libtool \
     linux-headers \
     libgomp \
+    # Dependencies for curl (Extension) - speeds up Composer significantly
+    curl-dev \
     # Dependencies for GD (Extension)
     freetype \
     freetype-dev \
@@ -37,13 +39,15 @@ RUN apk add --no-cache \
     postgresql-dev \
     postgresql-libs \
     # Compilation and installation of extensions
-    && docker-php-ext-install exif intl opcache zip pdo_pgsql pdo_mysql \
+    && docker-php-ext-install curl exif intl opcache zip pdo_pgsql pdo_mysql \
     && docker-php-ext-configure gd \
         --with-freetype \
         --with-jpeg \
         --with-webp \
         --with-avif \
     && docker-php-ext-install -j$(nproc) gd \
+    # gmagick 2.0.6RC1 is the only version supporting PHP 8.4 (no stable release yet)
+    # Check https://pecl.php.net/package/gmagick for updates
     && pecl install gmagick-2.0.6RC1 \
     && pecl install redis \
     && docker-php-ext-enable gmagick redis \
@@ -57,6 +61,7 @@ RUN apk add --no-cache \
     fcgi \
     openssl \
     libgomp \
+    libcurl \
     freetype \
     libjpeg-turbo \
     libpng \
@@ -113,6 +118,9 @@ COPY docker/php/php-fpm.conf /usr/local/etc/php-fpm.d/www.conf
 # Override zz-docker.conf to use Unix socket instead of TCP
 COPY docker/php/zz-docker.conf /usr/local/etc/php-fpm.d/zz-docker.conf
 
+# Copy Composer files (Docker Compose Watch will sync changes)
+COPY --chown=www-data:www-data composer.json composer.lock ./
+
 # Copy source code into image (Docker Compose Watch will sync changes)
 COPY --chown=www-data:www-data src/php/ ./src/php/
 COPY --chown=www-data:www-data tests/php/ ./tests/php/
@@ -151,6 +159,7 @@ COPY --chown=www-data:www-data templates ./templates
 
 # Copy built frontend assets from Node build stage
 # This allows serving production-built Vite assets via NGINX
+# Note: NODE_IMAGE must be built first (see compose.yaml build order)
 COPY --from=docker-webdev-node:latest --chown=www-data:www-data /app/public/build/ ./public/build/
 
 # Optimize Autoloader & Cleanup

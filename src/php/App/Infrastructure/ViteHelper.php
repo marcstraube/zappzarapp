@@ -12,12 +12,14 @@ namespace App\Infrastructure;
  */
 class ViteHelper
 {
-    private string $env;
-    private string $manifestPath;
+    private readonly string $env;
+
+    private readonly string $manifestPath;
 
     /** @var array<string, mixed>|null */
     private ?array $manifest = null;
-    private string $viteDevServerUrl;
+
+    private readonly string $viteDevServerUrl;
 
     public function __construct()
     {
@@ -105,7 +107,7 @@ class ViteHelper
 
         $cssFiles = $manifest[$sourceKey]['css'] ?? [];
 
-        return array_map(fn($file) => '/build/' . $file, $cssFiles);
+        return array_map(fn($file): string => '/build/' . $file, $cssFiles);
     }
 
     /**
@@ -149,7 +151,7 @@ class ViteHelper
         // Production mode: Load built CSS
         $cssUrls = $this->getCssUrl($entry);
 
-        if (empty($cssUrls)) {
+        if ($cssUrls === null || $cssUrls === []) {
             return '<!-- No CSS found in manifest -->';
         }
 

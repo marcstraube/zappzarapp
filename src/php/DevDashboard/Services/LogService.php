@@ -15,8 +15,9 @@ use SplFileObject;
      */
 class LogService
 {
-    private string $projectRoot;
-    private string $storageDir;
+    private readonly string $projectRoot;
+
+    private readonly string $storageDir;
 
     public function __construct()
     {
@@ -100,7 +101,7 @@ class LogService
         }
 
         // Sort by modification time (newest first)
-        usort($logs, fn ($a, $b) => $b['modified'] <=> $a['modified']);
+        usort($logs, fn (array $a, array $b): int => $b['modified'] <=> $a['modified']);
 
         return $logs;
     }
@@ -139,6 +140,7 @@ class LogService
     {
         $file = new SplFileObject($filepath, 'r');
         $file->seek(PHP_INT_MAX);
+
         $lastLine = $file->key();
 
         $offset = max(0, $lastLine - $lines);

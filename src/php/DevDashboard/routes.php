@@ -40,14 +40,14 @@ require_once __DIR__ . '/Controllers/DashboardController.php';
 $controller = new Controllers\DashboardController();
 
 // Dashboard routes
-route('GET', '/_dev', [$controller, 'index']);
-route('GET', '/_dev/', [$controller, 'index']);
-route('GET', '/_dev/system', [$controller, 'system']);
-route('GET', '/_dev/health', [$controller, 'health']);
-route('GET', '/_dev/quality', [$controller, 'quality']);
-route('GET', '/_dev/database', [$controller, 'database']);
-route('GET', '/_dev/logs', [$controller, 'logs']);
+route('GET', '/_dev', $controller->index(...));
+route('GET', '/_dev/', $controller->index(...));
+route('GET', '/_dev/system', $controller->system(...));
+route('GET', '/_dev/health', $controller->health(...));
+route('GET', '/_dev/quality', $controller->quality(...));
+route('GET', '/_dev/database', $controller->database(...));
+route('GET', '/_dev/logs', $controller->logs(...));
 
 // API endpoints for dashboard (JSON responses)
-route('GET', '/_dev/api/health-check', [$controller, 'apiHealthCheck']);
-route('GET', '/_dev/api/container-status', [$controller, 'apiContainerStatus']);
+route('GET', '/_dev/api/health-check', $controller->apiHealthCheck(...));
+route('GET', '/_dev/api/container-status', $controller->apiContainerStatus(...));

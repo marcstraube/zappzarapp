@@ -20,8 +20,10 @@ use RuntimeException;
 final class AuditLoggerTest extends TestCase
 {
     private PDO&MockObject $pdo;
+
     private AuditLogger $auditLogger;
-    private const ENCRYPTION_KEY = 'test-encryption-key';
+
+    private const string ENCRYPTION_KEY = 'test-encryption-key';
 
     protected function setUp(): void
     {

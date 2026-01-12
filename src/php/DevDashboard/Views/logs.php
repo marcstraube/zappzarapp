@@ -29,22 +29,22 @@
     <div class="card">
         <h2 class="text-lg font-semibold text-gray-900 mb-4">📝 Available Log Sources</h2>
         <div class="space-y-4">
-            <?php foreach ($log_sources as $key => $source): ?>
+            <?php foreach ($log_sources as $source): ?>
                 <div class="border border-gray-200 rounded-lg p-4 <?= $source['available'] ? '' : 'bg-gray-50 opacity-75' ?>">
                     <div class="flex items-center justify-between mb-2">
-                        <h3 class="font-medium text-gray-900"><?= htmlspecialchars($source['name']) ?></h3>
+                        <h3 class="font-medium text-gray-900"><?= htmlspecialchars((string) $source['name']) ?></h3>
                         <span class="badge <?= $source['available'] ? 'badge-green' : 'badge-gray' ?>">
                             <?= $source['available'] ? '✓ Available' : 'Disabled' ?>
                         </span>
                     </div>
-                    <p class="text-sm text-gray-600 mb-3"><?= htmlspecialchars($source['description']) ?></p>
+                    <p class="text-sm text-gray-600 mb-3"><?= htmlspecialchars((string) $source['description']) ?></p>
 
                     <?php if ($source['available']): ?>
                         <?php if ($source['type'] === 'docker'): ?>
                             <div class="bg-gray-50 border border-gray-200 rounded p-3">
                                 <p class="text-xs text-gray-600 mb-2">View from host terminal:</p>
                                 <code class="text-xs bg-gray-100 px-2 py-1 rounded text-gray-900 font-mono block">
-                                    <?= htmlspecialchars($source['command']) ?>
+                                    <?= htmlspecialchars((string) $source['command']) ?>
                                 </code>
                             </div>
 
@@ -53,7 +53,7 @@
                                     <p class="text-xs text-gray-600 mb-2">Available services:</p>
                                     <div class="flex flex-wrap gap-2">
                                         <?php foreach ($source['services'] as $service): ?>
-                                            <span class="badge badge-blue text-xs"><?= htmlspecialchars($service) ?></span>
+                                            <span class="badge badge-blue text-xs"><?= htmlspecialchars((string) $service) ?></span>
                                         <?php endforeach; ?>
                                     </div>
                                 </div>
@@ -65,7 +65,7 @@
                                     <div class="space-y-1">
                                         <?php foreach ($source['files'] as $file): ?>
                                             <div class="flex justify-between items-center text-xs">
-                                                <span class="font-mono text-gray-700"><?= htmlspecialchars($file['name']) ?></span>
+                                                <span class="font-mono text-gray-700"><?= htmlspecialchars((string) $file['name']) ?></span>
                                                 <span class="text-gray-500">
                                                     <?= number_format($file['size'] / 1024, 1) ?> KB •
                                                     <?= date('Y-m-d H:i', $file['modified']) ?>
@@ -77,7 +77,7 @@
                             <?php else: ?>
                                 <div class="bg-yellow-50 border border-yellow-200 rounded p-3">
                                     <p class="text-sm text-yellow-800">
-                                        No application log files found in <?= htmlspecialchars($source['path']) ?>
+                                        No application log files found in <?= htmlspecialchars((string) $source['path']) ?>
                                     </p>
                                 </div>
                             <?php endif; ?>

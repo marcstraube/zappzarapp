@@ -17,7 +17,7 @@ use RuntimeException;
 #[CoversClass(EncryptionService::class)]
 final class EncryptionServiceTest extends TestCase
 {
-    private const TEST_KEY = 'test-encryption-key-32-bytes-long';
+    private const string TEST_KEY = 'test-encryption-key-32-bytes-long';
 
     public function testEncryptReturnsNonEmptyString(): void
     {

@@ -59,12 +59,10 @@ class SystemInfoService
         $extensions = get_loaded_extensions();
         sort($extensions);
 
-        return array_map(function ($ext) {
-            return [
-                'name'    => $ext,
-                'version' => phpversion($ext) ?: 'N/A',
-            ];
-        }, $extensions);
+        return array_map(fn(string $ext): array => [
+            'name'    => $ext,
+            'version' => phpversion($ext) ?: 'N/A',
+        ], $extensions);
     }
 
     /**
@@ -81,14 +79,7 @@ class SystemInfoService
         $sensitiveKeys = ['PASSWORD', 'SECRET', 'KEY', 'TOKEN', 'PRIVATE'];
 
         foreach ($env as $key => $value) {
-            $isSensitive = false;
-            foreach ($sensitiveKeys as $sensitive) {
-                if (stripos($key, $sensitive) !== false) {
-                    $isSensitive = true;
-                    break;
-                }
-            }
-
+            $isSensitive    = array_any($sensitiveKeys, fn($sensitive): bool => stripos($key, (string) $sensitive) !== false);
             $filtered[$key] = $isSensitive ? '********' : $value;
         }
 
@@ -120,7 +111,7 @@ class SystemInfoService
             'initialized'             => true,
             'branch'                  => trim($branch),
             'commit'                  => trim($commit),
-            'has_uncommitted_changes' => !empty(trim($uncommitted)),
+            'has_uncommitted_changes' => !in_array(trim($uncommitted), ['', '0'], true),
             'uncommitted_files'       => array_filter(explode("\n", trim($uncommitted))),
         ];
     }
@@ -131,7 +122,7 @@ class SystemInfoService
     public function getNodeVersion(): ?string
     {
         $version = $this->executeCommand('docker compose exec -T node node --version');
-        return $version ? trim($version) : null;
+        return $version !== '' && $version !== '0' ? trim($version) : null;
     }
 
     /**
@@ -140,7 +131,7 @@ class SystemInfoService
     public function getComposerVersion(): ?string
     {
         $version = $this->executeCommand('docker compose exec -T php composer --version');
-        return $version ? trim($version) : null;
+        return $version !== '' && $version !== '0' ? trim($version) : null;
     }
 
     /**

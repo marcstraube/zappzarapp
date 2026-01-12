@@ -16,12 +16,17 @@ use PDOException;
  */
 class DatabaseService
 {
-    private string $dbType;
-    private string $dbHost;
-    private string $dbPort;
-    private string $dbName;
-    private string $dbUser;
-    private string $dbPassword;
+    private readonly string $dbType;
+
+    private readonly string $dbHost;
+
+    private readonly string $dbPort;
+
+    private readonly string $dbName;
+
+    private readonly string $dbUser;
+
+    private readonly string $dbPassword;
 
     public function __construct()
     {
@@ -36,7 +41,7 @@ class DatabaseService
     /**
      * Get defaultHost
      */
-    function getDefaultHost(): string
+    public function getDefaultHost(): string
     {
         $host = getenv('DB_HOST');
         if ($host !== false && $host !== '') {
@@ -49,7 +54,7 @@ class DatabaseService
     /**
      * Get defaultPort
      */
-    function getDefaultPort(): string
+    public function getDefaultPort(): string
     {
         $port = getenv('DB_PORT');
         if ($port !== false && $port !== '') {
@@ -62,7 +67,7 @@ class DatabaseService
     /**
      * Get connection
      */
-    function getConnection(): ?PDO
+    public function getConnection(): ?PDO
     {
         try {
             if ($this->dbType === 'postgres') {
@@ -75,7 +80,7 @@ class DatabaseService
                 PDO::ATTR_TIMEOUT => 3,
                 PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
             ]);
-        } catch (PDOException $e) {
+        } catch (PDOException) {
             return null;
         }
     }
@@ -89,7 +94,7 @@ class DatabaseService
     {
         $pdo = $this->getConnection();
 
-        if (!$pdo) {
+        if (!$pdo instanceof PDO) {
             return [
                 'connected' => false,
                 'error'     => 'Could not connect to database',
@@ -111,7 +116,7 @@ class DatabaseService
     /**
      * Get databaseVersion
      */
-    function getDatabaseVersion(\PDO $pdo): string
+    public function getDatabaseVersion(PDO $pdo): string
     {
         try {
             if ($this->dbType === 'postgres') {
@@ -119,10 +124,12 @@ class DatabaseService
                 if ($stmt === false) {
                     return 'Unknown';
                 }
+
                 $version = $stmt->fetchColumn();
                 if (!is_string($version)) {
                     return 'Unknown';
                 }
+
                 // Extract just the version number
                 preg_match('/PostgreSQL ([\d.]+)/', $version, $matches);
                 return $matches[1] ?? $version;
@@ -131,10 +138,11 @@ class DatabaseService
                 if ($stmt === false) {
                     return 'Unknown';
                 }
+
                 $result = $stmt->fetchColumn();
                 return is_string($result) ? $result : 'Unknown';
             }
-        } catch (\PDOException $e) {
+        } catch (PDOException) {
             return 'Unknown';
         }
     }
@@ -142,7 +150,7 @@ class DatabaseService
     /**
      * Get tableCount
      */
-    function getTableCount(\PDO $pdo): int
+    public function getTableCount(PDO $pdo): int
     {
         try {
             if ($this->dbType === 'postgres') {
@@ -162,7 +170,7 @@ class DatabaseService
             }
 
             return (int) $stmt->fetchColumn();
-        } catch (\PDOException $e) {
+        } catch (PDOException) {
             return 0;
         }
     }
@@ -170,16 +178,17 @@ class DatabaseService
     /**
      * Get databaseSize
      */
-    function getDatabaseSize(\PDO $pdo): string
+    public function getDatabaseSize(PDO $pdo): string
     {
         try {
             if ($this->dbType === 'postgres') {
                 $stmt = $pdo->query(
-                    "SELECT pg_size_pretty(pg_database_size('{$this->dbName}'))"
+                    sprintf("SELECT pg_size_pretty(pg_database_size('%s'))", $this->dbName)
                 );
                 if ($stmt === false) {
                     return 'Unknown';
                 }
+
                 $result = $stmt->fetchColumn();
                 return $result !== false ? (string)$result : '0 bytes';
             } else {
@@ -191,10 +200,11 @@ class DatabaseService
                 if ($stmt === false) {
                     return 'Unknown';
                 }
+
                 $sizeMb = $stmt->fetchColumn();
                 return $sizeMb !== false ? $sizeMb . ' MB' : '0 MB';
             }
-        } catch (\PDOException $e) {
+        } catch (PDOException) {
             return 'Unknown';
         }
     }
@@ -208,7 +218,7 @@ class DatabaseService
     {
         $pdo = $this->getConnection();
 
-        if (!$pdo) {
+        if (!$pdo instanceof PDO) {
             return [];
         }
 
@@ -239,7 +249,7 @@ class DatabaseService
             }
 
             $tables = [];
-            while ($row = $stmt->fetch(\PDO::FETCH_ASSOC)) {
+            while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
                 if ($this->dbType === 'postgres') {
                     $tables[] = [
                         'name'      => $row['table_name'],
@@ -257,7 +267,7 @@ class DatabaseService
             }
 
             return $tables;
-        } catch (\PDOException $e) {
+        } catch (PDOException) {
             return [];
         }
     }
@@ -265,15 +275,16 @@ class DatabaseService
     /**
      * Get tableRowCount
      */
-    function getTableRowCount(\PDO $pdo, string $tableName): int
+    public function getTableRowCount(PDO $pdo, string $tableName): int
     {
         try {
             $stmt = $pdo->query("SELECT COUNT(*) FROM " . $pdo->quote($tableName));
             if ($stmt === false) {
                 return 0;
             }
+
             return (int) $stmt->fetchColumn();
-        } catch (\PDOException $e) {
+        } catch (PDOException) {
             return 0;
         }
     }
@@ -287,7 +298,7 @@ class DatabaseService
     {
         $pdo = $this->getConnection();
 
-        if (!$pdo) {
+        if (!$pdo instanceof PDO) {
             return [
                 'available' => false,
                 'message'   => 'Could not connect to database',
@@ -307,7 +318,8 @@ class DatabaseService
                 if ($stmt === false) {
                     return ['available' => false, 'message' => 'Query failed'];
                 }
-                $stats = $stmt->fetch(\PDO::FETCH_ASSOC);
+
+                $stats = $stmt->fetch(PDO::FETCH_ASSOC);
                 if ($stats === false) {
                     return ['available' => false, 'message' => 'No data'];
                 }
@@ -323,7 +335,8 @@ class DatabaseService
                 if ($stmt === false) {
                     return ['available' => false, 'message' => 'Query failed'];
                 }
-                $connected = $stmt->fetch(\PDO::FETCH_ASSOC);
+
+                $connected = $stmt->fetch(PDO::FETCH_ASSOC);
                 if ($connected === false) {
                     return ['available' => false, 'message' => 'No data'];
                 }
@@ -335,10 +348,10 @@ class DatabaseService
                     'idle'      => 'N/A',
                 ];
             }
-        } catch (\PDOException $e) {
+        } catch (PDOException $pdoException) {
             return [
                 'available' => false,
-                'error'     => $e->getMessage(),
+                'error'     => $pdoException->getMessage(),
             ];
         }
     }
@@ -350,12 +363,12 @@ class DatabaseService
      */
     public function getDatabaseCommands(): array
     {
-        $commands = [
+        return [
             [
                 'label'   => 'Connect to Database (CLI)',
                 'command' => $this->dbType === 'postgres'
-                    ? "docker compose exec postgres psql -U {$this->dbUser} -d {$this->dbName}"
-                    : "docker compose exec mariadb mysql -u {$this->dbUser} -p{$this->dbPassword} {$this->dbName}",
+                    ? sprintf('docker compose exec postgres psql -U %s -d %s', $this->dbUser, $this->dbName)
+                    : sprintf('docker compose exec mariadb mysql -u %s -p%s %s', $this->dbUser, $this->dbPassword, $this->dbName),
                 'description' => 'Open interactive database shell',
             ],
             [
@@ -368,20 +381,18 @@ class DatabaseService
             [
                 'label'   => 'Backup Database',
                 'command' => $this->dbType === 'postgres'
-                    ? "docker compose exec postgres pg_dump -U {$this->dbUser} {$this->dbName} > backup.sql"
-                    : "docker compose exec mariadb mysqldump -u {$this->dbUser} -p{$this->dbPassword} {$this->dbName} > backup.sql",
+                    ? sprintf('docker compose exec postgres pg_dump -U %s %s > backup.sql', $this->dbUser, $this->dbName)
+                    : sprintf('docker compose exec mariadb mysqldump -u %s -p%s %s > backup.sql', $this->dbUser, $this->dbPassword, $this->dbName),
                 'description' => 'Create database backup file',
             ],
             [
                 'label'   => 'Restore Database',
                 'command' => $this->dbType === 'postgres'
-                    ? "docker compose exec -T postgres psql -U {$this->dbUser} {$this->dbName} < backup.sql"
-                    : "docker compose exec -T mariadb mysql -u {$this->dbUser} -p{$this->dbPassword} {$this->dbName} < backup.sql",
+                    ? sprintf('docker compose exec -T postgres psql -U %s %s < backup.sql', $this->dbUser, $this->dbName)
+                    : sprintf('docker compose exec -T mariadb mysql -u %s -p%s %s < backup.sql', $this->dbUser, $this->dbPassword, $this->dbName),
                 'description' => 'Restore database from backup file',
             ],
         ];
-
-        return $commands;
     }
 
     /**

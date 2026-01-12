@@ -2407,12 +2407,74 @@ curl http://localhost:3000/health
 ---
 
 **Erstellt:** 2025-12-19
-**Letzte Aktualisierung:** 2026-01-11 (Code Quality & PHPStan Level 8 Compliance)
-**Version:** 3.11
+**Letzte Aktualisierung:** 2026-01-12 (Code Quality & Documentation Improvements)
+**Version:** 3.12
 
 ---
 
 ## Changelog
+
+### Version 3.12 (2026-01-12) - Code Quality & Documentation Improvements
+
+#### Fixed
+- **Makefile `fresh` Target**:
+  - Added `--no-cache` flag to ensure true clean rebuilds
+  - Previously used cached layers, defeating the purpose of a "fresh" build
+
+- **PHPUnit Coverage Warnings**:
+  - Removed `src/php/App/Infrastructure` exclusion from `phpunit.xml.dist`
+  - Changed `HasAuditLoggingTest` from `#[CoversClass]` to `#[CoversNothing]` (traits can't be coverage targets)
+  - Eliminated 30+ coverage target warnings
+
+- **PHP development.ini Comment**:
+  - Fixed misleading comment about disabled functions
+  - Now correctly documents both `shell_exec` (phpDox) and `curl_exec/curl_multi_exec` (Composer)
+
+- **PHP Import Statements**:
+  - Refactored to use `use` imports instead of fully qualified class names (`\PDO`, `\PDOException`, etc.)
+  - Files updated: `DatabaseService.php`, `AuditLogger.php`, `CalculatorIntegrationTest.php`
+
+#### Added
+- **`make build-no-cache` Target**:
+  - New Makefile target for explicit no-cache builds
+  - Supports both development and production environments
+
+- **Separated Coverage Directories**:
+  - PHP coverage: `build/coverage/php/`
+  - Node.js coverage: `build/coverage/node/`
+  - Prevents report conflicts when running both coverage commands
+
+- **Test Documentation in `documentation/`**:
+  - `TESTING-PHP.md` - Comprehensive PHP testing guide (PHPUnit)
+  - `TESTING-NODE.md` - Comprehensive Node.js testing guide (Vitest)
+  - Updated `documentation/README.md` with Testing & Quality section
+
+- **New PHP Infrastructure Classes**:
+  - `CorsMiddleware.php` - CORS handling with configurable origins via `CORS_ORIGINS` env
+  - `HealthStatus.php` - Enum for health check states (OK, DEGRADED, ERROR, DISABLED, UNKNOWN)
+
+#### Changed
+- **Docker Compose Watch Configuration** (`compose.override.yaml`):
+  - Added `./build:/var/www/html/build` mount to PHP service for coverage reports
+  - Added `tests/php` to Watch sync for test file changes
+
+- **Vitest Configuration** (`vitest.config.ts`):
+  - Coverage directory changed from `./build/coverage` to `./build/coverage/node`
+
+- **Makefile Coverage Commands**:
+  - `test-coverage-php`: Output to `build/coverage/php/`
+  - `test-coverage-node`: Output to `build/coverage/node/`
+  - `test-coverage`: Updated info message with correct paths
+
+#### Removed
+- `tests/php/README.md` - Moved to `documentation/TESTING-PHP.md`
+- `tests/node/README.md` - Moved to `documentation/TESTING-NODE.md`
+
+#### Status
+- PHPStan Level 8: No errors
+- PHP CS Fixer: 0 files need fixing
+- PHPUnit: 65 tests, 229 assertions (0 warnings)
+- Vitest: 61 tests passing
 
 ### Version 3.11 (2026-01-11) - Code Quality & PHPStan Level 8 Compliance
 

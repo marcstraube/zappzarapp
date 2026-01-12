@@ -13,6 +13,19 @@ require_once __DIR__ . '/../vendor/autoload.php';
 
 /**
  * ============================================================================
+ * CORS MIDDLEWARE
+ * ============================================================================
+ * Handles Cross-Origin Resource Sharing based on CORS_ORIGINS environment variable.
+ * Must be called before any output to set headers correctly.
+ */
+$corsMiddleware = new \App\Http\Middleware\CorsMiddleware();
+if (!$corsMiddleware->handle()) {
+    // OPTIONS preflight request handled - exit early
+    exit;
+}
+
+/**
+ * ============================================================================
  * DEVELOPMENT DASHBOARD ROUTING (DEV-ONLY)
  * ============================================================================
  *

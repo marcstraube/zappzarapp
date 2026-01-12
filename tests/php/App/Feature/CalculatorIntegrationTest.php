@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Tests\Feature;
 
 use App\Utils\Calculator;
+use DivisionByZeroError;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -62,8 +63,8 @@ class CalculatorIntegrationTest extends TestCase
         try {
             $this->calculator->divide($numerator, $denominator);
             $this->fail('Expected DivisionByZeroError was not thrown');
-        } catch (\DivisionByZeroError $e) {
-            $this->assertStringContainsString('Division by zero', $e->getMessage());
+        } catch (DivisionByZeroError $divisionByZeroError) {
+            $this->assertStringContainsString('Division by zero', $divisionByZeroError->getMessage());
 
             // Fallback: Use safe default
             $result = $this->calculator->multiply($numerator, 0);

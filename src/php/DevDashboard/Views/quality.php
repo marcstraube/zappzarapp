@@ -248,10 +248,10 @@
         <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
             <?php foreach ($quick_actions as $action): ?>
                 <div class="border border-gray-200 rounded-lg p-4">
-                    <h3 class="font-medium text-gray-900 mb-1"><?= htmlspecialchars($action['label']) ?></h3>
-                    <p class="text-sm text-gray-600 mb-3"><?= htmlspecialchars($action['description']) ?></p>
+                    <h3 class="font-medium text-gray-900 mb-1"><?= htmlspecialchars((string) $action['label']) ?></h3>
+                    <p class="text-sm text-gray-600 mb-3"><?= htmlspecialchars((string) $action['description']) ?></p>
                     <code class="text-xs bg-gray-100 px-2 py-1 rounded text-gray-900 font-mono">
-                        <?= htmlspecialchars($action['command']) ?>
+                        <?= htmlspecialchars((string) $action['command']) ?>
                     </code>
                 </div>
             <?php endforeach; ?>

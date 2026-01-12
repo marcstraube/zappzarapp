@@ -23,11 +23,11 @@
             <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <div class="text-center p-4 bg-blue-50 rounded-lg">
                     <p class="text-sm text-gray-600 mb-1">Database Type</p>
-                    <p class="text-2xl font-bold text-blue-600"><?= strtoupper($overview['type']) ?></p>
+                    <p class="text-2xl font-bold text-blue-600"><?= strtoupper((string) $overview['type']) ?></p>
                 </div>
                 <div class="text-center p-4 bg-green-50 rounded-lg">
                     <p class="text-sm text-gray-600 mb-1">Version</p>
-                    <p class="text-lg font-bold text-green-600"><?= htmlspecialchars($overview['version']) ?></p>
+                    <p class="text-lg font-bold text-green-600"><?= htmlspecialchars((string) $overview['version']) ?></p>
                 </div>
                 <div class="text-center p-4 bg-purple-50 rounded-lg">
                     <p class="text-sm text-gray-600 mb-1">Tables</p>
@@ -35,18 +35,18 @@
                 </div>
                 <div class="text-center p-4 bg-yellow-50 rounded-lg">
                     <p class="text-sm text-gray-600 mb-1">Database Size</p>
-                    <p class="text-lg font-bold text-yellow-600"><?= htmlspecialchars($overview['total_size']) ?></p>
+                    <p class="text-lg font-bold text-yellow-600"><?= htmlspecialchars((string) $overview['total_size']) ?></p>
                 </div>
             </div>
             <div class="mt-4 p-4 bg-gray-50 rounded-lg">
                 <dl class="grid grid-cols-2 gap-4 text-sm">
                     <div>
                         <dt class="text-gray-600">Host:</dt>
-                        <dd class="font-mono text-gray-900"><?= htmlspecialchars($overview['host']) ?>:<?= htmlspecialchars($overview['port']) ?></dd>
+                        <dd class="font-mono text-gray-900"><?= htmlspecialchars((string) $overview['host']) ?>:<?= htmlspecialchars((string) $overview['port']) ?></dd>
                     </div>
                     <div>
                         <dt class="text-gray-600">Database Name:</dt>
-                        <dd class="font-mono text-gray-900"><?= htmlspecialchars($overview['database']) ?></dd>
+                        <dd class="font-mono text-gray-900"><?= htmlspecialchars((string) $overview['database']) ?></dd>
                     </div>
                 </dl>
             </div>
@@ -94,12 +94,12 @@
                         <tbody>
                             <?php foreach ($tables as $table): ?>
                                 <tr>
-                                    <td class="font-mono font-medium text-gray-900"><?= htmlspecialchars($table['name']) ?></td>
+                                    <td class="font-mono font-medium text-gray-900"><?= htmlspecialchars((string) $table['name']) ?></td>
                                     <?php if (isset($table['schema'])): ?>
-                                        <td class="text-gray-600"><?= htmlspecialchars($table['schema']) ?></td>
+                                        <td class="text-gray-600"><?= htmlspecialchars((string) $table['schema']) ?></td>
                                     <?php endif; ?>
                                     <td class="text-gray-700"><?= number_format($table['row_count']) ?></td>
-                                    <td class="text-gray-700"><?= htmlspecialchars($table['size']) ?></td>
+                                    <td class="text-gray-700"><?= htmlspecialchars((string) $table['size']) ?></td>
                                 </tr>
                             <?php endforeach; ?>
                         </tbody>
@@ -108,7 +108,7 @@
             <?php else: ?>
                 <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
                     <p class="text-yellow-800">
-                        No tables found in database <strong><?= htmlspecialchars($overview['database']) ?></strong>.
+                        No tables found in database <strong><?= htmlspecialchars((string) $overview['database']) ?></strong>.
                     </p>
                     <p class="text-sm text-yellow-700 mt-2">
                         Run database migrations or seed data to create tables.
@@ -127,11 +127,11 @@
                 <?php foreach ($commands as $cmd): ?>
                     <div class="border border-gray-200 rounded-lg p-4">
                         <div class="flex items-center justify-between mb-2">
-                            <h3 class="font-medium text-gray-900"><?= htmlspecialchars($cmd['label']) ?></h3>
+                            <h3 class="font-medium text-gray-900"><?= htmlspecialchars((string) $cmd['label']) ?></h3>
                         </div>
-                        <p class="text-sm text-gray-600 mb-3"><?= htmlspecialchars($cmd['description']) ?></p>
+                        <p class="text-sm text-gray-600 mb-3"><?= htmlspecialchars((string) $cmd['description']) ?></p>
                         <code class="text-xs bg-gray-100 px-3 py-2 rounded text-gray-900 font-mono block overflow-x-auto">
-                            <?= htmlspecialchars($cmd['command']) ?>
+                            <?= htmlspecialchars((string) $cmd['command']) ?>
                         </code>
                     </div>
                 <?php endforeach; ?>
@@ -169,7 +169,7 @@
                 <li>• <strong>DataGrip:</strong> JetBrains database IDE (powerful, paid)</li>
             </ul>
             <p class="text-xs text-green-700 mt-3">
-                Connection: <code class="bg-green-100 px-1 py-0.5 rounded">localhost:<?= htmlspecialchars($overview['port']) ?></code>
+                Connection: <code class="bg-green-100 px-1 py-0.5 rounded">localhost:<?= htmlspecialchars((string) $overview['port']) ?></code>
             </p>
         </div>
     </div>

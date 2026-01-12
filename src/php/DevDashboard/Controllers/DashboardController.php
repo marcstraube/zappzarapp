@@ -17,11 +17,15 @@ use DevDashboard\Services\SystemInfoService;
  */
 class DashboardController
 {
-    private HealthCheckService $healthCheckService;
-    private SystemInfoService $systemInfoService;
-    private QualityService $qualityService;
-    private LogService $logService;
-    private DatabaseService $databaseService;
+    private readonly HealthCheckService $healthCheckService;
+
+    private readonly SystemInfoService $systemInfoService;
+
+    private readonly QualityService $qualityService;
+
+    private readonly LogService $logService;
+
+    private readonly DatabaseService $databaseService;
 
     public function __construct()
     {
@@ -160,7 +164,7 @@ class DashboardController
 
         if (!file_exists($viewPath)) {
             http_response_code(404);
-            echo "View not found: {$view}";
+            echo 'View not found: ' . $view;
             return;
         }
 

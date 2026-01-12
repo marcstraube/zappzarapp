@@ -159,13 +159,13 @@ class HealthCheckServiceTest extends TestCase
 
         // Restore original environment
         if ($originalHost !== false) {
-            putenv("DB_HOST={$originalHost}");
+            putenv('DB_HOST=' . $originalHost);
         } else {
             putenv('DB_HOST');
         }
 
         if ($originalPort !== false) {
-            putenv("DB_PORT={$originalPort}");
+            putenv('DB_PORT=' . $originalPort);
         } else {
             putenv('DB_PORT');
         }

@@ -78,7 +78,7 @@
                             </div>
                             <div class="flex justify-between">
                                 <dt class="text-gray-500">Version:</dt>
-                                <dd class="text-gray-700 text-xs"><?= htmlspecialchars(substr($db['version'], 0, 50)) ?></dd>
+                                <dd class="text-gray-700 text-xs"><?= htmlspecialchars(substr((string) $db['version'], 0, 50)) ?></dd>
                             </div>
                         </dl>
                     <?php else: ?>
@@ -106,7 +106,7 @@
                     </div>
                     <div class="text-sm text-gray-600">
                         <?php if (isset($service['version'])): ?>
-                            <p class="font-mono text-xs"><?= htmlspecialchars($service['version']) ?></p>
+                            <p class="font-mono text-xs"><?= htmlspecialchars((string) $service['version']) ?></p>
                         <?php endif; ?>
                         <?php if (isset($service['sapi'])): ?>
                             <p class="text-gray-500 text-xs">SAPI: <?= $service['sapi'] ?></p>
@@ -133,11 +133,11 @@
                 <dl class="grid grid-cols-2 gap-4 text-sm">
                     <div>
                         <dt class="text-gray-500">Subject</dt>
-                        <dd class="font-medium text-gray-900"><?= htmlspecialchars($ssl['subject']) ?></dd>
+                        <dd class="font-medium text-gray-900"><?= htmlspecialchars((string) $ssl['subject']) ?></dd>
                     </div>
                     <div>
                         <dt class="text-gray-500">Issuer</dt>
-                        <dd class="font-medium text-gray-900"><?= htmlspecialchars($ssl['issuer']) ?></dd>
+                        <dd class="font-medium text-gray-900"><?= htmlspecialchars((string) $ssl['issuer']) ?></dd>
                     </div>
                     <div>
                         <dt class="text-gray-500">Valid From</dt>

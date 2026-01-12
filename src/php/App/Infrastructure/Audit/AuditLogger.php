@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Infrastructure\Audit;
 
 use PDO;
+use PDOException;
 use RuntimeException;
 
 /**
@@ -44,10 +45,8 @@ use RuntimeException;
  *
  * @package Infrastructure\Audit
  */
-final class AuditLogger implements AuditLoggerInterface
+final readonly class AuditLogger implements AuditLoggerInterface
 {
-    private PDO $pdo;
-    private string $encryptionKey;
     private string $logFilePath;
 
     /**
@@ -55,11 +54,12 @@ final class AuditLogger implements AuditLoggerInterface
      * @param string $encryptionKey Encryption key for sensitive data (from $_ENV['ENCRYPTION_KEY'])
      * @param string|null $logFilePath Optional log file path (default: storage/logs/audit.log)
      */
-    public function __construct(PDO $pdo, string $encryptionKey, ?string $logFilePath = null)
-    {
-        $this->pdo           = $pdo;
-        $this->encryptionKey = $encryptionKey;
-        $this->logFilePath   = $logFilePath ?? __DIR__ . '/../../../../storage/logs/audit.log';
+    public function __construct(
+        private PDO $pdo,
+        private string $encryptionKey,
+        ?string $logFilePath = null
+    ) {
+        $this->logFilePath = $logFilePath ?? __DIR__ . '/../../../../storage/logs/audit.log';
     }
 
     /**
@@ -168,12 +168,7 @@ final class AuditLogger implements AuditLoggerInterface
     /**
      * Write audit log to database and file
      *
-     * @param string $action
-     * @param string $entityType
-     * @param string $entityId
-     * @param int|null $userId
      * @param array<string, mixed> $data
-     * @return void
      */
     private function writeLog(
         string $action,
@@ -226,10 +221,10 @@ final class AuditLogger implements AuditLoggerInterface
                 'encryption_key' => $this->encryptionKey,
                 'checksum'       => $checksum,
             ]);
-        } catch (\PDOException $e) {
+        } catch (PDOException $pdoException) {
             // Log to file as fallback
             $this->writeLogToFile($timestamp, $action, $entityType, $entityId, $userId, $ipAddress, $dataJson);
-            throw new RuntimeException('Failed to write audit log to database: ' . $e->getMessage(), 0, $e);
+            throw new RuntimeException('Failed to write audit log to database: ' . $pdoException->getMessage(), 0, $pdoException);
         }
 
         // Also write to file for redundancy
@@ -238,15 +233,6 @@ final class AuditLogger implements AuditLoggerInterface
 
     /**
      * Write audit log to file (JSON format, one line per log entry)
-     *
-     * @param string $timestamp
-     * @param string $action
-     * @param string $entityType
-     * @param string $entityId
-     * @param int|null $userId
-     * @param string $ipAddress
-     * @param string $dataJson
-     * @return void
      */
     private function writeLogToFile(
         string $timestamp,
@@ -280,15 +266,13 @@ final class AuditLogger implements AuditLoggerInterface
 
     /**
      * Get client IP address (handles proxies)
-     *
-     * @return string
      */
     private function getClientIp(): string
     {
         // Check for proxies (X-Forwarded-For, X-Real-IP)
         if (!empty($_SERVER['HTTP_X_FORWARDED_FOR'])) {
             // X-Forwarded-For can contain multiple IPs, take the first one
-            $ips = explode(',', $_SERVER['HTTP_X_FORWARDED_FOR']);
+            $ips = explode(',', (string) $_SERVER['HTTP_X_FORWARDED_FOR']);
             return trim($ips[0]);
         }
 

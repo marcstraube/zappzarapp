@@ -51,7 +51,6 @@ trait HasAuditLogging
      * @param string|int $entityId Entity ID
      * @param int|null $userId User who performed the action (defaults to current session user)
      * @param array<string, mixed> $data Additional data
-     * @return void
      */
     protected function auditLog(
         string $action,
@@ -78,7 +77,6 @@ trait HasAuditLogging
      * @param string $action Action performed (e.g., 'login.success', 'login.failed')
      * @param int|null $userId User ID
      * @param array<string, mixed> $data Additional data
-     * @return void
      */
     protected function auditLogAuth(
         string $action,
@@ -100,7 +98,6 @@ trait HasAuditLogging
      * @param string $entityType Entity type affected
      * @param string|int $entityId Entity ID affected
      * @param array<string, mixed> $data Additional data
-     * @return void
      */
     protected function auditLogAdmin(
         string $action,

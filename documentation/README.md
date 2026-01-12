@@ -18,6 +18,11 @@ This directory contains **technical documentation** for the Docker WebDev Boiler
 
 - **[NETWORK.md](NETWORK.md)** - Network segmentation and security architecture
 
+### Testing & Quality
+
+- **[TESTING-PHP.md](TESTING-PHP.md)** - PHP testing guide (PHPUnit)
+- **[TESTING-NODE.md](TESTING-NODE.md)** - Node.js testing guide (Vitest)
+
 ---
 
 ## 🔗 Related Files
@@ -38,9 +43,11 @@ This directory contains **technical documentation** for the Docker WebDev Boiler
 documentation/
 ├── README.md                  # This file (documentation index)
 ├── SSL-CERTIFICATES.md        # SSL/TLS certificate management
-├── ENCRYPTION.md             # Database encryption guide
-├── AUDIT-LOGGING.md          # Audit logging guide
-└── NETWORK.md                # Network architecture
+├── ENCRYPTION.md              # Database encryption guide
+├── AUDIT-LOGGING.md           # Audit logging guide
+├── NETWORK.md                 # Network architecture
+├── TESTING-PHP.md             # PHP testing guide (PHPUnit)
+└── TESTING-NODE.md            # Node.js testing guide (Vitest)
 ```
 
 ---
@@ -57,6 +64,10 @@ documentation/
 - **Encryption**: See [ENCRYPTION.md](ENCRYPTION.md)
 - **Audit Logging**: See [AUDIT-LOGGING.md](AUDIT-LOGGING.md)
 - **Network Segmentation**: See [NETWORK.md](NETWORK.md)
+
+### Testing & Quality Assurance
+- **PHP Testing**: See [TESTING-PHP.md](TESTING-PHP.md)
+- **Node.js Testing**: See [TESTING-NODE.md](TESTING-NODE.md)
 
 ---
 

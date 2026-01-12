@@ -147,10 +147,10 @@ class HealthCheck
                 'enabled'     => true,
                 'mode'        => $this->env['NODE_MODE'],
             ];
-        } catch (Exception $e) {
+        } catch (Exception $exception) {
             $this->status['services']['node-backend'] = [
                 'status'  => 'error',
-                'message' => $e->getMessage(),
+                'message' => $exception->getMessage(),
                 'enabled' => true,
                 'mode'    => $this->env['NODE_MODE'],
             ];
@@ -194,10 +194,10 @@ class HealthCheck
             ];
 
             $redis->close();
-        } catch (Exception $e) {
+        } catch (Exception $exception) {
             $this->status['services']['redis'] = [
                 'status'  => 'error',
-                'message' => $e->getMessage(),
+                'message' => $exception->getMessage(),
                 'enabled' => true,
             ];
         }
@@ -243,7 +243,7 @@ class HealthCheck
             $dbUser = $_ENV['DB_USER'] ?? getenv('DB_USER') ?: 'app';
             $dbPass = $_ENV['DB_PASSWORD'] ?? getenv('DB_PASSWORD') ?: 'secret';
 
-            $dsn = "pgsql:host=postgres;port=5432;dbname={$dbName}";
+            $dsn = 'pgsql:host=postgres;port=5432;dbname=' . $dbName;
             $pdo = new PDO($dsn, $dbUser, $dbPass, [
                 PDO::ATTR_TIMEOUT => 2,
                 PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
@@ -258,11 +258,11 @@ class HealthCheck
                 'version' => $version,
                 'enabled' => true,
             ];
-        } catch (Exception $e) {
+        } catch (Exception $exception) {
             $this->status['services']['database'] = [
                 'status'  => 'error',
                 'type'    => 'postgres',
-                'message' => $e->getMessage(),
+                'message' => $exception->getMessage(),
                 'enabled' => true,
             ];
         }
@@ -288,7 +288,7 @@ class HealthCheck
             $dbUser = $_ENV['DB_USER'] ?? getenv('DB_USER') ?: 'app';
             $dbPass = $_ENV['DB_PASSWORD'] ?? getenv('DB_PASSWORD') ?: 'secret';
 
-            $dsn = "mysql:host=mariadb;port=3306;dbname={$dbName}";
+            $dsn = 'mysql:host=mariadb;port=3306;dbname=' . $dbName;
             $pdo = new PDO($dsn, $dbUser, $dbPass, [
                 PDO::ATTR_TIMEOUT => 2,
                 PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
@@ -303,11 +303,11 @@ class HealthCheck
                 'version' => $version,
                 'enabled' => true,
             ];
-        } catch (Exception $e) {
+        } catch (Exception $exception) {
             $this->status['services']['database'] = [
                 'status'  => 'error',
                 'type'    => 'mariadb',
-                'message' => $e->getMessage(),
+                'message' => $exception->getMessage(),
                 'enabled' => true,
             ];
         }
@@ -318,7 +318,7 @@ class HealthCheck
      */
     public function getOverallStatus(): string
     {
-        if (empty($this->status)) {
+        if ($this->status === []) {
             $this->checkAll();
         }
 
@@ -332,7 +332,7 @@ class HealthCheck
      */
     public function getServices(): array
     {
-        if (empty($this->status)) {
+        if ($this->status === []) {
             $this->checkAll();
         }
 

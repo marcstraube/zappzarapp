@@ -40,7 +40,6 @@ interface AuditLoggerInterface
      * @param string|int $entityId Entity ID (primary key)
      * @param int|null $userId User who performed the action (null for system actions)
      * @param array<string, mixed> $data Additional data (optional, will be encrypted)
-     * @return void
      */
     public function log(
         string $action,
@@ -56,7 +55,6 @@ interface AuditLoggerInterface
      * @param string $action Action performed (e.g., 'login.success', 'login.failed', 'logout')
      * @param int|null $userId User ID (null for failed login attempts)
      * @param array<string, mixed> $data Additional data (e.g., IP address, user agent)
-     * @return void
      */
     public function logAuth(
         string $action,
@@ -72,7 +70,6 @@ interface AuditLoggerInterface
      * @param string $entityType Entity type affected
      * @param string|int $entityId Entity ID affected
      * @param array<string, mixed> $data Additional data
-     * @return void
      */
     public function logAdmin(
         string $action,

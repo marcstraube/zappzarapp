@@ -51,12 +51,12 @@ final class EncryptionService
     /**
      * Encryption cipher (AES-256-GCM)
      */
-    private const CIPHER = 'aes-256-gcm';
+    private const string CIPHER = 'aes-256-gcm';
 
     /**
      * IV (Initialization Vector) length in bytes
      */
-    private const IV_LENGTH = 12; // 96 bits for GCM mode
+    private const int IV_LENGTH = 12; // 96 bits for GCM mode
 
     /**
      * Encrypt text using AES-256-GCM

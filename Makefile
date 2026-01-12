@@ -95,7 +95,7 @@ setup: ## Create directories, install dev dependencies and ensure structure
 	@mkdir -p tests/php/DevDashboard/{Services,Controllers}
 
 	# Build & Coverage directories (excluded from IDE indexing)
-	@mkdir -p build/{coverage,vitest-report}
+	@mkdir -p build/{coverage/php,coverage/node,vitest-report}
 
 	# Config & Templates
 	@mkdir -p config templates
@@ -128,7 +128,7 @@ setup: ## Create directories, install dev dependencies and ensure structure
 		echo -e "\033[0;34mGenerating ENCRYPTION_KEY...\033[0m"; \
 		ENCRYPTION_KEY=$$(openssl rand -base64 32); \
 		if grep -q "^ENCRYPTION_KEY=" .env 2>/dev/null; then \
-			sed -i "s|^ENCRYPTION_KEY=.*|ENCRYPTION_KEY=$$ENCRYPTION_KEY|" .env; \
+			sed -i.bak "s|^ENCRYPTION_KEY=.*|ENCRYPTION_KEY=$$ENCRYPTION_KEY|" .env && rm -f .env.bak; \
 		else \
 			echo "ENCRYPTION_KEY=$$ENCRYPTION_KEY" >> .env; \
 		fi; \
@@ -140,7 +140,7 @@ setup: ## Create directories, install dev dependencies and ensure structure
 		echo -e "\033[0;34mGenerating BACKUP_ENCRYPTION_KEY...\033[0m"; \
 		BACKUP_ENCRYPTION_KEY=$$(openssl rand -base64 32); \
 		if grep -q "^BACKUP_ENCRYPTION_KEY=" .env 2>/dev/null; then \
-			sed -i "s|^BACKUP_ENCRYPTION_KEY=.*|BACKUP_ENCRYPTION_KEY=$$BACKUP_ENCRYPTION_KEY|" .env; \
+			sed -i.bak "s|^BACKUP_ENCRYPTION_KEY=.*|BACKUP_ENCRYPTION_KEY=$$BACKUP_ENCRYPTION_KEY|" .env && rm -f .env.bak; \
 		else \
 			echo "BACKUP_ENCRYPTION_KEY=$$BACKUP_ENCRYPTION_KEY" >> .env; \
 		fi; \
@@ -173,6 +173,22 @@ build: ## Build Docker images
 		fi; \
 	else \
 		docker compose build; \
+	fi
+	@echo -e "\033[0;32mBuild completed!\033[0m"
+
+build-no-cache: ## Build Docker images without cache
+	@echo -e "\033[0;33mBuilding Docker images (no cache)...\033[0m"
+	@if [ -f .env ]; then \
+		. ./.env && if [ "$$ENV" = "production" ]; then \
+			echo -e "\033[0;34mBuilding Node image first (required by PHP and NGINX)...\033[0m" && \
+			docker compose -f compose.yaml -f compose.prod.yaml build --no-cache node && \
+			echo -e "\033[0;34mBuilding remaining images...\033[0m" && \
+			docker compose -f compose.yaml -f compose.prod.yaml build --no-cache; \
+		else \
+			docker compose build --no-cache; \
+		fi; \
+	else \
+		docker compose build --no-cache; \
 	fi
 	@echo -e "\033[0;32mBuild completed!\033[0m"
 
@@ -347,6 +363,11 @@ up-core:
 	if [ "$${ENABLE_REDIS:-true}" = "true" ]; then PROFILES="$$PROFILES --profile redis"; fi; \
 	echo -e "\033[0;33mStarting containers in $${ENV^^:-production} mode...\033[0m"; \
 	if [ "$$ENV" = "production" ]; then \
+		NODE_TARGET_AUTO="asset-server"; \
+		case "$${NODE_MODE:-full-stack}" in \
+			full-stack|backend-only) NODE_TARGET_AUTO="app-server" ;; \
+		esac; \
+		export NODE_TARGET="$${NODE_TARGET:-$$NODE_TARGET_AUTO}"; \
 		docker compose -f compose.yaml -f compose.prod.yaml $$PROFILES up -d; \
 	else \
 		echo -e "\033[0;34mStarting containers with Docker Compose Watch (cross-platform file sync)...\033[0m"; \
@@ -575,17 +596,22 @@ fresh: ## Complete clean slate rebuild, removing all data volumes (DANGEROUS!)
 		echo -e "\033[0;34mOperation cancelled.\033[0m"; \
 		exit 1; \
 	fi
-	@echo -e "\033[0;33mProceeding with fresh rebuild...\033[0m"
+	@echo -e "\033[0;33mProceeding with fresh rebuild (no cache)...\033[0m"
 	@if [ -f .env ]; then \
 		. ./.env && if [ "$$ENV" = "production" ]; then \
-			docker compose -f compose.yaml -f compose.prod.yaml down -v --rmi all; \
+			docker compose -f compose.yaml -f compose.prod.yaml down -v --rmi all && \
+			echo -e "\033[0;34mBuilding Node image first (required by PHP and NGINX)...\033[0m" && \
+			docker compose -f compose.yaml -f compose.prod.yaml build --no-cache node && \
+			echo -e "\033[0;34mBuilding remaining images...\033[0m" && \
+			docker compose -f compose.yaml -f compose.prod.yaml build --no-cache; \
 		else \
-			docker compose down -v --rmi all; \
+			docker compose down -v --rmi all && \
+			docker compose build --no-cache; \
 		fi; \
 	else \
-		docker compose down -v --rmi all; \
+		docker compose down -v --rmi all && \
+		docker compose build --no-cache; \
 	fi
-	@$(MAKE) --silent build
 	@$(MAKE) --silent up
 
 rebuild: clean build up ## Complete rebuild
@@ -630,7 +656,7 @@ rector-fix: ## Apply Rector refactorings automatically
 	@echo -e "\033[0;33mApplying Rector refactorings...\033[0m"
 	@docker compose exec php composer rector-fix
 
-check: cs-check analyse phpmd test ## Run all checks (CI simulation)
+check: cs-check analyse phpmd rector-check test validate ## Run all checks (CI simulation)
 	@echo -e "\033[0;32mAll checks passed!\033[0m"
 
 cs-check: ## Check coding style (dry-run)
@@ -645,26 +671,14 @@ cs-fix-all: ## Fix coding style aggressively on all files (uses config from .php
 	@echo -e "\033[0;33mFixing Coding Style aggressively on all files...\033[0m"
 	@docker compose exec php vendor/bin/php-cs-fixer fix --allow-risky=yes
 
-lint-config: ## Validate YAML configuration files (uses local YAMLlint if available)
+lint-config: ## Validate YAML configuration files
 	@echo -e "\033[0;33mValidating YAML configuration...\033[0m"
-	@if command -v yamllint >/dev/null 2>&1; then \
-		echo "Using local YAMLlint..."; \
-		yamllint ./**/*.yaml; \
-	else \
-		echo "Local YAMLlint not found, using Docker container..."; \
-		docker run --rm -v $$(pwd):/app -w /app cytopia/yamllint:latest ./**/*.yaml; \
-	fi
+	@docker run --rm -v $$(pwd):/app -w /app cytopia/yamllint:latest ./**/*.yaml
 	@echo -e "\033[0;32mYAML configuration check completed!\033[0m"
 
-outdated: ## Check for outdated Composer dependencies (uses local Composer if available)
+outdated: ## Check for outdated Composer dependencies
 	@echo -e "\033[0;33mChecking Composer for outdated packages...\033[0m"
-	@if command -v composer >/dev/null 2>&1; then \
-		echo "Using local Composer..."; \
-		composer outdated; \
-	else \
-		echo "Local Composer not found, using Docker container..."; \
-		docker compose exec php composer outdated; \
-	fi
+	@docker compose exec php composer outdated
 	@echo -e "\033[0;32mOutdated check completed!\033[0m"
 
 test: test-php test-node ## Run all tests (PHP + Node.js)
@@ -672,9 +686,8 @@ test: test-php test-node ## Run all tests (PHP + Node.js)
 
 test-coverage: test-coverage-php test-coverage-node ## Generate coverage reports for PHP and Node.js
 	@echo -e "\033[0;32mAll coverage reports generated!\033[0m"
-	@echo -e "\033[0;34mPHP Coverage: build/coverage/index.html (PHPUnit)\033[0m"
-	@echo -e "\033[0;34mNode.js Coverage: build/coverage/index.html (Vitest)\033[0m"
-	@echo -e "\033[0;33mNote: Both reports use the same directory. Run separately to avoid conflicts.\033[0m"
+	@echo -e "\033[0;34mPHP Coverage: build/coverage/php/index.html\033[0m"
+	@echo -e "\033[0;34mNode.js Coverage: build/coverage/node/index.html\033[0m"
 
 test-php: ## Run PHPUnit tests
 	@echo -e "\033[0;33mRunning PHPUnit tests...\033[0m"
@@ -684,10 +697,10 @@ test-php-debug: ## Run PHPUnit tests with Xdebug enabled
 	@echo -e "\033[0;33mRunning PHPUnit with Xdebug (Step Debugging)...\033[0m"
 	@docker compose exec php sh -c 'XDEBUG_MODE=develop,debug composer test'
 
-test-coverage-php: ## Generate PHPUnit coverage report (HTML in build/coverage)
+test-coverage-php: ## Generate PHPUnit coverage report (HTML in build/coverage/php)
 	@echo -e "\033[0;33mRunning PHPUnit with coverage report...\033[0m"
-	@docker compose exec php sh -c 'XDEBUG_MODE=coverage vendor/bin/phpunit --coverage-html build/coverage --coverage-clover build/coverage/clover.xml'
-	@echo -e "\033[0;32mPHP coverage report generated in build/coverage/index.html!\033[0m"
+	@docker compose exec php sh -c 'XDEBUG_MODE=coverage vendor/bin/phpunit --coverage-html build/coverage/php --coverage-clover build/coverage/php/clover.xml'
+	@echo -e "\033[0;32mPHP coverage report generated in build/coverage/php/index.html!\033[0m"
 
 test-node: ## Run Vitest tests
 	@echo -e "\033[0;33mRunning Vitest tests...\033[0m"
@@ -697,20 +710,14 @@ test-node-watch: ## Run Vitest in watch mode
 	@echo -e "\033[0;33mRunning Vitest in watch mode...\033[0m"
 	@docker compose exec node pnpm test:watch
 
-test-coverage-node: ## Generate Vitest coverage report (HTML in build/coverage)
+test-coverage-node: ## Generate Vitest coverage report (HTML in build/coverage/node)
 	@echo -e "\033[0;33mRunning Vitest with coverage report...\033[0m"
 	@docker compose exec node pnpm test:coverage
-	@echo -e "\033[0;32mNode.js coverage report generated in build/coverage!\033[0m"
+	@echo -e "\033[0;32mNode.js coverage report generated in build/coverage/node/index.html!\033[0m"
 
 validate: ## Validate composer.json/lock and package.json/lock files
 	@echo -e "\033[0;33mValidating Composer configuration...\033[0m"
-	@if command -v composer >/dev/null 2>&1; then \
-		echo "Using local Composer..."; \
-		composer validate --strict; \
-	else \
-		echo "Local Composer not found, using Docker..."; \
-		docker compose exec php composer validate --strict; \
-	fi
+	@docker compose exec php composer validate --strict
 	@echo -e "\033[0;32m✓ Composer configuration is valid!\033[0m"
 	@echo ""
 	@echo -e "\033[0;33mValidating pnpm lockfile...\033[0m"
@@ -847,9 +854,9 @@ ssl-letsencrypt: ## Setup Let's Encrypt SSL certificate (production)
 		read -p "Enter your domain (e.g., example.com): " DOMAIN; \
 		if [ -n "$$DOMAIN" ] && [ -f .env ]; then \
 			if grep -q "^#DOMAIN=" .env; then \
-				sed -i "s|^#DOMAIN=.*|DOMAIN=$$DOMAIN|" .env; \
+				sed -i.bak "s|^#DOMAIN=.*|DOMAIN=$$DOMAIN|" .env && rm -f .env.bak; \
 			elif grep -q "^DOMAIN=" .env; then \
-				sed -i "s|^DOMAIN=.*|DOMAIN=$$DOMAIN|" .env; \
+				sed -i.bak "s|^DOMAIN=.*|DOMAIN=$$DOMAIN|" .env && rm -f .env.bak; \
 			else \
 				echo "DOMAIN=$$DOMAIN" >> .env; \
 			fi; \
@@ -958,9 +965,9 @@ ssl-prod-enable: ## Enable SSL/TLS for production (generates ssl-production.conf
 		if [ -n "$$DOMAIN" ]; then \
 			if [ -f .env ]; then \
 				if grep -q "^#DOMAIN=" .env; then \
-					sed -i "s|^#DOMAIN=.*|DOMAIN=$$DOMAIN|" .env; \
+					sed -i.bak "s|^#DOMAIN=.*|DOMAIN=$$DOMAIN|" .env && rm -f .env.bak; \
 				elif grep -q "^DOMAIN=" .env; then \
-					sed -i "s|^DOMAIN=.*|DOMAIN=$$DOMAIN|" .env; \
+					sed -i.bak "s|^DOMAIN=.*|DOMAIN=$$DOMAIN|" .env && rm -f .env.bak; \
 				else \
 					echo "DOMAIN=$$DOMAIN" >> .env; \
 				fi; \

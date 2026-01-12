@@ -6,11 +6,12 @@ This directory contains tests for the PHP backend using PHPUnit (similar to Vite
 
 ```
 tests/php/               # PHP tests (PHPUnit)
-├── Unit/                # Unit tests for individual classes/functions
-│   └── .gitkeep
-├── Feature/             # Feature/Integration tests for complex workflows
-│   └── .gitkeep
-└── README.md
+├── App/                 # Application tests
+│   ├── Unit/            # Unit tests for individual classes/functions
+│   └── Feature/         # Feature/Integration tests for complex workflows
+└── DevDashboard/        # DevDashboard tests
+    ├── Controllers/
+    └── Services/
 
 Note: Node.js tests are in tests/node/ (Vitest), mirroring the src/php/ and src/node/ structure.
 ```
@@ -35,28 +36,31 @@ Alternatively, you can use composer commands directly in the container:
 docker compose exec php composer test
 
 # With coverage
-docker compose exec php composer test -- --coverage-html build/coverage
+docker compose exec php composer test -- --coverage-html build/coverage/php
 ```
 
 ## Coverage Reports
 
-Coverage reports are generated in `build/coverage/`:
-- `build/coverage/index.html` - HTML coverage report (similar to Vitest)
-- `build/coverage/clover.xml` - Clover XML format for CI/CD integration
+Coverage reports are generated in `build/coverage/php/`:
+- `build/coverage/php/index.html` - HTML coverage report (similar to Vitest)
+- `build/coverage/php/clover.xml` - Clover XML format for CI/CD integration
 
 ## Writing Tests
 
 ### Unit Tests
 
-Place unit tests in `tests/php/Unit/` directory. Example:
+Place unit tests in `tests/php/App/Unit/` directory. Example:
 
 ```php
 <?php
 
+declare(strict_types=1);
+
 namespace App\Tests\Unit;
 
-use PHPUnit\Framework\TestCase;
 use App\Utils\Calculator;
+use DivisionByZeroError;
+use PHPUnit\Framework\TestCase;
 
 class CalculatorTest extends TestCase
 {
@@ -68,7 +72,7 @@ class CalculatorTest extends TestCase
 
     public function testDivisionByZero(): void
     {
-        $this->expectException(\DivisionByZeroError::class);
+        $this->expectException(DivisionByZeroError::class);
         $calculator = new Calculator();
         $calculator->divide(10, 0);
     }
@@ -77,10 +81,12 @@ class CalculatorTest extends TestCase
 
 ### Feature Tests
 
-Place feature/integration tests in `tests/php/Feature/` directory. Example:
+Place feature/integration tests in `tests/php/App/Feature/` directory. Example:
 
 ```php
 <?php
+
+declare(strict_types=1);
 
 namespace App\Tests\Feature;
 
@@ -105,7 +111,7 @@ PHPUnit configuration is in `phpunit.xml` or `phpunit.xml.dist` at the project r
 Key configurations:
 - Test suites: Unit and Feature
 - Coverage thresholds: 80% (similar to Node.js Vitest)
-- Test directories: `tests/php/Unit/` and `tests/php/Feature/`
+- Test directories: `tests/php/App/Unit/` and `tests/php/App/Feature/`
 
 ## Quality Thresholds
 
@@ -136,6 +142,18 @@ make cs-check
 Fix code style:
 ```bash
 make cs-fix
+```
+
+### Rector (Automated Refactoring)
+
+Refactor code to modern PHP:
+```bash
+make rector
+```
+
+Preview changes without applying:
+```bash
+make rector-dry
 ```
 
 ### Complete Quality Check

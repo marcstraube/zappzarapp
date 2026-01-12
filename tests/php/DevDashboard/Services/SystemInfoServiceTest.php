@@ -137,7 +137,7 @@ class SystemInfoServiceTest extends TestCase
         ];
 
         foreach ($sensitiveKeys as $key => $value) {
-            putenv("{$key}={$value}");
+            putenv(sprintf('%s=%s', $key, $value));
         }
 
         $envVars = $this->service->getEnvironmentVariables();

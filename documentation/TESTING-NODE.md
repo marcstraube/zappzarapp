@@ -46,9 +46,9 @@ docker compose exec node pnpm test:coverage
 
 ## Coverage Reports
 
-Coverage reports are generated in `build/coverage/`:
-- `build/coverage/index.html` - HTML coverage report (similar to PHPUnit)
-- `build/coverage/lcov.info` - LCOV format for CI/CD integration
+Coverage reports are generated in `build/coverage/node/`:
+- `build/coverage/node/index.html` - HTML coverage report (similar to PHPUnit)
+- `build/coverage/node/lcov.info` - LCOV format for CI/CD integration
 
 ## Writing Tests
 
@@ -94,9 +94,9 @@ describe('API Tests', () => {
 
 The following aliases are available in tests:
 
-- `@` → `./src`
-- `@node` → `./src/node`
-- `@tests` → `./tests/node`
+- `@` -> `./src`
+- `@node` -> `./src/node`
+- `@tests` -> `./tests/node`
 
 ## Quality Thresholds
 

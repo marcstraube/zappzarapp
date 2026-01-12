@@ -6,14 +6,17 @@ namespace App\Tests\Unit\Infrastructure\Audit;
 
 use App\Infrastructure\Audit\AuditLoggerInterface;
 use App\Infrastructure\Audit\HasAuditLogging;
-use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\CoversNothing;
 use PHPUnit\Framework\TestCase;
 use RuntimeException;
 
 /**
  * Tests for HasAuditLogging trait
+ *
+ * Note: Trait coverage is measured through the test classes that use it
+ * (TestServiceWithAuditLogging, TestServiceWithoutLogger)
  */
-#[CoversClass(HasAuditLogging::class)]
+#[CoversNothing]
 final class HasAuditLoggingTest extends TestCase
 {
     public function testAuditLogCallsLogger(): void
@@ -106,11 +109,8 @@ class TestServiceWithAuditLogging
 {
     use HasAuditLogging;
 
-    private AuditLoggerInterface $auditLogger;
-
-    public function __construct(AuditLoggerInterface $auditLogger)
+    public function __construct(private AuditLoggerInterface $auditLogger)
     {
-        $this->auditLogger = $auditLogger;
     }
 
     public function testAuditLog(): void

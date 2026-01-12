@@ -12,6 +12,7 @@ import pinoHttp from 'pino-http';
 const NODE_ENV = process.env.NODE_ENV ?? 'production';
 const LOG_LEVEL = process.env.LOG_LEVEL ?? 'info';
 const LOG_FORMAT = process.env.LOG_FORMAT ?? 'json';
+const CORS_ORIGINS = process.env.CORS_ORIGINS ?? '*';
 
 // Configure Pino logger (structured logging)
 export const logger = pino({
@@ -64,11 +65,21 @@ export function createApp(): Express {
   app.use(express.json());
   app.use(express.urlencoded({ extended: true }));
 
-  // CORS (if needed)
+  // CORS - configurable via CORS_ORIGINS environment variable
+  // In production, set CORS_ORIGINS to your allowed domains (comma-separated)
+  // Example: CORS_ORIGINS=https://example.com,https://app.example.com
   app.use((req: Request, res: Response, next: NextFunction): void => {
-    res.header('Access-Control-Allow-Origin', '*');
+    const origin = req.headers.origin ?? '';
+    const allowedOrigins = CORS_ORIGINS.split(',').map((o) => o.trim());
+
+    // Check if origin is allowed (or if wildcard is used)
+    if (CORS_ORIGINS === '*' || allowedOrigins.includes(origin)) {
+      res.header('Access-Control-Allow-Origin', CORS_ORIGINS === '*' ? '*' : origin);
+    }
+
     res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
     res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+    res.header('Access-Control-Allow-Credentials', 'true');
 
     if (req.method === 'OPTIONS') {
       res.sendStatus(200);

@@ -30,8 +30,9 @@ server {
 
 # HTTPS Server
 server {
-    listen ${NGINX_SSL_PORT} ssl http2;
-    listen [::]:${NGINX_SSL_PORT} ssl http2;
+    listen ${NGINX_SSL_PORT} ssl;
+    listen [::]:${NGINX_SSL_PORT} ssl;
+    http2 on;
     server_name localhost 127.0.0.1;
 
     # SSL Certificate (self-signed for development)
@@ -67,12 +68,92 @@ server {
     add_header X-Content-Type-Options "nosniff" always;
     add_header X-XSS-Protection "1; mode=block" always;
 
+    # ============================================================================
+    # VITE HMR PROXY (DEVELOPMENT ONLY)
+    # ============================================================================
+    # Vite HMR WebSocket
+    location /@vite/client {
+        set $upstream_node node:5173;
+        proxy_pass http://$upstream_node;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+        proxy_set_header Host $host;
+        proxy_cache_bypass $http_upgrade;
+    }
+
+    # Vite Dev Server (JS/CSS/Images)
+    location ~ ^/(js|css|images)/ {
+        set $upstream_node node:5173;
+        proxy_pass http://$upstream_node;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+        proxy_set_header Host $host;
+        proxy_cache_bypass $http_upgrade;
+    }
+    # ============================================================================
+
+    # ============================================================================
+    # API DOCUMENTATION (DEVELOPMENT ONLY)
+    # ============================================================================
+    location = /docs {
+        return 301 /docs/;
+    }
+
+    location ^~ /docs/ {
+        alias /var/www/html/docs/;
+        autoindex on;
+        try_files $uri $uri/ =404;
+        add_header Cache-Control "no-cache, must-revalidate";
+    }
+    # ============================================================================
+
+    # ============================================================================
+    # NODE.JS BACKEND API PROXY
+    # ============================================================================
+    # Node.js API endpoints (/api/node/* -> /api/*)
+    location ~ ^/api/node/(.*)$ {
+        set $upstream_backend node:3000;
+        proxy_pass http://$upstream_backend/api/$1$is_args$args;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header X-Forwarded-Host $host;
+        proxy_set_header X-Forwarded-Port $server_port;
+
+        # Timeouts
+        proxy_connect_timeout 60s;
+        proxy_send_timeout 60s;
+        proxy_read_timeout 60s;
+
+        # Buffering
+        proxy_buffering off;
+        proxy_request_buffering off;
+
+        # WebSocket support
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection $connection_upgrade;
+    }
+
+    # Node.js Health Check
+    location = /api/node/health {
+        access_log off;
+        set $upstream_backend node:3000;
+        proxy_pass http://$upstream_backend/health;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+    }
+    # ============================================================================
+
     # Standard Location
     location / {
         try_files $uri $uri/ /index.php?$query_string;
     }
 
-    # API Endpoints
+    # API Endpoints (PHP fallback for non-Node routes)
     location ~ ^/api/ {
         limit_req zone=api burst=10 nodelay;
         try_files $uri $uri/ /index.php?$query_string;

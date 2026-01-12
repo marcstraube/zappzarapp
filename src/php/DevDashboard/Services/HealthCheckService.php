@@ -67,9 +67,11 @@ class HealthCheckService
         if (getenv('ENABLE_PHP') !== 'false') {
             $containers[] = 'php';
         }
+
         if (getenv('ENABLE_NODE') !== 'false') {
             $containers[] = 'node';
         }
+
         if (getenv('ENABLE_REDIS') !== 'false') {
             $containers[] = 'redis';
         }
@@ -100,12 +102,12 @@ class HealthCheckService
     {
         // Map container names to their service checks
         $checks = [
-            'php'      => fn() => $this->checkPhpFpm(),
-            'node'     => fn() => $this->checkNode(),
-            'nginx'    => fn() => $this->checkNginx(),
-            'postgres' => fn() => $this->checkPostgresConnection(),
-            'mariadb'  => fn() => $this->checkMariadbConnection(),
-            'redis'    => fn() => $this->checkRedisConnection(),
+            'php'      => $this->checkPhpFpm(...),
+            'node'     => $this->checkNode(...),
+            'nginx'    => $this->checkNginx(...),
+            'postgres' => $this->checkPostgresConnection(...),
+            'mariadb'  => $this->checkMariadbConnection(...),
+            'redis'    => $this->checkRedisConnection(...),
         ];
 
         if (!isset($checks[$containerName])) {
@@ -238,6 +240,7 @@ class HealthCheckService
                     'version'   => 'Unknown',
                 ];
             }
+
             $version = $stmt->fetchColumn();
             if ($version === false) {
                 $version = 'Unknown';
@@ -250,12 +253,12 @@ class HealthCheckService
                 'database'  => $dbname,
                 'version'   => $version,
             ];
-        } catch (PDOException $e) {
+        } catch (PDOException $pdoException) {
             return [
                 'connected' => false,
                 'host'      => $host,
                 'port'      => $port,
-                'error'     => $e->getMessage(),
+                'error'     => $pdoException->getMessage(),
             ];
         }
     }
@@ -290,6 +293,7 @@ class HealthCheckService
                     'version'   => 'Unknown',
                 ];
             }
+
             $version = $stmt->fetchColumn();
             if ($version === false) {
                 $version = 'Unknown';
@@ -302,12 +306,12 @@ class HealthCheckService
                 'database'  => $dbname,
                 'version'   => $version,
             ];
-        } catch (PDOException $e) {
+        } catch (PDOException $pdoException) {
             return [
                 'connected' => false,
                 'host'      => $host,
                 'port'      => $port,
-                'error'     => $e->getMessage(),
+                'error'     => $pdoException->getMessage(),
             ];
         }
     }

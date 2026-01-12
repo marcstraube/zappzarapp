@@ -28,9 +28,6 @@
         <include>
             <directory>src/php</directory>
         </include>
-        <exclude>
-            <directory>src/php/App/Infrastructure</directory>
-        </exclude>
     </source>
 
     <!-- PHP Configuration -->

@@ -66,8 +66,8 @@
         <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
             <?php foreach ($extensions as $ext): ?>
                 <div class="flex justify-between items-center p-2 bg-gray-50 rounded text-sm">
-                    <span class="font-medium text-gray-700"><?= htmlspecialchars($ext['name']) ?></span>
-                    <span class="text-xs text-gray-500"><?= htmlspecialchars($ext['version']) ?></span>
+                    <span class="font-medium text-gray-700"><?= htmlspecialchars((string) $ext['name']) ?></span>
+                    <span class="text-xs text-gray-500"><?= htmlspecialchars((string) $ext['version']) ?></span>
                 </div>
             <?php endforeach; ?>
         </div>
@@ -92,7 +92,7 @@
                             <?php if ($value === '********'): ?>
                                 <span class="text-gray-400">********</span>
                             <?php else: ?>
-                                <?= htmlspecialchars($value) ?>
+                                <?= htmlspecialchars((string) $value) ?>
                             <?php endif; ?>
                         </td>
                     </tr>
