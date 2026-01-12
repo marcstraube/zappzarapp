@@ -11,16 +11,14 @@ use PDOException;
  * Health Check Service
  *
  * Checks health of containers, databases, services, SSL certificates
-      *
-     * @return array<string, mixed>
-     * @SuppressWarnings(PHPMD.ExcessiveClassComplexity)
-     * @SuppressWarnings(PHPMD.UnusedLocalVariable)
-     */
+ *
+ * @SuppressWarnings("PHPMD.ExcessiveClassComplexity")
+ */
 class HealthCheckService
 {
     /**
      * Get overall system health status
-          *
+     *
      * @return array<string, mixed>
      */
     public function getOverallStatus(): array
@@ -134,6 +132,7 @@ class HealthCheckService
      * Check PostgreSQL connection
           *
      * @return array<string, mixed>
+     * @SuppressWarnings("PHPMD.UnusedLocalVariable")
      */
     private function checkPostgresConnection(): array
     {
@@ -153,6 +152,7 @@ class HealthCheckService
      * Check MariaDB connection
           *
      * @return array<string, mixed>
+     * @SuppressWarnings("PHPMD.UnusedLocalVariable")
      */
     private function checkMariadbConnection(): array
     {
@@ -172,6 +172,7 @@ class HealthCheckService
      * Check Redis connection
           *
      * @return array<string, mixed>
+     * @SuppressWarnings("PHPMD.UnusedLocalVariable")
      */
     private function checkRedisConnection(): array
     {
@@ -346,6 +347,7 @@ class HealthCheckService
      * Check Node.js service
           *
      * @return array<string, mixed>
+     * @SuppressWarnings("PHPMD.UnusedLocalVariable")
      */
     private function checkNode(): array
     {
@@ -372,6 +374,7 @@ class HealthCheckService
      * Check Nginx status
           *
      * @return array<string, mixed>
+     * @SuppressWarnings("PHPMD.UnusedLocalVariable")
      */
     private function checkNginx(): array
     {

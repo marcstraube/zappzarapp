@@ -112,6 +112,43 @@ setup: ## Create directories, install dev dependencies and ensure structure
 	@. ./.env && chmod 770 $${STORAGE_DIR:-./storage} -R
 
 	@echo -e "\033[0;32mProject structure created!\033[0m"
+
+	# SSL/TLS Certificate Check
+	@echo -e "\033[0;33mChecking SSL/TLS certificates...\033[0m"
+	@if [ ! -f docker/certs/cert.crt ]; then \
+		echo -e "\033[0;34mSSL certificates not found. Generating self-signed certificates...\033[0m"; \
+		$(MAKE) --silent ssl-selfsigned; \
+	else \
+		echo -e "\033[0;32mSSL certificates already exist.\033[0m"; \
+	fi
+
+	# Generate encryption keys if not present
+	@echo -e "\033[0;33mChecking encryption keys in .env...\033[0m"
+	@if ! grep -q "^ENCRYPTION_KEY=" .env 2>/dev/null || [ -z "$$(grep "^ENCRYPTION_KEY=" .env | cut -d'=' -f2)" ]; then \
+		echo -e "\033[0;34mGenerating ENCRYPTION_KEY...\033[0m"; \
+		ENCRYPTION_KEY=$$(openssl rand -base64 32); \
+		if grep -q "^ENCRYPTION_KEY=" .env 2>/dev/null; then \
+			sed -i "s|^ENCRYPTION_KEY=.*|ENCRYPTION_KEY=$$ENCRYPTION_KEY|" .env; \
+		else \
+			echo "ENCRYPTION_KEY=$$ENCRYPTION_KEY" >> .env; \
+		fi; \
+		echo -e "\033[0;32mENCRYPTION_KEY generated.\033[0m"; \
+	else \
+		echo -e "\033[0;32mENCRYPTION_KEY already exists.\033[0m"; \
+	fi
+	@if ! grep -q "^BACKUP_ENCRYPTION_KEY=" .env 2>/dev/null || [ -z "$$(grep "^BACKUP_ENCRYPTION_KEY=" .env | cut -d'=' -f2)" ]; then \
+		echo -e "\033[0;34mGenerating BACKUP_ENCRYPTION_KEY...\033[0m"; \
+		BACKUP_ENCRYPTION_KEY=$$(openssl rand -base64 32); \
+		if grep -q "^BACKUP_ENCRYPTION_KEY=" .env 2>/dev/null; then \
+			sed -i "s|^BACKUP_ENCRYPTION_KEY=.*|BACKUP_ENCRYPTION_KEY=$$BACKUP_ENCRYPTION_KEY|" .env; \
+		else \
+			echo "BACKUP_ENCRYPTION_KEY=$$BACKUP_ENCRYPTION_KEY" >> .env; \
+		fi; \
+		echo -e "\033[0;32mBACKUP_ENCRYPTION_KEY generated.\033[0m"; \
+	else \
+		echo -e "\033[0;32mBACKUP_ENCRYPTION_KEY already exists.\033[0m"; \
+	fi
+
 	@echo -e "\033[0;33mStarting containers (dependencies will install automatically)...\033[0m"
 	@$(MAKE) --silent up
 	@echo -e "\033[0;33mWaiting for dependencies to install (30-60 seconds)...\033[0m"
@@ -583,7 +620,7 @@ analyse: ## Run PHPStan static analysis
 
 phpmd: ## Run PHPMD (PHP Mess Detector) for code quality analysis
 	@echo -e "\033[0;33mRunning PHPMD (Mess Detector)...\033[0m"
-	@docker compose exec php composer phpmd
+	@docker compose exec php php -d error_reporting=24575 vendor/bin/phpmd src/php,tests/php text phpmd.xml.dist
 
 rector-check: ## Run Rector for automated refactoring analysis (dry-run)
 	@echo -e "\033[0;33mRunning Rector analysis (dry-run)...\033[0m"
@@ -604,9 +641,9 @@ cs-fix: ## Fix coding style automatically (uses composer alias)
 	@echo -e "\033[0;33mFixing Coding Style...\033[0m"
 	@docker compose exec php composer cs-fix
 
-cs-fix-all: ## Fix coding style aggressively on all files (forces fix on source dir)
+cs-fix-all: ## Fix coding style aggressively on all files (uses config from .php-cs-fixer.dist.php)
 	@echo -e "\033[0;33mFixing Coding Style aggressively on all files...\033[0m"
-	@docker compose exec php vendor/bin/php-cs-fixer fix /var/www/html/src/php/ --allow-risky=yes
+	@docker compose exec php vendor/bin/php-cs-fixer fix --allow-risky=yes
 
 lint-config: ## Validate YAML configuration files (uses local YAMLlint if available)
 	@echo -e "\033[0;33mValidating YAML configuration...\033[0m"
@@ -800,28 +837,91 @@ ssl-letsencrypt: ## Setup Let's Encrypt SSL certificate (production)
 		echo -e "\033[0;31mError: setup-letsencrypt.sh not found!\033[0m"; \
 		exit 1; \
 	fi
-	@read -p "Enter your domain (e.g., example.com): " DOMAIN; \
+	@# Check for DOMAIN in .env or prompt for it
+	@DOMAIN=""; \
+	if [ -f .env ] && grep -q "^DOMAIN=" .env; then \
+		DOMAIN=$$(grep "^DOMAIN=" .env | cut -d'=' -f2); \
+		echo -e "\033[0;32m✓ Using domain from .env: $$DOMAIN\033[0m"; \
+	fi; \
+	if [ -z "$$DOMAIN" ]; then \
+		read -p "Enter your domain (e.g., example.com): " DOMAIN; \
+		if [ -n "$$DOMAIN" ] && [ -f .env ]; then \
+			if grep -q "^#DOMAIN=" .env; then \
+				sed -i "s|^#DOMAIN=.*|DOMAIN=$$DOMAIN|" .env; \
+			elif grep -q "^DOMAIN=" .env; then \
+				sed -i "s|^DOMAIN=.*|DOMAIN=$$DOMAIN|" .env; \
+			else \
+				echo "DOMAIN=$$DOMAIN" >> .env; \
+			fi; \
+			echo -e "\033[0;32m✓ DOMAIN saved to .env\033[0m"; \
+		fi; \
+	fi; \
 	read -p "Enter your email (for renewal notifications): " EMAIL; \
 	bash docker/certs/setup-letsencrypt.sh $$DOMAIN $$EMAIL
 	@echo -e "\033[0;34mTo enable HTTPS (Production):\033[0m"
-	@echo -e "\033[0;34m  1. Copy ssl-production.conf.example to ssl-production.conf\033[0m"
-	@echo -e "\033[0;34m  2. Update domain in ssl-production.conf\033[0m"
-	@echo -e "\033[0;34m  3. Uncomment SSL volumes in compose.prod.yaml\033[0m"
-	@echo -e "\033[0;34m  4. Deploy: docker compose -f compose.yaml -f compose.prod.yaml up -d\033[0m"
+	@echo -e "\033[0;34m  1. Run: make ssl-prod-enable\033[0m"
+	@echo -e "\033[0;34m  2. Deploy: ENV=production make build && make up\033[0m"
 
-ssl-renew: ## Renew Let's Encrypt certificate
+ssl-renew: ## Renew Let's Encrypt certificate and reload all SSL services
 	@echo -e "\033[0;33mRenewing Let's Encrypt certificate...\033[0m"
-	@if command -v certbot >/dev/null 2>&1; then \
-		sudo certbot renew --deploy-hook 'docker compose restart nginx'; \
+	@CERT_CHANGED=false; \
+	CERT_BEFORE=""; \
+	if [ -f docker/certs/cert.crt ]; then \
+		CERT_BEFORE=$$(openssl x509 -in docker/certs/cert.crt -noout -fingerprint 2>/dev/null || echo ""); \
+	fi; \
+	if command -v certbot >/dev/null 2>&1; then \
+		sudo certbot renew --quiet; \
 	else \
 		docker run --rm --name certbot \
 			-v $$(pwd)/docker/certs/letsencrypt:/etc/letsencrypt \
 			-v $$(pwd)/public:/var/www/html \
-			-p 80:80 \
-			certbot/certbot renew \
-			--deploy-hook 'docker compose restart nginx'; \
+			certbot/certbot renew --quiet; \
+	fi; \
+	CERT_AFTER=""; \
+	if [ -f docker/certs/cert.crt ]; then \
+		CERT_AFTER=$$(openssl x509 -in docker/certs/cert.crt -noout -fingerprint 2>/dev/null || echo ""); \
+	fi; \
+	if [ "$$CERT_BEFORE" != "$$CERT_AFTER" ] && [ -n "$$CERT_AFTER" ]; then \
+		CERT_CHANGED=true; \
+	fi; \
+	if [ "$$CERT_CHANGED" = "true" ]; then \
+		echo -e "\033[0;32m✓ Certificate renewed! Reloading services...\033[0m"; \
+		$(MAKE) --silent ssl-reload-services; \
+	else \
+		echo -e "\033[0;33mNo certificates were renewed (not due yet).\033[0m"; \
 	fi
-	@echo -e "\033[0;32mCertificate renewed!\033[0m"
+
+ssl-reload-services: ## Reload all SSL-dependent services after certificate renewal
+	@echo -e "\033[0;33mReloading SSL-dependent services...\033[0m"
+	@# Nginx: graceful reload (reads certs directly from volume)
+	@if docker compose ps nginx --status running -q 2>/dev/null | grep -q .; then \
+		echo -e "  Reloading nginx (graceful)..."; \
+		docker compose exec -T nginx nginx -s reload 2>/dev/null && \
+			echo -e "  \033[0;32m✓ nginx reloaded\033[0m" || \
+			echo -e "  \033[0;33m⚠ nginx not running\033[0m"; \
+	fi
+	@# PostgreSQL: restart required (dev mode copies certs via entrypoint)
+	@if docker compose ps postgres --status running -q 2>/dev/null | grep -q .; then \
+		echo -e "  Restarting postgres (entrypoint re-copies certs)..."; \
+		docker compose restart postgres 2>/dev/null && \
+			echo -e "  \033[0;32m✓ postgres restarted\033[0m" || \
+			echo -e "  \033[0;33m⚠ postgres not running\033[0m"; \
+	fi
+	@# MariaDB: restart required (entrypoint re-copies certs, no graceful SSL reload)
+	@if docker compose ps mariadb --status running -q 2>/dev/null | grep -q .; then \
+		echo -e "  Restarting mariadb (entrypoint re-copies certs)..."; \
+		docker compose restart mariadb 2>/dev/null && \
+			echo -e "  \033[0;32m✓ mariadb restarted\033[0m" || \
+			echo -e "  \033[0;33m⚠ mariadb not running\033[0m"; \
+	fi
+	@# Redis: restart required (no graceful TLS reload)
+	@if docker compose ps redis --status running -q 2>/dev/null | grep -q .; then \
+		echo -e "  Restarting redis (no graceful TLS reload)..."; \
+		docker compose restart redis 2>/dev/null && \
+			echo -e "  \033[0;32m✓ redis restarted\033[0m" || \
+			echo -e "  \033[0;33m⚠ redis not running\033[0m"; \
+	fi
+	@echo -e "\033[0;32m✓ All SSL services reloaded!\033[0m"
 
 ssl-info: ## Show SSL certificate information
 	@echo -e "\033[0;33mSSL Certificate Information:\033[0m"
@@ -832,6 +932,65 @@ ssl-info: ## Show SSL certificate information
 		echo -e "\033[0;34m  - make ssl-selfsigned (development)\033[0m"; \
 		echo -e "\033[0;34m  - make ssl-letsencrypt (production)\033[0m"; \
 	fi
+
+ssl-prod-enable: ## Enable SSL/TLS for production (generates ssl-production.conf from template)
+	@echo -e "\033[0;33mEnabling SSL/TLS for production...\033[0m"
+	@if [ ! -f docker/nginx/conf.d/ssl-production.conf.template ]; then \
+		echo -e "\033[0;31mError: ssl-production.conf.template not found!\033[0m"; \
+		exit 1; \
+	fi
+	@if [ -f docker/nginx/conf.d/ssl-production.conf ]; then \
+		echo -e "\033[0;33mssl-production.conf already exists.\033[0m"; \
+		read -p "Overwrite? (y/N): " OVERWRITE; \
+		if [ "$$OVERWRITE" != "y" ] && [ "$$OVERWRITE" != "Y" ]; then \
+			echo -e "\033[0;34mOperation cancelled.\033[0m"; \
+			exit 0; \
+		fi; \
+	fi
+	@# Check for DOMAIN in .env or prompt for it
+	@DOMAIN=""; \
+	if [ -f .env ] && grep -q "^DOMAIN=" .env; then \
+		DOMAIN=$$(grep "^DOMAIN=" .env | cut -d'=' -f2); \
+		echo -e "\033[0;32m✓ Using domain from .env: $$DOMAIN\033[0m"; \
+	fi; \
+	if [ -z "$$DOMAIN" ]; then \
+		read -p "Enter your domain (e.g., example.com): " DOMAIN; \
+		if [ -n "$$DOMAIN" ]; then \
+			if [ -f .env ]; then \
+				if grep -q "^#DOMAIN=" .env; then \
+					sed -i "s|^#DOMAIN=.*|DOMAIN=$$DOMAIN|" .env; \
+				elif grep -q "^DOMAIN=" .env; then \
+					sed -i "s|^DOMAIN=.*|DOMAIN=$$DOMAIN|" .env; \
+				else \
+					echo "DOMAIN=$$DOMAIN" >> .env; \
+				fi; \
+				echo -e "\033[0;32m✓ DOMAIN saved to .env\033[0m"; \
+			else \
+				echo -e "\033[0;33m⚠️  No .env file found. Run 'make init' first.\033[0m"; \
+			fi; \
+		else \
+			echo -e "\033[0;31mError: Domain is required!\033[0m"; \
+			exit 1; \
+		fi; \
+	fi; \
+	NGINX_SSL_PORT=$${NGINX_SSL_PORT:-8443}; \
+	if [ -f .env ] && grep -q "^NGINX_SSL_PORT=" .env; then \
+		NGINX_SSL_PORT=$$(grep "^NGINX_SSL_PORT=" .env | cut -d'=' -f2); \
+	fi; \
+	export DOMAIN NGINX_SSL_PORT; \
+	envsubst '$$DOMAIN $$NGINX_SSL_PORT' < docker/nginx/conf.d/ssl-production.conf.template > docker/nginx/conf.d/ssl-production.conf
+	@echo -e "\033[0;32m✓ ssl-production.conf created with your domain!\033[0m"
+	@echo ""
+	@echo -e "\033[0;34mNext steps:\033[0m"
+	@echo -e "\033[0;34m  1. Generate SSL certificate:\033[0m"
+	@echo -e "\033[0;34m     For Let's Encrypt: make ssl-letsencrypt\033[0m"
+	@echo -e "\033[0;34m     For self-signed:   make ssl-selfsigned\033[0m"
+	@echo ""
+	@echo -e "\033[0;34m  2. Deploy:\033[0m"
+	@echo -e "\033[0;34m     ENV=production make build && make up\033[0m"
+	@echo ""
+	@echo -e "\033[0;34m  3. Setup auto-renewal (cron):\033[0m"
+	@echo -e "\033[0;34m     0 0 * * * cd $(PWD) && make ssl-renew >> /var/log/ssl-renew.log 2>&1\033[0m"
 
 ssl-clean: ## Remove all SSL certificates (WARNING: Destructive!)
 	@echo -e "\033[0;31m⚠️  WARNING: This will delete all SSL certificates!\033[0m"

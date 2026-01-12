@@ -11,9 +11,9 @@ use PDOException;
  * Database Service
  *
  * Provides database introspection and statistics
-      *
-     * @SuppressWarnings(PHPMD.ExcessiveClassComplexity)
-     */
+ *
+ * @SuppressWarnings("PHPMD.ExcessiveClassComplexity")
+ */
 class DatabaseService
 {
     private string $dbType;

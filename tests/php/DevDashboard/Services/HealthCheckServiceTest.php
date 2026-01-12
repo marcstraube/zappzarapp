@@ -65,7 +65,7 @@ class HealthCheckServiceTest extends TestCase
         // Should have at least one database checked
         $this->assertGreaterThanOrEqual(1, count($databases));
 
-        foreach ($databases as $dbName => $db) {
+        foreach ($databases as $db) {
             $this->assertIsArray($db);
             $this->assertArrayHasKey('connected', $db);
             $this->assertIsBool($db['connected']);

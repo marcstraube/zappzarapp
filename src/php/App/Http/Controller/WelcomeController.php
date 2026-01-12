@@ -15,7 +15,9 @@ use App\Infrastructure\HealthCheck;
 class WelcomeController
 {
     /**
-     * @SuppressWarnings(PHPMD.UnusedLocalVariable) Variables are used in the template
+     * Display the welcome page.
+     *
+     * @SuppressWarnings("PHPMD.UnusedLocalVariable") Variables are used in the template
      */
     public function index(): void
     {

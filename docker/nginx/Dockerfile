@@ -5,11 +5,12 @@ ARG ALPINE_VERSION=3.23
 # Alpine 3.23 provides nginx 1.28.0-r8 and nginx-mod-http-brotli 1.28.0-r8 (version-matched)
 FROM alpine:${ALPINE_VERSION} AS base
 
-# Install Nginx with Brotli module & Setup
+# Install Nginx with Brotli module & envsubst for template processing & Setup
 RUN apk add --no-cache \
         nginx \
         nginx-mod-http-brotli \
-        wget && \
+        wget \
+        gettext && \
     mkdir -p /var/cache/nginx /var/log/nginx /tmp/nginx /var/www/html /etc/nginx/conf.d && \
     touch /var/run/nginx.pid && \
     chown -R nginx:nginx /var/cache/nginx /var/log/nginx /etc/nginx/conf.d /var/run/nginx.pid /tmp/nginx
@@ -20,8 +21,9 @@ COPY docker/nginx/nginx.conf /etc/nginx/nginx.conf
 COPY docker/nginx/conf.d/default.conf /etc/nginx/conf.d/default.conf
 COPY docker/nginx/conf.d/csp-production.conf /etc/nginx/conf.d/csp-production.conf
 
-# Switch to non-root user
-USER nginx
+# Copy Entrypoint Script for SSL template processing
+COPY docker/nginx/entrypoint.sh /docker-entrypoint.sh
+RUN chmod +x /docker-entrypoint.sh
 
 # Set Working Directory
 WORKDIR /var/www/html
@@ -29,10 +31,12 @@ WORKDIR /var/www/html
 # Expose Unprivileged Port
 EXPOSE 8080
 
-# Health Check
+# Health Check (accepts self-signed certificates in development)
 HEALTHCHECK --interval=30s --timeout=3s --start-period=10s --retries=3 \
-    CMD wget --no-verbose --tries=1 --spider http://127.0.0.1:8080/health || exit 1
+    CMD wget --no-verbose --tries=1 --spider --no-check-certificate http://127.0.0.1:8080/health || exit 1
 
+# Entrypoint processes templates (runs as root, then starts nginx)
+ENTRYPOINT ["/docker-entrypoint.sh"]
 CMD ["nginx", "-g", "daemon off;"]
 
 # --- 2. DEVELOPMENT STAGE ---
@@ -53,7 +57,7 @@ RUN if [ "$USER_ID" != "101" ]; then \
     fi && \
     chown -R nginx:nginx /var/cache/nginx /var/log/nginx /etc/nginx/conf.d /var/run/nginx.pid /tmp/nginx
 
-USER nginx
+# Note: Container runs as root to process SSL templates via entrypoint, then starts nginx
 
 # --- 3. PRODUCTION STAGE ---
 FROM base AS production
@@ -70,4 +74,4 @@ COPY --from=docker-webdev-node:latest --chown=nginx:nginx /app/public/build/ /va
 # Harden permissions (read-only)
 RUN chmod -R 555 /var/www/html/public
 
-USER nginx
+# Note: Container runs as root to process SSL templates via entrypoint, then starts nginx

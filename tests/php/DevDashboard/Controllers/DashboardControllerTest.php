@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\DevDashboard\Controllers;
 
+use DevDashboard\Controllers\DashboardController;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -23,14 +24,14 @@ class DashboardControllerTest extends TestCase
 
     public function testControllerCanBeInstantiated(): void
     {
-        $controller = new \DevDashboard\Controllers\DashboardController();
+        $controller = new DashboardController();
 
-        $this->assertInstanceOf(\DevDashboard\Controllers\DashboardController::class, $controller);
+        $this->assertInstanceOf(DashboardController::class, $controller);
     }
 
     public function testApiHealthCheckReturnsValidJson(): void
     {
-        $controller = new \DevDashboard\Controllers\DashboardController();
+        $controller = new DashboardController();
 
         ob_start();
         $controller->apiHealthCheck();
@@ -45,7 +46,7 @@ class DashboardControllerTest extends TestCase
 
     public function testApiContainerStatusReturnsValidJson(): void
     {
-        $controller = new \DevDashboard\Controllers\DashboardController();
+        $controller = new DashboardController();
 
         ob_start();
         $controller->apiContainerStatus();

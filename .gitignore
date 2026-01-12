@@ -6,16 +6,22 @@
 # Logs
 *.log
 /logs/*
-!/logs/.gitkeep
+/storage/logs/*
 
 # SSL Certificates (don't commit private keys!)
 docker/certs/*.pem
 docker/certs/*.key
 docker/certs/*.crt
 
+# Generated SSL config (from template)
+docker/nginx/conf.d/ssl-production.conf
+
+# MariaDB Encryption (don't commit keyfiles and custom configs!)
+docker/mariadb/keyfile.key
+docker/mariadb/my.cnf
+
 # Build outputs
 /public/build/*
-!/public/build/.gitkeep
 /dist/
 
 # Dependencies

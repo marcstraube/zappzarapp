@@ -11,3 +11,11 @@ parameters:
 
     # Type Coverage
     reportUnmatchedIgnoredErrors: true
+
+    # Test assertions that PHPStan considers redundant but serve as documentation
+    ignoreErrors:
+        # assertIsArray/assertIsString on typed returns (valid test documentation)
+        -
+            message: '#will always evaluate to true#'
+            identifier: method.alreadyNarrowedType
+            path: tests/*

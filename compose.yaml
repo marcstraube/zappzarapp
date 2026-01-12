@@ -9,16 +9,16 @@ services:
       target: production
     container_name: ${COMPOSE_PROJECT_NAME:-docker-webdev}-nginx
     restart: unless-stopped
+    environment:
+      - NGINX_SSL_PORT=${NGINX_SSL_PORT:-8443}
     ports:
       - "${NGINX_PORT:-8080}:8080"
-      # Uncomment for HTTPS/SSL (requires SSL setup, see docker/certs/)
-      # - "${NGINX_SSL_PORT:-8443}:8443"
+      - "${NGINX_SSL_PORT:-8443}:${NGINX_SSL_PORT:-8443}"
     volumes:
       # Shared socket directory for PHP-FPM Unix socket communication
       - php-fpm-socket:/var/run/php-fpm
-      # Uncomment for HTTPS/SSL (mount development SSL config and certificates)
-      # - ./docker/nginx/conf.d/ssl-development.conf:/etc/nginx/conf.d/ssl.conf:ro
-      # - ./docker/certs:/etc/nginx/certs:ro
+      # SSL/HTTPS certificates
+      - ./docker/certs:/etc/nginx/certs:ro
     depends_on:
       node:
         condition: service_started

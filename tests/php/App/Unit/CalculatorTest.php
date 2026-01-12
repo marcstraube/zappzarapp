@@ -11,6 +11,8 @@ use PHPUnit\Framework\TestCase;
 /**
  * Example unit test for Calculator utility class
  * (Analog to tests/node/unit/math.test.ts)
+ *
+ * @SuppressWarnings("PHPMD.TooManyPublicMethods")
  */
 class CalculatorTest extends TestCase
 {

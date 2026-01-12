@@ -1,0 +1,97 @@
+# ============================================================================
+# MariaDB Configuration for Table-Level Encryption at Rest
+# ============================================================================
+# GDPR Art. 32: Encryption of personal data at rest
+#
+# IMPORTANT: This is OPTIONAL! Only enable if you need table-level encryption.
+# Most applications don't need this - TLS + OS-level disk encryption is sufficient.
+#
+# Setup:
+#   1. Generate keyfile: bash docker/mariadb/generate-keyfile.sh
+#   2. Copy this file: cp docker/mariadb/my.cnf.example docker/mariadb/my.cnf
+#   3. Mount keyfile and config in compose.yaml (see comments in compose.yaml)
+#   4. Restart MariaDB: make restart
+#
+# Usage:
+#   CREATE TABLE sensitive_data (...) ENGINE=InnoDB ENCRYPTED=YES;
+# ============================================================================
+
+[mysqld]
+
+# ----------------------------------------------------------------------------
+# Basic Settings
+# ----------------------------------------------------------------------------
+character-set-server = utf8mb4
+collation-server = utf8mb4_unicode_ci
+
+# Skip DNS lookups (faster connections)
+skip-name-resolve
+
+# ----------------------------------------------------------------------------
+# InnoDB Settings
+# ----------------------------------------------------------------------------
+innodb_buffer_pool_size = 256M
+innodb_log_file_size = 64M
+innodb_flush_log_at_trx_commit = 2
+innodb_flush_method = O_DIRECT
+
+# ----------------------------------------------------------------------------
+# Encryption at Rest
+# ----------------------------------------------------------------------------
+# Requires keyfile: docker/mariadb/keyfile.key (generate with generate-keyfile.sh)
+
+# Enable file_key_management plugin
+plugin_load_add = file_key_management
+
+# Path to keyfile (mounted as volume in Docker)
+file_key_management_filename = /etc/mysql/keyfile.key
+
+# Encryption algorithm (AES_CBC is default, AES_CTR is faster)
+file_key_management_encryption_algorithm = AES_CBC
+
+# Enable encryption for new tables by default (optional - recommended for paranoid mode)
+# If enabled, all new tables will be encrypted automatically (can override with ENCRYPTED=NO)
+#innodb_encrypt_tables = ON
+
+# Encrypt InnoDB log files (redo logs)
+innodb_encrypt_log = ON
+
+# Encrypt temporary tables
+innodb_encrypt_temporary_tables = ON
+
+# Encryption threads (for background encryption of existing tables)
+# Set to 2-4 for faster encryption of existing unencrypted tables
+innodb_encryption_threads = 4
+
+# Rotate encryption keys (re-encrypt with new key)
+# 0 = disabled (default), 1 = rotate encryption keys in background
+#innodb_encryption_rotate_key_age = 0
+
+# ----------------------------------------------------------------------------
+# SSL/TLS (Already configured in compose.yaml via command)
+# ----------------------------------------------------------------------------
+# These settings are passed via Docker Compose command arguments
+# See compose.prod.yaml for SSL certificate paths
+
+# ----------------------------------------------------------------------------
+# Logging
+# ----------------------------------------------------------------------------
+# General query log (disabled by default - only for debugging)
+#general_log = 1
+#general_log_file = /var/log/mysql/general.log
+
+# Slow query log
+slow_query_log = 1
+slow_query_log_file = /var/log/mysql/slow.log
+long_query_time = 2
+
+# Error log
+log_error = /var/log/mysql/error.log
+
+# ----------------------------------------------------------------------------
+# Performance Schema (monitoring)
+# ----------------------------------------------------------------------------
+performance_schema = ON
+
+[client]
+default-character-set = utf8mb4

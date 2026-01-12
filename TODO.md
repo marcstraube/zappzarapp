@@ -2407,12 +2407,184 @@ curl http://localhost:3000/health
 ---
 
 **Erstellt:** 2025-12-19
-**Letzte Aktualisierung:** 2026-01-03 (Security Hardening: Network Segmentation & Unix Sockets)
-**Version:** 3.9
+**Letzte Aktualisierung:** 2026-01-11 (Code Quality & PHPStan Level 8 Compliance)
+**Version:** 3.11
 
 ---
 
 ## Changelog
+
+### Version 3.11 (2026-01-11) - Code Quality & PHPStan Level 8 Compliance
+
+#### Fixed
+- **PHPDoc Formatting Issues**:
+  - Fixed malformed class docblocks in `HealthCheckService.php`, `DatabaseService.php`
+  - Fixed method docblock indentation issues
+  - Corrected misplaced `@return` annotations at class level
+
+- **PHPMD @SuppressWarnings Compatibility**:
+  - Changed format from `@SuppressWarnings(PHPMD.*)` to `@SuppressWarnings("PHPMD.*")` (quoted)
+  - Fixes PHPStan parsing errors while maintaining PHPMD compatibility
+  - Affected files: `HealthCheckService.php`, `DatabaseService.php`, `WelcomeController.php`
+
+- **PHPStan Type Issues (Level 8)**:
+  - `AuditLogger.php`: Changed `?string $logFilePath` to `string` (never null after construction)
+  - `AuditLogger.php`: Removed redundant null check that was always false
+  - `AuditLoggerTest.php`: Added `PDO&MockObject` intersection type for mock property
+  - `AuditLoggerTest.php`: Added `assertIsString()` for `file_get_contents()` result
+
+- **PHPStan Configuration**:
+  - Added ignore pattern for test-specific assertions that are valid documentation
+  - Pattern: `method.alreadyNarrowedType` in `tests/*` (assertIsArray, assertTrue, etc.)
+
+#### Changed
+- **MariaDB Encryption Config (`my.cnf.example`)**:
+  - Encryption settings now enabled by default (uncommented)
+  - Rationale: File is only copied when enabling table-level encryption
+  - Setup steps reduced from 5 to 4 (removed "uncomment encryption settings")
+  - Optional settings remain commented: `innodb_encrypt_tables`, `innodb_encryption_rotate_key_age`
+
+#### Status
+- PHPStan Level 8: No errors
+- PHP CS Fixer: 0 files need fixing
+- PHPUnit: 65 tests, 229 assertions
+- Vitest: 61 tests passing
+
+### Version 3.10 (2026-01-09) - SSL/TLS Secure-by-Default
+**GDPR Phase 1.1 Implementation - Encryption at Rest and in Transit:**
+
+#### Added
+- **Automated SSL/TLS Setup**:
+  - `make setup` now automatically generates self-signed certificates if not present
+  - Certificate check integrated into setup workflow
+  - Automatic fallback to `make ssl-selfsigned` for development
+
+- **Encryption Key Management**:
+  - Automatic generation of `ENCRYPTION_KEY` and `BACKUP_ENCRYPTION_KEY` in .env
+  - 256-bit AES keys generated via `openssl rand -base64 32`
+  - Keys are checked and generated only if missing or empty
+
+- **SSL/TLS for Databases (Development)**:
+  - PostgreSQL SSL enabled by default with custom entrypoint script
+  - MariaDB SSL enabled by default with custom entrypoint script
+  - Certificate permission handling via entrypoint wrappers
+  - Certificates mounted to `/tmp/certs/` and copied with correct ownership
+
+- **SSL/TLS for Databases (Production)**:
+  - PostgreSQL SSL configuration activated in `compose.prod.yaml`
+  - MariaDB SSL configuration activated in `compose.prod.yaml`
+  - Redis TLS configuration activated (port 6380, non-plaintext mode)
+  - All services use shared certificates from `docker/certs/`
+
+- **Nginx SSL/HTTPS with Dynamic Port Configuration**:
+  - HTTPS enabled on port 8443 (configurable via `NGINX_SSL_PORT`)
+  - **Automatic HTTP → HTTPS redirect**: `http://localhost:8080` → `https://localhost:8443/`
+  - Redirect uses configurable `NGINX_SSL_PORT` from environment variable
+  - SSL configuration generated dynamically from template using `envsubst`
+  - HTTP/2 support enabled for HTTPS connections
+  - Template-based configuration: `ssl-development.conf.template`
+  - Entrypoint script processes templates at container startup
+  - Port dynamically injected from `NGINX_SSL_PORT` environment variable
+  - CSP and SSL configs mounted by default in production (`compose.prod.yaml`)
+  - Self-signed certificates work out-of-the-box after `make setup`
+  - Ready for Let's Encrypt certificates (`make ssl-letsencrypt`)
+  - **Note**: Browser will show certificate warning for self-signed cert (expected behavior)
+
+- **Custom Entrypoint Scripts**:
+  - `docker/nginx/entrypoint.sh`: Processes SSL template with `envsubst` for dynamic port configuration
+  - `docker/postgres/entrypoint.sh`: Handles SSL certificate setup for PostgreSQL
+  - `docker/mariadb/entrypoint.sh`: Handles SSL certificate setup for MariaDB
+  - PostgreSQL & MariaDB scripts ensure correct ownership (postgres:postgres, mysql:mysql)
+  - Automatic permission fixing (644 for .crt, 600 for .key)
+  - Nginx script runs as root to write config, then starts nginx
+
+#### Changed
+- **Environment Configuration**:
+  - `NGINX_SSL_PORT=8443` now enabled by default in `.env.example`
+  - Automatic SSL port binding in `compose.yaml`
+  - SSL volumes mounted automatically (no manual uncomment needed)
+
+- **Makefile Setup Target Enhanced**:
+  - Added SSL certificate existence check
+  - Added encryption key generation logic
+  - Improved setup flow with colored output
+  - Better error handling for missing keys
+
+- **Database Configuration**:
+  - PostgreSQL: SSL enabled with custom entrypoint in development
+  - MariaDB: SSL enabled with custom entrypoint in development
+  - Redis: TLS mode enabled in production (port 6380, plaintext disabled)
+
+- **Nginx Configuration**:
+  - Fixed file permissions for `csp-production.conf` (600 → 644)
+  - Fixed file permissions for `ssl-production.conf.example` (600 → 644)
+  - Converted `ssl-development.conf` to template file with `${NGINX_SSL_PORT}` placeholder
+  - Nginx Dockerfile: Added `gettext` package for `envsubst` support
+  - Nginx Dockerfile: Removed `USER nginx` to allow root entrypoint execution
+  - Container starts as root, processes templates, then runs nginx
+
+#### Security Improvements
+- **Transport Layer Security**:
+  - All database connections encrypted by default
+  - PostgreSQL enforces SSL with server certificates
+  - MariaDB enforces secure transport with `--require-secure-transport=ON`
+  - Redis TLS mode disables plaintext connections
+
+- **At-Rest Encryption Preparation**:
+  - Encryption keys ready for column-level encryption (Phase 1.2)
+  - Keys stored securely in `.env` (excluded from version control)
+  - Backup encryption key for future backup script usage
+
+- **Certificate Management**:
+  - Self-signed certificates for development (automatic generation)
+  - Symlinks replaced with actual files for proper container access
+  - Certificate permissions: 644 for both `.crt` and `.key` (Nginx compatibility)
+  - Production-ready Let's Encrypt integration (via `make ssl-letsencrypt`)
+  - Centralized certificate location (`docker/certs/`)
+  - Certificates shared across all services (Nginx, PostgreSQL, MariaDB, Redis)
+
+#### GDPR Compliance
+- **Article 32 (Security of Processing)**:
+  - ✅ Encryption of personal data in transit (SSL/TLS)
+  - ✅ Preparation for encryption at rest (keys generated)
+  - ✅ Secure-by-default configuration
+
+- **Article 25 (Data Protection by Design)**:
+  - ✅ Default security settings enabled automatically
+  - ✅ No manual intervention required for basic security
+
+#### Developer Experience
+- **Zero-Configuration Security**:
+  - SSL/TLS works out of the box after `make setup`
+  - No manual certificate generation needed
+  - No manual key generation needed
+
+- **Backward Compatibility**:
+  - Existing deployments continue to work
+  - Entrypoint scripts handle missing certificates gracefully
+  - Optional encryption keys (can remain empty if not used)
+
+#### Testing
+- Complete container rebuild verified (`make fresh`)
+- All services healthy after SSL/TLS activation
+- PostgreSQL SSL verified: `SHOW ssl;` returns `on`
+- **HTTP → HTTPS redirect verified**: `http://localhost:8080` returns HTTP 301 → `https://localhost:8443/`
+- Redirect uses correct configurable port from `NGINX_SSL_PORT`
+- Nginx HTTPS verified: `https://localhost:8443` returns HTTP 200 OK
+- Following redirect with `-k` flag works: Final HTTP 200 OK
+- SSL template processing verified: "SSL configuration generated with NGINX_SSL_PORT=8443"
+- HTTP/2 protocol confirmed on HTTPS connections
+- Certificate validity: 1 year from generation (self-signed)
+- Certificate verified: Subject CN=localhost, valid chain
+- Encryption keys: 256-bit base64-encoded
+- **Browser behavior**: Self-signed certificate warning is shown (expected and normal)
+
+#### Documentation
+- GDPR Phase 1.1 tasks completed from `GDPR-NEXT-STEPS.md`
+- Next phase: Database Encryption (Phase 1.2 - optional)
+- Next phase: Audit Logging (Phase 1.3 - GDPR Art. 30)
+
+---
 
 ### Version 3.9 (2026-01-03) - Security Hardening: GDPR Compliance & Network Isolation
 **Major security enhancements for production environments with 10,000+ users:**
@@ -2424,7 +2596,7 @@ curl http://localhost:3000/health
   - `database`: Data persistence layer (postgres, mariadb, redis)
   - Prevents direct database access from public-facing services
   - Reduces attack surface and enables Defense-in-Depth strategy
-  - Comprehensive documentation in `NETWORK.md`
+  - Comprehensive documentation in `documentation/NETWORK.md`
 
 - **Unix Socket Communication**:
   - PHP-FPM now uses Unix sockets instead of TCP (nginx ↔ php)
