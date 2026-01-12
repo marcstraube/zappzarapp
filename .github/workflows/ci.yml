@@ -50,6 +50,9 @@ jobs:
       - name: Composer Validate
         run: docker compose exec -T php composer validate --strict
 
+      - name: Cleanup
+        uses: ./.github/actions/docker-cleanup
+
   # ============================================================================
   # PHP TESTS
   # ============================================================================
@@ -90,6 +93,9 @@ jobs:
           flags: php
           name: php-coverage
 
+      - name: Cleanup
+        uses: ./.github/actions/docker-cleanup
+
   # ============================================================================
   # NODE.JS QUALITY CHECKS
   # ============================================================================
@@ -124,6 +130,9 @@ jobs:
 
       - name: Validate package.json
         run: docker compose exec -T node pnpm run quality
+
+      - name: Cleanup
+        uses: ./.github/actions/docker-cleanup
 
   # ============================================================================
   # NODE.JS TESTS
@@ -164,6 +173,9 @@ jobs:
           flags: node
           name: node-coverage
 
+      - name: Cleanup
+        uses: ./.github/actions/docker-cleanup
+
   # ============================================================================
   # DEPENDENCY AUDIT
   # ============================================================================
@@ -199,8 +211,7 @@ jobs:
         run: docker compose exec -T node pnpm audit
 
       - name: Cleanup
-        if: always()
-        run: docker compose down -v
+        uses: ./.github/actions/docker-cleanup
 
   # ============================================================================
   # BUILD TEST (Production)
@@ -234,5 +245,4 @@ jobs:
           curl -f http://localhost:8080/health || exit 1
 
       - name: Cleanup
-        if: always()
-        run: docker compose down -v
+        uses: ./.github/actions/docker-cleanup

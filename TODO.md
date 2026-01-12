@@ -2407,12 +2407,31 @@ curl http://localhost:3000/health
 ---
 
 **Erstellt:** 2025-12-19
-**Letzte Aktualisierung:** 2026-01-12 (Filename Parity & Dashboard Fix)
-**Version:** 3.19
+**Letzte Aktualisierung:** 2026-01-12 (CI/CD Cleanup & PHPUnit Modernization)
+**Version:** 3.20
 
 ---
 
 ## Changelog
+
+### Version 3.20 (2026-01-12) - CI/CD Cleanup & PHPUnit Modernization
+
+#### Changed
+- **PHPUnit Modernization**:
+  - Replaced `@covers` annotation with PHP 8 `#[CoversClass()]` attribute in `SystemInfoServiceTest.php`
+  - Added `PHPUnit\Framework\Attributes\CoversClass` import
+
+- **GitLab CI Cleanup Consolidation**:
+  - Integrated `after_script` cleanup into `docker-setup` anchor (DRY principle)
+  - Removed unused `.cleanup` anchor
+  - Removed redundant `after_script` from `dependency-audit` and `build:production` jobs
+  - All 15 Docker jobs now inherit cleanup automatically
+
+- **GitHub Actions Cleanup Consolidation**:
+  - Created reusable Composite Action: `.github/actions/docker-cleanup/action.yml`
+  - Added cleanup to jobs missing it: `php-quality`, `php-tests`, `node-quality`, `node-tests`
+  - Replaced manual cleanup steps in `dependency-audit`, `build-production`, `dependency-scan`
+  - All 7 Docker jobs now use the same centralized cleanup action
 
 ### Version 3.19 (2026-01-12) - Filename Parity & Dashboard Fix
 

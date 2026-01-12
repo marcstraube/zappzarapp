@@ -1,0 +1,12 @@
+name: Docker Cleanup
+description: Cleanup Docker Compose containers and prune unused resources
+
+runs:
+  using: composite
+  steps:
+    - name: Docker Cleanup
+      if: always()
+      shell: bash
+      run: |
+        docker compose down -v || true
+        docker system prune -f || true

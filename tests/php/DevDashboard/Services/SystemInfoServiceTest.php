@@ -5,11 +5,10 @@ declare(strict_types=1);
 namespace Tests\DevDashboard\Services;
 
 use DevDashboard\Services\SystemInfoService;
+use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 
-/**
- * @covers \DevDashboard\Services\SystemInfoService
- */
+#[CoversClass(SystemInfoService::class)]
 class SystemInfoServiceTest extends TestCase
 {
     private SystemInfoService $service;

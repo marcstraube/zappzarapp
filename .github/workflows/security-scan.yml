@@ -141,8 +141,7 @@ jobs:
           retention-days: 30
 
       - name: Cleanup
-        if: always()
-        run: docker compose down -v
+        uses: ./.github/actions/docker-cleanup
 
   # ============================================================================
   # FILESYSTEM & CONFIG SCAN

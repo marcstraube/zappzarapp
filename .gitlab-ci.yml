@@ -23,6 +23,9 @@ stages:
   before_script:
     - apk add --no-cache docker-compose curl bash
     - docker compose version
+  after_script:
+    - docker compose down -v || true
+    - docker system prune -f || true
 
 # ============================================================================
 # BUILD STAGE
@@ -239,8 +242,6 @@ dependency-audit:
     - docker compose exec -T node pnpm install --frozen-lockfile
     - docker compose exec -T php composer audit
     - docker compose exec -T node pnpm audit
-  after_script:
-    - docker compose down -v
   allow_failure: true
 
 # ============================================================================
@@ -258,16 +259,7 @@ build:production:
     - sleep 10
     - docker compose ps
     - curl -f http://localhost:8080/health || exit 1
-  after_script:
-    - docker compose down -v
   artifacts:
     when: on_success
     expire_in: 7 days
 
-# ============================================================================
-# CLEANUP
-# ============================================================================
-.cleanup: &cleanup
-  after_script:
-    - docker compose down -v || true
-    - docker system prune -f || true
