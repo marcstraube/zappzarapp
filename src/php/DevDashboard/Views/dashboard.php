@@ -85,16 +85,6 @@
                 <dt class="text-sm text-gray-500">Commit</dt>
                 <dd class="text-sm font-mono text-gray-900"><?= htmlspecialchars($gitStatus['commit'] ?? 'Unknown') ?></dd>
             </div>
-            <div class="flex justify-between">
-                <dt class="text-sm text-gray-500">Uncommitted</dt>
-                <dd>
-                    <?php if ($gitStatus['has_uncommitted_changes']): ?>
-                        <span class="badge badge-yellow">⚠ <?= count($gitStatus['uncommitted_files']) ?> changes</span>
-                    <?php else: ?>
-                        <span class="badge badge-green">✓ Clean</span>
-                    <?php endif; ?>
-                </dd>
-            </div>
         </dl>
         <?php else: ?>
         <p class="text-sm text-gray-500"><?= $gitStatus['message'] ?? 'Not available' ?></p>

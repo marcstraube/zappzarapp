@@ -286,7 +286,7 @@ innodb_encryption_threads = 4
 
 ### 3. Mount Keyfile and Config in Docker Compose
 
-Edit `compose.yaml` or `compose.prod.yaml`:
+Edit `compose.yaml` or `compose.production.yaml`:
 
 ```yaml
 mariadb:

@@ -71,7 +71,7 @@ innodb_encryption_threads = 4
 # SSL/TLS (Already configured in compose.yaml via command)
 # ----------------------------------------------------------------------------
 # These settings are passed via Docker Compose command arguments
-# See compose.prod.yaml for SSL certificate paths
+# See compose.production.yaml for SSL certificate paths
 
 # ----------------------------------------------------------------------------
 # Logging

@@ -115,13 +115,9 @@ class SystemInfoServiceTest extends TestCase
         if ($status['initialized']) {
             $this->assertArrayHasKey('branch', $status);
             $this->assertArrayHasKey('commit', $status);
-            $this->assertArrayHasKey('has_uncommitted_changes', $status);
-            $this->assertArrayHasKey('uncommitted_files', $status);
 
             $this->assertIsString($status['branch']);
             $this->assertIsString($status['commit']);
-            $this->assertIsBool($status['has_uncommitted_changes']);
-            $this->assertIsArray($status['uncommitted_files']);
         }
     }
 

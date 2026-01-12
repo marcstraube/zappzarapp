@@ -27,7 +27,7 @@ services:
       args:
         USER_ID: ${USER_ID:-1000}
         GROUP_ID: ${GROUP_ID:-1000}
-    entrypoint: ["/entrypoint.dev.sh"]
+    entrypoint: ["/entrypoint.development.sh"]
     command: ["php-fpm"]
     develop:
       watch:
@@ -50,7 +50,7 @@ services:
           target: /var/www/html/templates
     volumes:
       # Entrypoint Script
-      - ./docker/php/entrypoint.dev.sh:/entrypoint.dev.sh:ro
+      - ./docker/php/entrypoint.development.sh:/entrypoint.development.sh:ro
 
       # Dependencies (named volume for best cross-platform performance)
       - php_vendor:/var/www/html/vendor

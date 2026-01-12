@@ -253,8 +253,8 @@ build:production:
     - master
     - develop
   script:
-    - ENV=production docker compose -f compose.yaml -f compose.prod.yaml build
-    - ENV=production docker compose -f compose.yaml -f compose.prod.yaml up -d
+    - ENV=production docker compose -f compose.yaml -f compose.production.yaml build
+    - ENV=production docker compose -f compose.yaml -f compose.production.yaml up -d
     - sleep 10
     - docker compose ps
     - curl -f http://localhost:8080/health || exit 1

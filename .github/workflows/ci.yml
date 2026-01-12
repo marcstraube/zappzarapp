@@ -220,11 +220,11 @@ jobs:
 
       - name: Build production images
         run: |
-          ENV=production docker compose -f compose.yaml -f compose.prod.yaml build
+          ENV=production docker compose -f compose.yaml -f compose.production.yaml build
 
       - name: Test production startup
         run: |
-          ENV=production docker compose -f compose.yaml -f compose.prod.yaml up -d
+          ENV=production docker compose -f compose.yaml -f compose.production.yaml up -d
           sleep 10
           docker compose ps
           docker compose logs

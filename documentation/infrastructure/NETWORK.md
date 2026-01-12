@@ -216,7 +216,7 @@ networks:
 
 1. **Never expose database ports** to the host machine in production
 2. **Use Unix sockets** for PHP-FPM (already configured)
-3. **Enable SSL/TLS** for all database connections (see `compose.prod.yaml`)
+3. **Enable SSL/TLS** for all database connections (see `compose.production.yaml`)
 4. **Monitor network traffic** with tools like `docker stats`
 5. **Regular security audits** of network configurations
 

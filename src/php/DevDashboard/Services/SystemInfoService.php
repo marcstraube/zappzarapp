@@ -103,16 +103,13 @@ class SystemInfoService
             ];
         }
 
-        $branch      = $this->executeCommand('git rev-parse --abbrev-ref HEAD', $gitDir);
-        $commit      = $this->executeCommand('git rev-parse --short HEAD', $gitDir);
-        $uncommitted = $this->executeCommand('git status --porcelain', $gitDir);
+        $branch = $this->executeCommand('git rev-parse --abbrev-ref HEAD', $gitDir);
+        $commit = $this->executeCommand('git rev-parse --short HEAD', $gitDir);
 
         return [
-            'initialized'             => true,
-            'branch'                  => trim($branch),
-            'commit'                  => trim($commit),
-            'has_uncommitted_changes' => !in_array(trim($uncommitted), ['', '0'], true),
-            'uncommitted_files'       => array_filter(explode("\n", trim($uncommitted))),
+            'initialized' => true,
+            'branch'      => trim($branch),
+            'commit'      => trim($commit),
         ];
     }
 

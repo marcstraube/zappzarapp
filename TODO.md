@@ -2407,12 +2407,39 @@ curl http://localhost:3000/health
 ---
 
 **Erstellt:** 2025-12-19
-**Letzte Aktualisierung:** 2026-01-12 (GDPR Security Scanning & GitLab CI)
-**Version:** 3.18
+**Letzte Aktualisierung:** 2026-01-12 (Filename Parity & Dashboard Fix)
+**Version:** 3.19
 
 ---
 
 ## Changelog
+
+### Version 3.19 (2026-01-12) - Filename Parity & Dashboard Fix
+
+#### Changed
+- **Filename Parity (dev/prod → development/production)**:
+  - Renamed `docker/php/entrypoint.dev.sh` → `docker/php/entrypoint.development.sh`
+  - Renamed `compose.prod.yaml` → `compose.production.yaml`
+  - Consistent with ENV values (`development`/`production`) and Dockerfile targets
+  - Updated all references in:
+    - `compose.override.yaml`
+    - `Makefile` (16 occurrences)
+    - `.github/workflows/ci.yml`
+    - `.gitlab-ci.yml`
+    - `docker/nginx/conf.d/csp-production.conf`
+    - `docker/node/ssl-example.md`
+    - `docker/mariadb/my.cnf.example`
+    - `documentation/infrastructure/NETWORK.md`
+    - `documentation/security/ENCRYPTION.md`
+
+#### Fixed
+- **Dev Dashboard Git Status**:
+  - Removed unreliable "uncommitted changes" counter from dashboard
+  - Git status now shows only branch and commit (work correctly in container)
+  - Root cause: `.dockerignore` excludes files from build, but `.git` is mounted as volume, causing Git to see tracked files as "deleted"
+  - Updated `SystemInfoService.php`, `dashboard.php`, and related tests
+
+---
 
 ### Version 3.18 (2026-01-12) - GDPR Security Scanning & GitLab CI
 

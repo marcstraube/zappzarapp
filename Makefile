@@ -182,9 +182,9 @@ build: ## Build Docker images
 		if [ "$${ENABLE_REDIS:-true}" = "true" ]; then PROFILES="$$PROFILES --profile redis"; fi; \
 		if [ "$$ENV" = "production" ]; then \
 			echo -e "\033[0;34mBuilding Node image first (required by PHP and NGINX)...\033[0m" && \
-			$(DC) -f compose.yaml -f compose.prod.yaml $$PROFILES build node && \
+			$(DC) -f compose.yaml -f compose.production.yaml $$PROFILES build node && \
 			echo -e "\033[0;34mBuilding remaining images...\033[0m" && \
-			$(DC) -f compose.yaml -f compose.prod.yaml $$PROFILES build; \
+			$(DC) -f compose.yaml -f compose.production.yaml $$PROFILES build; \
 		else \
 			$(DC) $$PROFILES build; \
 		fi; \
@@ -206,9 +206,9 @@ build-no-cache: ## Build Docker images without cache
 		if [ "$${ENABLE_REDIS:-true}" = "true" ]; then PROFILES="$$PROFILES --profile redis"; fi; \
 		if [ "$$ENV" = "production" ]; then \
 			echo -e "\033[0;34mBuilding Node image first (required by PHP and NGINX)...\033[0m" && \
-			$(DC) -f compose.yaml -f compose.prod.yaml $$PROFILES build --no-cache node && \
+			$(DC) -f compose.yaml -f compose.production.yaml $$PROFILES build --no-cache node && \
 			echo -e "\033[0;34mBuilding remaining images...\033[0m" && \
-			$(DC) -f compose.yaml -f compose.prod.yaml $$PROFILES build --no-cache; \
+			$(DC) -f compose.yaml -f compose.production.yaml $$PROFILES build --no-cache; \
 		else \
 			$(DC) $$PROFILES build --no-cache; \
 		fi; \
@@ -229,7 +229,7 @@ clean: ## Remove containers, networks and dangling images (keeps data volumes)
 		if [ "$${ENABLE_NODE:-true}" = "true" ]; then PROFILES="$$PROFILES --profile node"; fi; \
 		if [ "$${ENABLE_REDIS:-true}" = "true" ]; then PROFILES="$$PROFILES --profile redis"; fi; \
 		if [ "$$ENV" = "production" ]; then \
-			$(DC) -f compose.yaml -f compose.prod.yaml $$PROFILES down; \
+			$(DC) -f compose.yaml -f compose.production.yaml $$PROFILES down; \
 		else \
 			$(DC) $$PROFILES down; \
 		fi; \
@@ -262,7 +262,7 @@ down: ## Stop containers
 		if [ "$${ENABLE_NODE:-true}" = "true" ]; then PROFILES="$$PROFILES --profile node"; fi; \
 		if [ "$${ENABLE_REDIS:-true}" = "true" ]; then PROFILES="$$PROFILES --profile redis"; fi; \
 		if [ "$$ENV" = "production" ]; then \
-			$(DC) -f compose.yaml -f compose.prod.yaml $$PROFILES down; \
+			$(DC) -f compose.yaml -f compose.production.yaml $$PROFILES down; \
 		else \
 			$(DC) $$PROFILES down; \
 		fi; \
@@ -274,7 +274,7 @@ down: ## Stop containers
 logs: ## Show logs of all containers
 	@if [ -f .env ]; then \
 		. ./.env && if [ "$$ENV" = "production" ]; then \
-			docker compose -f compose.yaml -f compose.prod.yaml logs -f; \
+			docker compose -f compose.yaml -f compose.production.yaml logs -f; \
 		else \
 			docker compose logs -f; \
 		fi; \
@@ -285,7 +285,7 @@ logs: ## Show logs of all containers
 logs-nginx: ## Show Nginx logs only
 	@if [ -f .env ]; then \
 		. ./.env && if [ "$$ENV" = "production" ]; then \
-			docker compose -f compose.yaml -f compose.prod.yaml logs -f nginx; \
+			docker compose -f compose.yaml -f compose.production.yaml logs -f nginx; \
 		else \
 			docker compose logs -f nginx; \
 		fi; \
@@ -296,7 +296,7 @@ logs-nginx: ## Show Nginx logs only
 logs-php: ## Show PHP logs only
 	@if [ -f .env ]; then \
 		. ./.env && if [ "$$ENV" = "production" ]; then \
-			docker compose -f compose.yaml -f compose.prod.yaml logs -f php; \
+			docker compose -f compose.yaml -f compose.production.yaml logs -f php; \
 		else \
 			docker compose logs -f php; \
 		fi; \
@@ -307,7 +307,7 @@ logs-php: ## Show PHP logs only
 logs-node: ## Show Node.js logs only
 	@if [ -f .env ]; then \
 		. ./.env && if [ "$$ENV" = "production" ]; then \
-			docker compose -f compose.yaml -f compose.prod.yaml logs -f node; \
+			docker compose -f compose.yaml -f compose.production.yaml logs -f node; \
 		else \
 			docker compose logs -f node; \
 		fi; \
@@ -318,7 +318,7 @@ logs-node: ## Show Node.js logs only
 logs-redis: ## Show Redis logs only
 	@if [ -f .env ]; then \
 		. ./.env && if [ "$$ENV" = "production" ]; then \
-			docker compose -f compose.yaml -f compose.prod.yaml logs -f redis; \
+			docker compose -f compose.yaml -f compose.production.yaml logs -f redis; \
 		else \
 			docker compose logs -f redis; \
 		fi; \
@@ -329,7 +329,7 @@ logs-redis: ## Show Redis logs only
 logs-postgres: ## Show PostgreSQL logs only
 	@if [ -f .env ]; then \
 		. ./.env && if [ "$$ENV" = "production" ]; then \
-			docker compose -f compose.yaml -f compose.prod.yaml logs -f postgres; \
+			docker compose -f compose.yaml -f compose.production.yaml logs -f postgres; \
 		else \
 			docker compose logs -f postgres; \
 		fi; \
@@ -340,7 +340,7 @@ logs-postgres: ## Show PostgreSQL logs only
 logs-mariadb: ## Show MariaDB logs only
 	@if [ -f .env ]; then \
 		. ./.env && if [ "$$ENV" = "production" ]; then \
-			docker compose -f compose.yaml -f compose.prod.yaml logs -f mariadb; \
+			docker compose -f compose.yaml -f compose.production.yaml logs -f mariadb; \
 		else \
 			docker compose logs -f mariadb; \
 		fi; \
@@ -418,7 +418,7 @@ up: ## Start enabled containers (based on .env ENABLE_* flags)
 			full-stack|backend-only) NODE_TARGET_AUTO="app-server" ;; \
 		esac; \
 		export NODE_TARGET="$${NODE_TARGET:-$$NODE_TARGET_AUTO}"; \
-		$(DC) -f compose.yaml -f compose.prod.yaml $$PROFILES up -d; \
+		$(DC) -f compose.yaml -f compose.production.yaml $$PROFILES up -d; \
 	else \
 		echo -e "\033[0;34mStarting containers...\033[0m"; \
 		$(DC) $$PROFILES up -d; \
@@ -733,11 +733,11 @@ fresh: ## Complete clean slate rebuild, removing all data volumes (DANGEROUS!)
 	@# Stop ALL containers and rebuild ALL images regardless of profile settings (fresh = complete reset)
 	@if [ -f .env ]; then \
 		. ./.env && if [ "$$ENV" = "production" ]; then \
-			$(DC) -f compose.yaml -f compose.prod.yaml --profile php --profile node --profile redis --profile postgres --profile mariadb down -v --rmi all && \
+			$(DC) -f compose.yaml -f compose.production.yaml --profile php --profile node --profile redis --profile postgres --profile mariadb down -v --rmi all && \
 			echo -e "\033[0;34mBuilding Node image first (required by PHP and NGINX)...\033[0m" && \
-			$(DC) -f compose.yaml -f compose.prod.yaml --profile php --profile node --profile redis --profile postgres --profile mariadb build --no-cache node && \
+			$(DC) -f compose.yaml -f compose.production.yaml --profile php --profile node --profile redis --profile postgres --profile mariadb build --no-cache node && \
 			echo -e "\033[0;34mBuilding remaining images...\033[0m" && \
-			$(DC) -f compose.yaml -f compose.prod.yaml --profile php --profile node --profile redis --profile postgres --profile mariadb build --no-cache; \
+			$(DC) -f compose.yaml -f compose.production.yaml --profile php --profile node --profile redis --profile postgres --profile mariadb build --no-cache; \
 		else \
 			$(DC) --profile php --profile node --profile redis --profile postgres --profile mariadb down -v --rmi all && \
 			$(DC) --profile php --profile node --profile redis --profile postgres --profile mariadb build --no-cache; \

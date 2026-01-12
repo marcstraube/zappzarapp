@@ -1,4 +1,4 @@
-# ./compose.prod.yaml
+# ./compose.production.yaml
 # Docker Compose Production Environment
 
 services:

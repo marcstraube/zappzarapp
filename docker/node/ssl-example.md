@@ -83,7 +83,7 @@ services:
       - "${NODE_SSL_PORT:-3443}:3000"
 ```
 
-**Production (`compose.prod.yaml`):**
+**Production (`compose.production.yaml`):**
 ```yaml
 services:
   node:
