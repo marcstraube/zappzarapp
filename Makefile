@@ -1,6 +1,9 @@
 SHELL := /bin/bash
 .SHELLFLAGS := -c
 
+# Docker Compose with plain progress output to avoid terminal corruption
+DC := docker compose --progress=plain
+
 .PHONY: $(shell awk '/^[a-zA-Z_-]+:.*?## / { print $$1 }' $(MAKEFILE_LIST) | sed 's/://')
 
 help: ## Show this help
@@ -32,9 +35,9 @@ help: ## Show this help
 composer-install: ## Install/update Composer dependencies (Docker - guaranteed consistency)
 	@echo -e "\033[0;33mManaging Composer dependencies (Docker)...\033[0m"
 	@if [ ! -f "vendor/autoload.php" ]; then \
-		XDEBUG_MODE=off docker compose run --rm --no-TTY php composer install --prefer-dist --no-interaction; \
+		XDEBUG_MODE=off $(DC) run --rm --no-TTY php composer install --prefer-dist --no-interaction; \
 	else \
-		XDEBUG_MODE=off docker compose run --rm --no-TTY php composer install --prefer-dist --no-interaction --no-scripts; \
+		XDEBUG_MODE=off $(DC) run --rm --no-TTY php composer install --prefer-dist --no-interaction --no-scripts; \
 	fi
 	@echo -e "\033[0;32mDependencies ready!\033[0m"
 
@@ -165,14 +168,14 @@ build: ## Build Docker images
 	@if [ -f .env ]; then \
 		. ./.env && if [ "$$ENV" = "production" ]; then \
 			echo -e "\033[0;34mBuilding Node image first (required by PHP and NGINX)...\033[0m" && \
-			docker compose -f compose.yaml -f compose.prod.yaml build node && \
+			$(DC) -f compose.yaml -f compose.prod.yaml build node && \
 			echo -e "\033[0;34mBuilding remaining images...\033[0m" && \
-			docker compose -f compose.yaml -f compose.prod.yaml build; \
+			$(DC) -f compose.yaml -f compose.prod.yaml build; \
 		else \
-			docker compose build; \
+			$(DC) build; \
 		fi; \
 	else \
-		docker compose build; \
+		$(DC) build; \
 	fi
 	@echo -e "\033[0;32mBuild completed!\033[0m"
 
@@ -181,14 +184,14 @@ build-no-cache: ## Build Docker images without cache
 	@if [ -f .env ]; then \
 		. ./.env && if [ "$$ENV" = "production" ]; then \
 			echo -e "\033[0;34mBuilding Node image first (required by PHP and NGINX)...\033[0m" && \
-			docker compose -f compose.yaml -f compose.prod.yaml build --no-cache node && \
+			$(DC) -f compose.yaml -f compose.prod.yaml build --no-cache node && \
 			echo -e "\033[0;34mBuilding remaining images...\033[0m" && \
-			docker compose -f compose.yaml -f compose.prod.yaml build --no-cache; \
+			$(DC) -f compose.yaml -f compose.prod.yaml build --no-cache; \
 		else \
-			docker compose build --no-cache; \
+			$(DC) build --no-cache; \
 		fi; \
 	else \
-		docker compose build --no-cache; \
+		$(DC) build --no-cache; \
 	fi
 	@echo -e "\033[0;32mBuild completed!\033[0m"
 
@@ -196,12 +199,12 @@ clean: ## Remove containers, networks and dangling images (keeps data volumes)
 	@echo -e "\033[0;33mCleaning up...\033[0m"
 	@if [ -f .env ]; then \
 		. ./.env && if [ "$$ENV" = "production" ]; then \
-			docker compose -f compose.yaml -f compose.prod.yaml down; \
+			$(DC) -f compose.yaml -f compose.prod.yaml down; \
 		else \
-			docker compose down; \
+			$(DC) down; \
 		fi; \
 	else \
-		docker compose down; \
+		$(DC) down; \
 	fi
 	@docker system prune -f
 	@echo -e "\033[0;32mCleanup completed!\033[0m"
@@ -229,12 +232,12 @@ down: ## Stop containers
 		if [ "$${ENABLE_NODE:-true}" = "true" ]; then PROFILES="$$PROFILES --profile node"; fi; \
 		if [ "$${ENABLE_REDIS:-true}" = "true" ]; then PROFILES="$$PROFILES --profile redis"; fi; \
 		if [ "$$ENV" = "production" ]; then \
-			docker compose -f compose.yaml -f compose.prod.yaml $$PROFILES down; \
+			$(DC) -f compose.yaml -f compose.prod.yaml $$PROFILES down; \
 		else \
-			docker compose $$PROFILES down; \
+			$(DC) $$PROFILES down; \
 		fi; \
 	else \
-		docker compose down; \
+		$(DC) down; \
 	fi
 	@echo -e "\033[0;32mContainers stopped!\033[0m"
 
@@ -368,10 +371,10 @@ up-core:
 			full-stack|backend-only) NODE_TARGET_AUTO="app-server" ;; \
 		esac; \
 		export NODE_TARGET="$${NODE_TARGET:-$$NODE_TARGET_AUTO}"; \
-		docker compose -f compose.yaml -f compose.prod.yaml $$PROFILES up -d; \
+		$(DC) -f compose.yaml -f compose.prod.yaml $$PROFILES up -d; \
 	else \
 		echo -e "\033[0;34mStarting containers with Docker Compose Watch (cross-platform file sync)...\033[0m"; \
-		nohup docker compose $$PROFILES watch > /dev/null 2>&1 & \
+		setsid $(DC) $$PROFILES watch < /dev/null > /dev/null 2>&1 & \
 		echo $$! > .docker-watch.pid; \
 	fi
 	@echo -e "\033[0;32mContainers started!\033[0m"
@@ -436,7 +439,7 @@ sync-lockfiles: ## Sync lock files from containers to host (for IDE/Git)
 
 node-build: ## Executes the frontend build inside the Node container (uses 'build' stage)
 	@echo -e "\033[0;33mExecuting frontend build...\033[0m"
-	@docker compose run --rm --build --target build node pnpm run build
+	@$(DC) run --rm --build --target build node pnpm run build
 
 node-up: ## Starts the Node service alongside the standard stack (Uses the default 'asset-server' target)
 	@echo -e "\033[0;33mStarting Node service (asset-server target)...\033[0m"
@@ -599,18 +602,18 @@ fresh: ## Complete clean slate rebuild, removing all data volumes (DANGEROUS!)
 	@echo -e "\033[0;33mProceeding with fresh rebuild (no cache)...\033[0m"
 	@if [ -f .env ]; then \
 		. ./.env && if [ "$$ENV" = "production" ]; then \
-			docker compose -f compose.yaml -f compose.prod.yaml down -v --rmi all && \
+			$(DC) -f compose.yaml -f compose.prod.yaml down -v --rmi all && \
 			echo -e "\033[0;34mBuilding Node image first (required by PHP and NGINX)...\033[0m" && \
-			docker compose -f compose.yaml -f compose.prod.yaml build --no-cache node && \
+			$(DC) -f compose.yaml -f compose.prod.yaml build --no-cache node && \
 			echo -e "\033[0;34mBuilding remaining images...\033[0m" && \
-			docker compose -f compose.yaml -f compose.prod.yaml build --no-cache; \
+			$(DC) -f compose.yaml -f compose.prod.yaml build --no-cache; \
 		else \
-			docker compose down -v --rmi all && \
-			docker compose build --no-cache; \
+			$(DC) down -v --rmi all && \
+			$(DC) build --no-cache; \
 		fi; \
 	else \
-		docker compose down -v --rmi all && \
-		docker compose build --no-cache; \
+		$(DC) down -v --rmi all && \
+		$(DC) build --no-cache; \
 	fi
 	@$(MAKE) --silent up
 
@@ -910,21 +913,21 @@ ssl-reload-services: ## Reload all SSL-dependent services after certificate rene
 	@# PostgreSQL: restart required (dev mode copies certs via entrypoint)
 	@if docker compose ps postgres --status running -q 2>/dev/null | grep -q .; then \
 		echo -e "  Restarting postgres (entrypoint re-copies certs)..."; \
-		docker compose restart postgres 2>/dev/null && \
+		$(DC) restart postgres 2>/dev/null && \
 			echo -e "  \033[0;32m✓ postgres restarted\033[0m" || \
 			echo -e "  \033[0;33m⚠ postgres not running\033[0m"; \
 	fi
 	@# MariaDB: restart required (entrypoint re-copies certs, no graceful SSL reload)
 	@if docker compose ps mariadb --status running -q 2>/dev/null | grep -q .; then \
 		echo -e "  Restarting mariadb (entrypoint re-copies certs)..."; \
-		docker compose restart mariadb 2>/dev/null && \
+		$(DC) restart mariadb 2>/dev/null && \
 			echo -e "  \033[0;32m✓ mariadb restarted\033[0m" || \
 			echo -e "  \033[0;33m⚠ mariadb not running\033[0m"; \
 	fi
 	@# Redis: restart required (no graceful TLS reload)
 	@if docker compose ps redis --status running -q 2>/dev/null | grep -q .; then \
 		echo -e "  Restarting redis (no graceful TLS reload)..."; \
-		docker compose restart redis 2>/dev/null && \
+		$(DC) restart redis 2>/dev/null && \
 			echo -e "  \033[0;32m✓ redis restarted\033[0m" || \
 			echo -e "  \033[0;33m⚠ redis not running\033[0m"; \
 	fi

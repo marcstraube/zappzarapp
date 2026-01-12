@@ -2407,12 +2407,28 @@ curl http://localhost:3000/health
 ---
 
 **Erstellt:** 2025-12-19
-**Letzte Aktualisierung:** 2026-01-12 (Documentation Restructure & MIT License)
-**Version:** 3.14
+**Letzte Aktualisierung:** 2026-01-12 (Terminal Output & Entrypoint Fixes)
+**Version:** 3.15
 
 ---
 
 ## Changelog
+
+### Version 3.15 (2026-01-12) - Terminal Output & Entrypoint Fixes
+
+#### Fixed
+- **Makefile Terminal Corruption**:
+  - Added `$(DC)` variable with `--progress=plain` to prevent Docker Compose progress output from corrupting terminal
+  - Changed `nohup` to `setsid` for Docker Compose Watch to fully detach from terminal session
+  - Added `< /dev/null` to stdin redirection for complete terminal separation
+
+#### Removed
+- **Entrypoint Copy-on-Write Workaround**:
+  - Removed obsolete composer.json/composer.lock copy-move workaround from `entrypoint.dev.sh`
+  - This workaround was no longer needed with Docker Compose Watch (files are synced, not baked into image layer)
+  - Simplifies entrypoint and eliminates "Resource busy" errors on container restart
+
+---
 
 ### Version 3.14 (2026-01-12) - Documentation Restructure & MIT License
 
