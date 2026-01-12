@@ -5,13 +5,24 @@ This directory contains tests for the PHP backend using PHPUnit (similar to Vite
 ## Directory Structure
 
 ```
-tests/php/               # PHP tests (PHPUnit)
-├── App/                 # Application tests
-│   ├── Unit/            # Unit tests for individual classes/functions
-│   └── Feature/         # Feature/Integration tests for complex workflows
-└── DevDashboard/        # DevDashboard tests
+tests/php/                          # PHP tests (PHPUnit)
+├── App/                            # Application tests
+│   ├── Unit/                       # Unit tests for individual classes/functions
+│   │   ├── CalculatorTest.php
+│   │   └── Infrastructure/
+│   │       ├── Audit/
+│   │       │   ├── AuditLoggerTest.php
+│   │       │   └── HasAuditLoggingTest.php
+│   │       └── Encryption/
+│   │           └── EncryptionServiceTest.php
+│   └── Feature/                    # Feature/Integration tests
+│       └── CalculatorIntegrationTest.php
+└── DevDashboard/                   # DevDashboard tests
     ├── Controllers/
+    │   └── DashboardControllerTest.php
     └── Services/
+        ├── HealthCheckServiceTest.php
+        └── SystemInfoServiceTest.php
 
 Note: Node.js tests are in tests/node/ (Vitest), mirroring the src/php/ and src/node/ structure.
 ```
@@ -79,6 +90,35 @@ class CalculatorTest extends TestCase
 }
 ```
 
+### Service Tests
+
+Place service tests in the appropriate namespace. Example for Encryption:
+
+```php
+<?php
+
+declare(strict_types=1);
+
+namespace App\Tests\Unit\Infrastructure\Encryption;
+
+use App\Infrastructure\Encryption\EncryptionService;
+use PHPUnit\Framework\TestCase;
+
+class EncryptionServiceTest extends TestCase
+{
+    private const TEST_KEY = 'test-key-32-characters-long-!!';
+
+    public function testEncryptDecrypt(): void
+    {
+        $plaintext = 'sensitive data';
+        $encrypted = EncryptionService::encrypt($plaintext, self::TEST_KEY);
+        $decrypted = EncryptionService::decrypt($encrypted, self::TEST_KEY);
+
+        $this->assertEquals($plaintext, $decrypted);
+    }
+}
+```
+
 ### Feature Tests
 
 Place feature/integration tests in `tests/php/App/Feature/` directory. Example:
@@ -106,16 +146,16 @@ class ApiEndpointTest extends TestCase
 
 ## Test Configuration
 
-PHPUnit configuration is in `phpunit.xml` or `phpunit.xml.dist` at the project root.
+PHPUnit configuration is in `phpunit.xml.dist` at the project root.
 
 Key configurations:
 - Test suites: Unit and Feature
-- Coverage thresholds: 80% (similar to Node.js Vitest)
+- Coverage thresholds: 80%
 - Test directories: `tests/php/App/Unit/` and `tests/php/App/Feature/`
 
 ## Quality Thresholds
 
-Minimum coverage requirements (should match PHPUnit configuration):
+Minimum coverage requirements:
 - Lines: 80%
 - Functions: 80%
 - Branches: 80%
@@ -142,6 +182,13 @@ make cs-check
 Fix code style:
 ```bash
 make cs-fix
+```
+
+### PHPMD (Mess Detector)
+
+Run mess detector:
+```bash
+docker compose exec php vendor/bin/phpmd src text phpmd.xml.dist
 ```
 
 ### Rector (Automated Refactoring)

@@ -4,6 +4,7 @@
   "description": "Flexible Docker boilerplate for PHP and Node.js development",
   "type": "module",
   "private": true,
+  "license": "MIT",
   "scripts": {
     "dev": "vite",
     "dev:frontend": "pm2-runtime start ecosystem.config.cjs --only vite",

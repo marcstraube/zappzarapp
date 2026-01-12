@@ -2407,12 +2407,38 @@ curl http://localhost:3000/health
 ---
 
 **Erstellt:** 2025-12-19
-**Letzte Aktualisierung:** 2026-01-12 (PhpStorm Docker Integration & Health Dashboard Fixes)
-**Version:** 3.13
+**Letzte Aktualisierung:** 2026-01-12 (Documentation Restructure & MIT License)
+**Version:** 3.14
 
 ---
 
 ## Changelog
+
+### Version 3.14 (2026-01-12) - Documentation Restructure & MIT License
+
+#### Changed
+- **README.md Overhaul**:
+  - Reduced from 621 lines to ~130 lines
+  - Focused on project description, features, and quick start
+  - Moved detailed documentation to `documentation/` directory
+  - Updated Quick Start to use correct workflow (`make init` → edit `.env` → `make setup` → `make up`)
+  - Make is now a required prerequisite (not optional)
+  - Added IDE support (PhpStorm, VS Code) and Git Hooks (Captainhook) to features
+
+- **License Changed to MIT**:
+  - Updated `README.md`, `composer.json`, `package.json`
+  - Created `LICENSE` file with MIT license text
+
+#### Added
+- **documentation/XDEBUG.md**: Complete Xdebug configuration guide (moved from old README)
+- **documentation/RENOVATE.md**: Dependency management with Renovate (moved from old README)
+
+#### Updated
+- **documentation/README.md**: Added links to new documentation files, updated structure
+- **documentation/TESTING-PHP.md**: Updated directory structure to reflect actual test files
+- **documentation/TESTING-NODE.md**: Fixed directory structure (`tests/node/App/` instead of `tests/node/`)
+
+---
 
 ### Version 3.13 (2026-01-12) - PhpStorm Docker Integration & Health Dashboard Fixes
 

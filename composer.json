@@ -2,7 +2,7 @@
     "name": "your-org/project-name",
     "description": "A generic PHP 8.4 dockerized application template",
     "type": "project",
-    "license": "proprietary",
+    "license": "MIT",
     "authors": [
         {
             "name": "Your Name",

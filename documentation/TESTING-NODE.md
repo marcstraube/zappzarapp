@@ -6,11 +6,14 @@ This directory contains tests for the Node.js backend using Vitest (similar to P
 
 ```
 tests/node/              # Node.js tests (Vitest)
-├── unit/                # Unit tests for individual functions/utilities
-│   └── math.test.ts
-├── integration/         # Integration tests for API endpoints
-│   └── api.test.ts
-└── README.md
+└── App/
+    ├── unit/            # Unit tests for individual functions/utilities
+    │   ├── math.test.ts
+    │   └── services/
+    │       ├── EncryptionService.test.ts
+    │       └── AuditLogger.test.ts
+    └── integration/     # Integration tests for API endpoints
+        └── api.test.ts
 
 Note: PHP tests are in tests/php/ (PHPUnit), mirroring the src/php/ and src/node/ structure.
 ```
@@ -54,7 +57,7 @@ Coverage reports are generated in `build/coverage/node/`:
 
 ### Unit Tests
 
-Place unit tests in `tests/node/unit/` directory. Example:
+Place unit tests in `tests/node/App/unit/` directory. Example:
 
 ```typescript
 import { describe, it, expect } from 'vitest';
@@ -67,9 +70,30 @@ describe('MyFunction', () => {
 });
 ```
 
+### Service Tests
+
+Place service tests in `tests/node/App/unit/services/`. Example:
+
+```typescript
+import { describe, it, expect, beforeEach } from 'vitest';
+import { EncryptionService } from '@node/App/services/EncryptionService';
+
+describe('EncryptionService', () => {
+  const testKey = 'test-encryption-key-32-chars-!!';
+
+  it('should encrypt and decrypt data', () => {
+    const plaintext = 'sensitive data';
+    const encrypted = EncryptionService.encrypt(plaintext, testKey);
+    const decrypted = EncryptionService.decrypt(encrypted, testKey);
+
+    expect(decrypted).toBe(plaintext);
+  });
+});
+```
+
 ### Integration Tests
 
-Place integration tests in `tests/node/integration/` directory. Example:
+Place integration tests in `tests/node/App/integration/` directory. Example:
 
 ```typescript
 import { describe, it, expect, beforeAll } from 'vitest';
