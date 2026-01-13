@@ -70,7 +70,8 @@ RUN apk add --no-cache \
     graphicsmagick \
     icu-libs \
     libzip \
-    postgresql-libs
+    postgresql-libs \
+    tzdata
 
 # Copy the compiled extensions and configuration files from the builder
 COPY --from=php-builder /usr/local/etc/php/conf.d/ /usr/local/etc/php/conf.d/
@@ -118,6 +119,10 @@ COPY docker/php/php-fpm.conf /usr/local/etc/php-fpm.d/www.conf
 # Override zz-docker.conf to use Unix socket instead of TCP
 COPY docker/php/zz-docker.conf /usr/local/etc/php-fpm.d/zz-docker.conf
 
+# Copy entrypoint script (sets up timezone from TZ env var)
+COPY docker/php/entrypoint.sh /usr/local/bin/entrypoint.sh
+RUN chmod +x /usr/local/bin/entrypoint.sh
+
 # Copy Composer files (Docker Compose Watch will sync changes)
 # Note: composer.lock* uses glob to make it optional (not all projects have it initially)
 COPY --chown=www-data:www-data composer.json composer.lock* ./
@@ -130,6 +135,7 @@ COPY --chown=www-data:www-data templates/ ./templates/
 # Keep as root for entrypoint (entrypoint will handle permissions and su to www-data)
 # PHP-FPM will still run as www-data (configured in php-fpm.conf)
 
+ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
 CMD ["php-fpm"]
 
 # --- 4. PRODUCTION STAGE ---
@@ -141,6 +147,10 @@ COPY docker/php/php.ini /usr/local/etc/php/php.ini
 COPY docker/php/php-fpm.conf /usr/local/etc/php-fpm.d/www.conf
 # Override zz-docker.conf to use Unix socket instead of TCP
 COPY docker/php/zz-docker.conf /usr/local/etc/php-fpm.d/zz-docker.conf
+
+# Copy entrypoint script (sets up timezone from TZ env var)
+COPY docker/php/entrypoint.sh /usr/local/bin/entrypoint.sh
+RUN chmod +x /usr/local/bin/entrypoint.sh
 
 # Install Composer temporarily for dependency installation
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
@@ -176,7 +186,6 @@ RUN chown -R root:root /var/www/html && \
     chmod 770 /var/www/html/storage && \
     find /var/www/html/storage -type f -exec chmod 660 {} \; 2>/dev/null || true
 
-# Switch to App User
-USER www-data
-
+# Entrypoint runs as root to set up timezone, PHP-FPM runs as www-data (configured in php-fpm.conf)
+ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
 CMD ["php-fpm"]

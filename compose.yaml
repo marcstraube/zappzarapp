@@ -10,6 +10,7 @@ services:
     container_name: ${COMPOSE_PROJECT_NAME:-docker-webdev}-nginx
     restart: unless-stopped
     environment:
+      - TZ=${TZ:-UTC}
       - NGINX_SSL_PORT=${NGINX_SSL_PORT:-8443}
     ports:
       - "${NGINX_PORT:-8080}:8080"
@@ -41,15 +42,29 @@ services:
     volumes:
       # Shared socket directory for PHP-FPM Unix socket communication
       - php-fpm-socket:/var/run/php-fpm
+      # SSL certificates for external database connections
+      - ./docker/certs:/etc/ssl/db-certs:ro
     depends_on:
       node:
         condition: service_started
         required: false
     environment:
+      - TZ=${TZ:-UTC}
       - ENV=${ENV:-production}
       - LOG_LEVEL=${LOG_LEVEL:-info}
       - LOG_FORMAT=${LOG_FORMAT:-json}
       - CORS_ORIGINS=${CORS_ORIGINS:-}
+      # Database (12-Factor: DATABASE_URL takes precedence)
+      - DATABASE_URL=${DATABASE_URL:-}
+      - DB_TYPE=${DB_TYPE:-postgres}
+      - DB_HOST=${DB_HOST:-postgres}
+      - DB_PORT=${DB_PORT:-5432}
+      - DB_NAME=${DB_NAME:-app}
+      - DB_USER=${DB_USER:-app}
+      - DB_PASSWORD=${DB_PASSWORD:-secret}
+      - DB_SSL_CA=${DB_SSL_CA:-}
+      - DB_SSL_VERIFY=${DB_SSL_VERIFY:-false}
+      - REDIS_URL=${REDIS_URL:-redis://redis:6379}
     networks:
       - backend
       - database
@@ -71,11 +86,26 @@ services:
     container_name: ${COMPOSE_PROJECT_NAME:-docker-webdev}-node
     restart: unless-stopped
     profiles: ["node"]
+    volumes:
+      # SSL certificates for external database connections
+      - ./docker/certs:/etc/ssl/db-certs:ro
     environment:
+      - TZ=${TZ:-UTC}
       - NODE_ENV=${ENV:-production}
       - LOG_LEVEL=${LOG_LEVEL:-info}
       - LOG_FORMAT=${LOG_FORMAT:-json}
       - CORS_ORIGINS=${CORS_ORIGINS:-}
+      # Database (12-Factor: DATABASE_URL takes precedence)
+      - DATABASE_URL=${DATABASE_URL:-}
+      - DB_TYPE=${DB_TYPE:-postgres}
+      - DB_HOST=${DB_HOST:-postgres}
+      - DB_PORT=${DB_PORT:-5432}
+      - DB_NAME=${DB_NAME:-app}
+      - DB_USER=${DB_USER:-app}
+      - DB_PASSWORD=${DB_PASSWORD:-secret}
+      - DB_SSL_CA=${DB_SSL_CA:-}
+      - DB_SSL_VERIFY=${DB_SSL_VERIFY:-false}
+      - REDIS_URL=${REDIS_URL:-redis://redis:6379}
     # Expose port 3000 if Node runs as an upstream server for Nginx or is accessed directly.
     expose:
       - "3000"
@@ -92,6 +122,8 @@ services:
     container_name: ${COMPOSE_PROJECT_NAME:-docker-webdev}-redis
     restart: unless-stopped
     profiles: ["redis"]
+    environment:
+      - TZ=${TZ:-UTC}
     expose:
       - "6379"
     command: >
@@ -124,6 +156,8 @@ services:
     expose:
       - "5432"
     environment:
+      TZ: ${TZ:-UTC}
+      PGTZ: ${TZ:-UTC}
       POSTGRES_DB: ${DB_NAME:-app}
       POSTGRES_USER: ${DB_USER:-app}
       POSTGRES_PASSWORD: ${DB_PASSWORD:-secret}
@@ -148,6 +182,7 @@ services:
     expose:
       - "3306"
     environment:
+      TZ: ${TZ:-UTC}
       MARIADB_DATABASE: ${DB_NAME:-app}
       MARIADB_USER: ${DB_USER:-app}
       MARIADB_PASSWORD: ${DB_PASSWORD:-secret}

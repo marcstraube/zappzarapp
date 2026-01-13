@@ -2,12 +2,74 @@
 
 
 **Erstellt:** 2025-12-19
-**Letzte Aktualisierung:** 2026-01-13 (Windows Setup & Changelog Cleanup)
-**Version:** 3.21
+**Letzte Aktualisierung:** 2026-01-13 (Database SSL & Bidirectional Mounts)
+**Version:** 3.22
 
 ---
 
 ## Changelog
+
+### Version 3.22 (2026-01-13) - Database SSL & Bidirectional Mounts
+
+#### Added
+- **Database SSL Configuration**:
+  - `DB_SSL_CA` environment variable for custom CA certificate path
+  - `DB_SSL_CA=system` option for cloud databases with public CA-signed certificates
+  - `DB_SSL_VERIFY` environment variable (true/false) for certificate verification
+  - Automatic SSL fallback for MariaDB using internal certificate (`/etc/ssl/db-certs/cert.crt`)
+
+- **PostgreSQL sslmode Support**:
+  - Automatic sslmode selection based on SSL configuration
+  - `verify-full` when SSL CA + verification enabled
+  - `require` when SSL CA configured without verification
+  - Default `prefer` behavior when no explicit SSL config
+
+- **DatabaseConfig SSL Methods** (PHP & Node):
+  - `getSslConfig()` / `getSslCa()` / `getSslVerify()`
+  - `hasSsl()` - checks if SSL is configured and certificate exists
+  - `getPostgresSslMode()` - returns appropriate sslmode string
+  - `getPdoSslOptions()` (PHP) - returns PDO options for MariaDB SSL
+
+- **Unit Tests**:
+  - 39 PHP tests for DatabaseConfig (SSL, sslmode, URL parsing)
+  - 40 Node tests for database.ts (SSL, sslmode, URL parsing)
+
+#### Changed
+- **compose.override.yaml - Bidirectional Bind Mounts**:
+  - PHP: `src/php`, `tests/php`, `templates` now use bind mounts instead of watch sync
+  - Node: `src/node`, `tests/node`, `resources` now use bind mounts instead of watch sync
+  - Enables code quality tools (CS Fixer, ESLint, Prettier) to write changes back to host
+  - Removed redundant watch sync entries for these directories
+
+- **SSL Certificate Mount Point**:
+  - Unified mount point `/etc/ssl/db-certs/` for both PHP and Node containers
+  - Certificates from `./docker/certs/` mounted for database SSL connections
+
+- **.env.example Documentation**:
+  - Clarified `DB_TYPE` vs `DB_HOST` purpose
+  - Added `ENABLE_DATABASE=false` examples for external database usage
+  - Added SSL configuration section with examples
+
+- **Quick Start Instructions** (`.env.example`, `templates/welcome.php`):
+  - Fixed: `make fresh` → `make up` (fresh is dangerous, deletes all data)
+  - Fixed: "Set ENV=development" → "Adjust USER_ID, GROUP_ID" (ENV already has correct default)
+
+- **HealthCheck & Welcome Page**:
+  - Added `ENABLE_DATABASE` environment variable support
+  - Database status now correctly shows "Disabled" when `ENABLE_DATABASE=false`
+  - Service Configuration section updated with `ENABLE_DATABASE`
+
+#### Fixed
+- **CS Fixer Changes Not Written to Host**:
+  - Root cause: Docker Compose watch sync is unidirectional (host → container)
+  - Fixed by using bidirectional bind mounts for source directories
+  - PhpStorm inspections now match container tool results
+
+- **Welcome Page Database Display**:
+  - Was checking `DB_TYPE` (always set) instead of `ENABLE_DATABASE`
+  - Now correctly shows database as disabled when not enabled
+
+---
 
 ### Version 3.21 (2026-01-13) - Windows Setup & Changelog Cleanup
 

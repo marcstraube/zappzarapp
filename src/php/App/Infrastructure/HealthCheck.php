@@ -30,12 +30,13 @@ class HealthCheck
     {
         // Load environment variables
         $this->env = [
-            'ENV'          => $_ENV['ENV'] ?? getenv('ENV') ?: 'production',
-            'ENABLE_PHP'   => $this->parseBool($_ENV['ENABLE_PHP'] ?? getenv('ENABLE_PHP') ?: 'true'),
-            'ENABLE_NODE'  => $this->parseBool($_ENV['ENABLE_NODE'] ?? getenv('ENABLE_NODE') ?: 'false'),
-            'ENABLE_REDIS' => $this->parseBool($_ENV['ENABLE_REDIS'] ?? getenv('ENABLE_REDIS') ?: 'false'),
-            'DB_TYPE'      => $_ENV['DB_TYPE'] ?? getenv('DB_TYPE') ?: null,
-            'NODE_MODE'    => $_ENV['NODE_MODE'] ?? getenv('NODE_MODE') ?: 'none',
+            'ENV'             => $_ENV['ENV'] ?? getenv('ENV') ?: 'production',
+            'ENABLE_PHP'      => $this->parseBool($_ENV['ENABLE_PHP'] ?? getenv('ENABLE_PHP') ?: 'true'),
+            'ENABLE_NODE'     => $this->parseBool($_ENV['ENABLE_NODE'] ?? getenv('ENABLE_NODE') ?: 'false'),
+            'ENABLE_DATABASE' => $this->parseBool($_ENV['ENABLE_DATABASE'] ?? getenv('ENABLE_DATABASE') ?: 'false'),
+            'ENABLE_REDIS'    => $this->parseBool($_ENV['ENABLE_REDIS'] ?? getenv('ENABLE_REDIS') ?: 'false'),
+            'DB_TYPE'         => $_ENV['DB_TYPE'] ?? getenv('DB_TYPE') ?: null,
+            'NODE_MODE'       => $_ENV['NODE_MODE'] ?? getenv('NODE_MODE') ?: 'none',
         ];
     }
 
@@ -90,7 +91,7 @@ class HealthCheck
         }
 
         // Check Database
-        if ($this->env['DB_TYPE']) {
+        if ($this->env['ENABLE_DATABASE']) {
             $this->checkDatabase();
         } else {
             $this->status['services']['database'] = [

@@ -84,7 +84,7 @@ declare(strict_types=1);
             <li>📦 <strong>PHP Service:</strong> <?= $env['ENABLE_PHP'] ? '✅ Enabled' : '❌ Disabled' ?></li>
             <li>🟢 <strong>Node.js Service:</strong> <?= $env['ENABLE_NODE'] ? '✅ Enabled (' . htmlspecialchars($env['NODE_MODE']) . ')' : '❌ Disabled' ?></li>
             <li>🔴 <strong>Redis Service:</strong> <?= $env['ENABLE_REDIS'] ? '✅ Enabled' : '❌ Disabled' ?></li>
-            <li>💾 <strong>Database:</strong> <?= $env['DB_TYPE'] ? '✅ ' . strtoupper($env['DB_TYPE']) : '❌ None' ?></li>
+            <li>💾 <strong>Database:</strong> <?= $env['ENABLE_DATABASE'] ? '✅ ' . strtoupper($env['DB_TYPE']) : '❌ Disabled' ?></li>
         </ul>
     </div>
 
@@ -130,14 +130,13 @@ declare(strict_types=1);
         <pre style="background: #f5f5f5; padding: 0.5rem; border-radius: 4px; overflow-x: auto;"># 1. Initialize project (copy .env.example to .env)
 make init
 
-# 2. Edit .env and set your environment
-# Set: ENV=development
+# 2. Edit .env: Adjust USER_ID, GROUP_ID to match your host user (id -u, id -g)
 
 # 3. Create project structure (directories, dependencies)
 make setup
 
 # 4. Build and start all services
-make fresh</pre>
+make up</pre>
 
         <h3 style="margin-top: 1rem;">💻 Daily Development</h3>
         <pre style="background: #f5f5f5; padding: 0.5rem; border-radius: 4px; overflow-x: auto;"># Start services (uses existing images)
@@ -153,9 +152,14 @@ make build</pre>
         <pre style="background: #f5f5f5; padding: 0.5rem; border-radius: 4px; overflow-x: auto;"># Enable/disable services in .env:
 ENABLE_PHP=true       # PHP-FPM
 ENABLE_NODE=true      # Node.js (Vite + Backend)
+ENABLE_DATABASE=true  # Database container
 ENABLE_REDIS=true     # Redis Cache
-DB_TYPE=postgres      # Database (postgres/mariadb)
-NODE_MODE=full-stack  # Vite + Express (vite-only|backend-only|none)</pre>
+
+# Database type (postgres or mariadb)
+DB_TYPE=postgres
+
+# Node.js mode (full-stack|vite-only|backend-only|none)
+NODE_MODE=full-stack</pre>
     </div>
 
     <?php if ($vite->isDevelopment()): ?>

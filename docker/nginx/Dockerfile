@@ -10,7 +10,8 @@ RUN apk add --no-cache \
         nginx \
         nginx-mod-http-brotli \
         wget \
-        gettext && \
+        gettext \
+        tzdata && \
     mkdir -p /var/cache/nginx /var/log/nginx /tmp/nginx /var/www/html /etc/nginx/conf.d && \
     touch /var/run/nginx.pid && \
     chown -R nginx:nginx /var/cache/nginx /var/log/nginx /etc/nginx/conf.d /var/run/nginx.pid /tmp/nginx

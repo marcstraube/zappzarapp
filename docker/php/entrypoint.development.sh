@@ -1,11 +1,19 @@
 #!/bin/sh
 # Docker PHP Entrypoint Script (Development)
-# Handles dependency installation and Git configuration
+# Handles timezone setup, dependency installation and Git configuration
 
 set -e
 
 echo "[entrypoint] Starting PHP container..."
 echo "[entrypoint] ENV: ${ENV:-production}"
+
+# Set up timezone from TZ environment variable
+# Creates /etc/localtime symlink required for PHP on Alpine Linux
+if [ -n "$TZ" ] && [ -f "/usr/share/zoneinfo/$TZ" ]; then
+    echo "[entrypoint] Setting timezone to $TZ"
+    ln -sf "/usr/share/zoneinfo/$TZ" /etc/localtime
+    echo "$TZ" > /etc/timezone
+fi
 
 # Configure Git safe directory for Dev Dashboard (system-wide, applies to all users)
 git config --system --add safe.directory /var/www/html
