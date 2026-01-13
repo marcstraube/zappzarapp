@@ -1,12 +1,36 @@
 # Docker WebDev Boilerplate - Changelog
 
 **Erstellt:** 2025-12-19
-**Letzte Aktualisierung:** 2026-01-13 (PHP Error Pages, Vite HTTPS/HMR & DevDashboard Fixes)
-**Version:** 3.26
+**Letzte Aktualisierung:** 2026-01-13 (IDE Integration Update)
+**Version:** 3.27
 
 ---
 
 ## Changelog
+
+### Version 3.27 (2026-01-13) - IDE Integration Update
+
+#### Changed
+
+- **PhpStorm Run Configurations**: Complete overhaul with 101 configurations for all Make targets
+  - Organized by category: Setup, Docker, Logs, Shell, Node, Database, Redis, Backup, Quality, Test, Security, Docs, SSL, Renovate
+  - Alphabetically sorted in workspace.xml for consistent display order
+
+- **VSCode Tasks**: Updated `.vscode/tasks.json` with 101 tasks matching all Make targets
+  - Proper task grouping (build, test)
+  - Background tasks for logs and watch processes
+  - Dedicated panels for shell and CLI tasks
+
+#### Added
+
+- **New PhpStorm Run Configurations** for recently added Make targets:
+  - `composer-install-local`, `node-install-local` (local IDE dependency install)
+  - `cs-fix-all`, `lint-md-fix` (aggressive code style fixing)
+  - `secrets-rotate` (security secret rotation)
+  - All Node.js PM2 management commands
+  - All database CLI, dump, restore commands for both PostgreSQL and MariaDB
+
+---
 
 ### Version 3.26 (2026-01-13) - PHP Error Pages, Vite HTTPS/HMR & DevDashboard Fixes
 
