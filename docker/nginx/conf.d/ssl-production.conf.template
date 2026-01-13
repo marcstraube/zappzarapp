@@ -30,8 +30,9 @@ server {
 
 # HTTPS Server
 server {
-    listen 8443 ssl http2;
-    listen [::]:8443 ssl http2;
+    listen ${NGINX_SSL_PORT} ssl;
+    listen [::]:${NGINX_SSL_PORT} ssl;
+    http2 on;
     server_name ${DOMAIN} www.${DOMAIN};
 
     # SSL Certificate paths
@@ -93,26 +94,95 @@ server {
         alias /usr/share/nginx/html/errors/;
     }
 
+    # ============================================================================
+    # NODE.JS BACKEND API PROXY
+    # ============================================================================
+    # Routes requests to Node.js backend server (Express/Fastify/etc.)
+    # These locations are always active but only work when Node container is running.
+    # If Node is not running, requests to /api/node/* return 502 Bad Gateway.
+
+    # Node.js API endpoints - JSON errors (no HTML error pages)
+    location ~ ^/api/node/(.*)$ {
+        set $upstream_backend node:3000;
+        proxy_pass http://$upstream_backend/api/$1$is_args$args;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header X-Forwarded-Host $host;
+        proxy_set_header X-Forwarded-Port $server_port;
+
+        # Keep JSON error responses from Node.js
+        proxy_intercept_errors off;
+
+        # Timeouts
+        proxy_connect_timeout 60s;
+        proxy_send_timeout 60s;
+        proxy_read_timeout 60s;
+
+        # Buffering
+        proxy_buffering off;
+        proxy_request_buffering off;
+
+        # WebSocket support (if needed for Socket.IO, etc.)
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection $connection_upgrade;
+    }
+
+    # Node.js Health Check
+    location = /api/node/health {
+        access_log off;
+        set $upstream_backend node:3000;
+        proxy_pass http://$upstream_backend/health;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+    }
+    # ============================================================================
+
     # Standard Location
     location / {
         try_files $uri $uri/ /index.php?$query_string;
     }
 
-    # API Endpoints - Stricter Rate Limiting
+    # API Endpoints - Stricter Rate Limiting, JSON errors (no HTML error pages)
     location ~ ^/api/ {
         limit_req zone=api burst=10 nodelay;
-        try_files $uri $uri/ /index.php?$query_string;
+        try_files $uri /index.php?$query_string;
+
+        # Nested PHP handler for API - keeps JSON error responses
+        location ~ \.php$ {
+            fastcgi_intercept_errors off;
+            fastcgi_split_path_info ^(.+\.php)(/.+)$;
+            fastcgi_pass php:9000;
+            fastcgi_index index.php;
+            include fastcgi_params;
+            fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
+            fastcgi_param PATH_INFO $fastcgi_path_info;
+            fastcgi_param HTTPS on;
+            fastcgi_buffers 16 16k;
+            fastcgi_buffer_size 32k;
+            fastcgi_read_timeout 95;
+        }
     }
 
     # Health Check Endpoint
+    # Tries PHP first (for full health check), falls back to static JSON (Nginx-only mode)
     location = /health {
         access_log off;
-        try_files /health.php =404;
+        try_files /health.php @nginx_health;
         fastcgi_pass php:9000;
         fastcgi_index health.php;
         include fastcgi_params;
         fastcgi_param SCRIPT_FILENAME $document_root/health.php;
         fastcgi_param SCRIPT_NAME /health.php;
+        fastcgi_param HTTPS on;
+    }
+
+    # Fallback health check when PHP is not available (static/JAMstack mode)
+    location @nginx_health {
+        default_type application/json;
+        return 200 '{"status":"ok","service":"nginx","timestamp":"$time_iso8601"}';
     }
 
     # Static files caching - More generous rate limiting
@@ -125,14 +195,28 @@ server {
     }
 
     # PHP-FPM Handler
+    # Existing .php files are executed directly, non-existent ones route through index.php
     location ~ \.php$ {
-        try_files $uri =404;
+        try_files $uri @php_router;
         fastcgi_split_path_info ^(.+\.php)(/.+)$;
         fastcgi_pass php:9000;
         fastcgi_index index.php;
         include fastcgi_params;
         fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
         fastcgi_param PATH_INFO $fastcgi_path_info;
+        fastcgi_param HTTPS on;
+        fastcgi_buffers 16 16k;
+        fastcgi_buffer_size 32k;
+        fastcgi_read_timeout 95;
+    }
+
+    # Fallback for non-existent .php files - route through PHP router
+    location @php_router {
+        fastcgi_pass php:9000;
+        include fastcgi_params;
+        fastcgi_param SCRIPT_FILENAME $document_root/index.php;
+        fastcgi_param SCRIPT_NAME /index.php;
+        fastcgi_param REQUEST_URI $request_uri;
         fastcgi_param HTTPS on;
         fastcgi_buffers 16 16k;
         fastcgi_buffer_size 32k;

@@ -63,10 +63,28 @@ server {
     access_log /var/log/nginx/access_ssl.log;
     error_log /var/log/nginx/error_ssl.log;
 
-    # Security Headers (Development-friendly - no strict CSP)
+    # Security Headers
     add_header X-Frame-Options "SAMEORIGIN" always;
     add_header X-Content-Type-Options "nosniff" always;
     add_header X-XSS-Protection "1; mode=block" always;
+    add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+    add_header Permissions-Policy "geolocation=(), microphone=(), camera=()" always;
+
+    # CRITICAL SECURITY NOTE:
+    # The Content-Security-Policy (CSP) below is DEVELOPMENT-OPTIMIZED.
+    # It allows Vite HMR from localhost:5173 for Development.
+    #
+    # !!! FOR PRODUCTION, YOU MUST USE A STRICTER CSP !!!
+    #
+    # Production CSP should:
+    # 1. Remove localhost:5173 from script-src and connect-src
+    # 2. Use Nonce-based CSP (see index.php for implementation)
+    # 3. Remove 'unsafe-inline' and 'unsafe-eval' directives
+    #
+    # Development CSP (current):
+    # Note: 'unsafe-eval' is required for Vite's Hot Module Replacement (HMR)
+    # Note: 'data:' in img-src allows base64 encoded images (e.g., phpinfo logos)
+    add_header Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://localhost:${NGINX_SSL_PORT}; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' wss://localhost:${NGINX_SSL_PORT} https://localhost:${NGINX_SSL_PORT};" always;
 
     # Custom Error Pages
     error_page 404 /errors/404.html;
@@ -80,6 +98,10 @@ server {
     # ============================================================================
     # VITE HMR PROXY (DEVELOPMENT ONLY)
     # ============================================================================
+    # These locations proxy Vite dev server for Hot Module Replacement.
+    # In Production, these URLs are never called, so they're harmless.
+    # The node container runs on port 5173 only in Development mode.
+
     # Vite HMR WebSocket
     location /@vite/client {
         set $upstream_node node:5173;
@@ -89,6 +111,8 @@ server {
         proxy_set_header Connection "upgrade";
         proxy_set_header Host $host;
         proxy_cache_bypass $http_upgrade;
+        # Note: Vite returns 404 status with valid JS body - don't intercept
+        proxy_intercept_errors off;
     }
 
     # Vite Dev Server (JS/CSS/Images)
@@ -100,6 +124,20 @@ server {
         proxy_set_header Connection "upgrade";
         proxy_set_header Host $host;
         proxy_cache_bypass $http_upgrade;
+        # Note: Vite returns 404 status with valid JS body - don't intercept
+        proxy_intercept_errors off;
+    }
+
+    # Vite Internal Routes (filesystem, module IDs, node_modules)
+    location ~ ^/(@fs|@id|@vite|node_modules)/ {
+        set $upstream_node node:5173;
+        proxy_pass http://$upstream_node;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+        proxy_set_header Host $host;
+        proxy_cache_bypass $http_upgrade;
+        proxy_intercept_errors off;
     }
     # ============================================================================
 
@@ -121,7 +159,11 @@ server {
     # ============================================================================
     # NODE.JS BACKEND API PROXY
     # ============================================================================
-    # Node.js API endpoints (/api/node/* -> /api/*)
+    # Routes requests to Node.js backend server (Express/Fastify/etc.)
+    # Activated when NODE_MODE includes 'backend' or 'full-stack'
+    # The node container runs on port 3000 for backend API
+
+    # Node.js API endpoints - JSON errors (no HTML error pages)
     location ~ ^/api/node/(.*)$ {
         set $upstream_backend node:3000;
         proxy_pass http://$upstream_backend/api/$1$is_args$args;
@@ -133,6 +175,9 @@ server {
         proxy_set_header X-Forwarded-Host $host;
         proxy_set_header X-Forwarded-Port $server_port;
 
+        # Keep JSON error responses from Node.js
+        proxy_intercept_errors off;
+
         # Timeouts
         proxy_connect_timeout 60s;
         proxy_send_timeout 60s;
@@ -142,7 +187,7 @@ server {
         proxy_buffering off;
         proxy_request_buffering off;
 
-        # WebSocket support
+        # WebSocket support (if needed for Socket.IO, etc.)
         proxy_set_header Upgrade $http_upgrade;
         proxy_set_header Connection $connection_upgrade;
     }
@@ -162,21 +207,44 @@ server {
         try_files $uri $uri/ /index.php?$query_string;
     }
 
-    # API Endpoints (PHP fallback for non-Node routes)
+    # API Endpoints - Stricter Rate Limiting, JSON errors (no HTML error pages)
     location ~ ^/api/ {
         limit_req zone=api burst=10 nodelay;
-        try_files $uri $uri/ /index.php?$query_string;
+        try_files $uri /index.php?$query_string;
+
+        # Nested PHP handler for API - keeps JSON error responses
+        location ~ \.php$ {
+            fastcgi_intercept_errors off;
+            fastcgi_split_path_info ^(.+\.php)(/.+)$;
+            fastcgi_pass unix:/var/run/php-fpm/php-fpm.sock;
+            fastcgi_index index.php;
+            include fastcgi_params;
+            fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
+            fastcgi_param PATH_INFO $fastcgi_path_info;
+            fastcgi_param HTTPS on;
+            fastcgi_buffers 16 16k;
+            fastcgi_buffer_size 32k;
+            fastcgi_read_timeout 95;
+        }
     }
 
     # Health Check Endpoint
+    # Tries PHP first (for full health check), falls back to static JSON (Nginx-only mode)
     location = /health {
         access_log off;
-        try_files /health.php =404;
+        try_files /health.php @nginx_health;
         fastcgi_pass unix:/var/run/php-fpm/php-fpm.sock;
         fastcgi_index health.php;
         include fastcgi_params;
         fastcgi_param SCRIPT_FILENAME $document_root/health.php;
         fastcgi_param SCRIPT_NAME /health.php;
+        fastcgi_param HTTPS on;
+    }
+
+    # Fallback health check when PHP is not available (static/JAMstack mode)
+    location @nginx_health {
+        default_type application/json;
+        return 200 '{"status":"ok","service":"nginx","timestamp":"$time_iso8601"}';
     }
 
     # Static files caching
@@ -189,14 +257,28 @@ server {
     }
 
     # PHP-FPM Handler (Unix Socket for better security and performance)
+    # Existing .php files are executed directly, non-existent ones route through index.php
     location ~ \.php$ {
-        try_files $uri =404;
+        try_files $uri @php_router;
         fastcgi_split_path_info ^(.+\.php)(/.+)$;
         fastcgi_pass unix:/var/run/php-fpm/php-fpm.sock;
         fastcgi_index index.php;
         include fastcgi_params;
         fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
         fastcgi_param PATH_INFO $fastcgi_path_info;
+        fastcgi_param HTTPS on;
+        fastcgi_buffers 16 16k;
+        fastcgi_buffer_size 32k;
+        fastcgi_read_timeout 95;
+    }
+
+    # Fallback for non-existent .php files - route through PHP router
+    location @php_router {
+        fastcgi_pass unix:/var/run/php-fpm/php-fpm.sock;
+        include fastcgi_params;
+        fastcgi_param SCRIPT_FILENAME $document_root/index.php;
+        fastcgi_param SCRIPT_NAME /index.php;
+        fastcgi_param REQUEST_URI $request_uri;
         fastcgi_param HTTPS on;
         fastcgi_buffers 16 16k;
         fastcgi_buffer_size 32k;

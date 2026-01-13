@@ -26,8 +26,21 @@ class ViteHelper
         // Determine environment from ENV variable, default to production
         $this->env          = $_ENV['ENV'] ?? getenv('ENV') ?: 'production';
         $this->manifestPath = __DIR__ . '/../../../public/build/.vite/manifest.json';
-        // Use localhost:5173 for Vite Dev Server with CORS enabled
-        $this->viteDevServerUrl = 'http://localhost:5173';
+
+        // Determine Vite Dev Server URL based on request context
+        // For HTTPS requests: Use nginx proxy (same origin) to avoid mixed content
+        // For HTTP requests: Can use direct Vite server (but proxy also works)
+        $isHttps = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
+                   || ($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '') === 'https'
+                   || ($_SERVER['SERVER_PORT'] ?? '') === '443';
+
+        if ($isHttps) {
+            // Use relative URLs - nginx proxies /js/, /css/, /@vite/ to Vite
+            $this->viteDevServerUrl = '';
+        } else {
+            // Direct Vite server access (HTTP only)
+            $this->viteDevServerUrl = 'http://localhost:5173';
+        }
     }
 
     /**

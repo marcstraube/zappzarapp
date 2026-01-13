@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace DevDashboard\Services;
 
+use App\Infrastructure\DatabaseConfig;
 use PDO;
 use PDOException;
 
@@ -212,20 +213,15 @@ class HealthCheckService
 
     /**
      * Check PostgreSQL connection
-          *
+     *
      * @return array<string, mixed>
      */
     private function checkPostgresql(): array
     {
-        $host     = getenv('DB_HOST') ?: 'postgres';
-        $port     = getenv('DB_PORT') ?: '5432';
-        $dbname   = getenv('DB_NAME') ?: 'app';
-        $user     = getenv('DB_USER') ?: 'app';
-        $password = getenv('DB_PASSWORD') ?: 'secret';
+        $config = new DatabaseConfig();
 
         try {
-            $dsn = sprintf('pgsql:host=%s;port=%s;dbname=%s', $host, $port, $dbname);
-            $pdo = new PDO($dsn, $user, $password, [
+            $pdo = new PDO($config->getDsn(), $config->getUser(), $config->getPassword(), [
                 PDO::ATTR_TIMEOUT => 3,
                 PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
             ]);
@@ -234,9 +230,9 @@ class HealthCheckService
             if ($stmt === false) {
                 return [
                     'connected' => true,
-                    'host'      => $host,
-                    'port'      => $port,
-                    'database'  => $dbname,
+                    'host'      => $config->getHost(),
+                    'port'      => $config->getPort(),
+                    'database'  => $config->getName(),
                     'version'   => 'Unknown',
                 ];
             }
@@ -248,16 +244,16 @@ class HealthCheckService
 
             return [
                 'connected' => true,
-                'host'      => $host,
-                'port'      => $port,
-                'database'  => $dbname,
+                'host'      => $config->getHost(),
+                'port'      => $config->getPort(),
+                'database'  => $config->getName(),
                 'version'   => $version,
             ];
         } catch (PDOException $pdoException) {
             return [
                 'connected' => false,
-                'host'      => $host,
-                'port'      => $port,
+                'host'      => $config->getHost(),
+                'port'      => $config->getPort(),
                 'error'     => $pdoException->getMessage(),
             ];
         }
@@ -265,31 +261,28 @@ class HealthCheckService
 
     /**
      * Check MariaDB connection
-          *
+     *
      * @return array<string, mixed>
      */
     private function checkMariadb(): array
     {
-        $host     = getenv('DB_HOST') ?: 'mariadb';
-        $port     = getenv('DB_PORT') ?: '3306';
-        $dbname   = getenv('DB_NAME') ?: 'app';
-        $user     = getenv('DB_USER') ?: 'app';
-        $password = getenv('DB_PASSWORD') ?: 'secret';
+        $config = new DatabaseConfig();
 
         try {
-            $dsn = sprintf('mysql:host=%s;port=%s;dbname=%s', $host, $port, $dbname);
-            $pdo = new PDO($dsn, $user, $password, [
+            $options = [
                 PDO::ATTR_TIMEOUT => 3,
                 PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
-            ]);
+            ] + $config->getPdoSslOptions();
+
+            $pdo = new PDO($config->getDsn(), $config->getUser(), $config->getPassword(), $options);
 
             $stmt = $pdo->query('SELECT VERSION()');
             if ($stmt === false) {
                 return [
                     'connected' => true,
-                    'host'      => $host,
-                    'port'      => $port,
-                    'database'  => $dbname,
+                    'host'      => $config->getHost(),
+                    'port'      => $config->getPort(),
+                    'database'  => $config->getName(),
                     'version'   => 'Unknown',
                 ];
             }
@@ -301,16 +294,16 @@ class HealthCheckService
 
             return [
                 'connected' => true,
-                'host'      => $host,
-                'port'      => $port,
-                'database'  => $dbname,
+                'host'      => $config->getHost(),
+                'port'      => $config->getPort(),
+                'database'  => $config->getName(),
                 'version'   => $version,
             ];
         } catch (PDOException $pdoException) {
             return [
                 'connected' => false,
-                'host'      => $host,
-                'port'      => $port,
+                'host'      => $config->getHost(),
+                'port'      => $config->getPort(),
                 'error'     => $pdoException->getMessage(),
             ];
         }

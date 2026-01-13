@@ -51,10 +51,18 @@ class Router
             }
         }
 
-        // 404 Not Found
-        http_response_code(404);
-        header('Content-Type: application/json');
-        echo json_encode(['error' => 'Not Found', 'path' => $requestPath], JSON_THROW_ON_ERROR);
+        // 404 Not Found - Content-Negotiation
+        $acceptHeader = $_SERVER['HTTP_ACCEPT'] ?? '';
+
+        if (str_contains($acceptHeader, 'application/json')) {
+            // API clients: JSON response
+            http_response_code(404);
+            header('Content-Type: application/json');
+            echo json_encode(['error' => 'Not Found', 'path' => $requestPath], JSON_THROW_ON_ERROR);
+        } else {
+            // Browsers: render dynamic error page
+            ErrorPage::render(404, $requestPath);
+        }
     }
 
     private function matchPath(string $routePath, string $requestPath): bool

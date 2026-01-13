@@ -3,115 +3,116 @@ import { resolve } from 'path';
 import autoprefixer from 'autoprefixer';
 
 export default defineConfig({
-    // Root directory for source files
-    root: 'resources',
+  // Root directory for source files
+  root: 'resources',
 
-    // Public base path - only used in production
-    base: process.env.NODE_ENV === 'production' ? '/build/' : '/',
+  // Public base path - only used in production
+  base: process.env.NODE_ENV === 'production' ? '/build/' : '/',
 
-    // Build configuration
-    build: {
-        // Output directory relative to project root
-        outDir: '../public/build',
+  // Build configuration
+  build: {
+    // Output directory relative to project root
+    outDir: '../public/build',
 
-        // Empty output directory before building
-        emptyOutDir: true,
+    // Empty output directory before building
+    emptyOutDir: true,
 
-        // Generate manifest.json for cache busting
-        manifest: true,
+    // Generate manifest.json for cache busting
+    manifest: true,
 
-        // Rollup options
-        rollupOptions: {
-            input: {
-                // Main entry points
-                app: resolve(__dirname, 'resources/js/app.js'),
-                // Add more entry points as needed:
-                // admin: resolve(__dirname, 'resources/js/admin.js'),
-            },
-        },
-
-        // Minification
-        minify: 'esbuild',
-
-        // Source maps for debugging
-        sourcemap: process.env.NODE_ENV !== 'production',
-
-        // Chunk size warnings
-        chunkSizeWarningLimit: 1000,
+    // Rollup options
+    rollupOptions: {
+      input: {
+        // Main entry points
+        app: resolve(__dirname, 'resources/js/app.js'),
+        // Add more entry points as needed:
+        // admin: resolve(__dirname, 'resources/js/admin.js'),
+      },
     },
 
-    // Development server configuration
-    server: {
-        // Port for Vite dev server (HMR)
-        port: 5173,
+    // Minification
+    minify: 'esbuild',
 
-        // Allow external access (required for Docker)
-        host: '0.0.0.0',
+    // Source maps for debugging
+    sourcemap: process.env.NODE_ENV !== 'production',
 
-        // Watch options
-        watch: {
-            usePolling: true,
-            interval: 100,
-        },
+    // Chunk size warnings
+    chunkSizeWarningLimit: 1000,
+  },
 
-        // CORS - explicitly allow localhost:8080
-        cors: {
-            origin: '*',
-            credentials: true,
-        },
+  // Development server configuration
+  server: {
+    // Port for Vite dev server (HMR)
+    port: 5173,
 
-        // HMR configuration
-        hmr: {
-            host: 'localhost',
-            port: 5173,
-            protocol: 'ws',
-        },
+    // Allow external access (required for Docker)
+    host: '0.0.0.0',
 
-        // Serve index.html for SPA routing
-        strictPort: true,
-
-        // Proxy API requests to PHP backend
-        proxy: {
-            '/api': {
-                target: 'http://nginx:8080',
-                changeOrigin: true,
-            },
-        },
+    // Watch options
+    watch: {
+      usePolling: true,
+      interval: 100,
     },
 
-    // CSS configuration
-    css: {
-        // PostCSS configuration
-        postcss: {
-            plugins: [
-                autoprefixer,
-            ],
-        },
-
-        // Preprocessor options
-        preprocessorOptions: {
-            scss: {
-                // Additional SCSS data (variables, mixins)
-                // additionalData: `@import "@/css/variables.scss";`,
-            },
-        },
-
-        // Dev source maps
-        devSourcemap: true,
+    // CORS - explicitly allow localhost:8080
+    cors: {
+      origin: '*',
+      credentials: true,
     },
 
-    // Path aliases
-    resolve: {
-        alias: {
-            '@': resolve(__dirname, 'resources'),
-            '@js': resolve(__dirname, 'resources/js'),
-            '@css': resolve(__dirname, 'resources/css'),
-            '@img': resolve(__dirname, 'resources/images'),
-        },
+    // HMR configuration
+    // When accessed via nginx proxy (HTTPS), use clientPort to match the nginx port
+    // Browser connects to wss://localhost:8443, nginx proxies to ws://node:5173
+    hmr: {
+      host: 'localhost',
+      port: 5173,
+      clientPort: 8443, // Port the browser should connect to (nginx proxy)
+      protocol: 'wss', // Use secure WebSocket when behind HTTPS proxy
     },
 
-    // Optimize dependencies
-    optimizeDeps: {
-        include: [],
+    // Serve index.html for SPA routing
+    strictPort: true,
+
+    // Proxy API requests to PHP backend
+    proxy: {
+      '/api': {
+        target: 'http://nginx:8080',
+        changeOrigin: true,
+      },
     },
+  },
+
+  // CSS configuration
+  css: {
+    // PostCSS configuration
+    postcss: {
+      plugins: [autoprefixer],
+    },
+
+    // Preprocessor options
+    preprocessorOptions: {
+      scss: {
+        // Additional SCSS data (variables, mixins)
+        // additionalData: `@import "@/css/variables.scss";`,
+      },
+    },
+
+    // Dev source maps
+    devSourcemap: true,
+  },
+
+  // Path aliases
+  resolve: {
+    alias: {
+      '@': resolve(__dirname, 'resources'),
+      '@js': resolve(__dirname, 'resources/js'),
+      '@css': resolve(__dirname, 'resources/css'),
+      '@img': resolve(__dirname, 'resources/images'),
+    },
+  },
+
+  // Optimize dependencies
+  optimizeDeps: {
+    include: [],
+  },
 });

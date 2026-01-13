@@ -8,8 +8,11 @@
  * PHP files cannot be checked from Node container - use make commands for full PHP checks.
  */
 export default {
-  // TypeScript/JavaScript files
-  '*.{ts,js}': ['pnpm exec prettier --check', 'pnpm exec eslint --max-warnings=0'],
+  // TypeScript/JavaScript files (--no-warn-ignored suppresses warnings for eslint-ignored files)
+  '*.{ts,js}': [
+    'pnpm exec prettier --check',
+    'pnpm exec eslint --max-warnings=0 --no-warn-ignored',
+  ],
 
   // JSON files
   '*.json': ['pnpm exec prettier --check'],

@@ -49,6 +49,28 @@ class HealthCheck
     }
 
     /**
+     * Get secret value from Docker Secret file or environment variable
+     *
+     * Docker Secrets pattern: Check for {VAR}_FILE first, then fall back to {VAR}
+     */
+    private function getSecret(string $name, string $default = ''): string
+    {
+        // First try Docker Secret file (e.g., DB_PASSWORD_FILE -> /run/secrets/db_password)
+        $fileEnv  = $name . '_FILE';
+        $filePath = $_ENV[$fileEnv] ?? getenv($fileEnv) ?: null;
+
+        if ($filePath !== null && file_exists($filePath)) {
+            $content = file_get_contents($filePath);
+            if ($content !== false) {
+                return trim($content);
+            }
+        }
+
+        // Fall back to environment variable
+        return $_ENV[$name] ?? getenv($name) ?: $default;
+    }
+
+    /**
      * Check all services and return status array
      *
      * @return array<string, mixed>
@@ -265,7 +287,7 @@ class HealthCheck
         try {
             $dbName = $_ENV['DB_NAME'] ?? getenv('DB_NAME') ?: 'app';
             $dbUser = $_ENV['DB_USER'] ?? getenv('DB_USER') ?: 'app';
-            $dbPass = $_ENV['DB_PASSWORD'] ?? getenv('DB_PASSWORD') ?: 'secret';
+            $dbPass = $this->getSecret('DB_PASSWORD', 'secret');
 
             $dsn = 'pgsql:host=postgres;port=5432;dbname=' . $dbName;
             $pdo = new PDO($dsn, $dbUser, $dbPass, [
@@ -310,7 +332,7 @@ class HealthCheck
         try {
             $dbName = $_ENV['DB_NAME'] ?? getenv('DB_NAME') ?: 'app';
             $dbUser = $_ENV['DB_USER'] ?? getenv('DB_USER') ?: 'app';
-            $dbPass = $_ENV['DB_PASSWORD'] ?? getenv('DB_PASSWORD') ?: 'secret';
+            $dbPass = $this->getSecret('DB_PASSWORD', 'secret');
 
             $dsn = 'mysql:host=mariadb;port=3306;dbname=' . $dbName;
             $pdo = new PDO($dsn, $dbUser, $dbPass, [

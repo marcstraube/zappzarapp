@@ -159,8 +159,9 @@ class DashboardController
     private function render(string $view, array $data = []): void
     {
         extract($data);
-        $viewPath   = __DIR__ . '/../Views/' . $view . '.php';
-        $layoutPath = __DIR__ . '/../Views/layout.php';
+        $templateDir = __DIR__ . '/../../../../templates/dev-dashboard';
+        $viewPath    = $templateDir . '/' . $view . '.php';
+        $layoutPath  = $templateDir . '/layout.php';
 
         if (!file_exists($viewPath)) {
             http_response_code(404);

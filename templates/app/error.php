@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><?= $code ?> - <?= htmlspecialchars($title) ?></title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            color: #e4e4e7;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .container {
+            text-align: center;
+            padding: 2rem;
+        }
+        .error-code {
+            font-size: clamp(6rem, 20vw, 12rem);
+            font-weight: 700;
+            color: #3b82f6;
+            line-height: 1;
+            text-shadow: 0 0 40px rgba(59, 130, 246, 0.3);
+        }
+        .error-title {
+            font-size: clamp(1.5rem, 4vw, 2rem);
+            margin: 1rem 0 0.5rem;
+            color: #f4f4f5;
+        }
+        .error-message {
+            font-size: 1rem;
+            color: #a1a1aa;
+            max-width: 400px;
+            margin: 0 auto 1rem;
+        }
+        .error-path {
+            font-size: 0.875rem;
+            color: #71717a;
+            margin-bottom: 2rem;
+        }
+        .error-path code {
+            background: rgba(59, 130, 246, 0.1);
+            padding: 0.25rem 0.5rem;
+            border-radius: 0.25rem;
+            font-family: 'SF Mono', Monaco, 'Courier New', monospace;
+        }
+        .back-link {
+            display: inline-block;
+            padding: 0.75rem 1.5rem;
+            background: #3b82f6;
+            color: #fff;
+            text-decoration: none;
+            border-radius: 0.5rem;
+            font-weight: 500;
+            transition: background 0.2s, transform 0.2s;
+        }
+        .back-link:hover {
+            background: #2563eb;
+            transform: translateY(-2px);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="error-code"><?= $code ?></div>
+        <h1 class="error-title"><?= htmlspecialchars($title) ?></h1>
+        <p class="error-message"><?= htmlspecialchars($message) ?></p>
+        <?php if ($path !== null): ?>
+        <p class="error-path">Path: <code><?= htmlspecialchars($path) ?></code></p>
+        <?php endif; ?>
+        <a href="/" class="back-link">Back to Home</a>
+    </div>
+</body>
+</html>
