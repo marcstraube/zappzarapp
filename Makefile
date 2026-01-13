@@ -249,13 +249,21 @@ down: ## Stop containers
 
 logs: ## Show logs of all containers
 	@if [ -f .env ]; then \
-		. ./.env && if [ "$$ENV" = "production" ]; then \
-			docker compose -f compose.yaml -f compose.production.yaml logs -f; \
+		. ./.env && \
+		PROFILES=""; \
+		if [ "$${ENABLE_DATABASE:-true}" = "true" ]; then \
+			PROFILES="$$PROFILES --profile $${DB_TYPE:-postgres}"; \
+		fi; \
+		if [ "$${ENABLE_PHP:-true}" = "true" ]; then PROFILES="$$PROFILES --profile php"; fi; \
+		if [ "$${ENABLE_NODE:-true}" = "true" ]; then PROFILES="$$PROFILES --profile node"; fi; \
+		if [ "$${ENABLE_REDIS:-true}" = "true" ]; then PROFILES="$$PROFILES --profile redis"; fi; \
+		if [ "$$ENV" = "production" ]; then \
+			docker compose -f compose.yaml -f compose.production.yaml $$PROFILES logs -f; \
 		else \
-			docker compose logs -f; \
+			docker compose $$PROFILES logs -f; \
 		fi; \
 	else \
-		docker compose logs -f; \
+		docker compose --profile php --profile node --profile redis --profile postgres logs -f; \
 	fi
 
 logs-nginx: ## Show Nginx logs only

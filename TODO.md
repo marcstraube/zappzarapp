@@ -2,12 +2,22 @@
 
 
 **Erstellt:** 2025-12-19
-**Letzte Aktualisierung:** 2026-01-13 (Docker Secrets)
-**Version:** 3.23
+**Letzte Aktualisierung:** 2026-01-13 (Makefile Logs Fix)
+**Version:** 3.24
 
 ---
 
 ## Changelog
+
+### Version 3.24 (2026-01-13) - Makefile Logs Fix
+
+#### Fixed
+- **`make logs` now shows all containers**: Previously only displayed nginx logs because
+  Docker Compose profiles were not passed to the `logs` command. Now dynamically includes
+  all enabled services (php, node, redis, postgres) based on `ENABLE_*` flags in `.env`,
+  matching the behavior of `make up`, `make down`, and `make build`.
+
+---
 
 ### Version 3.23 (2026-01-13) - Docker Secrets & Container Improvements
 
