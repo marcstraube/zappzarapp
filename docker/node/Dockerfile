@@ -1,4 +1,12 @@
-ARG NODE_VERSION=24
+# Node.js Multi-Stage Dockerfile
+#
+# Version Pinning:
+# - Minor version pinned for stability (LTS)
+# - To update: check https://hub.docker.com/_/node/tags
+# - For SHA digest pinning in production, use:
+#   FROM node:24.12-alpine3.23@sha256:<digest>
+
+ARG NODE_VERSION=24.12
 ARG ALPINE_VERSION=3.23
 
 # --- 1. BASE STAGE (Shared Foundation) ---

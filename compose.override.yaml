@@ -118,7 +118,7 @@ services:
       - DB_PASSWORD=${DB_PASSWORD:-secret}
       - DB_SSL_CA=${DB_SSL_CA:-}
       - DB_SSL_VERIFY=${DB_SSL_VERIFY:-false}
-      - REDIS_URL=${REDIS_URL:-redis://redis:6379}
+      - REDIS_URL=${REDIS_URL:-rediss://redis:6379}
 
   node:
     build:
@@ -197,18 +197,27 @@ services:
       - DB_PASSWORD=${DB_PASSWORD:-secret}
       - DB_SSL_CA=${DB_SSL_CA:-}
       - DB_SSL_VERIFY=${DB_SSL_VERIFY:-false}
-      - REDIS_URL=${REDIS_URL:-redis://redis:6379}
+      - REDIS_URL=${REDIS_URL:-rediss://redis:6379}
     tty: true
 
   redis:
     ports:
       - "${REDIS_PORT:-6379}:6379"
+    volumes:
+      # SSL/TLS Certificates for encrypted connections (same as production for parity)
+      - ./docker/certs/cert.crt:/etc/ssl/certs/redis.crt:ro
+      - ./docker/certs/cert.key:/etc/ssl/private/redis.key:ro
     command: >
       redis-server
       --appendonly no
       --maxmemory 128mb
       --maxmemory-policy allkeys-lru
       --loglevel verbose
+      --tls-port 6379
+      --port 0
+      --tls-cert-file /etc/ssl/certs/redis.crt
+      --tls-key-file /etc/ssl/private/redis.key
+      --tls-auth-clients no
 
   postgres:
     ports:
@@ -220,10 +229,6 @@ services:
       # SSL/TLS Certificates for encrypted database connections (mounted to /tmp first)
       - ./docker/certs/cert.crt:/tmp/certs/server.crt:ro
       - ./docker/certs/cert.key:/tmp/certs/server.key:ro
-    environment:
-      TZ: ${TZ:-UTC}
-      PGTZ: ${TZ:-UTC}
-      POSTGRES_PASSWORD: ${DB_PASSWORD:-secret}
     command: >
       postgres
       -c shared_buffers=128MB
@@ -246,9 +251,6 @@ services:
       # SSL/TLS Certificates for encrypted database connections (mounted to /tmp first)
       - ./docker/certs/cert.crt:/tmp/certs/server.crt:ro
       - ./docker/certs/cert.key:/tmp/certs/server.key:ro
-    environment:
-      TZ: ${TZ:-UTC}
-      MARIADB_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-rootsecret}
     command: >
       --general-log=1
       --general-log-file=/var/log/mysql/general.log

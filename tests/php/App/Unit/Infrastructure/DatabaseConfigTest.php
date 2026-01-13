@@ -35,6 +35,7 @@ final class DatabaseConfigTest extends TestCase
         putenv('DB_NAME');
         putenv('DB_USER');
         putenv('DB_PASSWORD');
+        putenv('DB_PASSWORD_FILE');
     }
 
     #[RunInSeparateProcess]
@@ -527,5 +528,93 @@ final class DatabaseConfigTest extends TestCase
         // MariaDB DSN should not contain sslmode
         $this->assertStringNotContainsString('sslmode', $config->getDsn());
         $this->assertStringContainsString('mysql:', $config->getDsn());
+    }
+
+    // =========================================================================
+    // Docker Secrets (_FILE) Support Tests
+    // =========================================================================
+
+    #[RunInSeparateProcess]
+    public function testPasswordFromFile(): void
+    {
+        $tempFile = sys_get_temp_dir() . '/db_password_test_' . uniqid() . '.txt';
+        file_put_contents($tempFile, "secret_from_file\n");
+
+        try {
+            putenv("DB_PASSWORD_FILE=$tempFile");
+
+            $config = new DatabaseConfig();
+
+            $this->assertEquals('secret_from_file', $config->getPassword());
+        } finally {
+            unlink($tempFile);
+        }
+    }
+
+    #[RunInSeparateProcess]
+    public function testPasswordFileTrimsWhitespace(): void
+    {
+        $tempFile = sys_get_temp_dir() . '/db_password_test_' . uniqid() . '.txt';
+        file_put_contents($tempFile, "  password_with_spaces  \n\n");
+
+        try {
+            putenv("DB_PASSWORD_FILE=$tempFile");
+
+            $config = new DatabaseConfig();
+
+            $this->assertEquals('password_with_spaces', $config->getPassword());
+        } finally {
+            unlink($tempFile);
+        }
+    }
+
+    #[RunInSeparateProcess]
+    public function testPasswordFileTakesPrecedenceOverEnvVar(): void
+    {
+        $tempFile = sys_get_temp_dir() . '/db_password_test_' . uniqid() . '.txt';
+        file_put_contents($tempFile, 'from_file');
+
+        try {
+            putenv("DB_PASSWORD_FILE=$tempFile");
+            putenv('DB_PASSWORD=from_env');
+
+            $config = new DatabaseConfig();
+
+            $this->assertEquals('from_file', $config->getPassword());
+        } finally {
+            unlink($tempFile);
+        }
+    }
+
+    #[RunInSeparateProcess]
+    public function testFallbackToEnvVarWhenFileNotExists(): void
+    {
+        putenv('DB_PASSWORD_FILE=/nonexistent/path/to/password.txt');
+        putenv('DB_PASSWORD=fallback_password');
+
+        $config = new DatabaseConfig();
+
+        $this->assertEquals('fallback_password', $config->getPassword());
+    }
+
+    #[RunInSeparateProcess]
+    public function testFallbackToDefaultWhenFileNotExistsAndNoEnvVar(): void
+    {
+        putenv('DB_PASSWORD_FILE=/nonexistent/path/to/password.txt');
+
+        $config = new DatabaseConfig();
+
+        $this->assertEquals('secret', $config->getPassword());
+    }
+
+    #[RunInSeparateProcess]
+    public function testEmptyPasswordFilePathFallsBackToEnvVar(): void
+    {
+        putenv('DB_PASSWORD_FILE=');
+        putenv('DB_PASSWORD=env_password');
+
+        $config = new DatabaseConfig();
+
+        $this->assertEquals('env_password', $config->getPassword());
     }
 }

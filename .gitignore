@@ -78,6 +78,9 @@ Thumbs.db
 # Backups (encrypted database dumps)
 /backups/
 
+# Docker Secrets (sensitive data - never commit!)
+/secrets/
+
 # Tool Caches & Build Outputs
 /build/
 /.pnpm-store/

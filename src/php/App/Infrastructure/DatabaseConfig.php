@@ -9,6 +9,9 @@ namespace App\Infrastructure;
  *
  * Provides database connection configuration following 12-Factor App principles.
  * DATABASE_URL takes precedence over individual variables for PaaS compatibility.
+ *
+ * Supports Docker Secrets via _FILE environment variables:
+ * - DB_PASSWORD_FILE: Path to file containing database password
  */
 final class DatabaseConfig
 {
@@ -191,6 +194,7 @@ final class DatabaseConfig
 
     /**
      * Load configuration from individual environment variables.
+     * Uses _FILE variant for password to support Docker Secrets.
      */
     private function loadFromIndividualVars(): void
     {
@@ -199,7 +203,7 @@ final class DatabaseConfig
         $this->port     = (int) $this->getEnv('DB_PORT', (string) $this->getDefaultPort($this->type));
         $this->name     = $this->getEnv('DB_NAME', 'app');
         $this->user     = $this->getEnv('DB_USER', 'app');
-        $this->password = $this->getEnv('DB_PASSWORD', 'secret');
+        $this->password = $this->getEnvOrFile('DB_PASSWORD', 'secret');
     }
 
     private function getDefaultPort(string $type): int
@@ -214,6 +218,26 @@ final class DatabaseConfig
         $value = getenv($name);
 
         return $value !== false && $value !== '' ? $value : $default;
+    }
+
+    /**
+     * Get environment variable with _FILE support for Docker Secrets.
+     * Checks for {NAME}_FILE first, reads file content if exists,
+     * otherwise falls back to regular environment variable.
+     */
+    private function getEnvOrFile(string $name, string $default = ''): string
+    {
+        // Check for _FILE variant first (Docker Secrets pattern)
+        $fileVar  = $name . '_FILE';
+        $filePath = $this->getEnv($fileVar);
+
+        if ($filePath !== '' && file_exists($filePath) && is_readable($filePath)) {
+            $content = file_get_contents($filePath);
+
+            return $content !== false ? trim($content) : $default;
+        }
+
+        return $this->getEnv($name, $default);
     }
 
     /**

@@ -55,6 +55,8 @@ jobs:
             dockerfile: docker/postgres/Dockerfile
           - name: mariadb
             dockerfile: docker/mariadb/Dockerfile
+          - name: redis
+            dockerfile: docker/redis/Dockerfile
 
     steps:
       - name: Checkout code
@@ -67,7 +69,7 @@ jobs:
         run: |
           docker build -t ${{ env.COMPOSE_PROJECT_NAME }}-${{ matrix.image.name }}:scan \
             -f ${{ matrix.image.dockerfile }} \
-            $(dirname ${{ matrix.image.dockerfile }})
+            .
 
       - name: Trivy vulnerability scan (${{ matrix.image.name }})
         uses: aquasecurity/trivy-action@master

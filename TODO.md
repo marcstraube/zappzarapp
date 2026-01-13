@@ -2,12 +2,73 @@
 
 
 **Erstellt:** 2025-12-19
-**Letzte Aktualisierung:** 2026-01-13 (Database SSL & Bidirectional Mounts)
-**Version:** 3.22
+**Letzte Aktualisierung:** 2026-01-13 (Docker Secrets)
+**Version:** 3.23
 
 ---
 
 ## Changelog
+
+### Version 3.23 (2026-01-13) - Docker Secrets & Container Improvements
+
+#### Added
+- **Docker Secrets Support**:
+  - Secure password management via file-based secrets (`./secrets/`)
+  - `_FILE` environment variable pattern for PHP and Node (`DB_PASSWORD_FILE`, etc.)
+  - Secrets mounted read-only to containers at `/run/secrets/<secret_name>`
+  - Auto-generation of secrets during `make setup`
+
+- **Make Commands for Secrets**:
+  - `make secrets` - Generate missing secrets (idempotent, safe to run anytime)
+  - `make secrets-rotate-passwords` - Rotate DB passwords only (preserves encryption keys)
+  - `make secrets-rotate` - Rotate ALL secrets (with warning about backup key impact)
+
+- **DatabaseConfig `_FILE` Support** (PHP & Node):
+  - `getEnvOrFile()` method checks `{VAR}_FILE` first, then falls back to `{VAR}`
+  - Automatic whitespace trimming from secret file content
+  - Graceful fallback when secret file doesn't exist
+
+- **Custom Dockerfiles**:
+  - `docker/mariadb/Dockerfile` - Custom MariaDB image with healthcheck script
+  - `docker/redis/Dockerfile` - Custom Redis image based on Alpine
+
+- **Unit Tests**:
+  - 6 PHP tests for `_FILE` support (file reading, precedence, fallback)
+  - 6 Node tests for `_FILE` support (file reading, precedence, fallback)
+  - Total: 107 tests (up from 95)
+
+- **Documentation** (`documentation/security/SECRETS.md`):
+  - Complete guide for Docker Secrets usage
+  - Production deployment examples (Swarm, Kubernetes, Vault)
+  - Troubleshooting section
+  - "Disabling Docker Secrets" guide for legacy/external DB setups
+
+#### Changed
+- **compose.yaml - Password Configuration**:
+  - Both options documented inline (Docker Secrets vs. Environment Variables)
+  - Clear instructions for switching between options
+  - `POSTGRES_PASSWORD_FILE` and `MARIADB_PASSWORD_FILE` as defaults
+
+- **compose.override.yaml**:
+  - Removed password environment variables (moved to compose.yaml)
+  - Development overrides now only contain non-password settings
+
+- **.env.example / .env**:
+  - New "DATABASE PASSWORDS" section with clear documentation
+  - Instructions for switching from Secrets to Environment Variables
+  - Reference to SECRETS.md for details
+
+- **Dockerfile Improvements**:
+  - Nginx, PHP, Node, Postgres Dockerfiles updated with better layer caching
+  - Consistent USER_ID/GROUP_ID handling across all containers
+
+- **Security Workflow** (`.github/workflows/security-scan.yml`):
+  - Updated scan configuration
+
+- **HealthCheck** (`src/php/App/Infrastructure/HealthCheck.php`):
+  - Improved service status detection
+
+---
 
 ### Version 3.22 (2026-01-13) - Database SSL & Bidirectional Mounts
 

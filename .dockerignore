@@ -14,11 +14,11 @@
 .env.*
 !.env.example
 
-# Dependencies
+# Dependencies (installed in container)
 vendor/
 node_modules/
 
-# Development
+# Development artifacts
 .phpunit.result.cache
 .php-cs-fixer.cache
 
@@ -26,23 +26,24 @@ node_modules/
 logs/
 *.log
 
-# Documentation
+# Documentation (exclude markdown files but keep necessary ones)
+documentation/
 README.md
-*.md
-!composer.json
-!composer.lock
+CHANGELOG.md
+CONTRIBUTING.md
+LICENSE.md
 
-# Docker
+# Docker (compose files not needed in build context)
 docker-compose*.yml
 compose*.yaml
-Dockerfile
 .dockerignore
 
 # CI/CD
 .github/
+.gitlab/
 .gitlab-ci.yml
 
-# Configs
+# Build tools (not needed in container)
 Makefile
 
 # Temporary files
@@ -50,3 +51,12 @@ tmp/
 temp/
 *.tmp
 *.cache
+
+# Build outputs (generated during build)
+build/
+dist/
+docs/
+backups/
+
+# Test coverage
+coverage/

@@ -111,7 +111,7 @@ services:
       --save 900 1
       --save 300 10
       --save 60 10000
-      --tls-port 6380
+      --tls-port 6379
       --port 0
       --tls-cert-file /etc/ssl/certs/redis.crt
       --tls-key-file /etc/ssl/private/redis.key

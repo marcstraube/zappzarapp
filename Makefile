@@ -129,32 +129,8 @@ setup: ## Create directories, install dev dependencies and ensure structure
 		echo -e "\033[0;32mSSL certificates already exist.\033[0m"; \
 	fi
 
-	# Generate encryption keys if not present
-	@echo -e "\033[0;33mChecking encryption keys in .env...\033[0m"
-	@if ! grep -q "^ENCRYPTION_KEY=" .env 2>/dev/null || [ -z "$$(grep "^ENCRYPTION_KEY=" .env | cut -d'=' -f2)" ]; then \
-		echo -e "\033[0;34mGenerating ENCRYPTION_KEY...\033[0m"; \
-		ENCRYPTION_KEY=$$(openssl rand -base64 32); \
-		if grep -q "^ENCRYPTION_KEY=" .env 2>/dev/null; then \
-			sed -i.bak "s|^ENCRYPTION_KEY=.*|ENCRYPTION_KEY=$$ENCRYPTION_KEY|" .env && rm -f .env.bak; \
-		else \
-			echo "ENCRYPTION_KEY=$$ENCRYPTION_KEY" >> .env; \
-		fi; \
-		echo -e "\033[0;32mENCRYPTION_KEY generated.\033[0m"; \
-	else \
-		echo -e "\033[0;32mENCRYPTION_KEY already exists.\033[0m"; \
-	fi
-	@if ! grep -q "^BACKUP_ENCRYPTION_KEY=" .env 2>/dev/null || [ -z "$$(grep "^BACKUP_ENCRYPTION_KEY=" .env | cut -d'=' -f2)" ]; then \
-		echo -e "\033[0;34mGenerating BACKUP_ENCRYPTION_KEY...\033[0m"; \
-		BACKUP_ENCRYPTION_KEY=$$(openssl rand -base64 32); \
-		if grep -q "^BACKUP_ENCRYPTION_KEY=" .env 2>/dev/null; then \
-			sed -i.bak "s|^BACKUP_ENCRYPTION_KEY=.*|BACKUP_ENCRYPTION_KEY=$$BACKUP_ENCRYPTION_KEY|" .env && rm -f .env.bak; \
-		else \
-			echo "BACKUP_ENCRYPTION_KEY=$$BACKUP_ENCRYPTION_KEY" >> .env; \
-		fi; \
-		echo -e "\033[0;32mBACKUP_ENCRYPTION_KEY generated.\033[0m"; \
-	else \
-		echo -e "\033[0;32mBACKUP_ENCRYPTION_KEY already exists.\033[0m"; \
-	fi
+	# Generate Docker Secrets (file-based)
+	@$(MAKE) --silent secrets
 
 	@echo -e "\033[0;33mBuilding Docker images...\033[0m"
 	@$(MAKE) --silent build
@@ -868,6 +844,72 @@ validate: ## Validate composer.json/lock and package.json/lock files
 	@echo -e "\033[0;32m✓ pnpm lockfile is present!\033[0m"
 
 ##@ Security
+
+secrets: ## Generate missing Docker Secrets (idempotent)
+	@mkdir -p secrets
+	@chmod 700 secrets
+	@echo -e "\033[0;33mChecking Docker Secrets...\033[0m"
+	@if [ ! -f secrets/db_password.txt ]; then \
+		echo -e "\033[0;34mGenerating db_password secret...\033[0m"; \
+		openssl rand -base64 24 | tr -dc 'a-zA-Z0-9' | head -c 24 > secrets/db_password.txt; \
+		chmod 600 secrets/db_password.txt; \
+		echo -e "\033[0;32mdb_password secret generated.\033[0m"; \
+	else \
+		echo -e "\033[0;32mdb_password secret already exists.\033[0m"; \
+	fi
+	@if [ ! -f secrets/db_root_password.txt ]; then \
+		echo -e "\033[0;34mGenerating db_root_password secret...\033[0m"; \
+		openssl rand -base64 24 | tr -dc 'a-zA-Z0-9' | head -c 24 > secrets/db_root_password.txt; \
+		chmod 600 secrets/db_root_password.txt; \
+		echo -e "\033[0;32mdb_root_password secret generated.\033[0m"; \
+	else \
+		echo -e "\033[0;32mdb_root_password secret already exists.\033[0m"; \
+	fi
+	@if [ ! -f secrets/encryption_key.txt ]; then \
+		echo -e "\033[0;34mGenerating encryption_key secret...\033[0m"; \
+		openssl rand -base64 32 > secrets/encryption_key.txt; \
+		chmod 600 secrets/encryption_key.txt; \
+		echo -e "\033[0;32mencryption_key secret generated.\033[0m"; \
+	else \
+		echo -e "\033[0;32mencryption_key secret already exists.\033[0m"; \
+	fi
+	@if [ ! -f secrets/backup_encryption_key.txt ]; then \
+		echo -e "\033[0;34mGenerating backup_encryption_key secret...\033[0m"; \
+		openssl rand -base64 32 > secrets/backup_encryption_key.txt; \
+		chmod 600 secrets/backup_encryption_key.txt; \
+		echo -e "\033[0;32mbackup_encryption_key secret generated.\033[0m"; \
+	else \
+		echo -e "\033[0;32mbackup_encryption_key secret already exists.\033[0m"; \
+	fi
+	@echo -e "\033[0;32mSecrets check completed!\033[0m"
+
+secrets-rotate-passwords: ## Rotate database passwords only (safe, keeps encryption keys)
+	@echo -e "\033[0;33m╔══════════════════════════════════════════════════════════════════════╗\033[0m"
+	@echo -e "\033[0;33m║  Rotating database passwords (encryption keys preserved)             ║\033[0m"
+	@echo -e "\033[0;33m╠══════════════════════════════════════════════════════════════════════╣\033[0m"
+	@echo -e "\033[0;33m║  • Containers must be restarted after rotation                       ║\033[0m"
+	@echo -e "\033[0;33m║  • Update external connections using these passwords!                ║\033[0m"
+	@echo -e "\033[0;33m╚══════════════════════════════════════════════════════════════════════╝\033[0m"
+	@read -p "Continue? (yes/no): " confirm && [ "$$confirm" = "yes" ] || (echo "Aborted."; exit 1)
+	@echo -e "\033[0;33mRotating database passwords...\033[0m"
+	@rm -f secrets/db_password.txt secrets/db_root_password.txt
+	@$(MAKE) --silent secrets
+	@echo -e "\033[0;32mPasswords rotated. Run 'make down && make up' to apply changes.\033[0m"
+
+secrets-rotate: ## Rotate ALL secrets (DANGER: breaks existing backups!)
+	@echo -e "\033[0;31m╔══════════════════════════════════════════════════════════════════════╗\033[0m"
+	@echo -e "\033[0;31m║  ⚠️  WARNING: This will delete and regenerate ALL secrets!           ║\033[0m"
+	@echo -e "\033[0;31m╠══════════════════════════════════════════════════════════════════════╣\033[0m"
+	@echo -e "\033[0;31m║  • Containers must be restarted after rotation                       ║\033[0m"
+	@echo -e "\033[0;31m║  • Database passwords will change - update external connections!     ║\033[0m"
+	@echo -e "\033[0;31m║  • BACKUP_ENCRYPTION_KEY change = existing backups unreadable!       ║\033[0m"
+	@echo -e "\033[0;31m║    → Back up old key first: cat secrets/backup_encryption_key.txt   ║\033[0m"
+	@echo -e "\033[0;31m╚══════════════════════════════════════════════════════════════════════╝\033[0m"
+	@read -p "Are you sure? (yes/no): " confirm && [ "$$confirm" = "yes" ] || (echo "Aborted."; exit 1)
+	@echo -e "\033[0;33mRotating secrets...\033[0m"
+	@rm -f secrets/db_password.txt secrets/db_root_password.txt secrets/encryption_key.txt secrets/backup_encryption_key.txt
+	@$(MAKE) --silent secrets
+	@echo -e "\033[0;33mSecrets rotated. Run 'make down && make up' to apply changes.\033[0m"
 
 falco-run: ## Start Falco for Runtime Security Monitoring (requires root/sudo on Linux)
 	@echo -e "\033[0;33mStarting Falco for runtime monitoring...\033[0m"

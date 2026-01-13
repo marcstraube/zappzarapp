@@ -3,8 +3,14 @@
 #
 # Usage: CREATE EXTENSION pg_cron;
 # See: documentation/security/RETENTION-POLICY.md
+#
+# Version Pinning:
+# - Minor version pinned for stability
+# - To update: check https://hub.docker.com/_/postgres/tags
+# - For SHA digest pinning in production, use:
+#   FROM postgres:17.7-alpine3.23@sha256:<digest>
 
-ARG POSTGRES_VERSION=17
+ARG POSTGRES_VERSION=17.7
 ARG ALPINE_VERSION=3.23
 
 FROM postgres:${POSTGRES_VERSION}-alpine${ALPINE_VERSION} AS builder
@@ -30,15 +36,16 @@ RUN git clone --branch v${PG_CRON_VERSION} --depth 1 https://github.com/citusdat
     && make install
 
 # Final image
-FROM postgres:${POSTGRES_VERSION}-alpine${ALPINE_VERSION}
+FROM postgres:${POSTGRES_VERSION}-alpine${ALPINE_VERSION} AS final
 
 # Copy compiled extension from builder
 COPY --from=builder /usr/local/lib/postgresql/pg_cron.so /usr/local/lib/postgresql/
 COPY --from=builder /usr/local/share/postgresql/extension/pg_cron* /usr/local/share/postgresql/extension/
 
-# Copy custom entrypoint
-COPY docker/postgres/entrypoint.sh /usr/local/bin/custom-entrypoint.sh
-RUN chmod +x /usr/local/bin/custom-entrypoint.sh
+# Copy custom entrypoint for SSL certificate setup
+# Path matches compose.override.yaml volume mount for development hot-reload
+COPY docker/postgres/entrypoint.sh /entrypoint-wrapper.sh
+RUN chmod +x /entrypoint-wrapper.sh
 
-ENTRYPOINT ["/usr/local/bin/custom-entrypoint.sh"]
+ENTRYPOINT ["/entrypoint-wrapper.sh"]
 CMD ["postgres"]

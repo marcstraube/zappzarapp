@@ -1,8 +1,16 @@
+# Nginx Multi-Stage Dockerfile
+#
+# Version Pinning:
+# - Alpine version pinned (includes nginx + brotli module)
+# - Alpine 3.23 provides nginx 1.28.0 and nginx-mod-http-brotli 1.28.0 (version-matched)
+# - To update: check https://hub.docker.com/_/alpine/tags
+# - For SHA digest pinning in production, use:
+#   FROM alpine:3.23@sha256:<digest>
+
 ARG ALPINE_VERSION=3.23
 
 # --- 1. BASE STAGE (Shared) ---
 # Using Alpine 3.23 directly for version-matched nginx + brotli module
-# Alpine 3.23 provides nginx 1.28.0-r8 and nginx-mod-http-brotli 1.28.0-r8 (version-matched)
 FROM alpine:${ALPINE_VERSION} AS base
 
 # Install Nginx with Brotli module & envsubst for template processing & Setup

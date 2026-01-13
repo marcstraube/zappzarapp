@@ -159,7 +159,7 @@ class HealthCheck
     }
 
     /**
-     * Check Redis connection
+     * Check Redis connection (with TLS support)
      */
     private function checkRedis(): void
     {
@@ -173,14 +173,36 @@ class HealthCheck
         }
 
         try {
-            $redis     = new Redis();
-            $connected = $redis->connect('redis', 6379, 2);
+            $redis = new Redis();
+
+            // Parse REDIS_URL to determine TLS mode
+            $redisUrl = $_ENV['REDIS_URL'] ?? getenv('REDIS_URL') ?: 'rediss://redis:6379';
+            $useTls   = str_starts_with($redisUrl, 'rediss://');
+
+            // Parse host and port from URL
+            $parsedUrl = parse_url($redisUrl);
+            $host      = $parsedUrl['host'] ?? 'redis';
+            $port      = $parsedUrl['port'] ?? 6379;
+
+            if ($useTls) {
+                // TLS connection with self-signed certificate support
+                $connected = $redis->connect($host, $port, 2, '', 0, 0, [
+                    'stream' => [
+                        'verify_peer'       => false,
+                        'verify_peer_name'  => false,
+                        'allow_self_signed' => true,
+                    ],
+                ]);
+            } else {
+                $connected = $redis->connect($host, $port, 2);
+            }
 
             if (!$connected) {
                 $this->status['services']['redis'] = [
                     'status'  => 'error',
                     'message' => 'Could not connect to Redis',
                     'enabled' => true,
+                    'tls'     => $useTls,
                 ];
                 return;
             }
@@ -192,6 +214,7 @@ class HealthCheck
                 'status'  => ($pong === '+PONG' || $pong === true) ? 'ok' : 'error',
                 'version' => $info['redis_version'] ?? 'unknown',
                 'enabled' => true,
+                'tls'     => $useTls,
             ];
 
             $redis->close();

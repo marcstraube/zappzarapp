@@ -3,9 +3,12 @@
  *
  * Provides database connection configuration following 12-Factor App principles.
  * DATABASE_URL takes precedence over individual variables for PaaS compatibility.
+ *
+ * Supports Docker Secrets via _FILE environment variables:
+ * - DB_PASSWORD_FILE: Path to file containing database password
  */
 
-import { existsSync } from 'fs';
+import { existsSync, readFileSync } from 'fs';
 
 export interface DatabaseConfig {
   type: 'postgres' | 'mysql';
@@ -35,6 +38,27 @@ function getEnv(name: string, fallback: string): string {
 }
 
 /**
+ * Get environment variable with _FILE support for Docker Secrets.
+ * Checks for {NAME}_FILE first, reads file content if exists,
+ * otherwise falls back to regular environment variable.
+ */
+function getEnvOrFile(name: string, fallback: string): string {
+  // Check for _FILE variant first (Docker Secrets pattern)
+  const fileVar = `${name}_FILE`;
+  const filePath = process.env[fileVar];
+
+  if (filePath !== undefined && filePath !== '' && existsSync(filePath)) {
+    try {
+      return readFileSync(filePath, 'utf-8').trim();
+    } catch {
+      // Fall through to regular env var
+    }
+  }
+
+  return getEnv(name, fallback);
+}
+
+/**
  * Parse DATABASE_URL into config object.
  */
 function parseUrl(url: string): DatabaseConfig {
@@ -55,6 +79,7 @@ function parseUrl(url: string): DatabaseConfig {
 
 /**
  * Load config from individual environment variables.
+ * Uses _FILE variant for password to support Docker Secrets.
  */
 function loadFromIndividualVars(): DatabaseConfig {
   const type = getEnv('DB_TYPE', 'postgres') as 'postgres' | 'mysql';
@@ -66,7 +91,7 @@ function loadFromIndividualVars(): DatabaseConfig {
     port: parseInt(getEnv('DB_PORT', String(getDefaultPort(type))), 10),
     name: getEnv('DB_NAME', 'app'),
     user: getEnv('DB_USER', 'app'),
-    password: getEnv('DB_PASSWORD', 'secret'),
+    password: getEnvOrFile('DB_PASSWORD', 'secret'),
   };
 }
 

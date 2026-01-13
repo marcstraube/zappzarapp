@@ -14,6 +14,7 @@ async function loadDatabaseConfig(env: Record<string, string | undefined>) {
   delete process.env.DB_NAME;
   delete process.env.DB_USER;
   delete process.env.DB_PASSWORD;
+  delete process.env.DB_PASSWORD_FILE;
   delete process.env.DB_SSL_CA;
   delete process.env.DB_SSL_VERIFY;
 
@@ -598,6 +599,104 @@ describe('Database Configuration', () => {
 
       const regeneratedUrl = getDatabaseUrl(config);
       expect(regeneratedUrl).toBe(originalUrl);
+    });
+  });
+
+  // ===========================================================================
+  // Docker Secrets (_FILE) Support Tests
+  // ===========================================================================
+
+  describe('Docker Secrets (_FILE support)', () => {
+    // Helper to create temp file with password content
+    async function createTempFile(content: string): Promise<string> {
+      const fs = await import('fs');
+      const os = await import('os');
+      const path = await import('path');
+      const tempDir = os.tmpdir();
+      const tempFile = path.join(tempDir, `db_password_test_${Date.now()}_${Math.random().toString(36).slice(2)}.txt`);
+      fs.writeFileSync(tempFile, content);
+      return tempFile;
+    }
+
+    // Helper to remove temp file
+    async function removeTempFile(filePath: string): Promise<void> {
+      const fs = await import('fs');
+      fs.unlinkSync(filePath);
+    }
+
+    it('should read password from file when DB_PASSWORD_FILE is set', async () => {
+      const tempFile = await createTempFile('secret_from_file\n');
+
+      try {
+        const { getDatabaseConfig } = await loadDatabaseConfig({
+          DB_PASSWORD_FILE: tempFile,
+        });
+
+        const config = getDatabaseConfig();
+        expect(config.password).toBe('secret_from_file');
+      } finally {
+        await removeTempFile(tempFile);
+      }
+    });
+
+    it('should trim whitespace from password file content', async () => {
+      const tempFile = await createTempFile('  password_with_spaces  \n\n');
+
+      try {
+        const { getDatabaseConfig } = await loadDatabaseConfig({
+          DB_PASSWORD_FILE: tempFile,
+        });
+
+        const config = getDatabaseConfig();
+        expect(config.password).toBe('password_with_spaces');
+      } finally {
+        await removeTempFile(tempFile);
+      }
+    });
+
+    it('should prefer _FILE over direct env var', async () => {
+      const tempFile = await createTempFile('from_file');
+
+      try {
+        const { getDatabaseConfig } = await loadDatabaseConfig({
+          DB_PASSWORD_FILE: tempFile,
+          DB_PASSWORD: 'from_env',
+        });
+
+        const config = getDatabaseConfig();
+        expect(config.password).toBe('from_file');
+      } finally {
+        await removeTempFile(tempFile);
+      }
+    });
+
+    it('should fall back to env var when file does not exist', async () => {
+      const { getDatabaseConfig } = await loadDatabaseConfig({
+        DB_PASSWORD_FILE: '/nonexistent/path/to/password.txt',
+        DB_PASSWORD: 'fallback_password',
+      });
+
+      const config = getDatabaseConfig();
+      expect(config.password).toBe('fallback_password');
+    });
+
+    it('should fall back to default when file does not exist and no env var', async () => {
+      const { getDatabaseConfig } = await loadDatabaseConfig({
+        DB_PASSWORD_FILE: '/nonexistent/path/to/password.txt',
+      });
+
+      const config = getDatabaseConfig();
+      expect(config.password).toBe('secret');
+    });
+
+    it('should fall back to env var when _FILE path is empty', async () => {
+      const { getDatabaseConfig } = await loadDatabaseConfig({
+        DB_PASSWORD_FILE: '',
+        DB_PASSWORD: 'env_password',
+      });
+
+      const config = getDatabaseConfig();
+      expect(config.password).toBe('env_password');
     });
   });
 });

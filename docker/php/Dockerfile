@@ -1,3 +1,11 @@
+# PHP Multi-Stage Dockerfile
+#
+# Version Pinning:
+# - Minor version pinned for stability
+# - To update: check https://hub.docker.com/_/php/tags
+# - For SHA digest pinning in production, use:
+#   FROM php:8.4-fpm-alpine3.23@sha256:<digest>
+
 ARG PHP_VERSION=8.4
 ARG ALPINE_VERSION=3.23
 
