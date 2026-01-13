@@ -29,6 +29,8 @@ COPY docker/nginx/nginx.conf /etc/nginx/nginx.conf
 # Copy only base configs (SSL configs are mounted via volumes when enabled)
 COPY docker/nginx/conf.d/default.conf /etc/nginx/conf.d/default.conf
 COPY docker/nginx/conf.d/csp-production.conf /etc/nginx/conf.d/csp-production.conf
+# Copy custom error pages
+COPY docker/nginx/errors/ /usr/share/nginx/html/errors/
 
 # Copy Entrypoint Script for SSL template processing
 COPY docker/nginx/entrypoint.sh /docker-entrypoint.sh

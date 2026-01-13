@@ -2,12 +2,54 @@
 
 
 **Erstellt:** 2025-12-19
-**Letzte Aktualisierung:** 2026-01-13 (Makefile Logs Fix)
-**Version:** 3.24
+**Letzte Aktualisierung:** 2026-01-13 (Developer Tooling & Dependency Management)
+**Version:** 3.25
 
 ---
 
 ## Changelog
+
+### Version 3.25 (2026-01-13) - Developer Tooling & Dependency Management
+
+#### Added
+- **Markdownlint Integration**:
+  - Added `markdownlint-cli2` for Markdown linting
+  - New config file `.markdownlint-cli2.jsonc` with project-specific rules
+  - New Make targets: `make lint-md`, `make lint-md-fix`
+
+- **lint-staged for Pre-Commit Hooks**:
+  - Added `lint-staged` for running linters only on staged files
+  - New config file `lint-staged.config.js` (TS/JS, JSON, Markdown)
+  - Updated `captainhook.json` to use lint-staged instead of full codebase checks
+  - Separate PHP checks (syntax + CS-Fixer) for staged files only
+
+- **Custom Nginx Error Pages**:
+  - Added `docker/nginx/errors/404.html` - styled 404 page
+  - Added `docker/nginx/errors/50x.html` - styled 50x error page
+  - Updated Nginx configs with `error_page` directives and internal `/errors/` location
+
+- **`make node-update`**: New target for updating Node.js dependencies with automatic lockfile sync
+
+- **Dependency Management Documentation** (`documentation/development/DEPENDENCIES.md`):
+  - Complete guide for Composer and pnpm dependency management
+  - Docker Compose Watch architecture explanation
+  - Workflow examples (new feature, after pull, fresh install)
+  - Troubleshooting section for common issues
+
+#### Changed
+- **`make help` formatting**: Increased column width from `%-20s` to `%-26s` for better readability
+
+- **Automatic Lockfile Sync**: All dependency targets now sync only the relevant lockfile:
+  - `make composer-install` → syncs `composer.lock` after install
+  - `make node-install` → syncs `pnpm-lock.yaml` after install
+  - `make composer-install-local` → syncs `composer.lock` before install (if container running)
+  - `make node-install-local` → syncs `pnpm-lock.yaml` before install (if container running)
+
+- **`make sync-lockfiles`**: Remains available for manual sync of both lockfiles
+
+- **`compose.override.yaml`**: Added mounts for lint-staged config, markdownlint config, and documentation folder
+
+---
 
 ### Version 3.24 (2026-01-13) - Makefile Logs Fix
 

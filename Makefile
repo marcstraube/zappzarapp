@@ -28,7 +28,7 @@ help: ## Show this help
 			print cmds | "sort"; \
 			close("sort"); \
 		} \
-	}' $(MAKEFILE_LIST) | awk 'BEGIN {FS="\t"} {printf "  \033[0;32m%-20s\033[0m %s\n", $$1, $$2}'
+	}' $(MAKEFILE_LIST) | awk 'BEGIN {FS="\t"} {printf "  \033[0;32m%-26s\033[0m %s\n", $$1, $$2}'
 
 ##@ Setup
 
@@ -40,16 +40,27 @@ composer-install: ## Install/update Composer dependencies (Docker - guaranteed c
 		XDEBUG_MODE=off $(DC) run --rm --no-TTY php composer install --prefer-dist --no-interaction --no-scripts; \
 	fi
 	@echo -e "\033[0;32mDependencies ready!\033[0m"
+	@# Sync lockfile from container to host
+	@if docker compose ps php 2>/dev/null | grep -q "Up"; then \
+		docker cp $$(docker compose ps -q php):/var/www/html/composer.lock ./ 2>/dev/null && \
+		echo -e "\033[0;34m✓ composer.lock synced\033[0m" || true; \
+	fi
 
 composer-install-local: ## Install/update Composer dependencies (Local - IDE code completion only)
+	@# Sync lockfile from container if running (ensures consistency)
+	@if docker compose ps php 2>/dev/null | grep -q "Up"; then \
+		docker cp $$(docker compose ps -q php):/var/www/html/composer.lock ./ 2>/dev/null && \
+		echo -e "\033[0;34m✓ composer.lock synced from container\033[0m" || true; \
+	fi
 	@if command -v composer >/dev/null 2>&1; then \
 		echo -e "\033[0;33m⚠️  Using local Composer (version may differ from Docker).\033[0m"; \
 		if [ ! -f "vendor/autoload.php" ]; then \
-			composer install --prefer-dist --no-interaction; \
+			composer install --prefer-dist --no-interaction --ignore-platform-reqs && \
+			echo -e "\033[0;32mDependencies installed!\033[0m"; \
 		else \
-			composer install --prefer-dist --no-interaction --no-scripts; \
+			composer install --prefer-dist --no-interaction --no-scripts --ignore-platform-reqs && \
+			echo -e "\033[0;32mDependencies installed!\033[0m"; \
 		fi; \
-		echo -e "\033[0;32mDependencies installed!\033[0m"; \
 	else \
 		echo -e "\033[0;31mError: Local Composer not found. Use 'make composer-install' instead.\033[0m"; \
 		exit 1; \
@@ -217,6 +228,14 @@ clean: ## Remove containers, networks and dangling images (keeps data volumes)
 
 composer: ## Execute Composer command in running container (e.g. make composer CMD="require vendor/package")
 	@docker compose exec php composer $(CMD)
+
+composer-update: ## Update Composer dependencies and sync lock file to host
+	@echo -e "\033[0;33mUpdating Composer dependencies...\033[0m"
+	@XDEBUG_MODE=off $(DC) run --rm --no-TTY php composer update
+	@echo -e "\033[0;33mSyncing composer.lock to host...\033[0m"
+	@docker cp $$(docker compose ps -q php):/var/www/html/composer.lock ./ 2>/dev/null || \
+		$(DC) run --rm --no-TTY --entrypoint cat php /var/www/html/composer.lock > composer.lock
+	@echo -e "\033[0;32mDependencies updated and lock file synced!\033[0m"
 
 down: ## Stop containers
 	@echo -e "\033[0;33mStopping containers...\033[0m"
@@ -445,8 +464,26 @@ node-install: ## Install Node.js dependencies (Docker - requires ENV=development
 	@docker compose exec --user root node chown -R node:node /app/node_modules
 	@docker compose exec node sh -c 'TMPDIR=/tmp pnpm install'
 	@echo -e "\033[0;32mDependencies installed!\033[0m"
+	@# Sync lockfile from container to host
+	@if docker compose ps node 2>/dev/null | grep -q "Up"; then \
+		docker cp $$(docker compose ps -q node):/app/pnpm-lock.yaml ./ 2>/dev/null && \
+		echo -e "\033[0;34m✓ pnpm-lock.yaml synced\033[0m" || true; \
+	fi
+
+node-update: ## Update Node.js dependencies and sync lock file to host
+	@echo -e "\033[0;33mUpdating Node.js dependencies...\033[0m"
+	@docker compose exec node pnpm update
+	@echo -e "\033[0;33mSyncing pnpm-lock.yaml to host...\033[0m"
+	@docker cp $$(docker compose ps -q node):/app/pnpm-lock.yaml ./ 2>/dev/null || \
+		docker compose exec node cat /app/pnpm-lock.yaml > pnpm-lock.yaml
+	@echo -e "\033[0;32mDependencies updated and lock file synced!\033[0m"
 
 node-install-local: ## Install Node.js dependencies (Local - IDE code completion only)
+	@# Sync lockfile from container if running (ensures consistency)
+	@if docker compose ps node 2>/dev/null | grep -q "Up"; then \
+		docker cp $$(docker compose ps -q node):/app/pnpm-lock.yaml ./ 2>/dev/null && \
+		echo -e "\033[0;34m✓ pnpm-lock.yaml synced from container\033[0m" || true; \
+	fi
 	@if command -v pnpm >/dev/null 2>&1; then \
 		echo -e "\033[0;33m⚠️  Using local pnpm (version may differ from Docker).\033[0m"; \
 		pnpm install; \
@@ -793,6 +830,16 @@ lint-config: ## Validate YAML configuration files
 	@echo -e "\033[0;33mValidating YAML configuration...\033[0m"
 	@docker run --rm -v $$(pwd):/app -w /app cytopia/yamllint:latest ./**/*.yaml
 	@echo -e "\033[0;32mYAML configuration check completed!\033[0m"
+
+lint-md: ## Check Markdown files for style issues
+	@echo -e "\033[0;33mChecking Markdown files...\033[0m"
+	@docker compose exec node pnpm run lint:md
+	@echo -e "\033[0;32mMarkdown check completed!\033[0m"
+
+lint-md-fix: ## Fix Markdown style issues automatically
+	@echo -e "\033[0;33mFixing Markdown files...\033[0m"
+	@docker compose exec node pnpm run lint:md:fix
+	@echo -e "\033[0;32mMarkdown files fixed!\033[0m"
 
 outdated: ## Check for outdated Composer dependencies
 	@echo -e "\033[0;33mChecking Composer for outdated packages...\033[0m"

@@ -31,13 +31,11 @@ services:
     command: ["php-fpm"]
     develop:
       watch:
-        # Composer files (sync+restart to pick up dependency changes)
-        - action: sync+restart
+        # Composer files trigger rebuild (ensures fresh dependencies)
+        - action: rebuild
           path: ./composer.json
-          target: /var/www/html/composer.json
-        - action: sync+restart
+        - action: rebuild
           path: ./composer.lock
-          target: /var/www/html/composer.lock
     volumes:
       # Entrypoint Script
       - ./docker/php/entrypoint.development.sh:/entrypoint.development.sh:ro
@@ -177,9 +175,14 @@ services:
       - ./.prettierignore:/app/.prettierignore:ro
       - ./commitlint.config.js:/app/commitlint.config.js:ro
       - ./typedoc.json:/app/typedoc.json:ro
+      - ./.markdownlint-cli2.jsonc:/app/.markdownlint-cli2.jsonc:ro
+      - ./lint-staged.config.js:/app/lint-staged.config.js:ro
 
-      # Git repository (for commitlint)
-      - ./.git:/app/.git:ro
+      # Documentation (for markdownlint)
+      - ./documentation:/app/documentation:ro
+
+      # Git repository (for commitlint and lint-staged)
+      - ./.git:/app/.git
     environment:
       - TZ=${TZ:-UTC}
       - NODE_ENV=development

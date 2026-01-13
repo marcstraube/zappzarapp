@@ -21,6 +21,7 @@ Tools and configurations for local development.
 
 | Document                                            | Description                                    |
 |-----------------------------------------------------|------------------------------------------------|
+| [DEPENDENCIES.md](development/DEPENDENCIES.md)      | Dependency management (Composer, pnpm, Watch)  |
 | [DEV-DASHBOARD.md](development/DEV-DASHBOARD.md)    | Development dashboard for monitoring           |
 | [XDEBUG.md](development/XDEBUG.md)                  | Xdebug configuration for PHP debugging         |
 | [RENOVATE.md](development/RENOVATE.md)              | Automated dependency updates                   |
@@ -54,7 +55,7 @@ Platform-specific installation and configuration.
 
 ## Directory Structure
 
-```
+```text
 documentation/
 ├── README.md                 # This file (index)
 ├── security/                 # GDPR & Security
@@ -63,6 +64,7 @@ documentation/
 │   ├── ENCRYPTION.md
 │   └── SSL-CERTIFICATES.md
 ├── development/              # Development Tools
+│   ├── DEPENDENCIES.md
 │   ├── DEV-DASHBOARD.md
 │   ├── RENOVATE.md
 │   └── XDEBUG.md
@@ -90,6 +92,7 @@ documentation/
 ## Contributing
 
 When adding new documentation:
+
 1. Place it in the appropriate subdirectory
 2. Update this README with a link
 3. Use clear, descriptive filenames (UPPERCASE.md)

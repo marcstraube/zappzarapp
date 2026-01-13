@@ -14,34 +14,22 @@
     "enabled": true,
     "actions": [
       {
-        "action": "docker compose exec -T php vendor/bin/php-cs-fixer fix --diff --config=.php-cs-fixer.dist.php --dry-run",
+        "action": "docker compose exec -T node pnpm exec lint-staged --no-stash",
         "options": [],
         "type": "cli",
-        "description": "Check for styling issues with PHP-CS-Fixer (Dry-Run)"
+        "description": "Run lint-staged for Node.js files (TS/JS, JSON, MD)"
       },
       {
         "action": "git diff --name-only --cached --diff-filter=d | grep '.php$' | grep -v '^docker/' | xargs -r -I {} docker compose exec -T php php -l /var/www/html/{}",
         "options": [],
         "type": "cli",
-        "description": "Check for basic PHP syntax errors (Linting) - excludes docker/ config files"
+        "description": "Check PHP syntax on staged files"
       },
       {
-        "action": "docker compose exec -T node pnpm exec prettier --check 'src/**/*.{ts,js,json}'",
+        "action": "git diff --name-only --cached --diff-filter=d | grep '.php$' | grep -v '^docker/' | xargs -r sh -c 'docker compose exec -T php vendor/bin/php-cs-fixer fix --diff --dry-run --config=.php-cs-fixer.dist.php $(echo \"$@\" | sed \"s|[^ ]*|/var/www/html/&|g\")' _",
         "options": [],
         "type": "cli",
-        "description": "Check Node.js code formatting with Prettier"
-      },
-      {
-        "action": "docker compose exec -T node pnpm exec eslint 'src/**/*.{ts,js}' --max-warnings=0",
-        "options": [],
-        "type": "cli",
-        "description": "Lint Node.js code with ESLint (TypeScript-aware, zero warnings)"
-      },
-      {
-        "action": "docker compose exec -T node pnpm run type-check",
-        "options": [],
-        "type": "cli",
-        "description": "Check TypeScript types (similar to PHPStan for type safety)"
+        "description": "Check PHP coding style on staged files"
       }
     ]
   },
@@ -63,15 +51,15 @@
     ]
   },
   "post-checkout": {
-    "enabled": true,
+    "enabled": false,
     "actions": []
   },
   "post-merge": {
-    "enabled": true,
+    "enabled": false,
     "actions": []
   },
   "post-rewrite": {
-    "enabled": true,
+    "enabled": false,
     "actions": []
   }
 }
