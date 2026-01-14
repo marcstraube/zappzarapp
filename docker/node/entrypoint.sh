@@ -1,28 +1,25 @@
 #!/bin/sh
 # Docker Node.js Entrypoint Script
-# Handles dependency installation and service startup based on NODE_MODE
+# Validates dependencies (for services) and starts based on NODE_MODE
 
 set -e
 
+# If arguments are passed, run them directly (command mode, e.g., pnpm install)
+if [ $# -gt 0 ]; then
+    exec "$@"
+fi
+
+# Service mode: validate dependencies before starting
 echo "[entrypoint] Starting Node.js container..."
 echo "[entrypoint] NODE_MODE: ${NODE_MODE:-none}"
-echo "[entrypoint] NODE_ENV: ${NODE_ENV:-production}"
 
-# Install dependencies if node_modules doesn't exist or package.json changed
-if [ ! -d "/app/node_modules" ] || [ ! -f "/app/node_modules/.pnpm-lock.yaml" ]; then
-    echo "[entrypoint] Installing dependencies..."
-    # Check if pnpm-lock.yaml exists and is not empty
-    if [ -f "/app/pnpm-lock.yaml" ] && [ -s "/app/pnpm-lock.yaml" ]; then
-        echo "[entrypoint] Using existing pnpm-lock.yaml (frozen lockfile)"
-        pnpm install --frozen-lockfile
-    else
-        echo "[entrypoint] No valid lockfile found, generating new one..."
-        pnpm install --no-frozen-lockfile
-    fi
-    echo "[entrypoint] Dependencies installed successfully"
-else
-    echo "[entrypoint] Dependencies already installed, skipping..."
+# Fail fast if dependencies are missing (explicit install required)
+if [ ! -d "/app/node_modules" ] || [ -z "$(ls -A /app/node_modules 2>/dev/null)" ]; then
+    echo "[entrypoint] ERROR: Node.js dependencies not installed!"
+    echo "[entrypoint] Run 'make pnpm-install' to install dependencies."
+    exit 1
 fi
+echo "[entrypoint] Dependencies OK"
 
 # Start services based on NODE_MODE
 case "${NODE_MODE:-none}" in
@@ -40,9 +37,6 @@ case "${NODE_MODE:-none}" in
         ;;
     none|*)
         echo "[entrypoint] Idle mode - container running without services"
-        echo "[entrypoint] Run commands manually:"
-        echo "[entrypoint]   - Via make: 'make node-exec CMD=\"pnpm run <command>\"'"
-        echo "[entrypoint]   - Direct:   'docker compose exec node pnpm run <command>'"
         exec sleep infinity
         ;;
 esac

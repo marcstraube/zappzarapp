@@ -132,11 +132,8 @@ make init
 
 # 2. Edit .env: Adjust USER_ID, GROUP_ID to match your host user (id -u, id -g)
 
-# 3. Create project structure (directories, dependencies)
-make setup
-
-# 4. Build and start all services
-make up</pre>
+# 3. Full setup (build, install dependencies, start containers)
+make setup</pre>
 
         <h3 style="margin-top: 1rem;">💻 Daily Development</h3>
         <pre style="background: #f5f5f5; padding: 0.5rem; border-radius: 4px; overflow-x: auto;"># Start services (uses existing images)

@@ -20,35 +20,40 @@ synchronized back to the host for version control.
 
 ## File Synchronization Architecture
 
-This project uses **Docker Compose Watch** for cross-platform file
-synchronization:
+This project uses **bind mounts** for bidirectional file synchronization.
+Dependency directories use **named volumes** for cross-platform performance:
 
 ```text
 Host                          Container
-├── composer.json    ──Watch──►  /var/www/html/composer.json
-├── composer.lock    ──Watch──►  /var/www/html/composer.lock
-├── package.json     ──Watch──►  /app/package.json
-└── pnpm-lock.yaml   ──Watch──►  /app/pnpm-lock.yaml
+├── composer.json    ◄──Bind──►  /var/www/html/composer.json
+├── composer.lock    ◄──Bind──►  /var/www/html/composer.lock
+├── package.json     ◄──Bind──►  /app/package.json
+├── pnpm-lock.yaml   ◄──Bind──►  /app/pnpm-lock.yaml
+│
+│   Named Volumes (Container-only)
+├── (php_vendor)     ────────►   /var/www/html/vendor
+└── (node_modules)   ────────►   /app/node_modules
 ```
 
-### Watch Mode Behavior
+### Architecture Benefits
 
-- **Direction**: Host → Container (one-way sync)
-- **Action**: `rebuild` - Container rebuilds when dependency files change
-- **Cross-Platform**: Works identically on Linux, macOS, and Windows
+| Component      | Type         | Benefit                                |
+| -------------- | ------------ | -------------------------------------- |
+| Source files   | Bind Mount   | Instant sync, HMR works                |
+| Lock files     | Bind Mount   | Bidirectional, version control         |
+| `node_modules` | Named Volume | Fast installs, no Windows/macOS issues |
+| `vendor`       | Named Volume | Fast installs, no permission issues    |
 
-### Why Watch Instead of Bind Mounts?
+### Why Named Volumes for Dependencies?
 
-| Aspect         | Watch Mode       | Bind Mounts                        |
-| -------------- | ---------------- | ---------------------------------- |
-| Windows/macOS  | ✅ Fast          | ⚠️ Slower (filesystem translation) |
-| Linux          | ✅ Fast          | ✅ Fast                            |
-| Sync Direction | Host → Container | Bidirectional                      |
+Named volumes provide consistent performance across all platforms:
 
-Watch mode is the
-[recommended approach](https://docs.docker.com/compose/how-tos/file-watch/) for
-dependency files because changes to `package.json` or `composer.json` typically
-require a full reinstall anyway.
+- **Windows/macOS**: Bind-mounted `node_modules` is extremely slow due to
+  filesystem translation. Named volumes stay inside Docker and are fast.
+- **Linux**: Named volumes avoid permission conflicts between host and container
+  user IDs.
+- **All platforms**: Package managers (pnpm, Composer) work without EBUSY/lock
+  file issues.
 
 ---
 
@@ -117,8 +122,8 @@ make pnpm-update        # Updates + syncs pnpm-lock.yaml
 
 ## Lock File Synchronization
 
-Since Watch mode is one-way (Host → Container), lock files generated in the
-container must be synced back to the host for Git commits.
+Lock files are automatically synchronized via bind mounts. Changes made inside
+the container are immediately visible on the host and vice versa.
 
 ### Automatic Sync
 
@@ -171,12 +176,12 @@ git commit -m "feat: add new dependencies"
 # 1. Pull latest code
 git pull
 
-# 2. Rebuild containers (Watch mode detects changes)
-make restart
-
-# 3. Or manually reinstall if needed
+# 2. Reinstall dependencies (if lock files changed)
 make composer-install
 make pnpm-install
+
+# 3. Restart containers
+make restart
 ```
 
 ### Fresh Install (New Developer)
@@ -263,5 +268,5 @@ npm test            # Incorrect (uses local node)
 
 - [WINDOWS.md](../setup/WINDOWS.md) - Windows-specific setup (WSL2)
 - [RENOVATE.md](RENOVATE.md) - Automated dependency updates
-- [Docker Compose Watch](https://docs.docker.com/compose/how-tos/file-watch/) -
-  Official documentation
+- [Docker Volumes](https://docs.docker.com/engine/storage/volumes/) - Official
+  documentation

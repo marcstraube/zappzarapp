@@ -107,34 +107,6 @@ Error: Bind for 0.0.0.0:8080 failed: port is already allocated
    make restart
    ```
 
-### Docker Compose Watch Not Working
-
-#### Symptom
-
-File changes not syncing to containers.
-
-#### Solutions
-
-1. **Check if watch is running**
-
-   ```bash
-   cat .docker-watch.pid
-   ps aux | grep "docker.*watch"
-   ```
-
-2. **Restart containers**
-
-   ```bash
-   make down
-   make up  # Automatically starts watch
-   ```
-
-3. **Manual restart of watch**
-
-   ```bash
-   docker compose watch &
-   ```
-
 ## Permission Issues
 
 ### Linux: Permission Denied Errors

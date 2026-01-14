@@ -29,13 +29,6 @@ services:
         GROUP_ID: ${GROUP_ID:-1000}
     entrypoint: ["/entrypoint.development.sh"]
     command: ["php-fpm"]
-    develop:
-      watch:
-        # Composer files trigger rebuild (ensures fresh dependencies in image)
-        - action: rebuild
-          path: ./composer.json
-        - action: rebuild
-          path: ./composer.lock
     volumes:
       # Entrypoint Script
       - ./docker/php/entrypoint.development.sh:/entrypoint.development.sh:ro
@@ -149,32 +142,6 @@ services:
     ports:
       - "${VITE_PORT:-5173}:5173"
       - "${NODE_PORT:-3000}:3000"
-    develop:
-      watch:
-        # Rebuild when dependencies change
-        - action: rebuild
-          path: ./package.json
-        - action: rebuild
-          path: ./pnpm-lock.yaml
-        # Sync config files (restart container to pick up changes)
-        - action: sync+restart
-          path: ./tsconfig.json
-          target: /app/tsconfig.json
-        - action: sync+restart
-          path: ./tsconfig.build.json
-          target: /app/tsconfig.build.json
-        - action: sync+restart
-          path: ./tsconfig.vitest.json
-          target: /app/tsconfig.vitest.json
-        - action: sync+restart
-          path: ./vitest.config.ts
-          target: /app/vitest.config.ts
-        - action: sync+restart
-          path: ./vite.config.js
-          target: /app/vite.config.js
-        - action: sync+restart
-          path: ./ecosystem.config.cjs
-          target: /app/ecosystem.config.cjs
     volumes:
       # Package manager files (bidirectional bind mount for pnpm update/add/remove)
       # Not copied in Dockerfile development stage to avoid frozen-lockfile issues
@@ -194,6 +161,14 @@ services:
       - ./public:/app/public
       - ./docs:/app/docs
       - ./build:/app/build
+
+      # Build config files (needed for Vite, TypeScript, PM2)
+      - ./vite.config.js:/app/vite.config.js:ro
+      - ./tsconfig.json:/app/tsconfig.json:ro
+      - ./tsconfig.build.json:/app/tsconfig.build.json:ro
+      - ./tsconfig.vitest.json:/app/tsconfig.vitest.json:ro
+      - ./vitest.config.ts:/app/vitest.config.ts:ro
+      - ./ecosystem.config.cjs:/app/ecosystem.config.cjs:ro
 
       # Static config files (read-only bind mounts, rarely change)
       - ./postcss.config.js:/app/postcss.config.js:ro

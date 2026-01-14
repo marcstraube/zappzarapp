@@ -50,9 +50,9 @@ module.exports = {
       exec_mode: 'fork_mode',
       instances: 1,
       autorestart: true,
-      watch: false,  // Disabled in Docker: use Docker Compose Watch instead (compose.override.yaml)
-      // NOTE: PM2 watch with Docker bind mounts causes false-positive change detections
-      // Docker Compose Watch provides better file change detection for containerized apps
+      watch: false,  // Disabled: use tsx watch for backend development instead
+      // NOTE: PM2 watch with Docker bind mounts can cause false-positive change detections
+      // Use 'make node-server-dev' (tsx watch) for hot-reload during development
       max_memory_restart: '512M',
       env: {
         NODE_ENV: 'development',

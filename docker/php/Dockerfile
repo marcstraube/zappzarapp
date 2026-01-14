@@ -149,10 +149,8 @@ COPY docker/php/zz-docker.conf /usr/local/etc/php-fpm.d/zz-docker.conf
 COPY docker/php/entrypoint.sh /usr/local/bin/entrypoint.sh
 RUN chmod +x /usr/local/bin/entrypoint.sh
 
-# Copy source code into image (Docker Compose Watch will sync changes)
-COPY --chown=www-data:www-data src/php/ ./src/php/
-COPY --chown=www-data:www-data tests/php/ ./tests/php/
-COPY --chown=www-data:www-data templates/ ./templates/
+# Note: Source code, configs, and dependencies are provided via bind mounts
+# in development (see compose.override.yaml). No COPY needed here.
 
 # Keep as root for entrypoint (entrypoint will handle permissions and su to www-data)
 # PHP-FPM will still run as www-data (configured in php-fpm.conf)

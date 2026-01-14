@@ -1,11 +1,79 @@
 # Docker WebDev Boilerplate - Changelog
 
-**Erstellt:** 2025-12-19 **Letzte Aktualisierung:** 2026-01-14 (Quality Tools)
-**Version:** 3.32
+**Erstellt:** 2025-12-19 **Letzte Aktualisierung:** 2026-01-14 (Architecture
+Simplification) **Version:** 3.33
 
 ---
 
 ## Changelog
+
+### Version 3.33 (2026-01-14) - Architecture Simplification
+
+Major simplification: Removed Docker Compose Watch in favor of pure bind mounts.
+Explicit dependency installation instead of auto-install in entrypoints.
+
+#### Removed
+
+- **Docker Compose Watch**: Removed `develop:` blocks from
+  `compose.override.yaml`
+  - Root cause of EBUSY errors (file locking on package.json/pnpm-lock.yaml)
+  - Root cause of "Resource busy" errors during git commits (lint-staged)
+  - Vite HMR and PHP-FPM already handle file changes natively
+  - Bind mounts provide instant sync without file locking issues
+
+- **Auto-install in Entrypoints**: Dependencies no longer install automatically
+  - Entrypoints now fail-fast with clear error message if dependencies missing
+  - More predictable container startup time
+  - No network dependency during `make up`
+  - Industry standard: explicit install via `make setup` or `make *-install`
+
+#### Changed
+
+- **Makefile Targets** (simplified and consistent):
+  - `pnpm`: Changed from `exec` to `run` (works without running container)
+  - `pnpm-install`: Changed from `exec` to `run` (works without running
+    container)
+  - `pnpm-update`: Simplified from complex `docker create/cp` to `run` with /tmp
+  - `composer-install`: Removed conditional `--no-scripts` logic
+  - `up`: Removed Watch process start and PID file handling
+  - `down`: Removed Watch process kill logic
+  - `setup`: Now explicitly runs `composer-install` + `pnpm-install` before `up`
+
+- **Entrypoints** (fail-fast pattern):
+  - `docker/node/entrypoint.sh`: Validates dependencies, bypasses check for
+    commands (e.g., `pnpm install`)
+  - `docker/php/entrypoint.development.sh`: Validates dependencies only for
+    `php-fpm`, not for `composer` commands
+
+- **Dockerfiles** (Development Stage cleanup):
+  - `docker/node/Dockerfile`: Removed redundant COPY for configs and source
+    (provided via bind mounts)
+  - `docker/php/Dockerfile`: Removed redundant COPY for source (provided via
+    bind mounts)
+
+#### Added
+
+- **Bind Mounts** (`compose.override.yaml`): Added missing config file mounts
+  for Node container:
+  - `vite.config.js`, `tsconfig.json`, `tsconfig.build.json`
+  - `tsconfig.vitest.json`, `vitest.config.ts`, `ecosystem.config.cjs`
+
+#### Fixed
+
+- **EBUSY errors**: `make pnpm CMD="add ..."` no longer fails with atomic rename
+  errors (Docker Compose Watch was the cause, not bind mounts)
+- **Git commit errors**: `git commit` no longer fails with "Resource busy" when
+  lint-staged runs (Watch file handles were blocking git stash/checkout)
+
+#### Documentation
+
+- Updated `QUICKSTART.md`: Corrected setup step order
+- Updated `DEPENDENCIES.md`: Replaced Watch architecture with bind mount docs
+- Updated `TROUBLESHOOTING.md`: Removed "Docker Compose Watch Not Working"
+- Updated `PERFORMANCE.md`: Updated file sync description
+- Updated `templates/app/welcome.php`: Simplified Quick Start section
+
+---
 
 ### Version 3.32 (2026-01-14) - Security & Quality Tools
 
@@ -53,7 +121,6 @@
 - **Makefile `pnpm` target**: Fixed atomic rename issue on Docker bind mounts
   - Docker bind mounts don't support atomic rename (EBUSY error)
   - Solution: Run pnpm in /tmp, then copy files back to host
-  - Stops node container and Docker Compose Watch during operation
 
 #### Changed
 

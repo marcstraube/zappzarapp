@@ -54,8 +54,8 @@ This command:
 - Generates SSL certificates (self-signed)
 - Creates Docker secrets
 - Builds all Docker images
-- Starts containers
 - Installs dependencies (Composer + pnpm)
+- Starts containers
 
 ### 4. Verify Installation
 

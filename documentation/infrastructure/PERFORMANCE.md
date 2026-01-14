@@ -10,7 +10,7 @@ Optimization strategies for development and production environments.
 | ---------------------- | -------------------------------------------- | ------ |
 | Slow container startup | Use `make up` (not `make fresh`)             | High   |
 | Xdebug slows requests  | Set `XDEBUG_MODE=off` in `.env`              | High   |
-| File sync lag          | Docker Compose Watch handles this            | Medium |
+| File sync lag          | Bind mounts provide instant sync             | Medium |
 | IDE indexing slow      | Exclude `node_modules/`, `vendor/`, `build/` | Medium |
 
 ### Production Performance

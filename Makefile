@@ -32,14 +32,10 @@ help: ## Show this help
 
 ##@ Setup
 
-composer-install: ## Install/update Composer dependencies (Docker - guaranteed consistency)
-	@echo -e "\033[0;33mManaging Composer dependencies (Docker)...\033[0m"
-	@if [ ! -f "vendor/autoload.php" ]; then \
-		XDEBUG_MODE=off $(DC) run --rm --no-TTY php composer install --prefer-dist --no-interaction; \
-	else \
-		XDEBUG_MODE=off $(DC) run --rm --no-TTY php composer install --prefer-dist --no-interaction --no-scripts; \
-	fi
-	@echo -e "\033[0;32mDependencies ready!\033[0m"
+composer-install: ## Install Composer dependencies (Docker - guaranteed consistency)
+	@echo -e "\033[0;33mInstalling Composer dependencies (Docker)...\033[0m"
+	@XDEBUG_MODE=off $(DC) run --rm --no-TTY php composer install --prefer-dist --no-interaction
+	@echo -e "\033[0;32mDependencies installed!\033[0m"
 
 composer-install-local: ## Install/update Composer dependencies (Local - IDE code completion only)
 	@if command -v composer >/dev/null 2>&1; then \
@@ -135,13 +131,15 @@ setup: ## Create directories, install dev dependencies and ensure structure
 
 	@echo -e "\033[0;33mBuilding Docker images...\033[0m"
 	@$(MAKE) --silent build
-	@echo -e "\033[0;33mStarting containers (dependencies will install automatically)...\033[0m"
+
+	@echo -e "\033[0;33mInstalling dependencies...\033[0m"
+	@$(MAKE) --silent composer-install
+	@$(MAKE) --silent pnpm-install
+
+	@echo -e "\033[0;33mStarting containers...\033[0m"
 	@$(MAKE) --silent up
-	@echo -e "\033[0;33mWaiting for dependencies to install (30-60 seconds)...\033[0m"
-	@sleep 45
-	@echo -e "\033[0;33mSyncing lock files from containers to host...\033[0m"
-	@$(MAKE) --silent sync-lockfiles
-	@echo -e "\033[0;32mSetup completed (directories + dependencies + lock files)!\033[0m"
+
+	@echo -e "\033[0;32mSetup completed!\033[0m"
 	@echo -e "\033[0;34mNote: For IDE code completion, run 'make composer-install-local' and 'make pnpm-install-local'\033[0m"
 
 ##@ Docker
@@ -226,14 +224,6 @@ composer-update: ## Update Composer dependencies (updates composer.lock on host,
 
 down: ## Stop containers
 	@echo -e "\033[0;33mStopping containers...\033[0m"
-	@# Kill docker compose watch process using saved PID
-	@if [ -f .docker-watch.pid ]; then \
-		kill -9 $$(cat .docker-watch.pid) 2>/dev/null || true; \
-		rm -f .docker-watch.pid; \
-	fi
-	@# Fallback: kill any remaining watch processes (excluding current shell)
-	@pgrep -f "docker.*compose.*watch" | grep -v $$$$ | xargs -r kill -9 2>/dev/null || true
-	@sleep 2
 	@if [ -f .env ]; then \
 		. ./.env && \
 		PROFILES=""; \
@@ -341,47 +331,13 @@ logs-mariadb: ## Show MariaDB logs only
 pnpm: ## Execute pnpm command (e.g. make pnpm CMD="add -D vue")
 	@# Docker bind mounts don't support atomic rename (EBUSY error)
 	@# Solution: Run pnpm with lock file in temp location, then copy back
-	@NODE_WAS_RUNNING=false; \
-	WATCH_WAS_RUNNING=false; \
-	if docker compose ps node --format "{{.State}}" 2>/dev/null | grep -q running; then \
-		NODE_WAS_RUNNING=true; \
-	fi; \
-	if [ -f .docker-watch.pid ] && kill -0 $$(cat .docker-watch.pid) 2>/dev/null; then \
-		WATCH_WAS_RUNNING=true; \
-		echo -e "\033[0;33mPausing Docker Compose Watch...\033[0m"; \
-		kill $$(cat .docker-watch.pid) 2>/dev/null || true; \
-	fi; \
-	if [ "$$NODE_WAS_RUNNING" = "true" ]; then \
-		echo -e "\033[0;33mStopping node container...\033[0m"; \
-		docker compose stop node >/dev/null 2>&1; \
-	fi; \
-	sleep 1; \
-	CONTAINER_ID=$$($(DC) run -d --entrypoint sh node -c " \
+	@$(DC) run --rm --no-TTY node sh -c ' \
 		cp /app/package.json /tmp/package.json && \
 		cp /app/pnpm-lock.yaml /tmp/pnpm-lock.yaml 2>/dev/null || true && \
 		cd /tmp && pnpm $(CMD) && \
 		cat /tmp/package.json > /app/package.json && \
 		cat /tmp/pnpm-lock.yaml > /app/pnpm-lock.yaml \
-	"); \
-	docker logs -f $$CONTAINER_ID; \
-	EXIT_CODE=$$(docker inspect $$CONTAINER_ID --format='{{.State.ExitCode}}'); \
-	docker rm $$CONTAINER_ID >/dev/null 2>&1; \
-	if [ "$$NODE_WAS_RUNNING" = "true" ]; then \
-		echo -e "\033[0;33mRestarting node container...\033[0m"; \
-		docker compose start node >/dev/null 2>&1; \
-	fi; \
-	if [ "$$WATCH_WAS_RUNNING" = "true" ]; then \
-		echo -e "\033[0;33mResuming Docker Compose Watch...\033[0m"; \
-		. ./.env 2>/dev/null || true; \
-		PROFILES=""; \
-		[ "$${ENABLE_PHP:-true}" = "true" ] && PROFILES="$$PROFILES --profile php"; \
-		[ "$${ENABLE_NODE:-true}" = "true" ] && PROFILES="$$PROFILES --profile node"; \
-		[ "$${ENABLE_REDIS:-true}" = "true" ] && PROFILES="$$PROFILES --profile redis"; \
-		[ "$${ENABLE_DATABASE:-true}" = "true" ] && PROFILES="$$PROFILES --profile $${DB_TYPE:-postgres}"; \
-		setsid $(DC) $$PROFILES watch < /dev/null > /dev/null 2>&1 & \
-		echo $$! > .docker-watch.pid; \
-	fi; \
-	exit $$EXIT_CODE
+	'
 
 prune: ## Remove untagged/dangling images related to this project
 	@echo -e "\033[0;33mPruning dangling images...\033[0m"
@@ -452,15 +408,10 @@ up: ## Start enabled containers (based on .env ENABLE_* flags)
 		export NODE_TARGET="$${NODE_TARGET:-$$NODE_TARGET_AUTO}"; \
 		$(DC) -f compose.yaml -f compose.production.yaml $$PROFILES up -d; \
 	else \
-		echo -e "\033[0;34mStarting containers...\033[0m"; \
 		$(DC) $$PROFILES up -d; \
-		echo -e "\033[0;34mStarting Docker Compose Watch (cross-platform file sync)...\033[0m"; \
-		setsid $(DC) $$PROFILES watch < /dev/null > /dev/null 2>&1 & \
-		echo $$! > .docker-watch.pid; \
 	fi
 	@echo -e "\033[0;32mContainers started!\033[0m"
 	@. ./.env && echo -e "\033[0;34mNginx is running at http://localhost:$${NGINX_PORT:-8080}\033[0m"
-	@if [ -f .docker-watch.pid ]; then echo -e "\033[0;34mDocker Compose Watch is running (PID: $$(cat .docker-watch.pid))\033[0m"; fi
 
 ##@ Node.js Development
 
@@ -479,33 +430,22 @@ node-dev-backend: ## Start only Node.js backend with PM2
 	@echo -e "\033[0;33mStarting Node.js backend server...\033[0m"
 	@docker compose exec node pnpm run dev:backend
 
-pnpm-install: ## Install Node.js dependencies (Docker - requires ENV=development)
+pnpm-install: ## Install Node.js dependencies (Docker - guaranteed consistency)
 	@echo -e "\033[0;33mInstalling Node.js dependencies (Docker)...\033[0m"
-	@if [ -f .env ]; then \
-		. ./.env && if [ "$$ENV" = "production" ]; then \
-			echo -e "\033[0;31mError: pnpm-install requires ENV=development in .env file.\033[0m"; \
-			echo -e "\033[0;34mFor production builds, dependencies are installed during 'make build' (see Dockerfile build stage).\033[0m"; \
-			echo -e "\033[0;34mTo use pnpm-install, temporarily set ENV=development in .env, or use 'make pnpm-install-local'.\033[0m"; \
-			exit 1; \
-		fi; \
-	fi
-	@echo -e "\033[0;34mFixing node_modules permissions...\033[0m"
-	@docker compose exec --user root node chown -R node:node /app/node_modules
-	@docker compose exec node sh -c 'TMPDIR=/tmp pnpm install'
+	@$(DC) run --rm --no-TTY node pnpm install --frozen-lockfile
 	@echo -e "\033[0;32mDependencies installed!\033[0m"
 
-pnpm-update: ## Update Node.js dependencies (updates pnpm-lock.yaml on host, node_modules stays in container)
+pnpm-update: ## Update Node.js dependencies (updates pnpm-lock.yaml on host)
 	@echo -e "\033[0;33mUpdating Node.js dependencies...\033[0m"
-	@# Copy files to avoid Linux bind mount atomic rename issues
-	@CONTAINER=$$(docker create --entrypoint sh \
-		-v docker-webdev_node_modules:/app/node_modules \
-		docker-webdev-node:latest -c 'pnpm update') && \
-	docker cp package.json $$CONTAINER:/app/package.json && \
-	docker cp pnpm-lock.yaml $$CONTAINER:/app/pnpm-lock.yaml 2>/dev/null || true && \
-	docker start -a $$CONTAINER && \
-	docker cp $$CONTAINER:/app/package.json ./package.json && \
-	docker cp $$CONTAINER:/app/pnpm-lock.yaml ./pnpm-lock.yaml && \
-	docker rm $$CONTAINER >/dev/null
+	@# Docker bind mounts don't support atomic rename (EBUSY error)
+	@# Solution: Run pnpm with lock file in temp location, then copy back
+	@$(DC) run --rm --no-TTY node sh -c ' \
+		cp /app/package.json /tmp/package.json && \
+		cp /app/pnpm-lock.yaml /tmp/pnpm-lock.yaml 2>/dev/null || true && \
+		cd /tmp && pnpm update && \
+		cat /tmp/package.json > /app/package.json && \
+		cat /tmp/pnpm-lock.yaml > /app/pnpm-lock.yaml \
+	'
 	@echo -e "\033[0;32mDependencies updated!\033[0m"
 
 pnpm-install-local: ## Install Node.js dependencies (Local - IDE code completion only)

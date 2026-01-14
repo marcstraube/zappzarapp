@@ -43,18 +43,8 @@ RUN if [ "$USER_ID" != "1000" ]; then \
 COPY --chown=node:node docker/node/entrypoint.sh /usr/local/bin/entrypoint.sh
 RUN chmod +x /usr/local/bin/entrypoint.sh
 
-# Copy configuration files (Docker Compose Watch will sync changes)
-COPY --chown=node:node tsconfig.json ./
-COPY --chown=node:node tsconfig.build.json ./
-COPY --chown=node:node tsconfig.vitest.json ./
-COPY --chown=node:node vite.config.js ./
-COPY --chown=node:node vitest.config.ts ./
-COPY --chown=node:node ecosystem.config.cjs ./
-
-# Copy source code into image (Docker Compose Watch will sync changes)
-COPY --chown=node:node src/node/ ./src/node/
-COPY --chown=node:node tests/node/ ./tests/node/
-COPY --chown=node:node resources/ ./resources/
+# Note: Config files, source code, and dependencies are provided via bind mounts
+# in development (see compose.override.yaml). No COPY needed here.
 
 # Health Check: Verifies that at least one service (Vite or Backend) is running.
 # Falls back to file check for idle mode.
