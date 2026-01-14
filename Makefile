@@ -240,30 +240,44 @@ composer-update: ## Update Composer dependencies (updates composer.lock on host,
 	@XDEBUG_MODE=off $(DC) run --rm --no-TTY php composer update
 	@echo -e "\033[0;32mDependencies updated!\033[0m"
 
-down: ## Stop containers
-	@echo -e "\033[0;33mStopping containers...\033[0m"
-	@if [ -f .env ]; then \
-		. ./.env && \
-		PROFILES=""; \
-		if [ "$${ENABLE_DATABASE:-true}" = "true" ]; then \
-			PROFILES="$$PROFILES --profile $${DB_TYPE:-postgres}"; \
-		fi; \
-		if [ "$${ENABLE_PHP:-true}" = "true" ]; then PROFILES="$$PROFILES --profile php"; fi; \
-		if [ "$${ENABLE_NODE:-true}" = "true" ]; then PROFILES="$$PROFILES --profile node"; fi; \
-		if [ "$${ENABLE_REDIS:-true}" = "true" ]; then PROFILES="$$PROFILES --profile redis"; fi; \
-		if [ "$${ENABLE_MERCURE:-false}" = "true" ]; then PROFILES="$$PROFILES --profile mercure"; fi; \
-		if [ "$${ENABLE_MEILISEARCH:-false}" = "true" ]; then PROFILES="$$PROFILES --profile meilisearch"; fi; \
-		if [ "$${ENABLE_ELASTICSEARCH:-false}" = "true" ]; then PROFILES="$$PROFILES --profile elasticsearch"; fi; \
-		if [ "$${ENABLE_MAILPIT:-false}" = "true" ]; then PROFILES="$$PROFILES --profile mailpit"; fi; \
-		if [ "$${ENABLE_MINIO:-false}" = "true" ]; then PROFILES="$$PROFILES --profile minio"; fi; \
-		if [ "$${ENABLE_RABBITMQ:-false}" = "true" ]; then PROFILES="$$PROFILES --profile rabbitmq"; fi; \
-		if [ "$$ENV" = "production" ]; then \
-			$(DC) -f compose.yaml -f compose.production.yaml $$PROFILES down; \
+down: ## Stop containers (optionally specify service names: make down php nginx)
+	@SERVICES="$(filter-out $@,$(MAKECMDGOALS))"; \
+	if [ -n "$$SERVICES" ]; then \
+		echo -e "\033[0;33mStopping services: $$SERVICES...\033[0m"; \
+		if [ -f .env ]; then \
+			. ./.env && if [ "$$ENV" = "production" ]; then \
+				$(DC) -f compose.yaml -f compose.production.yaml stop $$SERVICES; \
+			else \
+				$(DC) stop $$SERVICES; \
+			fi; \
 		else \
-			$(DC) $$PROFILES down; \
+			$(DC) stop $$SERVICES; \
 		fi; \
 	else \
-		$(DC) down; \
+		echo -e "\033[0;33mStopping containers...\033[0m"; \
+		if [ -f .env ]; then \
+			. ./.env && \
+			PROFILES=""; \
+			if [ "$${ENABLE_DATABASE:-true}" = "true" ]; then \
+				PROFILES="$$PROFILES --profile $${DB_TYPE:-postgres}"; \
+			fi; \
+			if [ "$${ENABLE_PHP:-true}" = "true" ]; then PROFILES="$$PROFILES --profile php"; fi; \
+			if [ "$${ENABLE_NODE:-true}" = "true" ]; then PROFILES="$$PROFILES --profile node"; fi; \
+			if [ "$${ENABLE_REDIS:-true}" = "true" ]; then PROFILES="$$PROFILES --profile redis"; fi; \
+			if [ "$${ENABLE_MERCURE:-false}" = "true" ]; then PROFILES="$$PROFILES --profile mercure"; fi; \
+			if [ "$${ENABLE_MEILISEARCH:-false}" = "true" ]; then PROFILES="$$PROFILES --profile meilisearch"; fi; \
+			if [ "$${ENABLE_ELASTICSEARCH:-false}" = "true" ]; then PROFILES="$$PROFILES --profile elasticsearch"; fi; \
+			if [ "$${ENABLE_MAILPIT:-false}" = "true" ]; then PROFILES="$$PROFILES --profile mailpit"; fi; \
+			if [ "$${ENABLE_MINIO:-false}" = "true" ]; then PROFILES="$$PROFILES --profile minio"; fi; \
+			if [ "$${ENABLE_RABBITMQ:-false}" = "true" ]; then PROFILES="$$PROFILES --profile rabbitmq"; fi; \
+			if [ "$$ENV" = "production" ]; then \
+				$(DC) -f compose.yaml -f compose.production.yaml $$PROFILES down; \
+			else \
+				$(DC) $$PROFILES down; \
+			fi; \
+		else \
+			$(DC) down; \
+		fi; \
 	fi
 	@echo -e "\033[0;32mContainers stopped!\033[0m"
 
@@ -439,7 +453,23 @@ prune: ## Remove untagged/dangling images related to this project
 	@echo -e "\033[0;33mPruning dangling images...\033[0m"
 	@. ./.env && docker image prune -f --filter "label=com.docker.compose.project=$$COMPOSE_PROJECT_NAME"
 
-restart: down up ## Restart containers
+restart: ## Restart containers (optionally specify service names: make restart php nginx)
+	@SERVICES="$(filter-out $@,$(MAKECMDGOALS))"; \
+	if [ -n "$$SERVICES" ]; then \
+		echo -e "\033[0;33mRestarting services: $$SERVICES...\033[0m"; \
+		if [ -f .env ]; then \
+			. ./.env && if [ "$$ENV" = "production" ]; then \
+				$(DC) -f compose.yaml -f compose.production.yaml restart $$SERVICES; \
+			else \
+				$(DC) restart $$SERVICES; \
+			fi; \
+		else \
+			$(DC) restart $$SERVICES; \
+		fi; \
+		echo -e "\033[0;32mServices restarted!\033[0m"; \
+	else \
+		$(MAKE) down && $(MAKE) up; \
+	fi
 
 shell-nginx: ## Open shell in Nginx container
 	@docker compose exec nginx sh
@@ -483,63 +513,70 @@ status: ## Show running containers status and image disk usage
 	@echo -e "\033[0;33m\nImage Disk Usage:\033[0m"
 	@docker images | grep "$(COMPOSE_PROJECT_NAME:-docker-webdev)"
 
-up: ## Start enabled containers (based on .env ENABLE_* flags)
+up: ## Start containers (optionally specify service names: make up php nginx)
 	@if [ ! -f .env ]; then echo -e "\033[0;31mError: .env not found. Run 'make init' first.\033[0m"; exit 1; fi
-	@# Warn if Mailpit is enabled in production
-	@. ./.env && \
-	if [ "$${ENABLE_MAILPIT:-false}" = "true" ] && [ "$${ENV:-development}" = "production" ]; then \
-		echo -e "\033[0;33m⚠️  WARNING: Mailpit is enabled but ENV=production.\033[0m"; \
-		echo -e "\033[0;33m   Mailpit won't start (compose.production.yaml sets replicas: 0).\033[0m"; \
-		echo -e "\033[0;33m   Set ENABLE_MAILPIT=false to suppress this warning.\033[0m"; \
-		echo ""; \
-	fi
-	@# Check if required images exist
-	@. ./.env && \
-	MISSING=""; \
-	if [ "$${ENABLE_PHP:-true}" = "true" ] && ! docker image inspect docker-webdev-php >/dev/null 2>&1; then \
-		MISSING="$$MISSING php"; \
-	fi; \
-	if [ "$${ENABLE_NODE:-true}" = "true" ] && ! docker image inspect docker-webdev-node >/dev/null 2>&1; then \
-		MISSING="$$MISSING node"; \
-	fi; \
-	if ! docker image inspect docker-webdev-nginx >/dev/null 2>&1; then \
-		MISSING="$$MISSING nginx"; \
-	fi; \
-	if [ "$${ENABLE_DATABASE:-true}" = "true" ] && [ "$${DB_TYPE:-postgres}" = "postgres" ] && ! docker image inspect docker-webdev-postgres >/dev/null 2>&1; then \
-		MISSING="$$MISSING postgres"; \
-	fi; \
-	if [ -n "$$MISSING" ]; then \
-		echo -e "\033[0;31mError: Required images not found:$$MISSING\033[0m"; \
-		echo -e "\033[0;31mRun 'make build' first.\033[0m"; \
-		exit 1; \
-	fi
-	@. ./.env && \
-	PROFILES=""; \
-	if [ "$${ENABLE_DATABASE:-true}" = "true" ]; then \
-		PROFILES="$$PROFILES --profile $${DB_TYPE:-postgres}"; \
-	fi; \
-	if [ "$${ENABLE_PHP:-true}" = "true" ]; then PROFILES="$$PROFILES --profile php"; fi; \
-	if [ "$${ENABLE_NODE:-true}" = "true" ]; then PROFILES="$$PROFILES --profile node"; fi; \
-	if [ "$${ENABLE_REDIS:-true}" = "true" ]; then PROFILES="$$PROFILES --profile redis"; fi; \
-	if [ "$${ENABLE_MERCURE:-false}" = "true" ]; then PROFILES="$$PROFILES --profile mercure"; fi; \
-	if [ "$${ENABLE_MEILISEARCH:-false}" = "true" ]; then PROFILES="$$PROFILES --profile meilisearch"; fi; \
-	if [ "$${ENABLE_ELASTICSEARCH:-false}" = "true" ]; then PROFILES="$$PROFILES --profile elasticsearch"; fi; \
-	if [ "$${ENABLE_MAILPIT:-false}" = "true" ]; then PROFILES="$$PROFILES --profile mailpit"; fi; \
-	if [ "$${ENABLE_MINIO:-false}" = "true" ]; then PROFILES="$$PROFILES --profile minio"; fi; \
-	if [ "$${ENABLE_RABBITMQ:-false}" = "true" ]; then PROFILES="$$PROFILES --profile rabbitmq"; fi; \
-	echo -e "\033[0;33mStarting containers in $${ENV:-development} mode...\033[0m"; \
-	if [ "$$ENV" = "production" ]; then \
-		NODE_TARGET_AUTO="asset-server"; \
-		case "$${NODE_MODE:-full-stack}" in \
-			full-stack|backend-only) NODE_TARGET_AUTO="app-server" ;; \
-		esac; \
-		export NODE_TARGET="$${NODE_TARGET:-$$NODE_TARGET_AUTO}"; \
-		$(DC) -f compose.yaml -f compose.production.yaml $$PROFILES up -d; \
+	@SERVICES="$(filter-out $@,$(MAKECMDGOALS))"; \
+	if [ -n "$$SERVICES" ]; then \
+		echo -e "\033[0;33mStarting services: $$SERVICES...\033[0m"; \
+		. ./.env && if [ "$$ENV" = "production" ]; then \
+			$(DC) -f compose.yaml -f compose.production.yaml start $$SERVICES; \
+		else \
+			$(DC) start $$SERVICES; \
+		fi; \
+		echo -e "\033[0;32mServices started!\033[0m"; \
 	else \
-		$(DC) $$PROFILES up -d; \
+		. ./.env && \
+		if [ "$${ENABLE_MAILPIT:-false}" = "true" ] && [ "$${ENV:-development}" = "production" ]; then \
+			echo -e "\033[0;33m⚠️  WARNING: Mailpit is enabled but ENV=production.\033[0m"; \
+			echo -e "\033[0;33m   Mailpit won't start (compose.production.yaml sets replicas: 0).\033[0m"; \
+			echo -e "\033[0;33m   Set ENABLE_MAILPIT=false to suppress this warning.\033[0m"; \
+			echo ""; \
+		fi; \
+		MISSING=""; \
+		if [ "$${ENABLE_PHP:-true}" = "true" ] && ! docker image inspect docker-webdev-php >/dev/null 2>&1; then \
+			MISSING="$$MISSING php"; \
+		fi; \
+		if [ "$${ENABLE_NODE:-true}" = "true" ] && ! docker image inspect docker-webdev-node >/dev/null 2>&1; then \
+			MISSING="$$MISSING node"; \
+		fi; \
+		if ! docker image inspect docker-webdev-nginx >/dev/null 2>&1; then \
+			MISSING="$$MISSING nginx"; \
+		fi; \
+		if [ "$${ENABLE_DATABASE:-true}" = "true" ] && [ "$${DB_TYPE:-postgres}" = "postgres" ] && ! docker image inspect docker-webdev-postgres >/dev/null 2>&1; then \
+			MISSING="$$MISSING postgres"; \
+		fi; \
+		if [ -n "$$MISSING" ]; then \
+			echo -e "\033[0;31mError: Required images not found:$$MISSING\033[0m"; \
+			echo -e "\033[0;31mRun 'make build' first.\033[0m"; \
+			exit 1; \
+		fi; \
+		PROFILES=""; \
+		if [ "$${ENABLE_DATABASE:-true}" = "true" ]; then \
+			PROFILES="$$PROFILES --profile $${DB_TYPE:-postgres}"; \
+		fi; \
+		if [ "$${ENABLE_PHP:-true}" = "true" ]; then PROFILES="$$PROFILES --profile php"; fi; \
+		if [ "$${ENABLE_NODE:-true}" = "true" ]; then PROFILES="$$PROFILES --profile node"; fi; \
+		if [ "$${ENABLE_REDIS:-true}" = "true" ]; then PROFILES="$$PROFILES --profile redis"; fi; \
+		if [ "$${ENABLE_MERCURE:-false}" = "true" ]; then PROFILES="$$PROFILES --profile mercure"; fi; \
+		if [ "$${ENABLE_MEILISEARCH:-false}" = "true" ]; then PROFILES="$$PROFILES --profile meilisearch"; fi; \
+		if [ "$${ENABLE_ELASTICSEARCH:-false}" = "true" ]; then PROFILES="$$PROFILES --profile elasticsearch"; fi; \
+		if [ "$${ENABLE_MAILPIT:-false}" = "true" ]; then PROFILES="$$PROFILES --profile mailpit"; fi; \
+		if [ "$${ENABLE_MINIO:-false}" = "true" ]; then PROFILES="$$PROFILES --profile minio"; fi; \
+		if [ "$${ENABLE_RABBITMQ:-false}" = "true" ]; then PROFILES="$$PROFILES --profile rabbitmq"; fi; \
+		echo -e "\033[0;33mStarting containers in $${ENV:-development} mode...\033[0m"; \
+		if [ "$$ENV" = "production" ]; then \
+			NODE_TARGET_AUTO="asset-server"; \
+			case "$${NODE_MODE:-full-stack}" in \
+				full-stack|backend-only) NODE_TARGET_AUTO="app-server" ;; \
+			esac; \
+			export NODE_TARGET="$${NODE_TARGET:-$$NODE_TARGET_AUTO}"; \
+			$(DC) -f compose.yaml -f compose.production.yaml $$PROFILES up -d; \
+		else \
+			$(DC) $$PROFILES up -d; \
+		fi; \
+		echo -e "\033[0;32mContainers started!\033[0m"; \
+		echo -e "\033[0;34mNginx is running at http://localhost:$${NGINX_PORT:-8080}\033[0m"; \
 	fi
-	@echo -e "\033[0;32mContainers started!\033[0m"
-	@. ./.env && echo -e "\033[0;34mNginx is running at http://localhost:$${NGINX_PORT:-8080}\033[0m"
 
 ##@ Node.js Development
 
@@ -1628,3 +1665,9 @@ ssl-clean: ## Remove all SSL certificates (WARNING: Destructive!)
 	else \
 		echo -e "\033[0;34mOperation cancelled.\033[0m"; \
 	fi
+
+# Catch-all target for service names passed to up/down/restart
+# This prevents Make from trying to build service names as targets
+# Example: 'make up php nginx' - php and nginx are caught here
+%:
+	@:

@@ -1,11 +1,44 @@
 # Docker WebDev Boilerplate - Changelog
 
-**Erstellt:** 2025-12-19 **Letzte Aktualisierung:** 2026-01-14 (DevDashboard &
-IDE) **Version:** 3.35
+**Erstellt:** 2025-12-19 **Letzte Aktualisierung:** 2026-01-14 (PHP Extensions &
+Makefile) **Version:** 3.36
 
 ---
 
 ## Changelog
+
+### Version 3.36 (2026-01-14) - PHP Extensions & Makefile Service Control
+
+Added essential PHP extensions for messaging, WebSockets, and financial
+calculations. Extended Makefile with service-specific container control.
+
+#### PHP Extensions
+
+- **soap**: SOAP client/server for legacy APIs, payment gateways, shipping
+  providers
+- **bcmath**: Arbitrary precision mathematics for financial calculations and
+  cryptocurrency
+- **sockets**: Low-level socket interface for WebSocket implementations
+- **amqp**: High-performance AMQP client for RabbitMQ message broker
+- **pcntl**: Process control for signal handling and graceful queue worker
+  shutdown
+
+#### Makefile
+
+- **Service-specific control**: `make up`, `make down`, and `make restart` now
+  accept optional service names
+  - `make up php nginx` - Start specific services
+  - `make down php` - Stop specific service
+  - `make restart php nginx` - Restart specific services
+- Without arguments, commands work as before (profile-based logic)
+
+#### Configuration
+
+- Added INI files for each new extension in `docker/php/conf.d/`
+- Extensions can be individually disabled by commenting out the `extension=`
+  line
+
+---
 
 ### Version 3.35 (2026-01-14) - DevDashboard Improvements & IDE Integration
 

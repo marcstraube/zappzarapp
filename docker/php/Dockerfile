@@ -44,8 +44,13 @@ RUN apk add --no-cache \
     # Dependencies for PostgreSQL PDO (Extension)
     postgresql-dev \
     postgresql-libs \
+    # Dependencies for soap (Extension)
+    libxml2-dev \
+    # Dependencies for amqp (Extension - RabbitMQ)
+    rabbitmq-c \
+    rabbitmq-c-dev \
     # Compilation and installation of extensions
-    && docker-php-ext-install exif intl opcache zip pdo_pgsql pdo_mysql \
+    && docker-php-ext-install exif intl opcache zip pdo_pgsql pdo_mysql soap bcmath sockets pcntl \
     && docker-php-ext-configure gd \
         --with-freetype \
         --with-jpeg \
@@ -56,7 +61,8 @@ RUN apk add --no-cache \
     # Check https://pecl.php.net/package/gmagick for updates
     && pecl install gmagick-2.0.6RC1 \
     && pecl install redis \
-    && docker-php-ext-enable gmagick redis \
+    && pecl install amqp \
+    && docker-php-ext-enable gmagick redis amqp \
     && rm -rf /tmp/pear \
     # Remove auto-generated INI files (we use our own in conf.d/)
     && rm -f /usr/local/etc/php/conf.d/docker-php-ext-*.ini
@@ -79,6 +85,8 @@ RUN apk add --no-cache \
     icu-libs \
     libzip \
     postgresql-libs \
+    libxml2 \
+    rabbitmq-c \
     tzdata
 
 # Remove auto-generated extension INIs from base PHP image (we use our own)
@@ -90,14 +98,19 @@ COPY --from=php-builder /usr/local/lib/php/extensions/ /usr/local/lib/php/extens
 # Copy extension configuration files (production-ready defaults)
 # Note: development.ini and xdebug.ini are NOT copied here (dev-only, mounted via volumes)
 # Note: curl is statically compiled into PHP and cannot be disabled via INI
+COPY docker/php/conf.d/amqp.ini /usr/local/etc/php/conf.d/
+COPY docker/php/conf.d/bcmath.ini /usr/local/etc/php/conf.d/
 COPY docker/php/conf.d/exif.ini /usr/local/etc/php/conf.d/
 COPY docker/php/conf.d/gd.ini /usr/local/etc/php/conf.d/
 COPY docker/php/conf.d/gmagick.ini /usr/local/etc/php/conf.d/
 COPY docker/php/conf.d/intl.ini /usr/local/etc/php/conf.d/
 COPY docker/php/conf.d/opcache.ini /usr/local/etc/php/conf.d/
+COPY docker/php/conf.d/pcntl.ini /usr/local/etc/php/conf.d/
 COPY docker/php/conf.d/pdo_mysql.ini /usr/local/etc/php/conf.d/
 COPY docker/php/conf.d/pdo_pgsql.ini /usr/local/etc/php/conf.d/
 COPY docker/php/conf.d/redis.ini /usr/local/etc/php/conf.d/
+COPY docker/php/conf.d/soap.ini /usr/local/etc/php/conf.d/
+COPY docker/php/conf.d/sockets.ini /usr/local/etc/php/conf.d/
 COPY docker/php/conf.d/sodium.ini /usr/local/etc/php/conf.d/
 COPY docker/php/conf.d/zip.ini /usr/local/etc/php/conf.d/
 
