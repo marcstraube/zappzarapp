@@ -1,18 +1,39 @@
-# Database Backup & Restore
+# Backup & Restore
 
-GDPR-compliant backup strategy with encryption for PostgreSQL and MariaDB.
+GDPR-compliant backup strategy with encryption for all data services.
+
+## Overview
+
+| Service                       | Command                | Directory                | Format        |
+| ----------------------------- | ---------------------- | ------------------------ | ------------- |
+| Database (PostgreSQL/MariaDB) | `backup-db`            | `backups/db/`            | `.sql.gz.enc` |
+| MinIO (Object Storage)        | `backup-minio`         | `backups/minio/`         | `.tar.gz.enc` |
+| RabbitMQ (Message Broker)     | `backup-rabbitmq`      | `backups/rabbitmq/`      | `.json.enc`   |
+| Elasticsearch (Search)        | `backup-elasticsearch` | `backups/elasticsearch/` | `.tar.gz.enc` |
 
 ## Quick Start
 
 ```bash
-# Create encrypted backup
-make backup
+# Backup all enabled services
+make backup-all
 
-# List available backups
-make backup-list
+# Individual service backups
+make backup-db              # Database
+make backup-minio           # MinIO
+make backup-rabbitmq        # RabbitMQ
+make backup-elasticsearch   # Elasticsearch
 
-# Restore from backup (interactive)
-make restore
+# List backups
+make backup-db-list
+make backup-minio-list
+make backup-rabbitmq-list
+make backup-elasticsearch-list
+
+# Restore (interactive)
+make backup-db-restore
+make backup-minio-restore
+make backup-rabbitmq-restore
+make backup-elasticsearch-restore
 ```
 
 ## Prerequisites
@@ -24,34 +45,176 @@ you need to generate it manually:
 # Generate a new encryption key
 openssl rand -base64 32
 
-# Add to .env
-BACKUP_ENCRYPTION_KEY=your-generated-key-here
+# Add to secrets/backup_encryption_key.txt
+echo "your-generated-key-here" > secrets/backup_encryption_key.txt
 ```
 
-## Backup
+---
+
+## Database Backup (PostgreSQL/MariaDB)
 
 ### Create Backup
 
 ```bash
-# Default: encrypted backup to ./backups/
-make backup
+# Default: encrypted backup to ./backups/db/
+make backup-db
 
 # Direct script usage with options
 ./docker/scripts/backup-databases.sh --help
 ./docker/scripts/backup-databases.sh --output /custom/path --retention 7
-./docker/scripts/backup-databases.sh --no-encrypt  # Not recommended for production!
+./docker/scripts/backup-databases.sh --no-encrypt  # Not recommended!
 ```
 
 ### Backup Output
 
-Backups are stored in `./backups/` with the naming convention:
+Backups are stored in `./backups/db/` with the naming convention:
 
 - **Encrypted:** `{DB_TYPE}_{DB_NAME}_{TIMESTAMP}.sql.gz.enc`
 - **Unencrypted:** `{DB_TYPE}_{DB_NAME}_{TIMESTAMP}.sql.gz`
 
-Example: `postgres_app_20260112_143022.sql.gz.enc`
+Example: `postgres_app_20260114_143022.sql.gz.enc`
 
-### Retention Policy
+### Restore
+
+```bash
+# Interactive restore
+make backup-db-restore
+
+# Direct restore
+./docker/scripts/restore-database.sh backups/db/postgres_app_20260114_143022.sql.gz.enc
+
+# Skip confirmation (for automation)
+./docker/scripts/restore-database.sh backups/db/postgres_app_20260114_143022.sql.gz.enc --yes
+```
+
+### Manual Decryption
+
+```bash
+# Decrypt and decompress to view SQL
+openssl enc -aes-256-cbc -d -salt -pbkdf2 \
+  -pass file:secrets/backup_encryption_key.txt \
+  -in backups/db/postgres_app_20260114_143022.sql.gz.enc \
+  | gunzip > backup.sql
+```
+
+---
+
+## MinIO Backup (Object Storage)
+
+### Create Backup
+
+```bash
+# Default: encrypted backup to ./backups/minio/
+make backup-minio
+
+# Direct script usage
+./docker/scripts/backup-minio.sh --help
+./docker/scripts/backup-minio.sh --no-encrypt
+```
+
+### Backup Contents
+
+MinIO backups use `mc mirror` to export all buckets and objects:
+
+- **Format:** `minio_{TIMESTAMP}.tar.gz.enc`
+- **Contents:** All buckets, objects, and metadata
+
+Example: `minio_20260114_143022.tar.gz.enc`
+
+### Restore
+
+```bash
+# Interactive restore
+make backup-minio-restore
+
+# Direct restore
+./docker/scripts/restore-minio.sh backups/minio/minio_20260114_143022.tar.gz.enc
+```
+
+**Note:** Restore recreates buckets and objects. Existing objects with same keys
+will be overwritten.
+
+---
+
+## RabbitMQ Backup (Message Broker)
+
+### Create Backup
+
+```bash
+# Default: encrypted backup to ./backups/rabbitmq/
+make backup-rabbitmq
+
+# Direct script usage
+./docker/scripts/backup-rabbitmq.sh --help
+./docker/scripts/backup-rabbitmq.sh --no-encrypt
+```
+
+### Backup Contents
+
+RabbitMQ backups export definitions via the Management API:
+
+- **Format:** `rabbitmq_{TIMESTAMP}.json.enc`
+- **Contents:** Users, vhosts, permissions, exchanges, queues, bindings,
+  policies
+
+Example: `rabbitmq_20260114_143022.json.enc`
+
+**Important:** RabbitMQ backups do NOT include message data. For persistent
+messages, drain queues before backup or use a separate archival strategy.
+
+### Restore
+
+```bash
+# Interactive restore
+make backup-rabbitmq-restore
+
+# Direct restore
+./docker/scripts/restore-rabbitmq.sh backups/rabbitmq/rabbitmq_20260114_143022.json.enc
+```
+
+**Note:** Restore imports definitions. Existing definitions are merged, not
+replaced.
+
+---
+
+## Elasticsearch Backup (Search)
+
+### Create Backup
+
+```bash
+# Default: encrypted backup to ./backups/elasticsearch/
+make backup-elasticsearch
+
+# Direct script usage
+./docker/scripts/backup-elasticsearch.sh --help
+./docker/scripts/backup-elasticsearch.sh --no-encrypt
+```
+
+### Backup Contents
+
+Elasticsearch backups use the native Snapshot API:
+
+- **Format:** `elasticsearch_{TIMESTAMP}.tar.gz.enc`
+- **Contents:** All indices, mappings, and documents
+
+Example: `elasticsearch_20260114_143022.tar.gz.enc`
+
+### Restore
+
+```bash
+# Interactive restore
+make backup-elasticsearch-restore
+
+# Direct restore
+./docker/scripts/restore-elasticsearch.sh backups/elasticsearch/elasticsearch_20260114_143022.tar.gz.enc
+```
+
+**Note:** Restore closes affected indices during the operation. Plan for brief
+downtime.
+
+---
+
+## Retention Policy
 
 Backups older than the configured retention period are automatically deleted.
 
@@ -65,78 +228,48 @@ BACKUP_RETENTION_DAYS=30
 BACKUP_RETENTION_DAYS=0
 ```
 
-**Override via Make command:**
-
-```bash
-# One-time override: keep only 7 days
-make backup RETENTION=7
-
-# One-time override: keep all (ignore .env setting)
-make backup RETENTION=0
-```
-
-**Direct script usage:**
+**Override via script:**
 
 ```bash
 ./docker/scripts/backup-databases.sh --retention 7
+./docker/scripts/backup-minio.sh --retention 7
 ```
 
-## Restore
-
-### Interactive Restore
-
-```bash
-make restore
-# Lists available backups and prompts for selection
-```
-
-### Direct Restore
-
-```bash
-# From encrypted backup
-./docker/scripts/restore-database.sh backups/postgres_app_20260112_143022.sql.gz.enc
-
-# Skip confirmation (for scripts/automation)
-./docker/scripts/restore-database.sh backups/postgres_app_20260112_143022.sql.gz.enc --yes
-```
-
-### Manual Decryption
-
-If you need to inspect a backup without restoring:
-
-```bash
-# Decrypt and decompress to view SQL
-openssl enc -aes-256-cbc -d -salt -pbkdf2 \
-  -pass pass:"$BACKUP_ENCRYPTION_KEY" \
-  -in backups/postgres_app_20260112_143022.sql.gz.enc \
-  | gunzip > backup.sql
-
-# View contents
-less backup.sql
-```
+---
 
 ## Automation (Cron)
 
-### Daily Backup
+### Daily Backup of All Services
 
 ```bash
 # Edit crontab
 crontab -e
 
 # Add daily backup at 2:00 AM
-0 2 * * * cd /path/to/project && make backup >> /var/log/db-backup.log 2>&1
+0 2 * * * cd /path/to/project && make backup-all >> /var/log/backup.log 2>&1
 ```
 
-### Weekly Full Backup with 90-Day Retention
+### Individual Service Schedules
 
 ```bash
-# Sunday at 3:00 AM, keep 90 days
-0 3 * * 0 cd /path/to/project && ./docker/scripts/backup-databases.sh --retention 90 >> /var/log/db-backup.log 2>&1
+# Database: Daily at 2:00 AM
+0 2 * * * cd /path/to/project && make backup-db >> /var/log/backup.log 2>&1
+
+# MinIO: Weekly on Sunday at 3:00 AM
+0 3 * * 0 cd /path/to/project && make backup-minio >> /var/log/backup.log 2>&1
+
+# RabbitMQ: Daily at 2:30 AM
+30 2 * * * cd /path/to/project && make backup-rabbitmq >> /var/log/backup.log 2>&1
+
+# Elasticsearch: Daily at 3:00 AM
+0 3 * * * cd /path/to/project && make backup-elasticsearch >> /var/log/backup.log 2>&1
 ```
 
-## Offsite Backup (Optional)
+---
 
-After creating a backup, sync to offsite storage:
+## Offsite Backup
+
+After creating backups, sync to offsite storage:
 
 ```bash
 # AWS S3
@@ -149,11 +282,13 @@ rsync -avz ./backups/ user@backup-server:/backups/
 rclone sync ./backups/ remote:backups/
 ```
 
+---
+
 ## Security Considerations
 
 ### Encryption
 
-- Backups are encrypted using **AES-256-CBC** with PBKDF2 key derivation
+- All backups are encrypted using **AES-256-CBC** with PBKDF2 key derivation
 - The `BACKUP_ENCRYPTION_KEY` should be:
   - At least 32 characters (256 bits)
   - Stored securely (not in version control)
@@ -183,22 +318,25 @@ This backup strategy supports GDPR requirements:
 | Art. 33/34   | Breach Notification         | Backup logs for audit trail                 |
 | Art. 17      | Right to Erasure            | Retention policy, can restore and anonymize |
 
+---
+
 ## Troubleshooting
 
 ### "BACKUP_ENCRYPTION_KEY is not set"
 
 ```bash
-# Check if key exists in .env
-grep BACKUP_ENCRYPTION_KEY .env
+# Check if key exists
+cat secrets/backup_encryption_key.txt
 
-# If empty, generate and add:
-echo "BACKUP_ENCRYPTION_KEY=$(openssl rand -base64 32)" >> .env
+# If empty or missing, generate:
+openssl rand -base64 32 > secrets/backup_encryption_key.txt
+chmod 600 secrets/backup_encryption_key.txt
 ```
 
 ### "Container is not running"
 
 ```bash
-# Start the database container
+# Start the required containers
 make up
 
 # Check container status
@@ -208,9 +346,8 @@ docker compose ps
 ### "Permission denied" on backup directory
 
 ```bash
-# Create directory with correct permissions
-mkdir -p backups
-chmod 700 backups
+# Recreate directories with correct permissions
+make setup
 ```
 
 ### Restore fails with "bad decrypt"
@@ -221,27 +358,51 @@ chmod 700 backups
 
 Try restoring from a different backup or check key history.
 
+### MinIO: "mc: command not found"
+
+The MinIO client (`mc`) runs inside the MinIO container. Ensure the container is
+running:
+
+```bash
+docker compose ps minio
+make up  # If not running
+```
+
+### RabbitMQ: "Management API unavailable"
+
+Ensure RabbitMQ Management plugin is enabled and the container is healthy:
+
+```bash
+docker compose ps rabbitmq
+curl -u guest:guest http://localhost:15672/api/overview
+```
+
+### Elasticsearch: "Snapshot repository not found"
+
+The backup script automatically creates the repository. If it fails:
+
+```bash
+# Check Elasticsearch health
+curl http://localhost:9200/_cluster/health
+
+# Manually create repository
+curl -X PUT "localhost:9200/_snapshot/backup_repo" -H 'Content-Type: application/json' -d'
+{
+  "type": "fs",
+  "settings": {
+    "location": "/usr/share/elasticsearch/backup"
+  }
+}'
+```
+
+---
+
 ## Backup Logs
 
 Backup and restore operations are logged to `storage/logs/backup.log`:
 
 ```json
-{"timestamp":"2026-01-12T14:30:22+01:00","action":"backup_created","database":"postgres","db_name":"app","file":"postgres_app_20260112_143022.sql.gz.enc","size":"2.3M","encrypted":true}
-{"timestamp":"2026-01-12T15:00:00+01:00","action":"backup_restored","database":"postgres","db_name":"app","file":"postgres_app_20260112_143022.sql.gz.enc","encrypted":true}
+{"timestamp":"2026-01-14T14:30:22+01:00","action":"backup_created","service":"postgres","file":"postgres_app_20260114_143022.sql.gz.enc","size":"2.3M","encrypted":true}
+{"timestamp":"2026-01-14T14:31:00+01:00","action":"backup_created","service":"minio","file":"minio_20260114_143100.tar.gz.enc","size":"156M","encrypted":true}
+{"timestamp":"2026-01-14T14:32:00+01:00","action":"backup_created","service":"rabbitmq","file":"rabbitmq_20260114_143200.json.enc","size":"4.2K","encrypted":true}
 ```
-
-## Database Migrations
-
-To set up GDPR-compliant database features (encryption helpers, audit logs):
-
-```bash
-# Run all migrations for configured DB_TYPE
-make db-migrations
-```
-
-This applies:
-
-- `000_encryption_helpers.sql` - pgcrypto/encrypt_text functions
-- `001_audit_logs.sql` - Audit logging table with tamper protection
-
-See `ENCRYPTION.md` and `AUDIT-LOGGING.md` for details.

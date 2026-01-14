@@ -222,3 +222,143 @@ services:
         reservations:
           cpus: '0.5'
           memory: 512M
+
+  # ═══════════════════════════════════════════════════════════════════════════
+  # OPTIONAL SERVICES - Production Hardening
+  # ═══════════════════════════════════════════════════════════════════════════
+
+  mercure:
+    read_only: true
+    tmpfs:
+      - /tmp:mode=0770,size=64M
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    environment:
+      # Production: Restrict CORS to specific origins
+      MERCURE_EXTRA_DIRECTIVES: |
+        cors_origins ${CORS_ORIGINS:-}
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 256M
+        reservations:
+          cpus: '0.1'
+          memory: 64M
+
+  meilisearch:
+    read_only: false
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    environment:
+      # Production environment
+      MEILI_ENV: production
+      # Minimal logging
+      MEILI_LOG_LEVEL: WARN
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "5"
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 1G
+        reservations:
+          cpus: '0.25'
+          memory: 256M
+
+  elasticsearch:
+    read_only: false
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    environment:
+      # Production: Enable security
+      xpack.security.enabled: 'true'
+      # Minimal logging
+      logger.level: WARN
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "100m"
+        max-file: "5"
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 2G
+        reservations:
+          cpus: '0.5'
+          memory: 1G
+
+  # Note: Mailpit is typically NOT used in production
+  # Configure your app to use a real mail provider (SendGrid, Mailgun, etc.)
+  mailpit:
+    deploy:
+      replicas: 0
+
+  minio:
+    read_only: false
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    volumes:
+      - minio-data:/data
+      # SSL/TLS Certificates for encrypted connections
+      - ./docker/certs:/root/.minio/certs:ro
+    environment:
+      # Enable TLS (MinIO auto-detects certs in /root/.minio/certs/)
+      MINIO_SERVER_URL: https://minio:9000
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "5"
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 1G
+        reservations:
+          cpus: '0.25'
+          memory: 256M
+
+  rabbitmq:
+    read_only: false
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    volumes:
+      - rabbitmq-data:/var/lib/rabbitmq
+      # SSL/TLS Certificates for encrypted connections
+      - ./docker/certs/cert.crt:/etc/rabbitmq/certs/server.crt:ro
+      - ./docker/certs/cert.key:/etc/rabbitmq/certs/server.key:ro
+      # RabbitMQ TLS configuration (production - TLS only)
+      - ./docker/rabbitmq/rabbitmq-production.conf:/etc/rabbitmq/rabbitmq.conf:ro
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "5"
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 512M
+        reservations:
+          cpus: '0.25'
+          memory: 128M

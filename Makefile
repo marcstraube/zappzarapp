@@ -111,9 +111,9 @@ setup: ## Create directories, install dev dependencies and ensure structure
 	@. ./.env && mkdir -p $${STORAGE_DIR:-./storage}/{app/{uploads,generated},cache,sessions,logs}
 	@. ./.env && chmod 770 $${STORAGE_DIR:-./storage} -R
 
-	# Backups directory (encrypted database dumps)
-	@mkdir -p backups
-	@chmod 700 backups
+	# Backups directory (encrypted backups for all services)
+	@mkdir -p backups/{db,minio,rabbitmq,elasticsearch}
+	@chmod 700 backups backups/*
 
 	@echo -e "\033[0;32mProject structure created!\033[0m"
 
@@ -155,6 +155,12 @@ build: ## Build Docker images
 		if [ "$${ENABLE_PHP:-true}" = "true" ]; then PROFILES="$$PROFILES --profile php"; fi; \
 		if [ "$${ENABLE_NODE:-true}" = "true" ]; then PROFILES="$$PROFILES --profile node"; fi; \
 		if [ "$${ENABLE_REDIS:-true}" = "true" ]; then PROFILES="$$PROFILES --profile redis"; fi; \
+		if [ "$${ENABLE_MERCURE:-false}" = "true" ]; then PROFILES="$$PROFILES --profile mercure"; fi; \
+		if [ "$${ENABLE_MEILISEARCH:-false}" = "true" ]; then PROFILES="$$PROFILES --profile meilisearch"; fi; \
+		if [ "$${ENABLE_ELASTICSEARCH:-false}" = "true" ]; then PROFILES="$$PROFILES --profile elasticsearch"; fi; \
+		if [ "$${ENABLE_MAILPIT:-false}" = "true" ]; then PROFILES="$$PROFILES --profile mailpit"; fi; \
+		if [ "$${ENABLE_MINIO:-false}" = "true" ]; then PROFILES="$$PROFILES --profile minio"; fi; \
+		if [ "$${ENABLE_RABBITMQ:-false}" = "true" ]; then PROFILES="$$PROFILES --profile rabbitmq"; fi; \
 		if [ "$$ENV" = "production" ]; then \
 			echo -e "\033[0;34mBuilding Node image first (required by PHP and NGINX)...\033[0m" && \
 			$(DC) -f compose.yaml -f compose.production.yaml $$PROFILES build node && \
@@ -179,6 +185,12 @@ build-no-cache: ## Build Docker images without cache
 		if [ "$${ENABLE_PHP:-true}" = "true" ]; then PROFILES="$$PROFILES --profile php"; fi; \
 		if [ "$${ENABLE_NODE:-true}" = "true" ]; then PROFILES="$$PROFILES --profile node"; fi; \
 		if [ "$${ENABLE_REDIS:-true}" = "true" ]; then PROFILES="$$PROFILES --profile redis"; fi; \
+		if [ "$${ENABLE_MERCURE:-false}" = "true" ]; then PROFILES="$$PROFILES --profile mercure"; fi; \
+		if [ "$${ENABLE_MEILISEARCH:-false}" = "true" ]; then PROFILES="$$PROFILES --profile meilisearch"; fi; \
+		if [ "$${ENABLE_ELASTICSEARCH:-false}" = "true" ]; then PROFILES="$$PROFILES --profile elasticsearch"; fi; \
+		if [ "$${ENABLE_MAILPIT:-false}" = "true" ]; then PROFILES="$$PROFILES --profile mailpit"; fi; \
+		if [ "$${ENABLE_MINIO:-false}" = "true" ]; then PROFILES="$$PROFILES --profile minio"; fi; \
+		if [ "$${ENABLE_RABBITMQ:-false}" = "true" ]; then PROFILES="$$PROFILES --profile rabbitmq"; fi; \
 		if [ "$$ENV" = "production" ]; then \
 			echo -e "\033[0;34mBuilding Node image first (required by PHP and NGINX)...\033[0m" && \
 			$(DC) -f compose.yaml -f compose.production.yaml $$PROFILES build --no-cache node && \
@@ -203,6 +215,12 @@ clean: ## Remove containers, networks and dangling images (keeps data volumes)
 		if [ "$${ENABLE_PHP:-true}" = "true" ]; then PROFILES="$$PROFILES --profile php"; fi; \
 		if [ "$${ENABLE_NODE:-true}" = "true" ]; then PROFILES="$$PROFILES --profile node"; fi; \
 		if [ "$${ENABLE_REDIS:-true}" = "true" ]; then PROFILES="$$PROFILES --profile redis"; fi; \
+		if [ "$${ENABLE_MERCURE:-false}" = "true" ]; then PROFILES="$$PROFILES --profile mercure"; fi; \
+		if [ "$${ENABLE_MEILISEARCH:-false}" = "true" ]; then PROFILES="$$PROFILES --profile meilisearch"; fi; \
+		if [ "$${ENABLE_ELASTICSEARCH:-false}" = "true" ]; then PROFILES="$$PROFILES --profile elasticsearch"; fi; \
+		if [ "$${ENABLE_MAILPIT:-false}" = "true" ]; then PROFILES="$$PROFILES --profile mailpit"; fi; \
+		if [ "$${ENABLE_MINIO:-false}" = "true" ]; then PROFILES="$$PROFILES --profile minio"; fi; \
+		if [ "$${ENABLE_RABBITMQ:-false}" = "true" ]; then PROFILES="$$PROFILES --profile rabbitmq"; fi; \
 		if [ "$$ENV" = "production" ]; then \
 			$(DC) -f compose.yaml -f compose.production.yaml $$PROFILES down; \
 		else \
@@ -233,6 +251,12 @@ down: ## Stop containers
 		if [ "$${ENABLE_PHP:-true}" = "true" ]; then PROFILES="$$PROFILES --profile php"; fi; \
 		if [ "$${ENABLE_NODE:-true}" = "true" ]; then PROFILES="$$PROFILES --profile node"; fi; \
 		if [ "$${ENABLE_REDIS:-true}" = "true" ]; then PROFILES="$$PROFILES --profile redis"; fi; \
+		if [ "$${ENABLE_MERCURE:-false}" = "true" ]; then PROFILES="$$PROFILES --profile mercure"; fi; \
+		if [ "$${ENABLE_MEILISEARCH:-false}" = "true" ]; then PROFILES="$$PROFILES --profile meilisearch"; fi; \
+		if [ "$${ENABLE_ELASTICSEARCH:-false}" = "true" ]; then PROFILES="$$PROFILES --profile elasticsearch"; fi; \
+		if [ "$${ENABLE_MAILPIT:-false}" = "true" ]; then PROFILES="$$PROFILES --profile mailpit"; fi; \
+		if [ "$${ENABLE_MINIO:-false}" = "true" ]; then PROFILES="$$PROFILES --profile minio"; fi; \
+		if [ "$${ENABLE_RABBITMQ:-false}" = "true" ]; then PROFILES="$$PROFILES --profile rabbitmq"; fi; \
 		if [ "$$ENV" = "production" ]; then \
 			$(DC) -f compose.yaml -f compose.production.yaml $$PROFILES down; \
 		else \
@@ -253,6 +277,12 @@ logs: ## Show logs of all containers
 		if [ "$${ENABLE_PHP:-true}" = "true" ]; then PROFILES="$$PROFILES --profile php"; fi; \
 		if [ "$${ENABLE_NODE:-true}" = "true" ]; then PROFILES="$$PROFILES --profile node"; fi; \
 		if [ "$${ENABLE_REDIS:-true}" = "true" ]; then PROFILES="$$PROFILES --profile redis"; fi; \
+		if [ "$${ENABLE_MERCURE:-false}" = "true" ]; then PROFILES="$$PROFILES --profile mercure"; fi; \
+		if [ "$${ENABLE_MEILISEARCH:-false}" = "true" ]; then PROFILES="$$PROFILES --profile meilisearch"; fi; \
+		if [ "$${ENABLE_ELASTICSEARCH:-false}" = "true" ]; then PROFILES="$$PROFILES --profile elasticsearch"; fi; \
+		if [ "$${ENABLE_MAILPIT:-false}" = "true" ]; then PROFILES="$$PROFILES --profile mailpit"; fi; \
+		if [ "$${ENABLE_MINIO:-false}" = "true" ]; then PROFILES="$$PROFILES --profile minio"; fi; \
+		if [ "$${ENABLE_RABBITMQ:-false}" = "true" ]; then PROFILES="$$PROFILES --profile rabbitmq"; fi; \
 		if [ "$$ENV" = "production" ]; then \
 			docker compose -f compose.yaml -f compose.production.yaml $$PROFILES logs -f; \
 		else \
@@ -328,6 +358,72 @@ logs-mariadb: ## Show MariaDB logs only
 		docker compose logs -f mariadb; \
 	fi
 
+logs-mercure: ## Show Mercure logs only
+	@if [ -f .env ]; then \
+		. ./.env && if [ "$$ENV" = "production" ]; then \
+			docker compose -f compose.yaml -f compose.production.yaml logs -f mercure; \
+		else \
+			docker compose logs -f mercure; \
+		fi; \
+	else \
+		docker compose logs -f mercure; \
+	fi
+
+logs-meilisearch: ## Show Meilisearch logs only
+	@if [ -f .env ]; then \
+		. ./.env && if [ "$$ENV" = "production" ]; then \
+			docker compose -f compose.yaml -f compose.production.yaml logs -f meilisearch; \
+		else \
+			docker compose logs -f meilisearch; \
+		fi; \
+	else \
+		docker compose logs -f meilisearch; \
+	fi
+
+logs-elasticsearch: ## Show Elasticsearch logs only
+	@if [ -f .env ]; then \
+		. ./.env && if [ "$$ENV" = "production" ]; then \
+			docker compose -f compose.yaml -f compose.production.yaml logs -f elasticsearch; \
+		else \
+			docker compose logs -f elasticsearch; \
+		fi; \
+	else \
+		docker compose logs -f elasticsearch; \
+	fi
+
+logs-mailpit: ## Show Mailpit logs only
+	@if [ -f .env ]; then \
+		. ./.env && if [ "$$ENV" = "production" ]; then \
+			docker compose -f compose.yaml -f compose.production.yaml logs -f mailpit; \
+		else \
+			docker compose logs -f mailpit; \
+		fi; \
+	else \
+		docker compose logs -f mailpit; \
+	fi
+
+logs-minio: ## Show MinIO logs only
+	@if [ -f .env ]; then \
+		. ./.env && if [ "$$ENV" = "production" ]; then \
+			docker compose -f compose.yaml -f compose.production.yaml logs -f minio; \
+		else \
+			docker compose logs -f minio; \
+		fi; \
+	else \
+		docker compose logs -f minio; \
+	fi
+
+logs-rabbitmq: ## Show RabbitMQ logs only
+	@if [ -f .env ]; then \
+		. ./.env && if [ "$$ENV" = "production" ]; then \
+			docker compose -f compose.yaml -f compose.production.yaml logs -f rabbitmq; \
+		else \
+			docker compose logs -f rabbitmq; \
+		fi; \
+	else \
+		docker compose logs -f rabbitmq; \
+	fi
+
 pnpm: ## Execute pnpm command (e.g. make pnpm CMD="add -D vue")
 	@# Docker bind mounts don't support atomic rename (EBUSY error)
 	@# Solution: Run pnpm with lock file in temp location, then copy back
@@ -363,6 +459,24 @@ shell-postgres: ## Open shell in PostgreSQL container
 shell-mariadb: ## Open shell in MariaDB container
 	@docker compose exec mariadb sh
 
+shell-mercure: ## Open shell in Mercure container
+	@docker compose exec mercure sh
+
+shell-meilisearch: ## Open shell in Meilisearch container
+	@docker compose exec meilisearch sh
+
+shell-elasticsearch: ## Open shell in Elasticsearch container
+	@docker compose exec elasticsearch bash
+
+shell-mailpit: ## Open shell in Mailpit container
+	@docker compose exec mailpit sh
+
+shell-minio: ## Open shell in MinIO container
+	@docker compose exec minio sh
+
+shell-rabbitmq: ## Open shell in RabbitMQ container
+	@docker compose exec rabbitmq bash
+
 status: ## Show running containers status and image disk usage
 	@echo -e "\033[0;33mContainer Status:\033[0m"
 	@docker compose ps
@@ -371,6 +485,14 @@ status: ## Show running containers status and image disk usage
 
 up: ## Start enabled containers (based on .env ENABLE_* flags)
 	@if [ ! -f .env ]; then echo -e "\033[0;31mError: .env not found. Run 'make init' first.\033[0m"; exit 1; fi
+	@# Warn if Mailpit is enabled in production
+	@. ./.env && \
+	if [ "$${ENABLE_MAILPIT:-false}" = "true" ] && [ "$${ENV:-development}" = "production" ]; then \
+		echo -e "\033[0;33m⚠️  WARNING: Mailpit is enabled but ENV=production.\033[0m"; \
+		echo -e "\033[0;33m   Mailpit won't start (compose.production.yaml sets replicas: 0).\033[0m"; \
+		echo -e "\033[0;33m   Set ENABLE_MAILPIT=false to suppress this warning.\033[0m"; \
+		echo ""; \
+	fi
 	@# Check if required images exist
 	@. ./.env && \
 	MISSING=""; \
@@ -399,6 +521,12 @@ up: ## Start enabled containers (based on .env ENABLE_* flags)
 	if [ "$${ENABLE_PHP:-true}" = "true" ]; then PROFILES="$$PROFILES --profile php"; fi; \
 	if [ "$${ENABLE_NODE:-true}" = "true" ]; then PROFILES="$$PROFILES --profile node"; fi; \
 	if [ "$${ENABLE_REDIS:-true}" = "true" ]; then PROFILES="$$PROFILES --profile redis"; fi; \
+	if [ "$${ENABLE_MERCURE:-false}" = "true" ]; then PROFILES="$$PROFILES --profile mercure"; fi; \
+	if [ "$${ENABLE_MEILISEARCH:-false}" = "true" ]; then PROFILES="$$PROFILES --profile meilisearch"; fi; \
+	if [ "$${ENABLE_ELASTICSEARCH:-false}" = "true" ]; then PROFILES="$$PROFILES --profile elasticsearch"; fi; \
+	if [ "$${ENABLE_MAILPIT:-false}" = "true" ]; then PROFILES="$$PROFILES --profile mailpit"; fi; \
+	if [ "$${ENABLE_MINIO:-false}" = "true" ]; then PROFILES="$$PROFILES --profile minio"; fi; \
+	if [ "$${ENABLE_RABBITMQ:-false}" = "true" ]; then PROFILES="$$PROFILES --profile rabbitmq"; fi; \
 	echo -e "\033[0;33mStarting containers in $${ENV:-development} mode...\033[0m"; \
 	if [ "$$ENV" = "production" ]; then \
 		NODE_TARGET_AUTO="asset-server"; \
@@ -554,34 +682,152 @@ mariadb-restore: ## Restore MariaDB database from dump.sql
 
 ##@ Backup & Migrations
 
-backup: ## Create encrypted database backup (GDPR-compliant, RETENTION=days to override)
+backup-all: ## Create backups of all enabled services (database, minio, rabbitmq, elasticsearch)
+	@echo -e "\033[0;33m=== Creating backups of all enabled services ===${NC}\033[0m"
+	@. ./.env && \
+	if [ "$${ENABLE_DATABASE:-true}" = "true" ]; then \
+		echo -e "\033[0;34m[1/4] Database backup...\033[0m"; \
+		bash docker/scripts/backup-databases.sh; \
+	else \
+		echo -e "\033[0;37m[1/4] Database: skipped (disabled)\033[0m"; \
+	fi
+	@. ./.env && \
+	if [ "$${ENABLE_MINIO:-false}" = "true" ]; then \
+		echo -e "\033[0;34m[2/4] MinIO backup...\033[0m"; \
+		bash docker/scripts/backup-minio.sh; \
+	else \
+		echo -e "\033[0;37m[2/4] MinIO: skipped (disabled)\033[0m"; \
+	fi
+	@. ./.env && \
+	if [ "$${ENABLE_RABBITMQ:-false}" = "true" ]; then \
+		echo -e "\033[0;34m[3/4] RabbitMQ backup...\033[0m"; \
+		bash docker/scripts/backup-rabbitmq.sh; \
+	else \
+		echo -e "\033[0;37m[3/4] RabbitMQ: skipped (disabled)\033[0m"; \
+	fi
+	@. ./.env && \
+	if [ "$${ENABLE_ELASTICSEARCH:-false}" = "true" ]; then \
+		echo -e "\033[0;34m[4/4] Elasticsearch backup...\033[0m"; \
+		bash docker/scripts/backup-elasticsearch.sh; \
+	else \
+		echo -e "\033[0;37m[4/4] Elasticsearch: skipped (disabled)\033[0m"; \
+	fi
+	@echo -e "\033[0;32m=== All backups complete ===${NC}\033[0m"
+
+backup-db: ## Create encrypted database backup (GDPR-compliant, RETENTION=days to override)
 	@echo -e "\033[0;33mCreating encrypted database backup...\033[0m"
 	@if [ -n "$(RETENTION)" ]; then \
 		bash docker/scripts/backup-databases.sh --retention $(RETENTION); \
 	else \
 		bash docker/scripts/backup-databases.sh; \
 	fi
-	@echo -e "\033[0;34mBackups are stored in ./backups/\033[0m"
+	@echo -e "\033[0;34mBackups are stored in ./backups/db/\033[0m"
 
-backup-list: ## List all available backups
-	@echo -e "\033[0;33mAvailable backups:\033[0m"
-	@if [ -d backups ]; then \
-		ls -lah backups/*.sql.gz* 2>/dev/null || echo -e "\033[0;34mNo backups found.\033[0m"; \
+backup-db-list: ## List all database backups
+	@echo -e "\033[0;33mAvailable database backups:\033[0m"
+	@if [ -d backups/db ]; then \
+		ls -lah backups/db/*.sql.gz* 2>/dev/null || echo -e "\033[0;34mNo backups found.\033[0m"; \
 	else \
-		echo -e "\033[0;34mNo backups directory. Run 'make backup' first.\033[0m"; \
+		echo -e "\033[0;34mNo backups directory. Run 'make backup-db' first.\033[0m"; \
 	fi
 
-restore: ## Restore database from backup (interactive)
-	@echo -e "\033[0;33mAvailable backups:\033[0m"
-	@if [ -d backups ]; then \
-		ls -1 backups/*.sql.gz* 2>/dev/null || echo "No backups found."; \
+backup-db-restore: ## Restore database from backup (interactive)
+	@echo -e "\033[0;33mAvailable database backups:\033[0m"
+	@if [ -d backups/db ]; then \
+		ls -1 backups/db/*.sql.gz* 2>/dev/null || echo "No backups found."; \
 	else \
 		echo "No backups directory."; \
 		exit 1; \
 	fi
 	@echo ""
-	@read -p "Enter backup filename (from ./backups/): " BACKUP_FILE; \
-	bash docker/scripts/restore-database.sh "backups/$$BACKUP_FILE"
+	@read -p "Enter backup filename (from ./backups/db/): " BACKUP_FILE; \
+	bash docker/scripts/restore-database.sh "backups/db/$$BACKUP_FILE"
+
+backup-minio: ## Create encrypted MinIO backup (all buckets)
+	@echo -e "\033[0;33mCreating MinIO backup...\033[0m"
+	@if [ -n "$(RETENTION)" ]; then \
+		bash docker/scripts/backup-minio.sh --retention $(RETENTION); \
+	else \
+		bash docker/scripts/backup-minio.sh; \
+	fi
+
+backup-minio-list: ## List all MinIO backups
+	@echo -e "\033[0;33mAvailable MinIO backups:\033[0m"
+	@if [ -d backups/minio ]; then \
+		ls -lah backups/minio/*.tar.gz* 2>/dev/null || echo -e "\033[0;34mNo backups found.\033[0m"; \
+	else \
+		echo -e "\033[0;34mNo backups directory. Run 'make backup-minio' first.\033[0m"; \
+	fi
+
+backup-minio-restore: ## Restore MinIO from backup (interactive)
+	@echo -e "\033[0;33mAvailable MinIO backups:\033[0m"
+	@if [ -d backups/minio ]; then \
+		ls -1 backups/minio/*.tar.gz* 2>/dev/null || echo "No backups found."; \
+	else \
+		echo "No backups directory."; \
+		exit 1; \
+	fi
+	@echo ""
+	@echo -e "\033[0;33mNote: Restore will overwrite existing MinIO data.\033[0m"
+	@read -p "Enter backup filename (from ./backups/minio/): " BACKUP_FILE; \
+	bash docker/scripts/restore-minio.sh "backups/minio/$$BACKUP_FILE"
+
+backup-rabbitmq: ## Export RabbitMQ definitions (exchanges, queues, bindings)
+	@echo -e "\033[0;33mCreating RabbitMQ definitions backup...\033[0m"
+	@if [ -n "$(RETENTION)" ]; then \
+		bash docker/scripts/backup-rabbitmq.sh --retention $(RETENTION); \
+	else \
+		bash docker/scripts/backup-rabbitmq.sh; \
+	fi
+
+backup-rabbitmq-list: ## List all RabbitMQ backups
+	@echo -e "\033[0;33mAvailable RabbitMQ backups:\033[0m"
+	@if [ -d backups/rabbitmq ]; then \
+		ls -lah backups/rabbitmq/*.json* 2>/dev/null || echo -e "\033[0;34mNo backups found.\033[0m"; \
+	else \
+		echo -e "\033[0;34mNo backups directory. Run 'make backup-rabbitmq' first.\033[0m"; \
+	fi
+
+backup-rabbitmq-restore: ## Restore RabbitMQ definitions from backup (interactive)
+	@echo -e "\033[0;33mAvailable RabbitMQ backups:\033[0m"
+	@if [ -d backups/rabbitmq ]; then \
+		ls -1 backups/rabbitmq/*.json* 2>/dev/null || echo "No backups found."; \
+	else \
+		echo "No backups directory."; \
+		exit 1; \
+	fi
+	@echo ""
+	@read -p "Enter backup filename (from ./backups/rabbitmq/): " BACKUP_FILE; \
+	bash docker/scripts/restore-rabbitmq.sh "backups/rabbitmq/$$BACKUP_FILE"
+
+backup-elasticsearch: ## Create Elasticsearch snapshot (all indices)
+	@echo -e "\033[0;33mCreating Elasticsearch snapshot...\033[0m"
+	@if [ -n "$(RETENTION)" ]; then \
+		bash docker/scripts/backup-elasticsearch.sh --retention $(RETENTION); \
+	else \
+		bash docker/scripts/backup-elasticsearch.sh; \
+	fi
+
+backup-elasticsearch-list: ## List all Elasticsearch backups
+	@echo -e "\033[0;33mAvailable Elasticsearch backups:\033[0m"
+	@if [ -d backups/elasticsearch ]; then \
+		ls -lah backups/elasticsearch/*.tar.gz* 2>/dev/null || echo -e "\033[0;34mNo backups found.\033[0m"; \
+	else \
+		echo -e "\033[0;34mNo backups directory. Run 'make backup-elasticsearch' first.\033[0m"; \
+	fi
+
+backup-elasticsearch-restore: ## Restore Elasticsearch from backup (interactive)
+	@echo -e "\033[0;33mAvailable Elasticsearch backups:\033[0m"
+	@if [ -d backups/elasticsearch ]; then \
+		ls -1 backups/elasticsearch/*.tar.gz* 2>/dev/null || echo "No backups found."; \
+	else \
+		echo "No backups directory."; \
+		exit 1; \
+	fi
+	@echo ""
+	@echo -e "\033[0;33mNote: Restore will overwrite existing Elasticsearch indices.\033[0m"
+	@read -p "Enter backup filename (from ./backups/elasticsearch/): " BACKUP_FILE; \
+	bash docker/scripts/restore-elasticsearch.sh "backups/elasticsearch/$$BACKUP_FILE"
 
 db-migrations: ## Run database migrations (encryption helpers, audit logs)
 	@echo -e "\033[0;33mRunning database migrations...\033[0m"
@@ -691,6 +937,84 @@ check-health: ## Check application health by container status for all services
 	else \
 		echo -e "\033[0;33m  ⚠️  curl not found, skipping HTTP check\033[0m"; \
 	fi
+	@echo ""
+
+	@echo -e "\033[0;34m📡 Mercure (Real-time):\033[0m"
+	@if [ -f .env ]; then . ./.env; fi; \
+	if [ "$${ENABLE_MERCURE:-false}" = "true" ]; then \
+		if [ "$$(docker inspect --format='{{.State.Health.Status}}' $$(docker compose ps -q mercure) 2>/dev/null)" = "healthy" ]; then \
+			echo -e "\033[0;32m  ✅ Healthy\033[0m"; \
+		else \
+			echo -e "\033[0;31m  ❌ Unhealthy or not running\033[0m"; \
+		fi; \
+	else \
+		echo -e "\033[0;37m  ⚪ Disabled (ENABLE_MERCURE=false)\033[0m"; \
+	fi
+	@echo ""
+
+	@echo -e "\033[0;34m🔍 Meilisearch:\033[0m"
+	@if [ -f .env ]; then . ./.env; fi; \
+	if [ "$${ENABLE_MEILISEARCH:-false}" = "true" ]; then \
+		if [ "$$(docker inspect --format='{{.State.Health.Status}}' $$(docker compose ps -q meilisearch) 2>/dev/null)" = "healthy" ]; then \
+			echo -e "\033[0;32m  ✅ Healthy\033[0m"; \
+		else \
+			echo -e "\033[0;31m  ❌ Unhealthy or not running\033[0m"; \
+		fi; \
+	else \
+		echo -e "\033[0;37m  ⚪ Disabled (ENABLE_MEILISEARCH=false)\033[0m"; \
+	fi
+	@echo ""
+
+	@echo -e "\033[0;34m🔎 Elasticsearch:\033[0m"
+	@if [ -f .env ]; then . ./.env; fi; \
+	if [ "$${ENABLE_ELASTICSEARCH:-false}" = "true" ]; then \
+		if [ "$$(docker inspect --format='{{.State.Health.Status}}' $$(docker compose ps -q elasticsearch) 2>/dev/null)" = "healthy" ]; then \
+			echo -e "\033[0;32m  ✅ Healthy\033[0m"; \
+		else \
+			echo -e "\033[0;31m  ❌ Unhealthy or not running\033[0m"; \
+		fi; \
+	else \
+		echo -e "\033[0;37m  ⚪ Disabled (ENABLE_ELASTICSEARCH=false)\033[0m"; \
+	fi
+	@echo ""
+
+	@echo -e "\033[0;34m📧 Mailpit (Email Testing):\033[0m"
+	@if [ -f .env ]; then . ./.env; fi; \
+	if [ "$${ENABLE_MAILPIT:-false}" = "true" ]; then \
+		if [ "$$(docker inspect --format='{{.State.Health.Status}}' $$(docker compose ps -q mailpit) 2>/dev/null)" = "healthy" ]; then \
+			echo -e "\033[0;32m  ✅ Healthy\033[0m"; \
+		else \
+			echo -e "\033[0;31m  ❌ Unhealthy or not running\033[0m"; \
+		fi; \
+	else \
+		echo -e "\033[0;37m  ⚪ Disabled (ENABLE_MAILPIT=false)\033[0m"; \
+	fi
+	@echo ""
+
+	@echo -e "\033[0;34m📦 MinIO (S3 Storage):\033[0m"
+	@if [ -f .env ]; then . ./.env; fi; \
+	if [ "$${ENABLE_MINIO:-false}" = "true" ]; then \
+		if [ "$$(docker inspect --format='{{.State.Health.Status}}' $$(docker compose ps -q minio) 2>/dev/null)" = "healthy" ]; then \
+			echo -e "\033[0;32m  ✅ Healthy\033[0m"; \
+		else \
+			echo -e "\033[0;31m  ❌ Unhealthy or not running\033[0m"; \
+		fi; \
+	else \
+		echo -e "\033[0;37m  ⚪ Disabled (ENABLE_MINIO=false)\033[0m"; \
+	fi
+	@echo ""
+
+	@echo -e "\033[0;34m🐰 RabbitMQ (Message Broker):\033[0m"
+	@if [ -f .env ]; then . ./.env; fi; \
+	if [ "$${ENABLE_RABBITMQ:-false}" = "true" ]; then \
+		if [ "$$(docker inspect --format='{{.State.Health.Status}}' $$(docker compose ps -q rabbitmq) 2>/dev/null)" = "healthy" ]; then \
+			echo -e "\033[0;32m  ✅ Healthy\033[0m"; \
+		else \
+			echo -e "\033[0;31m  ❌ Unhealthy or not running\033[0m"; \
+		fi; \
+	else \
+		echo -e "\033[0;37m  ⚪ Disabled (ENABLE_RABBITMQ=false)\033[0m"; \
+	fi
 
 	@echo ""
 
@@ -705,18 +1029,18 @@ fresh: ## Complete clean slate rebuild, removing all data volumes (DANGEROUS!)
 	@# Stop ALL containers and rebuild ALL images regardless of profile settings (fresh = complete reset)
 	@if [ -f .env ]; then \
 		. ./.env && if [ "$$ENV" = "production" ]; then \
-			$(DC) -f compose.yaml -f compose.production.yaml --profile php --profile node --profile redis --profile postgres --profile mariadb down -v --rmi all && \
+			$(DC) -f compose.yaml -f compose.production.yaml --profile php --profile node --profile redis --profile postgres --profile mariadb --profile mercure --profile meilisearch --profile elasticsearch --profile mailpit --profile minio --profile rabbitmq down -v --rmi all && \
 			echo -e "\033[0;34mBuilding Node image first (required by PHP and NGINX)...\033[0m" && \
-			$(DC) -f compose.yaml -f compose.production.yaml --profile php --profile node --profile redis --profile postgres --profile mariadb build --no-cache node && \
+			$(DC) -f compose.yaml -f compose.production.yaml --profile php --profile node --profile redis --profile postgres --profile mariadb --profile mercure --profile meilisearch --profile elasticsearch --profile mailpit --profile minio --profile rabbitmq build --no-cache node && \
 			echo -e "\033[0;34mBuilding remaining images...\033[0m" && \
-			$(DC) -f compose.yaml -f compose.production.yaml --profile php --profile node --profile redis --profile postgres --profile mariadb build --no-cache; \
+			$(DC) -f compose.yaml -f compose.production.yaml --profile php --profile node --profile redis --profile postgres --profile mariadb --profile mercure --profile meilisearch --profile elasticsearch --profile mailpit --profile minio --profile rabbitmq build --no-cache; \
 		else \
-			$(DC) --profile php --profile node --profile redis --profile postgres --profile mariadb down -v --rmi all && \
-			$(DC) --profile php --profile node --profile redis --profile postgres --profile mariadb build --no-cache; \
+			$(DC) --profile php --profile node --profile redis --profile postgres --profile mariadb --profile mercure --profile meilisearch --profile elasticsearch --profile mailpit --profile minio --profile rabbitmq down -v --rmi all && \
+			$(DC) --profile php --profile node --profile redis --profile postgres --profile mariadb --profile mercure --profile meilisearch --profile elasticsearch --profile mailpit --profile minio --profile rabbitmq build --no-cache; \
 		fi; \
 	else \
-		$(DC) --profile php --profile node --profile redis --profile postgres --profile mariadb down -v --rmi all && \
-		$(DC) --profile php --profile node --profile redis --profile postgres --profile mariadb build --no-cache; \
+		$(DC) --profile php --profile node --profile redis --profile postgres --profile mariadb --profile mercure --profile meilisearch --profile elasticsearch --profile mailpit --profile minio --profile rabbitmq down -v --rmi all && \
+		$(DC) --profile php --profile node --profile redis --profile postgres --profile mariadb --profile mercure --profile meilisearch --profile elasticsearch --profile mailpit --profile minio --profile rabbitmq build --no-cache; \
 	fi
 	@$(MAKE) --silent up
 
@@ -790,6 +1114,12 @@ lint-docker: ## Lint Dockerfiles with hadolint
 	@docker run --rm -v $$(pwd)/.hadolint.yaml:/.config/hadolint.yaml -i hadolint/hadolint < docker/postgres/Dockerfile
 	@docker run --rm -v $$(pwd)/.hadolint.yaml:/.config/hadolint.yaml -i hadolint/hadolint < docker/mariadb/Dockerfile
 	@docker run --rm -v $$(pwd)/.hadolint.yaml:/.config/hadolint.yaml -i hadolint/hadolint < docker/redis/Dockerfile
+	@docker run --rm -v $$(pwd)/.hadolint.yaml:/.config/hadolint.yaml -i hadolint/hadolint < docker/mercure/Dockerfile
+	@docker run --rm -v $$(pwd)/.hadolint.yaml:/.config/hadolint.yaml -i hadolint/hadolint < docker/meilisearch/Dockerfile
+	@docker run --rm -v $$(pwd)/.hadolint.yaml:/.config/hadolint.yaml -i hadolint/hadolint < docker/elasticsearch/Dockerfile
+	@docker run --rm -v $$(pwd)/.hadolint.yaml:/.config/hadolint.yaml -i hadolint/hadolint < docker/mailpit/Dockerfile
+	@docker run --rm -v $$(pwd)/.hadolint.yaml:/.config/hadolint.yaml -i hadolint/hadolint < docker/minio/Dockerfile
+	@docker run --rm -v $$(pwd)/.hadolint.yaml:/.config/hadolint.yaml -i hadolint/hadolint < docker/rabbitmq/Dockerfile
 	@echo -e "\033[0;32mDockerfile linting completed!\033[0m"
 
 lint-md: ## Check Markdown files for style issues
@@ -946,6 +1276,54 @@ secrets: ## Generate missing Docker Secrets (idempotent)
 		echo -e "\033[0;32mbackup_encryption_key secret generated.\033[0m"; \
 	else \
 		echo -e "\033[0;32mbackup_encryption_key secret already exists.\033[0m"; \
+	fi
+	@if [ ! -f secrets/meilisearch_master_key.txt ]; then \
+		echo -e "\033[0;34mGenerating meilisearch_master_key secret...\033[0m"; \
+		openssl rand -base64 32 | tr -dc 'a-zA-Z0-9' | head -c 32 > secrets/meilisearch_master_key.txt; \
+		chmod 600 secrets/meilisearch_master_key.txt; \
+		echo -e "\033[0;32mmeilisearch_master_key secret generated.\033[0m"; \
+	else \
+		echo -e "\033[0;32mmeilisearch_master_key secret already exists.\033[0m"; \
+	fi
+	@if [ ! -f secrets/minio_root_user.txt ]; then \
+		echo -e "\033[0;34mGenerating minio_root_user secret...\033[0m"; \
+		echo "minioadmin" > secrets/minio_root_user.txt; \
+		chmod 600 secrets/minio_root_user.txt; \
+		echo -e "\033[0;32mminio_root_user secret generated.\033[0m"; \
+	else \
+		echo -e "\033[0;32mminio_root_user secret already exists.\033[0m"; \
+	fi
+	@if [ ! -f secrets/minio_root_password.txt ]; then \
+		echo -e "\033[0;34mGenerating minio_root_password secret...\033[0m"; \
+		openssl rand -base64 24 | tr -dc 'a-zA-Z0-9' | head -c 24 > secrets/minio_root_password.txt; \
+		chmod 600 secrets/minio_root_password.txt; \
+		echo -e "\033[0;32mminio_root_password secret generated.\033[0m"; \
+	else \
+		echo -e "\033[0;32mminio_root_password secret already exists.\033[0m"; \
+	fi
+	@if [ ! -f secrets/rabbitmq_user.txt ]; then \
+		echo -e "\033[0;34mGenerating rabbitmq_user secret...\033[0m"; \
+		echo "app" > secrets/rabbitmq_user.txt; \
+		chmod 600 secrets/rabbitmq_user.txt; \
+		echo -e "\033[0;32mrabbitmq_user secret generated.\033[0m"; \
+	else \
+		echo -e "\033[0;32mrabbitmq_user secret already exists.\033[0m"; \
+	fi
+	@if [ ! -f secrets/rabbitmq_password.txt ]; then \
+		echo -e "\033[0;34mGenerating rabbitmq_password secret...\033[0m"; \
+		openssl rand -base64 24 | tr -dc 'a-zA-Z0-9' | head -c 24 > secrets/rabbitmq_password.txt; \
+		chmod 600 secrets/rabbitmq_password.txt; \
+		echo -e "\033[0;32mrabbitmq_password secret generated.\033[0m"; \
+	else \
+		echo -e "\033[0;32mrabbitmq_password secret already exists.\033[0m"; \
+	fi
+	@if [ ! -f secrets/mercure_jwt_secret.txt ]; then \
+		echo -e "\033[0;34mGenerating mercure_jwt_secret secret...\033[0m"; \
+		openssl rand -base64 32 > secrets/mercure_jwt_secret.txt; \
+		chmod 600 secrets/mercure_jwt_secret.txt; \
+		echo -e "\033[0;32mmercure_jwt_secret secret generated.\033[0m"; \
+	else \
+		echo -e "\033[0;32mmercure_jwt_secret secret already exists.\033[0m"; \
 	fi
 	@echo -e "\033[0;32mSecrets check completed!\033[0m"
 

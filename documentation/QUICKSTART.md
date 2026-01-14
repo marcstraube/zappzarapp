@@ -294,5 +294,6 @@ make redis-cli       # Redis shell
 # === MAINTENANCE ===
 make composer-update # Update PHP deps
 make pnpm-update     # Update Node deps
-make backup          # Backup database
+make backup-db       # Backup database
+make backup-all      # Backup all services
 ```

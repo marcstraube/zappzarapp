@@ -271,6 +271,73 @@ services:
       --ssl-key=/etc/mysql/certs/server.key
       --require-secure-transport=ON
 
+  # ═══════════════════════════════════════════════════════════════════════════
+  # OPTIONAL SERVICES - Development Overrides
+  # ═══════════════════════════════════════════════════════════════════════════
+
+  mercure:
+    ports:
+      - "${MERCURE_PORT:-8081}:80"
+    environment:
+      # Development: Allow all CORS origins
+      MERCURE_EXTRA_DIRECTIVES: |
+        anonymous
+        cors_origins *
+        debug
+
+  meilisearch:
+    ports:
+      - "${MEILISEARCH_PORT:-7700}:7700"
+    environment:
+      # Development environment
+      MEILI_ENV: development
+      # Log level for debugging
+      MEILI_LOG_LEVEL: INFO
+
+  elasticsearch:
+    ports:
+      - "${ELASTICSEARCH_PORT:-9200}:9200"
+      - "${ELASTICSEARCH_TRANSPORT_PORT:-9300}:9300"
+    environment:
+      # Development: Disable security for easier local testing
+      xpack.security.enabled: 'false'
+      # Enable verbose logging
+      logger.level: INFO
+
+  mailpit:
+    ports:
+      # SMTP port for sending emails
+      - "${MAILPIT_SMTP_PORT:-1025}:1025"
+      # Web UI for viewing emails
+      - "${MAILPIT_UI_PORT:-8025}:8025"
+
+  minio:
+    ports:
+      # S3 API port (TLS)
+      - "${MINIO_API_PORT:-9000}:9000"
+      # Web Console port (TLS)
+      - "${MINIO_CONSOLE_PORT:-9001}:9001"
+    volumes:
+      # SSL/TLS Certificates for encrypted connections
+      - ./docker/certs:/root/.minio/certs:ro
+    environment:
+      # Enable TLS (MinIO auto-detects certs in /root/.minio/certs/)
+      MINIO_SERVER_URL: https://minio:9000
+      MINIO_BROWSER_REDIRECT_URL: https://localhost:${MINIO_CONSOLE_PORT:-9001}
+
+  rabbitmq:
+    ports:
+      # AMQP port for messaging (TLS)
+      - "${RABBITMQ_PORT:-5672}:5672"
+      # Management UI port
+      - "${RABBITMQ_MANAGEMENT_PORT:-15672}:15672"
+    volumes:
+      # SSL/TLS Certificates for encrypted connections
+      - ./docker/certs/cert.crt:/etc/rabbitmq/certs/server.crt:ro
+      - ./docker/certs/cert.key:/etc/rabbitmq/certs/server.key:ro
+      # RabbitMQ TLS configuration
+      - ./docker/rabbitmq/rabbitmq.conf:/etc/rabbitmq/rabbitmq.conf:ro
+
 volumes:
   node_modules:
     driver: local

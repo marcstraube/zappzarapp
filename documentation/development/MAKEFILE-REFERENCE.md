@@ -164,14 +164,23 @@ Database management and CLI access.
 
 Data backup and database migration commands.
 
-| Command                   | Description                                              |
-| ------------------------- | -------------------------------------------------------- |
-| `make backup`             | Create encrypted database backup (GDPR-compliant)        |
-| `make backup RETENTION=7` | Create backup with custom retention (7 days)             |
-| `make backup-list`        | List all available backups                               |
-| `make restore`            | Restore database from backup (interactive)               |
-| `make db-migrations`      | Run database migrations (encryption helpers, audit logs) |
-| `make db-cleanup`         | Run retention policy cleanup (delete old logs)           |
+| Command                             | Description                                              |
+| ----------------------------------- | -------------------------------------------------------- |
+| `make backup-all`                   | Backup all enabled services                              |
+| `make backup-db`                    | Create encrypted database backup (GDPR-compliant)        |
+| `make backup-db-list`               | List all database backups                                |
+| `make backup-db-restore`            | Restore database from backup (interactive)               |
+| `make backup-minio`                 | Create encrypted MinIO backup                            |
+| `make backup-minio-list`            | List all MinIO backups                                   |
+| `make backup-minio-restore`         | Restore MinIO from backup                                |
+| `make backup-rabbitmq`              | Export RabbitMQ definitions                              |
+| `make backup-rabbitmq-list`         | List all RabbitMQ backups                                |
+| `make backup-rabbitmq-restore`      | Import RabbitMQ definitions                              |
+| `make backup-elasticsearch`         | Create Elasticsearch snapshot                            |
+| `make backup-elasticsearch-list`    | List all Elasticsearch snapshots                         |
+| `make backup-elasticsearch-restore` | Restore Elasticsearch from snapshot                      |
+| `make db-migrations`                | Run database migrations (encryption helpers, audit logs) |
+| `make db-cleanup`                   | Run retention policy cleanup (delete old logs)           |
 
 See [BACKUP.md](security/BACKUP.md) for detailed backup documentation.
 
@@ -339,7 +348,7 @@ make pnpm CMD="add vue"
 make pnpm CMD="run build"
 
 # Backup with custom retention
-make backup RETENTION=14
+make backup-db RETENTION=14
 ```
 
 ### Chaining Commands

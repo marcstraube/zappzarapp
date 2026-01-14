@@ -1,11 +1,97 @@
 # Docker WebDev Boilerplate - Changelog
 
-**Erstellt:** 2025-12-19 **Letzte Aktualisierung:** 2026-01-14 (Architecture
-Simplification) **Version:** 3.33
+**Erstellt:** 2025-12-19 **Letzte Aktualisierung:** 2026-01-14 (Optional
+Services) **Version:** 3.34
 
 ---
 
 ## Changelog
+
+### Version 3.34 (2026-01-14) - Optional Services & Backup System
+
+Added six optional services with TLS support and restructured the backup system
+for all data stores.
+
+#### Added Services
+
+- **Mercure** (`ENABLE_MERCURE=true`)
+  - Real-time messaging via Server-Sent Events (SSE)
+  - Port: 8081, auto-generated JWT secret
+
+- **Meilisearch** (`ENABLE_MEILISEARCH=true`)
+  - Lightning-fast, typo-tolerant search engine
+  - Port: 7700, auto-generated master key
+
+- **Elasticsearch** (`ENABLE_ELASTICSEARCH=true`)
+  - Full-featured distributed search and analytics
+  - Ports: 9200, 9300, configurable heap size
+
+- **Mailpit** (`ENABLE_MAILPIT=true`)
+  - Email testing tool (catches all outgoing SMTP)
+  - Ports: 1025 (SMTP), 8025 (Web UI)
+  - Production: disabled by default (`replicas: 0`)
+
+- **MinIO** (`ENABLE_MINIO=true`)
+  - S3-compatible object storage with TLS
+  - Ports: 9000 (API), 9001 (Console)
+
+- **RabbitMQ** (`ENABLE_RABBITMQ=true`)
+  - Enterprise message broker with TLS support
+  - Ports: 5672/5671 (AMQP), 15672 (Management UI)
+  - Production: TLS-only mode
+
+#### Added Backup System
+
+- **Unified Backup Directory Structure**:
+  - `backups/db/` - Database backups
+  - `backups/minio/` - MinIO backups
+  - `backups/rabbitmq/` - RabbitMQ definitions
+  - `backups/elasticsearch/` - Elasticsearch snapshots
+
+- **Backup Commands**:
+  - `backup-all` - Backup all enabled services
+  - `backup-db`, `backup-db-list`, `backup-db-restore`
+  - `backup-minio`, `backup-minio-list`, `backup-minio-restore`
+  - `backup-rabbitmq`, `backup-rabbitmq-list`, `backup-rabbitmq-restore`
+  - `backup-elasticsearch`, `backup-elasticsearch-list`,
+    `backup-elasticsearch-restore`
+
+- **Backup Scripts**: `docker/scripts/backup-{minio,rabbitmq,elasticsearch}.sh`
+  and `restore-{minio,rabbitmq,elasticsearch}.sh`
+
+#### Added Makefile Targets
+
+- `logs-{mercure,meilisearch,elasticsearch,mailpit,minio,rabbitmq}`
+- `shell-{mercure,meilisearch,elasticsearch,mailpit,minio,rabbitmq}`
+- Mailpit production warning in `make up`
+
+#### Added Documentation
+
+- `documentation/infrastructure/OPTIONAL-SERVICES.md`
+
+#### Added IDE Integration
+
+- VS Code tasks for all new services and backup commands
+- IntelliJ run configurations for all new services and backup commands
+
+#### Changed
+
+- **Renamed Backup Commands** (breaking change):
+  - `backup` → `backup-db`
+  - `backup-list` → `backup-db-list`
+  - `restore` → `backup-db-restore`
+  - `backup-cleanup` → `backup-db-cleanup`
+
+- **Database Backup Directory**: `backup/` → `backups/db/`
+
+- **Profile System**: All services use Docker Compose profiles
+
+- **Markdownlint**: Disabled MD055 (table pipe style) for Prettier compatibility
+
+- **Documentation**: Updated `BACKUP.md`, `MAKEFILE-REFERENCE.md`,
+  `QUICKSTART.md`, `ARCHITECTURE.md`
+
+---
 
 ### Version 3.33 (2026-01-14) - Architecture Simplification
 

@@ -262,6 +262,10 @@ docker-webdev/
 ├── config/                   # Application config
 ├── storage/                  # Runtime storage
 ├── backups/                  # Encrypted backups
+│   ├── db/                   # Database backups
+│   ├── minio/                # MinIO backups
+│   ├── rabbitmq/             # RabbitMQ backups
+│   └── elasticsearch/        # Elasticsearch backups
 ├── secrets/                  # Docker secrets
 └── build/                    # Build output
 ```

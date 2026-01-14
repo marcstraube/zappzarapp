@@ -249,6 +249,194 @@ services:
       retries: 3
       start_period: 10s
 
+  # ═══════════════════════════════════════════════════════════════════════════
+  # OPTIONAL SERVICES
+  # ═══════════════════════════════════════════════════════════════════════════
+
+  # Mercure Hub - Real-time messaging server using Server-Sent Events (SSE)
+  # Native integration with Symfony/API Platform. Lightweight alternative to WebSockets.
+  # Usage: ENABLE_MERCURE=true in .env, then 'make up'
+  # Docs: https://mercure.rocks/
+  mercure:
+    build:
+      context: .
+      dockerfile: docker/mercure/Dockerfile
+    container_name: ${COMPOSE_PROJECT_NAME:-docker-webdev}-mercure
+    restart: unless-stopped
+    profiles: ["mercure"]
+    environment:
+      TZ: ${TZ:-UTC}
+      # Server configuration
+      SERVER_NAME: ':80'
+      # JWT keys loaded from secret file via entrypoint.sh
+      # Allow anonymous subscribers (set to 0 in production for auth-only)
+      MERCURE_EXTRA_DIRECTIVES: |
+        anonymous
+        cors_origins *
+    secrets:
+      - mercure_jwt_secret
+    expose:
+      - "80"
+    volumes:
+      - mercure-data:/data
+    networks:
+      - backend
+    # Health check defined in Dockerfile
+
+  # Meilisearch - Lightning fast, typo-tolerant search engine
+  # Lightweight alternative to Elasticsearch. Great for product search, autocomplete.
+  # Usage: ENABLE_MEILISEARCH=true in .env, then 'make up'
+  # Docs: https://www.meilisearch.com/docs
+  meilisearch:
+    build:
+      context: .
+      dockerfile: docker/meilisearch/Dockerfile
+    container_name: ${COMPOSE_PROJECT_NAME:-docker-webdev}-meilisearch
+    restart: unless-stopped
+    profiles: ["meilisearch"]
+    environment:
+      TZ: ${TZ:-UTC}
+      # Master key for API authentication (required in production)
+      MEILI_MASTER_KEY_FILE: /run/secrets/meilisearch_master_key
+      # Environment: development or production
+      MEILI_ENV: ${ENV:-development}
+      # Disable analytics
+      MEILI_NO_ANALYTICS: true
+    secrets:
+      - meilisearch_master_key
+    expose:
+      - "7700"
+    volumes:
+      - meilisearch-data:/meili_data
+    networks:
+      - database
+    # Health check defined in Dockerfile
+
+  # Elasticsearch - Distributed search and analytics engine
+  # Full-featured search with aggregations, analytics, geo-queries.
+  # Resource-intensive (min 2GB RAM). Use Meilisearch for simpler use cases.
+  # Usage: ENABLE_ELASTICSEARCH=true in .env, then 'make up'
+  # Docs: https://www.elastic.co/guide/en/elasticsearch/reference/current/index.html
+  elasticsearch:
+    build:
+      context: .
+      dockerfile: docker/elasticsearch/Dockerfile
+    container_name: ${COMPOSE_PROJECT_NAME:-docker-webdev}-elasticsearch
+    restart: unless-stopped
+    profiles: ["elasticsearch"]
+    environment:
+      TZ: ${TZ:-UTC}
+      # Single-node discovery (no cluster)
+      discovery.type: single-node
+      # Disable security features for development (enable in production!)
+      xpack.security.enabled: 'false'
+      # JVM heap size (should be ~50% of available container memory)
+      ES_JAVA_OPTS: '-Xms${ELASTICSEARCH_HEAP_SIZE:-512m} -Xmx${ELASTICSEARCH_HEAP_SIZE:-512m}'
+      # Disable machine learning (reduces memory footprint)
+      xpack.ml.enabled: 'false'
+      # Snapshot repository path (required for backups)
+      path.repo: /usr/share/elasticsearch/backup
+    expose:
+      - "9200"
+      - "9300"
+    volumes:
+      - elasticsearch-data:/usr/share/elasticsearch/data
+      - elasticsearch-backup:/usr/share/elasticsearch/backup
+    networks:
+      - database
+    # Health check defined in Dockerfile
+
+  # Mailpit - Email testing tool for development
+  # Catches all outgoing emails and displays them in a web UI.
+  # Configure your app to send mail to mailpit:1025 (SMTP).
+  # Usage: ENABLE_MAILPIT=true in .env, then 'make up'
+  # Docs: https://mailpit.axllent.org/docs/
+  mailpit:
+    build:
+      context: .
+      dockerfile: docker/mailpit/Dockerfile
+    container_name: ${COMPOSE_PROJECT_NAME:-docker-webdev}-mailpit
+    restart: unless-stopped
+    profiles: ["mailpit"]
+    environment:
+      TZ: ${TZ:-UTC}
+      # Max number of emails to store (older ones are deleted)
+      MP_MAX_MESSAGES: ${MAILPIT_MAX_MESSAGES:-500}
+      # Database path for persistence
+      MP_DATABASE: /data/mailpit.db
+    expose:
+      - "1025"
+      - "8025"
+    volumes:
+      - mailpit-data:/data
+    networks:
+      - backend
+    # Health check defined in Dockerfile
+
+  # MinIO - S3-compatible object storage
+  # Use same SDKs as AWS S3. Switch to real S3 in production without code changes.
+  # Usage: ENABLE_MINIO=true in .env, then 'make up'
+  # Docs: https://min.io/docs/minio/container/index.html
+  minio:
+    build:
+      context: .
+      dockerfile: docker/minio/Dockerfile
+    container_name: ${COMPOSE_PROJECT_NAME:-docker-webdev}-minio
+    restart: unless-stopped
+    profiles: ["minio"]
+    environment:
+      TZ: ${TZ:-UTC}
+      # Root credentials (change in production!)
+      MINIO_ROOT_USER_FILE: /run/secrets/minio_root_user
+      MINIO_ROOT_PASSWORD_FILE: /run/secrets/minio_root_password
+    command: server /data --console-address ":9001"
+    secrets:
+      - minio_root_user
+      - minio_root_password
+    expose:
+      - "9000"
+      - "9001"
+    volumes:
+      - minio-data:/data
+    networks:
+      - backend
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 10s
+      timeout: 5s
+      start_period: 10s
+      retries: 3
+
+  # RabbitMQ - Enterprise message broker
+  # Reliable messaging with routing, priorities, acknowledgments, and dead letter queues.
+  # Includes management UI for monitoring queues and connections.
+  # Usage: ENABLE_RABBITMQ=true in .env, then 'make up'
+  # Docs: https://www.rabbitmq.com/docs
+  rabbitmq:
+    build:
+      context: .
+      dockerfile: docker/rabbitmq/Dockerfile
+    container_name: ${COMPOSE_PROJECT_NAME:-docker-webdev}-rabbitmq
+    restart: unless-stopped
+    profiles: ["rabbitmq"]
+    environment:
+      TZ: ${TZ:-UTC}
+      # Default user and vhost
+      RABBITMQ_DEFAULT_USER_FILE: /run/secrets/rabbitmq_user
+      RABBITMQ_DEFAULT_PASS_FILE: /run/secrets/rabbitmq_password
+      RABBITMQ_DEFAULT_VHOST: ${RABBITMQ_VHOST:-/}
+    secrets:
+      - rabbitmq_user
+      - rabbitmq_password
+    expose:
+      - "5672"
+      - "15672"
+    volumes:
+      - rabbitmq-data:/var/lib/rabbitmq
+    networks:
+      - backend
+    # Health check defined in Dockerfile
+
 networks:
   # 3-Network Security Architecture for GDPR Compliance
   # - frontend: Public-facing nginx only
@@ -277,6 +465,27 @@ volumes:
   mariadb-data:
     driver: local
     name: ${COMPOSE_PROJECT_NAME:-docker-webdev}-mariadb-data
+  mercure-data:
+    driver: local
+    name: ${COMPOSE_PROJECT_NAME:-docker-webdev}-mercure-data
+  meilisearch-data:
+    driver: local
+    name: ${COMPOSE_PROJECT_NAME:-docker-webdev}-meilisearch-data
+  elasticsearch-data:
+    driver: local
+    name: ${COMPOSE_PROJECT_NAME:-docker-webdev}-elasticsearch-data
+  elasticsearch-backup:
+    driver: local
+    name: ${COMPOSE_PROJECT_NAME:-docker-webdev}-elasticsearch-backup
+  mailpit-data:
+    driver: local
+    name: ${COMPOSE_PROJECT_NAME:-docker-webdev}-mailpit-data
+  minio-data:
+    driver: local
+    name: ${COMPOSE_PROJECT_NAME:-docker-webdev}-minio-data
+  rabbitmq-data:
+    driver: local
+    name: ${COMPOSE_PROJECT_NAME:-docker-webdev}-rabbitmq-data
 
 # Docker Secrets (file-based for development, external for production/swarm)
 # Secrets are mounted at /run/secrets/<secret_name> in containers
@@ -290,3 +499,15 @@ secrets:
     file: ./secrets/encryption_key.txt
   backup_encryption_key:
     file: ./secrets/backup_encryption_key.txt
+  meilisearch_master_key:
+    file: ./secrets/meilisearch_master_key.txt
+  minio_root_user:
+    file: ./secrets/minio_root_user.txt
+  minio_root_password:
+    file: ./secrets/minio_root_password.txt
+  rabbitmq_user:
+    file: ./secrets/rabbitmq_user.txt
+  rabbitmq_password:
+    file: ./secrets/rabbitmq_password.txt
+  mercure_jwt_secret:
+    file: ./secrets/mercure_jwt_secret.txt

@@ -22,7 +22,10 @@
     // MD024: Allow duplicate headings in different sections
     "MD024": {
       "siblings_only": true
-    }
+    },
+
+    // MD055: Table pipe style - disabled (Prettier handles table formatting)
+    "MD055": false
   },
 
   // Files to ignore

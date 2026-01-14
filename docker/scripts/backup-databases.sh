@@ -9,7 +9,7 @@
 #
 # Options:
 #   -d, --database TYPE    Database type: postgres or mariadb (default: from .env)
-#   -o, --output DIR       Output directory (default: ./backups)
+#   -o, --output DIR       Output directory (default: ./backups/db)
 #   -r, --retention DAYS   Keep backups for N days (default: 30, 0 = keep all)
 #   -n, --no-encrypt       Skip encryption (not recommended for production)
 #   -h, --help             Show this help message
@@ -43,7 +43,7 @@ NC='\033[0m' # No Color
 # Default values
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
-OUTPUT_DIR="$PROJECT_ROOT/backups"
+OUTPUT_DIR="$PROJECT_ROOT/backups/db"
 ENCRYPT=true
 
 # Load .env if exists

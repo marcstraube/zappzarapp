@@ -39,3 +39,4 @@ ignored:
 trustedRegistries:
   - docker.io
   - ghcr.io
+  - docker.elastic.co

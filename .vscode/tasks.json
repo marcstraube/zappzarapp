@@ -171,6 +171,54 @@
       "isBackground": true
     },
     {
+      "label": "Logs: Mercure",
+      "type": "shell",
+      "command": "make logs-mercure",
+      "problemMatcher": [],
+      "presentation": { "reveal": "always", "panel": "dedicated" },
+      "isBackground": true
+    },
+    {
+      "label": "Logs: Meilisearch",
+      "type": "shell",
+      "command": "make logs-meilisearch",
+      "problemMatcher": [],
+      "presentation": { "reveal": "always", "panel": "dedicated" },
+      "isBackground": true
+    },
+    {
+      "label": "Logs: Elasticsearch",
+      "type": "shell",
+      "command": "make logs-elasticsearch",
+      "problemMatcher": [],
+      "presentation": { "reveal": "always", "panel": "dedicated" },
+      "isBackground": true
+    },
+    {
+      "label": "Logs: Mailpit",
+      "type": "shell",
+      "command": "make logs-mailpit",
+      "problemMatcher": [],
+      "presentation": { "reveal": "always", "panel": "dedicated" },
+      "isBackground": true
+    },
+    {
+      "label": "Logs: MinIO",
+      "type": "shell",
+      "command": "make logs-minio",
+      "problemMatcher": [],
+      "presentation": { "reveal": "always", "panel": "dedicated" },
+      "isBackground": true
+    },
+    {
+      "label": "Logs: RabbitMQ",
+      "type": "shell",
+      "command": "make logs-rabbitmq",
+      "problemMatcher": [],
+      "presentation": { "reveal": "always", "panel": "dedicated" },
+      "isBackground": true
+    },
+    {
       "label": "Shell: Nginx",
       "type": "shell",
       "command": "make shell-nginx",
@@ -209,6 +257,48 @@
       "label": "Shell: MariaDB",
       "type": "shell",
       "command": "make shell-mariadb",
+      "problemMatcher": [],
+      "presentation": { "reveal": "always", "panel": "dedicated" }
+    },
+    {
+      "label": "Shell: Mercure",
+      "type": "shell",
+      "command": "make shell-mercure",
+      "problemMatcher": [],
+      "presentation": { "reveal": "always", "panel": "dedicated" }
+    },
+    {
+      "label": "Shell: Meilisearch",
+      "type": "shell",
+      "command": "make shell-meilisearch",
+      "problemMatcher": [],
+      "presentation": { "reveal": "always", "panel": "dedicated" }
+    },
+    {
+      "label": "Shell: Elasticsearch",
+      "type": "shell",
+      "command": "make shell-elasticsearch",
+      "problemMatcher": [],
+      "presentation": { "reveal": "always", "panel": "dedicated" }
+    },
+    {
+      "label": "Shell: Mailpit",
+      "type": "shell",
+      "command": "make shell-mailpit",
+      "problemMatcher": [],
+      "presentation": { "reveal": "always", "panel": "dedicated" }
+    },
+    {
+      "label": "Shell: MinIO",
+      "type": "shell",
+      "command": "make shell-minio",
+      "problemMatcher": [],
+      "presentation": { "reveal": "always", "panel": "dedicated" }
+    },
+    {
+      "label": "Shell: RabbitMQ",
+      "type": "shell",
+      "command": "make shell-rabbitmq",
       "problemMatcher": [],
       "presentation": { "reveal": "always", "panel": "dedicated" }
     },
@@ -409,23 +499,93 @@
       "presentation": { "reveal": "always", "panel": "new" }
     },
     {
-      "label": "Backup: Create Encrypted",
+      "label": "Backup: All Services",
       "type": "shell",
-      "command": "make backup",
+      "command": "make backup-all",
       "problemMatcher": [],
       "presentation": { "reveal": "always", "panel": "new" }
     },
     {
-      "label": "Backup: List",
+      "label": "Backup: Database",
       "type": "shell",
-      "command": "make backup-list",
+      "command": "make backup-db",
       "problemMatcher": [],
       "presentation": { "reveal": "always", "panel": "new" }
     },
     {
-      "label": "Backup: Restore",
+      "label": "Backup: Database List",
       "type": "shell",
-      "command": "make restore",
+      "command": "make backup-db-list",
+      "problemMatcher": [],
+      "presentation": { "reveal": "always", "panel": "new" }
+    },
+    {
+      "label": "Backup: Database Restore",
+      "type": "shell",
+      "command": "make backup-db-restore",
+      "problemMatcher": [],
+      "presentation": { "reveal": "always", "panel": "new" }
+    },
+    {
+      "label": "Backup: Elasticsearch",
+      "type": "shell",
+      "command": "make backup-elasticsearch",
+      "problemMatcher": [],
+      "presentation": { "reveal": "always", "panel": "new" }
+    },
+    {
+      "label": "Backup: Elasticsearch List",
+      "type": "shell",
+      "command": "make backup-elasticsearch-list",
+      "problemMatcher": [],
+      "presentation": { "reveal": "always", "panel": "new" }
+    },
+    {
+      "label": "Backup: Elasticsearch Restore",
+      "type": "shell",
+      "command": "make backup-elasticsearch-restore",
+      "problemMatcher": [],
+      "presentation": { "reveal": "always", "panel": "new" }
+    },
+    {
+      "label": "Backup: MinIO",
+      "type": "shell",
+      "command": "make backup-minio",
+      "problemMatcher": [],
+      "presentation": { "reveal": "always", "panel": "new" }
+    },
+    {
+      "label": "Backup: MinIO List",
+      "type": "shell",
+      "command": "make backup-minio-list",
+      "problemMatcher": [],
+      "presentation": { "reveal": "always", "panel": "new" }
+    },
+    {
+      "label": "Backup: MinIO Restore",
+      "type": "shell",
+      "command": "make backup-minio-restore",
+      "problemMatcher": [],
+      "presentation": { "reveal": "always", "panel": "new" }
+    },
+    {
+      "label": "Backup: RabbitMQ",
+      "type": "shell",
+      "command": "make backup-rabbitmq",
+      "problemMatcher": [],
+      "presentation": { "reveal": "always", "panel": "new" }
+    },
+    {
+      "label": "Backup: RabbitMQ List",
+      "type": "shell",
+      "command": "make backup-rabbitmq-list",
+      "problemMatcher": [],
+      "presentation": { "reveal": "always", "panel": "new" }
+    },
+    {
+      "label": "Backup: RabbitMQ Restore",
+      "type": "shell",
+      "command": "make backup-rabbitmq-restore",
       "problemMatcher": [],
       "presentation": { "reveal": "always", "panel": "new" }
     },
