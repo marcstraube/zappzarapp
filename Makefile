@@ -1510,6 +1510,10 @@ $(PHPDOC_PHAR):
 docs-php: $(PHPDOC_PHAR) ## Generate PHP API documentation using phpDocumentor
 	@echo -e "\033[0;33mGenerating PHP API documentation...\033[0m"
 	@docker compose exec php composer docs
+	@echo -e "\033[0;33mApplying custom theme...\033[0m"
+	@docker compose exec php sh -c '\
+		CSS_CONTENT=$$(cat /var/www/html/documentation/assets/custom-phpdoc.css | tr "\n" " " | sed "s/  */ /g"); \
+		find /var/www/html/docs/api/php -name "*.html" -exec sed -i "s|</head>|<style>$$CSS_CONTENT</style></head>|" {} \;'
 	@echo -e "\033[0;32mPHP documentation generated in docs/api/php/\033[0m"
 
 docs-node: ## Generate Node/TypeScript API documentation using TypeDoc

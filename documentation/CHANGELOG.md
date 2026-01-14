@@ -1,11 +1,63 @@
 # Docker WebDev Boilerplate - Changelog
 
-**Erstellt:** 2025-12-19 **Letzte Aktualisierung:** 2026-01-14 (PHP Extensions &
-Makefile) **Version:** 3.36
+**Erstellt:** 2025-12-19 **Letzte Aktualisierung:** 2026-01-14 (Unified
+Documentation Theme) **Version:** 3.37
 
 ---
 
 ## Changelog
+
+### Version 3.37 (2026-01-14) - Unified Documentation Theme
+
+Unified the visual design across all three documentation systems (Docsify,
+PHPDocumentor, TypeDoc) with a consistent Indigo color scheme.
+
+#### Docsify (Markdown Guides)
+
+- **New**: Added `docs/index.html` as Docsify-powered documentation hub
+- **New**: Added `documentation/_sidebar.md` for structured navigation
+- **Styling**: White background, Indigo accents (`#3f51b5`), dark blue headings
+  (`#303f9f`)
+- **Features**: Search, code copy buttons, syntax highlighting, pagination
+
+#### PHPDocumentor (PHP API)
+
+- **New**: Custom theme override via inline `<style>` injection
+- **Header**: White background with border (previously gradient)
+- **Badges**: Replaced green SVG icons with Indigo (`#3f51b5`)
+- **Colors**: All primary colors changed from green (HSL 96°) to Indigo (HSL
+  231°)
+- **Links**: Consistent Indigo link colors with dark blue hover states
+
+#### TypeDoc (Node.js/TypeScript API)
+
+- **New**: `documentation/assets/custom-typedoc.css` with comprehensive
+  overrides
+- **Header**: White background with border (previously gradient)
+- **TypeScript colors**: All type colors (interface, class, function, method,
+  etc.) changed from green/pink to Indigo shades
+- **Badges**: `code.tsd-tag` styled with light Indigo background for readability
+
+#### Unified Color Palette
+
+| Element         | Color        | Hex       |
+| --------------- | ------------ | --------- |
+| Primary         | Indigo       | `#3f51b5` |
+| Primary Dark    | Dark Indigo  | `#303f9f` |
+| Primary Light   | Light Indigo | `#c5cae9` |
+| Primary Lighter | Pale Indigo  | `#e8eaf6` |
+| Text            | Dark Gray    | `#212529` |
+| Text Muted      | Gray         | `#6c757d` |
+| Background      | White        | `#fff`    |
+| Background 2nd  | Light Gray   | `#f8f9fa` |
+| Border          | Lighter Gray | `#e9ecef` |
+
+#### Infrastructure
+
+- **Nginx**: Added `/docs/guides/` location for Docsify in `default.conf` and
+  `ssl-development.conf.template`
+- **Docker**: Added `documentation/` volume mount to nginx and php containers
+- **Makefile**: `docs-php` target now injects custom CSS as inline `<style>` tag
 
 ### Version 3.36 (2026-01-14) - PHP Extensions & Makefile Service Control
 

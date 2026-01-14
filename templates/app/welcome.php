@@ -122,15 +122,15 @@ declare(strict_types=1);
 
     <?php if ($vite->isDevelopment()): ?>
     <div class="card">
-        <h2>📖 API Documentation</h2>
-        <p style="margin-bottom: 1rem;">Auto-generated API documentation for both stacks:</p>
+        <h2>📖 Documentation</h2>
+        <p style="margin-bottom: 1rem;">Guides and auto-generated API documentation:</p>
         <ul style="list-style: disc; padding-left: 1.5rem;">
-            <li><a href="/docs/" style="color: #007bff; text-decoration: none;"><strong>/docs/</strong></a> - Documentation overview</li>
+            <li><a href="/docs/" style="color: #007bff; text-decoration: none;"><strong>/docs/</strong></a> - Guides & Documentation (Docsify)</li>
             <li><a href="/docs/api/php/" style="color: #007bff; text-decoration: none;"><strong>/docs/api/php/</strong></a> - PHP API Documentation (phpDocumentor)</li>
             <li><a href="/docs/api/node/" style="color: #007bff; text-decoration: none;"><strong>/docs/api/node/</strong></a> - Node/TypeScript API Documentation (TypeDoc)</li>
         </ul>
         <p style="margin-top: 1rem; font-size: 0.9em; color: #666;">
-            <strong>Generate Docs:</strong> Run <code>make docs</code> to generate/update API documentation.
+            <strong>Generate API Docs:</strong> Run <code>make docs</code> to generate/update API documentation.
             Documentation is only available in development mode.
         </p>
     </div>

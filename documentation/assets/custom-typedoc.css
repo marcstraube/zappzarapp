@@ -1,0 +1,184 @@
+/**
+ * Custom TypeDoc Theme Override
+ * Unified Documentation Color Palette:
+ * - Primary: #3f51b5 (Indigo)
+ * - Primary Dark: #303f9f
+ * - Primary Light: #c5cae9
+ * - Primary Lighter: #e8eaf6
+ * - Text: #212529
+ * - Text Muted: #6c757d
+ * - Background: #fff
+ * - Background Secondary: #f8f9fa
+ * - Border: #e9ecef
+ */
+
+/* Force white background - override TypeDoc's layer */
+:root,
+:root[data-theme="light"] {
+    --color-background: #fff !important;
+    --color-background-secondary: #f8f9fa !important;
+    --color-background-active: #e8eaf6 !important;
+    --color-text: #212529 !important;
+    --color-text-aside: #6c757d !important;
+    --color-link: #3f51b5 !important;
+    --color-accent: #c5cae9 !important;
+    --color-active-menu-item: #e8eaf6 !important;
+    --color-icon-background: #e8eaf6 !important;
+    --color-icon-text: #303f9f !important;
+    --color-focus-outline: #7986cb !important;
+
+    /* Override TypeScript type colors - replace greens/pinks with indigo shades */
+    --color-ts: #3f51b5 !important;
+    --color-ts-interface: #303f9f !important;
+    --color-ts-class: #303f9f !important;
+    --color-ts-enum: #3f51b5 !important;
+    --color-ts-function: #3f51b5 !important;
+    --color-ts-module: #303f9f !important;
+    --color-ts-namespace: #303f9f !important;
+    --color-ts-type-alias: #3f51b5 !important;
+    --color-ts-variable: #3f51b5 !important;
+    --color-ts-property: #3f51b5 !important;
+    --color-ts-method: #3f51b5 !important;
+    --color-ts-enum-member: #3f51b5 !important;
+    --color-ts-call-signature: #3f51b5 !important;
+    --color-ts-index-signature: #3f51b5 !important;
+    --color-ts-constructor-signature: #3f51b5 !important;
+    --color-ts-parameter: #3f51b5 !important;
+    --color-ts-type-parameter: #3f51b5 !important;
+    --color-ts-accessor: #3f51b5 !important;
+    --color-ts-get-signature: #3f51b5 !important;
+    --color-ts-set-signature: #3f51b5 !important;
+}
+
+/* Dark mode */
+:root[data-theme="dark"] {
+    --color-background: #1e1e1e !important;
+    --color-background-secondary: #252526 !important;
+    --color-background-active: #37373d !important;
+    --color-text: #d4d4d4 !important;
+    --color-link: #9fa8da !important;
+    --color-accent: #7986cb !important;
+}
+
+@media (prefers-color-scheme: light) {
+    :root:not([data-theme="dark"]) {
+        --color-background: #fff !important;
+        --color-background-secondary: #f8f9fa !important;
+        --color-text: #212529 !important;
+    }
+}
+
+/* Body background */
+body {
+    background: #fff !important;
+}
+
+:root[data-theme="dark"] body {
+    background: #1e1e1e !important;
+}
+
+/* Header - White background like Docsify */
+.tsd-page-toolbar {
+    background: #fff !important;
+    border-bottom: 1px solid #e9ecef !important;
+}
+
+.tsd-page-toolbar .title {
+    color: #303f9f !important;
+    font-weight: 600;
+}
+
+/* Header toolbar buttons and icons */
+.tsd-page-toolbar .tsd-widget {
+    color: #212529 !important;
+}
+
+.tsd-page-toolbar .tsd-widget:hover {
+    color: #3f51b5 !important;
+}
+
+.tsd-page-toolbar svg {
+    fill: currentColor;
+}
+
+/* Main content text */
+.col-content,
+.tsd-panel,
+.tsd-typography {
+    color: #212529 !important;
+}
+
+/* Links */
+a {
+    color: #3f51b5;
+}
+
+a:hover {
+    color: #303f9f;
+}
+
+/* Navigation */
+.tsd-navigation a {
+    color: #212529;
+}
+
+.tsd-navigation a:hover {
+    color: #3f51b5;
+}
+
+.tsd-navigation a.current {
+    background: #e8eaf6;
+    color: #3f51b5;
+}
+
+/* Headings */
+h1, h2, h3, h4 {
+    color: #212529 !important;
+}
+
+.tsd-page-title h1 {
+    color: #303f9f !important;
+}
+
+/* Panels */
+.tsd-panel-group > summary h2 {
+    color: #303f9f !important;
+}
+
+/* Signatures */
+.tsd-signatures .tsd-signature {
+    border-left: 3px solid #c5cae9;
+    background: #f8f9fa;
+}
+
+/* Tags/Badges - ensure readable text */
+code.tsd-tag {
+    background: #e8eaf6 !important;
+    color: #303f9f !important;
+    border-color: #c5cae9 !important;
+}
+
+/* Signature type links */
+.tsd-signature-type {
+    color: #3f51b5 !important;
+}
+
+/* Kind icons in navigation */
+.tsd-kind-icon {
+    color: #3f51b5 !important;
+}
+
+/* Footer */
+footer {
+    background: #f8f9fa !important;
+    border-top: 1px solid #e9ecef;
+}
+
+footer,
+footer a {
+    color: #6c757d !important;
+}
+
+footer a:hover {
+    color: #3f51b5 !important;
+}

@@ -1,0 +1,43 @@
+- **Getting Started**
+  - [Home](README.md)
+  - [Quickstart](QUICKSTART.md)
+  - [Troubleshooting](TROUBLESHOOTING.md)
+  - [Contributing](CONTRIBUTING.md)
+  - [Changelog](CHANGELOG.md)
+
+- **Development**
+  - [Makefile Reference](development/MAKEFILE-REFERENCE.md)
+  - [Dependencies](development/DEPENDENCIES.md)
+  - [Dev Dashboard](development/DEV-DASHBOARD.md)
+  - [Xdebug](development/XDEBUG.md)
+  - [Renovate](development/RENOVATE.md)
+
+- **Testing**
+  - [PHP Testing](testing/TESTING-PHP.md)
+  - [Node.js Testing](testing/TESTING-NODE.md)
+
+- **Infrastructure**
+  - [Architecture](infrastructure/ARCHITECTURE.md)
+  - [Network](infrastructure/NETWORK.md)
+  - [Deployment](infrastructure/DEPLOYMENT.md)
+  - [Error Pages](infrastructure/ERROR-PAGES.md)
+  - [Monitoring](infrastructure/MONITORING.md)
+  - [Performance](infrastructure/PERFORMANCE.md)
+  - [Optional Services](infrastructure/OPTIONAL-SERVICES.md)
+
+- **Security**
+  - [SSL Certificates](security/SSL-CERTIFICATES.md)
+  - [Encryption](security/ENCRYPTION.md)
+  - [Audit Logging](security/AUDIT-LOGGING.md)
+  - [Backup](security/BACKUP.md)
+  - [Secrets](security/SECRETS.md)
+  - [Retention Policy](security/RETENTION-POLICY.md)
+  - [Access Log Monitoring](security/ACCESS-LOG-MONITORING.md)
+  - [Security Scanning](security/SECURITY-SCANNING.md)
+
+- **Setup Guides**
+  - [Windows (WSL2)](setup/WINDOWS.md)
+
+- **API Documentation**
+  - <a href="/docs/api/php/" target="_top">PHP API</a>
+  - <a href="/docs/api/node/" target="_top">Node.js API</a>

@@ -12,6 +12,7 @@ services:
       # Application
       - ./public:/var/www/html/public:ro
       - ./docs:/var/www/html/docs:ro
+      - ./documentation:/var/www/html/documentation:ro
 
       # Nginx Configuration (Read-Only)
       - ./docker/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
@@ -76,6 +77,7 @@ services:
 
       # Documentation Config
       - ./phpdoc.xml:/var/www/html/phpdoc.xml:ro
+      - ./documentation:/var/www/html/documentation:ro
 
       # SSL Certificates (for Health Check Dashboard)
       - ./docker/certs:/var/www/html/docker/certs:ro
@@ -183,7 +185,7 @@ services:
       - ./.prettierrc.json:/app/.prettierrc.json:ro
       - ./.prettierignore:/app/.prettierignore:ro
       - ./commitlint.config.js:/app/commitlint.config.js:ro
-      - ./typedoc.json:/app/typedoc.json:ro
+      - ./typedoc.json:/app/typedoc.json
       - ./.markdownlint-cli2.jsonc:/app/.markdownlint-cli2.jsonc:ro
       - ./lint-staged.config.js:/app/lint-staged.config.js:ro
       - ./.depcheckrc.json:/app/.depcheckrc.json:ro

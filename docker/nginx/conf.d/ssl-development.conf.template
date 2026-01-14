@@ -148,6 +148,13 @@ server {
         return 301 /docs/;
     }
 
+    # Docsify guides (rendered Markdown documentation)
+    location ^~ /docs/guides/ {
+        alias /var/www/html/documentation/;
+        try_files $uri $uri/ =404;
+        add_header Cache-Control "no-cache, must-revalidate";
+    }
+
     location ^~ /docs/ {
         alias /var/www/html/docs/;
         autoindex on;

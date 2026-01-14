@@ -3,11 +3,7 @@
   "entryPoints": ["src/node"],
   "entryPointStrategy": "expand",
   "out": "docs/api/node",
-  "exclude": [
-    "**/*.test.ts",
-    "**/*.spec.ts",
-    "**/node_modules/**"
-  ],
+  "exclude": ["**/*.test.ts", "**/*.spec.ts", "**/node_modules/**"],
   "excludePrivate": true,
   "excludeProtected": false,
   "excludeExternals": true,
@@ -25,5 +21,6 @@
     "Function",
     "Variable"
   ],
-  "theme": "default"
+  "theme": "default",
+  "customCss": "documentation/assets/custom-typedoc.css"
 }

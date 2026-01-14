@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Docker WebDev Documentation</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/docsify@4/lib/themes/vue.css">
+    <style>
+        /**
+         * Unified Documentation Theme
+         * Color Palette:
+         * - Primary: #3f51b5 (Indigo)
+         * - Primary Dark: #303f9f
+         * - Primary Light: #c5cae9
+         * - Primary Lighter: #e8eaf6
+         * - Text: #212529
+         * - Text Muted: #6c757d
+         * - Background: #fff
+         * - Background Secondary: #f8f9fa
+         * - Border: #e9ecef
+         */
+        :root {
+            --theme-color: #3f51b5;
+            --docsify-example-panel-bg: #f8f9fa;
+        }
+
+        /* App nav styling - white background */
+        .app-nav {
+            background: #fff !important;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        .app-nav a {
+            color: #212529 !important;
+        }
+
+        .app-nav a:hover {
+            color: #3f51b5 !important;
+        }
+
+        /* White background everywhere */
+        body, .sidebar, .content {
+            background: #fff;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            border-right: 1px solid #e9ecef;
+        }
+
+        .sidebar-nav > ul > li > a {
+            font-weight: 600;
+            color: #303f9f;
+        }
+
+        .sidebar-nav a {
+            color: #212529;
+        }
+
+        .sidebar-nav a:hover,
+        .sidebar-nav a.active {
+            color: #3f51b5;
+        }
+
+        /* App name in sidebar */
+        .app-name-link {
+            color: #303f9f !important;
+            font-weight: 600;
+        }
+
+        /* Content */
+        .markdown-section {
+            max-width: 900px;
+            color: #212529;
+        }
+
+        .markdown-section a {
+            color: #3f51b5;
+        }
+
+        .markdown-section a:hover {
+            color: #303f9f;
+        }
+
+        /* Headings */
+        .markdown-section h1,
+        .markdown-section h2 {
+            color: #303f9f;
+            border-bottom: 1px solid #e9ecef;
+            padding-bottom: 0.5rem;
+        }
+
+        .markdown-section h3,
+        .markdown-section h4 {
+            color: #212529;
+        }
+
+        /* Code blocks */
+        .markdown-section pre {
+            border-left: 3px solid #3f51b5;
+            background: #f8f9fa;
+        }
+
+        .markdown-section code {
+            background: #e8eaf6;
+            color: #303f9f;
+            padding: 0.2em 0.4em;
+            border-radius: 3px;
+        }
+
+        .markdown-section pre code {
+            background: transparent;
+            color: inherit;
+            padding: 0;
+        }
+
+        /* Tables */
+        .markdown-section table {
+            border-collapse: collapse;
+        }
+
+        .markdown-section table th {
+            background: #e8eaf6;
+            color: #303f9f;
+            border: 1px solid #c5cae9;
+        }
+
+        .markdown-section table td {
+            border: 1px solid #e9ecef;
+        }
+
+        .markdown-section table tr:nth-child(even) {
+            background: #f8f9fa;
+        }
+
+        /* Blockquotes */
+        .markdown-section blockquote {
+            border-left: 4px solid #3f51b5;
+            background: #f8f9fa;
+            color: #6c757d;
+            margin: 1em 0;
+            padding: 0.5em 1em;
+        }
+
+        /* Copy button */
+        .docsify-copy-code-button {
+            background: #3f51b5 !important;
+            color: #fff !important;
+        }
+
+        .docsify-copy-code-button:hover {
+            background: #303f9f !important;
+        }
+
+        /* Search */
+        .search input {
+            border-color: #c5cae9 !important;
+        }
+
+        .search input:focus {
+            border-color: #3f51b5 !important;
+            box-shadow: 0 0 0 2px #e8eaf6 !important;
+        }
+
+        .matching-post {
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        .matching-post .search-keyword {
+            background: #e8eaf6;
+            color: #303f9f;
+        }
+
+        /* Pagination */
+        .pagination-item-title {
+            color: #3f51b5;
+        }
+
+        .pagination-item:hover .pagination-item-title {
+            color: #303f9f;
+        }
+
+        /* Hide sidebar toggle on desktop */
+        @media (min-width: 768px) {
+            .sidebar-toggle {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="app">Loading...</div>
+    <script>
+        window.$docsify = {
+            name: 'Docker WebDev',
+            basePath: '/docs/guides/',
+            homepage: 'README.md',
+            loadSidebar: true,
+            subMaxLevel: 2,
+            auto2top: true,
+            search: {
+                placeholder: 'Search...',
+                noData: 'No results found',
+                depth: 3
+            },
+            copyCode: {
+                buttonText: 'Copy',
+                successText: 'Copied'
+            },
+            pagination: {
+                crossChapter: true,
+                crossChapterText: true
+            },
+            themeColor: '#3f51b5'
+        }
+    </script>
+    <!-- Docsify Core -->
+    <script src="https://cdn.jsdelivr.net/npm/docsify@4/lib/docsify.min.js"></script>
+    <!-- Plugins -->
+    <script src="https://cdn.jsdelivr.net/npm/docsify@4/lib/plugins/search.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/docsify-copy-code@2/dist/docsify-copy-code.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/docsify-pagination@2/dist/docsify-pagination.min.js"></script>
+    <!-- Syntax Highlighting -->
+    <script src="https://cdn.jsdelivr.net/npm/prismjs@1/components/prism-bash.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/prismjs@1/components/prism-php.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/prismjs@1/components/prism-typescript.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/prismjs@1/components/prism-yaml.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/prismjs@1/components/prism-json.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/prismjs@1/components/prism-nginx.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/prismjs@1/components/prism-docker.min.js"></script>
+</body>
+</html>

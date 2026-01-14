@@ -1,0 +1,292 @@
+/**
+ * Custom PHPDocumentor Theme Override
+ * Unified Documentation Color Palette:
+ * - Primary: #3f51b5 (Indigo)
+ * - Primary Dark: #303f9f
+ * - Primary Light: #c5cae9
+ * - Primary Lighter: #e8eaf6
+ * - Text: #212529
+ * - Text Muted: #6c757d
+ * - Background: #fff
+ * - Background Secondary: #f8f9fa
+ * - Border: #e9ecef
+ */
+
+:root {
+    /* Override the HSL-based color system completely */
+    --primary-color-hue: 231 !important;
+    --primary-color-saturation: 48% !important;
+    --primary-color: #3f51b5 !important;
+    --primary-color-darken: #303f9f !important;
+    --primary-color-darker: #1a237e !important;
+    --primary-color-lighten: #7986cb !important;
+    --primary-color-lighter: #e8eaf6 !important;
+
+    /* Override any green hue references */
+    --color-hue-phpdocumentor-green: 231 !important;
+
+    /* Text colors */
+    --text-color: #212529 !important;
+    --link-color-primary: #3f51b5 !important;
+    --link-hover-color-primary: #303f9f !important;
+}
+
+/* ============================================
+   HEADER - White background like Docsify
+   ============================================ */
+.phpdocumentor-header {
+    background: #fff !important;
+    border-bottom: 1px solid #e9ecef !important;
+}
+
+.phpdocumentor-title__link,
+.phpdocumentor-title__link:link,
+.phpdocumentor-title__link:visited {
+    color: #303f9f !important;
+    font-weight: 600;
+}
+
+.phpdocumentor-header a,
+.phpdocumentor-topnav a {
+    color: #212529 !important;
+}
+
+.phpdocumentor-header a:hover,
+.phpdocumentor-topnav a:hover {
+    color: #3f51b5 !important;
+}
+
+/* Search icon in header */
+.phpdocumentor-search__icon {
+    color: #212529 !important;
+}
+
+/* ============================================
+   SIDEBAR
+   ============================================ */
+.phpdocumentor-sidebar {
+    background: #fff !important;
+}
+
+.phpdocumentor-sidebar__category-header {
+    color: #303f9f !important;
+    border-bottom-color: #e8eaf6 !important;
+}
+
+.phpdocumentor-sidebar a {
+    color: #212529 !important;
+}
+
+.phpdocumentor-sidebar a:hover {
+    color: #3f51b5 !important;
+}
+
+.phpdocumentor-sidebar__root-namespace > a {
+    color: #303f9f !important;
+}
+
+/* ============================================
+   CONTENT AREA
+   ============================================ */
+body {
+    background: #fff !important;
+}
+
+.phpdocumentor {
+    background: #fff !important;
+}
+
+.phpdocumentor-content {
+    color: #212529 !important;
+}
+
+/* Links */
+.phpdocumentor a {
+    color: #3f51b5 !important;
+}
+
+.phpdocumentor a:hover {
+    color: #303f9f !important;
+}
+
+/* Headings */
+.phpdocumentor-content__title {
+    color: #303f9f !important;
+}
+
+.phpdocumentor h1,
+.phpdocumentor h2,
+.phpdocumentor h3,
+.phpdocumentor h4 {
+    color: #212529 !important;
+}
+
+/* Breadcrumbs */
+.phpdocumentor-breadcrumb a {
+    color: #3f51b5 !important;
+}
+
+/* ============================================
+   ELEMENTS / CARDS
+   ============================================ */
+.phpdocumentor-element {
+    border-color: #e8eaf6 !important;
+    background: #fff !important;
+}
+
+.phpdocumentor-element .phpdocumentor-element {
+    border-color: #c5cae9 !important;
+}
+
+.phpdocumentor-element:hover {
+    border-color: #3f51b5 !important;
+}
+
+/* Element found in / source button */
+.phpdocumentor-element-found-in__source {
+    background: #3f51b5 !important;
+    color: #fff !important;
+}
+
+.phpdocumentor-element-found-in__source:hover {
+    background: #303f9f !important;
+}
+
+/* ============================================
+   SIGNATURES
+   ============================================ */
+.phpdocumentor-signature {
+    border-left: 3px solid #c5cae9 !important;
+    background: #f8f9fa !important;
+}
+
+.phpdocumentor-signature__name {
+    color: #303f9f !important;
+}
+
+/* Type hints */
+.phpdocumentor-signature-type,
+.phpdocumentor-type,
+a.phpdocumentor-type {
+    color: #3f51b5 !important;
+}
+
+/* ============================================
+   TABLE OF CONTENTS
+   ============================================ */
+.phpdocumentor-table-of-contents {
+    background: #f8f9fa !important;
+    border-color: #e8eaf6 !important;
+}
+
+.phpdocumentor-table-of-contents__entry {
+    border-left-color: transparent !important;
+}
+
+.phpdocumentor-table-of-contents__entry.-active,
+.phpdocumentor-table-of-contents__entry:hover {
+    border-left-color: #3f51b5 !important;
+    background: #e8eaf6 !important;
+}
+
+.phpdocumentor-table-of-contents__entry a {
+    color: #212529 !important;
+}
+
+.phpdocumentor-table-of-contents__entry a:hover {
+    color: #3f51b5 !important;
+}
+
+/* Override green SVG badges with Indigo - Circle badges */
+.phpdocumentor-table-of-contents .phpdocumentor-table-of-contents__entry:before {
+    background-image: url('data:image/svg+xml;utf8,<svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="10" cy="10" r="10" fill="%233f51b5"/></svg>') !important;
+}
+
+.phpdocumentor-table-of-contents .phpdocumentor-table-of-contents__entry.-method:before,
+.phpdocumentor-table-of-contents .phpdocumentor-table-of-contents__entry.-function:before {
+    background-image: url('data:image/svg+xml;utf8,<svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="10" cy="10" r="10" fill="%233f51b5"/></svg>') !important;
+}
+
+/* Diamond badges for constants */
+.phpdocumentor-table-of-contents .phpdocumentor-table-of-contents__entry.-constant:before {
+    background-image: url('data:image/svg+xml;utf8,<svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="-3.05176e-05" y="9.99998" width="14.1422" height="14.1422" transform="rotate(-45 -3.05176e-05 9.99998)" fill="%233f51b5"/></svg>') !important;
+}
+
+/* ============================================
+   TAGS
+   ============================================ */
+.phpdocumentor-tag-list__heading {
+    color: #303f9f !important;
+}
+
+.phpdocumentor-tag__name {
+    color: #3f51b5 !important;
+}
+
+/* ============================================
+   CODE
+   ============================================ */
+.phpdocumentor pre {
+    border-left: 3px solid #3f51b5 !important;
+    background: #f8f9fa !important;
+}
+
+.phpdocumentor code {
+    background: #f8f9fa !important;
+    color: #212529 !important;
+}
+
+/* ============================================
+   ICONS / BADGES - Override green SVGs
+   ============================================ */
+.phpdocumentor-element__modifier,
+.phpdocumentor-visibility {
+    background-color: #3f51b5 !important;
+}
+
+/* Class/interface/trait icons */
+.phpdocumentor-class-graph__node circle,
+.phpdocumentor-class-graph__node rect {
+    fill: #3f51b5 !important;
+}
+
+/* Summary icons */
+.phpdocumentor-summary__icon {
+    color: #3f51b5 !important;
+}
+
+/* ============================================
+   BUTTONS
+   ============================================ */
+.phpdocumentor button,
+.phpdocumentor .btn {
+    background: #3f51b5 !important;
+    border-color: #3f51b5 !important;
+    color: #fff !important;
+}
+
+.phpdocumentor button:hover,
+.phpdocumentor .btn:hover {
+    background: #303f9f !important;
+    border-color: #303f9f !important;
+}
+
+/* ============================================
+   ADMONITIONS
+   ============================================ */
+.phpdocumentor-admonition {
+    border-left-color: #3f51b5 !important;
+}
+
+/* ============================================
+   GRAPHS / DIAGRAMS
+   ============================================ */
+.phpdocumentor-class-graph .edge path {
+    stroke: #3f51b5 !important;
+}
+
+.phpdocumentor-class-graph .node polygon,
+.phpdocumentor-class-graph .node ellipse {
+    stroke: #3f51b5 !important;
+    fill: #e8eaf6 !important;
+}
