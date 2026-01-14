@@ -1,6 +1,7 @@
 # PhpStorm/JetBrains IDE Configuration
 
-This directory contains PhpStorm/JetBrains IDE project configuration for the zappzarapp project.
+This directory contains PhpStorm/JetBrains IDE project configuration for the
+zappzarapp project.
 
 ## Files
 
@@ -80,7 +81,8 @@ Code inspection settings:
 
 #### SSL
 
-- **SSL: Generate Self-Signed** - Generate self-signed certificate for development
+- **SSL: Generate Self-Signed** - Generate self-signed certificate for
+  development
 - **SSL: Show Certificate Info** - Display SSL certificate information
 
 #### Utilities
@@ -89,7 +91,8 @@ Code inspection settings:
 - **Shell: PHP Container** - Open bash shell in PHP container
 - **Shell: Node Container** - Open bash shell in Node container
 
-**Access Run Configurations:** `Alt+Shift+F10` (Linux/Windows) or `Ctrl+Option+R` (macOS)
+**Access Run Configurations:** `Alt+Shift+F10` (Linux/Windows) or
+`Ctrl+Option+R` (macOS)
 
 ### Other Configuration Files
 
@@ -243,21 +246,20 @@ Enable automatic formatting:
 
 This PhpStorm configuration provides feature parity with VS Code:
 
-<!-- prettier-ignore -->
-| Feature            | PhpStorm           | VS Code                |
-| ------------------ | ------------------ | ---------------------- |
-| PHP Interpreter    | Docker Compose     | Intelephense + Docker  |
-| Code Style         | PHP CS Fixer       | PHP CS Fixer           |
-| Static Analysis    | PHPStan Level 5    | PHPStan Level 5        |
-| Mess Detection     | PHPMD              | PHPMD                  |
-| Testing            | PHPUnit            | PHPUnit Test Explorer  |
-| Debugging          | Xdebug 3.5.0       | Xdebug 3.5.0           |
-| JS/TS Linting      | ESLint (built-in)  | ESLint                 |
-| Formatting         | Prettier (built-in)| Prettier               |
-| Database Tools     | Built-in DataGrip  | SQL Tools              |
-| Git Integration    | Built-in VCS       | GitLens                |
-| Run Configurations | 25 pre-configured  | 23 tasks               |
-| Docker Integration | Built-in           | Docker Extension       |
+| Feature            | PhpStorm            | VS Code               |
+| ------------------ | ------------------- | --------------------- |
+| PHP Interpreter    | Docker Compose      | Intelephense + Docker |
+| Code Style         | PHP CS Fixer        | PHP CS Fixer          |
+| Static Analysis    | PHPStan Level 5     | PHPStan Level 5       |
+| Mess Detection     | PHPMD               | PHPMD                 |
+| Testing            | PHPUnit             | PHPUnit Test Explorer |
+| Debugging          | Xdebug 3.5.0        | Xdebug 3.5.0          |
+| JS/TS Linting      | ESLint (built-in)   | ESLint                |
+| Formatting         | Prettier (built-in) | Prettier              |
+| Database Tools     | Built-in DataGrip   | SQL Tools             |
+| Git Integration    | Built-in VCS        | GitLens               |
+| Run Configurations | 25 pre-configured   | 23 tasks              |
+| Docker Integration | Built-in            | Docker Extension      |
 
 ## Troubleshooting
 

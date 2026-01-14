@@ -52,6 +52,17 @@ export default defineConfig({
     watch: {
       usePolling: true,
       interval: 100,
+      // Ignore config files to prevent file locks during git operations
+      ignored: [
+        '**/node_modules/**',
+        '**/.git/**',
+        '**/.*ignore',
+        '**/.*rc',
+        '**/.*rc.json',
+        '**/*.config.js',
+        '**/*.config.cjs',
+        '**/*.config.ts',
+      ],
     },
 
     // CORS - explicitly allow localhost:8080

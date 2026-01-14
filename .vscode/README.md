@@ -1,6 +1,7 @@
 # Visual Studio Code Configuration
 
-This directory contains VS Code workspace configuration for the zappzarapp project.
+This directory contains VS Code workspace configuration for the zappzarapp
+project.
 
 ## Files
 
@@ -145,7 +146,8 @@ Debug configurations:
 
 ### 1. Install Recommended Extensions
 
-When you open this project in VS Code, you'll be prompted to install recommended extensions. Click "Install All" to get started.
+When you open this project in VS Code, you'll be prompted to install recommended
+extensions. Click "Install All" to get started.
 
 Alternatively, run:
 
@@ -250,19 +252,18 @@ Linting happens in real-time:
 
 This VS Code configuration provides feature parity with the PhpStorm setup:
 
-<!-- prettier-ignore -->
-| Feature         | PhpStorm          | VS Code               |
-| --------------- | ----------------- | --------------------- |
-| PHP Interpreter | Docker Compose    | Intelephense + Docker |
-| Code Style      | PHP CS Fixer      | PHP CS Fixer          |
-| Static Analysis | PHPStan Level 5   | PHPStan Level 5       |
-| Mess Detection  | PHPMD             | PHPMD                 |
-| Testing         | PHPUnit           | PHPUnit Test Explorer |
-| Debugging       | Xdebug 3.5.0      | Xdebug 3.5.0          |
-| JS/TS Linting   | ESLint            | ESLint                |
-| Formatting      | Prettier          | Prettier              |
-| Database Tools  | Built-in          | SQL Tools             |
-| Git Integration | Built-in          | GitLens               |
+| Feature         | PhpStorm        | VS Code               |
+| --------------- | --------------- | --------------------- |
+| PHP Interpreter | Docker Compose  | Intelephense + Docker |
+| Code Style      | PHP CS Fixer    | PHP CS Fixer          |
+| Static Analysis | PHPStan Level 5 | PHPStan Level 5       |
+| Mess Detection  | PHPMD           | PHPMD                 |
+| Testing         | PHPUnit         | PHPUnit Test Explorer |
+| Debugging       | Xdebug 3.5.0    | Xdebug 3.5.0          |
+| JS/TS Linting   | ESLint          | ESLint                |
+| Formatting      | Prettier        | Prettier              |
+| Database Tools  | Built-in        | SQL Tools             |
+| Git Integration | Built-in        | GitLens               |
 
 ## Troubleshooting
 

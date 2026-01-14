@@ -1,6 +1,6 @@
 # zappzarapp - Changelog
 
-**Erstellt:** 2025-12-19 **Letzte Aktualisierung:** 2026-01-14 (Branding &
+**Erstellt:** 2025-12-19 **Letzte Aktualisierung:** 2026-01-15 (Branding &
 Project Identity) **Version:** 3.40
 
 ---
@@ -61,6 +61,16 @@ identity, favicon, and comprehensive documentation improvements.
 - **Updated**: `.gitignore` to include `docs/assets/` directory
 - **Updated**: `typedoc.json` with favicon option
 - **Updated**: `phpdoc.xml` with shorter title for better display
+
+#### Developer Experience
+
+- **Fixed**: `.prettierignore` now allows local formatting of `.idea/` and
+  `.vscode/` markdown files (not mounted in container)
+- **Fixed**: Vite file watcher ignores config files to prevent "Resource busy"
+  errors during git operations
+- **Fixed**: `lint-staged` uses standard stash mode (removed `--no-stash` for
+  better Docker compatibility)
+- **Changed**: `composer validate` without `--strict` to allow `version` field
 
 ---
 

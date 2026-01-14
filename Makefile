@@ -1301,7 +1301,7 @@ test-coverage-node: ## Generate Vitest coverage report (HTML in build/coverage/n
 
 validate: ## Validate composer.json/lock and package.json/lock files
 	@echo -e "\033[0;33mValidating Composer configuration...\033[0m"
-	@docker compose exec php composer validate --strict
+	@docker compose exec php composer validate
 	@echo -e "\033[0;32m✓ Composer configuration is valid!\033[0m"
 	@echo ""
 	@echo -e "\033[0;33mValidating pnpm lockfile...\033[0m"

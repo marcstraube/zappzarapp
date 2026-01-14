@@ -15,8 +15,6 @@ coverage
 .vite
 
 # IDE
-.idea
-.vscode
 *.swp
 *.swo
 

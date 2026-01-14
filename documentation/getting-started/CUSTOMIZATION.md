@@ -35,6 +35,10 @@ After cloning zappzarapp, customize these files to make it your own project.
 }
 ```
 
+> **Note:** If you plan to publish your package on Packagist, remove the
+> `version` field. Packagist derives the version automatically from Git tags.
+> The `version` field is only needed for the dynamic API documentation titles.
+
 ### package.json
 
 ```json

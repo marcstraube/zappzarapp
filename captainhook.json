@@ -14,7 +14,7 @@
     "enabled": true,
     "actions": [
       {
-        "action": "docker compose exec -T node pnpm exec lint-staged --no-stash",
+        "action": "docker compose exec -T node pnpm exec lint-staged",
         "options": [],
         "type": "cli",
         "description": "Fix code style on staged Node.js files (TS/JS, JSON, MD) via Prettier, ESLint, Markdownlint (auto-fix and re-stage)"
