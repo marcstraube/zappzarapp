@@ -250,18 +250,19 @@ Linting happens in real-time:
 
 This VS Code configuration provides feature parity with the PhpStorm setup:
 
-| Feature | PhpStorm | VS Code |
-|---------|----------|---------|
-| PHP Interpreter | Docker Compose | Intelephense + Docker |
-| Code Style | PHP CS Fixer | PHP CS Fixer |
-| Static Analysis | PHPStan Level 5 | PHPStan Level 5 |
-| Mess Detection | PHPMD | PHPMD |
-| Testing | PHPUnit | PHPUnit Test Explorer |
-| Debugging | Xdebug 3.5.0 | Xdebug 3.5.0 |
-| JS/TS Linting | ESLint | ESLint |
-| Formatting | Prettier | Prettier |
-| Database Tools | Built-in | SQL Tools |
-| Git Integration | Built-in | GitLens |
+<!-- prettier-ignore -->
+| Feature         | PhpStorm          | VS Code               |
+| --------------- | ----------------- | --------------------- |
+| PHP Interpreter | Docker Compose    | Intelephense + Docker |
+| Code Style      | PHP CS Fixer      | PHP CS Fixer          |
+| Static Analysis | PHPStan Level 5   | PHPStan Level 5       |
+| Mess Detection  | PHPMD             | PHPMD                 |
+| Testing         | PHPUnit           | PHPUnit Test Explorer |
+| Debugging       | Xdebug 3.5.0      | Xdebug 3.5.0          |
+| JS/TS Linting   | ESLint            | ESLint                |
+| Formatting      | Prettier          | Prettier              |
+| Database Tools  | Built-in          | SQL Tools             |
+| Git Integration | Built-in          | GitLens               |
 
 ## Troubleshooting
 
