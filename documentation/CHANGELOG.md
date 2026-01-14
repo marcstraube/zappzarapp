@@ -1,11 +1,70 @@
 # Docker WebDev Boilerplate - Changelog
 
-**Erstellt:** 2025-12-19 **Letzte Aktualisierung:** 2026-01-14 (Welcome Page &
-Health Check Improvements) **Version:** 3.38
+**Erstellt:** 2025-12-19 **Letzte Aktualisierung:** 2026-01-14 (Dependency
+Injection & Test Data Libraries) **Version:** 3.39
 
 ---
 
 ## Changelog
+
+### Version 3.39 (2026-01-14) - Dependency Injection & Test Data Libraries
+
+Added PSR-11 compatible Dependency Injection using php-di with auto-wiring
+support. Both App and DevDashboard now use constructor injection for cleaner,
+more testable code. Also added FakerPHP and @faker-js/faker for test data
+generation.
+
+#### Dependency Injection (php-di)
+
+- **New**: `php-di/php-di` as production dependency
+- **New**: `config/container.php` for App container configuration
+- **New**: DI container initialization in `public/index.php`
+- **Refactored**: `WelcomeController` uses constructor injection for ViteHelper
+  and HealthCheck
+- **Refactored**: `StatusController` uses constructor injection for HealthCheck
+- **Refactored**: `DashboardController` uses constructor injection for all 5
+  services
+
+#### DevDashboard Container Isolation
+
+- **New**: DevDashboard uses its own isolated DI container (not shared with App)
+- **Benefit**: Changes to App's container config don't affect DevDashboard
+
+#### Test Data Libraries
+
+- **New**: `fakerphp/faker` (PHP) as dev dependency
+- **New**: `@faker-js/faker` (Node.js) as dev dependency
+- **Use case**: Generate realistic test data for unit tests and database seeders
+
+#### Code Style Enforcement
+
+- **New**: PHP-CS-Fixer rule `fully_qualified_strict_types` enforces use
+  statements
+- **New**: PHP-CS-Fixer rule `global_namespace_import` enforces class imports
+- **Effect**: `new \DI\ContainerBuilder()` → `use DI\ContainerBuilder;` +
+  `new ContainerBuilder()`
+
+#### Documentation
+
+- **Updated**: `documentation/development/DEV-DASHBOARD.md` with DI examples
+- **Updated**: Service usage examples now show `$this->serviceName->method()`
+  pattern
+- **Updated**: "Adding New Services" guide updated for constructor injection
+
+#### Tests
+
+- **Updated**: `DashboardControllerTest` uses factory method to create
+  controller with dependencies
+
+#### Pre-Commit Hook Improvements
+
+- **Fixed**: Root config files (`.php-cs-fixer.dist.php`, `rector.php`) excluded
+  from PHP pre-commit hooks
+- **Fixed**: Root config files (`*.config.js`, `*.config.ts`) excluded from
+  lint-staged (mounted as read-only)
+- **Fixed**: `typedoc.json` now mounted as read-only in Node container
+- **Reason**: Config files are mounted read-only for security and should not be
+  auto-fixed by linters
 
 ### Version 3.38 (2026-01-14) - Welcome Page & Health Check Improvements
 

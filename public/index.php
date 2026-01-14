@@ -8,8 +8,26 @@ declare(strict_types=1);
  * This file is the entry point for all HTTP requests routed through Nginx.
  */
 
+use App\Http\Controller\ExampleController;
+use App\Http\Controller\StatusController;
+use App\Http\Controller\WelcomeController;
+use App\Http\Middleware\CorsMiddleware;
+use App\Http\Router;
+use DI\ContainerBuilder;
+
 // Load Composer Autoloader
 require_once __DIR__ . '/../vendor/autoload.php';
+
+/**
+ * ============================================================================
+ * DEPENDENCY INJECTION CONTAINER
+ * ============================================================================
+ * Initialize the PSR-11 compatible DI container with auto-wiring support.
+ * Configuration is loaded from config/container.php.
+ */
+$containerBuilder = new ContainerBuilder();
+$containerBuilder->addDefinitions(__DIR__ . '/../config/container.php');
+$container = $containerBuilder->build();
 
 /**
  * ============================================================================
@@ -18,7 +36,7 @@ require_once __DIR__ . '/../vendor/autoload.php';
  * Handles Cross-Origin Resource Sharing based on CORS_ORIGINS environment variable.
  * Must be called before any output to set headers correctly.
  */
-$corsMiddleware = new \App\Http\Middleware\CorsMiddleware();
+$corsMiddleware = new CorsMiddleware();
 if (!$corsMiddleware->handle()) {
     // OPTIONS preflight request handled - exit early
     exit;
@@ -103,17 +121,12 @@ define('CSP_NONCE', $nonce);
 */
 
 // Simple Routing Example
-use App\Http\Router;
-use App\Http\Controller\ExampleController;
-use App\Http\Controller\WelcomeController;
-use App\Http\Controller\StatusController;
-
 $router = new Router();
 
-// Controllers
-$exampleController = new ExampleController();
-$welcomeController = new WelcomeController();
-$statusController  = new StatusController();
+// Controllers (resolved via DI container with auto-wiring)
+$exampleController = $container->get(ExampleController::class);
+$welcomeController = $container->get(WelcomeController::class);
+$statusController  = $container->get(StatusController::class);
 
 // Routes
 $router->get('/', [$welcomeController, 'index']);          // Main landing page

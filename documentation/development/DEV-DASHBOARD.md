@@ -12,6 +12,7 @@ configurations:
 | ----------- | -------- | -------------------------------------------- |
 | **Nginx**   | Yes      | Serves the dashboard                         |
 | **PHP-FPM** | Yes      | Runs the dashboard PHP code                  |
+| **php-di**  | Yes      | Dependency injection (auto-wiring)           |
 | Node.js     | No       | Only needed for welcome page (Vite HMR)      |
 | Database    | No       | Dashboard shows connection status if enabled |
 | Redis       | No       | Dashboard shows connection status if enabled |
@@ -179,31 +180,65 @@ if (str_starts_with($requestPath, '/_dev')) {
 }
 ```
 
+### Dependency Injection
+
+DevDashboard uses its own isolated DI container (separate from the App
+container). This ensures that changes to the App's container configuration don't
+affect the dashboard:
+
+```php
+// src/php/DevDashboard/routes.php
+use DI\ContainerBuilder;
+
+// DevDashboard uses its own DI container (isolated from App container)
+// Only auto-wiring, no explicit configuration needed
+$containerBuilder = new ContainerBuilder();
+$container        = $containerBuilder->build();
+$controller       = $container->get(DashboardController::class);
+```
+
+The controller receives its dependencies via constructor injection:
+
+```php
+class DashboardController
+{
+    public function __construct(
+        private readonly HealthCheckService $healthCheckService,
+        private readonly SystemInfoService $systemInfoService,
+        private readonly QualityService $qualityService,
+        private readonly LogService $logService,
+        private readonly DatabaseService $databaseService,
+    ) {}
+}
+```
+
 ### Routing
 
 Simple function-based routing without external dependencies:
 
 ```php
-route('GET', '/_dev', [$controller, 'index']);
-route('GET', '/_dev/system', [$controller, 'system']);
-route('GET', '/_dev/health', [$controller, 'health']);
+route('GET', '/_dev', $controller->index(...));
+route('GET', '/_dev/system', $controller->system(...));
+route('GET', '/_dev/health', $controller->health(...));
 ```
 
 ## Services
+
+All services are injected via constructor and available as class properties.
 
 ### HealthCheckService
 
 Provides health check functionality:
 
 ```php
-$service = new HealthCheckService();
+// In controller (injected via constructor)
 
 // Overall health status
-$status = $service->getOverallStatus();
+$status = $this->healthCheckService->getOverallStatus();
 // Returns: ['status' => 'healthy|degraded', 'healthy_count' => 5, 'unhealthy_count' => 0, ...]
 
 // Services by category (core, data, optional)
-$services = $service->getServices();
+$services = $this->healthCheckService->getServices();
 // Returns: [
 //   'core' => ['nginx' => [...], 'php' => [...], 'node' => [...]],
 //   'data' => ['postgres' => [...], 'redis' => [...]],
@@ -211,14 +246,14 @@ $services = $service->getServices();
 // ]
 
 // Detailed connection tests (with version info)
-$connections = $service->getConnections();
+$connections = $this->healthCheckService->getConnections();
 // Returns: [
 //   'database' => ['connected' => true, 'type' => 'PostgreSQL', 'version' => '17.2', ...],
 //   'redis' => ['connected' => true, 'type' => 'Redis', 'version' => '7.4.2', ...]
 // ]
 
 // SSL certificate info
-$ssl = $service->getSslInfo();
+$ssl = $this->healthCheckService->getSslInfo();
 ```
 
 ### SystemInfoService
@@ -226,22 +261,22 @@ $ssl = $service->getSslInfo();
 Provides system information:
 
 ```php
-$service = new SystemInfoService();
+// In controller (injected via constructor)
 
 // Basic info
-$info = $service->getBasicInfo();
+$info = $this->systemInfoService->getBasicInfo();
 
 // PHP version
-$version = $service->getPhpVersion();
+$version = $this->systemInfoService->getPhpVersion();
 
 // PHP extensions
-$extensions = $service->getPhpExtensions();
+$extensions = $this->systemInfoService->getPhpExtensions();
 
 // Environment variables (filtered)
-$env = $service->getEnvironmentVariables();
+$env = $this->systemInfoService->getEnvironmentVariables();
 
 // Git status
-$git = $service->getGitStatus();
+$git = $this->systemInfoService->getGitStatus();
 ```
 
 ### LogService
@@ -249,23 +284,23 @@ $git = $service->getGitStatus();
 Provides access to application and service logs:
 
 ```php
-$service = new LogService();
+// In controller (injected via constructor)
 
 // Get available log sources (only enabled services)
-$sources = $service->getAvailableLogSources();
+$sources = $this->logService->getAvailableLogSources();
 // Returns filtered list based on ENABLE_* environment variables
 
 // Get application log files from storage/logs/
-$logs = $service->getApplicationLogs();
+$logs = $this->logService->getApplicationLogs();
 
 // Read log file content (tail)
-$content = $service->readLogFile('laravel.log', 100);
+$content = $this->logService->readLogFile('laravel.log', 100);
 
 // Get CLI log commands
-$commands = $service->getLogCommands();
+$commands = $this->logService->getLogCommands();
 
 // Get log statistics
-$stats = $service->getLogStatistics();
+$stats = $this->logService->getLogStatistics();
 ```
 
 ## Testing
@@ -335,12 +370,23 @@ docker compose exec php sh -c 'XDEBUG_MODE=coverage vendor/bin/phpunit \
    }
    ```
 
-2. Use in controller:
+2. Add to controller constructor (auto-wiring handles the rest):
 
    ```php
-   require_once __DIR__ . '/../Services/MyService.php';
-   $service = new MyService();
-   $data = $service->getData();
+   public function __construct(
+       // ... existing services
+       private readonly MyService $myService,
+   ) {}
+   ```
+
+3. Use in controller method:
+
+   ```php
+   public function myPage(): void
+   {
+       $data = $this->myService->getData();
+       $this->render('mypage', ['data' => $data]);
+   }
    ```
 
 ## Removal

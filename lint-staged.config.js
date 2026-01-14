@@ -7,16 +7,30 @@
  *
  * Note: This runs inside the Node container via CaptainHook.
  * PHP files are handled separately in captainhook.json (PHP-CS-Fixer with autofix).
+ *
+ * Root config files (*.config.js, *.config.ts, etc.) are excluded because they are
+ * mounted as read-only in containers for security. Edit them manually if needed.
  */
 export default {
   // TypeScript/JavaScript files (auto-fix and re-stage)
-  '*.{ts,js}': [
+  // Excludes root config files (mounted as read-only in containers)
+  'src/**/*.{ts,js}': [
+    'pnpm exec prettier --write',
+    'pnpm exec eslint --fix --max-warnings=0 --no-warn-ignored',
+  ],
+  'tests/**/*.{ts,js}': [
+    'pnpm exec prettier --write',
+    'pnpm exec eslint --fix --max-warnings=0 --no-warn-ignored',
+  ],
+  'resources/**/*.{ts,js}': [
     'pnpm exec prettier --write',
     'pnpm exec eslint --fix --max-warnings=0 --no-warn-ignored',
   ],
 
-  // JSON files (auto-fix and re-stage, excluding auto-generated package manager configs)
-  '!(composer|package|package-lock).json': ['pnpm exec prettier --write'],
+  // JSON files (auto-fix and re-stage, excluding auto-generated and config files)
+  '!(composer|package|package-lock|tsconfig*|typedoc|.prettierrc|.markdownlint*|.depcheckrc).json': [
+    'pnpm exec prettier --write',
+  ],
 
   // Markdown files (auto-fix and re-stage)
   // Prettier first (formats tables), then markdownlint (checks remaining issues)

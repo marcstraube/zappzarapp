@@ -9,6 +9,8 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\RunInSeparateProcess;
 use PHPUnit\Framework\TestCase;
+use InvalidArgumentException;
+use PDO;
 
 /**
  * Tests for DatabaseConfig (12-Factor App compliant configuration)
@@ -283,7 +285,7 @@ final class DatabaseConfigTest extends TestCase
     {
         putenv('DATABASE_URL=invalid-url-without-scheme');
 
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage('Invalid DATABASE_URL format');
 
         new DatabaseConfig();
@@ -391,10 +393,10 @@ final class DatabaseConfigTest extends TestCase
 
         $options = $config->getPdoSslOptions();
 
-        $this->assertArrayHasKey(\PDO::MYSQL_ATTR_SSL_CA, $options);
-        $this->assertArrayHasKey(\PDO::MYSQL_ATTR_SSL_VERIFY_SERVER_CERT, $options);
-        $this->assertEquals(__FILE__, $options[\PDO::MYSQL_ATTR_SSL_CA]);
-        $this->assertFalse($options[\PDO::MYSQL_ATTR_SSL_VERIFY_SERVER_CERT]);
+        $this->assertArrayHasKey(PDO::MYSQL_ATTR_SSL_CA, $options);
+        $this->assertArrayHasKey(PDO::MYSQL_ATTR_SSL_VERIFY_SERVER_CERT, $options);
+        $this->assertEquals(__FILE__, $options[PDO::MYSQL_ATTR_SSL_CA]);
+        $this->assertFalse($options[PDO::MYSQL_ATTR_SSL_VERIFY_SERVER_CERT]);
     }
 
     #[RunInSeparateProcess]

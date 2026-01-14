@@ -14,6 +14,11 @@ use App\Infrastructure\HealthCheck;
  */
 class WelcomeController
 {
+    public function __construct(
+        private readonly ViteHelper $vite,
+        private readonly HealthCheck $health,
+    ) {}
+
     /**
      * Display the welcome page.
      *
@@ -21,8 +26,8 @@ class WelcomeController
      */
     public function index(): void
     {
-        $vite   = new ViteHelper();
-        $health = new HealthCheck();
+        $vite   = $this->vite;
+        $health = $this->health;
         $env    = $health->getEnvironment();
         $status = $health->checkAll();
 

@@ -20,16 +20,16 @@
         "description": "Fix code style on staged Node.js files (TS/JS, JSON, MD) via Prettier, ESLint, Markdownlint (auto-fix and re-stage)"
       },
       {
-        "action": "git diff --name-only --cached --diff-filter=d | grep '.php$' | grep -v '^docker/' | xargs -r -I {} docker compose exec -T php php -l /var/www/html/{}",
+        "action": "git diff --name-only --cached --diff-filter=d | grep '.php$' | grep -v '^docker/' | grep -v '^\\.php-cs-fixer' | grep -v '^rector\\.php$' | xargs -r -I {} docker compose exec -T php php -l /var/www/html/{}",
         "options": [],
         "type": "cli",
-        "description": "Check PHP syntax on staged files"
+        "description": "Check PHP syntax on staged files (excludes root config files)"
       },
       {
-        "action": "git diff --name-only --cached --diff-filter=d | grep '.php$' | grep -v '^docker/' | xargs -r sh -c 'docker compose exec -T php vendor/bin/php-cs-fixer fix --config=.php-cs-fixer.dist.php $(echo \"$@\" | sed \"s|[^ ]*|/var/www/html/&|g\") && git add $@' _",
+        "action": "git diff --name-only --cached --diff-filter=d | grep '.php$' | grep -v '^docker/' | grep -v '^\\.php-cs-fixer' | grep -v '^rector\\.php$' | xargs -r sh -c 'docker compose exec -T php vendor/bin/php-cs-fixer fix --config=.php-cs-fixer.dist.php $(echo \"$@\" | sed \"s|[^ ]*|/var/www/html/&|g\") && git add $@' _",
         "options": [],
         "type": "cli",
-        "description": "Fix PHP coding style on staged files (auto-fix and re-stage)"
+        "description": "Fix PHP coding style on staged files (excludes root config files)"
       }
     ]
   },

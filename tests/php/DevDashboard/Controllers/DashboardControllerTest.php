@@ -5,6 +5,11 @@ declare(strict_types=1);
 namespace Tests\DevDashboard\Controllers;
 
 use DevDashboard\Controllers\DashboardController;
+use DevDashboard\Services\DatabaseService;
+use DevDashboard\Services\HealthCheckService;
+use DevDashboard\Services\LogService;
+use DevDashboard\Services\QualityService;
+use DevDashboard\Services\SystemInfoService;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -12,26 +17,27 @@ use PHPUnit\Framework\TestCase;
  */
 class DashboardControllerTest extends TestCase
 {
-    protected function setUp(): void
+    private function createController(): DashboardController
     {
-        parent::setUp();
-
-        // Load required dependencies
-        require_once __DIR__ . '/../../../../src/php/DevDashboard/Services/HealthCheckService.php';
-        require_once __DIR__ . '/../../../../src/php/DevDashboard/Services/SystemInfoService.php';
-        require_once __DIR__ . '/../../../../src/php/DevDashboard/Controllers/DashboardController.php';
+        return new DashboardController(
+            new HealthCheckService(),
+            new SystemInfoService(),
+            new QualityService(),
+            new LogService(),
+            new DatabaseService(),
+        );
     }
 
     public function testControllerCanBeInstantiated(): void
     {
-        $controller = new DashboardController();
+        $controller = $this->createController();
 
         $this->assertInstanceOf(DashboardController::class, $controller);
     }
 
     public function testApiHealthCheckReturnsValidJson(): void
     {
-        $controller = new DashboardController();
+        $controller = $this->createController();
 
         ob_start();
         $controller->apiHealthCheck();
@@ -46,7 +52,7 @@ class DashboardControllerTest extends TestCase
 
     public function testApiServicesStatusReturnsValidJson(): void
     {
-        $controller = new DashboardController();
+        $controller = $this->createController();
 
         ob_start();
         $controller->apiServicesStatus();
@@ -65,7 +71,7 @@ class DashboardControllerTest extends TestCase
     public function testApiLogContentReturnsErrorWithoutFilename(): void
     {
         $_GET       = [];
-        $controller = new DashboardController();
+        $controller = $this->createController();
 
         ob_start();
         $controller->apiLogContent();
@@ -82,7 +88,7 @@ class DashboardControllerTest extends TestCase
     public function testApiLogContentReturnsErrorForNonExistentFile(): void
     {
         $_GET['file'] = 'nonexistent.log';
-        $controller   = new DashboardController();
+        $controller   = $this->createController();
 
         ob_start();
         $controller->apiLogContent();

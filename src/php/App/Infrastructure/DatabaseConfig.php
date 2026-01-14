@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Infrastructure;
 
 use InvalidArgumentException;
+use PDO;
 
 /**
  * Database Configuration Helper (12-Factor App compliant)
@@ -182,8 +183,8 @@ final class DatabaseConfig
         }
 
         return [
-            \PDO::MYSQL_ATTR_SSL_CA                 => $this->sslCa,
-            \PDO::MYSQL_ATTR_SSL_VERIFY_SERVER_CERT => $this->sslVerify,
+            PDO::MYSQL_ATTR_SSL_CA                 => $this->sslCa,
+            PDO::MYSQL_ATTR_SSL_VERIFY_SERVER_CERT => $this->sslVerify,
         ];
     }
 

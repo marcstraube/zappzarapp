@@ -17,24 +17,13 @@ use DevDashboard\Services\SystemInfoService;
  */
 class DashboardController
 {
-    private readonly HealthCheckService $healthCheckService;
-
-    private readonly SystemInfoService $systemInfoService;
-
-    private readonly QualityService $qualityService;
-
-    private readonly LogService $logService;
-
-    private readonly DatabaseService $databaseService;
-
-    public function __construct()
-    {
-        $this->healthCheckService = new HealthCheckService();
-        $this->systemInfoService  = new SystemInfoService();
-        $this->qualityService     = new QualityService();
-        $this->logService         = new LogService();
-        $this->databaseService    = new DatabaseService();
-    }
+    public function __construct(
+        private readonly HealthCheckService $healthCheckService,
+        private readonly SystemInfoService $systemInfoService,
+        private readonly QualityService $qualityService,
+        private readonly LogService $logService,
+        private readonly DatabaseService $databaseService,
+    ) {}
 
     /**
      * Dashboard home page with overview

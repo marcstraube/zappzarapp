@@ -14,6 +14,15 @@ return (new Config())
         'binary_operator_spaces' => [
             'operators' => ['=>' => 'align', '=' => 'align'],
         ],
+        // Enforce qualified imports (use statements) instead of inline FQCN
+        'fully_qualified_strict_types' => [
+            'import_symbols' => true,
+        ],
+        'global_namespace_import' => [
+            'import_classes' => true,
+            'import_constants' => false,
+            'import_functions' => false,
+        ],
     ])
     ->setFinder(
         (new Finder())

@@ -11,6 +11,9 @@ declare(strict_types=1);
 
 namespace DevDashboard;
 
+use DevDashboard\Controllers\DashboardController;
+use DI\ContainerBuilder;
+
 // Only enable dashboard in development or when explicitly enabled
 $isProduction     = (getenv('APP_ENV') ?: 'development') === 'production';
 $dashboardEnabled = getenv('ENABLE_DEV_DASHBOARD') !== 'false';
@@ -34,10 +37,11 @@ function route(string $method, string $path, callable $handler): void
     }
 }
 
-// Import controller
-require_once __DIR__ . '/Controllers/DashboardController.php';
-
-$controller = new Controllers\DashboardController();
+// DevDashboard uses its own DI container (isolated from App container)
+// Only auto-wiring, no explicit configuration needed
+$containerBuilder = new ContainerBuilder();
+$container        = $containerBuilder->build();
+$controller       = $container->get(DashboardController::class);
 
 // Dashboard routes
 route('GET', '/_dev', $controller->index(...));

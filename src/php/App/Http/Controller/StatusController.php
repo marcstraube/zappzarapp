@@ -13,10 +13,13 @@ use App\Infrastructure\HealthCheck;
  */
 class StatusController
 {
+    public function __construct(
+        private readonly HealthCheck $health,
+    ) {}
+
     public function index(): void
     {
-        $health = new HealthCheck();
-        $status = $health->checkAll();
+        $status = $this->health->checkAll();
 
         // Set appropriate HTTP status code
         $httpCode = $status['overall_status'] === 'ok' ? 200 : 503;
