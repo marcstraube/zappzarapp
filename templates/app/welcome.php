@@ -3,19 +3,21 @@
  * Welcome Page Template
  *
  * This template is rendered by WelcomeController and expects the following variables:
- * @var \App\Infrastructure\ViteHelper $vite - Vite asset helper for HMR and production builds
+ * @var ViteHelper $vite - Vite asset helper for HMR and production builds
  * @var array $env - Environment configuration from HealthCheck
  * @var array $status - Service health status from HealthCheck
  */
 
 declare(strict_types=1);
+use App\Infrastructure\ViteHelper;
 ?>
 <!DOCTYPE html>
 <html lang="de">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Docker WebDev Boilerplate</title>
+    <title>zappzarapp</title>
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg">
 
     <!-- Vite Assets - Dynamically loaded based on ENV -->
     <?= $vite->renderCssTags('js/app.js') ?>
@@ -37,8 +39,11 @@ declare(strict_types=1);
     <?php endif; ?>
 
     <div class="card text-center">
-        <h1>🚀 Docker WebDev Boilerplate</h1>
-        <p>Flexibles Setup für PHP und Node.js Entwicklung</p>
+        <h1>⚡ zappzarapp</h1>
+        <p style="font-family: monospace; color: #666; margin: 0.25rem 0;">/ˈt͡sapt͡saˈʁap/</p>
+        <p style="font-style: italic; color: #555; margin: 0.5rem 0 1rem 0;">
+            German for "in a flash" — a professional web dev stack that gets you coding in minutes.
+        </p>
 
         <div class="card" style="margin-top: 2rem; background: #f0f0f0; padding: 1rem; border-radius: 8px;">
             <h3>Current Environment</h3>

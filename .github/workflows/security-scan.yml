@@ -29,7 +29,7 @@ on:
       - 'pnpm-lock.yaml'
 
 env:
-  COMPOSE_PROJECT_NAME: docker-webdev-security
+  COMPOSE_PROJECT_NAME: zappzarapp-security
   SEVERITY: ${{ inputs.severity || 'HIGH,CRITICAL' }}
 
 jobs:

@@ -1,6 +1,6 @@
 # Contributing
 
-Thank you for your interest in contributing to the Docker WebDev Boilerplate!
+Thank you for your interest in contributing to zappzarapp!
 
 ## Important: What NOT to Commit
 

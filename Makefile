@@ -552,7 +552,7 @@ status: ## Show running containers status and image disk usage
 	@echo -e "\033[0;33mContainer Status:\033[0m"
 	@docker compose ps
 	@echo -e "\033[0;33m\nImage Disk Usage:\033[0m"
-	@docker images | grep "$(COMPOSE_PROJECT_NAME:-docker-webdev)"
+	@docker images | grep "$(COMPOSE_PROJECT_NAME:-zappzarapp)"
 
 up: ## Start containers (optionally specify service names: make up php nginx)
 	@if [ ! -f .env ]; then echo -e "\033[0;31mError: .env not found. Run 'make init' first.\033[0m"; exit 1; fi
@@ -574,16 +574,16 @@ up: ## Start containers (optionally specify service names: make up php nginx)
 			echo ""; \
 		fi; \
 		MISSING=""; \
-		if [ "$${ENABLE_PHP:-true}" = "true" ] && ! docker image inspect docker-webdev-php >/dev/null 2>&1; then \
+		if [ "$${ENABLE_PHP:-true}" = "true" ] && ! docker image inspect zappzarapp-php >/dev/null 2>&1; then \
 			MISSING="$$MISSING php"; \
 		fi; \
-		if [ "$${ENABLE_NODE:-true}" = "true" ] && ! docker image inspect docker-webdev-node >/dev/null 2>&1; then \
+		if [ "$${ENABLE_NODE:-true}" = "true" ] && ! docker image inspect zappzarapp-node >/dev/null 2>&1; then \
 			MISSING="$$MISSING node"; \
 		fi; \
-		if ! docker image inspect docker-webdev-nginx >/dev/null 2>&1; then \
+		if ! docker image inspect zappzarapp-nginx >/dev/null 2>&1; then \
 			MISSING="$$MISSING nginx"; \
 		fi; \
-		if [ "$${ENABLE_DATABASE:-true}" = "true" ] && [ "$${DB_TYPE:-postgres}" = "postgres" ] && ! docker image inspect docker-webdev-postgres >/dev/null 2>&1; then \
+		if [ "$${ENABLE_DATABASE:-true}" = "true" ] && [ "$${DB_TYPE:-postgres}" = "postgres" ] && ! docker image inspect zappzarapp-postgres >/dev/null 2>&1; then \
 			MISSING="$$MISSING postgres"; \
 		fi; \
 		if [ -n "$$MISSING" ]; then \
@@ -1258,9 +1258,9 @@ dive: ## Analyze Docker image layers and sizes
 	@echo "  3) nginx"
 	@read -p "Enter choice [1-3]: " choice; \
 	case $$choice in \
-		1) IMAGE=docker-webdev-php ;; \
-		2) IMAGE=docker-webdev-node ;; \
-		3) IMAGE=docker-webdev-nginx ;; \
+		1) IMAGE=zappzarapp-php ;; \
+		2) IMAGE=zappzarapp-node ;; \
+		3) IMAGE=zappzarapp-nginx ;; \
 		*) echo "Invalid choice"; exit 1 ;; \
 	esac; \
 	docker run --rm -it -v /var/run/docker.sock:/var/run/docker.sock wagoodman/dive:latest $$IMAGE
@@ -1467,7 +1467,7 @@ security-sbom: ## Generate a Software Bill of Materials (SBOM) using Trivy
 		. ./.env && \
 		docker run --rm -v /var/run/docker.sock:/var/run/docker.sock \
 			aquasec/trivy:latest image --format cyclonedx --output build/sbom-php.json \
-			$${COMPOSE_PROJECT_NAME:-docker-webdev}-php:latest; \
+			$${COMPOSE_PROJECT_NAME:-zappzarapp}-php:latest; \
 	fi
 	@echo -e "\033[0;32mSBOM generated in build/sbom-php.json!\033[0m"
 
@@ -1478,12 +1478,12 @@ security-scan: ## Scan Docker images for vulnerabilities
 		echo "Scanning PHP image..." && \
 		docker run --rm -v /var/run/docker.sock:/var/run/docker.sock \
 			aquasec/trivy:latest image --severity HIGH,CRITICAL \
-			$${COMPOSE_PROJECT_NAME:-docker-webdev}-php:latest 2>/dev/null || \
+			$${COMPOSE_PROJECT_NAME:-zappzarapp}-php:latest 2>/dev/null || \
 			echo "⚠️  Image not found. Run 'make build' first." && \
 		echo "\nScanning Nginx image..." && \
 		docker run --rm -v /var/run/docker.sock:/var/run/docker.sock \
 			aquasec/trivy:latest image --severity HIGH,CRITICAL \
-			$${COMPOSE_PROJECT_NAME:-docker-webdev}-nginx:latest 2>/dev/null || \
+			$${COMPOSE_PROJECT_NAME:-zappzarapp}-nginx:latest 2>/dev/null || \
 			echo "⚠️  Image not found. Run 'make build' first."; \
 	fi
 	@echo -e "\033[0;32mSecurity scan completed!\033[0m"
@@ -1514,11 +1514,26 @@ docs-php: $(PHPDOC_PHAR) ## Generate PHP API documentation using phpDocumentor
 	@docker compose exec php sh -c '\
 		CSS_CONTENT=$$(cat /var/www/html/documentation/assets/custom-phpdoc.css | tr "\n" " " | sed "s/  */ /g"); \
 		find /var/www/html/docs/api/php -name "*.html" -exec sed -i "s|</head>|<style>$$CSS_CONTENT</style></head>|" {} \;'
+	@echo -e "\033[0;33mSetting favicon...\033[0m"
+	@docker compose exec php sh -c '\
+		find /var/www/html/docs/api/php -name "*.html" -exec sed -i "s|images/favicon.ico|/favicon.svg|g" {} \;'
+	@echo -e "\033[0;33mSetting dynamic title...\033[0m"
+	@docker compose exec php sh -c '\
+		PROJECT_NAME=$$(php -r "echo ucfirst(explode(\"/\", json_decode(file_get_contents(\"/var/www/html/composer.json\"), true)[\"name\"])[1] ?? \"App\");"); \
+		PROJECT_VERSION=$$(php -r "echo json_decode(file_get_contents(\"/var/www/html/composer.json\"), true)[\"version\"] ?? \"0.0.0\";"); \
+		find /var/www/html/docs/api/php -name "*.html" -exec sed -i "s|<title>PHP API</title>|<title>$$PROJECT_NAME - PHP API - v$$PROJECT_VERSION</title>|g" {} \; ; \
+		find /var/www/html/docs/api/php -name "*.html" -exec sed -i "s|>PHP API</a>|>$$PROJECT_NAME - PHP API</a>|g" {} \;'
 	@echo -e "\033[0;32mPHP documentation generated in docs/api/php/\033[0m"
 
 docs-node: ## Generate Node/TypeScript API documentation using TypeDoc
 	@echo -e "\033[0;33mGenerating Node/TypeScript API documentation...\033[0m"
 	@docker compose exec node pnpm run docs
+	@echo -e "\033[0;33mSetting dynamic title...\033[0m"
+	@docker compose exec node sh -c '\
+		PROJECT_NAME=$$(node -e "console.log(require(\"/app/package.json\").name.split(\"/\").pop().replace(/^./, c => c.toUpperCase()))"); \
+		PROJECT_VERSION=$$(node -e "console.log(require(\"/app/package.json\").version || \"0.0.0\")"); \
+		find /app/docs/api/node -name "*.html" -exec sed -i "s|<title>Node API - v$$PROJECT_VERSION</title>|<title>$$PROJECT_NAME - Node API - v$$PROJECT_VERSION</title>|g" {} \; ; \
+		find /app/docs/api/node -name "*.html" -exec sed -i "s|>Node API - v$$PROJECT_VERSION</a>|>$$PROJECT_NAME - Node API</a>|g" {} \;'
 	@echo -e "\033[0;32mNode documentation generated in docs/api/node/\033[0m"
 
 docs-clean: ## Remove generated documentation

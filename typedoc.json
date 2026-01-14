@@ -1,5 +1,6 @@
 {
   "$schema": "https://typedoc.org/schema.json",
+  "favicon": "public/favicon.svg",
   "entryPoints": ["src/node"],
   "entryPointStrategy": "expand",
   "out": "docs/api/node",
@@ -8,7 +9,7 @@
   "excludeProtected": false,
   "excludeExternals": true,
   "readme": "none",
-  "name": "Node.js/TypeScript API Documentation",
+  "name": "Node API",
   "includeVersion": true,
   "sort": ["source-order"],
   "kindSortOrder": [

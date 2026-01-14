@@ -204,7 +204,7 @@ COPY --chown=www-data:www-data templates ./templates
 # Copy built frontend assets from Node build stage
 # This allows serving production-built Vite assets via NGINX
 # Note: NODE_IMAGE must be built first (see compose.yaml build order)
-COPY --from=docker-webdev-node:latest --chown=www-data:www-data /app/public/build/ ./public/build/
+COPY --from=zappzarapp-node:latest --chown=www-data:www-data /app/public/build/ ./public/build/
 
 # Optimize Autoloader & Cleanup
 RUN composer dump-autoload --optimize --no-dev --classmap-authoritative && \

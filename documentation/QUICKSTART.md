@@ -1,6 +1,6 @@
 # Quickstart Guide
 
-Get the docker-webdev boilerplate running in under 5 minutes.
+Get zappzarapp running in under 5 minutes.
 
 ## Prerequisites
 

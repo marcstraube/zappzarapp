@@ -192,13 +192,13 @@ docker pull aquasec/trivy
 make build
 
 # Scan specific image
-trivy image docker-webdev-php:latest
+trivy image zappzarapp-php:latest
 
 # Scan with severity filter
-trivy image --severity HIGH,CRITICAL docker-webdev-php:latest
+trivy image --severity HIGH,CRITICAL zappzarapp-php:latest
 
 # Scan ignoring unfixed vulnerabilities
-trivy image --ignore-unfixed docker-webdev-php:latest
+trivy image --ignore-unfixed zappzarapp-php:latest
 ```
 
 ### Scan Filesystem

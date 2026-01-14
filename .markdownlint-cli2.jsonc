@@ -25,7 +25,10 @@
     },
 
     // MD055: Table pipe style - disabled (Prettier handles table formatting)
-    "MD055": false
+    "MD055": false,
+
+    // MD060: Table column style - disabled (Prettier handles table formatting)
+    "MD060": false
   },
 
   // Files to ignore

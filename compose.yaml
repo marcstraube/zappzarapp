@@ -7,7 +7,7 @@ services:
       context: .
       dockerfile: docker/nginx/Dockerfile
       target: production
-    container_name: ${COMPOSE_PROJECT_NAME:-docker-webdev}-nginx
+    container_name: ${COMPOSE_PROJECT_NAME:-zappzarapp}-nginx
     restart: unless-stopped
     environment:
       - TZ=${TZ:-UTC}
@@ -36,7 +36,7 @@ services:
       context: .
       dockerfile: docker/php/Dockerfile
       target: production
-    container_name: ${COMPOSE_PROJECT_NAME:-docker-webdev}-php
+    container_name: ${COMPOSE_PROJECT_NAME:-zappzarapp}-php
     restart: unless-stopped
     profiles: ["php"]
     volumes:
@@ -100,8 +100,8 @@ services:
       # Conditionally set the build target based on the environment variable,
       # defaulting to the secure 'asset-server' stage (the idle state).
       target: ${NODE_TARGET:-asset-server}
-    image: ${COMPOSE_PROJECT_NAME:-docker-webdev}-node:latest
-    container_name: ${COMPOSE_PROJECT_NAME:-docker-webdev}-node
+    image: ${COMPOSE_PROJECT_NAME:-zappzarapp}-node:latest
+    container_name: ${COMPOSE_PROJECT_NAME:-zappzarapp}-node
     restart: unless-stopped
     profiles: ["node"]
     volumes:
@@ -146,7 +146,7 @@ services:
     build:
       context: .
       dockerfile: docker/redis/Dockerfile
-    container_name: ${COMPOSE_PROJECT_NAME:-docker-webdev}-redis
+    container_name: ${COMPOSE_PROJECT_NAME:-zappzarapp}-redis
     restart: unless-stopped
     profiles: ["redis"]
     environment:
@@ -180,7 +180,7 @@ services:
     build:
       context: .
       dockerfile: docker/postgres/Dockerfile
-    container_name: ${COMPOSE_PROJECT_NAME:-docker-webdev}-postgres
+    container_name: ${COMPOSE_PROJECT_NAME:-zappzarapp}-postgres
     restart: unless-stopped
     profiles: ["postgres"]
     expose:
@@ -222,7 +222,7 @@ services:
     build:
       context: .
       dockerfile: docker/mariadb/Dockerfile
-    container_name: ${COMPOSE_PROJECT_NAME:-docker-webdev}-mariadb
+    container_name: ${COMPOSE_PROJECT_NAME:-zappzarapp}-mariadb
     restart: unless-stopped
     profiles: ["mariadb"]
     expose:
@@ -272,7 +272,7 @@ services:
     build:
       context: .
       dockerfile: docker/mercure/Dockerfile
-    container_name: ${COMPOSE_PROJECT_NAME:-docker-webdev}-mercure
+    container_name: ${COMPOSE_PROJECT_NAME:-zappzarapp}-mercure
     restart: unless-stopped
     profiles: ["mercure"]
     environment:
@@ -302,7 +302,7 @@ services:
     build:
       context: .
       dockerfile: docker/meilisearch/Dockerfile
-    container_name: ${COMPOSE_PROJECT_NAME:-docker-webdev}-meilisearch
+    container_name: ${COMPOSE_PROJECT_NAME:-zappzarapp}-meilisearch
     restart: unless-stopped
     profiles: ["meilisearch"]
     environment:
@@ -332,7 +332,7 @@ services:
     build:
       context: .
       dockerfile: docker/elasticsearch/Dockerfile
-    container_name: ${COMPOSE_PROJECT_NAME:-docker-webdev}-elasticsearch
+    container_name: ${COMPOSE_PROJECT_NAME:-zappzarapp}-elasticsearch
     restart: unless-stopped
     profiles: ["elasticsearch"]
     environment:
@@ -366,7 +366,7 @@ services:
     build:
       context: .
       dockerfile: docker/mailpit/Dockerfile
-    container_name: ${COMPOSE_PROJECT_NAME:-docker-webdev}-mailpit
+    container_name: ${COMPOSE_PROJECT_NAME:-zappzarapp}-mailpit
     restart: unless-stopped
     profiles: ["mailpit"]
     environment:
@@ -392,7 +392,7 @@ services:
     build:
       context: .
       dockerfile: docker/minio/Dockerfile
-    container_name: ${COMPOSE_PROJECT_NAME:-docker-webdev}-minio
+    container_name: ${COMPOSE_PROJECT_NAME:-zappzarapp}-minio
     restart: unless-stopped
     profiles: ["minio"]
     environment:
@@ -427,7 +427,7 @@ services:
     build:
       context: .
       dockerfile: docker/rabbitmq/Dockerfile
-    container_name: ${COMPOSE_PROJECT_NAME:-docker-webdev}-rabbitmq
+    container_name: ${COMPOSE_PROJECT_NAME:-zappzarapp}-rabbitmq
     restart: unless-stopped
     profiles: ["rabbitmq"]
     environment:
@@ -455,48 +455,48 @@ networks:
   # - database: Data layer (databases + php/node as gateways)
   frontend:
     driver: bridge
-    name: ${COMPOSE_PROJECT_NAME:-docker-webdev}-frontend
+    name: ${COMPOSE_PROJECT_NAME:-zappzarapp}-frontend
   backend:
     driver: bridge
-    name: ${COMPOSE_PROJECT_NAME:-docker-webdev}-backend
+    name: ${COMPOSE_PROJECT_NAME:-zappzarapp}-backend
   database:
     driver: bridge
-    name: ${COMPOSE_PROJECT_NAME:-docker-webdev}-database
+    name: ${COMPOSE_PROJECT_NAME:-zappzarapp}-database
 
 volumes:
   php-fpm-socket:
     driver: local
-    name: ${COMPOSE_PROJECT_NAME:-docker-webdev}-php-fpm-socket
+    name: ${COMPOSE_PROJECT_NAME:-zappzarapp}-php-fpm-socket
   redis-data:
     driver: local
-    name: ${COMPOSE_PROJECT_NAME:-docker-webdev}-redis-data
+    name: ${COMPOSE_PROJECT_NAME:-zappzarapp}-redis-data
   postgres-data:
     driver: local
-    name: ${COMPOSE_PROJECT_NAME:-docker-webdev}-postgres-data
+    name: ${COMPOSE_PROJECT_NAME:-zappzarapp}-postgres-data
   mariadb-data:
     driver: local
-    name: ${COMPOSE_PROJECT_NAME:-docker-webdev}-mariadb-data
+    name: ${COMPOSE_PROJECT_NAME:-zappzarapp}-mariadb-data
   mercure-data:
     driver: local
-    name: ${COMPOSE_PROJECT_NAME:-docker-webdev}-mercure-data
+    name: ${COMPOSE_PROJECT_NAME:-zappzarapp}-mercure-data
   meilisearch-data:
     driver: local
-    name: ${COMPOSE_PROJECT_NAME:-docker-webdev}-meilisearch-data
+    name: ${COMPOSE_PROJECT_NAME:-zappzarapp}-meilisearch-data
   elasticsearch-data:
     driver: local
-    name: ${COMPOSE_PROJECT_NAME:-docker-webdev}-elasticsearch-data
+    name: ${COMPOSE_PROJECT_NAME:-zappzarapp}-elasticsearch-data
   elasticsearch-backup:
     driver: local
-    name: ${COMPOSE_PROJECT_NAME:-docker-webdev}-elasticsearch-backup
+    name: ${COMPOSE_PROJECT_NAME:-zappzarapp}-elasticsearch-backup
   mailpit-data:
     driver: local
-    name: ${COMPOSE_PROJECT_NAME:-docker-webdev}-mailpit-data
+    name: ${COMPOSE_PROJECT_NAME:-zappzarapp}-mailpit-data
   minio-data:
     driver: local
-    name: ${COMPOSE_PROJECT_NAME:-docker-webdev}-minio-data
+    name: ${COMPOSE_PROJECT_NAME:-zappzarapp}-minio-data
   rabbitmq-data:
     driver: local
-    name: ${COMPOSE_PROJECT_NAME:-docker-webdev}-rabbitmq-data
+    name: ${COMPOSE_PROJECT_NAME:-zappzarapp}-rabbitmq-data
 
 # Docker Secrets (file-based for development, external for production/swarm)
 # Secrets are mounted at /run/secrets/<secret_name> in containers

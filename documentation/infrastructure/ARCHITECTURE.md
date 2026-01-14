@@ -1,6 +1,6 @@
 # System Architecture
 
-This document provides a comprehensive overview of the docker-webdev boilerplate
+This document provides a comprehensive overview of the zappzarapp boilerplate
 architecture, including components, data flows, and design decisions.
 
 ## Architecture Diagram
@@ -232,7 +232,7 @@ Production mode (`ENV=production`) enables:
 ## Directory Structure
 
 ```text
-docker-webdev/
+zappzarapp/
 ├── src/                      # Application source code
 │   ├── php/                  # PHP application
 │   │   ├── App/              # Main application

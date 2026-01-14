@@ -1,7 +1,11 @@
-# Docker WebDev Boilerplate
+# ⚡ zappzarapp
 
-A flexible Docker boilerplate for PHP and/or Node.js web development with a
-modern toolchain.
+**zappzarapp** · /ˈt͡sapt͡saˈʁap/
+
+> German colloquial for "in a flash" — from Russian цап-царап: grab it and go.
+
+A professional web development stack that gets you coding in minutes, not hours.
+No setup hassle, no reinventing the wheel - just clone, configure, and go.
 
 ## Features
 

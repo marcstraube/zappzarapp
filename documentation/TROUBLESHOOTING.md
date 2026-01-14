@@ -1,6 +1,6 @@
 # Troubleshooting Guide
 
-Common problems and their solutions for the docker-webdev boilerplate.
+Common problems and their solutions for the zappzarapp boilerplate.
 
 ## Quick Diagnostics
 
@@ -34,7 +34,7 @@ docker compose version
 1. **Check for existing containers**
 
    ```bash
-   docker ps -a | grep docker-webdev
+   docker ps -a | grep zappzarapp
    make down  # Stop any existing containers
    make up
    ```
@@ -191,7 +191,7 @@ Nginx returns 502 when accessing PHP pages.
 3. **Check PHP container health**
 
    ```bash
-   docker inspect docker-webdev-php --format='{{.State.Health.Status}}'
+   docker inspect zappzarapp-php --format='{{.State.Health.Status}}'
    ```
 
 4. **View PHP logs**
@@ -368,7 +368,7 @@ Application can't connect to PostgreSQL/MariaDB.
 2. **Check database health**
 
    ```bash
-   docker inspect docker-webdev-postgres --format='{{.State.Health.Status}}'
+   docker inspect zappzarapp-postgres --format='{{.State.Health.Status}}'
    ```
 
 3. **Check database logs**
@@ -423,7 +423,7 @@ Authentication failed errors.
 4. **Complete database reset** (WARNING: deletes data)
 
    ```bash
-   docker volume rm docker-webdev-postgres-data
+   docker volume rm zappzarapp-postgres-data
    make up
    ```
 
@@ -444,7 +444,7 @@ Cannot connect to Redis, TLS errors.
 2. **Check Redis health**
 
    ```bash
-   docker inspect docker-webdev-redis --format='{{.State.Health.Status}}'
+   docker inspect zappzarapp-redis --format='{{.State.Health.Status}}'
    ```
 
 3. **Verify TLS certificates exist**
@@ -564,14 +564,14 @@ PHP can't connect to database, Nginx can't reach Node.
 1. **Check network configuration**
 
    ```bash
-   docker network ls | grep docker-webdev
-   docker network inspect docker-webdev-backend
+   docker network ls | grep zappzarapp
+   docker network inspect zappzarapp-backend
    ```
 
 2. **Verify container is in correct network**
 
    ```bash
-   docker inspect docker-webdev-php --format='{{json .NetworkSettings.Networks}}' | jq
+   docker inspect zappzarapp-php --format='{{json .NetworkSettings.Networks}}' | jq
    ```
 
 3. **Restart networking**

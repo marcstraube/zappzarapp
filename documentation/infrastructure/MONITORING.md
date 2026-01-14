@@ -1,6 +1,6 @@
 # External Monitoring Integration
 
-This guide explains how to integrate the docker-webdev application with external
+This guide explains how to integrate the zappzarapp application with external
 monitoring tools. Monitoring should run on separate infrastructure for
 reliability.
 
@@ -121,14 +121,14 @@ Add to your Prometheus server's `prometheus.yml`:
 
 ```yaml
 scrape_configs:
-  - job_name: 'docker-webdev'
+  - job_name: 'zappzarapp'
     metrics_path: '/health'
     static_configs:
       - targets: ['your-app.example.com:8080']
     relabel_configs:
       - source_labels: [__address__]
         target_label: instance
-        replacement: 'docker-webdev-production'
+        replacement: 'zappzarapp-production'
     # Parse JSON health response
     metric_relabel_configs:
       - source_labels: [__name__]
@@ -211,7 +211,7 @@ RUN curl -L https://download.newrelic.com/php_agent/release/newrelic-php5-*-linu
 
 ```bash
 NEW_RELIC_LICENSE_KEY=your_license_key
-NEW_RELIC_APP_NAME="Docker Webdev Production"
+NEW_RELIC_APP_NAME="zappzarapp Production"
 ```
 
 ### Datadog
@@ -387,7 +387,7 @@ services:
 ```yaml
 # alerts.yml
 groups:
-  - name: docker-webdev
+  - name: zappzarapp
     rules:
       - alert: ServiceDown
         expr: probe_success{job="blackbox-http"} == 0

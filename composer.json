@@ -1,14 +1,21 @@
 {
-    "name": "your-org/project-name",
-    "description": "A generic PHP 8.4 dockerized application template",
+    "name": "marcstraube/zappzarapp",
+    "version": "1.0.0",
+    "description": "A professional web development stack that gets you coding in minutes - zappzarapp!",
     "type": "project",
     "license": "MIT",
+    "homepage": "https://github.com/marcstraube/zappzarapp",
     "authors": [
         {
-            "name": "Your Name",
-            "email": "your.email@example.com"
+            "name": "Marc Straube",
+            "email": "email@marcstraube.de",
+            "homepage": "https://github.com/marcstraube"
         }
     ],
+    "support": {
+        "issues": "https://github.com/marcstraube/zappzarapp/issues",
+        "source": "https://github.com/marcstraube/zappzarapp"
+    },
     "require": {
         "php": "^8.4",
         "ext-ctype": "*",

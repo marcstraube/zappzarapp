@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="DataSourceManagerImpl" format="xml" multifile-model="true">
-    <data-source source="LOCAL" name="PostgreSQL (Docker)" uuid="postgres-docker-webdev">
+    <data-source source="LOCAL" name="PostgreSQL (Docker)" uuid="postgres-zappzarapp">
       <driver-ref>postgresql</driver-ref>
       <synchronize>true</synchronize>
       <jdbc-driver>org.postgresql.Driver</jdbc-driver>
@@ -11,7 +11,7 @@
         <property name="ApplicationName" value="PhpStorm" />
       </driver-properties>
     </data-source>
-    <data-source source="LOCAL" name="MariaDB (Docker)" uuid="mariadb-docker-webdev">
+    <data-source source="LOCAL" name="MariaDB (Docker)" uuid="mariadb-zappzarapp">
       <driver-ref>mariadb</driver-ref>
       <synchronize>true</synchronize>
       <jdbc-driver>org.mariadb.jdbc.Driver</jdbc-driver>

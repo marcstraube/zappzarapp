@@ -290,3 +290,46 @@ a.phpdocumentor-type {
     stroke: #3f51b5 !important;
     fill: #e8eaf6 !important;
 }
+
+/* ============================================
+   LAYOUT FIXES
+   ============================================ */
+/* Fix title overflow in header */
+.phpdocumentor-header.phpdocumentor-section {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 1rem;
+}
+
+.phpdocumentor-title {
+    flex: 1 1 auto;
+    min-width: 0;
+    max-width: 100%;
+    margin: 0 !important;
+}
+
+.phpdocumentor-title__link {
+    display: block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* On small screens, allow wrapping */
+@media (max-width: 768px) {
+    .phpdocumentor-title__link {
+        white-space: normal;
+        word-wrap: break-word;
+        overflow-wrap: break-word;
+    }
+}
+
+.phpdocumentor-header__menu {
+    overflow: hidden;
+}
+
+/* Ensure search doesn't overlap */
+.phpdocumentor-search {
+    flex-shrink: 0;
+}

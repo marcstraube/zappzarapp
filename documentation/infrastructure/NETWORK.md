@@ -119,13 +119,13 @@ The network segmentation is defined in `compose.yaml`:
 networks:
   frontend:
     driver: bridge
-    name: ${COMPOSE_PROJECT_NAME:-docker-webdev}-frontend
+    name: ${COMPOSE_PROJECT_NAME:-zappzarapp}-frontend
   backend:
     driver: bridge
-    name: ${COMPOSE_PROJECT_NAME:-docker-webdev}-backend
+    name: ${COMPOSE_PROJECT_NAME:-zappzarapp}-backend
   database:
     driver: bridge
-    name: ${COMPOSE_PROJECT_NAME:-docker-webdev}-database
+    name: ${COMPOSE_PROJECT_NAME:-zappzarapp}-database
 ```
 
 ### Service Network Assignments
@@ -174,14 +174,14 @@ networks:
 2. **Verify nginx cannot reach database**:
 
    ```bash
-    docker exec docker-webdev-nginx ping -c 1 postgres
+    docker exec zappzarapp-nginx ping -c 1 postgres
    # Expected: ping: bad address 'postgres'
    ```
 
 3. **Verify php CAN reach database**:
 
    ```bash
-   docker exec docker-webdev-php ping -c 1 postgres
+   docker exec zappzarapp-php ping -c 1 postgres
    # Expected: PING postgres (172.x.x.x): 56 data bytes
    ```
 
@@ -189,12 +189,12 @@ networks:
 
 ```bash
 # List all networks
-docker network ls | grep docker-webdev
+docker network ls | grep zappzarapp
 
 # Inspect specific network
-docker network inspect docker-webdev-frontend
-docker network inspect docker-webdev-backend
-docker network inspect docker-webdev-database
+docker network inspect zappzarapp-frontend
+docker network inspect zappzarapp-backend
+docker network inspect zappzarapp-database
 ```
 
 ## Performance Impact
@@ -255,7 +255,7 @@ networks:
 **Check**:
 
 1. Verify both services are in `database` network
-2. Check `docker network inspect docker-webdev-database`
+2. Check `docker network inspect zappzarapp-database`
 3. Ensure service names match (not IPs)
 
 ### Nginx Cannot Proxy to PHP
@@ -266,8 +266,7 @@ networks:
 
 1. Verify both `nginx` and `php` are in `backend` network
 2. Check Unix socket is mounted correctly
-3. Verify PHP-FPM is running:
-   `docker exec docker-webdev-php ps aux | grep php-fpm`
+3. Verify PHP-FPM is running: `docker exec zappzarapp-php ps aux | grep php-fpm`
 
 ## References
 

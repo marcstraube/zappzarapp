@@ -1,6 +1,6 @@
 # Makefile Reference
 
-Complete reference for all available `make` commands in the docker-webdev
+Complete reference for all available `make` commands in the zappzarapp
 boilerplate.
 
 Run `make help` to see all available commands with descriptions.

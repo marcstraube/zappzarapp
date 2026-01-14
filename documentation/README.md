@@ -1,6 +1,6 @@
 # Documentation
 
-Technical documentation for the Docker WebDev Boilerplate.
+Technical documentation for zappzarapp.
 
 ---
 

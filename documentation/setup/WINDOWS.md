@@ -1,6 +1,6 @@
 # Windows Setup Guide
 
-This guide covers setting up the Docker WebDev Boilerplate on Windows.
+This guide covers setting up zappzarapp on Windows.
 
 ---
 
@@ -57,8 +57,8 @@ Open your WSL terminal (Ubuntu):
 cd ~
 
 # Clone the project
-git clone <repository-url> docker-webdev
-cd docker-webdev
+git clone <repository-url> zappzarapp
+cd zappzarapp
 
 # Run setup
 make init
@@ -122,8 +122,8 @@ Open Git Bash:
 
 ```bash
 cd /c/Users/YourName/Projects
-git clone <repository-url> docker-webdev
-cd docker-webdev
+git clone <repository-url> zappzarapp
+cd zappzarapp
 
 make init
 make setup

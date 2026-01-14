@@ -330,7 +330,7 @@ Current image sizes (approximate):
 
 ```bash
 # Check image sizes
-docker images | grep docker-webdev
+docker images | grep zappzarapp
 
 # Remove unused images
 make prune

@@ -90,8 +90,9 @@ Thumbs.db
 .rector.cache
 .eslintcache
 
-# Documentation (generated)
-/docs/
+# Documentation (generated - keep index.html and assets/)
+/docs/*
 !/docs/index.html
+!/docs/assets/
 /.phpdoc/
 /tools/

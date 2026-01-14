@@ -1,7 +1,7 @@
 # Deployment Guide
 
 This guide covers the CI/CD pipelines and deployment strategies for the
-docker-webdev boilerplate.
+zappzarapp boilerplate.
 
 ## CI/CD Overview
 
@@ -183,7 +183,7 @@ curl http://localhost:8080/health
 2. **Tag and push to registry:**
 
    ```bash
-   docker tag docker-webdev-php:latest registry.example.com/myapp/php:v1.0.0
+   docker tag zappzarapp-php:latest registry.example.com/myapp/php:v1.0.0
    docker push registry.example.com/myapp/php:v1.0.0
    ```
 
@@ -354,10 +354,10 @@ Expected response:
 
 ```bash
 # Keep previous images tagged
-docker tag docker-webdev-php:latest docker-webdev-php:previous
+docker tag zappzarapp-php:latest zappzarapp-php:previous
 
 # Rollback
-docker tag docker-webdev-php:previous docker-webdev-php:latest
+docker tag zappzarapp-php:previous zappzarapp-php:latest
 docker compose up -d
 ```
 

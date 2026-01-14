@@ -1,11 +1,68 @@
-# Docker WebDev Boilerplate - Changelog
+# zappzarapp - Changelog
 
-**Erstellt:** 2025-12-19 **Letzte Aktualisierung:** 2026-01-14 (Dependency
-Injection & Test Data Libraries) **Version:** 3.39
+**Erstellt:** 2025-12-19 **Letzte Aktualisierung:** 2026-01-14 (Branding &
+Project Identity) **Version:** 3.40
 
 ---
 
 ## Changelog
+
+### Version 3.40 (2026-01-14) - Branding & Project Identity
+
+Complete rebranding from "docker-webdev" to "zappzarapp" with new visual
+identity, favicon, and comprehensive documentation improvements.
+
+#### Project Rename
+
+- **Renamed**: Project from "docker-webdev" to "zappzarapp"
+- **Etymology**: German colloquial for "in a flash" — from Russian цап-царап
+  (grab it and go)
+- **IPA**: /ˈt͡sapt͡saˈʁap/
+- **Updated**: 59+ files with new project name (compose.yaml, Dockerfiles,
+  Makefile, CI/CD configs, documentation, IDE configs)
+
+#### Favicon & Visual Identity
+
+- **New**: `public/favicon.svg` - Lightning bolt icon (golden gradient on dark
+  circle)
+- **New**: `public/assets/dev-dashboard/favicon.svg` - Separate favicon for Dev
+  Dashboard
+- **New**: `docs/assets/favicon.svg` - Separate favicon for Docsify guides
+- **Design**: zappzarapp infrastructure keeps its branding even when users
+  customize the app favicon
+
+#### API Documentation Improvements
+
+- **New**: Dynamic titles from package files
+  (`{ProjectName} - PHP/Node API - v{version}`)
+- **New**: Version field added to `composer.json`
+- **New**: Makefile post-processing extracts name/version from composer.json and
+  package.json
+- **Fixed**: PHP docs title overflow with improved CSS (flex layout,
+  text-overflow ellipsis)
+- **Fixed**: Favicon integration for both phpDocumentor and TypeDoc
+
+#### Package Metadata
+
+- **Updated**: `composer.json` with author, homepage, support URLs
+- **Updated**: `package.json` with author, repository, bugs, homepage
+- **Added**: Git remote for GitHub (`git@github.com:marcstraube/zappzarapp.git`)
+
+#### Documentation
+
+- **New**: `documentation/getting-started/CUSTOMIZATION.md` - Guide for
+  customizing the project (package files, license, branding, git remote)
+- **Updated**: `documentation/_sidebar.md` with Customization link
+- **Updated**: `README.md` header with project name, IPA, and etymology
+- **Updated**: `templates/app/welcome.php` with new branding
+
+#### Configuration
+
+- **Updated**: `.gitignore` to include `docs/assets/` directory
+- **Updated**: `typedoc.json` with favicon option
+- **Updated**: `phpdoc.xml` with shorter title for better display
+
+---
 
 ### Version 3.39 (2026-01-14) - Dependency Injection & Test Data Libraries
 
@@ -1792,7 +1849,7 @@ health checks for better visibility:**
 
 #### Changed - IDE Integration Updates
 
-- **.idea/docker-webdev.iml**: Updated sourceFolders and testFolders for App/
+- **.idea/zappzarapp.iml**: Updated sourceFolders and testFolders for App/
   structure
 - **.idea/phpunit.xml**: Corrected test directories path
 - **ecosystem.config.cjs**: Updated Node.js app paths to src/node/App/
@@ -1949,7 +2006,7 @@ mounts, and production safety:**
 
 #### Changed - IDE Integration
 
-- **.idea/docker-webdev.iml**:
+- **.idea/zappzarapp.iml**:
   - Corrected sourceFolders: `src/php/App`, `src/php/DevDashboard` (not generic
     `src/php`)
   - Corrected test folders: `tests/php/App`, `tests/php/DevDashboard`
@@ -2334,12 +2391,12 @@ Complete feature parity between VS Code and PhpStorm:
       - ✅ Zukunftssicher (PER ersetzt PSR-12 offiziell)
       - ✅ Konsistent mit PhpStorm-Config (.idea/php.xml nutzt auch PER-CS)
   - **Änderung 4: Docker Compose Build-Dependencies (compose.yaml)**
-    - **Problem:** nginx + php kopieren von `docker-webdev-node:latest`, aber
-      keine explizite Dependency
+    - **Problem:** nginx + php kopieren von `zappzarapp-node:latest`, aber keine
+      explizite Dependency
       - `docker/nginx/Dockerfile:66`:
-        `COPY --from=docker-webdev-node:latest /app/public/build/`
+        `COPY --from=zappzarapp-node:latest /app/public/build/`
       - `docker/php/Dockerfile:140`:
-        `COPY --from=docker-webdev-node:latest /app/public/build/`
+        `COPY --from=zappzarapp-node:latest /app/public/build/`
       - Potenzielle Race-Condition bei `make build` (node muss zuerst gebaut
         werden)
     - **Lösung:** `depends_on: node` bei nginx + php hinzugefügt
@@ -2942,7 +2999,7 @@ Complete feature parity between VS Code and PhpStorm:
       - `tests/unit/` → `tests/node/unit/` (Vitest Unit-Tests)
       - `tests/integration/` → `tests/node/integration/` (Vitest
         Integration-Tests)
-    - **PhpStorm IDE-Konfiguration aktualisiert (.idea/docker-webdev.iml:5-8)**
+    - **PhpStorm IDE-Konfiguration aktualisiert (.idea/zappzarapp.iml:5-8)**
       - `src/php` (Source) + `tests/php` (Test Source mit Namespace App\Tests\)
       - `src/node` (Source) + `tests/node` (Test Source)
       - IDE erkennt nun beide Sprach-Stacks korrekt
@@ -3198,7 +3255,7 @@ Complete feature parity between VS Code and PhpStorm:
     - Veraltete tests/ Markierung noch vorhanden (überflüssig)
     - TypeScript Autocomplete und Navigation unvollständig
   - **Lösung: Symmetrische IDE-Konfiguration für beide Stacks**
-    - **.idea/docker-webdev.iml aktualisiert (Zeilen 5-8)**
+    - **.idea/zappzarapp.iml aktualisiert (Zeilen 5-8)**
       - **Source Folders:**
         - `src/php` (packagePrefix: App\)
         - `src/node` (NEU hinzugefügt)
@@ -3288,7 +3345,7 @@ Complete feature parity between VS Code and PhpStorm:
       (Source + Compiled)
     - Fehlende Excludes verlangsamen Search, Navigation und Code-Completion
   - **Lösung: Build- und Cache-Directories excluded
-    (.idea/docker-webdev.iml:12-13)**
+    (.idea/zappzarapp.iml:12-13)**
     - `build/` - PHPUnit Coverage Reports, Tool Caches
     - `dist/` - TypeScript Build Output (transpilierter Code)
   - **Bereits korrekt excluded:**

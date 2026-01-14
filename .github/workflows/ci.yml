@@ -8,7 +8,7 @@ on:
   workflow_dispatch:
 
 env:
-  COMPOSE_PROJECT_NAME: docker-webdev-ci
+  COMPOSE_PROJECT_NAME: zappzarapp-ci
   ENV: development
 
 jobs:

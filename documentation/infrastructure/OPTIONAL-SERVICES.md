@@ -1,7 +1,6 @@
 # Optional Services
 
-This document describes the optional services available in the Docker Webdev
-boilerplate.
+This document describes the optional services available in zappzarapp.
 
 ## Overview
 

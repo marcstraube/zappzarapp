@@ -17,7 +17,7 @@
 #   SEVERITY: Minimum severity (default: HIGH,CRITICAL)
 
 variables:
-  COMPOSE_PROJECT_NAME: docker-webdev-security
+  COMPOSE_PROJECT_NAME: zappzarapp-security
   SEVERITY: "HIGH,CRITICAL"
   DOCKER_DRIVER: overlay2
   DOCKER_TLS_CERTDIR: ""

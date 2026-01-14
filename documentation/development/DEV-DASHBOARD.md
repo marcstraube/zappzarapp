@@ -442,9 +442,9 @@ Planned features for future releases:
 
 ## Contributing
 
-This dashboard is part of the docker-webdev boilerplate. Contributions and
+This dashboard is part of the zappzarapp boilerplate. Contributions and
 improvements are welcome!
 
 ## License
 
-Part of the docker-webdev project.
+Part of the zappzarapp project.

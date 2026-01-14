@@ -2,7 +2,7 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/.idea/docker-webdev.iml" filepath="$PROJECT_DIR$/.idea/docker-webdev.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/zappzarapp.iml" filepath="$PROJECT_DIR$/.idea/zappzarapp.iml" />
     </modules>
   </component>
 </project>
