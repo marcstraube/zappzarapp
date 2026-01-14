@@ -1,11 +1,49 @@
 # Docker WebDev Boilerplate - Changelog
 
-**Erstellt:** 2025-12-19 **Letzte Aktualisierung:** 2026-01-14 (Node.js Quality
-Tools Parity & Pre-Commit Improvements) **Version:** 3.30
+**Erstellt:** 2025-12-19 **Letzte Aktualisierung:** 2026-01-14 (PHP Extension
+Configuration) **Version:** 3.31
 
 ---
 
 ## Changelog
+
+### Version 3.31 (2026-01-14) - PHP Extension Configuration
+
+#### Added
+
+- **Individual PHP Extension INI Files** (`docker/php/conf.d/`):
+  - Each extension now has its own INI file for easy enable/disable
+  - Extensions can be disabled by commenting out `extension=` line
+  - Files: `exif.ini`, `gd.ini`, `gmagick.ini`, `intl.ini`, `opcache.ini`,
+    `pdo_mysql.ini`, `pdo_pgsql.ini`, `redis.ini`, `sodium.ini`, `zip.ini`
+
+- **Xdebug INI Enhancement**:
+  - `zend_extension=xdebug` directive now in `xdebug.ini` (single source of
+    truth)
+  - Auto-generated PIE INI removed during build
+
+#### Changed
+
+- **Dockerfile Base Stage**:
+  - Auto-generated `docker-php-ext-*.ini` files now removed
+  - Custom extension INIs copied instead for full control
+  - Removed unnecessary curl compilation (built-in since PHP 8.4 Alpine)
+
+- **compose.override.yaml**:
+  - All extension INIs mounted for development
+  - Added documentation about curl being statically compiled
+
+- **php.ini**:
+  - Simplified Redis session documentation with cross-reference to `redis.ini`
+  - Removed obsolete extension settings comment block
+
+#### Technical Notes
+
+- **curl**: Statically compiled (`--with-curl`), cannot be disabled via INI
+- **sodium**: Shared extension (`--with-sodium=shared`), can be disabled via INI
+- All other extensions: Can be disabled by commenting `extension=` line
+
+---
 
 ### Version 3.30 (2026-01-14) - Node.js Quality Tools Parity & Documentation Fixes
 

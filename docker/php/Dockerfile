@@ -21,8 +21,6 @@ RUN apk add --no-cache \
     libtool \
     linux-headers \
     libgomp \
-    # Dependencies for curl (Extension) - speeds up Composer significantly
-    curl-dev \
     # Dependencies for GD (Extension)
     freetype \
     freetype-dev \
@@ -47,7 +45,7 @@ RUN apk add --no-cache \
     postgresql-dev \
     postgresql-libs \
     # Compilation and installation of extensions
-    && docker-php-ext-install curl exif intl opcache zip pdo_pgsql pdo_mysql \
+    && docker-php-ext-install exif intl opcache zip pdo_pgsql pdo_mysql \
     && docker-php-ext-configure gd \
         --with-freetype \
         --with-jpeg \
@@ -59,7 +57,9 @@ RUN apk add --no-cache \
     && pecl install gmagick-2.0.6RC1 \
     && pecl install redis \
     && docker-php-ext-enable gmagick redis \
-    && rm -rf /tmp/pear
+    && rm -rf /tmp/pear \
+    # Remove auto-generated INI files (we use our own in conf.d/)
+    && rm -f /usr/local/etc/php/conf.d/docker-php-ext-*.ini
 
 # --- 2. BASE STAGE (Shared Runtime Image - Small & Fast) ---
 FROM php:${PHP_VERSION}-fpm-alpine${ALPINE_VERSION} AS base
@@ -81,9 +81,25 @@ RUN apk add --no-cache \
     postgresql-libs \
     tzdata
 
-# Copy the compiled extensions and configuration files from the builder
-COPY --from=php-builder /usr/local/etc/php/conf.d/ /usr/local/etc/php/conf.d/
+# Remove auto-generated extension INIs from base PHP image (we use our own)
+RUN rm -f /usr/local/etc/php/conf.d/docker-php-ext-*.ini
+
+# Copy the compiled extensions from the builder (INI files are our own)
 COPY --from=php-builder /usr/local/lib/php/extensions/ /usr/local/lib/php/extensions/
+
+# Copy extension configuration files (production-ready defaults)
+# Note: development.ini and xdebug.ini are NOT copied here (dev-only, mounted via volumes)
+# Note: curl is statically compiled into PHP and cannot be disabled via INI
+COPY docker/php/conf.d/exif.ini /usr/local/etc/php/conf.d/
+COPY docker/php/conf.d/gd.ini /usr/local/etc/php/conf.d/
+COPY docker/php/conf.d/gmagick.ini /usr/local/etc/php/conf.d/
+COPY docker/php/conf.d/intl.ini /usr/local/etc/php/conf.d/
+COPY docker/php/conf.d/opcache.ini /usr/local/etc/php/conf.d/
+COPY docker/php/conf.d/pdo_mysql.ini /usr/local/etc/php/conf.d/
+COPY docker/php/conf.d/pdo_pgsql.ini /usr/local/etc/php/conf.d/
+COPY docker/php/conf.d/redis.ini /usr/local/etc/php/conf.d/
+COPY docker/php/conf.d/sodium.ini /usr/local/etc/php/conf.d/
+COPY docker/php/conf.d/zip.ini /usr/local/etc/php/conf.d/
 
 # Health Check (Unix Socket)
 HEALTHCHECK --interval=30s --timeout=3s --start-period=40s --retries=3 \
@@ -118,8 +134,10 @@ COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 # Install PIE (PHP Installer for Extensions)
 COPY --from=ghcr.io/php/pie:bin /pie /usr/bin/pie
 
-# Install Xdebug
-RUN pie install xdebug/xdebug
+# Install Xdebug (INI is mounted via volumes in compose.override.yaml)
+RUN pie install xdebug/xdebug \
+    && rm -f /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini \
+    && rm -f /usr/local/etc/php/conf.d/50-xdebug.ini
 
 # Copy configuration files (same as production for consistency)
 # Use www.conf to override the default pool configuration

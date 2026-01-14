@@ -94,7 +94,24 @@ services:
       - ./docker/php/php.ini:/usr/local/etc/php/php.ini:ro
       - ./docker/php/php-fpm.conf:/usr/local/etc/php-fpm.d/www.conf:ro
       - ./docker/php/zz-docker.conf:/usr/local/etc/php-fpm.d/zz-docker.conf:ro
-      - ./docker/php/conf.d/development.ini:/usr/local/etc/php/conf.d/zz-env.ini:ro
+
+      # PHP Extension Configuration (conf.d/)
+      # Each extension has its own INI file for easy enable/disable (comment out extension= line)
+      # INIs are loaded alphabetically - zz-* prefix ensures overrides load last
+      # Note: curl is statically compiled into PHP and cannot be disabled
+      - ./docker/php/conf.d/exif.ini:/usr/local/etc/php/conf.d/exif.ini:ro
+      - ./docker/php/conf.d/gd.ini:/usr/local/etc/php/conf.d/gd.ini:ro
+      - ./docker/php/conf.d/gmagick.ini:/usr/local/etc/php/conf.d/gmagick.ini:ro
+      - ./docker/php/conf.d/intl.ini:/usr/local/etc/php/conf.d/intl.ini:ro
+      - ./docker/php/conf.d/opcache.ini:/usr/local/etc/php/conf.d/opcache.ini:ro
+      - ./docker/php/conf.d/pdo_mysql.ini:/usr/local/etc/php/conf.d/pdo_mysql.ini:ro
+      - ./docker/php/conf.d/pdo_pgsql.ini:/usr/local/etc/php/conf.d/pdo_pgsql.ini:ro
+      - ./docker/php/conf.d/redis.ini:/usr/local/etc/php/conf.d/redis.ini:ro
+      - ./docker/php/conf.d/sodium.ini:/usr/local/etc/php/conf.d/sodium.ini:ro
+      - ./docker/php/conf.d/zip.ini:/usr/local/etc/php/conf.d/zip.ini:ro
+
+      # Development-only overrides (loaded last due to zz-* prefix)
+      - ./docker/php/conf.d/development.ini:/usr/local/etc/php/conf.d/zz-development.ini:ro
       - ./docker/php/conf.d/xdebug.ini:/usr/local/etc/php/conf.d/zz-xdebug.ini:ro
       - ./docker/php/conf.d/timezone.php:/usr/local/etc/php/conf.d/timezone.php:ro
     extra_hosts:
