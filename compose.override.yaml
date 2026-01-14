@@ -188,8 +188,10 @@ services:
       - ./.markdownlint-cli2.jsonc:/app/.markdownlint-cli2.jsonc:ro
       - ./lint-staged.config.js:/app/lint-staged.config.js:ro
 
-      # Documentation (for markdownlint)
-      - ./documentation:/app/documentation:ro
+      # Markdown files (read-write for Prettier/markdownlint)
+      - ./documentation:/app/documentation
+      - ./README.md:/app/README.md
+      - ./CHANGELOG.md:/app/CHANGELOG.md
 
       # Git repository (for commitlint and lint-staged)
       - ./.git:/app/.git

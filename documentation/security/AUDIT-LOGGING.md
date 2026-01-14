@@ -1,12 +1,13 @@
 # Audit Logging Guide
 
-**GDPR Art. 30 & 32 Compliance: Records of Processing Activities**
+> GDPR Art. 30 & 32 Compliance: Records of Processing Activities
 
 ---
 
 ## Why Audit Logging?
 
 **GDPR requires audit logging for:**
+
 - **Art. 15**: Right of access - Users can request "who accessed my data?"
 - **Art. 17**: Right to erasure - Audit trail of data deletion
 - **Art. 30**: Records of processing activities
@@ -14,6 +15,7 @@
 - **Art. 33**: Breach notification - What data was accessed during breach?
 
 **Security benefits:**
+
 - Detect unauthorized access
 - Investigate security incidents
 - Monitor administrative actions
@@ -26,17 +28,20 @@
 ### ✅ ALWAYS Log These Actions
 
 **Personal Data Access:**
+
 - Viewing user profiles, orders, invoices
 - Exporting personal data (GDPR data portability)
 - Searching/filtering users
 
 **Personal Data Modifications:**
+
 - Creating new users
 - Updating user information
 - Deleting users (right to erasure)
 - Anonymizing users
 
 **Authentication:**
+
 - Successful login
 - Failed login attempts (security monitoring)
 - Logout
@@ -44,6 +49,7 @@
 - Two-factor authentication events
 
 **Administrative Actions:**
+
 - Role assignments/changes
 - Permission grants/revokes
 - System configuration changes
@@ -53,15 +59,18 @@
 ### ⚠️ DON'T Log These
 
 **Public Data:**
+
 - Viewing public pages
 - Accessing non-personal data
 
 **High-Frequency Operations:**
+
 - Page views (use analytics instead)
 - API health checks
 - Static asset requests
 
 **System Operations:**
+
 - Database migrations
 - Cache clearing
 - Background jobs (unless they process personal data)
@@ -73,11 +82,13 @@
 ### 1. Run Migration
 
 **PostgreSQL:**
+
 ```bash
 docker compose exec postgres psql -U app -d app -f /docker-entrypoint-initdb.d/001_audit_logs.sql
 ```
 
 **MariaDB:**
+
 ```bash
 docker compose exec mariadb mysql -u app -p app < /docker-entrypoint-initdb.d/001_audit_logs.sql
 ```
@@ -240,6 +251,7 @@ Use a consistent naming scheme for actions:
 ### Format: `{entity}.{action}`
 
 **User Actions:**
+
 - `user.view` - Viewing user profile
 - `user.create` - Creating new user
 - `user.update` - Updating user information
@@ -248,6 +260,7 @@ Use a consistent naming scheme for actions:
 - `user.anonymize` - Anonymizing user (GDPR compliance)
 
 **Authentication:**
+
 - `login.success` - Successful login
 - `login.failed` - Failed login attempt
 - `logout` - User logged out
@@ -257,6 +270,7 @@ Use a consistent naming scheme for actions:
 - `2fa.disabled` - Two-factor authentication disabled
 
 **Administrative:**
+
 - `role.granted` - Role assigned to user
 - `role.revoked` - Role removed from user
 - `permission.granted` - Permission granted
@@ -308,6 +322,7 @@ const logs = await auditLogger.getLogsForEntity('user', 456, 100);
 ### SQL (Direct Query)
 
 **PostgreSQL:**
+
 ```sql
 -- Get all actions on user 456
 SELECT
@@ -346,6 +361,7 @@ ORDER BY timestamp DESC;
 ```
 
 **MariaDB:**
+
 ```sql
 -- Same queries as PostgreSQL, but use:
 -- - NOW() - INTERVAL 24 HOUR instead of NOW() - INTERVAL '24 hours'
@@ -358,6 +374,7 @@ ORDER BY timestamp DESC;
 When a user requests their data (GDPR Art. 15), include audit logs:
 
 **PHP:**
+
 ```php
 <?php
 public function generateDataExport(int $userId): array
@@ -392,6 +409,7 @@ public function generateDataExport(int $userId): array
 Audit logs **cannot be modified or deleted** after creation.
 
 Triggers prevent `UPDATE` and `DELETE` operations:
+
 ```sql
 -- This will FAIL
 UPDATE audit_logs SET action = 'something.else' WHERE id = 123;
@@ -402,7 +420,8 @@ DELETE FROM audit_logs WHERE id = 123;
 -- Error: Audit logs are immutable
 ```
 
-Only way to remove logs: Manual database operation by DBA (for compliance with retention policies).
+Only way to remove logs: Manual database operation by DBA (for compliance with
+retention policies).
 
 ---
 
@@ -411,12 +430,14 @@ Only way to remove logs: Manual database operation by DBA (for compliance with r
 The `data` column is encrypted using `encrypt_text()` function.
 
 **Contains:**
+
 - User agent
 - Changed fields
 - Additional context
 - Sensitive information
 
 **Decrypted only when querying:**
+
 ```sql
 SELECT decrypt_text(data, 'ENCRYPTION_KEY') AS data_decrypted
 FROM audit_logs;
@@ -427,11 +448,13 @@ FROM audit_logs;
 ### 3. Tamper-Proof Checksum
 
 Each log entry has a SHA-256 checksum:
-```
+
+```text
 checksum = SHA256(timestamp + action + entity_type + entity_id + data)
 ```
 
 **Verify integrity:**
+
 ```sql
 -- PostgreSQL
 SELECT
@@ -449,11 +472,13 @@ WHERE checksum != encode(digest(timestamp::text || action || entity_type || enti
 ### 4. IP Address Tracking
 
 Logs include client IP address (handles proxies):
+
 - `X-Forwarded-For` header
 - `X-Real-IP` header
 - `REMOTE_ADDR` fallback
 
 Useful for:
+
 - Security monitoring (detect unauthorized access)
 - Breach notification (which IPs accessed data?)
 - Geolocation analysis
@@ -463,12 +488,22 @@ Useful for:
 ### 5. Dual Logging (Database + File)
 
 Logs are written to:
+
 1. **Database** (`audit_logs` table) - Queryable, indexed
 2. **File** (`storage/logs/audit.log`) - Redundancy, backup
 
 **File format:** JSON lines (one log entry per line)
+
 ```json
-{"timestamp":"2025-01-09T21:00:00.000Z","user_id":123,"ip_address":"192.168.1.1","action":"user.update","entity_type":"user","entity_id":"456","data":{"changed_fields":["email"],"user_agent":"Mozilla/5.0"}}
+{
+  "timestamp": "2025-01-09T21:00:00.000Z",
+  "user_id": 123,
+  "ip_address": "192.168.1.1",
+  "action": "user.update",
+  "entity_type": "user",
+  "entity_id": "456",
+  "data": { "changed_fields": ["email"], "user_agent": "Mozilla/5.0" }
+}
 ```
 
 ---
@@ -478,14 +513,17 @@ Logs are written to:
 **Recommended retention:** 1-2 years
 
 **Legal requirements vary by jurisdiction:**
+
 - GDPR: No specific retention period, but "no longer than necessary"
 - Some industries: 5-7 years (e.g., financial services)
 
 **See Phase 2.2** for automatic retention policy implementation:
+
 - `delete_old_logs()` function (PostgreSQL)
 - Scheduled cleanup (pg_cron, cron, etc.)
 
 **Manual cleanup (for testing):**
+
 ```sql
 -- Delete logs older than 90 days (PostgreSQL)
 -- NOTE: This bypasses the immutability trigger!
@@ -504,6 +542,7 @@ DELETE FROM audit_logs WHERE timestamp < NOW() - INTERVAL 90 DAY;
 ### Indexes
 
 The following indexes are created automatically:
+
 - `idx_audit_logs_timestamp` - Recent logs
 - `idx_audit_logs_user_id` - Logs by user
 - `idx_audit_logs_entity` - Logs by entity
@@ -512,9 +551,11 @@ The following indexes are created automatically:
 
 ### Partitioning (Large Scale)
 
-For high-volume applications (millions of logs), consider **table partitioning**:
+For high-volume applications (millions of logs), consider **table
+partitioning**:
 
 **PostgreSQL:**
+
 ```sql
 -- Partition by month
 CREATE TABLE audit_logs_2025_01 PARTITION OF audit_logs
@@ -522,6 +563,7 @@ CREATE TABLE audit_logs_2025_01 PARTITION OF audit_logs
 ```
 
 **MariaDB:**
+
 ```sql
 -- Partition by range (month)
 ALTER TABLE audit_logs
@@ -583,12 +625,14 @@ ORDER BY access_count DESC;
 **Symptom:** `writeLog()` throws exception
 
 **Possible causes:**
+
 1. `audit_logs` table doesn't exist → Run migration
 2. `encrypt_text()` function missing → Run `000_encryption_helpers.sql`
 3. Wrong `ENCRYPTION_KEY` → Check `.env`
 4. Database connection failed → Check database status
 
-**Fallback:** Logs are written to file (`storage/logs/audit.log`) even if database write fails.
+**Fallback:** Logs are written to file (`storage/logs/audit.log`) even if
+database write fails.
 
 ---
 
@@ -597,10 +641,12 @@ ORDER BY access_count DESC;
 **Symptom:** `decrypt_text()` returns `NULL`
 
 **Causes:**
+
 - Wrong encryption key
 - Encrypted data is corrupted
 
 **Solution:**
+
 ```sql
 -- Check if encryption key is correct
 SELECT decrypt_text(data, 'CORRECT_KEY') FROM audit_logs LIMIT 1;
@@ -614,10 +660,12 @@ SELECT decrypt_text(data, 'CORRECT_KEY') FROM audit_logs LIMIT 1;
 **Symptom:** `storage/logs/audit.log` not created
 
 **Causes:**
+
 - Directory doesn't exist
 - Permission denied
 
 **Solution:**
+
 ```bash
 mkdir -p storage/logs
 chmod 755 storage/logs
@@ -670,6 +718,7 @@ $this->auditLog(
 ```
 
 **Exception:** For GDPR data deletion, log reason:
+
 ```php
 $this->auditLog(
     action: 'user.delete',
@@ -684,6 +733,7 @@ $this->auditLog(
 ### 3. Use Consistent Action Names
 
 Follow the `{entity}.{action}` convention:
+
 - `user.view`, `user.update`, `user.delete`
 - `login.success`, `login.failed`
 - `role.granted`, `role.revoked`

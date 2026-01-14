@@ -1,6 +1,7 @@
 # Docker WebDev Boilerplate
 
-A flexible Docker boilerplate for PHP and/or Node.js web development with a modern toolchain.
+A flexible Docker boilerplate for PHP and/or Node.js web development with a
+modern toolchain.
 
 ## Features
 
@@ -39,13 +40,14 @@ make up
 ```
 
 The application is available at:
-- **HTTP:** http://localhost:8080
-- **HTTPS:** https://localhost:8443
-- **Dev Dashboard:** http://localhost:8080/_dev
+
+- **HTTP:** <http://localhost:8080>
+- **HTTPS:** <https://localhost:8443>
+- **Dev Dashboard:** <http://localhost:8080/\_dev>
 
 ## Project Structure
 
-```
+```text
 .
 ├── src/
 │   ├── php/           # PHP backend code
@@ -63,12 +65,14 @@ The application is available at:
 Detailed documentation is available in [`documentation/`](documentation/):
 
 ### Security & Compliance
+
 - [SSL Certificates](documentation/SSL-CERTIFICATES.md)
 - [Database Encryption](documentation/ENCRYPTION.md)
 - [Audit Logging](documentation/AUDIT-LOGGING.md)
 - [Network Architecture](documentation/NETWORK.md)
 
 ### Development
+
 - [Dev Dashboard](documentation/DEV-DASHBOARD.md)
 - [Xdebug Configuration](documentation/XDEBUG.md)
 - [PHP Testing](documentation/TESTING-PHP.md)
@@ -95,7 +99,8 @@ make check         # Full quality check
 
 ## Git Hooks
 
-This project uses [Captainhook](https://github.com/captainhookphp/captainhook) for Git hooks.
+This project uses [Captainhook](https://github.com/captainhookphp/captainhook)
+for Git hooks.
 
 Hooks are automatically installed during `make setup`. To install manually:
 
@@ -104,22 +109,29 @@ vendor/bin/captainhook install
 ```
 
 Configured hooks include:
-- **pre-commit:** Code style checks, static analysis
+
+- **pre-commit:** Auto-fix code style (PHP-CS-Fixer, Prettier, ESLint,
+  Markdownlint)
 - **commit-msg:** Commit message validation (conventional commits)
+- **pre-push:** Static analysis (PHPStan, TypeScript) and tests (PHPUnit,
+  Vitest)
 
 ## Development Modes
 
 ### PHP Backend (Default)
+
 ```bash
 ENV=development make up
 ```
 
 ### Node.js Development (HMR)
+
 ```bash
 make node-dev      # Starts Vite dev server on port 5173
 ```
 
 ### Production Build
+
 ```bash
 ENV=production make build
 make up

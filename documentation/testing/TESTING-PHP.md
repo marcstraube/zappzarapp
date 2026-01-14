@@ -1,10 +1,11 @@
 # PHP Tests
 
-This directory contains tests for the PHP backend using PHPUnit (similar to Vitest for Node.js).
+This directory contains tests for the PHP backend using PHPUnit (similar to
+Vitest for Node.js).
 
 ## Directory Structure
 
-```
+```text
 tests/php/                          # PHP tests (PHPUnit)
 ├── App/                            # Application tests
 │   ├── Unit/                       # Unit tests for individual classes/functions
@@ -53,6 +54,7 @@ docker compose exec php composer test -- --coverage-html build/coverage/php
 ## Coverage Reports
 
 Coverage reports are generated in `build/coverage/php/`:
+
 - `build/coverage/php/index.html` - HTML coverage report (similar to Vitest)
 - `build/coverage/php/clover.xml` - Clover XML format for CI/CD integration
 
@@ -149,6 +151,7 @@ class ApiEndpointTest extends TestCase
 PHPUnit configuration is in `phpunit.xml.dist` at the project root.
 
 Key configurations:
+
 - Test suites: Unit and Feature
 - Coverage thresholds: 80%
 - Test directories: `tests/php/App/Unit/` and `tests/php/App/Feature/`
@@ -156,6 +159,7 @@ Key configurations:
 ## Quality Thresholds
 
 Minimum coverage requirements:
+
 - Lines: 80%
 - Functions: 80%
 - Branches: 80%
@@ -168,6 +172,7 @@ Similar to Vitest's coverage requirements in the Node.js stack.
 ### PHPStan (Static Analysis)
 
 Run static analysis:
+
 ```bash
 make analyse
 ```
@@ -175,11 +180,13 @@ make analyse
 ### PHP-CS-Fixer (Code Style)
 
 Check code style:
+
 ```bash
 make cs-check
 ```
 
 Fix code style:
+
 ```bash
 make cs-fix
 ```
@@ -187,6 +194,7 @@ make cs-fix
 ### PHPMD (Mess Detector)
 
 Run mess detector:
+
 ```bash
 docker compose exec php vendor/bin/phpmd src text phpmd.xml.dist
 ```
@@ -194,11 +202,13 @@ docker compose exec php vendor/bin/phpmd src text phpmd.xml.dist
 ### Rector (Automated Refactoring)
 
 Refactor code to modern PHP:
+
 ```bash
 make rector
 ```
 
 Preview changes without applying:
+
 ```bash
 make rector-dry
 ```
@@ -206,6 +216,7 @@ make rector-dry
 ### Complete Quality Check
 
 Run all quality checks at once:
+
 ```bash
 make check  # Runs cs-check, analyse, and test
 ```

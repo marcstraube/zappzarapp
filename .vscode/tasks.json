@@ -504,6 +504,44 @@
       "presentation": { "reveal": "always", "panel": "shared" }
     },
     {
+      "label": "Quality: TypeScript Type Check",
+      "type": "shell",
+      "command": "make type-check",
+      "problemMatcher": [],
+      "group": { "kind": "test", "isDefault": false },
+      "presentation": { "reveal": "always", "panel": "shared" }
+    },
+    {
+      "label": "Quality: ESLint",
+      "type": "shell",
+      "command": "make lint-node",
+      "problemMatcher": [],
+      "group": { "kind": "test", "isDefault": false },
+      "presentation": { "reveal": "always", "panel": "shared" }
+    },
+    {
+      "label": "Quality: ESLint Fix",
+      "type": "shell",
+      "command": "make lint-node-fix",
+      "problemMatcher": [],
+      "presentation": { "reveal": "always", "panel": "shared" }
+    },
+    {
+      "label": "Quality: Prettier Check",
+      "type": "shell",
+      "command": "make prettier-check",
+      "problemMatcher": [],
+      "group": { "kind": "test", "isDefault": false },
+      "presentation": { "reveal": "always", "panel": "shared" }
+    },
+    {
+      "label": "Quality: Prettier Fix",
+      "type": "shell",
+      "command": "make prettier-fix",
+      "problemMatcher": [],
+      "presentation": { "reveal": "always", "panel": "shared" }
+    },
+    {
       "label": "Quality: Check Outdated",
       "type": "shell",
       "command": "make outdated",

@@ -14,12 +14,17 @@
     // MD041: First line should be a top-level heading - disabled for fragments
     "MD041": false,
 
+    // MD046: Code block style - use fenced (more common than indented)
+    "MD046": {
+      "style": "fenced"
+    },
+
     // MD024: Allow duplicate headings in different sections
     "MD024": {
-      "siblings_only": true,
-    },
+      "siblings_only": true
+    }
   },
 
   // Files to ignore
-  "ignores": ["node_modules/**", "vendor/**", "build/**", "docs/**", ".git/**", "CHANGELOG.md"],
+  "ignores": ["node_modules/**", "vendor/**", "build/**", "docs/**", ".git/**", "CHANGELOG.md"]
 }

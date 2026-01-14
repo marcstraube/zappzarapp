@@ -1,6 +1,7 @@
 # SSL/TLS Certificate Management
 
-This guide covers SSL/TLS certificate setup and management for development and production environments.
+This guide covers SSL/TLS certificate setup and management for development and
+production environments.
 
 ## Quick Start
 
@@ -28,8 +29,9 @@ ENV=production make build && make up
 
 ### Development
 
-SSL is **automatically configured** via the nginx entrypoint using `ssl-development.conf.template`.
-No manual steps required - just ensure certificates exist (created by `make setup`).
+SSL is **automatically configured** via the nginx entrypoint using
+`ssl-development.conf.template`. No manual steps required - just ensure
+certificates exist (created by `make setup`).
 
 ### Production
 
@@ -63,7 +65,8 @@ crontab -e
 2. Renews certificate if due (within 30 days of expiry)
 3. Reloads all SSL-dependent services:
    - **Nginx**: Graceful reload (`nginx -s reload`)
-   - **PostgreSQL**: Restart (entrypoint re-copies certs with correct permissions)
+   - **PostgreSQL**: Restart (entrypoint re-copies certs with correct
+     permissions)
    - **MariaDB**: Restart (entrypoint re-copies certs with correct permissions)
    - **Redis**: Restart (no graceful TLS reload available)
 
@@ -84,24 +87,30 @@ make ssl-info
 
 ### Why Permissions Matter
 
-Database containers (PostgreSQL, MariaDB) require specific file permissions for SSL certificates:
+Database containers (PostgreSQL, MariaDB) require specific file permissions for
+SSL certificates:
+
 - **Certificate files** (`.crt`): `644` (readable by all)
 - **Private keys** (`.key`): `600` (owner only, **critical for security**)
 
 ### How Permissions Are Handled
 
 **Development Mode:**
+
 - Certificates are mounted to `/tmp/certs/`
-- Container entrypoint scripts copy them to the correct location with proper permissions
+- Container entrypoint scripts copy them to the correct location with proper
+  permissions
 - This happens on every container start/restart
 
 **Production Mode:**
+
 - Certificates are mounted directly to the final path
 - Host file permissions are used (ensure correct permissions on host)
 
 ### After Certificate Renewal
 
 The `make ssl-reload-services` command restarts database containers to ensure:
+
 1. New certificates are loaded
 2. Entrypoint scripts re-copy certs with correct permissions (dev mode)
 3. All services use the renewed certificate
@@ -109,7 +118,7 @@ The `make ssl-reload-services` command restarts database containers to ensure:
 ## Available Make Commands
 
 | Command                    | Description                                         |
-|----------------------------|-----------------------------------------------------|
+| -------------------------- | --------------------------------------------------- |
 | `make ssl-selfsigned`      | Generate self-signed certificate (dev)              |
 | `make ssl-letsencrypt`     | Setup Let's Encrypt certificate (prod)              |
 | `make ssl-prod-enable`     | Generate ssl-production.conf from template          |
@@ -120,7 +129,7 @@ The `make ssl-reload-services` command restarts database containers to ensure:
 
 ## File Structure
 
-```
+```text
 docker/certs/
 ├── generate-selfsigned.sh       # Self-signed cert generator
 ├── setup-letsencrypt.sh         # Let's Encrypt setup script
@@ -144,7 +153,8 @@ docker/nginx/conf.d/
 ## Security Notes
 
 1. **Never commit private keys** (`.key`, `.pem`) to version control
-2. **Self-signed certificates** are for development only - browsers will show warnings
+2. **Self-signed certificates** are for development only - browsers will show
+   warnings
 3. **Let's Encrypt** requires:
    - Domain pointing to your server's public IP
    - Port 80 accessible from the internet
@@ -165,12 +175,14 @@ make ssl-selfsigned  # or make ssl-letsencrypt
 ### Browser shows "Not Secure" warning
 
 Expected for self-signed certificates. Options:
+
 1. Add exception in browser (development only)
 2. Use Let's Encrypt for valid certificates (production)
 
 ### Let's Encrypt validation fails
 
 Check:
+
 1. Domain DNS points to your server: `nslookup yourdomain.com`
 2. Port 80 is open: `netstat -tuln | grep :80`
 3. Nginx is running: `docker compose ps nginx`

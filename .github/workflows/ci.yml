@@ -131,6 +131,9 @@ jobs:
       - name: Validate package.json
         run: docker compose exec -T node pnpm run quality
 
+      - name: Markdownlint
+        run: docker compose exec -T node pnpm run lint:md
+
       - name: Cleanup
         uses: ./.github/actions/docker-cleanup
 

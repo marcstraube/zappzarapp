@@ -41,7 +41,8 @@ On first launch, create a username and password.
 
 ### Step 3: Install Docker Desktop
 
-1. Download [Docker Desktop for Windows](https://www.docker.com/products/docker-desktop/)
+1. Download
+   [Docker Desktop for Windows](https://www.docker.com/products/docker-desktop/)
 2. Run the installer
 3. Enable **"Use WSL 2 based engine"** during installation
 4. After installation, open Docker Desktop Settings:
@@ -65,20 +66,23 @@ make setup
 make up
 ```
 
-> **Important:** Always run commands from within WSL, not from Windows PowerShell/CMD.
+> **Important:** Always run commands from within WSL, not from Windows
+> PowerShell/CMD.
 
 ### Step 5: Access the Application
 
 Open in your Windows browser:
-- **HTTP:** http://localhost:8080
-- **HTTPS:** https://localhost:8443
-- **Dev Dashboard:** http://localhost:8080/_dev
+
+- **HTTP:** <http://localhost:8080>
+- **HTTPS:** <https://localhost:8443>
+- **Dev Dashboard:** <http://localhost:8080/_dev>
 
 ---
 
 ## Alternative: Git Bash
 
-If you cannot use WSL2, Git Bash provides a Unix-like environment with `make` support.
+If you cannot use WSL2, Git Bash provides a Unix-like environment with `make`
+support.
 
 ### Step 1: Install Git for Windows
 
@@ -108,7 +112,8 @@ Option B - Via MSYS2:
 
 ### Step 3: Install Docker Desktop
 
-1. Download [Docker Desktop for Windows](https://www.docker.com/products/docker-desktop/)
+1. Download
+   [Docker Desktop for Windows](https://www.docker.com/products/docker-desktop/)
 2. Run the installer (WSL2 backend is still recommended)
 
 ### Step 4: Clone and Run
@@ -152,6 +157,7 @@ Then restart WSL: `wsl --shutdown`
 ### Slow File System Performance
 
 For best performance with WSL2:
+
 - Store project files **inside WSL** (`/home/user/...`)
 - Avoid mounting from Windows (`/mnt/c/...`)
 
@@ -172,28 +178,31 @@ If not found, ensure the installation path is in your PATH environment variable.
 
 ### VS Code
 
-1. Install the [Remote - WSL](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-wsl) extension
+1. Install the
+   [Remote - WSL](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-wsl)
+   extension
 2. Open VS Code, press `F1`, select **"WSL: Connect to WSL"**
 3. Open your project folder from within WSL
 
 ### PhpStorm / WebStorm
 
-1. Configure WSL as the terminal: **Settings → Tools → Terminal → Shell Path:** `wsl.exe`
+1. Configure WSL as the terminal: **Settings → Tools → Terminal → Shell Path:**
+   `wsl.exe`
 2. Configure Docker: **Settings → Build, Execution, Deployment → Docker → WSL**
 
 ---
 
 ## Quick Reference
 
-| Task | Command (run in WSL/Git Bash) |
-|------|-------------------------------|
-| Start containers | `make up` |
-| Stop containers | `make down` |
-| View logs | `make logs` |
-| Run tests | `make test` |
-| PHP shell | `make shell-php` |
-| Node shell | `make shell-node` |
-| Full setup | `make setup` |
+| Task             | Command (run in WSL/Git Bash) |
+| ---------------- | ----------------------------- |
+| Start containers | `make up`                     |
+| Stop containers  | `make down`                   |
+| View logs        | `make logs`                   |
+| Run tests        | `make test`                   |
+| PHP shell        | `make shell-php`              |
+| Node shell       | `make shell-node`             |
+| Full setup       | `make setup`                  |
 
 ---
 

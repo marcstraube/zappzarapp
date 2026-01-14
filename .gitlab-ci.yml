@@ -185,6 +185,16 @@ node:type-check:
     - docker compose exec -T node pnpm install --frozen-lockfile
     - docker compose exec -T node pnpm run type-check
 
+node:markdownlint:
+  <<: *docker-setup
+  stage: quality
+  dependencies:
+    - build:node
+  script:
+    - docker compose up -d node
+    - docker compose exec -T node pnpm install --frozen-lockfile
+    - docker compose exec -T node pnpm run lint:md
+
 # ============================================================================
 # NODE.JS TESTS
 # ============================================================================

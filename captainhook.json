@@ -17,7 +17,7 @@
         "action": "docker compose exec -T node pnpm exec lint-staged --no-stash",
         "options": [],
         "type": "cli",
-        "description": "Run lint-staged for Node.js files (TS/JS, JSON, MD)"
+        "description": "Fix code style on staged Node.js files (TS/JS, JSON, MD) via Prettier, ESLint, Markdownlint (auto-fix and re-stage)"
       },
       {
         "action": "git diff --name-only --cached --diff-filter=d | grep '.php$' | grep -v '^docker/' | xargs -r -I {} docker compose exec -T php php -l /var/www/html/{}",
@@ -26,10 +26,10 @@
         "description": "Check PHP syntax on staged files"
       },
       {
-        "action": "git diff --name-only --cached --diff-filter=d | grep '.php$' | grep -v '^docker/' | xargs -r sh -c 'docker compose exec -T php vendor/bin/php-cs-fixer fix --diff --dry-run --config=.php-cs-fixer.dist.php $(echo \"$@\" | sed \"s|[^ ]*|/var/www/html/&|g\")' _",
+        "action": "git diff --name-only --cached --diff-filter=d | grep '.php$' | grep -v '^docker/' | xargs -r sh -c 'docker compose exec -T php vendor/bin/php-cs-fixer fix --config=.php-cs-fixer.dist.php $(echo \"$@\" | sed \"s|[^ ]*|/var/www/html/&|g\") && git add $@' _",
         "options": [],
         "type": "cli",
-        "description": "Check PHP coding style on staged files"
+        "description": "Fix PHP coding style on staged files (auto-fix and re-stage)"
       }
     ]
   },
@@ -41,6 +41,18 @@
         "options": [],
         "type": "cli",
         "description": "Run PHPStan static analysis (Level 5) before pushing to remote"
+      },
+      {
+        "action": "docker compose exec -T php vendor/bin/phpunit",
+        "options": [],
+        "type": "cli",
+        "description": "Run PHPUnit tests (PHP unit & integration tests)"
+      },
+      {
+        "action": "docker compose exec -T node pnpm run type-check",
+        "options": [],
+        "type": "cli",
+        "description": "Run TypeScript type checking (static analysis)"
       },
       {
         "action": "docker compose exec -T node pnpm test",

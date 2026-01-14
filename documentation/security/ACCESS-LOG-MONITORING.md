@@ -1,24 +1,29 @@
 # Access Log Monitoring Guide
 
-**GDPR Art. 32 Compliance: Security of Processing**
+> GDPR Art. 32 Compliance: Security of Processing
 
 ---
 
 ## Scope
 
-**Important:** Access log monitoring tools (fail2ban, Logwatch, alerting) are **host-level configurations** and not part of this boilerplate. This document provides guidance on which tools to consider and how they integrate with the Docker setup.
+**Important:** Access log monitoring tools (fail2ban, Logwatch, alerting) are
+**host-level configurations** and not part of this boilerplate. This document
+provides guidance on which tools to consider and how they integrate with the
+Docker setup.
 
 ---
 
 ## Why Access Log Monitoring?
 
 **GDPR Art. 32 requires appropriate security measures:**
+
 - Detection of unauthorized access attempts
 - Identification of brute-force attacks
 - Monitoring for suspicious activity patterns
 - Incident response capability
 
 **Security benefits:**
+
 - Automatic blocking of malicious IPs
 - Early warning for security incidents
 - Forensic analysis capability
@@ -46,12 +51,12 @@ docker logs -t nginx
 
 ### Application Logs (Mounted Volumes)
 
-| Log Type    | Container Path                         | Host Path (default)          |
-|-------------|----------------------------------------|------------------------------|
-| Nginx       | `/var/log/nginx/`                      | Via `docker logs nginx`      |
-| PHP         | `/var/log/php/`                        | Via `docker logs php`        |
-| Application | `/var/www/html/storage/logs/`          | `./storage/logs/`            |
-| Audit       | `/var/www/html/storage/logs/audit.log` | `./storage/logs/audit.log`   |
+| Log Type    | Container Path                         | Host Path (default)        |
+| ----------- | -------------------------------------- | -------------------------- |
+| Nginx       | `/var/log/nginx/`                      | Via `docker logs nginx`    |
+| PHP         | `/var/log/php/`                        | Via `docker logs php`      |
+| Application | `/var/www/html/storage/logs/`          | `./storage/logs/`          |
+| Audit       | `/var/www/html/storage/logs/audit.log` | `./storage/logs/audit.log` |
 
 ### Export Logs to Host (Optional)
 
@@ -74,12 +79,14 @@ services:
 Automatically bans IPs showing malicious signs.
 
 **Use cases:**
+
 - Block repeated failed SSH attempts
 - Block HTTP brute-force attacks
 - Block repeated 4xx/5xx errors
 
 **Resources:**
-- Official docs: https://www.fail2ban.org/
+
+- Official docs: <https://www.fail2ban.org/>
 - Docker integration: Use host-based fail2ban reading container logs
 
 **Example jail for nginx (host-side):**
@@ -106,62 +113,70 @@ bantime = 86400
 Daily log analysis and summary reports.
 
 **Use cases:**
+
 - Daily security summary emails
 - Anomaly detection
 - Trend analysis
 
 **Resources:**
-- Official docs: https://sourceforge.net/projects/logwatch/
+
+- Official docs: <https://sourceforge.net/projects/logwatch/>
 
 ### 3. Prometheus + Grafana (Metrics & Alerting)
 
 Real-time monitoring and alerting.
 
 **Use cases:**
+
 - Request rate monitoring
 - Error rate alerting
 - Resource usage tracking
 
 **Resources:**
-- Prometheus: https://prometheus.io/
-- Grafana: https://grafana.com/
+
+- Prometheus: <https://prometheus.io/>
+- Grafana: <https://grafana.com/>
 
 ### 4. Loki (Log Aggregation)
 
 Centralized log management (pairs with Grafana).
 
 **Use cases:**
+
 - Centralized log search
 - Log correlation across services
 - Long-term log retention
 
 **Resources:**
-- Official docs: https://grafana.com/oss/loki/
+
+- Official docs: <https://grafana.com/oss/loki/>
 
 ### 5. OSSEC/Wazuh (Host-based IDS)
 
 Comprehensive intrusion detection system.
 
 **Use cases:**
+
 - File integrity monitoring
 - Rootkit detection
 - Active response
 
 **Resources:**
-- Wazuh: https://wazuh.com/
-- OSSEC: https://www.ossec.net/
+
+- Wazuh: <https://wazuh.com/>
+- OSSEC: <https://www.ossec.net/>
 
 ---
 
 ## Quick Start Recommendations
 
-| Need                        | Recommended Tool     | Complexity |
-|-----------------------------|----------------------|------------|
-| Block brute-force attacks   | fail2ban             | Low        |
-| Daily log summaries         | Logwatch             | Low        |
-| Real-time alerting          | Prometheus + Grafana | Medium     |
-| Centralized logging         | Loki + Grafana       | Medium     |
-| Full IDS/SIEM               | Wazuh                | High       |
+| Need                      | Recommended Tool     | Complexity |
+| ------------------------- | -------------------- | ---------- |
+| Block brute-force attacks | fail2ban             | Low        |
+| Daily log summaries       | Logwatch             | Low        |
+| Real-time alerting        | Prometheus + Grafana | Medium     |
+| Centralized logging       | Loki + Grafana       | Medium     |
+| Full IDS/SIEM             | Wazuh                | High       |
 
 **Minimum recommendation:** Start with fail2ban for basic intrusion prevention.
 
@@ -170,11 +185,13 @@ Comprehensive intrusion detection system.
 ## Integration with Audit Logging
 
 The application's [Audit Logging](./AUDIT-LOGGING.md) system provides:
+
 - User action tracking (stored in database)
 - GDPR-compliant access records
 - Tamper-proof logs with checksums
 
 Access log monitoring complements this by:
+
 - Detecting attacks before authentication
 - Blocking malicious IPs at network level
 - Monitoring infrastructure-level events

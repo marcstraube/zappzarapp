@@ -1,12 +1,14 @@
 # Security Scanning Guide
 
-**GDPR Art. 32 Compliance: Continuous Security Assessment**
+> GDPR Art. 32 Compliance: Continuous Security Assessment
 
 ---
 
 ## Overview
 
-This project includes automated security scanning via GitHub Actions to identify vulnerabilities in:
+This project includes automated security scanning via GitHub Actions to identify
+vulnerabilities in:
+
 - Docker images (OS packages, libraries)
 - Application dependencies (Composer, pnpm)
 - Filesystem (misconfigurations, vulnerable files)
@@ -16,10 +18,11 @@ This project includes automated security scanning via GitHub Actions to identify
 
 ## CI/CD Workflows
 
-This project provides security scanning workflows for both GitHub Actions and GitLab CI/CD.
+This project provides security scanning workflows for both GitHub Actions and
+GitLab CI/CD.
 
 | Platform | Main Pipeline              | Security Scan                         |
-|----------|----------------------------|---------------------------------------|
+| -------- | -------------------------- | ------------------------------------- |
 | GitHub   | `.github/workflows/ci.yml` | `.github/workflows/security-scan.yml` |
 | GitLab   | `.gitlab-ci.yml`           | `.gitlab/security-scan.gitlab-ci.yml` |
 
@@ -32,7 +35,7 @@ This project provides security scanning workflows for both GitHub Actions and Gi
 ### Triggers
 
 | Trigger  | Description                                    |
-|----------|------------------------------------------------|
+| -------- | ---------------------------------------------- |
 | Schedule | Weekly (Sunday 2 AM UTC)                       |
 | Manual   | `workflow_dispatch` with configurable severity |
 | Push     | On changes to Docker/dependency files          |
@@ -42,6 +45,7 @@ This project provides security scanning workflows for both GitHub Actions and Gi
 #### 1. Docker Image Scan
 
 Scans all Docker images for vulnerabilities:
+
 - PHP
 - Node.js
 - Nginx
@@ -49,6 +53,7 @@ Scans all Docker images for vulnerabilities:
 - MariaDB
 
 Uses [Trivy](https://trivy.dev/) to detect:
+
 - OS package vulnerabilities (CVEs)
 - Language-specific vulnerabilities
 - Misconfigurations
@@ -56,6 +61,7 @@ Uses [Trivy](https://trivy.dev/) to detect:
 #### 2. Dependency Scan
 
 Audits application dependencies:
+
 - `composer audit` for PHP packages
 - `pnpm audit` for Node.js packages
 
@@ -64,6 +70,7 @@ Results uploaded as artifacts for review.
 #### 3. Filesystem Scan
 
 Scans the repository for:
+
 - Vulnerable dependencies in lock files
 - Infrastructure as Code (IaC) misconfigurations
 - Dockerfile best practice violations
@@ -71,12 +78,14 @@ Scans the repository for:
 #### 4. Secret Scan
 
 Detects accidentally committed secrets:
+
 - API keys
 - Passwords
 - Private keys
 - Tokens
 
-Uses both Trivy and [TruffleHog](https://github.com/trufflesecurity/trufflehog) for comprehensive detection.
+Uses both Trivy and [TruffleHog](https://github.com/trufflesecurity/trufflehog)
+for comprehensive detection.
 
 ---
 
@@ -85,6 +94,7 @@ Uses both Trivy and [TruffleHog](https://github.com/trufflesecurity/trufflehog) 
 ### GitHub Security Tab
 
 SARIF results are uploaded to GitHub's Security tab:
+
 1. Navigate to your repository
 2. Click "Security" tab
 3. Select "Code scanning alerts"
@@ -95,7 +105,8 @@ Each run generates a summary with pass/fail status for each scan type.
 
 ### Artifacts
 
-Dependency audit results are available as downloadable artifacts (retained 30 days).
+Dependency audit results are available as downloadable artifacts (retained 30
+days).
 
 ---
 
@@ -124,12 +135,13 @@ include:
 
 - **Job artifacts:** Download JSON reports from job details
 - **Security summary:** Generated `security-summary.md` in report stage
-- **Container scanning reports:** Integrated with GitLab's Security Dashboard (Ultimate tier)
+- **Container scanning reports:** Integrated with GitLab's Security Dashboard
+  (Ultimate tier)
 
 ### Key Differences from GitHub
 
 | Feature            | GitHub              | GitLab                     |
-|--------------------|---------------------|----------------------------|
+| ------------------ | ------------------- | -------------------------- |
 | Secret scanning    | TruffleHog          | Gitleaks                   |
 | SARIF upload       | GitHub Security tab | Artifacts                  |
 | Security dashboard | Code scanning       | Container scanning reports |
@@ -139,7 +151,7 @@ include:
 ## Severity Levels
 
 | Level    | Description                          | Action              |
-|----------|--------------------------------------|---------------------|
+| -------- | ------------------------------------ | ------------------- |
 | CRITICAL | Actively exploited, easy to exploit  | Fix immediately     |
 | HIGH     | Significant risk, likely exploitable | Fix within days     |
 | MEDIUM   | Moderate risk, harder to exploit     | Fix within sprint   |
@@ -220,7 +232,7 @@ docker compose exec node pnpm audit
 
 Create `.trivyignore` in project root:
 
-```
+```text
 # Ignore specific CVE (with reason)
 CVE-2023-12345  # False positive: not exploitable in our context
 
@@ -313,7 +325,8 @@ USER appuser
 
 ## Integration with CI/CD
 
-The main CI pipeline (`.github/workflows/ci.yml`) includes basic security scans. The dedicated security scan workflow provides:
+The main CI pipeline (`.github/workflows/ci.yml`) includes basic security scans.
+The dedicated security scan workflow provides:
 
 - **More comprehensive scanning** (all images, not just PHP/Nginx)
 - **Scheduled runs** (catch new CVEs in existing images)
@@ -393,6 +406,7 @@ dast-scan:
 ### GDPR Art. 32
 
 Regular security scanning demonstrates:
+
 - **Appropriate technical measures** to ensure security
 - **Ongoing assessment** of processing security
 - **Ability to detect** vulnerabilities before exploitation
@@ -400,6 +414,7 @@ Regular security scanning demonstrates:
 ### Documentation
 
 Keep records of:
+
 - Scan schedules and results
 - Remediation actions taken
 - Accepted risks (with justification)
@@ -408,6 +423,7 @@ Keep records of:
 
 ## Related Documentation
 
-- [Access Log Monitoring](./ACCESS-LOG-MONITORING.md) - Runtime security monitoring
+- [Access Log Monitoring](./ACCESS-LOG-MONITORING.md) - Runtime security
+  monitoring
 - [Audit Logging Guide](./AUDIT-LOGGING.md) - Access tracking
 - [Encryption Guide](./ENCRYPTION.md) - Data protection

@@ -1,30 +1,105 @@
 # Docker WebDev Boilerplate - Changelog
 
-**Erstellt:** 2025-12-19
-**Letzte Aktualisierung:** 2026-01-14 (Node.js Major Updates & Volume Mount Fixes)
-**Version:** 3.29
+**Erstellt:** 2025-12-19 **Letzte Aktualisierung:** 2026-01-14 (Node.js Quality
+Tools Parity & Pre-Commit Improvements) **Version:** 3.30
 
 ---
 
 ## Changelog
 
+### Version 3.30 (2026-01-14) - Node.js Quality Tools Parity & Documentation Fixes
+
+#### Added
+
+- **Makefile Node.js Quality Targets** (parity with PHP tools):
+  - `type-check`: TypeScript static analysis (equivalent to PHPStan)
+  - `lint-node`: ESLint for TypeScript/JavaScript
+  - `lint-node-fix`: ESLint auto-fix
+  - `prettier-check`: Code formatting check (TS/JS, Markdown)
+  - `prettier-fix`: Code formatting auto-fix
+
+- **Pre-push Hook Enhancements** (captainhook.json):
+  - PHPUnit tests now run on pre-push (was missing)
+  - TypeScript type-check now runs on pre-push (parity with PHPStan)
+
+- **IDE Integration** for new targets:
+  - PhpStorm: 5 new run configurations in `.idea/runConfigurations/`
+  - VSCode: 5 new tasks in `.vscode/tasks.json`
+
+- **Documentation** (4 new files):
+  - `documentation/CONTRIBUTING.md`: Contribution guidelines (lock files, commit
+    conventions)
+  - `documentation/QUICKSTART.md`: Get started in under 5 minutes
+  - `documentation/TROUBLESHOOTING.md`: Common problems and solutions
+  - `documentation/CHANGELOG.md`: Boilerplate version history (renamed from
+    TODO.md)
+
+- **Documentation reorganization** (moved to subdirectories):
+  - `infrastructure/`: ARCHITECTURE.md, DEPLOYMENT.md, PERFORMANCE.md,
+    MONITORING.md
+  - `development/`: MAKEFILE-REFERENCE.md
+
+#### Changed
+
+- **Makefile `check` target**: Now includes all Node.js quality tools
+  (`prettier-check`, `type-check`, `lint-node`)
+- **lint-staged.config.js**: Added Prettier formatting before markdownlint for
+  markdown files
+- **package.json format scripts**: Now include all markdown files (`**/*.md`)
+- **compose.override.yaml**: Added root markdown file mounts and documentation
+  folder (read-write for Prettier/markdownlint)
+- **.markdownlint-cli2.jsonc**: Added `MD046: fenced` rule (enforces ` ``` `
+  code blocks instead of indented blocks, enables language specification for
+  syntax highlighting)
+- **CI/CD Pipelines**:
+  - GitHub Actions: Added Markdownlint step to node-quality job
+  - GitLab CI: Added new `node:markdownlint` job in quality stage
+- **README.md**: Updated Git hooks description (pre-commit auto-fix tools, added
+  pre-push with PHPStan/TypeScript/PHPUnit/Vitest)
+- **documentation/README.md**: Restructured documentation index, reorganized
+  files into subdirectories
+
+#### Fixed
+
+- **ASCII Diagram Alignment** in existing documentation:
+  - `ERROR-PAGES.md`: Symmetric flowchart alignment
+  - `NETWORK.md`: Centered connectors between network tiers
+
+- **Markdown Lint Errors** (280+ errors fixed):
+  - MD040: Added language specifiers to all code blocks
+  - MD036: Changed bold emphasis to blockquotes in security docs
+  - MD060: Fixed table alignment via Prettier
+
+- **PhpStorm Run Configuration Order**: Fixed alphabetical sorting in
+  `.idea/workspace.xml`
+
+---
+
 ### Version 3.29 (2026-01-14) - Node.js Major Updates
 
 #### Fixed
 
-- **Node package manager operations on Linux**: Fixed `pnpm update` failing with "EBUSY: resource busy" on Linux due to overlay-fs limitations (same issue as Composer in 3.28)
-  - Solution: Use docker create/cp approach to avoid single-file bind mount atomic rename issues
+- **Node package manager operations on Linux**: Fixed `pnpm update` failing with
+  "EBUSY: resource busy" on Linux due to overlay-fs limitations (same issue as
+  Composer in 3.28)
+  - Solution: Use docker create/cp approach to avoid single-file bind mount
+    atomic rename issues
 
 #### Changed
 
-- **Dockerfile (Node Development Stage)**: Removed `COPY package.json pnpm-lock.yaml ./` - files are now mounted as volumes
-- **compose.override.yaml**: Added bidirectional volume mounts for Node package manager files
-- **Makefile `node-update`**: Now uses docker create/cp approach to avoid bind mount issues
+- **Dockerfile (Node Development Stage)**: Removed
+  `COPY package.json pnpm-lock.yaml ./` - files are now mounted as volumes
+- **compose.override.yaml**: Added bidirectional volume mounts for Node package
+  manager files
+- **Makefile `node-update`**: Now uses docker create/cp approach to avoid bind
+  mount issues
 
 #### Removed
 
-- **Makefile `sync-lockfiles`**: No longer needed - lock files are now bidirectionally mounted
-- **docker cp sync operations**: Removed from `composer-install`, `composer-install-local`, `node-install`, `node-install-local`
+- **Makefile `sync-lockfiles`**: No longer needed - lock files are now
+  bidirectionally mounted
+- **docker cp sync operations**: Removed from `composer-install`,
+  `composer-install-local`, `node-install`, `node-install-local`
 
 #### Updated (Node.js - Major Versions)
 
@@ -42,21 +117,31 @@
 
 #### Fixed
 
-- **Composer write permissions on Linux**: Fixed `composer update/require/remove` failing with "Permission denied" on Linux due to overlay-fs limitations
-  - Root cause: Single-file bind mounts combined with Docker overlay-fs prevented writing to files copied via `COPY` in Dockerfile
-  - Solution: Mount `composer.json` and `composer.lock` as volumes instead of copying them into the development image
+- **Composer write permissions on Linux**: Fixed
+  `composer update/require/remove` failing with "Permission denied" on Linux due
+  to overlay-fs limitations
+  - Root cause: Single-file bind mounts combined with Docker overlay-fs
+    prevented writing to files copied via `COPY` in Dockerfile
+  - Solution: Mount `composer.json` and `composer.lock` as volumes instead of
+    copying them into the development image
 
 #### Changed
 
-- **Dockerfile (PHP Development Stage)**: Removed `COPY composer.json composer.lock* ./` - files are now mounted as volumes in development
-- **compose.override.yaml**: Added bidirectional volume mounts for `composer.json` and `composer.lock`
-- **Makefile `composer-update`**: Now runs as user 1000:1000 with direct composer entrypoint (bypasses root-requiring entrypoint)
-- **Makefile `composer`**: Now runs as `www-data` user for consistent permissions
+- **Dockerfile (PHP Development Stage)**: Removed
+  `COPY composer.json composer.lock* ./` - files are now mounted as volumes in
+  development
+- **compose.override.yaml**: Added bidirectional volume mounts for
+  `composer.json` and `composer.lock`
+- **Makefile `composer-update`**: Now runs as user 1000:1000 with direct
+  composer entrypoint (bypasses root-requiring entrypoint)
+- **Makefile `composer`**: Now runs as `www-data` user for consistent
+  permissions
 
 #### Updated
 
 - **rector/rector**: 2.2 → 2.3
-- **lint-staged.config.js**: Exclude package manager configs (`composer.json`, `package.json`, `package-lock.json`) from prettier checks
+- **lint-staged.config.js**: Exclude package manager configs (`composer.json`,
+  `package.json`, `package-lock.json`) from prettier checks
 
 ---
 
@@ -64,11 +149,14 @@
 
 #### Changed
 
-- **PhpStorm Run Configurations**: Complete overhaul with 101 configurations for all Make targets
-  - Organized by category: Setup, Docker, Logs, Shell, Node, Database, Redis, Backup, Quality, Test, Security, Docs, SSL, Renovate
+- **PhpStorm Run Configurations**: Complete overhaul with 101 configurations for
+  all Make targets
+  - Organized by category: Setup, Docker, Logs, Shell, Node, Database, Redis,
+    Backup, Quality, Test, Security, Docs, SSL, Renovate
   - Alphabetically sorted in workspace.xml for consistent display order
 
-- **VSCode Tasks**: Updated `.vscode/tasks.json` with 101 tasks matching all Make targets
+- **VSCode Tasks**: Updated `.vscode/tasks.json` with 101 tasks matching all
+  Make targets
   - Proper task grouping (build, test)
   - Background tasks for logs and watch processes
   - Dedicated panels for shell and CLI tasks
@@ -76,7 +164,8 @@
 #### Added
 
 - **New PhpStorm Run Configurations** for recently added Make targets:
-  - `composer-install-local`, `node-install-local` (local IDE dependency install)
+  - `composer-install-local`, `node-install-local` (local IDE dependency
+    install)
   - `cs-fix-all`, `lint-md-fix` (aggressive code style fixing)
   - `secrets-rotate` (security secret rotation)
   - All Node.js PM2 management commands
@@ -89,7 +178,8 @@
 #### Added
 
 - **PHP Error Page System** (`ErrorPage.php`):
-  - Centralized error page generation with content negotiation (HTML/JSON based on Accept header)
+  - Centralized error page generation with content negotiation (HTML/JSON based
+    on Accept header)
   - All HTTP errors (400-599) routed through PHP for consistent handling
   - Template-based error pages in `templates/app/error.php`
   - Unit tests for error handling (`ErrorPageTest.php`)
@@ -101,22 +191,30 @@
 
 #### Fixed
 
-- **Vite HMR over HTTPS**: Hot Module Replacement now works correctly when accessing the application via HTTPS (`https://localhost:8443`)
-  - `ViteHelper.php`: Uses relative URLs for HTTPS requests to avoid mixed content blocking
-  - `vite.config.js`: Added `clientPort: 8443` and `protocol: 'wss'` for WebSocket connection through nginx proxy
-  - Nginx configs: Added proxy location for Vite internal routes (`/@fs/`, `/@id/`, `/@vite/`, `node_modules/`)
+- **Vite HMR over HTTPS**: Hot Module Replacement now works correctly when
+  accessing the application via HTTPS (`https://localhost:8443`)
+  - `ViteHelper.php`: Uses relative URLs for HTTPS requests to avoid mixed
+    content blocking
+  - `vite.config.js`: Added `clientPort: 8443` and `protocol: 'wss'` for
+    WebSocket connection through nginx proxy
+  - Nginx configs: Added proxy location for Vite internal routes (`/@fs/`,
+    `/@id/`, `/@vite/`, `node_modules/`)
 
-- **DevDashboard Database Connection**: Health check now uses Docker Secrets for database password
-  - `HealthCheckService.php`: Refactored to use `DatabaseConfig` class instead of direct `getenv('DB_PASSWORD')`
+- **DevDashboard Database Connection**: Health check now uses Docker Secrets for
+  database password
+  - `HealthCheckService.php`: Refactored to use `DatabaseConfig` class instead
+    of direct `getenv('DB_PASSWORD')`
   - Ensures consistent Docker Secrets support across all database connections
 
 #### Changed
 
 - **Template Reorganization**: View files moved to `templates/` directory
   - `templates/app/` - Application templates (welcome.php, error.php)
-  - `templates/dev-dashboard/` - DevDashboard templates (moved from `src/php/DevDashboard/Views/`)
+  - `templates/dev-dashboard/` - DevDashboard templates (moved from
+    `src/php/DevDashboard/Views/`)
 
-- **Nginx SSL Config Sync**: Both `ssl-development.conf.template` and `default.conf` now have identical Vite proxy configurations
+- **Nginx SSL Config Sync**: Both `ssl-development.conf.template` and
+  `default.conf` now have identical Vite proxy configurations
 
 - **Production SSL Config (`ssl-production.conf.template`)**:
   - Dynamic port via `${NGINX_SSL_PORT}` variable (was hardcoded 8443)
@@ -140,17 +238,21 @@
 - **lint-staged for Pre-Commit Hooks**:
   - Added `lint-staged` for running linters only on staged files
   - New config file `lint-staged.config.js` (TS/JS, JSON, Markdown)
-  - Updated `captainhook.json` to use lint-staged instead of full codebase checks
+  - Updated `captainhook.json` to use lint-staged instead of full codebase
+    checks
   - Separate PHP checks (syntax + CS-Fixer) for staged files only
 
 - **Custom Nginx Error Pages**:
   - Added `docker/nginx/errors/404.html` - styled 404 page
   - Added `docker/nginx/errors/50x.html` - styled 50x error page
-  - Updated Nginx configs with `error_page` directives and internal `/errors/` location
+  - Updated Nginx configs with `error_page` directives and internal `/errors/`
+    location
 
-- **`make node-update`**: New target for updating Node.js dependencies with automatic lockfile sync
+- **`make node-update`**: New target for updating Node.js dependencies with
+  automatic lockfile sync
 
-- **Dependency Management Documentation** (`documentation/development/DEPENDENCIES.md`):
+- **Dependency Management Documentation**
+  (`documentation/development/DEPENDENCIES.md`):
   - Complete guide for Composer and pnpm dependency management
   - Docker Compose Watch architecture explanation
   - Workflow examples (new feature, after pull, fresh install)
@@ -158,17 +260,22 @@
 
 #### Changed
 
-- **`make help` formatting**: Increased column width from `%-20s` to `%-26s` for better readability
+- **`make help` formatting**: Increased column width from `%-20s` to `%-26s` for
+  better readability
 
-- **Automatic Lockfile Sync**: All dependency targets now sync only the relevant lockfile:
+- **Automatic Lockfile Sync**: All dependency targets now sync only the relevant
+  lockfile:
   - `make composer-install` → syncs `composer.lock` after install
   - `make node-install` → syncs `pnpm-lock.yaml` after install
-  - `make composer-install-local` → syncs `composer.lock` before install (if container running)
-  - `make node-install-local` → syncs `pnpm-lock.yaml` before install (if container running)
+  - `make composer-install-local` → syncs `composer.lock` before install (if
+    container running)
+  - `make node-install-local` → syncs `pnpm-lock.yaml` before install (if
+    container running)
 
 - **`make sync-lockfiles`**: Remains available for manual sync of both lockfiles
 
-- **`compose.override.yaml`**: Added mounts for lint-staged config, markdownlint config, and documentation folder
+- **`compose.override.yaml`**: Added mounts for lint-staged config, markdownlint
+  config, and documentation folder
 
 ---
 
@@ -176,10 +283,11 @@
 
 #### Fixed
 
-- **`make logs` now shows all containers**: Previously only displayed nginx logs because
-  Docker Compose profiles were not passed to the `logs` command. Now dynamically includes
-  all enabled services (php, node, redis, postgres) based on `ENABLE_*` flags in `.env`,
-  matching the behavior of `make up`, `make down`, and `make build`.
+- **`make logs` now shows all containers**: Previously only displayed nginx logs
+  because Docker Compose profiles were not passed to the `logs` command. Now
+  dynamically includes all enabled services (php, node, redis, postgres) based
+  on `ENABLE_*` flags in `.env`, matching the behavior of `make up`,
+  `make down`, and `make build`.
 
 ---
 
@@ -189,17 +297,21 @@
 
 - **Docker Secrets Support**:
   - Secure password management via file-based secrets (`./secrets/`)
-  - `_FILE` environment variable pattern for PHP and Node (`DB_PASSWORD_FILE`, etc.)
+  - `_FILE` environment variable pattern for PHP and Node (`DB_PASSWORD_FILE`,
+    etc.)
   - Secrets mounted read-only to containers at `/run/secrets/<secret_name>`
   - Auto-generation of secrets during `make setup`
 
 - **Make Commands for Secrets**:
   - `make secrets` - Generate missing secrets (idempotent, safe to run anytime)
-  - `make secrets-rotate-passwords` - Rotate DB passwords only (preserves encryption keys)
-  - `make secrets-rotate` - Rotate ALL secrets (with warning about backup key impact)
+  - `make secrets-rotate-passwords` - Rotate DB passwords only (preserves
+    encryption keys)
+  - `make secrets-rotate` - Rotate ALL secrets (with warning about backup key
+    impact)
 
 - **DatabaseConfig `_FILE` Support** (PHP & Node):
-  - `getEnvOrFile()` method checks `{VAR}_FILE` first, then falls back to `{VAR}`
+  - `getEnvOrFile()` method checks `{VAR}_FILE` first, then falls back to
+    `{VAR}`
   - Automatic whitespace trimming from secret file content
   - Graceful fallback when secret file doesn't exist
 
@@ -252,9 +364,12 @@
 
 - **Database SSL Configuration**:
   - `DB_SSL_CA` environment variable for custom CA certificate path
-  - `DB_SSL_CA=system` option for cloud databases with public CA-signed certificates
-  - `DB_SSL_VERIFY` environment variable (true/false) for certificate verification
-  - Automatic SSL fallback for MariaDB using internal certificate (`/etc/ssl/db-certs/cert.crt`)
+  - `DB_SSL_CA=system` option for cloud databases with public CA-signed
+    certificates
+  - `DB_SSL_VERIFY` environment variable (true/false) for certificate
+    verification
+  - Automatic SSL fallback for MariaDB using internal certificate
+    (`/etc/ssl/db-certs/cert.crt`)
 
 - **PostgreSQL sslmode Support**:
   - Automatic sslmode selection based on SSL configuration
@@ -275,9 +390,12 @@
 #### Changed
 
 - **compose.override.yaml - Bidirectional Bind Mounts**:
-  - PHP: `src/php`, `tests/php`, `templates` now use bind mounts instead of watch sync
-  - Node: `src/node`, `tests/node`, `resources` now use bind mounts instead of watch sync
-  - Enables code quality tools (CS Fixer, ESLint, Prettier) to write changes back to host
+  - PHP: `src/php`, `tests/php`, `templates` now use bind mounts instead of
+    watch sync
+  - Node: `src/node`, `tests/node`, `resources` now use bind mounts instead of
+    watch sync
+  - Enables code quality tools (CS Fixer, ESLint, Prettier) to write changes
+    back to host
   - Removed redundant watch sync entries for these directories
 
 - **SSL Certificate Mount Point**:
@@ -291,7 +409,8 @@
 
 - **Quick Start Instructions** (`.env.example`, `templates/welcome.php`):
   - Fixed: `make fresh` → `make up` (fresh is dangerous, deletes all data)
-  - Fixed: "Set ENV=development" → "Adjust USER_ID, GROUP_ID" (ENV already has correct default)
+  - Fixed: "Set ENV=development" → "Adjust USER_ID, GROUP_ID" (ENV already has
+    correct default)
 
 - **HealthCheck & Welcome Page**:
   - Added `ENABLE_DATABASE` environment variable support
@@ -347,19 +466,24 @@
 #### Changed
 
 - **PHPUnit Modernization**:
-  - Replaced `@covers` annotation with PHP 8 `#[CoversClass()]` attribute in `SystemInfoServiceTest.php`
+  - Replaced `@covers` annotation with PHP 8 `#[CoversClass()]` attribute in
+    `SystemInfoServiceTest.php`
   - Added `PHPUnit\Framework\Attributes\CoversClass` import
 
 - **GitLab CI Cleanup Consolidation**:
   - Integrated `after_script` cleanup into `docker-setup` anchor (DRY principle)
   - Removed unused `.cleanup` anchor
-  - Removed redundant `after_script` from `dependency-audit` and `build:production` jobs
+  - Removed redundant `after_script` from `dependency-audit` and
+    `build:production` jobs
   - All 15 Docker jobs now inherit cleanup automatically
 
 - **GitHub Actions Cleanup Consolidation**:
-  - Created reusable Composite Action: `.github/actions/docker-cleanup/action.yml`
-  - Added cleanup to jobs missing it: `php-quality`, `php-tests`, `node-quality`, `node-tests`
-  - Replaced manual cleanup steps in `dependency-audit`, `build-production`, `dependency-scan`
+  - Created reusable Composite Action:
+    `.github/actions/docker-cleanup/action.yml`
+  - Added cleanup to jobs missing it: `php-quality`, `php-tests`,
+    `node-quality`, `node-tests`
+  - Replaced manual cleanup steps in `dependency-audit`, `build-production`,
+    `dependency-scan`
   - All 7 Docker jobs now use the same centralized cleanup action
 
 ### Version 3.19 (2026-01-12) - Filename Parity & Dashboard Fix
@@ -367,9 +491,11 @@
 #### Changed
 
 - **Filename Parity (dev/prod → development/production)**:
-  - Renamed `docker/php/entrypoint.dev.sh` → `docker/php/entrypoint.development.sh`
+  - Renamed `docker/php/entrypoint.dev.sh` →
+    `docker/php/entrypoint.development.sh`
   - Renamed `compose.prod.yaml` → `compose.production.yaml`
-  - Consistent with ENV values (`development`/`production`) and Dockerfile targets
+  - Consistent with ENV values (`development`/`production`) and Dockerfile
+    targets
   - Updated all references in:
     - `compose.override.yaml`
     - `Makefile` (16 occurrences)
@@ -386,7 +512,8 @@
 - **Dev Dashboard Git Status**:
   - Removed unreliable "uncommitted changes" counter from dashboard
   - Git status now shows only branch and commit (work correctly in container)
-  - Root cause: `.dockerignore` excludes files from build, but `.git` is mounted as volume, causing Git to see tracked files as "deleted"
+  - Root cause: `.dockerignore` excludes files from build, but `.git` is mounted
+    as volume, causing Git to see tracked files as "deleted"
   - Updated `SystemInfoService.php`, `dashboard.php`, and related tests
 
 ---
@@ -396,13 +523,16 @@
 #### Added
 
 - **GDPR Phase 3.2 - Automated Security Scanning**:
-  - `.github/workflows/security-scan.yml`: Comprehensive GitHub security workflow
-    - Docker image vulnerability scans (all 5 images: PHP, Node, Nginx, PostgreSQL, MariaDB)
+  - `.github/workflows/security-scan.yml`: Comprehensive GitHub security
+    workflow
+    - Docker image vulnerability scans (all 5 images: PHP, Node, Nginx,
+      PostgreSQL, MariaDB)
     - Dependency scanning (Composer + pnpm audit)
     - Filesystem scan (IaC misconfigurations)
     - Secret scanning (Trivy + TruffleHog)
     - Scheduled weekly runs + manual trigger with configurable severity
-  - `.gitlab/security-scan.gitlab-ci.yml`: Equivalent GitLab CI security pipeline
+  - `.gitlab/security-scan.gitlab-ci.yml`: Equivalent GitLab CI security
+    pipeline
     - Same scan coverage as GitHub workflow
     - Gitleaks for secret scanning (GitLab alternative to TruffleHog)
     - Security summary report generation
@@ -412,7 +542,8 @@
     - Optional Dependabot and OWASP ZAP configuration
 
 - **GDPR Phase 2.3 & 3.1 - Access Log Monitoring Documentation**:
-  - `documentation/security/ACCESS-LOG-MONITORING.md`: Host-level monitoring guide
+  - `documentation/security/ACCESS-LOG-MONITORING.md`: Host-level monitoring
+    guide
     - Relevant log locations in Docker setup
     - Tool recommendations (fail2ban, Logwatch, Prometheus/Grafana, Loki, Wazuh)
     - Quick start recommendations by complexity
@@ -437,8 +568,10 @@
 #### Added
 
 - **GDPR Phase 2.2 - Retention Policies**:
-  - `migrations/postgresql/002_retention_policies.sql`: PostgreSQL retention functions
-  - `migrations/mariadb/002_retention_policies.sql`: MariaDB retention procedures
+  - `migrations/postgresql/002_retention_policies.sql`: PostgreSQL retention
+    functions
+  - `migrations/mariadb/002_retention_policies.sql`: MariaDB retention
+    procedures
   - `delete_old_logs(table, days)`: Delete logs older than retention period
   - `anonymize_user(id, reference)`: GDPR Art. 17 user anonymization template
   - `get_retention_status()`: Retention monitoring helper
@@ -446,24 +579,30 @@
   - `make db-cleanup`: New target for manual cleanup (default: 730 days)
 
 - **PostgreSQL pg_cron Extension**:
-  - `docker/postgres/Dockerfile`: Custom PostgreSQL 17 Alpine image with pg_cron pre-compiled
-  - `docker/postgres/entrypoint.sh`: Custom entrypoint for SSL certificate handling
+  - `docker/postgres/Dockerfile`: Custom PostgreSQL 17 Alpine image with pg_cron
+    pre-compiled
+  - `docker/postgres/entrypoint.sh`: Custom entrypoint for SSL certificate
+    handling
   - pg_cron pre-configured in compose files (`shared_preload_libraries`)
 
 #### Fixed
 
 - **Makefile Profile Handling**:
-  - `build`, `build-no-cache`, `clean`, `fresh` now correctly handle all profiles
-  - `make up` uses `docker compose up -d` before starting watch (fixes container startup)
+  - `build`, `build-no-cache`, `clean`, `fresh` now correctly handle all
+    profiles
+  - `make up` uses `docker compose up -d` before starting watch (fixes container
+    startup)
   - Merged redundant `up-core` into `up` target
 
 - **Node Container Stability**:
   - Fixed restart loop caused by `node_modules` volume permissions
-  - Dockerfile now creates `/app/node_modules` with correct ownership before `USER node`
+  - Dockerfile now creates `/app/node_modules` with correct ownership before
+    `USER node`
   - Added `pnpm-lock.yaml*` glob pattern (optional for initial setup)
 
 - **PHP Dockerfile**:
-  - Added `composer.lock*` glob pattern in development stage (optional for initial setup)
+  - Added `composer.lock*` glob pattern in development stage (optional for
+    initial setup)
 
 #### Changed
 
@@ -475,7 +614,8 @@
 - **Code Cleanup**:
   - Removed duplicate ARG declarations in `docker/postgres/Dockerfile`
   - Moved pg_cron documentation to `compose.yaml` (central location)
-  - `.gitignore`: Fixed `/tools/` entry (was incorrectly `/tools/.docker-watch.log`)
+  - `.gitignore`: Fixed `/tools/` entry (was incorrectly
+    `/tools/.docker-watch.log`)
 
 ---
 
@@ -484,7 +624,8 @@
 #### Added
 
 - **GDPR Phase 2.1 - Backup Strategy**:
-  - `docker/scripts/backup-databases.sh`: Encrypted database backups (AES-256-CBC)
+  - `docker/scripts/backup-databases.sh`: Encrypted database backups
+    (AES-256-CBC)
   - `docker/scripts/restore-database.sh`: Restore with auto-detection of DB type
   - Supports PostgreSQL and MariaDB
   - Configurable retention policy via `BACKUP_RETENTION_DAYS` in `.env`
@@ -495,7 +636,8 @@
   - `make backup RETENTION=X`: Override retention policy
   - `make backup-list`: List available backups
   - `make restore`: Interactive restore from backup
-  - `make db-migrations`: Run GDPR database migrations (encryption helpers, audit logs)
+  - `make db-migrations`: Run GDPR database migrations (encryption helpers,
+    audit logs)
 
 - **Configuration**:
   - `BACKUP_RETENTION_DAYS` in `.env.example` (default: 30 days)
@@ -505,19 +647,22 @@
 
 - **Documentation Restructure**:
   - Reorganized `documentation/` into thematic subdirectories:
-    - `security/`: AUDIT-LOGGING.md, BACKUP.md, ENCRYPTION.md, SSL-CERTIFICATES.md
+    - `security/`: AUDIT-LOGGING.md, BACKUP.md, ENCRYPTION.md,
+      SSL-CERTIFICATES.md
     - `development/`: DEV-DASHBOARD.md, RENOVATE.md, XDEBUG.md
     - `testing/`: TESTING-NODE.md, TESTING-PHP.md
     - `infrastructure/`: NETWORK.md
   - Updated `documentation/README.md` with new structure and aligned tables
 
 - **Markdown Formatting**:
-  - Fixed table column alignment in all documentation files (PhpStorm compatibility)
+  - Fixed table column alignment in all documentation files (PhpStorm
+    compatibility)
   - Fixed numbered list continuation with code blocks (proper indentation)
 
 #### Documentation
 
-- `documentation/security/BACKUP.md`: Complete backup & restore guide with GDPR compliance table
+- `documentation/security/BACKUP.md`: Complete backup & restore guide with GDPR
+  compliance table
 
 ---
 
@@ -526,16 +671,21 @@
 #### Fixed
 
 - **Makefile Terminal Corruption**:
-  - Added `$(DC)` variable with `--progress=plain` to prevent Docker Compose progress output from corrupting terminal
-  - Changed `nohup` to `setsid` for Docker Compose Watch to fully detach from terminal session
+  - Added `$(DC)` variable with `--progress=plain` to prevent Docker Compose
+    progress output from corrupting terminal
+  - Changed `nohup` to `setsid` for Docker Compose Watch to fully detach from
+    terminal session
   - Added `< /dev/null` to stdin redirection for complete terminal separation
 
 #### Removed
 
 - **Entrypoint Copy-on-Write Workaround**:
-  - Removed obsolete composer.json/composer.lock copy-move workaround from `entrypoint.dev.sh`
-  - This workaround was no longer needed with Docker Compose Watch (files are synced, not baked into image layer)
-  - Simplifies entrypoint and eliminates "Resource busy" errors on container restart
+  - Removed obsolete composer.json/composer.lock copy-move workaround from
+    `entrypoint.dev.sh`
+  - This workaround was no longer needed with Docker Compose Watch (files are
+    synced, not baked into image layer)
+  - Simplifies entrypoint and eliminates "Resource busy" errors on container
+    restart
 
 ---
 
@@ -547,9 +697,11 @@
   - Reduced from 621 lines to ~130 lines
   - Focused on project description, features, and quick start
   - Moved detailed documentation to `documentation/` directory
-  - Updated Quick Start to use correct workflow (`make init` → edit `.env` → `make setup` → `make up`)
+  - Updated Quick Start to use correct workflow (`make init` → edit `.env` →
+    `make setup` → `make up`)
   - Make is now a required prerequisite (not optional)
-  - Added IDE support (PhpStorm, VS Code) and Git Hooks (Captainhook) to features
+  - Added IDE support (PhpStorm, VS Code) and Git Hooks (Captainhook) to
+    features
 
 - **License Changed to MIT**:
   - Updated `README.md`, `composer.json`, `package.json`
@@ -557,14 +709,19 @@
 
 #### Added
 
-- **documentation/XDEBUG.md**: Complete Xdebug configuration guide (moved from old README)
-- **documentation/RENOVATE.md**: Dependency management with Renovate (moved from old README)
+- **documentation/XDEBUG.md**: Complete Xdebug configuration guide (moved from
+  old README)
+- **documentation/RENOVATE.md**: Dependency management with Renovate (moved from
+  old README)
 
 #### Updated
 
-- **documentation/README.md**: Added links to new documentation files, updated structure
-- **documentation/TESTING-PHP.md**: Updated directory structure to reflect actual test files
-- **documentation/TESTING-NODE.md**: Fixed directory structure (`tests/node/App/` instead of `tests/node/`)
+- **documentation/README.md**: Added links to new documentation files, updated
+  structure
+- **documentation/TESTING-PHP.md**: Updated directory structure to reflect
+  actual test files
+- **documentation/TESTING-NODE.md**: Fixed directory structure
+  (`tests/node/App/` instead of `tests/node/`)
 
 ---
 
@@ -573,7 +730,8 @@
 #### Fixed
 
 - **PhpStorm Docker Quality Tools**:
-  - Corrected tool paths for PHPMD, PHP-CS-Fixer, and PHPStan to use container paths (`/var/www/html/vendor/bin/...`)
+  - Corrected tool paths for PHPMD, PHP-CS-Fixer, and PHPStan to use container
+    paths (`/var/www/html/vendor/bin/...`)
   - Fixed `DOCKER_REMOTE_PROJECT_PATH` from `/opt/project` to `/var/www/html`
   - Added proper remote-mappings for Docker interpreter
   - Configured PHP-CS-Fixer `rulesetPath` for Custom config
@@ -596,7 +754,8 @@
 #### Changed
 
 - **PHPStan Configuration**:
-  - Set `reportUnmatchedIgnoredErrors: false` to keep ignore patterns for future use without warnings
+  - Set `reportUnmatchedIgnoredErrors: false` to keep ignore patterns for future
+    use without warnings
 
 ---
 
@@ -610,16 +769,20 @@
 
 - **PHPUnit Coverage Warnings**:
   - Removed `src/php/App/Infrastructure` exclusion from `phpunit.xml.dist`
-  - Changed `HasAuditLoggingTest` from `#[CoversClass]` to `#[CoversNothing]` (traits can't be coverage targets)
+  - Changed `HasAuditLoggingTest` from `#[CoversClass]` to `#[CoversNothing]`
+    (traits can't be coverage targets)
   - Eliminated 30+ coverage target warnings
 
 - **PHP development.ini Comment**:
   - Fixed misleading comment about disabled functions
-  - Now correctly documents both `shell_exec` (phpDox) and `curl_exec/curl_multi_exec` (Composer)
+  - Now correctly documents both `shell_exec` (phpDox) and
+    `curl_exec/curl_multi_exec` (Composer)
 
 - **PHP Import Statements**:
-  - Refactored to use `use` imports instead of fully qualified class names (`\PDO`, `\PDOException`, etc.)
-  - Files updated: `DatabaseService.php`, `AuditLogger.php`, `CalculatorIntegrationTest.php`
+  - Refactored to use `use` imports instead of fully qualified class names
+    (`\PDO`, `\PDOException`, etc.)
+  - Files updated: `DatabaseService.php`, `AuditLogger.php`,
+    `CalculatorIntegrationTest.php`
 
 #### Added
 
@@ -638,17 +801,21 @@
   - Updated `documentation/README.md` with Testing & Quality section
 
 - **New PHP Infrastructure Classes**:
-  - `CorsMiddleware.php` - CORS handling with configurable origins via `CORS_ORIGINS` env
-  - `HealthStatus.php` - Enum for health check states (OK, DEGRADED, ERROR, DISABLED, UNKNOWN)
+  - `CorsMiddleware.php` - CORS handling with configurable origins via
+    `CORS_ORIGINS` env
+  - `HealthStatus.php` - Enum for health check states (OK, DEGRADED, ERROR,
+    DISABLED, UNKNOWN)
 
 #### Changed
 
 - **Docker Compose Watch Configuration** (`compose.override.yaml`):
-  - Added `./build:/var/www/html/build` mount to PHP service for coverage reports
+  - Added `./build:/var/www/html/build` mount to PHP service for coverage
+    reports
   - Added `tests/php` to Watch sync for test file changes
 
 - **Vitest Configuration** (`vitest.config.ts`):
-  - Coverage directory changed from `./build/coverage` to `./build/coverage/node`
+  - Coverage directory changed from `./build/coverage` to
+    `./build/coverage/node`
 
 - **Makefile Coverage Commands**:
   - `test-coverage-php`: Output to `build/coverage/php/`
@@ -672,24 +839,32 @@
 #### Fixed
 
 - **PHPDoc Formatting Issues**:
-  - Fixed malformed class docblocks in `HealthCheckService.php`, `DatabaseService.php`
+  - Fixed malformed class docblocks in `HealthCheckService.php`,
+    `DatabaseService.php`
   - Fixed method docblock indentation issues
   - Corrected misplaced `@return` annotations at class level
 
 - **PHPMD @SuppressWarnings Compatibility**:
-  - Changed format from `@SuppressWarnings(PHPMD.*)` to `@SuppressWarnings("PHPMD.*")` (quoted)
+  - Changed format from `@SuppressWarnings(PHPMD.*)` to
+    `@SuppressWarnings("PHPMD.*")` (quoted)
   - Fixes PHPStan parsing errors while maintaining PHPMD compatibility
-  - Affected files: `HealthCheckService.php`, `DatabaseService.php`, `WelcomeController.php`
+  - Affected files: `HealthCheckService.php`, `DatabaseService.php`,
+    `WelcomeController.php`
 
 - **PHPStan Type Issues (Level 8)**:
-  - `AuditLogger.php`: Changed `?string $logFilePath` to `string` (never null after construction)
+  - `AuditLogger.php`: Changed `?string $logFilePath` to `string` (never null
+    after construction)
   - `AuditLogger.php`: Removed redundant null check that was always false
-  - `AuditLoggerTest.php`: Added `PDO&MockObject` intersection type for mock property
-  - `AuditLoggerTest.php`: Added `assertIsString()` for `file_get_contents()` result
+  - `AuditLoggerTest.php`: Added `PDO&MockObject` intersection type for mock
+    property
+  - `AuditLoggerTest.php`: Added `assertIsString()` for `file_get_contents()`
+    result
 
 - **PHPStan Configuration**:
-  - Added ignore pattern for test-specific assertions that are valid documentation
-  - Pattern: `method.alreadyNarrowedType` in `tests/*` (assertIsArray, assertTrue, etc.)
+  - Added ignore pattern for test-specific assertions that are valid
+    documentation
+  - Pattern: `method.alreadyNarrowedType` in `tests/*` (assertIsArray,
+    assertTrue, etc.)
 
 #### Changed
 
@@ -697,7 +872,8 @@
   - Encryption settings now enabled by default (uncommented)
   - Rationale: File is only copied when enabling table-level encryption
   - Setup steps reduced from 5 to 4 (removed "uncomment encryption settings")
-  - Optional settings remain commented: `innodb_encrypt_tables`, `innodb_encryption_rotate_key_age`
+  - Optional settings remain commented: `innodb_encrypt_tables`,
+    `innodb_encryption_rotate_key_age`
 
 #### Status
 
@@ -713,7 +889,8 @@
 #### Added
 
 - **Automated SSL/TLS Setup**:
-  - `make setup` now automatically generates self-signed certificates if not present
+  - `make setup` now automatically generates self-signed certificates if not
+    present
   - Certificate check integrated into setup workflow
   - Automatic fallback to `make ssl-selfsigned` for development
 
@@ -736,7 +913,8 @@
 
 - **Nginx SSL/HTTPS with Dynamic Port Configuration**:
   - HTTPS enabled on port 8443 (configurable via `NGINX_SSL_PORT`)
-  - **Automatic HTTP → HTTPS redirect**: `http://localhost:8080` → `https://localhost:8443/`
+  - **Automatic HTTP → HTTPS redirect**: `http://localhost:8080` →
+    `https://localhost:8443/`
   - Redirect uses configurable `NGINX_SSL_PORT` from environment variable
   - SSL configuration generated dynamically from template using `envsubst`
   - HTTP/2 support enabled for HTTPS connections
@@ -746,13 +924,17 @@
   - CSP and SSL configs mounted by default in production (`compose.prod.yaml`)
   - Self-signed certificates work out-of-the-box after `make setup`
   - Ready for Let's Encrypt certificates (`make ssl-letsencrypt`)
-  - **Note**: Browser will show certificate warning for self-signed cert (expected behavior)
+  - **Note**: Browser will show certificate warning for self-signed cert
+    (expected behavior)
 
 - **Custom Entrypoint Scripts**:
-  - `docker/nginx/entrypoint.sh`: Processes SSL template with `envsubst` for dynamic port configuration
-  - `docker/postgres/entrypoint.sh`: Handles SSL certificate setup for PostgreSQL
+  - `docker/nginx/entrypoint.sh`: Processes SSL template with `envsubst` for
+    dynamic port configuration
+  - `docker/postgres/entrypoint.sh`: Handles SSL certificate setup for
+    PostgreSQL
   - `docker/mariadb/entrypoint.sh`: Handles SSL certificate setup for MariaDB
-  - PostgreSQL & MariaDB scripts ensure correct ownership (postgres:postgres, mysql:mysql)
+  - PostgreSQL & MariaDB scripts ensure correct ownership (postgres:postgres,
+    mysql:mysql)
   - Automatic permission fixing (644 for .crt, 600 for .key)
   - Nginx script runs as root to write config, then starts nginx
 
@@ -777,7 +959,8 @@
 - **Nginx Configuration**:
   - Fixed file permissions for `csp-production.conf` (600 → 644)
   - Fixed file permissions for `ssl-production.conf.example` (600 → 644)
-  - Converted `ssl-development.conf` to template file with `${NGINX_SSL_PORT}` placeholder
+  - Converted `ssl-development.conf` to template file with `${NGINX_SSL_PORT}`
+    placeholder
   - Nginx Dockerfile: Added `gettext` package for `envsubst` support
   - Nginx Dockerfile: Removed `USER nginx` to allow root entrypoint execution
   - Container starts as root, processes templates, then runs nginx
@@ -798,7 +981,8 @@
 - **Certificate Management**:
   - Self-signed certificates for development (automatic generation)
   - Symlinks replaced with actual files for proper container access
-  - Certificate permissions: 644 for both `.crt` and `.key` (Nginx compatibility)
+  - Certificate permissions: 644 for both `.crt` and `.key` (Nginx
+    compatibility)
   - Production-ready Let's Encrypt integration (via `make ssl-letsencrypt`)
   - Centralized certificate location (`docker/certs/`)
   - Certificates shared across all services (Nginx, PostgreSQL, MariaDB, Redis)
@@ -831,16 +1015,19 @@
 - Complete container rebuild verified (`make fresh`)
 - All services healthy after SSL/TLS activation
 - PostgreSQL SSL verified: `SHOW ssl;` returns `on`
-- **HTTP → HTTPS redirect verified**: `http://localhost:8080` returns HTTP 301 → `https://localhost:8443/`
+- **HTTP → HTTPS redirect verified**: `http://localhost:8080` returns HTTP 301 →
+  `https://localhost:8443/`
 - Redirect uses correct configurable port from `NGINX_SSL_PORT`
 - Nginx HTTPS verified: `https://localhost:8443` returns HTTP 200 OK
 - Following redirect with `-k` flag works: Final HTTP 200 OK
-- SSL template processing verified: "SSL configuration generated with NGINX_SSL_PORT=8443"
+- SSL template processing verified: "SSL configuration generated with
+  NGINX_SSL_PORT=8443"
 - HTTP/2 protocol confirmed on HTTPS connections
 - Certificate validity: 1 year from generation (self-signed)
 - Certificate verified: Subject CN=localhost, valid chain
 - Encryption keys: 256-bit base64-encoded
-- **Browser behavior**: Self-signed certificate warning is shown (expected and normal)
+- **Browser behavior**: Self-signed certificate warning is shown (expected and
+  normal)
 
 #### Documentation
 
@@ -900,7 +1087,8 @@
 
 #### Removed
 
-- Redundant `NODE_ENV=production` from PHP service (no functional use in PHP-FPM)
+- Redundant `NODE_ENV=production` from PHP service (no functional use in
+  PHP-FPM)
 
 #### Fixed
 
@@ -909,17 +1097,22 @@
   - Fixed PM2 not passing `--import tsx` interpreter args to Node.js process
   - Changed from `interpreter` + `interpreter_args` to `script` + `args` pattern
   - Backend now starts correctly with TypeScript transpilation via tsx loader
-  - Resolved endless restart loops caused by `wait_ready: true` with missing `process.send('ready')`
-  - Configured structured JSON logging (consistent with project-wide logging standard)
-  - Disabled PM2 watch mode (better handled by bind mounts for file change detection)
+  - Resolved endless restart loops caused by `wait_ready: true` with missing
+    `process.send('ready')`
+  - Configured structured JSON logging (consistent with project-wide logging
+    standard)
+  - Disabled PM2 watch mode (better handled by bind mounts for file change
+    detection)
 - **Node.js Graceful Shutdown**:
   - Added `process.off()` calls to prevent multiple SIGINT/SIGTERM handlers
   - Prevents duplicate shutdown attempts during container restarts
 - **Development Workflow** (Cross-Platform Compatibility):
   - Hybrid approach: COPY in Dockerfile + Docker Compose Watch for file sync
-  - Source code (src/, tests/, resources/, templates/) copied into images at build time
+  - Source code (src/, tests/, resources/, templates/) copied into images at
+    build time
   - Docker Compose Watch syncs file changes in development (~50-100ms latency)
-  - Named volumes for dependencies (node_modules, vendor) - best performance on all platforms
+  - Named volumes for dependencies (node_modules, vendor) - best performance on
+    all platforms
   - Consistent performance across Linux, Windows, and macOS
   - No manual configuration needed - works out-of-the-box on all platforms
 
@@ -939,15 +1132,20 @@
 #### Fixed - Docker Configuration
 
 - **Production Compose YAML Syntax**:
-  - Fixed invalid YAML syntax in `compose.prod.yaml` for PostgreSQL and MariaDB services
-  - Removed inline comments from multi-line command strings (lines 134-154 for PostgreSQL, 183-196 for MariaDB)
-  - Comments inside folded multi-line strings (`>`) were being passed to database commands, causing syntax errors
-  - Moved SSL configuration comments outside command blocks as proper YAML comments
+  - Fixed invalid YAML syntax in `compose.prod.yaml` for PostgreSQL and MariaDB
+    services
+  - Removed inline comments from multi-line command strings (lines 134-154 for
+    PostgreSQL, 183-196 for MariaDB)
+  - Comments inside folded multi-line strings (`>`) were being passed to
+    database commands, causing syntax errors
+  - Moved SSL configuration comments outside command blocks as proper YAML
+    comments
   - Validated with `docker compose config --quiet` to ensure correctness
 
 ### Version 3.7 (2026-01-02) - Code Quality & Test Coverage Improvements
 
-**Achieved 100% Node.js test coverage, eliminated all PHPMD errors, and improved TypeScript configuration structure:**
+**Achieved 100% Node.js test coverage, eliminated all PHPMD errors, and improved
+TypeScript configuration structure:**
 
 #### Fixed - Code Quality
 
@@ -956,49 +1154,61 @@
   - Added appropriate `@SuppressWarnings` annotations for intentional patterns
   - Added missing `use` statements (PDO, PDOException, Redis, Exception, etc.)
   - Removed error control operators (`@`) in HealthCheck and services
-  - Files improved: WelcomeController, HealthCheck, DatabaseService, HealthCheckService, LogService, QualityService
+  - Files improved: WelcomeController, HealthCheck, DatabaseService,
+    HealthCheckService, LogService, QualityService
 
 #### Changed - Node.js Architecture
 
 - **Entry Point Separation**:
-  - Moved `server.ts` from `src/node/App/` to `src/node/` (proper separation of concerns)
+  - Moved `server.ts` from `src/node/App/` to `src/node/` (proper separation of
+    concerns)
   - Entry point now separated from application logic
-  - Updated `ecosystem.config.cjs` to reference correct path: `src/node/server.ts`
+  - Updated `ecosystem.config.cjs` to reference correct path:
+    `src/node/server.ts`
 - **TypeScript Configuration Cleanup**:
   - Split into three distinct configs for clarity:
-    - `tsconfig.json`: Development & testing (includes only `src/node/App/**/*` and `tests/node/App/**/*`)
-    - `tsconfig.build.json`: Production builds (includes `server.ts` entry point)
+    - `tsconfig.json`: Development & testing (includes only `src/node/App/**/*`
+      and `tests/node/App/**/*`)
+    - `tsconfig.build.json`: Production builds (includes `server.ts` entry
+      point)
     - `tsconfig.vitest.json`: Test-specific settings
-  - Fixed `vitest.config.ts` test patterns to match new structure (`tests/node/App/**/*`)
+  - Fixed `vitest.config.ts` test patterns to match new structure
+    (`tests/node/App/**/*`)
 
 #### Fixed - Test Coverage
 
 - **Node.js Coverage: 100%**:
   - Achieved 100% coverage on application code (exceeds 80% target)
   - app.ts: 100%, math.ts: 100%
-  - Resolved Vitest v8 coverage issue with server.ts through proper configuration
+  - Resolved Vitest v8 coverage issue with server.ts through proper
+    configuration
   - 27/27 tests passing
 
 #### Changed - Docker Configuration
 
 - **Watch Mode Improvements**:
   - Added `sync+restart` action for config files in `compose.override.yaml`
-  - Auto-restart on changes to: tsconfig.json, tsconfig.build.json, tsconfig.vitest.json, vitest.config.ts, vite.config.js, ecosystem.config.cjs
+  - Auto-restart on changes to: tsconfig.json, tsconfig.build.json,
+    tsconfig.vitest.json, vitest.config.ts, vite.config.js, ecosystem.config.cjs
   - Improves development experience with automatic config reloading
 - **Production Build Fix**:
   - Added `tsconfig.build.json` to Dockerfile COPY step (was missing)
-  - Fixed production build to compile both frontend AND backend: `pnpm run build && pnpm run server:build`
+  - Fixed production build to compile both frontend AND backend:
+    `pnpm run build && pnpm run server:build`
   - Ensures TypeScript server is properly compiled in production images
 
 #### Technical Debt Removed
 
-- Deleted unnecessary `tests/node/App/unit/server.test.ts` (wasn't testing server.ts)
-- Simplified coverage configuration (removed unnecessary glob-specific thresholds)
+- Deleted unnecessary `tests/node/App/unit/server.test.ts` (wasn't testing
+  server.ts)
+- Simplified coverage configuration (removed unnecessary glob-specific
+  thresholds)
 - Cleaned up workarounds that were masking cache issues
 
 ### Version 3.6 (2025-12-31) - Granular Service Control & Makefile Optimization
 
-**Introduced optional database control, simplified Makefile logic, and improved health checks for better visibility:**
+**Introduced optional database control, simplified Makefile logic, and improved
+health checks for better visibility:**
 
 #### Added - Optional Database Control
 
@@ -1011,8 +1221,10 @@
 #### Changed - Makefile Simplification
 
 - **Profile-Based Service Management**:
-  - Removed redundant `SERVICES` variable (was duplicating `PROFILES` functionality)
-  - Now uses Docker Compose profiles idiomatically: `docker compose $PROFILES up -d`
+  - Removed redundant `SERVICES` variable (was duplicating `PROFILES`
+    functionality)
+  - Now uses Docker Compose profiles idiomatically:
+    `docker compose $PROFILES up -d`
   - Cleaner, more maintainable code following Docker Compose best practices
   - Reduced code complexity in `up-core` and `down` targets
 
@@ -1025,13 +1237,15 @@
 #### Fixed - Path Configuration
 
 - **TypeScript Path Mappings**:
-  - Fixed `tsconfig.json`: `@tests/*` now correctly points to `./tests/node/App/*`
+  - Fixed `tsconfig.json`: `@tests/*` now correctly points to
+    `./tests/node/App/*`
   - Fixed `vitest.config.ts`: `@tests` alias updated to `./tests/node/App`
   - Aligns with App/ directory structure introduced in v3.5
 
 ### Version 3.5 (2025-12-31) - Docker Compose Watch, Vitest 4, App Structure Migration
 
-**Modern development workflow with Docker Compose Watch (2025 standard), Vitest 4 upgrade, and improved project structure:**
+**Modern development workflow with Docker Compose Watch (2025 standard), Vitest
+4 upgrade, and improved project structure:**
 
 #### Added - Docker Compose Watch (2025 Standard)
 
@@ -1044,11 +1258,15 @@
   - Manual sync via `make sync-lockfiles` (uses `docker cp`)
 
 - **Makefile Commands**:
-  - `make sync-lockfiles`: Copies lock files from containers to host (for Git tracking)
+  - `make sync-lockfiles`: Copies lock files from containers to host (for Git
+    tracking)
   - `make validate`: Extended to check both Composer and pnpm lockfile presence
-  - `make setup`: Now creates `tools/` directory (fixes `make docs` permission issues)
-  - `make up`: Automatically starts database based on `DB_TYPE` environment variable
-  - `make down`: Now uses same profiles as `make up` (stops all enabled services correctly)
+  - `make setup`: Now creates `tools/` directory (fixes `make docs` permission
+    issues)
+  - `make up`: Automatically starts database based on `DB_TYPE` environment
+    variable
+  - `make down`: Now uses same profiles as `make up` (stops all enabled services
+    correctly)
 
 #### Changed - Vitest Upgrade (2.1.8 → 4.0.16)
 
@@ -1059,18 +1277,23 @@
   - Added: `@types/ws` ^8.5.13, `ws` ^8.18.0 (for future WebSocket live-logs)
 
 - **Configuration Improvements** (vitest.config.ts):
-  - Fixed TypeScript import: `import * as path from 'path'` (was causing TS1259 error)
+  - Fixed TypeScript import: `import * as path from 'path'` (was causing TS1259
+    error)
   - Simplified coverage include/exclude (Vitest 4 fixed pattern matching)
   - Updated alias: `'@node': './src/node/App'` (reflects new App/ structure)
-  - Comment clarifies: "Vitest 4.x: Fixed include/exclude handling (no longer needs workarounds)"
+  - Comment clarifies: "Vitest 4.x: Fixed include/exclude handling (no longer
+    needs workarounds)"
 
 #### Changed - App/ Directory Structure Migration
 
 - **PHP Source Files**:
   - Moved: `src/php/*.php` → `src/php/App/` (preserves subdirectory structure)
-  - Examples: `Http/Router.php`, `Http/Controller/*.php`, `Infrastructure/*.php`, `Utils/*.php`
-  - Updated composer.json PSR-4: `"App\\": "src/php/App/"` (was `"App\\": "src/php/"`)
-  - Updated composer.json PSR-4 dev: `"App\\Tests\\": "tests/php/App/"` (was `"tests/php/"`)
+  - Examples: `Http/Router.php`, `Http/Controller/*.php`,
+    `Infrastructure/*.php`, `Utils/*.php`
+  - Updated composer.json PSR-4: `"App\\": "src/php/App/"` (was
+    `"App\\": "src/php/"`)
+  - Updated composer.json PSR-4 dev: `"App\\Tests\\": "tests/php/App/"` (was
+    `"tests/php/"`)
 
 - **PHP Test Files**:
   - Moved: `tests/php/*.php` → `tests/php/App/`
@@ -1088,20 +1311,25 @@
 
 - **Template Path Fix**:
   - `WelcomeController.php`: Added extra `../` for new directory nesting level
-  - Path: `__DIR__ . '/../../../../../templates/welcome.php'` (was 5 levels, now 6)
+  - Path: `__DIR__ . '/../../../../../templates/welcome.php'` (was 5 levels,
+    now 6)
 
 #### Changed - IDE Integration Updates
 
-- **.idea/docker-webdev.iml**: Updated sourceFolders and testFolders for App/ structure
+- **.idea/docker-webdev.iml**: Updated sourceFolders and testFolders for App/
+  structure
 - **.idea/phpunit.xml**: Corrected test directories path
 - **ecosystem.config.cjs**: Updated Node.js app paths to src/node/App/
 - **phpunit.xml.dist**: Updated test suite directories to tests/php/App/
 
 #### Fixed - Git Status on DevDashboard
 
-- **Problem**: Git commands failed for www-data user with "dubious ownership" error
-- **Root Cause**: Repository owned by host user (UID 1000), but PHP-FPM runs as www-data (UID 82)
-- **Solution**: Changed `git config --global` to `git config --system` in docker/php/entrypoint.dev.sh
+- **Problem**: Git commands failed for www-data user with "dubious ownership"
+  error
+- **Root Cause**: Repository owned by host user (UID 1000), but PHP-FPM runs as
+  www-data (UID 82)
+- **Solution**: Changed `git config --global` to `git config --system` in
+  docker/php/entrypoint.dev.sh
   - System-wide config (`/etc/gitconfig`) accessible to all users
   - Global config (`/root/.gitconfig`) only accessible to root
 - **Result**: Dashboard now correctly displays:
@@ -1113,13 +1341,16 @@
 
 - **Database Auto-Start**: `make up` now includes database in SERVICES variable
   - Changed: `SERVICES="nginx ${DB_TYPE:-postgres}"` (was `SERVICES="nginx"`)
-  - Database type controlled by `DB_TYPE` env var (postgres/mariadb), not separate flag
+  - Database type controlled by `DB_TYPE` env var (postgres/mariadb), not
+    separate flag
 
 - **make down Profile Handling**: Now uses same profiles as `make up`
   - Previously only stopped nginx, left other containers running
-  - Now correctly stops all enabled services (php, node, redis, postgres/mariadb)
+  - Now correctly stops all enabled services (php, node, redis,
+    postgres/mariadb)
 
-- **Confusing Hints Removed**: Deleted "For guaranteed consistency, use 'make ...-install'" messages
+- **Confusing Hints Removed**: Deleted "For guaranteed consistency, use 'make
+  ...-install'" messages
   - Messages appeared on `*-install-local` targets but were misleading
   - Lock files now managed via Docker Compose Watch strategy
 
@@ -1129,15 +1360,18 @@
   - Before: Only checked `vendor/` directory and `autoload.php`
   - After: Also checks for `composer.lock` existence
   - Ensures lockfile is generated on first `make setup` run
-  - Condition: `if [ ! -d vendor ] || [ ! -f vendor/autoload.php ] || [ ! -f composer.lock ]`
+  - Condition:
+    `if [ ! -d vendor ] || [ ! -f vendor/autoload.php ] || [ ! -f composer.lock ]`
 
 #### Testing
 
-- ✅ Fresh developer workflow: `make init` → `make setup` → `make up` (tested from clean slate)
+- ✅ Fresh developer workflow: `make init` → `make setup` → `make up` (tested
+  from clean slate)
 - ✅ PHPUnit: 36 tests, 163 assertions passing
 - ✅ Vitest: 25 tests passing
-- ✅ All endpoints functional: localhost:8080, /_dev, /_dev/system, etc.
-- ✅ Git Status displays correctly on DevDashboard (branch, commit, uncommitted changes)
+- ✅ All endpoints functional: localhost:8080, /\_dev, /\_dev/system, etc.
+- ✅ Git Status displays correctly on DevDashboard (branch, commit, uncommitted
+  changes)
 - ✅ make docs working (tools/ directory created by setup)
 - ✅ make validate checks both composer.json and pnpm-lock.yaml
 - ✅ make down stops all services (verified with make status)
@@ -1151,21 +1385,26 @@
 
 ### Version 3.4 (2025-12-30) - Development Dashboard Completion
 
-**Complete implementation of all dashboard pages with proper autoloading, volume mounts, and production safety:**
+**Complete implementation of all dashboard pages with proper autoloading, volume
+mounts, and production safety:**
 
 #### Completed - Dashboard Pages
 
 - **Quality Page (`/_dev/quality`)**:
-  - PHP quality tools status: PHPStan Level 8, PHPMD, PHP CS Fixer (properly detected)
-  - Node.js quality tools status: ESLint, Prettier, TypeScript (detected via volume mounts)
+  - PHP quality tools status: PHPStan Level 8, PHPMD, PHP CS Fixer (properly
+    detected)
+  - Node.js quality tools status: ESLint, Prettier, TypeScript (detected via
+    volume mounts)
   - Code statistics: Accurate file counts for PHP/Node source and test files
   - Test coverage reports for PHP (PHPUnit) and Node.js (Vitest)
-  - Quick action commands: Run quality checks, auto-fix code style, generate coverage
+  - Quick action commands: Run quality checks, auto-fix code style, generate
+    coverage
 
 - **Logs Page (`/_dev/logs`)**:
   - Log statistics: File count, total size, available sources
   - Application logs detection (requires `make setup` to create storage/logs)
-  - Available log sources: Docker Compose logs, per-service logs, application logs
+  - Available log sources: Docker Compose logs, per-service logs, application
+    logs
   - CLI commands with examples for log viewing (docker compose logs, tail, grep)
   - Usage tips: Real-time monitoring, filtering, searching patterns
   - Makefile integration documentation
@@ -1190,10 +1429,12 @@
 
 #### Fixed - Critical Issues
 
-- **PHP Autoloading**: Removed all `require_once` statements from DashboardController
+- **PHP Autoloading**: Removed all `require_once` statements from
+  DashboardController
   - Added `DevDashboard\` namespace to composer.json PSR-4 autoload
   - Added `Tests\DevDashboard\` namespace to composer.json PSR-4 autoload-dev
-  - Eliminates "does not comply with psr-4" warnings during composer dump-autoload
+  - Eliminates "does not comply with psr-4" warnings during composer
+    dump-autoload
 
 - **CSP Security**: Fixed Content-Security-Policy blocking phpinfo() images
   - Added `img-src 'self' data:` to development CSP in nginx default.conf
@@ -1233,7 +1474,8 @@
 #### Changed - IDE Integration
 
 - **.idea/docker-webdev.iml**:
-  - Corrected sourceFolders: `src/php/App`, `src/php/DevDashboard` (not generic `src/php`)
+  - Corrected sourceFolders: `src/php/App`, `src/php/DevDashboard` (not generic
+    `src/php`)
   - Corrected test folders: `tests/php/App`, `tests/php/DevDashboard`
   - Added Node.js folders: `src/node`, `tests/node`
 
@@ -1287,25 +1529,32 @@
 #### Security Notes
 
 - Dashboard only accessible when `ENV=development`
-- Volume mounts for .git and Node.js configs are DEV-only (compose.override.yaml)
+- Volume mounts for .git and Node.js configs are DEV-only
+  (compose.override.yaml)
 - Sensitive environment variables masked in display
 - phpinfo() only available in development
 
 ### Version 3.3 (2025-12-30) - Development Dashboard
 
-**Comprehensive development dashboard for real-time system monitoring and insights:**
+**Comprehensive development dashboard for real-time system monitoring and
+insights:**
 
 #### Added - Development Dashboard (`/_dev`)
 
 - **Dashboard Pages**:
-  - Main Dashboard (`/_dev`): System overview with health status, git info, quick actions
-  - Health Checks (`/_dev/health`): Container status, database connections, service monitoring, SSL certificate info
-  - System Info (`/_dev/system`): PHP version, loaded extensions (160+), environment variables, phpinfo() viewer
-  - Placeholder Pages: Quality metrics, Database tools, Log viewer (to be implemented)
+  - Main Dashboard (`/_dev`): System overview with health status, git info,
+    quick actions
+  - Health Checks (`/_dev/health`): Container status, database connections,
+    service monitoring, SSL certificate info
+  - System Info (`/_dev/system`): PHP version, loaded extensions (160+),
+    environment variables, phpinfo() viewer
+  - Placeholder Pages: Quality metrics, Database tools, Log viewer (to be
+    implemented)
 
 - **Core Services**:
   - `HealthCheckService`: Real-time health monitoring via TCP socket checks
-    - Container checks: nginx, php, node, redis, postgres (based on enabled services)
+    - Container checks: nginx, php, node, redis, postgres (based on enabled
+      services)
     - Database connections: PostgreSQL/MariaDB (based on DB_TYPE)
     - Service checks: PHP-FPM, Node.js, Nginx
     - SSL certificate validation with expiry warnings
@@ -1317,8 +1566,10 @@
 
 - **Technical Implementation**:
   - Simple function-based routing under `/_dev` prefix
-  - Server-side rendered PHP views with inline CSS (CSP-compliant, no external CDN)
-  - Environment-based enable/disable (`ENABLE_DEV_DASHBOARD=false` for production)
+  - Server-side rendered PHP views with inline CSS (CSP-compliant, no external
+    CDN)
+  - Environment-based enable/disable (`ENABLE_DEV_DASHBOARD=false` for
+    production)
   - Comprehensive test coverage: 19 tests, 123 assertions (100% passing)
 
 - **API Endpoints**:
@@ -1332,8 +1583,10 @@
   - `tests/php/DevDashboard/{Controllers,Services}`
 
 - **Docker Nginx Configuration**:
-  - Fixed config mounting: Only copy base configs into image (default.conf, csp-production.conf)
-  - SSL configs now properly opt-in via compose.yaml volumes (not baked into image)
+  - Fixed config mounting: Only copy base configs into image (default.conf,
+    csp-production.conf)
+  - SSL configs now properly opt-in via compose.yaml volumes (not baked into
+    image)
   - Resolved restart loop issue caused by missing SSL certs with mounted config
 
 - **PHPUnit Configuration**:
@@ -1345,22 +1598,29 @@
 
 #### Technical Details
 
-- **Health Check Strategy**: TCP socket connectivity checks instead of Docker CLI (works inside containers)
-- **Environment Awareness**: Only checks enabled services (ENABLE_PHP, ENABLE_NODE, ENABLE_REDIS, DB_TYPE)
-- **Security**: Sensitive environment variables (PASSWORD, SECRET, KEY) are masked in display
-- **Styling**: Self-contained inline CSS (~190 lines) for zero external dependencies
+- **Health Check Strategy**: TCP socket connectivity checks instead of Docker
+  CLI (works inside containers)
+- **Environment Awareness**: Only checks enabled services (ENABLE_PHP,
+  ENABLE_NODE, ENABLE_REDIS, DB_TYPE)
+- **Security**: Sensitive environment variables (PASSWORD, SECRET, KEY) are
+  masked in display
+- **Styling**: Self-contained inline CSS (~190 lines) for zero external
+  dependencies
 
 ### Version 3.2 (2025-12-30) - IDE Integration (VS Code & PhpStorm)
 
-**Complete IDE configurations for both Visual Studio Code and PhpStorm with full feature parity:**
+**Complete IDE configurations for both Visual Studio Code and PhpStorm with full
+feature parity:**
 
 #### Added - VS Code Configuration (`.vscode/`)
 
 - **Workspace Configuration**:
-  - `extensions.json`: 26 recommended extensions (PHP, Node.js, Docker, Git, Testing, Database)
+  - `extensions.json`: 26 recommended extensions (PHP, Node.js, Docker, Git,
+    Testing, Database)
   - `settings.json`: Comprehensive workspace settings with tool integration
   - `tasks.json`: 24 pre-configured tasks for all Makefile commands
-  - `launch.json`: Debug configurations for PHP (Xdebug), Node.js, Frontend, Full-Stack compounds
+  - `launch.json`: Debug configurations for PHP (Xdebug), Node.js, Frontend,
+    Full-Stack compounds
   - `README.md`: Complete documentation with setup guide and troubleshooting
 
 - **PHP Development Tools**:
@@ -1417,7 +1677,8 @@
 #### Changed
 
 - **VS Code Configuration**:
-  - Fixed `cSpell.enableFiletypes` → `cSpell.enabledFileTypes` (deprecated syntax)
+  - Fixed `cSpell.enableFiletypes` → `cSpell.enabledFileTypes` (deprecated
+    syntax)
   - Renamed tasks for consistency with PhpStorm: `Docker: *` → `Make: *`
     - `Docker: Up` → `Make: Up`
     - `Docker: Down` → `Make: Down`
@@ -1425,11 +1686,13 @@
     - `Docker: Fresh Build` → `Make: Fresh Build`
     - `Docker: Rebuild` → `Make: Rebuild`
 - **PhpStorm Run Configurations**:
-  - Renamed `Rebuild_Docker_Images.xml` → `Make__Rebuild.xml` (consistent naming)
+  - Renamed `Rebuild_Docker_Images.xml` → `Make__Rebuild.xml` (consistent
+    naming)
   - Renamed `Run_App_in_Browser.xml` → `Browser__Open_App.xml`
   - Removed `Docker.xml` (redundant, all Docker operations via Make)
-- **.gitignore**: Updated to allow VS Code workspace config (like PhpStorm .idea)
-  - Only ignore user-specific files (*.code-workspace, .history/)
+- **.gitignore**: Updated to allow VS Code workspace config (like PhpStorm
+  .idea)
+  - Only ignore user-specific files (\*.code-workspace, .history/)
 
 #### Feature Parity (Both IDEs)
 
@@ -1454,13 +1717,17 @@ Complete feature parity between VS Code and PhpStorm:
 #### Added
 
 - **SSL Certificate Management**:
-  - Self-signed certificate generator (`docker/nginx/certs/generate-selfsigned.sh`)
+  - Self-signed certificate generator
+    (`docker/nginx/certs/generate-selfsigned.sh`)
   - Let's Encrypt setup script (`docker/nginx/certs/setup-letsencrypt.sh`)
-  - Makefile commands: `ssl-selfsigned`, `ssl-letsencrypt`, `ssl-renew`, `ssl-info`, `ssl-clean`
+  - Makefile commands: `ssl-selfsigned`, `ssl-letsencrypt`, `ssl-renew`,
+    `ssl-info`, `ssl-clean`
   - Comprehensive SSL documentation (`docker/nginx/certs/README.md`)
 - **Nginx SSL Configurations**:
-  - `ssl-development.conf`: Zero-config SSL für Development (localhost, self-signed)
-  - `ssl-production.conf.example`: Production template mit HSTS, OCSP Stapling, strenger CSP
+  - `ssl-development.conf`: Zero-config SSL für Development (localhost,
+    self-signed)
+  - `ssl-production.conf.example`: Production template mit HSTS, OCSP Stapling,
+    strenger CSP
   - Separate Configs für Development/Production Parität
 - **Database SSL Support**:
   - PostgreSQL: SSL connection configuration in `compose.prod.yaml` (optional)
@@ -1474,19 +1741,23 @@ Complete feature parity between VS Code and PhpStorm:
 
 #### Changed
 
-- **Directory Structure**: SSL certificate directory via `make setup` statt .gitkeep
+- **Directory Structure**: SSL certificate directory via `make setup` statt
+  .gitkeep
 - **Compose Files**:
   - `compose.yaml`: SSL volumes für development (commented)
   - `compose.prod.yaml`: SSL volumes für production (commented)
-- **Zero-Config Philosophy**: Development SSL funktioniert out-of-the-box nach `make ssl-selfsigned`
+- **Zero-Config Philosophy**: Development SSL funktioniert out-of-the-box nach
+  `make ssl-selfsigned`
 
 #### Removed
 
 - Obsolete `.gitkeep` files (alle Directories werden via `make setup` erstellt):
   - `src/php/.gitkeep`, `src/node/.gitkeep`
-  - `resources/js/.gitkeep`, `resources/css/.gitkeep`, `resources/images/.gitkeep`
+  - `resources/js/.gitkeep`, `resources/css/.gitkeep`,
+    `resources/images/.gitkeep`
   - `config/.gitkeep`, `templates/.gitkeep`
-  - `storage/app/.gitkeep`, `storage/cache/.gitkeep`, `storage/sessions/.gitkeep`
+  - `storage/app/.gitkeep`, `storage/cache/.gitkeep`,
+    `storage/sessions/.gitkeep`
 
 #### Security
 
@@ -1530,12 +1801,14 @@ Complete feature parity between VS Code and PhpStorm:
 
 #### Removed
 
-- Obsoleter TODO Kommentar in `docker/php/Dockerfile` (Composer wurde bereits korrekt deinstalliert in Zeile 144)
+- Obsoleter TODO Kommentar in `docker/php/Dockerfile` (Composer wurde bereits
+  korrekt deinstalliert in Zeile 144)
 
 #### Quality Notes
 
 - Projekt-Status nach Peer Review: **AUSGEZEICHNET (9.5/10)**
-- PhpStorm Settings bereits perfekt konfiguriert (Docker Interpreter, PHPStan Level 5, CS-Fixer, PHPMD)
+- PhpStorm Settings bereits perfekt konfiguriert (Docker Interpreter, PHPStan
+  Level 5, CS-Fixer, PHPMD)
 - Komplette PHP ↔ Node.js Parität bei allen Quality Tools
 - Zero-Config Readiness validiert
 - 12-Factor App Compliance vollständig
@@ -1545,7 +1818,8 @@ Complete feature parity between VS Code and PhpStorm:
 ### Version 2.19 (2025-12-29)
 
 - ✅ **Code Quality & Build Optimization (Gemini-Review + Optimierungen)**
-  - **Kontext:** Gemini AI Review des gesamten Projekts mit 7 Verbesserungsvorschlägen
+  - **Kontext:** Gemini AI Review des gesamten Projekts mit 7
+    Verbesserungsvorschlägen
     - Nach Analyse: 5 Vorschläge sinnvoll, 2 inkorrekt/obsolet
     - **Resultat:** 5 Optimierungen implementiert (+ 1 Datei-Cleanup)
   - **Änderung 1: Rector vollständig integriert (composer.json + Makefile)**
@@ -1553,8 +1827,10 @@ Complete feature parity between VS Code and PhpStorm:
       - `rector.php` Config existierte, aber keine Scripts/Targets
       - Automatische PHP 8.4 Refactorings nicht verfügbar
     - **Lösung:**
-      - `composer.json`: Scripts `rector-check` (dry-run) und `rector-fix` hinzugefügt
-      - `Makefile`: Targets `make rector-check` und `make rector-fix` hinzugefügt
+      - `composer.json`: Scripts `rector-check` (dry-run) und `rector-fix`
+        hinzugefügt
+      - `Makefile`: Targets `make rector-check` und `make rector-fix`
+        hinzugefügt
     - **Nutzen:**
       - ✅ Automatische Code-Upgrades auf PHP 8.4 Syntax (property hooks, etc.)
       - ✅ Dead Code Detection & Removal
@@ -1564,14 +1840,17 @@ Complete feature parity between VS Code and PhpStorm:
       - Potenzielle CRLF/LF-Inkonsistenzen zwischen Windows/Unix/macOS
     - **Lösung:** Explizite `eol=lf` Regeln für alle Text-Dateien
       - `* text=auto eol=lf` (Global Default)
-      - Explizite Rules: `*.php`, `*.js`, `*.ts`, `*.json`, `*.md`, `*.yaml`, `*.yml`, `*.xml`
+      - Explizite Rules: `*.php`, `*.js`, `*.ts`, `*.json`, `*.md`, `*.yaml`,
+        `*.yml`, `*.xml`
     - **Nutzen:**
       - ✅ 100% LF-Garantie (verhindert CRLF auf Windows)
       - ✅ Keine Git-Diff-Rauschen durch Line-Ending-Wechsel
-  - **Änderung 3: PHP-CS-Fixer auf @PER-CS:risky umgestellt (.php-cs-fixer.dist.php)**
+  - **Änderung 3: PHP-CS-Fixer auf @PER-CS:risky umgestellt
+    (.php-cs-fixer.dist.php)**
     - **Vorher:** `@auto` Ruleset (veraltet, deprecated in PHP-CS-Fixer v4)
     - **Nachher:** `@PER-CS:risky` + Custom Binary Operator Alignment
-      - `@PER-CS:risky` = PER Coding Style 2.0 (PSR-12 Nachfolger, offizieller PHP-FIG Standard)
+      - `@PER-CS:risky` = PER Coding Style 2.0 (PSR-12 Nachfolger, offizieller
+        PHP-FIG Standard)
       - `setRiskyAllowed(true)` aktiviert (required für :risky Variante)
       - Custom Rule: `binary_operator_spaces` mit `=>` und `=` Alignment
     - **Nutzen:**
@@ -1579,16 +1858,22 @@ Complete feature parity between VS Code and PhpStorm:
       - ✅ Zukunftssicher (PER ersetzt PSR-12 offiziell)
       - ✅ Konsistent mit PhpStorm-Config (.idea/php.xml nutzt auch PER-CS)
   - **Änderung 4: Docker Compose Build-Dependencies (compose.yaml)**
-    - **Problem:** nginx + php kopieren von `docker-webdev-node:latest`, aber keine explizite Dependency
-      - `docker/nginx/Dockerfile:66`: `COPY --from=docker-webdev-node:latest /app/public/build/`
-      - `docker/php/Dockerfile:140`: `COPY --from=docker-webdev-node:latest /app/public/build/`
-      - Potenzielle Race-Condition bei `make build` (node muss zuerst gebaut werden)
+    - **Problem:** nginx + php kopieren von `docker-webdev-node:latest`, aber
+      keine explizite Dependency
+      - `docker/nginx/Dockerfile:66`:
+        `COPY --from=docker-webdev-node:latest /app/public/build/`
+      - `docker/php/Dockerfile:140`:
+        `COPY --from=docker-webdev-node:latest /app/public/build/`
+      - Potenzielle Race-Condition bei `make build` (node muss zuerst gebaut
+        werden)
     - **Lösung:** `depends_on: node` bei nginx + php hinzugefügt
       - `condition: service_started` (wartet auf node-Container Start)
       - `required: false` (optional, da nur für Build relevant)
     - **Nutzen:**
-      - ✅ Korrekte Build-Reihenfolge garantiert (Docker Compose orchestriert automatisch)
-      - ✅ Makefile-Logic vereinfacht (kein manueller "build node first"-Hack mehr nötig)
+      - ✅ Korrekte Build-Reihenfolge garantiert (Docker Compose orchestriert
+        automatisch)
+      - ✅ Makefile-Logic vereinfacht (kein manueller "build node first"-Hack
+        mehr nötig)
       - ✅ Konsistent mit Best Practices (explizite Dependencies deklarieren)
   - **Änderung 5: Node.js Security-Audit (Makefile)**
     - **Problem:** PHP hat `make security-deps`, Node.js hatte kein Äquivalent
@@ -1607,7 +1892,8 @@ Complete feature parity between VS Code and PhpStorm:
   - **Änderung 7: CaptainHook PHP Lint Hook Fix (captainhook.json)**
     - **Problem:** Pre-commit Hook schlägt fehl bei gelöschten PHP-Dateien
       - `git diff --name-only --cached` listet auch gelöschte Dateien
-      - `php -l` versucht nicht-existierende Dateien zu linten → "Could not open input file"
+      - `php -l` versucht nicht-existierende Dateien zu linten → "Could not open
+        input file"
     - **Lösung:** `--diff-filter=d` hinzugefügt
       - Filtert gelöschte Dateien aus dem diff
       - Nur existierende PHP-Dateien werden gelintet
@@ -1638,32 +1924,41 @@ Complete feature parity between VS Code and PhpStorm:
 
 ### Version 2.18 (2025-12-29)
 
-- ✅ **Nginx /docs/ Route: API-Dokumentation über Browser zugänglich (Development-Only)**
-  - **Problem:** Generierte API-Dokumentation ist lokal vorhanden, aber nicht im Browser abrufbar
+- ✅ **Nginx /docs/ Route: API-Dokumentation über Browser zugänglich
+  (Development-Only)**
+  - **Problem:** Generierte API-Dokumentation ist lokal vorhanden, aber nicht im
+    Browser abrufbar
     - `make docs` generiert Dokumentation in `docs/`, aber kein Web-Zugriff
     - Entwickler müssen Dateien direkt im Filesystem öffnen
     - Inkonsistent mit Dashboard-Integration der anderen Endpoints
   - **Lösung: Nginx Route + Dashboard-Integration (nur Development)**
     - **Nginx `/docs/` Location Block (`docker/nginx/conf.d/default.conf`):**
-      - `location ^~ /docs/` - Prefix-Match mit `^~` modifier (verhindert Regex-Matching)
+      - `location ^~ /docs/` - Prefix-Match mit `^~` modifier (verhindert
+        Regex-Matching)
       - `alias /var/www/html/docs/` - Serve-Pfad
       - `autoindex on` - Directory-Listing für Übersichtsseite
       - `try_files $uri $uri/ =404` - File-Serving-Logik
-      - `add_header Cache-Control "no-cache, must-revalidate"` - Verhindert veraltete Docs
-      - **Warum `^~` modifier:** Verhindert, dass Regex-Location `~* \.(css|js|...)` CSS/JS-Files in docs/ abfängt
+      - `add_header Cache-Control "no-cache, must-revalidate"` - Verhindert
+        veraltete Docs
+      - **Warum `^~` modifier:** Verhindert, dass Regex-Location
+        `~* \.(css|js|...)` CSS/JS-Files in docs/ abfängt
     - **Redirect `/docs` → `/docs/`:**
       - `location = /docs { return 301 /docs/; }` - Trailing Slash Normalization
     - **Volume Mount (compose.override.yaml):**
       - `- ./docs:/var/www/html/docs:ro` (Read-Only, nur Development)
-      - **Sicherheit:** In Production nicht gemountet → 404 für `/docs/` (intended behavior)
+      - **Sicherheit:** In Production nicht gemountet → 404 für `/docs/`
+        (intended behavior)
     - **Dashboard-Integration (`templates/welcome.php`):**
-      - Neue Sektion "📖 API Documentation" (nur Development: `if ($vite->isDevelopment())`)
+      - Neue Sektion "📖 API Documentation" (nur Development:
+        `if ($vite->isDevelopment())`)
       - Links zu `/docs/`, `/docs/api/php/`, `/docs/api/node/`
       - Hinweis: "Run `make docs` to generate/update API documentation"
   - **Endpoints:**
-    - `http://localhost:8080/docs/` - Dokumentations-Übersicht (Directory Listing)
+    - `http://localhost:8080/docs/` - Dokumentations-Übersicht (Directory
+      Listing)
     - `http://localhost:8080/docs/api/php/` - PHP API Docs (phpDocumentor)
-    - `http://localhost:8080/docs/api/node/` - Node/TypeScript API Docs (TypeDoc)
+    - `http://localhost:8080/docs/api/node/` - Node/TypeScript API Docs
+      (TypeDoc)
   - **Files geändert:**
     - `docker/nginx/conf.d/default.conf` (neue `/docs/` Location Blocks)
     - `compose.override.yaml` (docs/ Volume Mount für nginx Service)
@@ -1677,24 +1972,33 @@ Complete feature parity between VS Code and PhpStorm:
 
 ### Version 2.17 (2025-12-29)
 
-- ✅ **Documentation Generation: PHP + Node/TypeScript (Production-Ready Setup)**
+- ✅ **Documentation Generation: PHP + Node/TypeScript (Production-Ready
+  Setup)**
   - **Problem:** Keine automatische API-Dokumentations-Generierung vorhanden
     - Manual documentation ist fehleranfällig und veraltet schnell
     - Keine Parität zwischen PHP und Node.js Tooling
     - Inkonsistent mit "production-ready boilerplate"-Philosophie
   - **Lösung: Pre-konfigurierte Documentation-Tools für beide Stacks**
     - **PHP: phpDocumentor v3.9.1 (PHAR standalone)**
-      - **Installation:** Auto-Download on first use (Makefile lädt PHAR bei Bedarf herunter)
-      - **Warum PHAR:** Vermeidet Composer-Dependency-Konflikte (phpDocumentor v3 requires Monolog v2, wir nutzen v3)
-      - **Warum Download-on-Demand:** Kein 25MB Binary im Repo (tools/ ist in .gitignore)
+      - **Installation:** Auto-Download on first use (Makefile lädt PHAR bei
+        Bedarf herunter)
+      - **Warum PHAR:** Vermeidet Composer-Dependency-Konflikte (phpDocumentor
+        v3 requires Monolog v2, wir nutzen v3)
+      - **Warum Download-on-Demand:** Kein 25MB Binary im Repo (tools/ ist in
+        .gitignore)
       - **Config:** `phpdoc.xml` (scannt `src/php/`, Output: `docs/api/php/`)
-      - **Features:** Class diagrams, inheritance graphs, Markdown support, responsive UI
-      - **Script:** `composer docs` → `php tools/phpdoc.phar --config=phpdoc.xml`
-      - **Makefile-Logic:** `make docs-php` prüft ob PHAR existiert, downloadet sie sonst automatisch
+      - **Features:** Class diagrams, inheritance graphs, Markdown support,
+        responsive UI
+      - **Script:** `composer docs` →
+        `php tools/phpdoc.phar --config=phpdoc.xml`
+      - **Makefile-Logic:** `make docs-php` prüft ob PHAR existiert, downloadet
+        sie sonst automatisch
     - **Node/TypeScript: TypeDoc**
       - **Installation:** `pnpm add -D typedoc` (package.json devDependencies)
-      - **Config:** `typedoc.json` (scannt `src/node/`, Output: `docs/api/node/`)
-      - **Features:** TypeScript-native, type inference, cross-referenced navigation
+      - **Config:** `typedoc.json` (scannt `src/node/`, Output:
+        `docs/api/node/`)
+      - **Features:** TypeScript-native, type inference, cross-referenced
+        navigation
       - **Script:** `pnpm run docs` → `typedoc`
     - **Makefile-Targets:**
       - `make docs` - Generiert PHP + Node Dokumentation
@@ -1708,7 +2012,8 @@ Complete feature parity between VS Code and PhpStorm:
       - `package.json` (Script: `docs`, DevDep: `typedoc`)
       - `.gitignore` (ignoriert `docs/`, `.phpdoc/` Cache, `tools/`)
       - `Makefile` (neue Documentation-Section mit Auto-Download-Logic)
-      - `README.md` (umfassende "Documentation Generation"-Sektion mit Examples, Best Practices, CI/CD Integration)
+      - `README.md` (umfassende "Documentation Generation"-Sektion mit Examples,
+        Best Practices, CI/CD Integration)
       - `tools/` (git-ignored, PHAR wird on-demand downloaded)
   - **Vorteile:**
     - ✅ Zero-Config Documentation Generation (out-of-the-box)
@@ -1728,7 +2033,8 @@ Complete feature parity between VS Code and PhpStorm:
     - `docker/php/Dockerfile`: Alpine 3.22 → 3.23
     - `docker/node/Dockerfile`: Alpine 3.22 → 3.23
       - **Fix:** `COREPACK_ENABLE_DOWNLOAD_PROMPT=0` hinzugefügt
-      - **Grund:** Alpine 3.23 / Node 24 - Corepack fragt interaktiv nach Download-Bestätigung
+      - **Grund:** Alpine 3.23 / Node 24 - Corepack fragt interaktiv nach
+        Download-Bestätigung
       - **Lösung:** Environment-Variable deaktiviert interaktive Prompts
   - **Vorteile:**
     - Neueste Sicherheitsupdates (Alpine 3.23, Dezember 2024)
@@ -1736,34 +2042,42 @@ Complete feature parity between VS Code and PhpStorm:
     - Garantiertes Version-Matching zwischen nginx und Modulen
 
 - ✅ **Nginx: Brotli-Kompression aktiviert (Dual-Compression-Strategie)**
-  - **Problem:** Nur Gzip-Kompression aktiv, moderne Brotli-Kompression nicht genutzt
+  - **Problem:** Nur Gzip-Kompression aktiv, moderne Brotli-Kompression nicht
+    genutzt
     - Brotli bietet 10-20% bessere Kompression als Gzip
-    - Offizielle nginx Docker-Images haben Version-Mismatch mit Alpine Brotli-Paketen
+    - Offizielle nginx Docker-Images haben Version-Mismatch mit Alpine
+      Brotli-Paketen
     - Inkonsistenz zur "production-ready modern defaults"-Philosophie
-  - **Lösung: Nginx direkt aus Alpine-Repository + Brotli + Gzip parallel aktiviert**
+  - **Lösung: Nginx direkt aus Alpine-Repository + Brotli + Gzip parallel
+    aktiviert**
     - **Dockerfile-Strategie-Wechsel:**
-      - **Vorher:** `FROM nginx:1.29-alpine3.22` (offizielles nginx Docker-Image)
+      - **Vorher:** `FROM nginx:1.29-alpine3.22` (offizielles nginx
+        Docker-Image)
       - **Nachher:** `FROM alpine:3.23` + Installation von nginx aus Alpine-Repo
-      - **Warum:** Garantiert Version-Matching zwischen nginx und nginx-mod-http-brotli
-      - Alpine 3.23 liefert: `nginx-1.28.0-r8` + `nginx-mod-http-brotli-1.28.0-r8` (perfekt matched)
+      - **Warum:** Garantiert Version-Matching zwischen nginx und
+        nginx-mod-http-brotli
+      - Alpine 3.23 liefert: `nginx-1.28.0-r8` +
+        `nginx-mod-http-brotli-1.28.0-r8` (perfekt matched)
     - **nginx.conf (Zeile 1-3, 51-72):**
       - **Module laden:**
         - `load_module modules/ngx_http_brotli_filter_module.so;`
         - `load_module modules/ngx_http_brotli_static_module.so;`
       - **Brotli Compression (Primary - Modern browsers):**
         - `brotli on;` mit Level 6 (balanced compression/speed)
-        - Identische MIME-Types wie Gzip (text/*, application/*, fonts)
+        - Identische MIME-Types wie Gzip (text/_, application/_, fonts)
       - **Gzip Compression (Fallback - Legacy browsers):**
         - `gzip on;` bleibt aktiv (100% Backward Compatibility)
         - Gleiche Konfiguration wie vorher
       - **Automatische Negotiation:**
-        - Nginx wählt Brotli für moderne Clients (Chrome 50+, Firefox 44+, Safari 11+, Edge 15+)
+        - Nginx wählt Brotli für moderne Clients (Chrome 50+, Firefox 44+,
+          Safari 11+, Edge 15+)
         - Gzip für Legacy-Clients (alte Browser, CLI-Tools ohne Brotli)
         - Basiert auf `Accept-Encoding` HTTP-Header
     - **Vorteile:**
       - ✅ 10-20% bessere Kompression für moderne Clients (Brotli)
       - ✅ 100% Backward Compatibility (Gzip Fallback)
-      - ✅ Konsistent mit Projekt-Philosophie: "Production-ready modern defaults"
+      - ✅ Konsistent mit Projekt-Philosophie: "Production-ready modern
+        defaults"
       - ✅ Zero Configuration nötig (funktioniert out-of-the-box)
       - ✅ Version-Matching garantiert (Alpine managed Dependencies)
       - ✅ Kein Build-Overhead (alpine packages, keine Source-Compilation)
@@ -1784,16 +2098,22 @@ Complete feature parity between VS Code and PhpStorm:
     - **captainhook.json komplett überarbeitet**
       - **commit-msg Hook:**
         - Vorher: `pnpm exec commitlint --edit $1`
-        - Nachher: `docker compose exec -T node pnpm exec commitlint --edit /app/.git/COMMIT_EDITMSG`
+        - Nachher:
+          `docker compose exec -T node pnpm exec commitlint --edit /app/.git/COMMIT_EDITMSG`
         - Benötigt .git Mount im Node-Container
       - **pre-commit Hook (5 Actions):**
-        - PHP-CS-Fixer: `docker compose exec -T php vendor/bin/php-cs-fixer fix --diff --config=.php-cs-fixer.dist.php --dry-run`
-        - PHP Syntax Check: `git diff --name-only --cached | grep .php$ | xargs -r -I {} docker compose exec -T php php -l /var/www/html/{}`
-        - Prettier: `docker compose exec -T node pnpm exec prettier --check 'src/**/*.{ts,js,json}'`
-        - ESLint: `docker compose exec -T node pnpm exec eslint 'src/**/*.{ts,js}' --max-warnings=0`
+        - PHP-CS-Fixer:
+          `docker compose exec -T php vendor/bin/php-cs-fixer fix --diff --config=.php-cs-fixer.dist.php --dry-run`
+        - PHP Syntax Check:
+          `git diff --name-only --cached | grep .php$ | xargs -r -I {} docker compose exec -T php php -l /var/www/html/{}`
+        - Prettier:
+          `docker compose exec -T node pnpm exec prettier --check 'src/**/*.{ts,js,json}'`
+        - ESLint:
+          `docker compose exec -T node pnpm exec eslint 'src/**/*.{ts,js}' --max-warnings=0`
         - TypeScript: `docker compose exec -T node pnpm run type-check`
       - **pre-push Hook (2 Actions):**
-        - PHPStan: `docker compose exec -T php vendor/bin/phpstan analyse --configuration=phpstan.neon --memory-limit=1G`
+        - PHPStan:
+          `docker compose exec -T php vendor/bin/phpstan analyse --configuration=phpstan.neon --memory-limit=1G`
         - Vitest: `docker compose exec -T node pnpm test`
     - **compose.override.yaml: Node-Container Anpassungen (Zeilen 99, 73-82)**
       - **Git-Zugriff für commitlint:**
@@ -1802,24 +2122,34 @@ Complete feature parity between VS Code and PhpStorm:
       - **Volume-Mounts vereinheitlicht:**
         - Vorher: `.:/app` (gesamtes Projekt gemountet, inkonsistent zu PHP)
         - Nachher: Spezifische Files/Directories wie bei PHP-Container
-        - Neue Mounts: package.json, pnpm-lock.yaml, src/node, tests/node, public, resources, dist, vite.config.js, tsconfig.json, eslint.config.js, commitlint.config.js, etc.
-        - Konsistenz: Beide Container (PHP + Node) nutzen identisches Mount-Pattern
+        - Neue Mounts: package.json, pnpm-lock.yaml, src/node, tests/node,
+          public, resources, dist, vite.config.js, tsconfig.json,
+          eslint.config.js, commitlint.config.js, etc.
+        - Konsistenz: Beide Container (PHP + Node) nutzen identisches
+          Mount-Pattern
     - **Ausführliche Descriptions wiederhergestellt**
       - Alle captainhook.json Actions haben aussagekräftige Beschreibungen
-      - Statt "(in container)" nun: "Validate commit message format against Conventional Commits standard", "Check for styling issues with PHP-CS-Fixer (Dry-Run)", etc.
-    - **`-T` Flag verwendet:** Deaktiviert TTY allocation (Git Hooks nicht interaktiv)
+      - Statt "(in container)" nun: "Validate commit message format against
+        Conventional Commits standard", "Check for styling issues with
+        PHP-CS-Fixer (Dry-Run)", etc.
+    - **`-T` Flag verwendet:** Deaktiviert TTY allocation (Git Hooks nicht
+      interaktiv)
     - **Hooks neu installiert:** `vendor/bin/captainhook install -f`
   - **Vorteile:**
-    - **100% Version-Parität:** PHP 8.4, Node 24, pnpm 10.26.2 exakt wie in Containern
+    - **100% Version-Parität:** PHP 8.4, Node 24, pnpm 10.26.2 exakt wie in
+      Containern
     - **Keine lokalen Dependencies:** Nur Git, Docker, Make erforderlich
     - **Reproduzierbar:** Jeder Developer hat identisches Environment
     - **Konsistent:** Alle Development-Tools laufen in Containern
     - **Keine Versionskonflikt-Warnungen:** Host-PHP spielt keine Rolle mehr
-    - **"Container als venv":** Makefile + containerisierte Hooks = vollständige Isolation
-    - **Einheitliche Volume-Struktur:** PHP und Node nutzen identisches Mount-Pattern
+    - **"Container als venv":** Makefile + containerisierte Hooks = vollständige
+      Isolation
+    - **Einheitliche Volume-Struktur:** PHP und Node nutzen identisches
+      Mount-Pattern
   - **Trade-off akzeptiert:**
     - Container müssen laufen (ist beim Development sowieso gegeben)
-    - Minimal höhere Latenz (~100ms) durch Docker exec (nicht spürbar bei Commits)
+    - Minimal höhere Latenz (~100ms) durch Docker exec (nicht spürbar bei
+      Commits)
   - **Dependencies aktualisiert:**
     - `@eslint/js@^9.18.0` zu devDependencies hinzugefügt (package.json:40)
     - Erforderlich für ESLint 9.x Flat Config System (eslint.config.js:1)
@@ -1828,13 +2158,15 @@ Complete feature parity between VS Code and PhpStorm:
 ### Version 2.14 (2025-12-29)
 
 - ✅ **Monolog für PHP: Strukturiertes Logging**
-  - **Problem:** PHP hatte kein Logging-Framework, während Node.js bereits Pino hatte
+  - **Problem:** PHP hatte kein Logging-Framework, während Node.js bereits Pino
+    hatte
     - Keine strukturierte Log-Ausgabe für PHP-Anwendungen
     - Inkonsistenz zwischen PHP- und Node.js-Stack
     - Developer müssten selbst Logging-Lösung wählen/implementieren
   - **Lösung: Monolog als Standard-Logger (analog zu Pino für Node.js)**
     - **Monolog 3.9.0 installiert** (composer.json:17, composer.lock)
-    - **PSR-3 Standard:** Framework-agnostisch, kompatibel mit Laravel, Symfony, etc.
+    - **PSR-3 Standard:** Framework-agnostisch, kompatibel mit Laravel, Symfony,
+      etc.
     - **Verwendung:**
 
       ```php
@@ -1871,7 +2203,8 @@ Complete feature parity between VS Code and PhpStorm:
       - Zeigt Best-Practices bei jedem Commit
     - **Commitlint Konfiguration (commitlint.config.js)**
       - Extends `@commitlint/config-conventional`
-      - **Erlaubte Typen:** feat, fix, refactor, style, docs, test, chore, perf, ci, build, revert
+      - **Erlaubte Typen:** feat, fix, refactor, style, docs, test, chore, perf,
+        ci, build, revert
       - **Rules:**
         - Subject: Lowercase, kein Punkt, max 100 Zeichen
         - Body/Footer: Max 100 Zeichen pro Zeile
@@ -1892,8 +2225,10 @@ Complete feature parity between VS Code and PhpStorm:
       - Verbesserte Code-Review-Effizienz
       - Semantic Versioning Support
 
-- ✅ **TypeScript Type-Safety: Eliminierung unsicherer eslint-disable Workarounds**
-  - **Problem:** Pre-Commit Hook scheiterte wegen ESLint-Fehlern in TypeScript-Dateien
+- ✅ **TypeScript Type-Safety: Eliminierung unsicherer eslint-disable
+  Workarounds**
+  - **Problem:** Pre-Commit Hook scheiterte wegen ESLint-Fehlern in
+    TypeScript-Dateien
     - `@typescript-eslint/no-unsafe-assignment` bei pino-http Import
     - `@typescript-eslint/no-unsafe-call` bei pinoHttp Aufruf
     - `@typescript-eslint/strict-boolean-expressions` bei env vars (|| statt ??)
@@ -1906,13 +2241,15 @@ Complete feature parity between VS Code and PhpStorm:
       ```typescript
       // Vorher (unsicher):
       import pinoHttpImport from 'pino-http';
-      const pinoHttp = pinoHttpImport as unknown as typeof pinoHttpImport.default;
+      const pinoHttp =
+        pinoHttpImport as unknown as typeof pinoHttpImport.default;
 
       // Nachher (typsicher):
       import pinoHttp from 'pino-http';
       ```
 
-    - **Environment Variables mit Nullish Coalescing (src/node/app.ts:12-14, server.ts:14-17)**
+    - **Environment Variables mit Nullish Coalescing (src/node/app.ts:12-14,
+      server.ts:14-17)**
 
       ```typescript
       // Vorher: || (falsy check)
@@ -1930,7 +2267,10 @@ Complete feature parity between VS Code and PhpStorm:
 
       // Nachher (typsicher):
       const nameParam = req.query.name;
-      const name = typeof nameParam === 'string' && nameParam.length > 0 ? nameParam : 'World';
+      const name =
+        typeof nameParam === 'string' && nameParam.length > 0
+          ? nameParam
+          : 'World';
       ```
 
     - **req.body explizit als unknown (src/node/app.ts:114)**
@@ -1966,7 +2306,8 @@ Complete feature parity between VS Code and PhpStorm:
   - **Problem:** Inkonsistente Volume-Mount-Strategie zwischen PHP und Node
     - PHP-Container: Gezielte Mounts für jede Datei/Verzeichnis
     - Node-Container: Komplettes Projekt-Root (`.:/app`)
-    - PHP-Container: `./tests:/var/www/html/tests` statt `./tests/php:/var/www/html/tests/php`
+    - PHP-Container: `./tests:/var/www/html/tests` statt
+      `./tests/php:/var/www/html/tests/php`
     - PHP-CS-Fixer: `__DIR__ . '/tests'` statt `__DIR__ . '/tests/php'`
     - Inkonsistenz mit Verzeichnisstruktur `tests/php/` und `tests/node/`
   - **Lösung: Gezielte Mounts für beide Container + korrekte Pfade**
@@ -2006,9 +2347,11 @@ Complete feature parity between VS Code and PhpStorm:
     - **.php-cs-fixer.dist.php (Zeile 19)**
       - Vorher: `__DIR__ . '/tests'`
       - Nachher: `__DIR__ . '/tests/php'`
+
   - **Vorteile:**
     - **Konsistenz:** Beide Container verwenden gleiche Mount-Strategie
-    - **Sicherheit:** Keine ungewollten Dateien im Container (`.git`, `.env`, etc.)
+    - **Sicherheit:** Keine ungewollten Dateien im Container (`.git`, `.env`,
+      etc.)
     - **Read-Only:** Konfigurationsdateien mit `:ro` Flag geschützt
     - **Explizit:** Klar erkennbar welche Dateien gemountet werden
     - **Performance:** Weniger Dateien = schnelleres File-Watching
@@ -2016,11 +2359,13 @@ Complete feature parity between VS Code and PhpStorm:
     - **Korrekte Pfade:** PHP-Tools arbeiten nur mit PHP-Tests
 
 - ✅ **Docker Image-Tags korrigiert: Redis und PostgreSQL Alpine-Versionen**
-  - **Problem:** Fehlerhafte Image-Tags aus Version 2.13 verhinderten `make fresh`
+  - **Problem:** Fehlerhafte Image-Tags aus Version 2.13 verhinderten
+    `make fresh`
     - `redis:7.4-alpine3.22` - **Tag existiert nicht!** (manifest unknown)
     - `postgres:17.7-alpine3.22` - **Tag existiert nicht!** (manifest unknown)
     - Redis und PostgreSQL verwenden **nicht** das Tagging-Format `-alpine3.22`
-    - Alpine-Version kann bei offiziellen Images nicht im Tag spezifiziert werden
+    - Alpine-Version kann bei offiziellen Images nicht im Tag spezifiziert
+      werden
   - **Lösung: Korrekte offizielle Image-Tags verwenden**
     - **compose.yaml (Zeile 64)**
       - Vorher: `redis:7.4-alpine3.22` ❌
@@ -2044,7 +2389,8 @@ Complete feature parity between VS Code and PhpStorm:
 ### Version 2.13 (2025-12-29)
 
 - ✅ **Node.js: Quality-of-Life Tooling (Testing, Linting, Formatting)**
-  - **Problem:** Node.js-Stack hatte keine Quality-Tools wie PHP (PHPUnit, PHPStan, PHP-CS-Fixer)
+  - **Problem:** Node.js-Stack hatte keine Quality-Tools wie PHP (PHPUnit,
+    PHPStan, PHP-CS-Fixer)
     - Kein Testing-Framework → Keine automatisierten Tests
     - Kein Linter → Keine statische Code-Analyse
     - Kein Formatter → Inkonsistente Code-Formatierung
@@ -2054,13 +2400,15 @@ Complete feature parity between VS Code and PhpStorm:
       - Vitest 2.1.8 mit Native Vite-Integration
       - Coverage Reports (V8): HTML, LCOV, Text → `build/coverage/`
       - Vitest UI für interaktive Test-Entwicklung
-      - Test-Verzeichnisstruktur: `tests/node/{unit,integration}/` (symmetrisch zu PHP `tests/php/{Unit,Feature}/`)
+      - Test-Verzeichnisstruktur: `tests/node/{unit,integration}/` (symmetrisch
+        zu PHP `tests/php/{Unit,Feature}/`)
       - Coverage-Thresholds: 80% (Lines, Functions, Branches, Statements)
       - Konfiguration: `vitest.config.ts` mit Path-Aliases (@node, @tests)
     - **Linting: ESLint + TypeScript-ESLint** (PHPStan-Äquivalent)
       - ESLint 9.18.0 mit Flat Config Format (eslint.config.js)
       - TypeScript-ESLint 8.20.0 für Type-Aware Linting
-      - Strict Rules: no-explicit-any, no-floating-promises, strict-boolean-expressions
+      - Strict Rules: no-explicit-any, no-floating-promises,
+        strict-boolean-expressions
       - TypeScript Type-Checking ähnlich PHPStan Level 5
     - **Formatting: Prettier** (PHP-CS-Fixer-Äquivalent)
       - Prettier 3.4.2 mit eslint-plugin-prettier Integration
@@ -2070,8 +2418,10 @@ Complete feature parity between VS Code and PhpStorm:
     - **Git Hooks: CaptainHook erweitert**
       - **pre-commit:** Prettier Check, ESLint, TypeScript Type-Check
       - **pre-push:** Vitest Tests (analog zu PHPStan für PHP)
-      - Hooks laufen automatisch bei Git-Operationen (captainhook.json:21-38, 50-55)
-    - **Package.json Scripts:** Vollständiges Script-Arsenal (package.json:22-30)
+      - Hooks laufen automatisch bei Git-Operationen (captainhook.json:21-38,
+        50-55)
+    - **Package.json Scripts:** Vollständiges Script-Arsenal
+      (package.json:22-30)
       - `pnpm test` → Vitest run
       - `pnpm test:watch` → Watch mode
       - `pnpm test:coverage` → Coverage Report
@@ -2079,7 +2429,8 @@ Complete feature parity between VS Code and PhpStorm:
       - `pnpm format` / `pnpm format:check` → Prettier
       - `pnpm quality` → Alle Checks (Format, Lint, Type-Check, Test)
     - **Makefile Integration:** setup-Target erweitert (Makefile:94-98, 106)
-      - `tests/php/{Unit,Feature}` und `tests/node/{unit,integration}` Verzeichnisse (Symmetrie wie src/)
+      - `tests/php/{Unit,Feature}` und `tests/node/{unit,integration}`
+        Verzeichnisse (Symmetrie wie src/)
       - `build/{coverage,vitest-report}` für Reports
       - `node-install` automatisch nach `composer-install`
   - **Code Refactoring für Testbarkeit:**
@@ -2089,19 +2440,23 @@ Complete feature parity between VS Code and PhpStorm:
     - Logger exportiert für Test-Mocking
   - **Beispiel-Tests:**
     - **Unit-Tests:** `tests/node/unit/math.test.ts` (Utility-Funktionen)
-    - **Integration-Tests:** `tests/node/integration/api.test.ts` (API-Endpoints mit supertest)
+    - **Integration-Tests:** `tests/node/integration/api.test.ts` (API-Endpoints
+      mit supertest)
     - Security Headers, CORS, 404/500 Error Handling getestet
   - **Dependencies hinzugefügt:** (package.json:40-58)
     - Testing: vitest, @vitest/ui, @vitest/coverage-v8, supertest
-    - Linting: eslint, @typescript-eslint/eslint-plugin, @typescript-eslint/parser
+    - Linting: eslint, @typescript-eslint/eslint-plugin,
+      @typescript-eslint/parser
     - Formatting: prettier, eslint-plugin-prettier, eslint-config-prettier
     - Types: @types/supertest
-  - **Dokumentation:** `tests/node/README.md` mit Struktur, Beispielen, Thresholds
+  - **Dokumentation:** `tests/node/README.md` mit Struktur, Beispielen,
+    Thresholds
 
 - ✅ **Test-Verzeichnisstruktur: Vollständige Symmetrie PHP ↔ Node.js**
   - **Problem:** Inkonsistente Test-Verzeichnisstruktur
     - Source-Code getrennt: `src/php/` und `src/node/` ✓
-    - Tests gemischt: `tests/Unit`, `tests/Feature`, `tests/unit`, `tests/integration` ✗
+    - Tests gemischt: `tests/Unit`, `tests/Feature`, `tests/unit`,
+      `tests/integration` ✗
     - Keine klare Trennung zwischen PHP- und Node.js-Tests
     - PhpStorm-Konfiguration nur für gemischtes `tests/` Verzeichnis
   - **Lösung: Spiegelsymmetrische Struktur wie in src/**
@@ -2109,7 +2464,8 @@ Complete feature parity between VS Code and PhpStorm:
       - `tests/Unit/` → `tests/php/Unit/` (PHPUnit Unit-Tests)
       - `tests/Feature/` → `tests/php/Feature/` (PHPUnit Feature-Tests)
       - `tests/unit/` → `tests/node/unit/` (Vitest Unit-Tests)
-      - `tests/integration/` → `tests/node/integration/` (Vitest Integration-Tests)
+      - `tests/integration/` → `tests/node/integration/` (Vitest
+        Integration-Tests)
     - **PhpStorm IDE-Konfiguration aktualisiert (.idea/docker-webdev.iml:5-8)**
       - `src/php` (Source) + `tests/php` (Test Source mit Namespace App\Tests\)
       - `src/node` (Source) + `tests/node` (Test Source)
@@ -2122,7 +2478,8 @@ Complete feature parity between VS Code and PhpStorm:
       - Erstellt beide Strukturen parallel
       - Kommentar: "separated by language like src/"
   - **Best Practice: Vollständige Symmetrie zwischen PHP- und Node.js-Stack**
-    - **Tools:** PHP: PHPUnit, PHPStan, PHP-CS-Fixer | Node.js: Vitest, ESLint+TS, Prettier
+    - **Tools:** PHP: PHPUnit, PHPStan, PHP-CS-Fixer | Node.js: Vitest,
+      ESLint+TS, Prettier
     - **Struktur:** `src/php/` + `tests/php/` | `src/node/` + `tests/node/`
     - **Workflow:** Gleiche Integration (CaptainHook, Makefile)
     - **Coverage:** Gleiche Anforderungen (80%)
@@ -2147,7 +2504,8 @@ Complete feature parity between VS Code and PhpStorm:
       - pnpm-Commands als Alternative dokumentiert
       - Quality-Tools-Sektion hinzugefügt (ESLint, Prettier, pnpm quality)
       - Symmetrisch zur PHP-README strukturiert
-    - **.gitkeep Dateien entfernt** (tests/php/Unit/.gitkeep, tests/php/Feature/.gitkeep)
+    - **.gitkeep Dateien entfernt** (tests/php/Unit/.gitkeep,
+      tests/php/Feature/.gitkeep)
       - Unnötig, da `make setup` Verzeichnisse erstellt (Makefile:94-95)
       - Reduziert Dateien-Clutter
     - **Makefile Test-Targets erweitert (Makefile:560-592)**
@@ -2171,7 +2529,7 @@ Complete feature parity between VS Code and PhpStorm:
   - **Problem:** Asymmetrische Test-Beispiele und Path-Alias-Fehler
     - Node.js hatte Beispiel-Tests (math.test.ts, api.test.ts), PHP nicht
     - Node.js hatte Beispiel-Utilities (src/node/utils/math.ts), PHP nicht
-    - TypeScript Path-Aliases (@node/*, @tests/*) funktionierten nicht in Tests
+    - TypeScript Path-Aliases (@node/_, @tests/_) funktionierten nicht in Tests
     - IDE konnte Importe nicht auflösen → Entwickler-Erfahrung schlecht
     - `make test-php` und `make test` funktionierten nicht (mehrere Fehler)
   - **Lösung: Symmetrische Beispiele und korrekte TypeScript-Konfiguration**
@@ -2193,15 +2551,19 @@ Complete feature parity between VS Code and PhpStorm:
       - setUp() Methode für Test-Fixture
       - Gruppierung nach Funktionalität (Addition, Multiplication, etc.)
       - Exception-Testing für Division durch Null
-    - **PHP Feature-Tests erstellt (tests/php/Feature/CalculatorIntegrationTest.php)**
+    - **PHP Feature-Tests erstellt
+      (tests/php/Feature/CalculatorIntegrationTest.php)**
       - Analog zu tests/node/integration/api.test.ts
       - Testet komplexe Workflows über mehrere Methoden
       - Error-Handling-Workflows
       - Chained Calculations (mehrere Operationen nacheinander)
       - Demonstriert Feature-Test-Pattern
   - **Ergebnis: Perfekte Symmetrie zwischen PHP und Node.js**
-    - **PHP:** src/php/Utils/Calculator.php → tests/php/Unit/CalculatorTest.php + tests/php/Feature/CalculatorIntegrationTest.php
-    - **Node.js:** src/node/utils/math.ts → tests/node/unit/math.test.ts + tests/node/integration/api.test.ts
+    - **PHP:** src/php/Utils/Calculator.php →
+      tests/php/Unit/CalculatorTest.php +
+      tests/php/Feature/CalculatorIntegrationTest.php
+    - **Node.js:** src/node/utils/math.ts → tests/node/unit/math.test.ts +
+      tests/node/integration/api.test.ts
     - Beide Sprachen haben lauffähige Beispiel-Tests
     - Entwickler können `make test` ausführen → Alle Tests laufen
     - Path-Aliases funktionieren in IDE und Tests
@@ -2210,9 +2572,11 @@ Complete feature parity between VS Code and PhpStorm:
 - ✅ **PHPUnit-Konfiguration & Test-Infrastruktur-Fixes**
   - **Problem:** `make test-php` und `make test` funktionierten nicht
     - Kein phpunit.xml.dist → PHPUnit fand keine Konfiguration
-    - composer.json autoload-dev hatte falschen Pfad (`tests/` statt `tests/php/`)
+    - composer.json autoload-dev hatte falschen Pfad (`tests/` statt
+      `tests/php/`)
     - phpunit.xml.dist nicht in Docker-Volume gemountet (compose.override.yaml)
-    - composer test Script lief mit Coverage, aber Xdebug nicht im Coverage-Modus
+    - composer test Script lief mit Coverage, aber Xdebug nicht im
+      Coverage-Modus
     - Datei-Permissions zu restriktiv (600 statt 644)
   - **Lösung: Vollständige PHPUnit-Infrastruktur**
     - **phpunit.xml.dist erstellt** mit korrekter Konfiguration
@@ -2229,7 +2593,8 @@ Complete feature parity between VS Code and PhpStorm:
       - autoload-dev: `"App\\Tests\\": "tests/php/"` (war: tests/)
       - test script: `phpunit` (ohne Coverage-Zwang)
       - → Tests laufen schnell ohne Coverage-Overhead
-      - → Coverage über separates Target: `make test-coverage-php` mit XDEBUG_MODE=coverage
+      - → Coverage über separates Target: `make test-coverage-php` mit
+        XDEBUG_MODE=coverage
     - **compose.override.yaml erweitert (compose.override.yaml:39)**
       - phpunit.xml.dist Volume-Mount hinzugefügt
       - Read-only Mount für Konfigurationsdatei
@@ -2257,7 +2622,8 @@ Complete feature parity between VS Code and PhpStorm:
       - Composer Script: `composer phpmd` (composer.json:58)
       - Makefile-Target: `make phpmd` (Makefile:523-525)
     - **phpmd.xml.dist Konfiguration** mit ausgewogenen Regeln
-      - **Clean Code Rules:** Detect code smells (disabled: ElseExpression, StaticAccess)
+      - **Clean Code Rules:** Detect code smells (disabled: ElseExpression,
+        StaticAccess)
       - **Code Size Rules (Complexity):**
         - Cyclomatic Complexity: Max 15 (Warnung bei zu verschachteltem Code)
         - NPath Complexity: Max 250 (Max Ausführungspfade)
@@ -2266,8 +2632,10 @@ Complete feature parity between VS Code and PhpStorm:
         - Excessive Parameter List: Max 10 Parameter
         - Too Many Fields: Max 20 Felder
         - Too Many Methods: Max 25 Methoden
-      - **Design Rules:** Coupling, Depth of Inheritance (disabled: ExitExpression für CLI)
-      - **Naming Rules:** Short/Long Variable Names (min 2 chars, exceptions: i,j,k,e,id,x,y,a,b)
+      - **Design Rules:** Coupling, Depth of Inheritance (disabled:
+        ExitExpression für CLI)
+      - **Naming Rules:** Short/Long Variable Names (min 2 chars, exceptions:
+        i,j,k,e,id,x,y,a,b)
       - **Unused Code Detection:** Unused Variables, Parameters, Private Methods
       - **Controversial Rules:** Deaktiviert (zu opinionated)
     - **Docker-Integration** (compose.override.yaml:38)
@@ -2281,12 +2649,15 @@ Complete feature parity between VS Code and PhpStorm:
     - **Code Style:** PHP-CS-Fixer
     - **Complexity & Design:** PHPMD (NEU)
     - **Testing:** PHPUnit
-    - Symmetrie zu Node.js: ESLint deckt Complexity + Linting ab, PHPMD tut das Gleiche für PHP
+    - Symmetrie zu Node.js: ESLint deckt Complexity + Linting ab, PHPMD tut das
+      Gleiche für PHP
 
 - ✅ **Vitest-Konfiguration & TypeScript Path-Alias-Fixes**
   - **Problem:** TypeScript-Fehler in vitest.config.ts und Test-Imports
-    - vitest.config.ts Zeile 28: "No overload matches this call" (Coverage Thresholds)
-    - vitest.config.ts Zeile 37: "reporter does not exist" (sollte "reporters" sein)
+    - vitest.config.ts Zeile 28: "No overload matches this call" (Coverage
+      Thresholds)
+    - vitest.config.ts Zeile 37: "reporter does not exist" (sollte "reporters"
+      sein)
     - api.test.ts Zeile 3: "Cannot find module @node/app"
     - math.test.ts Zeile 2: "Cannot find module @node/utils/math"
     - Tests liefen, aber IDE zeigte Fehler → Schlechte Developer Experience
@@ -2306,9 +2677,11 @@ Complete feature parity between VS Code and PhpStorm:
       - vitest.config.ts resolve.alias mappte @node → src/node
       - IDE erkennt nun alle Importe korrekt (keine roten Wellenlinien mehr)
     - **tsconfig.json moduleResolution fix (tsconfig.json:6-7)**
-      - `module: "NodeNext"` → `module: "ESNext"` (für Vite/Vitest Kompatibilität)
+      - `module: "NodeNext"` → `module: "ESNext"` (für Vite/Vitest
+        Kompatibilität)
       - `moduleResolution: "NodeNext"` → `moduleResolution: "bundler"`
-      - NodeNext erforderte .js Dateiendungen in Imports → PhpStorm-Fehler in server.ts:12
+      - NodeNext erforderte .js Dateiendungen in Imports → PhpStorm-Fehler in
+        server.ts:12
       - bundler-Strategie ist optimal für Vite-basierte Projekte
       - Löst PhpStorm-Fehler ohne .js Extensions in allen Imports
   - **Resultat: Alle Tests laufen erfolgreich ohne TypeScript-Fehler**
@@ -2321,8 +2694,10 @@ Complete feature parity between VS Code and PhpStorm:
 
 - ✅ **Security & Code Quality Maintenance**
   - **Problem:** Verschiedene Warnungen und Sicherheitslücken
-    - .prettierignore: Redundanter Eintrag `public/build` (bereits durch `build` abgedeckt)
-    - package.json: pm2 5.4.3 hat CVE-2025-5891 (Severity 4.3) - ReDoS in Config.js
+    - .prettierignore: Redundanter Eintrag `public/build` (bereits durch `build`
+      abgedeckt)
+    - package.json: pm2 5.4.3 hat CVE-2025-5891 (Severity 4.3) - ReDoS in
+      Config.js
     - pnpm 9.15.1 verfügbar für Update auf 10.26.2 (Major-Version)
   - **Lösung: Security-Update und Code-Bereinigung**
     - **.prettierignore bereinigt (.prettierignore:5-7)**
@@ -2360,26 +2735,30 @@ Complete feature parity between VS Code and PhpStorm:
       - .pnpm-store, build, dist, node_modules, public/build, storage, vendor
   - **Resultat: Vollständige IDE-Integration**
     - PhpStorm erkennt beide Sprach-Stacks korrekt
-    - TypeScript Autocomplete funktioniert für src/node/**/*
+    - TypeScript Autocomplete funktioniert für src/node/\*_/_
     - Test-Runner erkennt beide Test-Stacks
     - Navigation und Refactoring für PHP und Node.js
     - Symmetrie zwischen PHP- und Node.js-Entwicklung
 
 - ✅ **PHPUnit XML-Konfiguration: Schema-Konformität**
   - **Problem:** phpunit.xml.dist Schema-Fehler in PhpStorm
-    - `restrictDeprecations`, `restrictNotices`, `restrictWarnings` waren ursprünglich im `<source>` Element
+    - `restrictDeprecations`, `restrictNotices`, `restrictWarnings` waren
+      ursprünglich im `<source>` Element
     - PhpStorm-Fehler: "Attribute not allowed to appear in element"
     - Fehler durch falsche Platzierung der Attribute
   - **Lösung: Korrekte Attribut-Platzierung nach offizieller Dokumentation**
     - **Quelle:** <https://docs.phpunit.de/en/12.5/configuration.html>
     - **`restrictNotices="true"`** im `<source>` Element (phpunit.xml.dist:24)
-      - Beschränkt Reporting von E_STRICT, E_NOTICE, E_USER_NOTICE auf Projekt-Source-Code
+      - Beschränkt Reporting von E_STRICT, E_NOTICE, E_USER_NOTICE auf
+        Projekt-Source-Code
       - Ignoriert Notices aus Vendor-Dependencies
     - **`restrictWarnings="true"`** im `<source>` Element (phpunit.xml.dist:24)
-      - Beschränkt Reporting von E_WARNING, E_USER_WARNING auf Projekt-Source-Code
+      - Beschränkt Reporting von E_WARNING, E_USER_WARNING auf
+        Projekt-Source-Code
       - Ignoriert Warnings aus Vendor-Dependencies
     - **`restrictDeprecations` existiert NICHT** in PHPUnit 12.5
-      - Stattdessen: `ignoreSelfDeprecations`, `ignoreDirectDeprecations`, `ignoreIndirectDeprecations`
+      - Stattdessen: `ignoreSelfDeprecations`, `ignoreDirectDeprecations`,
+        `ignoreIndirectDeprecations`
       - Nicht verwendet, da wir alle Deprecations sehen wollen
     - **Strikte Testeinstellungen im `<phpunit>` Root-Element:**
       - `failOnWarning="true"` - Tests schlagen bei Warnungen fehl
@@ -2395,13 +2774,18 @@ Complete feature parity between VS Code and PhpStorm:
 ### Version 2.12 (2025-12-28)
 
 - ✅ **Dependency Management: Workflow-Klarheit für Composer und Node.js**
-  - **Problem:** Unklare Verwendungszwecke der lokalen vs. Container-basierten Dependency-Installation
-    - `composer-install-local` und `node-install-local` könnten als "schnellere Alternative" missverstanden werden
+  - **Problem:** Unklare Verwendungszwecke der lokalen vs. Container-basierten
+    Dependency-Installation
+    - `composer-install-local` und `node-install-local` könnten als "schnellere
+      Alternative" missverstanden werden
     - Intention war unklar: Wann sollte man welchen Befehl verwenden?
   - **Lösung: Makefile-Kommentare präzisiert**
-    - **composer-install-local:** Kommentar geändert zu "IDE code completion only" (Makefile:41)
-    - **node-install-local:** Kommentar geändert zu "IDE code completion only" (Makefile:319)
-    - **Best Practice:** Container-Installation für Runtime/CI/CD, lokale Installation NUR für IDE-Support
+    - **composer-install-local:** Kommentar geändert zu "IDE code completion
+      only" (Makefile:41)
+    - **node-install-local:** Kommentar geändert zu "IDE code completion only"
+      (Makefile:319)
+    - **Best Practice:** Container-Installation für Runtime/CI/CD, lokale
+      Installation NUR für IDE-Support
   - **Vorteile:**
     - Klare Trennung: Production-Konsistenz vs. Development-Convenience
     - Verhindert Versions-Konflikte durch klarere Intention
@@ -2417,14 +2801,18 @@ Complete feature parity between VS Code and PhpStorm:
   - **Routing über Nginx:**
     - `localhost:8080/api/node/hello` → `node:3000/api/hello` (GET) ✅
     - `localhost:8080/api/node/echo` → `node:3000/api/echo` (POST) ✅
-  - **Best Practice:** Klare HTTP-Methoden-Semantik für professionelles API-Design
+  - **Best Practice:** Klare HTTP-Methoden-Semantik für professionelles
+    API-Design
 
 - ✅ **PhpStorm: Excluded Directories optimiert**
-  - **Problem:** Unvollständige Exclude-Konfiguration führt zu Performance-Problemen
+  - **Problem:** Unvollständige Exclude-Konfiguration führt zu
+    Performance-Problemen
     - `build/` (PHPUnit Coverage) nicht excluded → IDE indexiert unnötig
-    - `dist/` (Node.js Build Output) nicht excluded → doppelte Indexierung (Source + Compiled)
+    - `dist/` (Node.js Build Output) nicht excluded → doppelte Indexierung
+      (Source + Compiled)
     - Fehlende Excludes verlangsamen Search, Navigation und Code-Completion
-  - **Lösung: Build- und Cache-Directories excluded (.idea/docker-webdev.iml:12-13)**
+  - **Lösung: Build- und Cache-Directories excluded
+    (.idea/docker-webdev.iml:12-13)**
     - `build/` - PHPUnit Coverage Reports, Tool Caches
     - `dist/` - TypeScript Build Output (transpilierter Code)
   - **Bereits korrekt excluded:**
@@ -2437,32 +2825,44 @@ Complete feature parity between VS Code and PhpStorm:
 
 ### Version 2.11 (2025-12-28)
 
-- ✅ **PHP Code Quality Improvements: PSR-4 Compliance und Dependency Management**
+- ✅ **PHP Code Quality Improvements: PSR-4 Compliance und Dependency
+  Management**
   - **Problem:** IDE-Warnungen und fehlende Extension-Deklarationen
     - `ext-pdo` fehlte in composer.json, obwohl HealthCheck.php PDO verwendet
     - `ext-json` war implizit verwendet, aber nicht deklariert
-    - IDE-Warnungen in ViteHelper.php: "Cannot resolve file/directory" für sprintf() Platzhalter
+    - IDE-Warnungen in ViteHelper.php: "Cannot resolve file/directory" für
+      sprintf() Platzhalter
     - Unnötige Redundanz in Conditional-Checks (null + empty)
   - **Lösung 1: Composer Dependencies vervollständigt**
-    - **ext-pdo hinzugefügt:** Erforderlich für PostgreSQL/MariaDB Verbindungen in HealthCheck
-    - **ext-json hinzugefügt:** Verwendet in Router, ExampleController, StatusController (JSON_THROW_ON_ERROR)
-    - **Best Practice:** Explizite Deklaration aller verwendeten Extensions verhindert Runtime-Fehler
+    - **ext-pdo hinzugefügt:** Erforderlich für PostgreSQL/MariaDB Verbindungen
+      in HealthCheck
+    - **ext-json hinzugefügt:** Verwendet in Router, ExampleController,
+      StatusController (JSON_THROW_ON_ERROR)
+    - **Best Practice:** Explizite Deklaration aller verwendeten Extensions
+      verhindert Runtime-Fehler
   - **Lösung 2: IDE-Warnungen in ViteHelper.php behoben**
     - **@noinspection HtmlUnknownTarget Annotations hinzugefügt**
-      - renderScriptTags() Zeile 108: Unterdrückt Warnung für dynamische Vite Dev Server URLs
-      - renderScriptTags() Zeile 125: Unterdrückt Warnung für Production Build-Assets
-      - renderCssTags() Zeile 148: Unterdrückt Warnung für CSS-Dateien aus Manifest
+      - renderScriptTags() Zeile 108: Unterdrückt Warnung für dynamische Vite
+        Dev Server URLs
+      - renderScriptTags() Zeile 125: Unterdrückt Warnung für Production
+        Build-Assets
+      - renderCssTags() Zeile 148: Unterdrückt Warnung für CSS-Dateien aus
+        Manifest
     - **Code-Redundanz entfernt:**
-      - Zeile 142: `if (empty($cssUrls))` ersetzt `if ($cssUrls === null || empty($cssUrls))`
+      - Zeile 142: `if (empty($cssUrls))` ersetzt
+        `if ($cssUrls === null || empty($cssUrls))`
       - Grund: `empty()` prüft bereits auf null, array, und Leerheit
     - **Warum diese Warnungen auftraten:**
       - PHPStorm versucht, String-Formatierungen in sprintf() zu validieren
       - `%s` Platzhalter wurden als tatsächliche Dateipfade interpretiert
       - Warnungen waren harmlos, aber störend für Code-Quality-Metriken
   - **Lösung 3: Template-Variable-Dokumentation in welcome.php**
-    - **Problem:** PhpStorm meldete "Undefined variable" für $vite, $env, $status
+    - **Problem:** PhpStorm meldete "Undefined variable" für
+      $vite, $env,
+      $status
       - Variablen werden von WelcomeController via include übergeben
-      - IDE konnte nicht erkennen, dass Variablen im Template-Scope verfügbar sind
+      - IDE konnte nicht erkennen, dass Variablen im Template-Scope verfügbar
+        sind
     - **PHPDoc-Header hinzugefügt (Zeilen 1-12):**
       - `@var \App\Infrastructure\ViteHelper $vite` - Vite asset helper
       - `@var array $env` - Environment configuration
@@ -2474,18 +2874,21 @@ Complete feature parity between VS Code and PhpStorm:
       - Dokumentiert erwartete Variablen für Template-Engine-Integration
       - Best Practice für PHP-Template-Dateien
   - **Dateien geändert:**
-    - `composer.json`: ext-pdo und ext-json hinzugefügt (Zeilen 16-17), license Kleinschreibung (Zeile 5)
-    - `src/php/Infrastructure/ViteHelper.php`: @noinspection Annotations, Code-Cleanup (Zeilen 108, 125, 142, 148)
+    - `composer.json`: ext-pdo und ext-json hinzugefügt (Zeilen 16-17), license
+      Kleinschreibung (Zeile 5)
+    - `src/php/Infrastructure/ViteHelper.php`: @noinspection Annotations,
+      Code-Cleanup (Zeilen 108, 125, 142, 148)
     - `templates/welcome.php`: PHPDoc-Header mit @var Annotations (Zeilen 1-12)
   - **Ergebnis:**
-    - ✅ Alle IDE-Warnungen in src/php/*und templates/* behoben
+    - ✅ Alle IDE-Warnungen in src/php/_und templates/_ behoben
     - ✅ Composer Dependencies vollständig deklariert
     - ✅ Code Quality verbessert (keine redundanten Checks)
     - ✅ Template-Variablen dokumentiert mit Type-Hints
     - ✅ PSR-4 Namespaces bereits korrekt (keine Änderungen nötig)
   - **Nächste Schritte:**
     - Autoloader bereits regeneriert (`composer dump-autoload -o`)
-    - Bei anhaltenden Namespace-Warnungen: PhpStorm Cache invalidieren (`File` → `Invalidate Caches`)
+    - Bei anhaltenden Namespace-Warnungen: PhpStorm Cache invalidieren (`File` →
+      `Invalidate Caches`)
 
 ### Version 2.10 (2025-12-23)
 
@@ -2510,16 +2913,24 @@ Complete feature parity between VS Code and PhpStorm:
     - Automatische Profile-Aktivierung via `docker compose --profile ${DB_TYPE}`
     - Makefile erweitert mit DB-spezifischen Commands
   - **Best Practices - Konsistente Minor-Version Pinning:**
-    - **Alle Images mit fixen Minor-Versionen** (keine `latest`- oder Major-only-Tags)
-    - **PostgreSQL:** `17.7-alpine` (Minor fixiert, erlaubt automatische Patch-Updates 17.7.x)
-    - **MariaDB:** `12.1` (Minor fixiert, erlaubt automatische Patch-Updates 12.1.x)
-    - **Redis:** `7.4-alpine` (Minor fixiert, erlaubt automatische Patch-Updates 7.4.x)
-    - **Vorteil:** Balance zwischen Sicherheit (automatische Patches) und Stabilität (keine Breaking Changes)
-    - **Verhindert:** Unerwartete Minor-Updates mit Breaking Changes (z.B. 17.0 → 17.1)
+    - **Alle Images mit fixen Minor-Versionen** (keine `latest`- oder
+      Major-only-Tags)
+    - **PostgreSQL:** `17.7-alpine` (Minor fixiert, erlaubt automatische
+      Patch-Updates 17.7.x)
+    - **MariaDB:** `12.1` (Minor fixiert, erlaubt automatische Patch-Updates
+      12.1.x)
+    - **Redis:** `7.4-alpine` (Minor fixiert, erlaubt automatische Patch-Updates
+      7.4.x)
+    - **Vorteil:** Balance zwischen Sicherheit (automatische Patches) und
+      Stabilität (keine Breaking Changes)
+    - **Verhindert:** Unerwartete Minor-Updates mit Breaking Changes (z.B. 17.0
+      → 17.1)
   - **Dateien geändert:**
-    - `compose.yaml`: PostgreSQL 17.7-alpine, MariaDB 12.1, Redis 7.4-alpine (alle Minor-fixiert)
+    - `compose.yaml`: PostgreSQL 17.7-alpine, MariaDB 12.1, Redis 7.4-alpine
+      (alle Minor-fixiert)
     - `compose.prod.yaml`: Production-Optimierungen für beide DBs
-    - `compose.override.yaml`: Development-Settings (verbose logging, exposed ports)
+    - `compose.override.yaml`: Development-Settings (verbose logging, exposed
+      ports)
     - `.env.example`: `DB_TYPE`, Datenbank-URLs, Port-Konfigurationen
     - `.env`: `DB_TYPE=postgres` als Standard
     - `Makefile`: `up-core` mit Profile-Support, DB-spezifische CLI-Commands
@@ -2530,10 +2941,12 @@ Complete feature parity between VS Code and PhpStorm:
     - Node.js Backend mit PostgreSQL ✅
     - Alle Services healthy und voll funktionsfähig ✅
 
-- ✅ **Granulare Service-Aktivierung mit ENABLE_* Flags**
-  - **Problem:** Bisherige Architektur startete immer alle Services (PHP, Node, Redis)
+- ✅ **Granulare Service-Aktivierung mit ENABLE\_\* Flags**
+  - **Problem:** Bisherige Architektur startete immer alle Services (PHP, Node,
+    Redis)
     - Verschwendung von Ressourcen für ungenutzte Services
-    - Keine Flexibilität für unterschiedliche Stack-Typen (Pure PHP, Pure Node.js, Static)
+    - Keine Flexibilität für unterschiedliche Stack-Typen (Pure PHP, Pure
+      Node.js, Static)
     - Nginx war der einzige wirklich essenzielle Service
   - **Lösung:** Docker Compose Profiles für jeden Service
     - PHP: `profiles: ["php"]`, aktivierbar via `ENABLE_PHP=true`
@@ -2559,17 +2972,22 @@ Complete feature parity between VS Code and PhpStorm:
     - **Custom**: Beliebige Kombination
   - **Makefile-Integration:**
     - `make up` liest `.env` und aktiviert nur gewählte Services
-    - Dynamischer Profil-Aufbau: `--profile postgres --profile php --profile node --profile redis`
+    - Dynamischer Profil-Aufbau:
+      `--profile postgres --profile php --profile node --profile redis`
     - Output zeigt aktive Services: `Active services: nginx php node redis`
   - **Zukunftssicherheit:**
-    - Einfache Erweiterung für neue Services (z.B. ENABLE_RABBITMQ, ENABLE_ELASTICSEARCH)
+    - Einfache Erweiterung für neue Services (z.B. ENABLE_RABBITMQ,
+      ENABLE_ELASTICSEARCH)
     - Skaliert linear: N Services = N Variablen (statt N! Kombinationen)
     - Microservice-Prinzip: Jeder Service einzeln steuerbar
   - **Dateien geändert:**
-    - `compose.yaml`: Profiles für php, node, redis hinzugefügt; depends_on auf `required: false`
-    - `.env`: `ENABLE_PHP`, `ENABLE_NODE`, `ENABLE_REDIS` hinzugefügt (alle true)
+    - `compose.yaml`: Profiles für php, node, redis hinzugefügt; depends_on auf
+      `required: false`
+    - `.env`: `ENABLE_PHP`, `ENABLE_NODE`, `ENABLE_REDIS` hinzugefügt (alle
+      true)
     - `.env.example`: Ausführliche Dokumentation + 5 vordefinierte Presets
-    - `Makefile`: `up-core` dynamische Profile-Aktivierung basierend auf ENABLE_* Flags
+    - `Makefile`: `up-core` dynamische Profile-Aktivierung basierend auf
+      ENABLE\_\* Flags
   - **Getestet:**
     - Full-Stack (PHP + Node + Redis + PostgreSQL): ✅ Alle Services gestartet
     - Node-only (nur Node.js + Nginx): ✅ PHP und Redis nicht gestartet
@@ -2579,27 +2997,34 @@ Complete feature parity between VS Code and PhpStorm:
 - ✅ **NODE_MODE Auto-Start Implementation mit Entrypoint-Script**
   - **Problem:** Node.js Container führte NODE_MODE nicht aus
     - Container startete nur mit `sleep infinity` (development stage)
-    - NODE_MODE-Variable (`full-stack`, `vite-only`, `backend-only`, `none`) war in .env dokumentiert, aber nicht implementiert
-    - PM2-Config (`ecosystem.config.cjs`) und npm-Scripts existierten, wurden aber nie ausgeführt
-    - Vite Dev Server lief nicht → **CORS-Fehler** bei HMR (localhost:5173 nicht erreichbar)
+    - NODE_MODE-Variable (`full-stack`, `vite-only`, `backend-only`, `none`) war
+      in .env dokumentiert, aber nicht implementiert
+    - PM2-Config (`ecosystem.config.cjs`) und npm-Scripts existierten, wurden
+      aber nie ausgeführt
+    - Vite Dev Server lief nicht → **CORS-Fehler** bei HMR (localhost:5173 nicht
+      erreichbar)
     - Regression des in Version 2.9 behobenen CORS-Problems
   - **Root Cause:**
-    - Dockerfile development stage hatte kein ENTRYPOINT, nur `CMD ["sleep", "infinity"]`
+    - Dockerfile development stage hatte kein ENTRYPOINT, nur
+      `CMD ["sleep", "infinity"]`
     - Keine Logik für Dependency-Installation (`pnpm install`)
     - Keine Logik für automatischen Service-Start basierend auf NODE_MODE
   - **Lösung - Entrypoint Script erstellt:** `docker/node/entrypoint.sh`
     - **Dependency Installation:**
       - Prüft ob `node_modules` existiert oder leer ist
       - Führt `pnpm install --frozen-lockfile` aus wenn nötig
-      - Überspringt Installation wenn Dependencies bereits vorhanden (Performance)
+      - Überspringt Installation wenn Dependencies bereits vorhanden
+        (Performance)
     - **Service-Start basierend auf NODE_MODE:**
       - `NODE_MODE=full-stack` → `pnpm run dev:full` (PM2 mit Vite + Express)
       - `NODE_MODE=vite-only` → `pnpm run dev:frontend` (PM2 nur Vite)
       - `NODE_MODE=backend-only` → `pnpm run dev:backend` (PM2 nur Express)
-      - `NODE_MODE=none` → `sleep infinity` (Idle Container für manuelle Commands)
+      - `NODE_MODE=none` → `sleep infinity` (Idle Container für manuelle
+        Commands)
     - **Logging:** Debug-Output für Startup-Status
   - **Dockerfile-Änderungen:**
-    - Entrypoint-Script kopiert: `COPY --chown=node:node docker/node/entrypoint.sh /usr/local/bin/`
+    - Entrypoint-Script kopiert:
+      `COPY --chown=node:node docker/node/entrypoint.sh /usr/local/bin/`
     - Ausführbar gemacht: `RUN chmod +x /usr/local/bin/entrypoint.sh`
     - Als ENTRYPOINT gesetzt: `ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]`
     - Ersetzt bisheriges `CMD ["sleep", "infinity"]`
@@ -2655,27 +3080,36 @@ Complete feature parity between VS Code and PhpStorm:
     - Keine zentrale Service-Status-Prüfung
     - Developer musste Routing/Framework selbst implementieren
   - **Lösung 1: ViteHelper als Infrastructure-Klasse**
-    - **Verschoben:** `public/vite-helper.php` → `src/php/Infrastructure/ViteHelper.php`
+    - **Verschoben:** `public/vite-helper.php` →
+      `src/php/Infrastructure/ViteHelper.php`
     - **Namespace:** `App\Infrastructure\ViteHelper`
     - **Autoloading:** Via Composer PSR-4 (`"App\\": "src/php/"`)
-    - **Manifest-Path angepasst:** `__DIR__ . '/../../../public/build/.vite/manifest.json'`
-    - **Alle Funktionen erhalten:** Development HMR, Production Assets, CORS-Config
+    - **Manifest-Path angepasst:**
+      `__DIR__ . '/../../../public/build/.vite/manifest.json'`
+    - **Alle Funktionen erhalten:** Development HMR, Production Assets,
+      CORS-Config
   - **Lösung 2: HealthCheck-Klasse für Service-Monitoring**
     - **Neue Klasse:** `src/php/Infrastructure/HealthCheck.php`
     - **Features:**
-      - Prüft alle Services: PHP-FPM, Node Backend, Redis, Database (PostgreSQL/MariaDB)
-      - Liest ENV-Variablen: `ENABLE_PHP`, `ENABLE_NODE`, `ENABLE_REDIS`, `DB_TYPE`, `NODE_MODE`
+      - Prüft alle Services: PHP-FPM, Node Backend, Redis, Database
+        (PostgreSQL/MariaDB)
+      - Liest ENV-Variablen: `ENABLE_PHP`, `ENABLE_NODE`, `ENABLE_REDIS`,
+        `DB_TYPE`, `NODE_MODE`
       - Gibt Gesamtstatus zurück: `ok`, `degraded`, `error`
-      - Zeigt Service-Versionen: PHP 8.4.16, Node v24.12.0, PostgreSQL 17.7, etc.
+      - Zeigt Service-Versionen: PHP 8.4.16, Node v24.12.0, PostgreSQL 17.7,
+        etc.
     - **Service-Checks:**
       - **PHP-FPM:** Immer OK (Code läuft bereits)
-      - **Node Backend:** HTTP-Request zu `http://node:3000/health` (JSON-Parsing)
+      - **Node Backend:** HTTP-Request zu `http://node:3000/health`
+        (JSON-Parsing)
       - **Redis:** Verbindung + PING-Test via PHP Redis Extension
       - **Database:** PDO-Verbindung + Version-Query (postgres/mariadb)
-    - **Error Handling:** Bei fehlenden Extensions (Redis, PDO) wird Status als "error" mit Message zurückgegeben
+    - **Error Handling:** Bei fehlenden Extensions (Redis, PDO) wird Status als
+      "error" mit Message zurückgegeben
   - **Lösung 3: MVC-Controller für Routing**
     - **Neue Controller:**
-      - `src/php/Http/Controller/WelcomeController.php` - Landing Page mit Service-Dashboard
+      - `src/php/Http/Controller/WelcomeController.php` - Landing Page mit
+        Service-Dashboard
       - `src/php/Http/Controller/StatusController.php` - JSON Health Endpoint
     - **Template:** `templates/welcome.php` - HTML-Template für Dashboard
     - **Routes in `public/index.php`:**
@@ -2715,7 +3149,8 @@ Complete feature parity between VS Code and PhpStorm:
     - **Geändert:** `public/index.php` (Routes erweitert)
     - **Verschoben:** `public/test.php` → `public/welcome.php` (aktualisiert)
     - **Gelöscht:** `public/vite-helper.php` (alte Version)
-    - **Geändert:** `compose.override.yaml` (PHP ENV-Variablen hinzugefügt, Zeilen 51-60)
+    - **Geändert:** `compose.override.yaml` (PHP ENV-Variablen hinzugefügt,
+      Zeilen 51-60)
   - **Testing & Verification:**
     - Composer Autoloader regeneriert: `composer dump-autoload -o` ✅
     - PHP-Container neu erstellt: `docker compose up -d php` ✅
@@ -2732,29 +3167,41 @@ Complete feature parity between VS Code and PhpStorm:
       - Redis: ⚠️ Error (Extension nicht installiert)
       - Database: ⚠️ Error (PDO Extension nicht installiert)
     - **Overall Status:** `degraded` (wegen fehlender Extensions)
-    - **Hinweis:** Extensions wurden später hinzugefügt (siehe nächster Changelog-Eintrag)
+    - **Hinweis:** Extensions wurden später hinzugefügt (siehe nächster
+      Changelog-Eintrag)
   - **Vorteile:**
-    - **Framework-Agnostic:** Dev kann später Laravel, Symfony, Slim, etc. nutzen
-    - **Clean Architecture:** Business-Logik in `src/`, Public-Dateien in `public/`
+    - **Framework-Agnostic:** Dev kann später Laravel, Symfony, Slim, etc.
+      nutzen
+    - **Clean Architecture:** Business-Logik in `src/`, Public-Dateien in
+      `public/`
     - **PSR-4 Autoloading:** Kein manuelles `require_once` mehr
     - **Testbar:** Klassen können via PHPUnit getestet werden
-    - **Monitoring:** Zentraler HealthCheck für Docker Healthchecks und Uptime-Monitoring
+    - **Monitoring:** Zentraler HealthCheck für Docker Healthchecks und
+      Uptime-Monitoring
     - **Transparency:** Dashboard zeigt alle aktiven Features und Service-Status
-    - **Hybrid Routing:** Dev kann Router nutzen oder direkte Dateien (maximale Flexibilität)
+    - **Hybrid Routing:** Dev kann Router nutzen oder direkte Dateien (maximale
+      Flexibilität)
 
 - ✅ **PHP Extensions installiert: Redis, PDO PostgreSQL, PDO MySQL**
   - **Problem:** HealthCheck zeigte "degraded" Status
-    - Redis Extension fehlte → HealthCheck-Fehler: "Redis PHP extension not installed"
-    - PDO PostgreSQL Extension fehlte → HealthCheck-Fehler: "PDO PostgreSQL extension not installed"
-    - health.php war kaputt → Leere weiße Seite (Bug: prüfte REQUEST_URI === '/health' statt '/health.php')
+    - Redis Extension fehlte → HealthCheck-Fehler: "Redis PHP extension not
+      installed"
+    - PDO PostgreSQL Extension fehlte → HealthCheck-Fehler: "PDO PostgreSQL
+      extension not installed"
+    - health.php war kaputt → Leere weiße Seite (Bug: prüfte REQUEST_URI ===
+      '/health' statt '/health.php')
     - User-Frustration: "Warum ist Status degraded wenn Services laufen?"
   - **User-Feedback:**
-    - "Sollten wir REDIS und PDO nicht, wie z.B. auch GraphicsMagick, bereits vorinstallieren?"
-    - "Damit sofort alles lauffähig ist und ein Dev nicht erst herausfinden muss, wie man die Extension installiert"
+    - "Sollten wir REDIS und PDO nicht, wie z.B. auch GraphicsMagick, bereits
+      vorinstallieren?"
+    - "Damit sofort alles lauffähig ist und ein Dev nicht erst herausfinden
+      muss, wie man die Extension installiert"
   - **Entscheidung:** Extensions vorinstallieren (wie GraphicsMagick)
     - **Philosophie:** Boilerplate sollte "out of the box" funktionieren
-    - Dev kann später Extensions entfernen (einfach), aber hinzufügen ist frustrierend
-    - Wenn Services (Redis, PostgreSQL) verfügbar sind, sollten Extensions auch da sein
+    - Dev kann später Extensions entfernen (einfach), aber hinzufügen ist
+      frustrierend
+    - Wenn Services (Redis, PostgreSQL) verfügbar sind, sollten Extensions auch
+      da sein
   - **Lösung 1: Redis Extension via PECL**
     - Im `php-builder` Stage: `pecl install redis`
     - Extension aktiviert: `docker-php-ext-enable redis`
@@ -2767,18 +3214,21 @@ Complete feature parity between VS Code and PhpStorm:
     - Keine zusätzlichen Dependencies (Built-in in PHP)
     - Installation: `docker-php-ext-install pdo_mysql`
   - **Lösung 4: health.php repariert**
-    - **Problem:** `if ($_SERVER['REQUEST_URI'] === '/health')` prüfte falsche URI
+    - **Problem:** `if ($_SERVER['REQUEST_URI'] === '/health')` prüfte falsche
+      URI
     - **Aufruf war:** `http://localhost:8080/health.php`
     - **Geprüft wurde:** `/health` (nie true → leere Seite)
     - **Fix:** Bedingung entfernt, direktes JSON-Output
     - **Zweck:** Minimal-Simple Health Check für Docker HEALTHCHECK
-    - **Format:** `{"status":"ok","service":"php-fpm","timestamp":"2025-12-24T13:55:35+01:00"}`
+    - **Format:**
+      `{"status":"ok","service":"php-fpm","timestamp":"2025-12-24T13:55:35+01:00"}`
   - **Dateien geändert:**
     - `docker/php/Dockerfile` (Zeilen 36-40, 48-49, 68):
       - `postgresql-dev postgresql-libs` hinzugefügt
       - `pdo_pgsql pdo_mysql` in docker-php-ext-install
       - `pecl install redis && docker-php-ext-enable redis`
-    - `public/health.php` (Zeilen 1-19): URI-Check entfernt, direktes JSON-Output
+    - `public/health.php` (Zeilen 1-19): URI-Check entfernt, direktes
+      JSON-Output
   - **Testing & Verification:**
     - PHP Container neu gebaut: `docker compose build php` ✅
     - Extensions geladen: `php -m | grep -E "redis|pdo_pgsql|pdo_mysql"` ✅
@@ -2796,7 +3246,8 @@ Complete feature parity between VS Code and PhpStorm:
     - **Better DX:** Developer muss nicht nach Dockerfile-Anleitung suchen
     - **Consistency:** Wenn Service verfügbar ist, ist Extension auch da
     - **Production-Ready:** Image kann direkt deployed werden
-  - **Image-Size Impact:** ~3 MB (Redis ~1 MB, PDO PostgreSQL ~2 MB - vernachlässigbar)
+  - **Image-Size Impact:** ~3 MB (Redis ~1 MB, PDO PostgreSQL ~2 MB -
+    vernachlässigbar)
 
 - ✅ **Redundante welcome.php entfernt und Endpoint-Dokumentation verbessert**
   - **Problem:** Verwirrende Redundanz bei Endpoints
@@ -2807,7 +3258,8 @@ Complete feature parity between VS Code and PhpStorm:
     - health.php als "Legacy" bezeichnet, obwohl perfekt für Docker HEALTHCHECK
   - **User-Feedback:**
     - "welcome.php scheint mir jetzt ziemlich redundant zu sein"
-    - "health.php ist auf der Startseite als Legacy beschrieben, ggf. Hinweis, das für Docker HEALTHCHECK genutzt"
+    - "health.php ist auf der Startseite als Legacy beschrieben, ggf. Hinweis,
+      das für Docker HEALTHCHECK genutzt"
   - **Lösung 1: welcome.php gelöscht**
     - Redundanz eliminiert
     - Nur noch Clean URLs via Router: `/` und `/welcome`
@@ -2827,7 +3279,8 @@ Complete feature parity between VS Code and PhpStorm:
       - "Use `/status` for monitoring dashboards (detailed service info)"
   - **Dateien geändert:**
     - **Gelöscht:** `public/welcome.php` (redundant)
-    - **Geändert:** `templates/welcome.php` (Zeilen 79-95): Endpoint-Liste neu strukturiert, Tip hinzugefügt
+    - **Geändert:** `templates/welcome.php` (Zeilen 79-95): Endpoint-Liste neu
+      strukturiert, Tip hinzugefügt
   - **Testing & Verification:**
     - `GET /` → Dashboard ✅
     - `GET /welcome` → Dashboard (Alias) ✅
@@ -2836,21 +3289,27 @@ Complete feature parity between VS Code and PhpStorm:
     - `GET /status` → Detailed JSON ✅
   - **Vorteile:**
     - **Clarity:** Jeder Endpoint hat klaren Zweck, keine Redundanz
-    - **Best Practices:** Dokumentation zeigt wann welcher Endpoint genutzt werden sollte
-    - **Developer Experience:** Keine Verwirrung mehr über "welchen Endpoint nutze ich?"
+    - **Best Practices:** Dokumentation zeigt wann welcher Endpoint genutzt
+      werden sollte
+    - **Developer Experience:** Keine Verwirrung mehr über "welchen Endpoint
+      nutze ich?"
     - **Clean:** Weniger Dateien = weniger Maintenance
 
 - ✅ **TypeScript Fehler in src/node/server.ts behoben**
   - **Problem:** Implizite `any`-Types und Import-Probleme
-    - `pino-http` CommonJS/ESM Interop-Fehler: `TS2349: This expression is not callable`
-    - Implizite `any` in Callback-Parametern (customLogLevel, customSuccessMessage, etc.)
+    - `pino-http` CommonJS/ESM Interop-Fehler:
+      `TS2349: This expression is not callable`
+    - Implizite `any` in Callback-Parametern (customLogLevel,
+      customSuccessMessage, etc.)
     - `server: any` ohne korrekte Typisierung
     - Unused default export
   - **Lösung:**
-    - **pino-http Import-Fix:** `import pinoHttpImport from 'pino-http'` + Workaround
+    - **pino-http Import-Fix:** `import pinoHttpImport from 'pino-http'` +
+      Workaround
 
       ```typescript
-      const pinoHttp = pinoHttpImport as unknown as typeof pinoHttpImport.default;
+      const pinoHttp =
+        pinoHttpImport as unknown as typeof pinoHttpImport.default;
       ```
 
     - **Explizite Types für Callbacks:**
@@ -2861,30 +3320,36 @@ Complete feature parity between VS Code and PhpStorm:
     - **Label Type:** `level: (label: string) => {...}` in Pino formatter
     - **Logger-Referenz:** `req.log.error` → `logger.error` im Error Handler
     - **Unused Export entfernt:** `export default app` gelöscht
+
   - **Dateien geändert:**
     - `src/node/server.ts` (Zeilen 11-17, 34, 42-55, 138, 125)
   - **Verification:**
     - TypeScript Compilation: ✅ Keine Fehler (`pnpm run type-check`)
     - Server läuft: ✅ API antwortet korrekt auf `/api/node/health`
-  - **Hinweis:** IDE-Diagnostics (TS2307, TS2580) sind normal - node_modules nur im Container
+  - **Hinweis:** IDE-Diagnostics (TS2307, TS2580) sind normal - node_modules nur
+    im Container
 
 - ✅ **SCSS/SASS Support implementiert**
   - **Dependency hinzugefügt:**
     - `sass@^1.97.1` in `devDependencies`
     - Installiert via `pnpm add -D sass`
-  - **Vite Config:** Bereits vorbereitet mit `preprocessorOptions.scss` (Zeile 92-96)
+  - **Vite Config:** Bereits vorbereitet mit `preprocessorOptions.scss` (Zeile
+    92-96)
   - **Test-SCSS erstellt:** `resources/css/test.scss`
     - **Moderne SASS-Modules:**
       - `@use 'sass:math'` für `math.div()` (statt deprecated `/`)
-      - `@use 'sass:color'` für `color.adjust()` (statt deprecated `darken()`, `lighten()`)
+      - `@use 'sass:color'` für `color.adjust()` (statt deprecated `darken()`,
+        `lighten()`)
     - **Features demonstriert:**
       - Variablen: `$primary-color`, `$secondary-color`, `$spacing`, etc.
-      - Nesting: `.scss-test__header`, `.scss-test__content`, `.scss-test__footer`
+      - Nesting: `.scss-test__header`, `.scss-test__content`,
+        `.scss-test__footer`
       - Mixins: `@mixin flex-center`, `@mixin card-shadow($opacity)`
       - Color-Funktionen: `color.adjust($primary-color, $lightness: -10%)`
       - Math-Funktionen: `math.div($spacing, 2)`
       - Media Queries: `@media (max-width: 768px)`
-  - **Integration:** `resources/js/app.js` importiert `import '../css/test.scss'`
+  - **Integration:** `resources/js/app.js` importiert
+    `import '../css/test.scss'`
   - **Build-Output:**
     - Kompiliertes CSS: `public/build/assets/app-ByQwGoR5.css` (3.06 kB)
     - Keine Deprecation-Warnings ✅
@@ -2912,7 +3377,8 @@ Complete feature parity between VS Code and PhpStorm:
       - User musste selbst herausfinden welche Commands wann relevant sind
       - Verwirrung für neue Developer: "Was muss ich als erstes tun?"
       - **Inkonsistenz:** Zeigte `cp .env.example .env` statt `make init`
-    - **Lösung:** Quick Start in zwei Abschnitte unterteilt mit konsistenten Commands
+    - **Lösung:** Quick Start in zwei Abschnitte unterteilt mit konsistenten
+      Commands
       - **🚀 Initial Setup (First Time):**
 
         ```bash
@@ -2931,7 +3397,8 @@ Complete feature parity between VS Code and PhpStorm:
         ```
 
     - **Dateien geändert:**
-      - `templates/welcome.php` (Zeilen 100-114): Quick Start neu strukturiert mit 4-Schritt-Flow
+      - `templates/welcome.php` (Zeilen 100-114): Quick Start neu strukturiert
+        mit 4-Schritt-Flow
       - `.env.example` (Zeilen 7-11): Quick Start Header aktualisiert
       - `.env` (Zeilen 7-11): Quick Start Header aktualisiert
     - **Vorteile:**
@@ -2988,8 +3455,10 @@ Complete feature parity between VS Code and PhpStorm:
       - User fragte: "Ist Redis ready2go oder erfordert es weitere Anpassungen?"
       - Unklar ob zwischen Redis und file-based Sessions gewechselt werden kann
       - Keine Anleitung wie Redis-Sessions aktiviert werden
-      - **Falsche Platzierung:** development.ini würde nur in Development ENV geladen
-    - **Lösung:** Dokumentierte Konfiguration in **php.ini** (Base-Config für alle Environments)
+      - **Falsche Platzierung:** development.ini würde nur in Development ENV
+        geladen
+    - **Lösung:** Dokumentierte Konfiguration in **php.ini** (Base-Config für
+      alle Environments)
       - **Default:** File-based Sessions (kein Code-Change nötig)
       - **Optional:** Redis Sessions (auskommentiert mit Anleitung)
       - **Warnung hinzugefügt:** Redis erfordert Code-Anpassungen:
@@ -3007,10 +3476,13 @@ Complete feature parity between VS Code and PhpStorm:
         ```
 
     - **Dateien geändert:**
-      - `docker/php/php.ini` (Zeilen 28-44): Redis Session-Handler Dokumentation hinzugefügt
-      - `docker/php/conf.d/development.ini`: Redis-Config entfernt (war falsche Stelle)
+      - `docker/php/php.ini` (Zeilen 28-44): Redis Session-Handler Dokumentation
+        hinzugefügt
+      - `docker/php/conf.d/development.ini`: Redis-Config entfernt (war falsche
+        Stelle)
     - **Vorteile:**
-      - **Richtige Platzierung:** php.ini gilt für alle Environments (development + production)
+      - **Richtige Platzierung:** php.ini gilt für alle Environments
+        (development + production)
       - Transparenz: User weiß was Redis erfordert
       - Quick-Switch: Zeilen auskommentieren für Redis-Sessions
       - Best Practices: Production mit Auth, Development ohne
@@ -3018,7 +3490,8 @@ Complete feature parity between VS Code and PhpStorm:
 
   - **5. Image-Versionen in Compose-Dateien standardisiert**
     - **Problem:** Inkonsistente und teilweise falsche Image-Tags
-      - `postgres:17.7-alpine` - Falscher Tag (PostgreSQL nutzt Major-Versionen: `17-alpine`)
+      - `postgres:17.7-alpine` - Falscher Tag (PostgreSQL nutzt Major-Versionen:
+        `17-alpine`)
       - Images hatten keine konsistente Versionierung
       - .env Variablen waren unnötig (jeder Image-String kommt nur 1x vor)
     - **Lösung:** Korrekte und konsistente Image-Tags **direkt in compose.yaml**
@@ -3027,8 +3500,10 @@ Complete feature parity between VS Code and PhpStorm:
       - **MariaDB:** `mariadb:12.1` (nutzt Debian/Ubuntu, nicht Alpine)
       - **Keine .env Variablen:** Versionen bleiben hardcoded in compose.yaml
         - Grund: Keine Wiederverwendung (jeder Image-String kommt nur 1x vor)
-        - Dockerfiles nutzen ARG (DRY: `alpine:${ALPINE_VERSION}` mehrfach verwendet)
-        - compose.yaml: Fixe Versionen (bessere Lesbarkeit, Renovate-Kompatibilität)
+        - Dockerfiles nutzen ARG (DRY: `alpine:${ALPINE_VERSION}` mehrfach
+          verwendet)
+        - compose.yaml: Fixe Versionen (bessere Lesbarkeit,
+          Renovate-Kompatibilität)
     - **Dateien geändert:**
       - `compose.yaml` (Zeile 64): redis Image `redis:7.4-alpine`
       - `compose.yaml` (Zeile 88): postgres Image `postgres:17-alpine`
@@ -3041,36 +3516,46 @@ Complete feature parity between VS Code and PhpStorm:
       - **Korrekte Tags:** PostgreSQL verwendet Major-Versionen
       - **Reproduzierbarkeit:** Gleiche Builds über Zeit
       - **Lesbarkeit:** Klare, dokumentierte Versionen
-      - **Renovate-Kompatibilität:** Dependency-Scanner können Versionen erkennen
+      - **Renovate-Kompatibilität:** Dependency-Scanner können Versionen
+        erkennen
 
   - **6. Makefile Konsistenz und Formatierung verbessert**
     - **Problem:** Fehlende und inkonsistente Commands
-      - **Inkonsistente Dependency-Installation:** PHP nutzte `dev-deps`, Node nutzte `node-install`
-      - **Fehlende logs-* Commands:** logs-redis, logs-postgres, logs-mariadb existierten nicht
-      - **Fehlende shell-* Commands:** shell-node, shell-redis, shell-postgres, shell-mariadb fehlten
-      - **Inkonsistente Benennung:** `node-shell` statt `shell-node` (nicht konsistent mit shell-nginx, shell-php)
-      - **Formatierung:** Command-Beschreibungen mit ungleichem Abstand (15 Zeichen zu kurz für längste Commands)
-      - **Database-Emoji:** Falsches Symbol mit extra Leerzeichen in check-health
-      - **Überflüssige Commands:** MySQL-Commands (mysql-cli, mysql-dump, mysql-restore) obwohl MySQL-Service entfernt wurde
+      - **Inkonsistente Dependency-Installation:** PHP nutzte `dev-deps`, Node
+        nutzte `node-install`
+      - **Fehlende logs-\* Commands:** logs-redis, logs-postgres, logs-mariadb
+        existierten nicht
+      - **Fehlende shell-\* Commands:** shell-node, shell-redis, shell-postgres,
+        shell-mariadb fehlten
+      - **Inkonsistente Benennung:** `node-shell` statt `shell-node` (nicht
+        konsistent mit shell-nginx, shell-php)
+      - **Formatierung:** Command-Beschreibungen mit ungleichem Abstand (15
+        Zeichen zu kurz für längste Commands)
+      - **Database-Emoji:** Falsches Symbol mit extra Leerzeichen in
+        check-health
+      - **Überflüssige Commands:** MySQL-Commands (mysql-cli, mysql-dump,
+        mysql-restore) obwohl MySQL-Service entfernt wurde
     - **Lösung 1: MySQL Commands entfernt**
       - `mysql-cli`, `mysql-dump`, `mysql-restore` gelöscht
       - Grund: MySQL Service existiert nicht mehr (nur PostgreSQL und MariaDB)
       - MariaDB Commands beibehalten (Service existiert in compose.yaml)
-    - **Lösung 2: Fehlende logs-* Commands hinzugefügt**
+    - **Lösung 2: Fehlende logs-\* Commands hinzugefügt**
       - `logs-redis` (Zeile 199): Show Redis logs only
       - `logs-postgres` (Zeile 210): Show PostgreSQL logs only
       - `logs-mariadb` (Zeile 221): Show MariaDB logs only
       - Konsistente Implementierung wie logs-nginx, logs-php, logs-node
       - Unterstützt automatisch production/development ENV-Detection
     - **Lösung 3: Composer Commands mit Node.js konsistent benannt**
-      - **Problem:** PHP nutzte `dev-deps` / `dev-deps-local`, Node nutzte `node-install` / `node-install-local`
+      - **Problem:** PHP nutzte `dev-deps` / `dev-deps-local`, Node nutzte
+        `node-install` / `node-install-local`
       - **Umbenennung:**
         - `dev-deps` → `composer-install` (Zeile 32)
         - `dev-deps-local` → `composer-install-local` (Zeile 41)
       - **Alle Referenzen aktualisiert:**
         - `setup` Target: Ruft jetzt `composer-install` auf (Zeile 104)
         - Fehlermeldungen: Zeigen jetzt `make composer-install` (Zeilen 44, 52)
-      - **Konsistentes Naming:** `<package-manager>-install` / `<package-manager>-install-local`
+      - **Konsistentes Naming:** `<package-manager>-install` /
+        `<package-manager>-install-local`
         - Composer: `composer-install` / `composer-install-local`
         - Node.js: `node-install` / `node-install-local`
     - **Lösung 4: Shell Commands konsistent gemacht**
@@ -3080,58 +3565,78 @@ Complete feature parity between VS Code and PhpStorm:
         - `shell-postgres` (Zeile 253): Open shell in PostgreSQL container
         - `shell-mariadb` (Zeile 256): Open shell in MariaDB container
       - **Gelöscht:** `node-shell` (Zeile 289) → ersetzt durch `shell-node`
-      - **Konsistentes Pattern:** Alle shell-* Commands in Docker-Sektion gruppiert
+      - **Konsistentes Pattern:** Alle shell-\* Commands in Docker-Sektion
+        gruppiert
     - **Lösung 5: Formatierung verbessert**
       - Command-Breite von `%-15s` auf `%-20s` erhöht (Zeile 28)
-      - Grund: Längste Commands sind 18 Zeichen (`node-install-local`, `node-app-server-up`)
+      - Grund: Längste Commands sind 18 Zeichen (`node-install-local`,
+        `node-app-server-up`)
       - Alle Beschreibungen jetzt perfekt ausgerichtet bei `make help`
     - **Lösung 6: Database-Emoji korrigiert**
-      - Altes Symbol: `🗄️` (File Cabinet) mit extra Leerzeichen und falscher Breite
+      - Altes Symbol: `🗄️` (File Cabinet) mit extra Leerzeichen und falscher
+        Breite
       - Neues Symbol: `💾` (Floppy Disk - klassisches Datenspeicher-Symbol)
-      - Konsistente Breite und Abstand zu anderen Symbolen (📦 PHP-FPM, 🔴 Redis, 🌐 Nginx)
+      - Konsistente Breite und Abstand zu anderen Symbolen (📦 PHP-FPM, 🔴
+        Redis, 🌐 Nginx)
     - **Dateien geändert:**
       - `Makefile` (Zeile 28): help-Formatierung %-20s
-      - `Makefile` (Zeilen 32, 41): dev-deps → composer-install, dev-deps-local → composer-install-local
-      - `Makefile` (Zeilen 44, 52, 104): Alle dev-deps Referenzen auf composer-install aktualisiert
-      - `Makefile` (Zeilen 199-230): logs-redis, logs-postgres, logs-mariadb hinzugefügt
-      - `Makefile` (Zeilen 247-257): shell-node, shell-redis, shell-postgres, shell-mariadb hinzugefügt
-      - `Makefile` (Zeile 365-381): mysql-cli, mysql-dump, mysql-restore entfernt
+      - `Makefile` (Zeilen 32, 41): dev-deps → composer-install, dev-deps-local
+        → composer-install-local
+      - `Makefile` (Zeilen 44, 52, 104): Alle dev-deps Referenzen auf
+        composer-install aktualisiert
+      - `Makefile` (Zeilen 199-230): logs-redis, logs-postgres, logs-mariadb
+        hinzugefügt
+      - `Makefile` (Zeilen 247-257): shell-node, shell-redis, shell-postgres,
+        shell-mariadb hinzugefügt
+      - `Makefile` (Zeile 365-381): mysql-cli, mysql-dump, mysql-restore
+        entfernt
       - `Makefile` (Zeile 289): node-shell entfernt
       - `Makefile` (Zeile 436): Database-Emoji auf 💾 geändert
     - **Testing & Verification:**
-      - `make help`: Alle Commands perfekt formatiert, composer-install und composer-install-local sichtbar ✅
-      - `make composer-install`: Installiert Composer Dependencies im Container ✅
+      - `make help`: Alle Commands perfekt formatiert, composer-install und
+        composer-install-local sichtbar ✅
+      - `make composer-install`: Installiert Composer Dependencies im Container
+        ✅
       - `make logs-redis`: Zeigt Redis-Logs ✅
       - `make shell-postgres`: Öffnet PostgreSQL-Shell ✅
       - `make check-health`: Database-Emoji 💾 konsistente Breite ✅
     - **Vorteile:**
-      - **Vollständigkeit:** Alle Services haben logs-*und shell-* Commands
+      - **Vollständigkeit:** Alle Services haben logs-_und shell-_ Commands
       - **Konsistenz:**
-        - Einheitliches Naming-Schema (shell-*, logs-*, *-install)
-        - Composer und Node.js nutzen gleiches Pattern: `<tool>-install` / `<tool>-install-local`
+        - Einheitliches Naming-Schema (shell-_, logs-_, \*-install)
+        - Composer und Node.js nutzen gleiches Pattern: `<tool>-install` /
+          `<tool>-install-local`
       - **Lesbarkeit:** Perfekt formatierte Help-Ausgabe
-      - **Klarheit:** Keine überflüssigen Commands für nicht-existierende Services
-      - **UX:** Developer findet jeden Command intuitiv ohne Dokumentation zu lesen
+      - **Klarheit:** Keine überflüssigen Commands für nicht-existierende
+        Services
+      - **UX:** Developer findet jeden Command intuitiv ohne Dokumentation zu
+        lesen
 
   - **7. compose.override.yaml ENV Variable auf development hardcoded**
     - **Problem:** Unnötige Fallback-Logik in Development-only File
       - `ENV=${ENV:-development}` in compose.override.yaml (Zeile 51)
-      - compose.override.yaml wird NUR in Development verwendet (nie in Production)
-      - Production nutzt: `docker compose -f compose.yaml -f compose.prod.yaml` (ohne override)
-      - Inkonsistenz: NODE_ENV war bereits hardcoded (`NODE_ENV=development`), aber ENV hatte Fallback
+      - compose.override.yaml wird NUR in Development verwendet (nie in
+        Production)
+      - Production nutzt: `docker compose -f compose.yaml -f compose.prod.yaml`
+        (ohne override)
+      - Inkonsistenz: NODE_ENV war bereits hardcoded (`NODE_ENV=development`),
+        aber ENV hatte Fallback
     - **Lösung:** ENV auf development hardcoded (analog zu NODE_ENV)
       - `ENV=${ENV:-development}` → `ENV=development`
       - Konsistent mit `NODE_ENV=development` (Zeile 75)
     - **Begründung:**
-      - compose.override.yaml ist Development-spezifisch (per Docker Compose Convention)
-      - Fallback-Logik `${ENV:-development}` macht nur in Base-Files Sinn (compose.yaml)
+      - compose.override.yaml ist Development-spezifisch (per Docker Compose
+        Convention)
+      - Fallback-Logik `${ENV:-development}` macht nur in Base-Files Sinn
+        (compose.yaml)
       - Hardcoded values in Override-Files sind Best Practice
     - **Dateien geändert:**
       - `compose.override.yaml` (Zeile 51): ENV=development (hardcoded)
     - **Vorteile:**
       - **Klarheit:** Keine Verwirrung ob ENV dynamisch oder fix ist
       - **Konsistenz:** Beide ENV-Variablen (ENV, NODE_ENV) jetzt hardcoded
-      - **Best Practice:** Override-Files sollten explizite Werte haben, keine Fallbacks
+      - **Best Practice:** Override-Files sollten explizite Werte haben, keine
+        Fallbacks
       - **Einfachheit:** Weniger Variablen-Substituierung = schnelleres Startup
 
 ### Version 2.9 (2025-12-19)
@@ -3140,17 +3645,21 @@ Complete feature parity between VS Code and PhpStorm:
   - **Problem:** Browser blockierte Vite Dev Server mit CORS-Fehlern
     - `Cross-Origin Request blocked: CORS request failed`
     - `Module source URI is not allowed in this document`
-    - Grund: Browser versuchte von `localhost:8080` (NGINX) auf `localhost:5173` (Vite) zuzugreifen
+    - Grund: Browser versuchte von `localhost:8080` (NGINX) auf `localhost:5173`
+      (Vite) zuzugreifen
   - **Lösung 1: Explizite CORS-Konfiguration in Vite**
-    - `vite.config.js:58-61`: CORS aktiviert mit `origin: '*'` und `credentials: true`
+    - `vite.config.js:58-61`: CORS aktiviert mit `origin: '*'` und
+      `credentials: true`
     - `vite.config.js:71`: `strictPort: true` hinzugefügt für stabilen Port
   - **Lösung 2: Dynamic base path für Development vs Production**
-    - `vite.config.js:10`: `base: process.env.NODE_ENV === 'production' ? '/build/' : '/'`
+    - `vite.config.js:10`:
+      `base: process.env.NODE_ENV === 'production' ? '/build/' : '/'`
     - Development: Root-Path `/` für direkte Vite-Server Zugriffe
     - Production: `/build/` für statische Assets
   - **Dateien geändert:**
     - `vite.config.js` (Zeilen 10, 58-61, 71)
-    - `public/vite-helper.php` (Zeile 22: `viteDevServerUrl = 'http://localhost:5173'`)
+    - `public/vite-helper.php` (Zeile 22:
+      `viteDevServerUrl = 'http://localhost:5173'`)
   - **Ergebnis:** Vite HMR lädt jetzt korrekt mit CORS-Headern
 
 - ✅ **ViteHelper.php Entry Points korrigiert**
@@ -3166,24 +3675,30 @@ Complete feature parity between VS Code and PhpStorm:
   - **Ergebnis:** Assets werden jetzt korrekt geladen
 
 - ✅ **node_modules Permission-Problem in Development Mode behoben**
-  - **Problem:** `make node-install` schlug fehl mit `EACCES: permission denied, mkdir '/app/node_modules/.pnpm'`
+  - **Problem:** `make node-install` schlug fehl mit
+    `EACCES: permission denied, mkdir '/app/node_modules/.pnpm'`
     - Ursache: Docker Volume `node_modules` wurde mit `root:root` erstellt
     - Node User (UID 1000) hatte keine Schreibrechte
   - **Lösung:** Permissions-Fix vor pnpm install
-    - `Makefile:246-247`: `chown -R node:node /app/node_modules` als root vor pnpm install
+    - `Makefile:246-247`: `chown -R node:node /app/node_modules` als root vor
+      pnpm install
     - Ausgabe: "Fixing node_modules permissions..." für Transparenz
   - **Dateien geändert:**
     - `Makefile` (Zeilen 246-247)
-  - **Ergebnis:** Dependencies installieren jetzt erfolgreich in Development Mode
+  - **Ergebnis:** Dependencies installieren jetzt erfolgreich in Development
+    Mode
 
 - ✅ **Vollständige Test-Matrix: Alle 6 Szenarien erfolgreich**
   - **ENV=production:**
     - ✅ Test 1: PHP-only Mode (nginx + php)
-    - ✅ Test 2: Asset-Server Mode (nginx + php + node:asset-server mit Build-Artefakten)
-    - ✅ Test 3: App-Server Mode (nginx + php + node:app-server mit Backend auf Port 3000)
+    - ✅ Test 2: Asset-Server Mode (nginx + php + node:asset-server mit
+      Build-Artefakten)
+    - ✅ Test 3: App-Server Mode (nginx + php + node:app-server mit Backend auf
+      Port 3000)
   - **ENV=development:**
     - ✅ Test 4: PHP-only Mode (nginx + php)
-    - ✅ Test 5: Asset-Server Mode mit HMR (nginx + php + node + Vite Dev Server auf Port 5173)
+    - ✅ Test 5: Asset-Server Mode mit HMR (nginx + php + node + Vite Dev Server
+      auf Port 5173)
     - ✅ Test 6: App-Server Mode (nginx + php + node + Backend in watch mode)
   - **Test-Befehle für Development:**
 
@@ -3204,21 +3719,27 @@ Complete feature parity between VS Code and PhpStorm:
     ```
 
   - **Dynamische ENV-Erkennung funktioniert:**
-    - `public/test.php` zeigt automatisch Development (🔧 Vite HMR) oder Production (🚀 Built Assets)
+    - `public/test.php` zeigt automatisch Development (🔧 Vite HMR) oder
+      Production (🚀 Built Assets)
     - `public/vite-helper.php` lädt korrekt basierend auf `$_ENV['ENV']`
 
 - 🔧 **Bekannte Einschränkungen:**
-  - Vite HMR WebSocket muss von Browser zu `localhost:5173` direkt verbinden können
-  - In Docker-Netzwerk-Setups ohne Port-Forwarding muss `hmr.host` angepasst werden
-  - Production Mode erfordert `make build` vor `make up` (Build-Artefakte werden in Image kopiert)
+  - Vite HMR WebSocket muss von Browser zu `localhost:5173` direkt verbinden
+    können
+  - In Docker-Netzwerk-Setups ohne Port-Forwarding muss `hmr.host` angepasst
+    werden
+  - Production Mode erfordert `make build` vor `make up` (Build-Artefakte werden
+    in Image kopiert)
 
 ### Version 2.8 (2025-12-19)
 
 - ✅ **Container Logging auf 12-Factor App Best Practices umgestellt**
   - **Problem:** Production Mode schlug fehl
     - Nginx crashte mit "Permission denied" auf `/var/log/nginx/error.log`
-    - Ursache: Read-only Filesystem in Production (`compose.prod.yaml:8`) verhinderte Schreibzugriff auf Log-Dateien
-    - Anti-Pattern: Bind-Mounts für Logs (`./logs:/var/log/*`) skalieren nicht und funktionieren nicht mit read-only FS
+    - Ursache: Read-only Filesystem in Production (`compose.prod.yaml:8`)
+      verhinderte Schreibzugriff auf Log-Dateien
+    - Anti-Pattern: Bind-Mounts für Logs (`./logs:/var/log/*`) skalieren nicht
+      und funktionieren nicht mit read-only FS
   - **Lösung:** Umstellung auf stdout/stderr Logging (Industry Standard)
     1. **Nginx Logs:** `docker/nginx/nginx.conf`
        - `error_log stderr warn;` (Zeile 2)
@@ -3229,14 +3750,17 @@ Complete feature parity between VS Code and PhpStorm:
     3. **Compose Cleanup:**
        - `compose.yaml`: Nginx Log Bind-Mount entfernt (Zeile 15)
        - `compose.override.yaml`: PHP Log Bind-Mounts entfernt (Zeilen 42-43)
-       - `compose.prod.yaml`: tmpfs für `/var/log/app` und `/var/log/php` entfernt (Zeilen 40-41)
+       - `compose.prod.yaml`: tmpfs für `/var/log/app` und `/var/log/php`
+         entfernt (Zeilen 40-41)
     4. **Makefile Cleanup:**
        - `LOG_DIR` Referenzen in `make setup` und `make up-core` entfernt
   - **Vorteile:**
     - ✅ Production Mode funktioniert jetzt (read-only FS kompatibel)
     - ✅ Einheitliches Logging zwischen Dev und Production
-    - ✅ Logs via `make logs-nginx` / `make logs-php` / `docker compose logs` verfügbar
-    - ✅ Automatische Log-Rotation via Docker JSON-File Driver (50MB/File, 5 Files)
+    - ✅ Logs via `make logs-nginx` / `make logs-php` / `docker compose logs`
+      verfügbar
+    - ✅ Automatische Log-Rotation via Docker JSON-File Driver (50MB/File, 5
+      Files)
     - ✅ Kompatibel mit Log-Aggregation (ELK, Loki, CloudWatch, etc.)
     - ✅ Skaliert auf Kubernetes/Swarm (keine Filesystem-Abhängigkeit)
   - **Dateien geändert:**
@@ -3262,17 +3786,22 @@ Complete feature parity between VS Code and PhpStorm:
 
 - ✅ **Nginx Health-Check Fix**
   - **Problem:** Nginx Health-Check schlug fehl mit "Connection refused"
-  - **Ursache:** `wget --spider http://localhost:8080/health` versuchte IPv6 (`[::1]`), aber nginx hört nur auf IPv4
+  - **Ursache:** `wget --spider http://localhost:8080/health` versuchte IPv6
+    (`[::1]`), aber nginx hört nur auf IPv4
   - **Lösung:** Health-Check URL von `localhost` → `127.0.0.1` geändert
   - **Datei:** `docker/nginx/Dockerfile` Zeile 30
   - **Ergebnis:** Health-Check funktioniert jetzt zuverlässig
 
 - ✅ **Nginx Dynamic DNS Resolution für Node Container**
-  - **Problem:** "Chicken-Egg Problem" - nginx startete nicht ohne node-Container
-    - Fehler: `host not found in upstream "node" in /etc/nginx/conf.d/default.conf:58`
-    - Grund: nginx löste DNS-Namen beim Start auf, scheiterte wenn node nicht existierte
+  - **Problem:** "Chicken-Egg Problem" - nginx startete nicht ohne
+    node-Container
+    - Fehler:
+      `host not found in upstream "node" in /etc/nginx/conf.d/default.conf:58`
+    - Grund: nginx löste DNS-Namen beim Start auf, scheiterte wenn node nicht
+      existierte
     - Konflikt: `make up` (nur nginx+php) vs `make node-up` (alle Services)
-  - **Anforderung:** nginx muss auch ohne node-Container starten und healthy sein
+  - **Anforderung:** nginx muss auch ohne node-Container starten und healthy
+    sein
   - **Lösung:** Dynamic DNS Resolution mit Docker's internem DNS
     1. **Resolver hinzugefügt:** `resolver 127.0.0.11 valid=30s ipv6=off;`
        - `127.0.0.11` = Docker's interner DNS-Server
@@ -3294,11 +3823,13 @@ Complete feature parity between VS Code and PhpStorm:
   - **Statisch:** `proxy_pass http://node:5173;`
     - DNS-Auflösung beim nginx-Start
     - Fehler wenn upstream nicht existiert → nginx startet nicht
-  - **Dynamisch:** `set $upstream_node node:5173; proxy_pass http://$upstream_node;`
+  - **Dynamisch:**
+    `set $upstream_node node:5173; proxy_pass http://$upstream_node;`
     - DNS-Auflösung bei jedem Request (mit Cache)
     - Fehler nur wenn upstream zum Request-Zeitpunkt nicht erreichbar
     - Erfordert `resolver` Direktive
-  - **Vorteil:** Flexibler Workflow - node ist optional, nginx funktioniert in beiden Fällen
+  - **Vorteil:** Flexibler Workflow - node ist optional, nginx funktioniert in
+    beiden Fällen
 
 - ✅ **Workflow-Verifizierung**
   - **Szenario 1: Nur PHP Backend**
@@ -3322,10 +3853,14 @@ Complete feature parity between VS Code and PhpStorm:
 ### Version 2.6 (2025-12-19)
 
 - ✅ **Node.js Backend Port 3000 Fix**
-  - Problem: `curl http://localhost:3000` fehlgeschlagen mit "Could not connect to server"
-  - Ursache: Port 3000 war nur mit `expose:` konfiguriert (nur Docker-Netzwerk), nicht mit `ports:` (Host-Zugriff)
-  - Lösung: Port 3000 in `compose.override.yaml` hinzugefügt (Zeile 63): `- "${NODE_PORT:-3000}:3000"`
-  - Jetzt erreichbar: `curl http://localhost:3000/health` und `curl http://localhost:3000/api/hello?name=Docker`
+  - Problem: `curl http://localhost:3000` fehlgeschlagen mit "Could not connect
+    to server"
+  - Ursache: Port 3000 war nur mit `expose:` konfiguriert (nur Docker-Netzwerk),
+    nicht mit `ports:` (Host-Zugriff)
+  - Lösung: Port 3000 in `compose.override.yaml` hinzugefügt (Zeile 63):
+    `- "${NODE_PORT:-3000}:3000"`
+  - Jetzt erreichbar: `curl http://localhost:3000/health` und
+    `curl http://localhost:3000/api/hello?name=Docker`
   - Datei: `compose.override.yaml` Zeile 63
 - ✅ **TypeScript-Fehler in server.ts behoben** (vom User bereits durchgeführt)
   - TS2742: Expliziter Typ für Express App (`const app: Express = express();`)
@@ -3333,67 +3868,99 @@ Complete feature parity between VS Code and PhpStorm:
   - TS7030: Expliziter `void` Rückgabetyp für Middleware-Funktionen
   - Datei: `src/node/server.ts` (bereits korrekt)
 - ✅ **Makefile Review & Analyse**
-  - Alle Pfade überprüft: Keine veralteten `/var/www/html/app/` Referenzen gefunden
+  - Alle Pfade überprüft: Keine veralteten `/var/www/html/app/` Referenzen
+    gefunden
   - Alle `docker compose exec`/`run` Befehle geprüft: Funktionieren korrekt
   - **Empfehlungen für zukünftige Optimierung:**
-    1. `node-build` (Zeile 251-253): Verwendet `--build --target build`, was bei jedem Aufruf Image rebuildet → Ineffizient
-       - Alternative: Im laufenden Container ausführen oder separates Build-Image-Konzept
-    2. `node-up` / `node-app-server-up`: Verwirrende Befehle, könnten besser dokumentiert werden
-       - `node-up`: Startet Container mit "sleep infinity" (asset-server) → Unklar, warum nötig in Development
-       - `node-app-server-up`: Startet mit NODE_TARGET=app-server → Macht Sinn für Backend-Testing
-    3. Fehlende Container-Status-Checks: `node-dev`, `node-server-dev` etc. scheitern, wenn Container nicht läuft
-       - Lösung: `@docker compose ps -q node >/dev/null 2>&1 || { echo "Container not running"; exit 1; }` vor exec
-  - **Aktueller Stand:** Alle Befehle funktionieren, keine veralteten Commands identifiziert
+    1. `node-build` (Zeile 251-253): Verwendet `--build --target build`, was bei
+       jedem Aufruf Image rebuildet → Ineffizient
+       - Alternative: Im laufenden Container ausführen oder separates
+         Build-Image-Konzept
+    2. `node-up` / `node-app-server-up`: Verwirrende Befehle, könnten besser
+       dokumentiert werden
+       - `node-up`: Startet Container mit "sleep infinity" (asset-server) →
+         Unklar, warum nötig in Development
+       - `node-app-server-up`: Startet mit NODE_TARGET=app-server → Macht Sinn
+         für Backend-Testing
+    3. Fehlende Container-Status-Checks: `node-dev`, `node-server-dev` etc.
+       scheitern, wenn Container nicht läuft
+       - Lösung:
+         `@docker compose ps -q node >/dev/null 2>&1 || { echo "Container not running"; exit 1; }`
+         vor exec
+  - **Aktueller Stand:** Alle Befehle funktionieren, keine veralteten Commands
+    identifiziert
 - 📝 **Testing-Status Update**
   - Phase 6.3 (Node.js Backend Testing) bereit für Tests nach Port-Fix
-  - Workflow: `make up` → `make node-install` → `make node-server-dev` → `curl http://localhost:3000/health`
+  - Workflow: `make up` → `make node-install` → `make node-server-dev` →
+    `curl http://localhost:3000/health`
 
 ### Version 2.5 (2025-12-19)
 
-- ✅ **Phase 6.2 Testing abgeschlossen:** Node.js Frontend & Vite HMR erfolgreich getestet
+- ✅ **Phase 6.2 Testing abgeschlossen:** Node.js Frontend & Vite HMR
+  erfolgreich getestet
   - Dependencies: 109 packages installiert in 5.2s
   - Vite HMR: Ready in 407ms auf Port 5173
   - test.html: <http://localhost:8080/test.html> lädt erfolgreich
   - API Health Check: Zeigt JSON-Daten korrekt an
   - HMR: Live-Reload funktioniert bei Änderungen in `resources/css/app.css`
 - ✅ **Bugfix: Named Volume Permissions (node_modules)**
-  - Problem: Docker erstellt named volumes mit root:root Ownership, User `node` (UID 1000) konnte nicht schreiben → `EACCES: permission denied, mkdir '/app/node_modules/.pnpm'`
-  - Lösung: `make node-install` (Makefile:237) angepasst - startet mit `--user root`, fixt Permissions via `chown`, dann `su node -s /bin/sh -c 'pnpm install'`
-  - Begründung: Named volume nötig für Windows/Mac Performance (Linux könnte bind mount nutzen, aber Konsistenz wichtiger)
+  - Problem: Docker erstellt named volumes mit root:root Ownership, User `node`
+    (UID 1000) konnte nicht schreiben →
+    `EACCES: permission denied, mkdir '/app/node_modules/.pnpm'`
+  - Lösung: `make node-install` (Makefile:237) angepasst - startet mit
+    `--user root`, fixt Permissions via `chown`, dann
+    `su node -s /bin/sh -c 'pnpm install'`
+  - Begründung: Named volume nötig für Windows/Mac Performance (Linux könnte
+    bind mount nutzen, aber Konsistenz wichtiger)
   - Datei: `Makefile` Zeile 237
 - ✅ **Bugfix: Vite 6 ESM Compatibility**
-  - Problem: `vite.config.js` verwendete `require('autoprefixer')` (CommonJS) in ESM-Kontext
-  - Fehler: `Dynamic require of "file:///app/node_modules/.pnpm/autoprefixer@10.4.23_postcss@8.5.6/node_modules/autoprefixer/lib/autoprefixer.js" is not supported`
-  - Lösung: Geändert zu ESM-Import - `import autoprefixer from 'autoprefixer'` (Zeile 3) und `plugins: [autoprefixer]` (Zeile 81)
+  - Problem: `vite.config.js` verwendete `require('autoprefixer')` (CommonJS) in
+    ESM-Kontext
+  - Fehler:
+    `Dynamic require of "file:///app/node_modules/.pnpm/autoprefixer@10.4.23_postcss@8.5.6/node_modules/autoprefixer/lib/autoprefixer.js" is not supported`
+  - Lösung: Geändert zu ESM-Import - `import autoprefixer from 'autoprefixer'`
+    (Zeile 3) und `plugins: [autoprefixer]` (Zeile 81)
   - Datei: `vite.config.js` Zeilen 3 & 81
 - ✅ **Bugfix: Content Security Policy (CSP) blockierte Vite HMR**
-  - Problem: Nginx CSP erlaubte nur `script-src 'self'`, aber Vite läuft auf Port 5173 → Scripts/Styles wurden im Browser mit CSP-Fehler markiert
+  - Problem: Nginx CSP erlaubte nur `script-src 'self'`, aber Vite läuft auf
+    Port 5173 → Scripts/Styles wurden im Browser mit CSP-Fehler markiert
   - Symptome:
-    - Browser Console: CSP-Violations für `http://localhost:5173/build/@vite/client` und `/build/js/app.js`
+    - Browser Console: CSP-Violations für
+      `http://localhost:5173/build/@vite/client` und `/build/js/app.js`
     - API Health Check bleibt auf "Loading..." stecken (fetch blockiert)
     - Keine HMR WebSocket-Verbindung
   - Lösung: CSP für Development erweitert (Zeile 35):
-    - `script-src 'self' 'unsafe-inline' http://localhost:5173` - Erlaubt Scripts von Vite Dev Server
-    - `connect-src 'self' ws://localhost:5173 http://localhost:5173` - Erlaubt WebSocket für HMR und fetch zu Vite
-  - Wichtig: **Production CSP muss stricter sein!** Entferne `localhost:5173` und nutze Nonce-basierte CSP (siehe index.php)
+    - `script-src 'self' 'unsafe-inline' http://localhost:5173` - Erlaubt
+      Scripts von Vite Dev Server
+    - `connect-src 'self' ws://localhost:5173 http://localhost:5173` - Erlaubt
+      WebSocket für HMR und fetch zu Vite
+  - Wichtig: **Production CSP muss stricter sein!** Entferne `localhost:5173`
+    und nutze Nonce-basierte CSP (siehe index.php)
   - Datei: `docker/nginx/conf.d/default.conf` Zeile 35
 - ✅ **Bugfix: Vite Base Path in test.html**
-  - Problem: `test.html` verwendete Pfade ohne `/build/` Prefix → `http://localhost:5173/@vite/client` statt `http://localhost:5173/build/@vite/client`
+  - Problem: `test.html` verwendete Pfade ohne `/build/` Prefix →
+    `http://localhost:5173/@vite/client` statt
+    `http://localhost:5173/build/@vite/client`
   - Lösung: Pfade angepasst auf korrekte Base Path (Zeilen 16-17)
   - Datei: `public/test.html` Zeilen 16-17
 
 ### Version 2.4 (2025-12-19)
 
-- ✅ **Phase 6.1 Testing abgeschlossen:** PHP Backend & QA Tools erfolgreich getestet
+- ✅ **Phase 6.1 Testing abgeschlossen:** PHP Backend & QA Tools erfolgreich
+  getestet
   - Nginx: Läuft stabil (Port 8080)
   - PHP API: <http://localhost:8080/> und /api/health funktionieren
   - PHPStan: No errors (2 files analyzed)
   - PHP-CS-Fixer: 0 errors in 4 files
 - ✅ **Bugfix: Nginx vite-hmr.conf Integration (Phase 4.1)**
-  - Problem: Separate `vite-hmr.conf` verursachte "location directive not allowed" Fehler
-  - Lösung: Vite HMR Locations direkt in `default.conf` integriert (Zeilen 45-71)
-  - Begründung: Production-safe (Proxy schlägt harmlos fehl), keine separate Datei nötig
-  - Entfernt: Separate `vite-hmr.conf` Datei und Mount aus `compose.override.yaml`
+  - Problem: Separate `vite-hmr.conf` verursachte "location directive not
+    allowed" Fehler
+  - Lösung: Vite HMR Locations direkt in `default.conf` integriert (Zeilen
+    45-71)
+  - Begründung: Production-safe (Proxy schlägt harmlos fehl), keine separate
+    Datei nötig
+  - Entfernt: Separate `vite-hmr.conf` Datei und Mount aus
+    `compose.override.yaml`
 - ✅ **Bugfix: PHPStan Config**
   - Problem: "At least one path must be specified" - leeres `tests/` Verzeichnis
   - Lösung: `tests/` Pfad in `phpstan.neon` auskommentiert (Zeile 6)
@@ -3405,12 +3972,18 @@ Complete feature parity between VS Code and PhpStorm:
 
 ### Version 2.3 (2025-12-18)
 
-- ✅ **Makefile Kompatibilität:** Makefile auf Kompatibilität mit neuer Struktur geprüft (Phase 4)
-  - Hinzugefügt: `make node-dev`, `make node-server-dev`, `make node-server-build`, `make logs-node`
-  - Korrigiert: cs-fix-all Pfad von `/var/www/html/app/` zu `/var/www/html/src/php/`
-- ✅ **TODO.md Antworten:** Rückfragen aus Phase 4.4 und 4.7 als Unterpunkte beantwortet
-  - **4.4.1:** Make Befehl für Dev App-Server - `make node-server-dev` Verwendung und Workflow
-  - **4.4.2:** Image Slimming für Production - `pnpm prune --prod` Implementierung mit Beispiel
+- ✅ **Makefile Kompatibilität:** Makefile auf Kompatibilität mit neuer Struktur
+  geprüft (Phase 4)
+  - Hinzugefügt: `make node-dev`, `make node-server-dev`,
+    `make node-server-build`, `make logs-node`
+  - Korrigiert: cs-fix-all Pfad von `/var/www/html/app/` zu
+    `/var/www/html/src/php/`
+- ✅ **TODO.md Antworten:** Rückfragen aus Phase 4.4 und 4.7 als Unterpunkte
+  beantwortet
+  - **4.4.1:** Make Befehl für Dev App-Server - `make node-server-dev`
+    Verwendung und Workflow
+  - **4.4.2:** Image Slimming für Production - `pnpm prune --prod`
+    Implementierung mit Beispiel
   - **4.7.1:** NODE_ENV vs ENV - Single Source of Truth Pattern erklärt
   - Alle Antworten mit Code-Beispielen, Rationale und Referenzen dokumentiert
 
@@ -3424,23 +3997,31 @@ Complete feature parity between VS Code and PhpStorm:
   - tsx: 4.19.2 → 4.21.0
   - Vite 6.x, Express 4.x, pnpm 9.x bleiben (stable LTS)
 - ✅ **Makefile Docker-First:** Neue Strategie für Dependencies (Phase 4.6)
-  - `make dev-deps` / `make node-install` → Docker (Default, garantiert konsistent)
-  - `make dev-deps-local` / `make node-install-local` → Lokal (Opt-in, mit Warning)
+  - `make dev-deps` / `make node-install` → Docker (Default, garantiert
+    konsistent)
+  - `make dev-deps-local` / `make node-install-local` → Lokal (Opt-in, mit
+    Warning)
   - `make composer` / `make pnpm` → Ad-hoc Commands auf laufenden Containern
-- ✅ **README Tool-Versionen:** Ausführlicher Abschnitt zu Konsistenz (Phase 8.1)
+- ✅ **README Tool-Versionen:** Ausführlicher Abschnitt zu Konsistenz (Phase
+  8.1)
   - Warum Docker-First
   - Problem mit lokalen Tools (Lockfile-Konflikte)
   - composer.json config.platform schützt nur vor PHP-Differenzen
-- ✅ **Phase 4 Zusammenfassung:** Aktualisiert auf 7 Abschnitte (4.6 hinzugefügt)
+- ✅ **Phase 4 Zusammenfassung:** Aktualisiert auf 7 Abschnitte (4.6
+  hinzugefügt)
 
 ### Version 2.1 (2025-12-17)
 
-- ✅ **index.php zentralisiert:** Phase 3.3 enthält jetzt die finale Version mit CSP Template
+- ✅ **index.php zentralisiert:** Phase 3.3 enthält jetzt die finale Version mit
+  CSP Template
 - ✅ **test.html Dev-Mode:** Dev-Mode mit HMR als Default aktiviert (Phase 3.6)
-- ✅ **compose.override.yaml:** Anpassungen für existierende Datei statt Neuerstellung (Phase 4.7)
+- ✅ **compose.override.yaml:** Anpassungen für existierende Datei statt
+  Neuerstellung (Phase 4.7)
 - ✅ **Phase 4 optimiert:** Redundante Abschnitte entfernt, Nummern angepasst
-- ✅ **Node Development Stage:** Kompatibilität mit app-server dokumentiert (Phase 4.4)
-- ✅ **Zusammenfassung:** Aktualisiert auf 6 statt 11 Abschnitte durch Zentralisierung
+- ✅ **Node Development Stage:** Kompatibilität mit app-server dokumentiert
+  (Phase 4.4)
+- ✅ **Zusammenfassung:** Aktualisiert auf 6 statt 11 Abschnitte durch
+  Zentralisierung
 
 ### Version 2.0 (2025-12-17)
 
@@ -3452,12 +4033,15 @@ Complete feature parity between VS Code and PhpStorm:
 
 ### Version 1.0 (2025-12-17) - Project Foundation & Architecture Design
 
-Initial project planning document establishing the flexible PHP/Node.js Docker boilerplate architecture.
+Initial project planning document establishing the flexible PHP/Node.js Docker
+boilerplate architecture.
 
 #### Project Goals
 
-- Flexible boilerplate supporting PHP Backend, Node.js Backend, Fullstack, or API-only modes
-- Node.js modes: Development (Vite HMR), asset-server (Production), app-server (Production Runtime)
+- Flexible boilerplate supporting PHP Backend, Node.js Backend, Fullstack, or
+  API-only modes
+- Node.js modes: Development (Vite HMR), asset-server (Production), app-server
+  (Production Runtime)
 - Modern toolchain with TypeScript, Vite 6, PHP 8.4, Node.js 24
 
 #### Phase 1: Directory Structure
@@ -3484,8 +4068,10 @@ Initial project planning document establishing the flexible PHP/Node.js Docker b
 
 #### Phase 4: Docker & Compose Configuration
 
-- Nginx: Vite HMR proxy, CORS examples, Brotli compression (commented), rate limiting zones
-- Node Dockerfile: Multi-stage build (development, build, asset-server, app-server)
+- Nginx: Vite HMR proxy, CORS examples, Brotli compression (commented), rate
+  limiting zones
+- Node Dockerfile: Multi-stage build (development, build, asset-server,
+  app-server)
 - PHP Dockerfile: Selective COPY for production optimization
 - Makefile: Docker-First dependency strategy, node-dev/node-server-dev targets
 - compose.override.yaml: HMR config mount, Vite port exposure, NODE_ENV handling

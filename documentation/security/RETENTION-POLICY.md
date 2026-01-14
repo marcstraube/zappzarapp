@@ -1,17 +1,21 @@
 # Data Retention Policy Guide
 
-**GDPR Art. 5(1)(e) & Art. 17 Compliance: Storage Limitation & Right to Erasure**
+> GDPR Art. 5(1)(e) & Art. 17 Compliance: Storage Limitation & Right to Erasure
 
 ---
 
 ## Why Retention Policies?
 
 **GDPR requires data retention policies for:**
-- **Art. 5(1)(e)**: Storage limitation - Data should be kept only as long as necessary
+
+- **Art. 5(1)(e)**: Storage limitation - Data should be kept only as long as
+  necessary
 - **Art. 17**: Right to erasure ("Right to be forgotten")
-- **Art. 30**: Documentation of retention periods in Records of Processing Activities
+- **Art. 30**: Documentation of retention periods in Records of Processing
+  Activities
 
 **Security benefits:**
+
 - Reduced attack surface (less data = less risk)
 - Faster database queries (smaller tables)
 - Lower storage costs
@@ -22,7 +26,7 @@
 ## Recommended Retention Periods
 
 | Data Type             | Retention Period        | Rationale                                |
-|-----------------------|-------------------------|------------------------------------------|
+| --------------------- | ----------------------- | ---------------------------------------- |
 | Audit logs            | 2 years (730 days)      | Legal compliance, incident investigation |
 | Session data          | 7-30 days               | Active sessions only                     |
 | Access logs           | 90 days                 | Security monitoring                      |
@@ -88,7 +92,8 @@ SOURCE /docker-entrypoint-initdb.d/migrations/002_retention_policies.sql;
 
 ### 2. Customize `anonymize_user()`
 
-The `anonymize_user()` function is a **template**. You must customize it for your tables:
+The `anonymize_user()` function is a **template**. You must customize it for
+your tables:
 
 ```sql
 -- Example: Uncomment and modify in the migration file
@@ -104,7 +109,8 @@ WHERE id = p_user_id;
 
 ### 3. Schedule Cleanup (Admin Task)
 
-Scheduling is **not part of the boilerplate** - it's a Dev/Admin task. Choose one:
+Scheduling is **not part of the boilerplate** - it's a Dev/Admin task. Choose
+one:
 
 #### Option A: System Cron with make db-cleanup (Recommended)
 
@@ -173,8 +179,8 @@ sudo systemctl enable --now db-cleanup.timer
 
 #### Option C: pg_cron (PostgreSQL only)
 
-pg_cron is **pre-installed** in the custom PostgreSQL image and **pre-configured** in compose files.
-You only need to create the extension:
+pg_cron is **pre-installed** in the custom PostgreSQL image and
+**pre-configured** in compose files. You only need to create the extension:
 
 ```sql
 -- pg_cron is already loaded via shared_preload_libraries
@@ -223,30 +229,30 @@ kind: CronJob
 metadata:
   name: db-cleanup
 spec:
-  schedule: "0 3 * * *"  # Daily at 3 AM
+  schedule: '0 3 * * *' # Daily at 3 AM
   jobTemplate:
     spec:
       template:
         spec:
           containers:
-          - name: cleanup
-            image: postgres:16-alpine
-            command:
-            - psql
-            - -h
-            - postgres-service
-            - -U
-            - app
-            - -d
-            - app
-            - -c
-            - "SELECT delete_old_logs('audit_logs', 730);"
-            env:
-            - name: PGPASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: db-secrets
-                  key: password
+            - name: cleanup
+              image: postgres:16-alpine
+              command:
+                - psql
+                - -h
+                - postgres-service
+                - -U
+                - app
+                - -d
+                - app
+                - -c
+                - "SELECT delete_old_logs('audit_logs', 730);"
+              env:
+                - name: PGPASSWORD
+                  valueFrom:
+                    secretKeyRef:
+                      name: db-secrets
+                      key: password
           restartPolicy: OnFailure
 ```
 
@@ -328,9 +334,11 @@ $this->mailer->send(
 
 ### 1. Audit Log Retention
 
-Audit logs are **append-only and immutable** (protected by triggers). The `delete_old_logs()` function temporarily disables the trigger for cleanup.
+Audit logs are **append-only and immutable** (protected by triggers). The
+`delete_old_logs()` function temporarily disables the trigger for cleanup.
 
 **Recommendation:** Keep audit logs for at least 2 years:
+
 - Legal hold requirements
 - Incident investigation needs
 - Compliance audits
@@ -338,6 +346,7 @@ Audit logs are **append-only and immutable** (protected by triggers). The `delet
 ### 2. Anonymization vs. Deletion
 
 **Prefer anonymization over deletion:**
+
 - Maintains referential integrity
 - Preserves statistical data
 - Provides audit trail
@@ -352,6 +361,7 @@ Audit logs are **append-only and immutable** (protected by triggers). The `delet
 ### 3. Backup Considerations
 
 After anonymizing a user, old backups still contain their data:
+
 - Document backup retention in privacy policy
 - Consider backup encryption (already implemented, see BACKUP.md)
 - Set realistic backup retention (30-90 days)
@@ -359,6 +369,7 @@ After anonymizing a user, old backups still contain their data:
 ### 4. Third-Party Data Processors
 
 When anonymizing users, also:
+
 - Notify third-party processors (payment providers, analytics, etc.)
 - Request deletion from external systems
 - Document the chain of deletion
@@ -378,7 +389,8 @@ CALL get_retention_status();
 ```
 
 Example output:
-```
+
+```text
  table_name  | total_rows | oldest_record       | rows_older_than_90_days | rows_older_than_365_days
 -------------+------------+---------------------+-------------------------+--------------------------
  audit_logs  | 1234567    | 2023-01-15 10:23:45 | 456789                  | 123456
@@ -386,7 +398,8 @@ Example output:
 
 ### Add Custom Tables
 
-Extend `get_retention_status()` in the migration files to monitor additional tables:
+Extend `get_retention_status()` in the migration files to monitor additional
+tables:
 
 ```sql
 -- PostgreSQL: Add to get_retention_status() function

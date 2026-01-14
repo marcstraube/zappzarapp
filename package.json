@@ -28,8 +28,8 @@
     "lint:fix": "eslint 'src/**/*.{ts,js}' --fix",
     "lint:md": "markdownlint-cli2 '**/*.md' '#node_modules'",
     "lint:md:fix": "markdownlint-cli2 --fix '**/*.md' '#node_modules'",
-    "format": "prettier --write 'src/**/*.{ts,js,json,md}'",
-    "format:check": "prettier --check 'src/**/*.{ts,js,json,md}'",
+    "format": "prettier --write 'src/**/*.{ts,js,json}' '**/*.md' '!node_modules/**'",
+    "format:check": "prettier --check 'src/**/*.{ts,js,json}' '**/*.md' '!node_modules/**'",
     "quality": "pnpm run format:check && pnpm run lint && pnpm run type-check && pnpm run test",
     "docs": "typedoc"
   },

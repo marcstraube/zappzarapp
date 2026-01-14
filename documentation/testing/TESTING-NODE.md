@@ -1,10 +1,11 @@
 # Node.js Tests
 
-This directory contains tests for the Node.js backend using Vitest (similar to PHPUnit for PHP).
+This directory contains tests for the Node.js backend using Vitest (similar to
+PHPUnit for PHP).
 
 ## Directory Structure
 
-```
+```text
 tests/node/              # Node.js tests (Vitest)
 └── App/
     ├── unit/            # Unit tests for individual functions/utilities
@@ -50,6 +51,7 @@ docker compose exec node pnpm test:coverage
 ## Coverage Reports
 
 Coverage reports are generated in `build/coverage/node/`:
+
 - `build/coverage/node/index.html` - HTML coverage report (similar to PHPUnit)
 - `build/coverage/node/lcov.info` - LCOV format for CI/CD integration
 
@@ -125,6 +127,7 @@ The following aliases are available in tests:
 ## Quality Thresholds
 
 Minimum coverage requirements (configured in `vitest.config.ts`):
+
 - Lines: 80%
 - Functions: 80%
 - Branches: 80%
@@ -137,6 +140,7 @@ Similar to PHPUnit's coverage requirements in the PHP stack.
 ### ESLint (Static Analysis)
 
 Run linting (similar to PHPStan for PHP):
+
 ```bash
 # Check for linting issues
 docker compose exec node pnpm lint
@@ -148,6 +152,7 @@ docker compose exec node pnpm lint:fix
 ### Prettier (Code Formatting)
 
 Check and fix code formatting (similar to PHP-CS-Fixer):
+
 ```bash
 # Check formatting
 docker compose exec node pnpm format:check
@@ -159,6 +164,7 @@ docker compose exec node pnpm format
 ### Complete Quality Check
 
 Run all quality checks at once:
+
 ```bash
 # Runs format-check, lint, type-check, and test
 docker compose exec node pnpm quality

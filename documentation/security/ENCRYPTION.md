@@ -1,6 +1,6 @@
 # Database Encryption Guide
 
-**GDPR Art. 32 Compliance: Encryption of Personal Data**
+> GDPR Art. 32 Compliance: Encryption of Personal Data
 
 ---
 
@@ -8,13 +8,16 @@
 
 **Most applications DON'T need column-level encryption!**
 
-The following security measures are **already implemented** and sufficient for most use cases:
+The following security measures are **already implemented** and sufficient for
+most use cases:
+
 - ✅ **TLS/SSL** for data in transit (HTTPS, database connections)
 - ✅ **OS-level disk encryption** (encrypt storage volumes)
 - ✅ **Access control** and authentication
 - ✅ **Audit logging** (see Phase 1.3)
 
 **Only use column-level encryption for:**
+
 - ❗ **GDPR Art. 9 Special Categories** of personal data:
   - Health data
   - Biometric data (fingerprints, facial recognition)
@@ -24,6 +27,7 @@ The following security measures are **already implemented** and sufficient for m
   - Government-issued ID numbers
 
 **Do NOT use for:**
+
 - ⚠️ Regular personal data (name, email, address, phone number)
 - ⚠️ Data that needs to be searched or indexed frequently
 - ⚠️ Low-sensitivity data
@@ -35,61 +39,73 @@ The following security measures are **already implemented** and sufficient for m
 This boilerplate provides **3 encryption options**:
 
 ### 1. Database-Level Encryption (SQL Functions)
+
 **Recommended for**: Encrypting specific columns in existing tables
 
 - **PostgreSQL**: `encrypt_text()` / `decrypt_text()` (pgcrypto extension)
 - **MariaDB**: `encrypt_text()` / `decrypt_text()` (AES functions)
 
 **Pros:**
+
 - ✅ Transparent - works with any language/framework
 - ✅ Encryption happens in database (consistent)
 - ✅ Key never leaves application server
 
 **Cons:**
+
 - ⚠️ Cannot index encrypted columns efficiently
 - ⚠️ Searching requires full table scan
 
-**Setup:** See [Database-Level Encryption](#database-level-encryption-sql-functions)
+**Setup:** See
+[Database-Level Encryption](#database-level-encryption-sql-functions)
 
 ---
 
 ### 2. Application-Level Encryption (PHP/Node.js)
+
 **Recommended for**: Full control over encryption, application-specific needs
 
 - **PHP**: `EncryptionService::encrypt()` / `::decrypt()`
 - **Node.js**: `EncryptionService.encrypt()` / `.decrypt()`
 
 **Pros:**
+
 - ✅ Full control over encryption logic
 - ✅ Can use different keys per tenant/user
 - ✅ Works with any database (even NoSQL)
 
 **Cons:**
+
 - ⚠️ More code to maintain
 - ⚠️ Must ensure consistency across services
 
-**Setup:** See [Application-Level Encryption](#application-level-encryption-phpnodejs)
+**Setup:** See
+[Application-Level Encryption](#application-level-encryption-phpnodejs)
 
 ---
 
 ### 3. Table-Level Encryption at Rest (MariaDB only)
+
 **Recommended for**: Encrypting entire tables transparently
 
 - **MariaDB**: `CREATE TABLE ... ENCRYPTED=YES`
 - **Automatic**: All data in table is encrypted on disk
 
 **Pros:**
+
 - ✅ **Transparent** - no code changes needed
 - ✅ **Fast** - encryption at storage layer
 - ✅ **Can still use indexes** normally
 - ✅ Protects against physical disk theft
 
 **Cons:**
+
 - ⚠️ MariaDB only (not available in PostgreSQL without extensions)
 - ⚠️ Encrypts entire table (all-or-nothing)
 - ⚠️ Requires keyfile management
 
-**Setup:** See [Table-Level Encryption at Rest](#table-level-encryption-at-rest-mariadb-only)
+**Setup:** See
+[Table-Level Encryption at Rest](#table-level-encryption-at-rest-mariadb-only)
 
 ---
 
@@ -100,17 +116,20 @@ This boilerplate provides **3 encryption options**:
 #### 1. Enable pgcrypto Extension
 
 Run migration:
+
 ```bash
 docker compose exec postgres psql -U app -d app -f /docker-entrypoint-initdb.d/000_encryption_helpers.sql
 ```
 
 Or manually:
+
 ```sql
 \c app
 \i /docker-entrypoint-initdb.d/000_encryption_helpers.sql
 ```
 
 The migration creates two functions:
+
 - `encrypt_text(plaintext TEXT, key TEXT) RETURNS BYTEA`
 - `decrypt_text(encrypted BYTEA, key TEXT) RETURNS TEXT`
 
@@ -130,6 +149,7 @@ CREATE TABLE users (
 #### 3. Insert Encrypted Data
 
 **From SQL:**
+
 ```sql
 INSERT INTO users (email, full_name, ssn)
 VALUES (
@@ -140,6 +160,7 @@ VALUES (
 ```
 
 **From PHP:**
+
 ```php
 $encryptionKey = $_ENV['ENCRYPTION_KEY'] ?? throw new RuntimeException('ENCRYPTION_KEY not set');
 
@@ -173,11 +194,13 @@ FROM users;
 #### 1. Enable Encryption Functions
 
 Run migration:
+
 ```bash
 docker compose exec mariadb mysql -u app -p app < /docker-entrypoint-initdb.d/000_encryption_helpers.sql
 ```
 
 The migration creates two functions:
+
 - `encrypt_text(plaintext TEXT, key VARCHAR(255)) RETURNS VARBINARY(16000)`
 - `decrypt_text(encrypted VARBINARY(16000), key VARCHAR(255)) RETURNS TEXT`
 
@@ -262,7 +285,8 @@ bash docker/mariadb/generate-keyfile.sh
 
 This creates `docker/mariadb/keyfile.key` (gitignored).
 
-**⚠️ IMPORTANT:** Backup this keyfile securely! If lost, encrypted data **CANNOT** be recovered.
+**⚠️ IMPORTANT:** Backup this keyfile securely! If lost, encrypted data
+**CANNOT** be recovered.
 
 ---
 
@@ -351,13 +375,14 @@ WHERE CREATE_OPTIONS LIKE '%ENCRYPTED%';
 Searching encrypted data requires **full table scan** (very slow).
 
 **Bad:**
+
 ```sql
 -- SLOW - full table scan!
 SELECT * FROM users
 WHERE decrypt_text(ssn, 'key') = '123-45-6789';
 ```
 
-**Better: Use Hash-Based Lookups**
+#### Better: Use Hash-Based Lookups
 
 Store a hash of the searchable value:
 
@@ -392,6 +417,7 @@ WHERE ssn_hash = SHA256('123-45-6789');
 ### 1. Environment Variables
 
 **Store encryption keys in `.env`:**
+
 ```bash
 ENCRYPTION_KEY=your-base64-encoded-32-byte-key
 BACKUP_ENCRYPTION_KEY=your-backup-key
@@ -404,6 +430,7 @@ BACKUP_ENCRYPTION_KEY=your-backup-key
 ### 2. Key Rotation
 
 **When to rotate:**
+
 - Regularly (e.g., every 12 months)
 - After security incident
 - After employee departure
@@ -413,10 +440,12 @@ BACKUP_ENCRYPTION_KEY=your-backup-key
 1. Generate new key: `openssl rand -base64 32`
 2. Add to `.env`: `ENCRYPTION_KEY_NEW=...`
 3. Re-encrypt all data:
+
    ```sql
    UPDATE users
    SET ssn = encrypt_text(decrypt_text(ssn, 'OLD_KEY'), 'NEW_KEY');
    ```
+
 4. Replace `ENCRYPTION_KEY` with `ENCRYPTION_KEY_NEW`
 5. Remove old key
 
@@ -440,7 +469,8 @@ BACKUP_ENCRYPTION_KEY=your-backup-key
 - ✅ **Key management**: Secure storage of encryption keys
 - ✅ **Right to access**: Can decrypt data for subject access requests
 - ✅ **Right to erasure**: Can delete encrypted data
-- ✅ **Data breach**: Encrypted data is useless without key (reduces breach impact)
+- ✅ **Data breach**: Encrypted data is useless without key (reduces breach
+  impact)
 
 ---
 
@@ -449,11 +479,13 @@ BACKUP_ENCRYPTION_KEY=your-backup-key
 ### Decryption Returns NULL
 
 **Causes:**
+
 - Wrong encryption key
 - Corrupted encrypted data
 - Wrong algorithm/mode
 
 **Solution:**
+
 - Verify `ENCRYPTION_KEY` is correct
 - Check that encrypted data is not truncated (BYTEA/VARBINARY large enough)
 
@@ -464,9 +496,11 @@ BACKUP_ENCRYPTION_KEY=your-backup-key
 **Problem:** Queries are slow when decrypting many rows
 
 **Solutions:**
+
 1. Decrypt only when necessary (not in WHERE clause)
 2. Use hash-based lookups (see above)
-3. Consider table-level encryption (MariaDB ENCRYPTED=YES) for better performance
+3. Consider table-level encryption (MariaDB ENCRYPTED=YES) for better
+   performance
 
 ---
 
@@ -475,6 +509,7 @@ BACKUP_ENCRYPTION_KEY=your-backup-key
 **Error:** `file_key_management plugin: Can't open keyfile`
 
 **Solutions:**
+
 1. Generate keyfile: `bash docker/mariadb/generate-keyfile.sh`
 2. Check volume mount in `compose.yaml`
 3. Verify file permissions: `chmod 600 docker/mariadb/keyfile.key`
@@ -485,7 +520,7 @@ BACKUP_ENCRYPTION_KEY=your-backup-key
 
 **Already have unencrypted data?**
 
-### PostgreSQL:
+### PostgreSQL
 
 ```sql
 -- 1. Add encrypted column
@@ -503,14 +538,15 @@ ALTER TABLE users DROP COLUMN ssn;
 ALTER TABLE users RENAME COLUMN ssn_encrypted TO ssn;
 ```
 
-### MariaDB Table-Level:
+### MariaDB Table-Level
 
 ```sql
 -- Simply enable encryption on existing table
 ALTER TABLE users ENCRYPTED=YES;
 ```
 
-Background encryption will happen automatically (controlled by `innodb_encryption_threads`).
+Background encryption will happen automatically (controlled by
+`innodb_encryption_threads`).
 
 ---
 

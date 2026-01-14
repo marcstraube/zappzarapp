@@ -780,7 +780,7 @@ rector-fix: ## Apply Rector refactorings automatically
 	@echo -e "\033[0;33mApplying Rector refactorings...\033[0m"
 	@docker compose exec php composer rector-fix
 
-check: cs-check analyse phpmd rector-check test validate ## Run all checks (CI simulation)
+check: cs-check analyse phpmd rector-check prettier-check type-check lint-node test validate lint-md ## Run all checks (CI simulation)
 	@echo -e "\033[0;32mAll checks passed!\033[0m"
 
 cs-check: ## Check coding style (dry-run)
@@ -809,6 +809,31 @@ lint-md-fix: ## Fix Markdown style issues automatically
 	@echo -e "\033[0;33mFixing Markdown files...\033[0m"
 	@docker compose exec node pnpm run lint:md:fix
 	@echo -e "\033[0;32mMarkdown files fixed!\033[0m"
+
+lint-node: ## Run ESLint on TypeScript/JavaScript files
+	@echo -e "\033[0;33mRunning ESLint...\033[0m"
+	@docker compose exec node pnpm run lint
+	@echo -e "\033[0;32mESLint check completed!\033[0m"
+
+lint-node-fix: ## Fix ESLint issues automatically
+	@echo -e "\033[0;33mFixing ESLint issues...\033[0m"
+	@docker compose exec node pnpm run lint:fix
+	@echo -e "\033[0;32mESLint issues fixed!\033[0m"
+
+type-check: ## Run TypeScript type checking (static analysis)
+	@echo -e "\033[0;33mRunning TypeScript type check...\033[0m"
+	@docker compose exec node pnpm run type-check
+	@echo -e "\033[0;32mTypeScript check completed!\033[0m"
+
+prettier-check: ## Check code formatting with Prettier
+	@echo -e "\033[0;33mChecking code formatting (Prettier)...\033[0m"
+	@docker compose exec node pnpm run format:check
+	@echo -e "\033[0;32mPrettier check completed!\033[0m"
+
+prettier-fix: ## Fix code formatting with Prettier
+	@echo -e "\033[0;33mFixing code formatting (Prettier)...\033[0m"
+	@docker compose exec node pnpm run format
+	@echo -e "\033[0;32mPrettier formatting applied!\033[0m"
 
 outdated: ## Check for outdated Composer dependencies
 	@echo -e "\033[0;33mChecking Composer for outdated packages...\033[0m"

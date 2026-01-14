@@ -1,39 +1,47 @@
 # Development Dashboard
 
-A comprehensive development dashboard for monitoring and managing your Docker-based development environment.
+A comprehensive development dashboard for monitoring and managing your
+Docker-based development environment.
 
 ## Features
 
 ### 📊 Dashboard Overview
+
 - Real-time system health status
 - Quick access to all features
 - Git repository status
 - System information summary
 
 ### 💻 System Information
+
 - Complete PHP information (phpinfo)
 - PHP version and extensions
 - Environment variables (sensitive data masked)
 - Server configuration
 
 ### 🏥 Health Checks
-- **Docker Containers**: Status of all containers (PHP, Node, Nginx, databases, Redis)
+
+- **Docker Containers**: Status of all containers (PHP, Node, Nginx, databases,
+  Redis)
 - **Database Connections**: PostgreSQL and MariaDB connection status
 - **Services**: PHP-FPM, Node.js, Nginx health checks
 - **SSL Certificates**: Certificate validity and expiration warnings
 
 ### ✅ Code Quality (Planned)
+
 - PHPStan, PHPMD, ESLint status
 - Test coverage reports
 - Code metrics and trends
 
 ### 💾 Database Tools (Planned)
+
 - Database statistics
 - Connection management
 - Query console
 - Table browser
 
 ### 📝 Logs Viewer (Planned)
+
 - Unified log viewer
 - Real-time streaming
 - Advanced filtering
@@ -44,6 +52,7 @@ A comprehensive development dashboard for monitoring and managing your Docker-ba
 The dashboard is accessible at: **`/_dev`**
 
 All dashboard routes are prefixed with `/_dev/`:
+
 - `/_dev` - Dashboard home
 - `/_dev/system` - System information
 - `/_dev/health` - Health checks
@@ -54,6 +63,7 @@ All dashboard routes are prefixed with `/_dev/`:
 ### API Endpoints
 
 JSON API endpoints for integrations:
+
 - `/_dev/api/health-check` - Overall health status
 - `/_dev/api/container-status` - Docker container status
 
@@ -62,12 +72,14 @@ JSON API endpoints for integrations:
 ### Environment Variables
 
 **Disable in Production:**
+
 ```bash
 # .env
 ENABLE_DEV_DASHBOARD=false
 ```
 
 The dashboard automatically disables in production unless explicitly enabled:
+
 ```bash
 APP_ENV=production
 ENABLE_DEV_DASHBOARD=false  # Dashboard disabled
@@ -78,6 +90,7 @@ ENABLE_DEV_DASHBOARD=false  # Dashboard disabled
 ### Sensitive Data Protection
 
 The dashboard automatically masks sensitive environment variables:
+
 - Passwords (`*PASSWORD*`)
 - Secrets (`*SECRET*`)
 - Keys (`*KEY*`)
@@ -87,6 +100,7 @@ The dashboard automatically masks sensitive environment variables:
 ### Production Safety
 
 **Recommendations:**
+
 1. Set `ENABLE_DEV_DASHBOARD=false` in production `.env`
 2. Use firewall rules to block `/_dev` routes in production
 3. Never expose development dashboard to public internet
@@ -95,7 +109,7 @@ The dashboard automatically masks sensitive environment variables:
 
 ### Directory Structure
 
-```
+```text
 src/php/DevDashboard/
 ├── Controllers/
 │   └── DashboardController.php    # Main controller
@@ -216,6 +230,7 @@ docker compose exec php sh -c 'XDEBUG_MODE=coverage vendor/bin/phpunit \
 ### Adding New Pages
 
 1. Create view file in `Views/`:
+
    ```php
    // Views/mypage.php
    <div class="bg-white rounded-lg shadow p-6">
@@ -225,11 +240,13 @@ docker compose exec php sh -c 'XDEBUG_MODE=coverage vendor/bin/phpunit \
    ```
 
 2. Add route in `routes.php`:
+
    ```php
    route('GET', '/_dev/mypage', [$controller, 'mypage']);
    ```
 
 3. Add controller method:
+
    ```php
    public function mypage(): void
    {
@@ -242,6 +259,7 @@ docker compose exec php sh -c 'XDEBUG_MODE=coverage vendor/bin/phpunit \
 ### Adding New Services
 
 1. Create service in `Services/`:
+
    ```php
    namespace DevDashboard\Services;
 
@@ -255,6 +273,7 @@ docker compose exec php sh -c 'XDEBUG_MODE=coverage vendor/bin/phpunit \
    ```
 
 2. Use in controller:
+
    ```php
    require_once __DIR__ . '/../Services/MyService.php';
    $service = new MyService();
@@ -266,12 +285,14 @@ docker compose exec php sh -c 'XDEBUG_MODE=coverage vendor/bin/phpunit \
 To completely remove the dashboard:
 
 1. Delete directory:
+
    ```bash
    rm -rf src/php/DevDashboard/
    rm -rf tests/php/DevDashboard/
    ```
 
 2. Remove from `public/index.php`:
+
    ```php
    // Remove the dashboard routing section
    ```
@@ -292,7 +313,8 @@ Planned features for future releases:
 
 ## Contributing
 
-This dashboard is part of the docker-webdev boilerplate. Contributions and improvements are welcome!
+This dashboard is part of the docker-webdev boilerplate. Contributions and
+improvements are welcome!
 
 ## License
 

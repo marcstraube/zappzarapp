@@ -17,7 +17,8 @@ make restore
 
 ## Prerequisites
 
-The `BACKUP_ENCRYPTION_KEY` is automatically generated during `make setup`. If you need to generate it manually:
+The `BACKUP_ENCRYPTION_KEY` is automatically generated during `make setup`. If
+you need to generate it manually:
 
 ```bash
 # Generate a new encryption key
@@ -44,6 +45,7 @@ make backup
 ### Backup Output
 
 Backups are stored in `./backups/` with the naming convention:
+
 - **Encrypted:** `{DB_TYPE}_{DB_NAME}_{TIMESTAMP}.sql.gz.enc`
 - **Unencrypted:** `{DB_TYPE}_{DB_NAME}_{TIMESTAMP}.sql.gz`
 
@@ -54,6 +56,7 @@ Example: `postgres_app_20260112_143022.sql.gz.enc`
 Backups older than the configured retention period are automatically deleted.
 
 **Configuration (in `.env`):**
+
 ```bash
 # Default: 30 days
 BACKUP_RETENTION_DAYS=30
@@ -63,6 +66,7 @@ BACKUP_RETENTION_DAYS=0
 ```
 
 **Override via Make command:**
+
 ```bash
 # One-time override: keep only 7 days
 make backup RETENTION=7
@@ -72,6 +76,7 @@ make backup RETENTION=0
 ```
 
 **Direct script usage:**
+
 ```bash
 ./docker/scripts/backup-databases.sh --retention 7
 ```
@@ -157,9 +162,11 @@ rclone sync ./backups/ remote:backups/
 
 ### Key Management
 
-**CRITICAL:** If you lose `BACKUP_ENCRYPTION_KEY`, encrypted backups cannot be restored!
+**CRITICAL:** If you lose `BACKUP_ENCRYPTION_KEY`, encrypted backups cannot be
+restored!
 
 Recommendations:
+
 1. Store the key in a secure password manager
 2. Keep a printed copy in a physical safe
 3. Use a secrets management service (Vault, AWS Secrets Manager)
@@ -169,12 +176,12 @@ Recommendations:
 
 This backup strategy supports GDPR requirements:
 
-| GDPR Article | Requirement                  | Implementation                              |
-|--------------|------------------------------|---------------------------------------------|
-| Art. 5(1)(f) | Integrity & Confidentiality  | AES-256 encryption                          |
-| Art. 32      | Security of Processing       | Encrypted backups, access control           |
-| Art. 33/34   | Breach Notification          | Backup logs for audit trail                 |
-| Art. 17      | Right to Erasure             | Retention policy, can restore and anonymize |
+| GDPR Article | Requirement                 | Implementation                              |
+| ------------ | --------------------------- | ------------------------------------------- |
+| Art. 5(1)(f) | Integrity & Confidentiality | AES-256 encryption                          |
+| Art. 32      | Security of Processing      | Encrypted backups, access control           |
+| Art. 33/34   | Breach Notification         | Backup logs for audit trail                 |
+| Art. 17      | Right to Erasure            | Retention policy, can restore and anonymize |
 
 ## Troubleshooting
 
@@ -233,6 +240,7 @@ make db-migrations
 ```
 
 This applies:
+
 - `000_encryption_helpers.sql` - pgcrypto/encrypt_text functions
 - `001_audit_logs.sql` - Audit logging table with tamper protection
 

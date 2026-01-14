@@ -1,48 +1,49 @@
 # Error Pages Configuration
 
-This document describes how error pages are handled across the different components of the stack.
+This document describes how error pages are handled across the different
+components of the stack.
 
 ## Architecture Overview
 
 ```text
-                         Request
-                            │
-                            ▼
-                         nginx
-                            │
-            ┌───────────────┼───────────────┐
-            ▼               ▼               ▼
-      Static Files        PHP            Node
-            │               │               │
-            ▼               ▼               ▼
-    nginx Error Page   Content-Neg.    JSON only
-     (static HTML)          │
-                    ┌───────┴───────┐
-                    ▼               ▼
-              Browser?          API?
-                    │               │
-                    ▼               ▼
-           PHP Error Page    JSON Response
-            (dynamic)
+                            Request
+                               │
+                               ▼
+                            nginx
+                               │
+               ┌───────────────┼───────────────┐
+               ▼               ▼               ▼
+         Static Files        PHP            Node
+               │               │               │
+               ▼               ▼               ▼
+       nginx Error Page  Content-Neg.     JSON only
+        (static HTML)          │
+                       ┌───────┴───────┐
+                       ▼               ▼
+                   Browser?          API?
+                       │               │
+                       ▼               ▼
+               PHP Error Page    JSON Response
+                 (dynamic)
 ```
 
 ## Error Page Responsibilities
 
-| Component   | Error Type                                      | Response Format  | Location               |
-|-------------|-------------------------------------------------|------------------|------------------------|
-| **nginx**   | Static file not found (`.txt`, `.jpg`, etc.)    | HTML             | `docker/nginx/errors/` |
-| **nginx**   | Backend unavailable (502, 503, 504)             | HTML             | `docker/nginx/errors/` |
-| **PHP**     | Route not found (browser)                       | HTML             | `ErrorPage::render()`  |
-| **PHP**     | Route not found (API client)                    | JSON             | Router                 |
-| **PHP**     | Non-existent `.php` file                        | HTML/JSON        | Router (via nginx)     |
-| **Node**    | Any error                                       | JSON             | Express error handler  |
+| Component | Error Type                                   | Response Format | Location               |
+| --------- | -------------------------------------------- | --------------- | ---------------------- |
+| **nginx** | Static file not found (`.txt`, `.jpg`, etc.) | HTML            | `docker/nginx/errors/` |
+| **nginx** | Backend unavailable (502, 503, 504)          | HTML            | `docker/nginx/errors/` |
+| **PHP**   | Route not found (browser)                    | HTML            | `ErrorPage::render()`  |
+| **PHP**   | Route not found (API client)                 | JSON            | Router                 |
+| **PHP**   | Non-existent `.php` file                     | HTML/JSON       | Router (via nginx)     |
+| **Node**  | Any error                                    | JSON            | Express error handler  |
 
 ## Content Negotiation
 
 PHP uses the `Accept` header to determine the response format:
 
 | Accept Header            | Response                                       |
-|--------------------------|------------------------------------------------|
+| ------------------------ | ---------------------------------------------- |
 | `application/json`       | JSON: `{"error": "Not Found", "path": "/foo"}` |
 | `text/html` (or default) | HTML error page with status code               |
 
@@ -64,7 +65,8 @@ These are served when:
 - A backend service is unavailable (PHP-FPM down → 502)
 - nginx itself encounters an error
 
-**Note:** Non-existent `.php` files are routed through PHP for consistent error handling with content negotiation.
+**Note:** Non-existent `.php` files are routed through PHP for consistent error
+handling with content negotiation.
 
 **Configuration** in `docker/nginx/conf.d/default.conf`:
 
@@ -108,7 +110,7 @@ The `ErrorPage` class renders dynamic error pages with:
 **Supported error codes:**
 
 | Code | Title                 | Use Case                |
-|------|-----------------------|-------------------------|
+| ---- | --------------------- | ----------------------- |
 | 400  | Bad Request           | Malformed request       |
 | 401  | Unauthorized          | Authentication required |
 | 403  | Forbidden             | Access denied           |
@@ -158,12 +160,14 @@ app.use((req: Request, res: Response): void => {
 });
 
 // 500 Handler
-app.use((err: Error, req: Request, res: Response, _next: NextFunction): void => {
-  res.status(500).json({
-    error: NODE_ENV === 'development' ? err.message : 'Internal Server Error',
-    timestamp: new Date().toISOString(),
-  });
-});
+app.use(
+  (err: Error, req: Request, res: Response, _next: NextFunction): void => {
+    res.status(500).json({
+      error: NODE_ENV === 'development' ? err.message : 'Internal Server Error',
+      timestamp: new Date().toISOString(),
+    });
+  }
+);
 ```
 
 This is intentional because Node.js serves as:
@@ -173,7 +177,9 @@ This is intentional because Node.js serves as:
 
 #### Node.js API Proxy Behavior
 
-The nginx configuration includes Node.js API proxy locations (`/api/node/*`) in all environments (development and production). These locations use dynamic upstream resolution:
+The nginx configuration includes Node.js API proxy locations (`/api/node/*`) in
+all environments (development and production). These locations use dynamic
+upstream resolution:
 
 ```nginx
 location ~ ^/api/node/(.*)$ {
@@ -186,7 +192,7 @@ location ~ ^/api/node/(.*)$ {
 **Behavior when Node is not running:**
 
 | Scenario                   | Result                     |
-|----------------------------|----------------------------|
+| -------------------------- | -------------------------- |
 | Node container running     | JSON response from Node.js |
 | Node container stopped     | nginx 502 Bad Gateway page |
 | Node container not started | nginx 502 Bad Gateway page |
@@ -221,12 +227,12 @@ docker compose start php
 
 **Expected Results:**
 
-| Request                        | All Services Up           | PHP Down            | Node Down           |
-|--------------------------------|---------------------------|---------------------|---------------------|
-| `/nonexistent`                 | PHP 404 (HTML/JSON)       | nginx 502 page      | PHP 404 (HTML/JSON) |
-| `/nonexistent.php`             | PHP 404 (HTML/JSON)       | nginx 502 page      | PHP 404 (HTML/JSON) |
-| `/api/node/nonexistent`        | Node 404 (JSON)           | Node 404 (JSON)     | nginx 502 page      |
-| `/nonexistent.txt`             | nginx 404 page            | nginx 404 page      | nginx 404 page      |
+| Request                 | All Services Up     | PHP Down        | Node Down           |
+| ----------------------- | ------------------- | --------------- | ------------------- |
+| `/nonexistent`          | PHP 404 (HTML/JSON) | nginx 502 page  | PHP 404 (HTML/JSON) |
+| `/nonexistent.php`      | PHP 404 (HTML/JSON) | nginx 502 page  | PHP 404 (HTML/JSON) |
+| `/api/node/nonexistent` | Node 404 (JSON)     | Node 404 (JSON) | nginx 502 page      |
+| `/nonexistent.txt`      | nginx 404 page      | nginx 404 page  | nginx 404 page      |
 
 ## Styling Guidelines
 
@@ -237,4 +243,5 @@ Both nginx and PHP error pages use consistent styling:
 - **Font**: System font stack (Apple, Windows, Linux compatible)
 - **Layout**: Centered, responsive
 
-To maintain consistency when customizing, use the same color palette and typography.
+To maintain consistency when customizing, use the same color palette and
+typography.

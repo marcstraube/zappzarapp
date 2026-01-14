@@ -1,23 +1,27 @@
 # Dependency Management
 
-This document explains how dependencies are managed in this Docker-based development environment.
+This document explains how dependencies are managed in this Docker-based
+development environment.
 
 ---
 
 ## Overview
 
-Dependencies are installed and managed **inside Docker containers** to ensure consistency across all platforms (Linux, macOS, Windows). Lock files are synchronized back to the host for version control.
+Dependencies are installed and managed **inside Docker containers** to ensure
+consistency across all platforms (Linux, macOS, Windows). Lock files are
+synchronized back to the host for version control.
 
-| Tool     | Lock File         | Container Path               |
-|----------|-------------------|------------------------------|
-| Composer | `composer.lock`   | `/var/www/html/vendor`       |
-| pnpm     | `pnpm-lock.yaml`  | `/app/node_modules`          |
+| Tool     | Lock File        | Container Path         |
+| -------- | ---------------- | ---------------------- |
+| Composer | `composer.lock`  | `/var/www/html/vendor` |
+| pnpm     | `pnpm-lock.yaml` | `/app/node_modules`    |
 
 ---
 
 ## File Synchronization Architecture
 
-This project uses **Docker Compose Watch** for cross-platform file synchronization:
+This project uses **Docker Compose Watch** for cross-platform file
+synchronization:
 
 ```text
 Host                          Container
@@ -35,13 +39,16 @@ Host                          Container
 
 ### Why Watch Instead of Bind Mounts?
 
-| Aspect            | Watch Mode          | Bind Mounts                        |
-|-------------------|---------------------|------------------------------------|
-| Windows/macOS     | ✅ Fast              | ⚠️ Slower (filesystem translation) |
-| Linux             | ✅ Fast              | ✅ Fast                             |
-| Sync Direction    | Host → Container    | Bidirectional                      |
+| Aspect         | Watch Mode       | Bind Mounts                        |
+| -------------- | ---------------- | ---------------------------------- |
+| Windows/macOS  | ✅ Fast          | ⚠️ Slower (filesystem translation) |
+| Linux          | ✅ Fast          | ✅ Fast                            |
+| Sync Direction | Host → Container | Bidirectional                      |
 
-Watch mode is the [recommended approach](https://docs.docker.com/compose/how-tos/file-watch/) for dependency files because changes to `package.json` or `composer.json` typically require a full reinstall anyway.
+Watch mode is the
+[recommended approach](https://docs.docker.com/compose/how-tos/file-watch/) for
+dependency files because changes to `package.json` or `composer.json` typically
+require a full reinstall anyway.
 
 ---
 
@@ -73,9 +80,11 @@ make composer-install-local    # Uses --ignore-platform-reqs
 make node-install-local        # Uses local pnpm
 ```
 
-Both commands automatically sync lock files from the container first (if running), ensuring the local installation uses the same versions as Docker.
+Both commands automatically sync lock files from the container first (if
+running), ensuring the local installation uses the same versions as Docker.
 
-⚠️ **Warning**: Local installations may differ from Docker due to different PHP/Node.js versions.
+⚠️ **Warning**: Local installations may differ from Docker due to different
+PHP/Node.js versions.
 
 ---
 
@@ -108,7 +117,8 @@ make node-update        # Updates + syncs pnpm-lock.yaml
 
 ## Lock File Synchronization
 
-Since Watch mode is one-way (Host → Container), lock files generated in the container must be synced back to the host for Git commits.
+Since Watch mode is one-way (Host → Container), lock files generated in the
+container must be synced back to the host for Git commits.
 
 ### Automatic Sync
 
@@ -222,7 +232,8 @@ make node-install    # Automatically fixes permissions
 
 **Symptom**: Code works in container but not locally (or vice versa)
 
-**Solution**: Always use container versions. Local install is only for IDE support:
+**Solution**: Always use container versions. Local install is only for IDE
+support:
 
 ```bash
 # Run tests/code in container, not locally
@@ -234,17 +245,17 @@ npm test            # Incorrect (uses local node)
 
 ## Related Make Targets
 
-| Command                  | Description                                      |
-|--------------------------|--------------------------------------------------|
-| `make composer-install`  | Install PHP deps (Docker) + sync lock file       |
-| `make node-install`      | Install Node deps (Docker) + sync lock file      |
-| `make composer-update`   | Update PHP deps + sync lock file                 |
-| `make node-update`       | Update Node deps + sync lock file                |
-| `make sync-lockfiles`    | Manually sync lock files from containers         |
-| `make composer CMD="..."`| Run arbitrary Composer command                   |
-| `make pnpm CMD="..."`    | Run arbitrary pnpm command                       |
-| `make validate`          | Validate composer.json and package.json          |
-| `make outdated`          | Check for outdated PHP dependencies              |
+| Command                   | Description                                 |
+| ------------------------- | ------------------------------------------- |
+| `make composer-install`   | Install PHP deps (Docker) + sync lock file  |
+| `make node-install`       | Install Node deps (Docker) + sync lock file |
+| `make composer-update`    | Update PHP deps + sync lock file            |
+| `make node-update`        | Update Node deps + sync lock file           |
+| `make sync-lockfiles`     | Manually sync lock files from containers    |
+| `make composer CMD="..."` | Run arbitrary Composer command              |
+| `make pnpm CMD="..."`     | Run arbitrary pnpm command                  |
+| `make validate`           | Validate composer.json and package.json     |
+| `make outdated`           | Check for outdated PHP dependencies         |
 
 ---
 
@@ -252,4 +263,5 @@ npm test            # Incorrect (uses local node)
 
 - [WINDOWS.md](../setup/WINDOWS.md) - Windows-specific setup (WSL2)
 - [RENOVATE.md](RENOVATE.md) - Automated dependency updates
-- [Docker Compose Watch](https://docs.docker.com/compose/how-tos/file-watch/) - Official documentation
+- [Docker Compose Watch](https://docs.docker.com/compose/how-tos/file-watch/) -
+  Official documentation
