@@ -43,5 +43,11 @@ else
     echo "[entrypoint] Dependencies already installed, skipping..."
 fi
 
-# Execute the main command (php-fpm)
-exec "$@"
+# Execute the main command
+# php-fpm handles user switching internally (configured in php-fpm.conf)
+# All other commands (composer, phpunit, etc.) run as www-data
+if [ "$1" = "php-fpm" ]; then
+    exec "$@"
+else
+    exec su-exec www-data "$@"
+fi

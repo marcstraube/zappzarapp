@@ -1,0 +1,35 @@
+{
+  "$schema": "https://json.schemastore.org/depcheckrc",
+  "ignorePatterns": [
+    "build",
+    "dist",
+    "docs",
+    "coverage"
+  ],
+  "ignores": [
+    "@types/*",
+    "tsx",
+    "typescript",
+    "vitest",
+    "@vitest/*",
+    "eslint",
+    "eslint-*",
+    "@eslint/*",
+    "@typescript-eslint/*",
+    "prettier",
+    "postcss",
+    "autoprefixer",
+    "sass",
+    "typedoc",
+    "pm2",
+    "lint-staged",
+    "markdownlint-cli2",
+    "@commitlint/*",
+    "vite",
+    "pino-pretty",
+    "ws",
+    "depcheck",
+    "knip"
+  ],
+  "skip-missing": true
+}

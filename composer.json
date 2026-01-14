@@ -26,6 +26,7 @@
         "phpstan/phpstan": "^2.1",
         "phpunit/phpunit": "^12.4",
         "rector/rector": "^2.3",
+        "roave/security-advisories": "dev-latest",
         "symfony/var-dumper": "^8.0"
     },
     "config": {

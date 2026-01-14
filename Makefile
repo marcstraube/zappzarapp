@@ -142,7 +142,7 @@ setup: ## Create directories, install dev dependencies and ensure structure
 	@echo -e "\033[0;33mSyncing lock files from containers to host...\033[0m"
 	@$(MAKE) --silent sync-lockfiles
 	@echo -e "\033[0;32mSetup completed (directories + dependencies + lock files)!\033[0m"
-	@echo -e "\033[0;34mNote: For IDE code completion, run 'make composer-install-local' and 'make node-install-local'\033[0m"
+	@echo -e "\033[0;34mNote: For IDE code completion, run 'make composer-install-local' and 'make pnpm-install-local'\033[0m"
 
 ##@ Docker
 
@@ -216,12 +216,12 @@ clean: ## Remove containers, networks and dangling images (keeps data volumes)
 	@docker system prune -f
 	@echo -e "\033[0;32mCleanup completed!\033[0m"
 
-composer: ## Execute Composer command in running container (e.g. make composer CMD="require vendor/package")
-	@docker compose exec -u www-data php composer $(CMD)
+composer: ## Execute Composer command (e.g. make composer CMD="require --dev vendor/package")
+	@XDEBUG_MODE=off $(DC) run --rm --no-TTY php composer $(CMD)
 
 composer-update: ## Update Composer dependencies (updates composer.lock on host, vendor stays in container)
 	@echo -e "\033[0;33mUpdating Composer dependencies...\033[0m"
-	@XDEBUG_MODE=off $(DC) run --rm --no-TTY -u $${USER_ID:-1000}:$${GROUP_ID:-1000} --entrypoint composer php update
+	@XDEBUG_MODE=off $(DC) run --rm --no-TTY php composer update
 	@echo -e "\033[0;32mDependencies updated!\033[0m"
 
 down: ## Stop containers
@@ -338,8 +338,50 @@ logs-mariadb: ## Show MariaDB logs only
 		docker compose logs -f mariadb; \
 	fi
 
-pnpm: ## Execute pnpm command in running container (e.g. make pnpm CMD="add vue")
-	@docker compose exec node pnpm $(CMD)
+pnpm: ## Execute pnpm command (e.g. make pnpm CMD="add -D vue")
+	@# Docker bind mounts don't support atomic rename (EBUSY error)
+	@# Solution: Run pnpm with lock file in temp location, then copy back
+	@NODE_WAS_RUNNING=false; \
+	WATCH_WAS_RUNNING=false; \
+	if docker compose ps node --format "{{.State}}" 2>/dev/null | grep -q running; then \
+		NODE_WAS_RUNNING=true; \
+	fi; \
+	if [ -f .docker-watch.pid ] && kill -0 $$(cat .docker-watch.pid) 2>/dev/null; then \
+		WATCH_WAS_RUNNING=true; \
+		echo -e "\033[0;33mPausing Docker Compose Watch...\033[0m"; \
+		kill $$(cat .docker-watch.pid) 2>/dev/null || true; \
+	fi; \
+	if [ "$$NODE_WAS_RUNNING" = "true" ]; then \
+		echo -e "\033[0;33mStopping node container...\033[0m"; \
+		docker compose stop node >/dev/null 2>&1; \
+	fi; \
+	sleep 1; \
+	CONTAINER_ID=$$($(DC) run -d --entrypoint sh node -c " \
+		cp /app/package.json /tmp/package.json && \
+		cp /app/pnpm-lock.yaml /tmp/pnpm-lock.yaml 2>/dev/null || true && \
+		cd /tmp && pnpm $(CMD) && \
+		cat /tmp/package.json > /app/package.json && \
+		cat /tmp/pnpm-lock.yaml > /app/pnpm-lock.yaml \
+	"); \
+	docker logs -f $$CONTAINER_ID; \
+	EXIT_CODE=$$(docker inspect $$CONTAINER_ID --format='{{.State.ExitCode}}'); \
+	docker rm $$CONTAINER_ID >/dev/null 2>&1; \
+	if [ "$$NODE_WAS_RUNNING" = "true" ]; then \
+		echo -e "\033[0;33mRestarting node container...\033[0m"; \
+		docker compose start node >/dev/null 2>&1; \
+	fi; \
+	if [ "$$WATCH_WAS_RUNNING" = "true" ]; then \
+		echo -e "\033[0;33mResuming Docker Compose Watch...\033[0m"; \
+		. ./.env 2>/dev/null || true; \
+		PROFILES=""; \
+		[ "$${ENABLE_PHP:-true}" = "true" ] && PROFILES="$$PROFILES --profile php"; \
+		[ "$${ENABLE_NODE:-true}" = "true" ] && PROFILES="$$PROFILES --profile node"; \
+		[ "$${ENABLE_REDIS:-true}" = "true" ] && PROFILES="$$PROFILES --profile redis"; \
+		[ "$${ENABLE_DATABASE:-true}" = "true" ] && PROFILES="$$PROFILES --profile $${DB_TYPE:-postgres}"; \
+		setsid $(DC) $$PROFILES watch < /dev/null > /dev/null 2>&1 & \
+		echo $$! > .docker-watch.pid; \
+	fi; \
+	exit $$EXIT_CODE
 
 prune: ## Remove untagged/dangling images related to this project
 	@echo -e "\033[0;33mPruning dangling images...\033[0m"
@@ -437,13 +479,13 @@ node-dev-backend: ## Start only Node.js backend with PM2
 	@echo -e "\033[0;33mStarting Node.js backend server...\033[0m"
 	@docker compose exec node pnpm run dev:backend
 
-node-install: ## Install Node.js dependencies (Docker - requires ENV=development)
+pnpm-install: ## Install Node.js dependencies (Docker - requires ENV=development)
 	@echo -e "\033[0;33mInstalling Node.js dependencies (Docker)...\033[0m"
 	@if [ -f .env ]; then \
 		. ./.env && if [ "$$ENV" = "production" ]; then \
-			echo -e "\033[0;31mError: node-install requires ENV=development in .env file.\033[0m"; \
+			echo -e "\033[0;31mError: pnpm-install requires ENV=development in .env file.\033[0m"; \
 			echo -e "\033[0;34mFor production builds, dependencies are installed during 'make build' (see Dockerfile build stage).\033[0m"; \
-			echo -e "\033[0;34mTo use node-install, temporarily set ENV=development in .env, or use 'make node-install-local'.\033[0m"; \
+			echo -e "\033[0;34mTo use pnpm-install, temporarily set ENV=development in .env, or use 'make pnpm-install-local'.\033[0m"; \
 			exit 1; \
 		fi; \
 	fi
@@ -452,7 +494,7 @@ node-install: ## Install Node.js dependencies (Docker - requires ENV=development
 	@docker compose exec node sh -c 'TMPDIR=/tmp pnpm install'
 	@echo -e "\033[0;32mDependencies installed!\033[0m"
 
-node-update: ## Update Node.js dependencies (updates pnpm-lock.yaml on host, node_modules stays in container)
+pnpm-update: ## Update Node.js dependencies (updates pnpm-lock.yaml on host, node_modules stays in container)
 	@echo -e "\033[0;33mUpdating Node.js dependencies...\033[0m"
 	@# Copy files to avoid Linux bind mount atomic rename issues
 	@CONTAINER=$$(docker create --entrypoint sh \
@@ -466,13 +508,13 @@ node-update: ## Update Node.js dependencies (updates pnpm-lock.yaml on host, nod
 	docker rm $$CONTAINER >/dev/null
 	@echo -e "\033[0;32mDependencies updated!\033[0m"
 
-node-install-local: ## Install Node.js dependencies (Local - IDE code completion only)
+pnpm-install-local: ## Install Node.js dependencies (Local - IDE code completion only)
 	@if command -v pnpm >/dev/null 2>&1; then \
 		echo -e "\033[0;33m⚠️  Using local pnpm (version may differ from Docker).\033[0m"; \
 		pnpm install; \
 		echo -e "\033[0;32mDependencies installed!\033[0m"; \
 	else \
-		echo -e "\033[0;31mError: Local pnpm not found. Use 'make node-install' instead.\033[0m"; \
+		echo -e "\033[0;31mError: Local pnpm not found. Use 'make pnpm-install' instead.\033[0m"; \
 		exit 1; \
 	fi
 
@@ -780,7 +822,7 @@ rector-fix: ## Apply Rector refactorings automatically
 	@echo -e "\033[0;33mApplying Rector refactorings...\033[0m"
 	@docker compose exec php composer rector-fix
 
-check: cs-check analyse phpmd rector-check prettier-check type-check lint-node test validate lint-md ## Run all checks (CI simulation)
+check: cs-check analyse phpmd rector-check prettier-check type-check lint-node test validate lint-md lint-docker ## Run all checks (CI simulation)
 	@echo -e "\033[0;32mAll checks passed!\033[0m"
 
 cs-check: ## Check coding style (dry-run)
@@ -799,6 +841,16 @@ lint-config: ## Validate YAML configuration files
 	@echo -e "\033[0;33mValidating YAML configuration...\033[0m"
 	@docker run --rm -v $$(pwd):/app -w /app cytopia/yamllint:latest ./**/*.yaml
 	@echo -e "\033[0;32mYAML configuration check completed!\033[0m"
+
+lint-docker: ## Lint Dockerfiles with hadolint
+	@echo -e "\033[0;33mLinting Dockerfiles with hadolint...\033[0m"
+	@docker run --rm -v $$(pwd)/.hadolint.yaml:/.config/hadolint.yaml -i hadolint/hadolint < docker/php/Dockerfile
+	@docker run --rm -v $$(pwd)/.hadolint.yaml:/.config/hadolint.yaml -i hadolint/hadolint < docker/node/Dockerfile
+	@docker run --rm -v $$(pwd)/.hadolint.yaml:/.config/hadolint.yaml -i hadolint/hadolint < docker/nginx/Dockerfile
+	@docker run --rm -v $$(pwd)/.hadolint.yaml:/.config/hadolint.yaml -i hadolint/hadolint < docker/postgres/Dockerfile
+	@docker run --rm -v $$(pwd)/.hadolint.yaml:/.config/hadolint.yaml -i hadolint/hadolint < docker/mariadb/Dockerfile
+	@docker run --rm -v $$(pwd)/.hadolint.yaml:/.config/hadolint.yaml -i hadolint/hadolint < docker/redis/Dockerfile
+	@echo -e "\033[0;32mDockerfile linting completed!\033[0m"
 
 lint-md: ## Check Markdown files for style issues
 	@echo -e "\033[0;33mChecking Markdown files...\033[0m"
@@ -839,6 +891,31 @@ outdated: ## Check for outdated Composer dependencies
 	@echo -e "\033[0;33mChecking Composer for outdated packages...\033[0m"
 	@docker compose exec php composer outdated
 	@echo -e "\033[0;32mOutdated check completed!\033[0m"
+
+depcheck: ## Find unused Node.js dependencies
+	@echo -e "\033[0;33mChecking for unused dependencies...\033[0m"
+	@docker compose exec node pnpm exec depcheck
+	@echo -e "\033[0;32mDepcheck completed!\033[0m"
+
+knip: ## Find dead code, unused exports and dependencies
+	@echo -e "\033[0;33mRunning knip dead code detection...\033[0m"
+	@docker compose exec node pnpm exec knip
+	@echo -e "\033[0;32mKnip completed!\033[0m"
+
+dive: ## Analyze Docker image layers and sizes
+	@echo -e "\033[0;33mAnalyzing Docker image layers...\033[0m"
+	@echo -e "\033[0;34mSelect image to analyze:\033[0m"
+	@echo "  1) php"
+	@echo "  2) node"
+	@echo "  3) nginx"
+	@read -p "Enter choice [1-3]: " choice; \
+	case $$choice in \
+		1) IMAGE=docker-webdev-php ;; \
+		2) IMAGE=docker-webdev-node ;; \
+		3) IMAGE=docker-webdev-nginx ;; \
+		*) echo "Invalid choice"; exit 1 ;; \
+	esac; \
+	docker run --rm -it -v /var/run/docker.sock:/var/run/docker.sock wagoodman/dive:latest $$IMAGE
 
 test: test-php test-node ## Run all tests (PHP + Node.js)
 	@echo -e "\033[0;32mAll tests completed!\033[0m"

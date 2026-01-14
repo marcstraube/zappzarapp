@@ -204,7 +204,7 @@ Configure your IDE to use the local `vendor/` directory.
 ### For Node.js Development
 
 ```bash
-make node-install-local
+make pnpm-install-local
 ```
 
 ### PHPStorm / VSCode
@@ -293,6 +293,6 @@ make redis-cli       # Redis shell
 
 # === MAINTENANCE ===
 make composer-update # Update PHP deps
-make node-update     # Update Node deps
+make pnpm-update     # Update Node deps
 make backup          # Backup database
 ```

@@ -26,8 +26,8 @@ Commands for initial project setup and configuration.
 | `make setup`                  | Create directories, generate secrets, build images, install dependencies |
 | `make composer-install`       | Install/update Composer dependencies via Docker (guaranteed consistency) |
 | `make composer-install-local` | Install Composer dependencies locally (for IDE code completion)          |
-| `make node-install`           | Install Node.js dependencies via Docker (requires ENV=development)       |
-| `make node-install-local`     | Install Node.js dependencies locally (for IDE code completion)           |
+| `make pnpm-install`           | Install Node.js dependencies via Docker (requires ENV=development)       |
+| `make pnpm-install-local`     | Install Node.js dependencies locally (for IDE code completion)           |
 | `make hooks-install`          | Install Git hooks using CaptainHook                                      |
 
 ### Setup Workflow
@@ -40,7 +40,7 @@ make setup          # 3. Complete setup (build, install, start)
 
 # IDE setup (optional)
 make composer-install-local  # PHP code completion
-make node-install-local      # Node.js code completion
+make pnpm-install-local      # Node.js code completion
 ```
 
 ## Docker Commands
@@ -90,7 +90,7 @@ Container lifecycle management.
 | `make composer CMD="..."` | Execute Composer command in running container          |
 | `make composer-update`    | Update Composer dependencies (updates `composer.lock`) |
 | `make pnpm CMD="..."`     | Execute pnpm command in running container              |
-| `make node-update`        | Update Node.js dependencies (updates `pnpm-lock.yaml`) |
+| `make pnpm-update`        | Update Node.js dependencies (updates `pnpm-lock.yaml`) |
 
 **Examples:**
 
@@ -390,7 +390,7 @@ make check  # Runs: cs-check, analyse, phpmd, rector-check, test, validate
 
 ```bash
 make composer-install  # Update PHP dependencies
-make node-install      # Update Node dependencies
+make pnpm-install      # Update Node dependencies
 make restart           # Restart containers
 ```
 

@@ -204,6 +204,8 @@ services:
       - ./typedoc.json:/app/typedoc.json:ro
       - ./.markdownlint-cli2.jsonc:/app/.markdownlint-cli2.jsonc:ro
       - ./lint-staged.config.js:/app/lint-staged.config.js:ro
+      - ./.depcheckrc.json:/app/.depcheckrc.json:ro
+      - ./knip.config.js:/app/knip.config.js:ro
 
       # Markdown files (read-write for Prettier/markdownlint)
       - ./documentation:/app/documentation

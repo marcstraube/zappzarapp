@@ -1,11 +1,71 @@
 # Docker WebDev Boilerplate - Changelog
 
-**Erstellt:** 2025-12-19 **Letzte Aktualisierung:** 2026-01-14 (PHP Extension
-Configuration) **Version:** 3.31
+**Erstellt:** 2025-12-19 **Letzte Aktualisierung:** 2026-01-14 (Quality Tools)
+**Version:** 3.32
 
 ---
 
 ## Changelog
+
+### Version 3.32 (2026-01-14) - Security & Quality Tools
+
+#### Added
+
+- **roave/security-advisories** (Composer dev dependency):
+  - Zero-config security scanning for PHP dependencies
+  - Blocks `composer install/update` when known CVEs detected
+  - No configuration required - works automatically
+
+- **hadolint** (Dockerfile linter via Docker):
+  - `make lint-docker`: Lint all Dockerfiles in `docker/` directory
+  - `.hadolint.yaml`: Configuration with sensible defaults for boilerplate
+  - Ignores: DL3018 (version pinning), DL3059 (consecutive RUN), DL3002 (root
+    user), DL3003 (WORKDIR), SC2046/SC3009 (shell compatibility)
+
+- **depcheck** (Node.js dev dependency):
+  - `make depcheck`: Find unused Node.js dependencies
+  - Keeps package.json clean
+
+- **knip** (Node.js dev dependency):
+  - `make knip`: Find dead code, unused exports and files
+  - Comprehensive codebase analysis
+
+- **dive** (Docker image analyzer via Docker):
+  - `make dive`: Interactive Docker image layer analysis
+  - Shows layer sizes, helps optimize images
+
+- **IDE Integration** (6 new configurations):
+  - PhpStorm: `Quality__Lint_Dockerfiles.xml`, `Quality__Depcheck.xml`,
+    `Quality__Knip.xml`, `Quality__Dive.xml`
+  - VSCode: `Quality: Lint Dockerfiles`, `Quality: Depcheck (Unused Deps)`,
+    `Quality: Knip (Dead Code)`, `Quality: Dive (Image Analysis)`
+
+#### Fixed
+
+- **PHP Development Entrypoint**: Non-php-fpm commands (like `composer`) now run
+  as `www-data` (UID 1000) instead of root
+  - Added `su-exec` to PHP development image
+  - `entrypoint.development.sh` now uses `su-exec www-data` for non-FPM commands
+
+- **Makefile `composer` target**: Changed from `docker compose exec` to
+  `docker compose run` for correct user permissions on host files
+
+- **Makefile `pnpm` target**: Fixed atomic rename issue on Docker bind mounts
+  - Docker bind mounts don't support atomic rename (EBUSY error)
+  - Solution: Run pnpm in /tmp, then copy files back to host
+  - Stops node container and Docker Compose Watch during operation
+
+#### Changed
+
+- **Makefile Target Naming**: Renamed Node.js package management targets for
+  consistency with Composer naming convention
+  - `node-install` → `pnpm-install`
+  - `node-update` → `pnpm-update`
+  - `node-install-local` → `pnpm-install-local`
+  - New naming separates package management (`pnpm-*`) from runtime (`node-*`)
+  - Container/runtime targets unchanged: `node-dev`, `node-build`, `node-pm2-*`
+
+---
 
 ### Version 3.31 (2026-01-14) - PHP Extension Configuration
 

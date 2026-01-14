@@ -213,23 +213,30 @@
       "presentation": { "reveal": "always", "panel": "dedicated" }
     },
     {
-      "label": "Node: Install (Docker)",
+      "label": "pnpm: Install (Docker)",
       "type": "shell",
-      "command": "make node-install",
+      "command": "make pnpm-install",
       "problemMatcher": [],
       "presentation": { "reveal": "always", "panel": "new" }
     },
     {
-      "label": "Node: Install (Local)",
+      "label": "pnpm: Install (Local)",
       "type": "shell",
-      "command": "make node-install-local",
+      "command": "make pnpm-install-local",
       "problemMatcher": [],
       "presentation": { "reveal": "always", "panel": "new" }
     },
     {
-      "label": "Node: Update",
+      "label": "pnpm: Update",
       "type": "shell",
-      "command": "make node-update",
+      "command": "make pnpm-update",
+      "problemMatcher": [],
+      "presentation": { "reveal": "always", "panel": "new" }
+    },
+    {
+      "label": "pnpm: Run Command",
+      "type": "shell",
+      "command": "make pnpm CMD=\"${input:pnpmCommand}\"",
       "problemMatcher": [],
       "presentation": { "reveal": "always", "panel": "new" }
     },
@@ -490,6 +497,13 @@
       "presentation": { "reveal": "always", "panel": "shared" }
     },
     {
+      "label": "Quality: Lint Dockerfiles",
+      "type": "shell",
+      "command": "make lint-docker",
+      "problemMatcher": [],
+      "presentation": { "reveal": "always", "panel": "shared" }
+    },
+    {
       "label": "Quality: Lint Markdown",
       "type": "shell",
       "command": "make lint-md",
@@ -547,6 +561,27 @@
       "command": "make outdated",
       "problemMatcher": [],
       "presentation": { "reveal": "always", "panel": "shared" }
+    },
+    {
+      "label": "Quality: Depcheck (Unused Deps)",
+      "type": "shell",
+      "command": "make depcheck",
+      "problemMatcher": [],
+      "presentation": { "reveal": "always", "panel": "shared" }
+    },
+    {
+      "label": "Quality: Knip (Dead Code)",
+      "type": "shell",
+      "command": "make knip",
+      "problemMatcher": [],
+      "presentation": { "reveal": "always", "panel": "shared" }
+    },
+    {
+      "label": "Quality: Dive (Image Analysis)",
+      "type": "shell",
+      "command": "make dive",
+      "problemMatcher": [],
+      "presentation": { "reveal": "always", "panel": "dedicated" }
     },
     {
       "label": "Quality: Validate",
@@ -762,6 +797,13 @@
       "command": "make renovate",
       "problemMatcher": [],
       "presentation": { "reveal": "always", "panel": "shared" }
+    }
+  ],
+  "inputs": [
+    {
+      "id": "pnpmCommand",
+      "type": "promptString",
+      "description": "pnpm command (e.g. add -D vue, remove lodash, update)"
     }
   ]
 }

@@ -37,3 +37,8 @@ pnpm-debug.log*
 package-lock.json
 pnpm-lock.yaml
 composer.lock
+
+# Tool configuration (read-only in container)
+.depcheckrc.json
+knip.config.js
+.hadolint.yaml

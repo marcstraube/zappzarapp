@@ -63,7 +63,7 @@ Always use Docker commands for consistency:
 make composer-install    # Install dependencies + sync lock file
 
 # Node.js (pnpm)
-make node-install        # Install dependencies + sync lock file
+make pnpm-install        # Install dependencies + sync lock file
 ```
 
 Both commands automatically sync lock files back to the host after installation.
@@ -77,7 +77,7 @@ For IDE autocompletion (not recommended for running code):
 make composer-install-local    # Uses --ignore-platform-reqs
 
 # Node.js (pnpm)
-make node-install-local        # Uses local pnpm
+make pnpm-install-local        # Uses local pnpm
 ```
 
 Both commands automatically sync lock files from the container first (if
@@ -110,7 +110,7 @@ make sync-lockfiles
 make composer-update    # Updates + syncs composer.lock
 
 # Node.js: Update all packages
-make node-update        # Updates + syncs pnpm-lock.yaml
+make pnpm-update        # Updates + syncs pnpm-lock.yaml
 ```
 
 ---
@@ -125,9 +125,9 @@ container must be synced back to the host for Git commits.
 Lock files are automatically synced after:
 
 - `make composer-install`
-- `make node-install`
+- `make pnpm-install`
 - `make composer-update`
-- `make node-update`
+- `make pnpm-update`
 - `make setup`
 
 ### Manual Sync
@@ -176,7 +176,7 @@ make restart
 
 # 3. Or manually reinstall if needed
 make composer-install
-make node-install
+make pnpm-install
 ```
 
 ### Fresh Install (New Developer)
@@ -215,7 +215,7 @@ make sync-lockfiles
 
 ```bash
 # Force reinstall
-make composer-install    # or make node-install
+make composer-install    # or make pnpm-install
 ```
 
 ### Permission Issues (node_modules)
@@ -225,7 +225,7 @@ make composer-install    # or make node-install
 **Solution**:
 
 ```bash
-make node-install    # Automatically fixes permissions
+make pnpm-install    # Automatically fixes permissions
 ```
 
 ### Dependencies Differ Between Host and Container
@@ -248,9 +248,9 @@ npm test            # Incorrect (uses local node)
 | Command                   | Description                                 |
 | ------------------------- | ------------------------------------------- |
 | `make composer-install`   | Install PHP deps (Docker) + sync lock file  |
-| `make node-install`       | Install Node deps (Docker) + sync lock file |
+| `make pnpm-install`       | Install Node deps (Docker) + sync lock file |
 | `make composer-update`    | Update PHP deps + sync lock file            |
-| `make node-update`        | Update Node deps + sync lock file           |
+| `make pnpm-update`        | Update Node deps + sync lock file           |
 | `make sync-lockfiles`     | Manually sync lock files from containers    |
 | `make composer CMD="..."` | Run arbitrary Composer command              |
 | `make pnpm CMD="..."`     | Run arbitrary pnpm command                  |

@@ -1,0 +1,41 @@
+# Hadolint Configuration
+# https://github.com/hadolint/hadolint#configure
+
+# Fail on warnings and errors, not info
+failure-threshold: warning
+
+# Ignore rules that are impractical for this boilerplate
+ignored:
+  # DL3018: Pin versions in apk add
+  # Rationale: Version pinning in Alpine is impractical as packages are
+  # frequently updated and old versions removed from repositories.
+  # We pin PHP/Node major versions via base images instead.
+  - DL3018
+
+  # DL3059: Multiple consecutive RUN instructions
+  # Rationale: We intentionally separate RUN commands for clarity and
+  # to leverage Docker layer caching during development.
+  - DL3059
+
+  # SC2046: Quote to prevent word splitting
+  # Rationale: $PHPIZE_DEPS is intentionally unquoted to expand to multiple args
+  - SC2046
+
+  # SC3009: Brace expansion is undefined in POSIX sh
+  # Rationale: Alpine's busybox ash supports brace expansion {a,b,c}
+  - SC3009
+
+  # DL3002: Last USER should not be root
+  # Rationale: Nginx must start as root to bind privileged ports,
+  # then drops privileges via its own user directive.
+  - DL3002
+
+  # DL3003: Use WORKDIR to switch to a directory
+  # Rationale: In multi-stage builds, cd in RUN is acceptable for
+  # temporary directory changes that don't affect subsequent layers.
+  - DL3003
+
+# Treat these shells as acceptable (Alpine uses ash/busybox)
+trustedRegistries:
+  - docker.io
+  - ghcr.io

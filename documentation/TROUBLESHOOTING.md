@@ -313,7 +313,7 @@ See [XDEBUG.md](development/XDEBUG.md) for detailed configuration.
 3. **Reinstall dependencies**
 
    ```bash
-   make node-install
+   make pnpm-install
    ```
 
 4. **Start manually**
@@ -326,7 +326,7 @@ See [XDEBUG.md](development/XDEBUG.md) for detailed configuration.
 
 #### Symptom
 
-`make node-install` fails with permission or lock errors.
+`make pnpm-install` fails with permission or lock errors.
 
 #### Solutions
 
