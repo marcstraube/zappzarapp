@@ -5,8 +5,10 @@ declare(strict_types=1);
 namespace DevDashboard\Services;
 
 use App\Infrastructure\DatabaseConfig;
+use Exception;
 use PDO;
 use PDOException;
+use Redis;
 
 /**
  * Health Check Service
@@ -14,9 +16,19 @@ use PDOException;
  * Checks health of containers, databases, services, SSL certificates
  *
  * @SuppressWarnings("PHPMD.ExcessiveClassComplexity")
+ * @SuppressWarnings("PHPMD.ExcessiveClassLength")
  */
 class HealthCheckService
 {
+    /**
+     * Service category constants
+     */
+    private const string CATEGORY_CORE     = 'core';
+
+    private const string CATEGORY_DATA     = 'data';
+
+    private const string CATEGORY_OPTIONAL = 'optional';
+
     /**
      * Get overall system health status
      *
@@ -24,25 +36,18 @@ class HealthCheckService
      */
     public function getOverallStatus(): array
     {
-        $containers = $this->getContainerStatus();
-        $databases  = $this->getDatabaseStatus();
+        $services = $this->getServices();
 
         $healthy   = 0;
         $unhealthy = 0;
 
-        foreach ($containers as $container) {
-            if ($container['status'] === 'healthy' || $container['status'] === 'running') {
-                $healthy++;
-            } else {
-                $unhealthy++;
-            }
-        }
-
-        foreach ($databases as $db) {
-            if ($db['connected']) {
-                $healthy++;
-            } else {
-                $unhealthy++;
+        foreach ($services as $category) {
+            foreach ($category as $service) {
+                if ($service['status'] === 'running') {
+                    $healthy++;
+                } else {
+                    $unhealthy++;
+                }
             }
         }
 
@@ -55,80 +60,140 @@ class HealthCheckService
     }
 
     /**
-     * Get Docker container status
-          *
-     * @return array<string, mixed>
+     * Get all services grouped by category
+     *
+     * @return array<string, array<string, array<string, mixed>>>
      */
-    public function getContainerStatus(): array
+    public function getServices(): array
     {
-        // Build list of containers to check based on configuration
-        $containers = ['nginx']; // Nginx always runs
-
-        // Check optional services based on environment
-        if (getenv('ENABLE_PHP') !== 'false') {
-            $containers[] = 'php';
-        }
-
-        if (getenv('ENABLE_NODE') !== 'false') {
-            $containers[] = 'node';
-        }
-
-        if (getenv('ENABLE_REDIS') !== 'false') {
-            $containers[] = 'redis';
-        }
-
-        // Check database based on DB_TYPE
-        $dbType = getenv('DB_TYPE') ?: 'postgres';
-        if ($dbType === 'postgres') {
-            $containers[] = 'postgres';
-        } elseif ($dbType === 'mariadb' || $dbType === 'mysql') {
-            $containers[] = 'mariadb';
-        }
-
-        $status = [];
-        foreach ($containers as $container) {
-            $status[$container] = $this->checkContainer($container);
-        }
-
-        return $status;
+        return [
+            self::CATEGORY_CORE     => $this->getCoreServices(),
+            self::CATEGORY_DATA     => $this->getDataServices(),
+            self::CATEGORY_OPTIONAL => $this->getOptionalServices(),
+        ];
     }
 
     /**
-     * Check individual container status
-     * Uses service connectivity checks instead of Docker commands (works inside containers)
-          *
-     * @return array<string, mixed>
+     * Get core services (always needed for the application)
+     *
+     * @return array<string, array<string, mixed>>
      */
-    private function checkContainer(string $containerName): array
+    private function getCoreServices(): array
     {
-        // Map container names to their service checks
-        $checks = [
-            'php'      => $this->checkPhpFpm(...),
-            'node'     => $this->checkNode(...),
-            'nginx'    => $this->checkNginx(...),
-            'postgres' => $this->checkPostgresConnection(...),
-            'mariadb'  => $this->checkMariadbConnection(...),
-            'redis'    => $this->checkRedisConnection(...),
-        ];
+        $services = [];
 
-        if (!isset($checks[$containerName])) {
-            return [
-                'name'    => $containerName,
-                'status'  => 'unknown',
-                'health'  => 'unknown',
-                'message' => 'Unknown container',
-            ];
+        // Nginx is always enabled
+        $services['nginx'] = $this->buildServiceStatus('nginx', 'Nginx', 'Web Server / Reverse Proxy');
+
+        if (getenv('ENABLE_PHP') !== 'false') {
+            $services['php'] = $this->buildServiceStatus('php', 'PHP-FPM', 'PHP FastCGI Process Manager');
         }
 
-        $checkResult = $checks[$containerName]();
-        $isRunning   = $checkResult['running'] ?? $checkResult['connected'] ?? false;
+        if (getenv('ENABLE_NODE') !== 'false') {
+            $services['node'] = $this->buildServiceStatus('node', 'Node.js', 'JavaScript Runtime');
+        }
+
+        return $services;
+    }
+
+    /**
+     * Get data services (databases, caches)
+     *
+     * @return array<string, array<string, mixed>>
+     */
+    private function getDataServices(): array
+    {
+        $services = [];
+
+        // Database based on DB_TYPE
+        $dbType = getenv('DB_TYPE') ?: 'postgres';
+        if ($dbType === 'postgres') {
+            $services['postgres'] = $this->buildServiceStatus('postgres', 'PostgreSQL', 'Relational Database');
+        } elseif ($dbType === 'mariadb' || $dbType === 'mysql') {
+            $services['mariadb'] = $this->buildServiceStatus('mariadb', 'MariaDB', 'Relational Database');
+        }
+
+        // Redis
+        if (getenv('ENABLE_REDIS') !== 'false') {
+            $services['redis'] = $this->buildServiceStatus('redis', 'Redis', 'In-Memory Cache & Sessions');
+        }
+
+        return $services;
+    }
+
+    /**
+     * Get optional services
+     *
+     * @return array<string, array<string, mixed>>
+     */
+    private function getOptionalServices(): array
+    {
+        $services = [];
+
+        $optionalConfig = [
+            'mercure'       => ['env' => 'ENABLE_MERCURE', 'name' => 'Mercure', 'desc' => 'Real-time Messaging (SSE)'],
+            'meilisearch'   => ['env' => 'ENABLE_MEILISEARCH', 'name' => 'Meilisearch', 'desc' => 'Search Engine'],
+            'elasticsearch' => ['env' => 'ENABLE_ELASTICSEARCH', 'name' => 'Elasticsearch', 'desc' => 'Search & Analytics'],
+            'mailpit'       => ['env' => 'ENABLE_MAILPIT', 'name' => 'Mailpit', 'desc' => 'Email Testing'],
+            'minio'         => ['env' => 'ENABLE_MINIO', 'name' => 'MinIO', 'desc' => 'S3-Compatible Storage'],
+            'rabbitmq'      => ['env' => 'ENABLE_RABBITMQ', 'name' => 'RabbitMQ', 'desc' => 'Message Broker'],
+        ];
+
+        foreach ($optionalConfig as $key => $config) {
+            if (getenv($config['env']) === 'true') {
+                $services[$key] = $this->buildServiceStatus($key, $config['name'], $config['desc']);
+            }
+        }
+
+        return $services;
+    }
+
+    /**
+     * Build service status array
+     *
+     * @return array<string, mixed>
+     */
+    private function buildServiceStatus(string $key, string $name, string $description): array
+    {
+        $check     = $this->checkService($key);
+        $isRunning = $check['running'] ?? $check['connected'] ?? false;
 
         return [
-            'name'    => $containerName,
-            'status'  => $isRunning ? 'running' : 'not_running',
-            'health'  => $isRunning ? 'healthy' : 'unhealthy',
-            'details' => $checkResult,
+            'name'        => $name,
+            'description' => $description,
+            'status'      => $isRunning ? 'running' : 'stopped',
+            'port'        => $check['port'] ?? null,
+            'details'     => $check,
         ];
+    }
+
+    /**
+     * Check individual service status
+     *
+     * @return array<string, mixed>
+     */
+    private function checkService(string $serviceName): array
+    {
+        $checks = [
+            'php'           => $this->checkPhpFpm(...),
+            'node'          => $this->checkNode(...),
+            'nginx'         => $this->checkNginx(...),
+            'postgres'      => $this->checkPostgresConnection(...),
+            'mariadb'       => $this->checkMariadbConnection(...),
+            'redis'         => $this->checkRedisConnection(...),
+            'mercure'       => $this->checkMercure(...),
+            'meilisearch'   => $this->checkMeilisearch(...),
+            'elasticsearch' => $this->checkElasticsearch(...),
+            'mailpit'       => $this->checkMailpit(...),
+            'minio'         => $this->checkMinio(...),
+            'rabbitmq'      => $this->checkRabbitmq(...),
+        ];
+
+        if (!isset($checks[$serviceName])) {
+            return ['running' => false, 'error' => 'Unknown service'];
+        }
+
+        return $checks[$serviceName]();
     }
 
     /**
@@ -192,23 +257,223 @@ class HealthCheckService
     }
 
     /**
-     * Get database connection status
-          *
+     * Check Mercure connection
+     *
      * @return array<string, mixed>
+     * @SuppressWarnings("PHPMD.UnusedLocalVariable")
+     * @SuppressWarnings("PHPMD.ErrorControlOperator")
      */
-    public function getDatabaseStatus(): array
+    private function checkMercure(): array
     {
-        $dbType = getenv('DB_TYPE') ?: 'postgres';
-        $status = [];
+        $host = 'mercure';
+        $port = 80;
 
-        // Only check the configured database type
-        if ($dbType === 'postgres') {
-            $status['postgresql'] = $this->checkPostgresql();
-        } elseif ($dbType === 'mariadb' || $dbType === 'mysql') {
-            $status['mariadb'] = $this->checkMariadb();
+        $socket = @fsockopen($host, $port, $_errno, $errstr, 1);
+        if ($socket) {
+            fclose($socket);
+            return ['connected' => true, 'host' => $host, 'port' => $port];
         }
 
-        return $status;
+        return ['connected' => false, 'error' => $errstr];
+    }
+
+    /**
+     * Check Meilisearch connection
+     *
+     * @return array<string, mixed>
+     * @SuppressWarnings("PHPMD.UnusedLocalVariable")
+     * @SuppressWarnings("PHPMD.ErrorControlOperator")
+     */
+    private function checkMeilisearch(): array
+    {
+        $host = 'meilisearch';
+        $port = 7700;
+
+        $socket = @fsockopen($host, $port, $_errno, $errstr, 1);
+        if ($socket) {
+            fclose($socket);
+            return ['connected' => true, 'host' => $host, 'port' => $port];
+        }
+
+        return ['connected' => false, 'error' => $errstr];
+    }
+
+    /**
+     * Check Elasticsearch connection
+     *
+     * @return array<string, mixed>
+     * @SuppressWarnings("PHPMD.UnusedLocalVariable")
+     * @SuppressWarnings("PHPMD.ErrorControlOperator")
+     */
+    private function checkElasticsearch(): array
+    {
+        $host = 'elasticsearch';
+        $port = 9200;
+
+        $socket = @fsockopen($host, $port, $_errno, $errstr, 1);
+        if ($socket) {
+            fclose($socket);
+            return ['connected' => true, 'host' => $host, 'port' => $port];
+        }
+
+        return ['connected' => false, 'error' => $errstr];
+    }
+
+    /**
+     * Check Mailpit connection
+     *
+     * @return array<string, mixed>
+     * @SuppressWarnings("PHPMD.UnusedLocalVariable")
+     * @SuppressWarnings("PHPMD.ErrorControlOperator")
+     */
+    private function checkMailpit(): array
+    {
+        $host = 'mailpit';
+        $port = 8025;
+
+        $socket = @fsockopen($host, $port, $_errno, $errstr, 1);
+        if ($socket) {
+            fclose($socket);
+            return ['connected' => true, 'host' => $host, 'port' => $port];
+        }
+
+        return ['connected' => false, 'error' => $errstr];
+    }
+
+    /**
+     * Check MinIO connection
+     *
+     * @return array<string, mixed>
+     * @SuppressWarnings("PHPMD.UnusedLocalVariable")
+     * @SuppressWarnings("PHPMD.ErrorControlOperator")
+     */
+    private function checkMinio(): array
+    {
+        $host = 'minio';
+        $port = 9000;
+
+        $socket = @fsockopen($host, $port, $_errno, $errstr, 1);
+        if ($socket) {
+            fclose($socket);
+            return ['connected' => true, 'host' => $host, 'port' => $port];
+        }
+
+        return ['connected' => false, 'error' => $errstr];
+    }
+
+    /**
+     * Check RabbitMQ connection
+     *
+     * @return array<string, mixed>
+     * @SuppressWarnings("PHPMD.UnusedLocalVariable")
+     * @SuppressWarnings("PHPMD.ErrorControlOperator")
+     */
+    private function checkRabbitmq(): array
+    {
+        $host = 'rabbitmq';
+        $port = 5672;
+
+        $socket = @fsockopen($host, $port, $_errno, $errstr, 1);
+        if ($socket) {
+            fclose($socket);
+            return ['connected' => true, 'host' => $host, 'port' => $port];
+        }
+
+        return ['connected' => false, 'error' => $errstr];
+    }
+
+    /**
+     * Get detailed connection status for data services
+     *
+     * @return array<string, array<string, mixed>>
+     */
+    public function getConnections(): array
+    {
+        $connections = [];
+
+        // Database connection
+        $dbType = getenv('DB_TYPE') ?: 'postgres';
+        if ($dbType === 'postgres') {
+            $connections['database'] = $this->checkPostgresql() + ['type' => 'PostgreSQL'];
+        } elseif ($dbType === 'mariadb' || $dbType === 'mysql') {
+            $connections['database'] = $this->checkMariadb() + ['type' => 'MariaDB'];
+        }
+
+        // Redis connection
+        if (getenv('ENABLE_REDIS') !== 'false') {
+            $connections['redis'] = $this->checkRedisDetailed();
+        }
+
+        return $connections;
+    }
+
+    /**
+     * Check Redis with detailed info (PING test, version)
+     *
+     * @return array<string, mixed>
+     * @SuppressWarnings("PHPMD.ErrorControlOperator")
+     */
+    private function checkRedisDetailed(): array
+    {
+        if (!extension_loaded('redis')) {
+            return [
+                'connected' => false,
+                'type'      => 'Redis',
+                'error'     => 'Redis PHP extension not installed',
+            ];
+        }
+
+        try {
+            $redis    = new Redis();
+            $redisUrl = getenv('REDIS_URL') ?: 'redis://redis:6379';
+            $useTls   = str_starts_with($redisUrl, 'rediss://');
+
+            $parsedUrl = parse_url($redisUrl);
+            $host      = $parsedUrl['host'] ?? 'redis';
+            $port      = $parsedUrl['port'] ?? 6379;
+
+            if ($useTls) {
+                $connected = @$redis->connect($host, $port, 2, '', 0, 0, [
+                    'stream' => [
+                        'verify_peer'       => false,
+                        'verify_peer_name'  => false,
+                        'allow_self_signed' => true,
+                    ],
+                ]);
+            } else {
+                $connected = @$redis->connect($host, $port, 2);
+            }
+
+            if (!$connected) {
+                return [
+                    'connected' => false,
+                    'type'      => 'Redis',
+                    'host'      => $host,
+                    'port'      => $port,
+                    'error'     => 'Connection failed',
+                ];
+            }
+
+            $pong    = $redis->ping();
+            $info    = $redis->info('SERVER');
+            $version = $info['redis_version'] ?? 'Unknown';
+            $redis->close();
+
+            return [
+                'connected' => $pong === true || $pong === '+PONG',
+                'type'      => 'Redis',
+                'host'      => $host,
+                'port'      => $port,
+                'version'   => $version,
+                'tls'       => $useTls,
+            ];
+        } catch (Exception $exception) {
+            return [
+                'connected' => false,
+                'type'      => 'Redis',
+                'error'     => $exception->getMessage(),
+            ];
+        }
     }
 
     /**
@@ -307,20 +572,6 @@ class HealthCheckService
                 'error'     => $pdoException->getMessage(),
             ];
         }
-    }
-
-    /**
-     * Get service health (PHP-FPM, Node.js, Nginx)
-          *
-     * @return array<string, mixed>
-     */
-    public function getServiceStatus(): array
-    {
-        return [
-            'php_fpm' => $this->checkPhpFpm(),
-            'node'    => $this->checkNode(),
-            'nginx'   => $this->checkNginx(),
-        ];
     }
 
     /**

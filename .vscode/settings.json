@@ -109,6 +109,23 @@
     "editor.tabSize": 2,
     "editor.wordWrap": "on"
   },
+  "markdownlint.config": {
+    "default": true,
+    "MD013": false,
+    "MD033": false,
+    "MD041": false,
+    "MD046": { "style": "fenced" },
+    "MD024": { "siblings_only": true },
+    "MD055": false
+  },
+  "markdownlint.ignore": [
+    "node_modules/**",
+    "vendor/**",
+    "build/**",
+    "docs/**",
+    ".git/**",
+    "CHANGELOG.md"
+  ],
   "eslint.enable": true,
   "eslint.validate": [
     "javascript",

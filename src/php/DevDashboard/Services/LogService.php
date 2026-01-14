@@ -26,20 +26,20 @@ class LogService
     }
 
     /**
-     * Get available log sources
-          *
-     * @return array<string, mixed>
+     * Get available log sources (only enabled services)
+     *
+     * @return array<string, array<string, mixed>>
      */
     public function getAvailableLogSources(): array
     {
-        return [
+        $sources = [
             'docker' => [
                 'name'        => 'Docker Services',
-                'description' => 'Container logs from all services (nginx, php, node, databases)',
+                'description' => 'Container logs from all services',
                 'type'        => 'docker',
                 'available'   => true,
                 'command'     => 'docker compose logs --tail=100 -f',
-                'services'    => ['nginx', 'php', 'node', 'postgres', 'mariadb', 'redis'],
+                'services'    => $this->getActiveServices(),
             ],
             'application' => [
                 'name'        => 'Application Logs',
@@ -60,7 +60,7 @@ class LogService
                 'name'        => 'PHP-FPM Logs',
                 'description' => 'PHP-FPM error and debug logs',
                 'type'        => 'docker',
-                'available'   => true,
+                'available'   => getenv('ENABLE_PHP') !== 'false',
                 'command'     => 'docker compose logs php --tail=100',
             ],
             'node' => [
@@ -70,7 +70,52 @@ class LogService
                 'available'   => getenv('ENABLE_NODE') !== 'false',
                 'command'     => 'docker compose logs node --tail=100',
             ],
+            'mercure' => [
+                'name'        => 'Mercure Logs',
+                'description' => 'Real-time messaging hub logs',
+                'type'        => 'docker',
+                'available'   => getenv('ENABLE_MERCURE') === 'true',
+                'command'     => 'docker compose logs mercure --tail=100',
+            ],
+            'meilisearch' => [
+                'name'        => 'Meilisearch Logs',
+                'description' => 'Search engine logs',
+                'type'        => 'docker',
+                'available'   => getenv('ENABLE_MEILISEARCH') === 'true',
+                'command'     => 'docker compose logs meilisearch --tail=100',
+            ],
+            'elasticsearch' => [
+                'name'        => 'Elasticsearch Logs',
+                'description' => 'Distributed search and analytics engine logs',
+                'type'        => 'docker',
+                'available'   => getenv('ENABLE_ELASTICSEARCH') === 'true',
+                'command'     => 'docker compose logs elasticsearch --tail=100',
+            ],
+            'mailpit' => [
+                'name'        => 'Mailpit Logs',
+                'description' => 'Email testing tool logs',
+                'type'        => 'docker',
+                'available'   => getenv('ENABLE_MAILPIT') === 'true',
+                'command'     => 'docker compose logs mailpit --tail=100',
+            ],
+            'minio' => [
+                'name'        => 'MinIO Logs',
+                'description' => 'S3-compatible object storage logs',
+                'type'        => 'docker',
+                'available'   => getenv('ENABLE_MINIO') === 'true',
+                'command'     => 'docker compose logs minio --tail=100',
+            ],
+            'rabbitmq' => [
+                'name'        => 'RabbitMQ Logs',
+                'description' => 'Message broker logs',
+                'type'        => 'docker',
+                'available'   => getenv('ENABLE_RABBITMQ') === 'true',
+                'command'     => 'docker compose logs rabbitmq --tail=100',
+            ],
         ];
+
+        // Filter out unavailable sources
+        return array_filter($sources, static fn (array $source): bool => $source['available']);
     }
 
     /**
@@ -217,5 +262,56 @@ class LogService
         $factor = (int) floor((strlen((string) $bytes) - 1) / 3);
 
         return sprintf('%.2f %s', $bytes / (1024 ** $factor), $units[$factor]);
+    }
+
+    /**
+     * Get list of active services based on environment configuration
+     *
+     * @return array<int, string>
+     * @SuppressWarnings("PHPMD.CyclomaticComplexity")
+     * @SuppressWarnings("PHPMD.NPathComplexity")
+     */
+    private function getActiveServices(): array
+    {
+        $services = ['nginx'];
+
+        // Core services (enabled by default)
+        $coreServices = [
+            'php'   => 'ENABLE_PHP',
+            'node'  => 'ENABLE_NODE',
+            'redis' => 'ENABLE_REDIS',
+        ];
+
+        foreach ($coreServices as $service => $envVar) {
+            if (getenv($envVar) !== 'false') {
+                $services[] = $service;
+            }
+        }
+
+        // Database (based on DB_TYPE)
+        $dbType = getenv('DB_TYPE') ?: 'postgres';
+        if ($dbType === 'postgres') {
+            $services[] = 'postgres';
+        } elseif ($dbType === 'mariadb' || $dbType === 'mysql') {
+            $services[] = 'mariadb';
+        }
+
+        // Optional services (disabled by default)
+        $optionalServices = [
+            'mercure'       => 'ENABLE_MERCURE',
+            'meilisearch'   => 'ENABLE_MEILISEARCH',
+            'elasticsearch' => 'ENABLE_ELASTICSEARCH',
+            'mailpit'       => 'ENABLE_MAILPIT',
+            'minio'         => 'ENABLE_MINIO',
+            'rabbitmq'      => 'ENABLE_RABBITMQ',
+        ];
+
+        foreach ($optionalServices as $service => $envVar) {
+            if (getenv($envVar) === 'true') {
+                $services[] = $service;
+            }
+        }
+
+        return $services;
     }
 }

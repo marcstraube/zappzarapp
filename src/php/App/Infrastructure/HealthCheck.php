@@ -17,6 +17,8 @@ use Exception;
  * - Node.js Backend (if ENABLE_NODE=true)
  * - Redis (if ENABLE_REDIS=true)
  * - Database (if DB_TYPE is set)
+ *
+ * @SuppressWarnings("PHPMD.ExcessiveClassComplexity")
  */
 class HealthCheck
 {
@@ -199,10 +201,10 @@ class HealthCheck
 
             // Parse REDIS_URL to determine TLS mode
             $redisUrl = $_ENV['REDIS_URL'] ?? getenv('REDIS_URL') ?: 'rediss://redis:6379';
-            $useTls   = str_starts_with($redisUrl, 'rediss://');
+            $useTls   = str_starts_with((string) $redisUrl, 'rediss://');
 
             // Parse host and port from URL
-            $parsedUrl = parse_url($redisUrl);
+            $parsedUrl = parse_url((string) $redisUrl);
             $host      = $parsedUrl['host'] ?? 'redis';
             $port      = $parsedUrl['port'] ?? 6379;
 

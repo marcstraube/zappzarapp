@@ -44,12 +44,12 @@ class DashboardControllerTest extends TestCase
         $this->assertArrayHasKey('status', $data);
     }
 
-    public function testApiContainerStatusReturnsValidJson(): void
+    public function testApiServicesStatusReturnsValidJson(): void
     {
         $controller = new DashboardController();
 
         ob_start();
-        $controller->apiContainerStatus();
+        $controller->apiServicesStatus();
         $output = ob_get_clean();
 
         $this->assertNotFalse($output, 'Output buffer should not be empty');
@@ -57,5 +57,42 @@ class DashboardControllerTest extends TestCase
 
         $data = json_decode($output, true);
         $this->assertNotEmpty($data);
+        $this->assertArrayHasKey('core', $data);
+        $this->assertArrayHasKey('data', $data);
+        $this->assertArrayHasKey('optional', $data);
+    }
+
+    public function testApiLogContentReturnsErrorWithoutFilename(): void
+    {
+        $_GET       = [];
+        $controller = new DashboardController();
+
+        ob_start();
+        $controller->apiLogContent();
+        $output = ob_get_clean();
+
+        $this->assertNotFalse($output, 'Output buffer should not be empty');
+        $this->assertJson($output);
+
+        $data = json_decode($output, true);
+        $this->assertArrayHasKey('error', $data);
+        $this->assertEquals('No filename provided', $data['error']);
+    }
+
+    public function testApiLogContentReturnsErrorForNonExistentFile(): void
+    {
+        $_GET['file'] = 'nonexistent.log';
+        $controller   = new DashboardController();
+
+        ob_start();
+        $controller->apiLogContent();
+        $output = ob_get_clean();
+
+        $this->assertNotFalse($output, 'Output buffer should not be empty');
+        $this->assertJson($output);
+
+        $data = json_decode($output, true);
+        $this->assertArrayHasKey('error', $data);
+        $this->assertEquals('Log file not found', $data['error']);
     }
 }

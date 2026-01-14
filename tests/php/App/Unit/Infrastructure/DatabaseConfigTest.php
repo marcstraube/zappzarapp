@@ -12,6 +12,11 @@ use PHPUnit\Framework\TestCase;
 
 /**
  * Tests for DatabaseConfig (12-Factor App compliant configuration)
+ *
+ * @SuppressWarnings("PHPMD.TooManyMethods")
+ * @SuppressWarnings("PHPMD.TooManyPublicMethods")
+ * @SuppressWarnings("PHPMD.ExcessiveClassComplexity")
+ * @SuppressWarnings("PHPMD.ExcessiveClassLength")
  */
 #[CoversClass(DatabaseConfig::class)]
 final class DatabaseConfigTest extends TestCase
@@ -288,7 +293,7 @@ final class DatabaseConfigTest extends TestCase
     #[DataProvider('typeVariationsProvider')]
     public function testIsPostgresWithVariousTypes(string $type, bool $expectedPostgres): void
     {
-        putenv("DB_TYPE=$type");
+        putenv('DB_TYPE=' . $type);
 
         $config = new DatabaseConfig();
 
@@ -312,7 +317,7 @@ final class DatabaseConfigTest extends TestCase
     #[DataProvider('mariadbTypeVariationsProvider')]
     public function testIsMariaDbWithVariousTypes(string $type, bool $expectedMariaDb): void
     {
-        putenv("DB_TYPE=$type");
+        putenv('DB_TYPE=' . $type);
 
         $config = new DatabaseConfig();
 
@@ -541,7 +546,7 @@ final class DatabaseConfigTest extends TestCase
         file_put_contents($tempFile, "secret_from_file\n");
 
         try {
-            putenv("DB_PASSWORD_FILE=$tempFile");
+            putenv('DB_PASSWORD_FILE=' . $tempFile);
 
             $config = new DatabaseConfig();
 
@@ -558,7 +563,7 @@ final class DatabaseConfigTest extends TestCase
         file_put_contents($tempFile, "  password_with_spaces  \n\n");
 
         try {
-            putenv("DB_PASSWORD_FILE=$tempFile");
+            putenv('DB_PASSWORD_FILE=' . $tempFile);
 
             $config = new DatabaseConfig();
 
@@ -575,7 +580,7 @@ final class DatabaseConfigTest extends TestCase
         file_put_contents($tempFile, 'from_file');
 
         try {
-            putenv("DB_PASSWORD_FILE=$tempFile");
+            putenv('DB_PASSWORD_FILE=' . $tempFile);
             putenv('DB_PASSWORD=from_env');
 
             $config = new DatabaseConfig();

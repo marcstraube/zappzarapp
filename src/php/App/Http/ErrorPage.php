@@ -12,17 +12,17 @@ namespace App\Http;
  */
 class ErrorPage
 {
-    private const ERRORS = [
+    private const array ERRORS = [
         400 => ['title' => 'Bad Request', 'message' => 'The request could not be understood by the server.'],
         401 => ['title' => 'Unauthorized', 'message' => 'Authentication is required to access this resource.'],
-        403 => ['title' => 'Forbidden', 'message' => 'You don\'t have permission to access this resource.'],
-        404 => ['title' => 'Page Not Found', 'message' => 'The page you\'re looking for doesn\'t exist or has been moved.'],
+        403 => ['title' => 'Forbidden', 'message' => "You don't have permission to access this resource."],
+        404 => ['title' => 'Page Not Found', 'message' => "The page you're looking for doesn't exist or has been moved."],
         500 => ['title' => 'Internal Server Error', 'message' => 'Something went wrong on our end. Please try again later.'],
         502 => ['title' => 'Bad Gateway', 'message' => 'The server received an invalid response from an upstream server.'],
         503 => ['title' => 'Service Unavailable', 'message' => 'The service is temporarily unavailable. Please try again later.'],
     ];
 
-    private const TEMPLATE_PATH = __DIR__ . '/../../../../templates/app/error.php';
+    private const string TEMPLATE_PATH = __DIR__ . '/../../../../templates/app/error.php';
 
     /**
      * Render an error page and send HTTP response.
@@ -41,14 +41,14 @@ class ErrorPage
      */
     public static function renderHtml(int $statusCode, ?string $path = null): string
     {
-        $error = self::getErrorInfo($statusCode);
+        $errorInfo = self::getErrorInfo($statusCode);
 
-        return self::renderTemplate(
-            $statusCode,
-            $error['title'],
-            $error['message'],
-            $path
-        );
+        return self::renderTemplate([
+            'code'    => $statusCode,
+            'title'   => $errorInfo['title'],
+            'message' => $errorInfo['message'],
+            'path'    => $path,
+        ]);
     }
 
     /**
@@ -84,13 +84,12 @@ class ErrorPage
 
     /**
      * Render the error template.
+     *
+     * @param array{code: int, title: string, message: string, path: ?string} $data
      */
-    private static function renderTemplate(
-        int $code,
-        string $title,
-        string $message,
-        ?string $path
-    ): string {
+    private static function renderTemplate(array $data): string
+    {
+        extract($data);
         ob_start();
         include self::TEMPLATE_PATH;
 

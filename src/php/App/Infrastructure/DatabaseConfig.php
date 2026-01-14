@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Infrastructure;
 
+use InvalidArgumentException;
+
 /**
  * Database Configuration Helper (12-Factor App compliant)
  *
@@ -12,21 +14,33 @@ namespace App\Infrastructure;
  *
  * Supports Docker Secrets via _FILE environment variables:
  * - DB_PASSWORD_FILE: Path to file containing database password
+ *
+ * @SuppressWarnings("PHPMD.ExcessiveClassComplexity")
  */
 final class DatabaseConfig
 {
-    private const DEFAULT_POSTGRES_PORT      = 5432;
-    private const DEFAULT_MYSQL_PORT         = 3306;
-    private const DEFAULT_INTERNAL_CERT_PATH = '/etc/ssl/db-certs/cert.crt';
-    private const SYSTEM_CA_BUNDLE_PATH      = '/etc/ssl/certs/ca-certificates.crt';
+    private const int DEFAULT_POSTGRES_PORT      = 5432;
+
+    private const int DEFAULT_MYSQL_PORT         = 3306;
+
+    private const string DEFAULT_INTERNAL_CERT_PATH = '/etc/ssl/db-certs/cert.crt';
+
+    private const string SYSTEM_CA_BUNDLE_PATH      = '/etc/ssl/certs/ca-certificates.crt';
 
     private string $type;
+
     private string $host;
+
     private int $port;
+
     private string $name;
+
     private string $user;
+
     private string $password;
+
     private string $sslCa;
+
     private bool $sslVerify;
 
     public function __construct()
@@ -181,14 +195,14 @@ final class DatabaseConfig
         $parts = parse_url($url);
 
         if ($parts === false || !isset($parts['scheme'], $parts['host'])) {
-            throw new \InvalidArgumentException('Invalid DATABASE_URL format');
+            throw new InvalidArgumentException('Invalid DATABASE_URL format');
         }
 
         $this->type     = $parts['scheme'] === 'postgresql' ? 'postgres' : $parts['scheme'];
         $this->host     = $parts['host'];
         $this->port     = $parts['port'] ?? $this->getDefaultPort($this->type);
         $this->name     = ltrim($parts['path'] ?? '/app', '/');
-        $this->user     = !empty($parts['user']) ? $parts['user'] : 'app';
+        $this->user     = empty($parts['user']) ? 'app' : $parts['user'];
         $this->password = isset($parts['pass']) ? rawurldecode($parts['pass']) : '';
     }
 

@@ -9,6 +9,7 @@ use PHPUnit\Framework\TestCase;
 
 /**
  * @covers \DevDashboard\Services\HealthCheckService
+ * @SuppressWarnings("PHPMD.TooManyPublicMethods")
  */
 class HealthCheckServiceTest extends TestCase
 {
@@ -36,68 +37,81 @@ class HealthCheckServiceTest extends TestCase
         $this->assertIsString($status['timestamp']);
     }
 
-    public function testGetContainerStatus(): void
+    public function testGetServicesReturnsCategories(): void
     {
-        $containers = $this->service->getContainerStatus();
+        $services = $this->service->getServices();
 
-        // Verify nginx is always checked
-        $this->assertArrayHasKey('nginx', $containers);
-
-        // Verify container structure
-        foreach ($containers as $name => $container) {
-            $this->assertIsArray($container);
-            $this->assertArrayHasKey('name', $container);
-            $this->assertArrayHasKey('status', $container);
-            $this->assertArrayHasKey('health', $container);
-
-            $this->assertEquals($name, $container['name']);
-        }
-
-        // Should have at least nginx + other enabled services
-        $this->assertGreaterThanOrEqual(1, count($containers));
+        $this->assertArrayHasKey('core', $services);
+        $this->assertArrayHasKey('data', $services);
+        $this->assertArrayHasKey('optional', $services);
     }
 
-    public function testGetDatabaseStatus(): void
+    public function testGetServicesCoreContainsNginx(): void
     {
-        $databases = $this->service->getDatabaseStatus();
+        $services = $this->service->getServices();
 
-        // Only checks the configured database type (DB_TYPE environment variable)
-        // Should have at least one database checked
-        $this->assertGreaterThanOrEqual(1, count($databases));
+        // Nginx is always in core
+        $this->assertArrayHasKey('nginx', $services['core']);
 
-        foreach ($databases as $db) {
-            $this->assertIsArray($db);
-            $this->assertArrayHasKey('connected', $db);
-            $this->assertIsBool($db['connected']);
+        // Verify service structure
+        $nginx = $services['core']['nginx'];
+        $this->assertArrayHasKey('name', $nginx);
+        $this->assertArrayHasKey('description', $nginx);
+        $this->assertArrayHasKey('status', $nginx);
+        $this->assertArrayHasKey('port', $nginx);
+        $this->assertArrayHasKey('details', $nginx);
 
-            if ($db['connected']) {
-                $this->assertArrayHasKey('host', $db);
-                $this->assertArrayHasKey('port', $db);
-                $this->assertArrayHasKey('database', $db);
-                $this->assertArrayHasKey('version', $db);
-            } else {
-                $this->assertArrayHasKey('error', $db);
-            }
+        $this->assertContains($nginx['status'], ['running', 'stopped']);
+    }
+
+    public function testGetServicesDataContainsDatabase(): void
+    {
+        $services = $this->service->getServices();
+
+        // Should have at least one database (postgres or mariadb)
+        $dataServices = $services['data'];
+        $this->assertNotEmpty($dataServices);
+
+        $hasDatabase = isset($dataServices['postgres']) || isset($dataServices['mariadb']);
+        $this->assertTrue($hasDatabase, 'Data services should contain postgres or mariadb');
+    }
+
+    public function testGetConnectionsReturnsDatabase(): void
+    {
+        $connections = $this->service->getConnections();
+
+        $this->assertArrayHasKey('database', $connections);
+
+        $db = $connections['database'];
+        $this->assertArrayHasKey('connected', $db);
+        $this->assertArrayHasKey('type', $db);
+        $this->assertIsBool($db['connected']);
+
+        if ($db['connected']) {
+            $this->assertArrayHasKey('host', $db);
+            $this->assertArrayHasKey('port', $db);
+            $this->assertArrayHasKey('database', $db);
+            $this->assertArrayHasKey('version', $db);
+        } else {
+            $this->assertArrayHasKey('error', $db);
         }
     }
 
-    public function testGetServiceStatus(): void
+    public function testGetConnectionsReturnsRedis(): void
     {
-        $services = $this->service->getServiceStatus();
+        // Skip if Redis is disabled
+        if (getenv('ENABLE_REDIS') === 'false') {
+            $this->markTestSkipped('Redis is disabled');
+        }
 
-        $this->assertArrayHasKey('php_fpm', $services);
-        $this->assertArrayHasKey('node', $services);
-        $this->assertArrayHasKey('nginx', $services);
+        $connections = $this->service->getConnections();
 
-        // Verify PHP-FPM service
-        $phpFpm = $services['php_fpm'];
-        $this->assertArrayHasKey('running', $phpFpm);
-        $this->assertArrayHasKey('sapi', $phpFpm);
-        $this->assertArrayHasKey('version', $phpFpm);
+        $this->assertArrayHasKey('redis', $connections);
 
-        $this->assertIsBool($phpFpm['running']);
-        $this->assertEquals(PHP_SAPI, $phpFpm['sapi']);
-        $this->assertEquals(PHP_VERSION, $phpFpm['version']);
+        $redis = $connections['redis'];
+        $this->assertArrayHasKey('connected', $redis);
+        $this->assertArrayHasKey('type', $redis);
+        $this->assertEquals('Redis', $redis['type']);
     }
 
     public function testGetSslInfoWhenCertificateDoesNotExist(): void
@@ -140,7 +154,7 @@ class HealthCheckServiceTest extends TestCase
         }
     }
 
-    public function testDatabaseConnectionWithInvalidCredentials(): void
+    public function testConnectionWithInvalidCredentials(): void
     {
         // Temporarily set invalid database credentials
         $originalHost = getenv('DB_HOST');
@@ -149,13 +163,14 @@ class HealthCheckServiceTest extends TestCase
         putenv('DB_HOST=invalid_host');
         putenv('DB_PORT=9999');
 
-        $databases = $this->service->getDatabaseStatus();
+        // Create new service instance to pick up new env vars
+        $service     = new HealthCheckService();
+        $connections = $service->getConnections();
 
-        // Both PostgreSQL and MariaDB should fail to connect
-        foreach ($databases as $db) {
-            $this->assertFalse($db['connected']);
-            $this->assertArrayHasKey('error', $db);
-        }
+        // Database should fail to connect
+        $this->assertArrayHasKey('database', $connections);
+        $this->assertFalse($connections['database']['connected']);
+        $this->assertArrayHasKey('error', $connections['database']);
 
         // Restore original environment
         if ($originalHost !== false) {
@@ -185,5 +200,23 @@ class HealthCheckServiceTest extends TestCase
         // Counts should be non-negative
         $this->assertGreaterThanOrEqual(0, $status['healthy_count']);
         $this->assertGreaterThanOrEqual(0, $status['unhealthy_count']);
+    }
+
+    public function testServiceStructureIsCorrect(): void
+    {
+        $services = $this->service->getServices();
+
+        foreach ($services as $categoryServices) {
+            $this->assertIsArray($categoryServices);
+
+            foreach ($categoryServices as $key => $service) {
+                $this->assertIsString($key);
+                $this->assertIsArray($service);
+                $this->assertArrayHasKey('name', $service);
+                $this->assertArrayHasKey('description', $service);
+                $this->assertArrayHasKey('status', $service);
+                $this->assertContains($service['status'], ['running', 'stopped']);
+            }
+        }
     }
 }

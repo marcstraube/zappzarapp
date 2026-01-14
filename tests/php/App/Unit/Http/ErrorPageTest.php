@@ -10,6 +10,8 @@ use PHPUnit\Framework\TestCase;
 
 /**
  * Unit tests for ErrorPage class
+ *
+ * @SuppressWarnings("PHPMD.TooManyPublicMethods")
  */
 class ErrorPageTest extends TestCase
 {
@@ -119,7 +121,7 @@ class ErrorPageTest extends TestCase
 
     public function testRenderHtmlDoesNotContainPathWhenNull(): void
     {
-        $html = ErrorPage::renderHtml(404, null);
+        $html = ErrorPage::renderHtml(404);
 
         $this->assertStringNotContainsString('Path:', $html);
     }

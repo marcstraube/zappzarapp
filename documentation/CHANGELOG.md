@@ -1,11 +1,51 @@
 # Docker WebDev Boilerplate - Changelog
 
-**Erstellt:** 2025-12-19 **Letzte Aktualisierung:** 2026-01-14 (Optional
-Services) **Version:** 3.34
+**Erstellt:** 2025-12-19 **Letzte Aktualisierung:** 2026-01-14 (DevDashboard &
+IDE) **Version:** 3.35
 
 ---
 
 ## Changelog
+
+### Version 3.35 (2026-01-14) - DevDashboard Improvements & IDE Integration
+
+Enhanced DevDashboard with optional services health monitoring and improved IDE
+integration.
+
+#### DevDashboard
+
+- **Health Check Integration**: Added health monitoring for all optional
+  services (Mercure, Meilisearch, Elasticsearch, Mailpit, MinIO, RabbitMQ)
+- **Embedded CSS**: Added missing CSS classes for modal, spacing, and color
+  utilities
+- **Log Viewer Modal**: Added modal for viewing log file contents with inline
+  styles (no Tailwind dependency)
+- **Design Consistency**: Unified styling across all dashboard pages
+
+#### IDE Integration
+
+- **PhpStorm Prettier**: Added `.idea/prettier.xml` configuration for automatic
+  Prettier formatting on save and reformat (includes Markdown support)
+- **PhpStorm Quality Tools**: Configured PHPStan (Level 8 with `phpstan.neon`),
+  PHP CS Fixer, PHPMD, ESLint, and TypeScript inspections for parity with
+  `make check`
+- **PhpStorm Markdown**: Disabled conflicting Markdown inspections (Prettier
+  handles formatting)
+- **VSCode Markdownlint**: Added configuration matching
+  `.markdownlint-cli2.jsonc`
+
+#### Code Quality
+
+- **Rector Compatibility**: Refactored `ErrorPage` to use `extract()` pattern
+  for template variables
+- **PHP 8.4 Updates**: Applied typed constants and strict string casts
+
+#### Documentation
+
+- **DEV-DASHBOARD.md**: Updated with optional services section, removed emojis
+  from tables (Prettier compatibility)
+
+---
 
 ### Version 3.34 (2026-01-14) - Optional Services & Backup System
 

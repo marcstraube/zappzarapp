@@ -68,16 +68,15 @@ class DashboardController
     }
 
     /**
-     * Health check page (containers, services, databases)
+     * Health check page (services, connections, ssl)
      */
     public function health(): void
     {
         $data = [
-            'title'      => 'Health Checks',
-            'containers' => $this->healthCheckService->getContainerStatus(),
-            'databases'  => $this->healthCheckService->getDatabaseStatus(),
-            'services'   => $this->healthCheckService->getServiceStatus(),
-            'ssl'        => $this->healthCheckService->getSslInfo(),
+            'title'       => 'Health Checks',
+            'services'    => $this->healthCheckService->getServices(),
+            'connections' => $this->healthCheckService->getConnections(),
+            'ssl'         => $this->healthCheckService->getSslInfo(),
         ];
 
         $this->render('health', $data);
@@ -143,12 +142,32 @@ class DashboardController
     }
 
     /**
-     * API: Container status endpoint (JSON)
+     * API: Services status endpoint (JSON)
      */
-    public function apiContainerStatus(): void
+    public function apiServicesStatus(): void
     {
         header('Content-Type: application/json');
-        echo json_encode($this->healthCheckService->getContainerStatus());
+        echo json_encode($this->healthCheckService->getServices());
+    }
+
+    /**
+     * API: Get log file content (JSON)
+     */
+    public function apiLogContent(): void
+    {
+        header('Content-Type: application/json');
+
+        $filename = $_GET['file'] ?? '';
+        $lines    = (int) ($_GET['lines'] ?? 100);
+
+        if ($filename === '') {
+            echo json_encode(['error' => 'No filename provided']);
+
+            return;
+        }
+
+        $result = $this->logService->readLogFile($filename, min($lines, 500));
+        echo json_encode($result);
     }
 
     /**

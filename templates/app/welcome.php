@@ -23,6 +23,19 @@ declare(strict_types=1);
 </head>
 <body>
 <div class="container">
+    <?php if ($vite->isDevelopment() && !$vite->isViteDevServerRunning()): ?>
+    <div class="card" style="background: #fff3cd; border: 2px solid #ffc107; padding: 1rem; margin-bottom: 1rem;">
+        <h3 style="color: #856404; margin: 0 0 0.5rem 0;">⚠️ Vite Dev Server Not Running</h3>
+        <p style="color: #856404; margin: 0;">
+            CSS styles are loaded via Vite HMR in development mode. The page may appear unstyled.
+        </p>
+        <p style="color: #856404; margin: 0.5rem 0 0 0; font-size: 0.9em;">
+            <strong>Fix:</strong> Run <code style="background: #f8f9fa; padding: 0.2rem 0.4rem; border-radius: 3px;">make node-up</code>
+            or set <code style="background: #f8f9fa; padding: 0.2rem 0.4rem; border-radius: 3px;">ENABLE_NODE=true</code> in your <code>.env</code> file.
+        </p>
+    </div>
+    <?php endif; ?>
+
     <div class="card text-center">
         <h1>🚀 Docker WebDev Boilerplate</h1>
         <p>Flexibles Setup für PHP und Node.js Entwicklung</p>

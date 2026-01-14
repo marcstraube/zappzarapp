@@ -184,4 +184,40 @@ class ViteHelper
     {
         return $this->env;
     }
+
+    /**
+     * Check if Vite dev server is running (development mode only)
+     *
+     * @SuppressWarnings("PHPMD.ErrorControlOperator")
+     * @SuppressWarnings("PHPMD.UnusedLocalVariable")
+     */
+    public function isViteDevServerRunning(): bool
+    {
+        if (!$this->isDevelopment()) {
+            return false;
+        }
+
+        // Try to connect to Vite dev server via Node container
+        $socket = @fsockopen('node', 5173, $_errno, $errstr, 1);
+        if ($socket !== false) {
+            fclose($socket);
+
+            return true;
+        }
+
+        return false;
+    }
+
+    /**
+     * Check if assets are available (either Vite running or production build exists)
+     */
+    public function areAssetsAvailable(): bool
+    {
+        if ($this->isDevelopment()) {
+            return $this->isViteDevServerRunning();
+        }
+
+        // Production mode: check if manifest exists
+        return $this->getManifest() !== null;
+    }
 }

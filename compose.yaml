@@ -54,6 +54,17 @@ services:
       - LOG_LEVEL=${LOG_LEVEL:-info}
       - LOG_FORMAT=${LOG_FORMAT:-json}
       - CORS_ORIGINS=${CORS_ORIGINS:-}
+      # Service activation flags (for DevDashboard)
+      - ENABLE_PHP=${ENABLE_PHP:-true}
+      - ENABLE_NODE=${ENABLE_NODE:-true}
+      - ENABLE_DATABASE=${ENABLE_DATABASE:-true}
+      - ENABLE_REDIS=${ENABLE_REDIS:-true}
+      - ENABLE_MERCURE=${ENABLE_MERCURE:-false}
+      - ENABLE_MEILISEARCH=${ENABLE_MEILISEARCH:-false}
+      - ENABLE_ELASTICSEARCH=${ENABLE_ELASTICSEARCH:-false}
+      - ENABLE_MAILPIT=${ENABLE_MAILPIT:-false}
+      - ENABLE_MINIO=${ENABLE_MINIO:-false}
+      - ENABLE_RABBITMQ=${ENABLE_RABBITMQ:-false}
       # Database (12-Factor: DATABASE_URL takes precedence)
       - DATABASE_URL=${DATABASE_URL:-}
       - DB_TYPE=${DB_TYPE:-postgres}

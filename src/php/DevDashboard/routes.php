@@ -50,4 +50,5 @@ route('GET', '/_dev/logs', $controller->logs(...));
 
 // API endpoints for dashboard (JSON responses)
 route('GET', '/_dev/api/health-check', $controller->apiHealthCheck(...));
-route('GET', '/_dev/api/container-status', $controller->apiContainerStatus(...));
+route('GET', '/_dev/api/services', $controller->apiServicesStatus(...));
+route('GET', '/_dev/api/logs', $controller->apiLogContent(...));

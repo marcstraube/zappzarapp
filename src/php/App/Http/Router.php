@@ -54,7 +54,7 @@ class Router
         // 404 Not Found - Content-Negotiation
         $acceptHeader = $_SERVER['HTTP_ACCEPT'] ?? '';
 
-        if (str_contains($acceptHeader, 'application/json')) {
+        if (str_contains((string) $acceptHeader, 'application/json')) {
             // API clients: JSON response
             http_response_code(404);
             header('Content-Type: application/json');
