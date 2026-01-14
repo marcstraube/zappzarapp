@@ -1,11 +1,42 @@
 # Docker WebDev Boilerplate - Changelog
 
-**Erstellt:** 2025-12-19 **Letzte Aktualisierung:** 2026-01-14 (Unified
-Documentation Theme) **Version:** 3.37
+**Erstellt:** 2025-12-19 **Letzte Aktualisierung:** 2026-01-14 (Welcome Page &
+Health Check Improvements) **Version:** 3.38
 
 ---
 
 ## Changelog
+
+### Version 3.38 (2026-01-14) - Welcome Page & Health Check Improvements
+
+Improved the Welcome page endpoint listing and extended the `/status` health
+check to include all optional services.
+
+#### Welcome Page Endpoints
+
+- **Improved**: Better sorting (Pages → Health Checks → Node.js API →
+  Development)
+- **Improved**: Cleaner naming (removed redundant "(via Router)" suffix)
+- **New**: Node.js API endpoints now listed (`/api/node/health`,
+  `/api/node/hello`, `POST /api/node/echo`)
+- **New**: Node.js endpoints shown conditionally based on `ENABLE_NODE` and
+  `NODE_MODE`
+- **New**: Copy-to-clipboard button for POST endpoint curl command with visual
+  feedback
+
+#### Health Check (`/status`)
+
+- **New**: Support for optional services health checks
+- **New**: `ENABLE_MERCURE`, `ENABLE_MEILISEARCH`, `ENABLE_ELASTICSEARCH`,
+  `ENABLE_MAILPIT`, `ENABLE_MINIO`, `ENABLE_RABBITMQ` environment variables
+- **New**: Health check methods for all optional services:
+  - Mercure (TCP port 80)
+  - Meilisearch (HTTP `/health` API)
+  - Elasticsearch (HTTP `/_cluster/health` API)
+  - Mailpit (TCP port 8025)
+  - MinIO (HTTP `/minio/health/live` API)
+  - RabbitMQ (TCP port 5672)
+- **Improved**: `features` section now shows all `ENABLE_*` flags
 
 ### Version 3.37 (2026-01-14) - Unified Documentation Theme
 

@@ -17,8 +17,12 @@ use Exception;
  * - Node.js Backend (if ENABLE_NODE=true)
  * - Redis (if ENABLE_REDIS=true)
  * - Database (if DB_TYPE is set)
+ * - Optional services (Mercure, Meilisearch, Elasticsearch, Mailpit, MinIO, RabbitMQ)
  *
  * @SuppressWarnings("PHPMD.ExcessiveClassComplexity")
+ * @SuppressWarnings("PHPMD.ExcessiveClassLength")
+ * @SuppressWarnings("PHPMD.TooManyMethods")
+ * @SuppressWarnings("PHPMD.UnusedPrivateMethod") check* methods called dynamically via $this->$method()
  */
 class HealthCheck
 {
@@ -28,17 +32,26 @@ class HealthCheck
     /** @var array<string, mixed> */
     private array $status = [];
 
+    /**
+     * @SuppressWarnings("PHPMD.NPathComplexity")
+     */
     public function __construct()
     {
         // Load environment variables
         $this->env = [
-            'ENV'             => $_ENV['ENV'] ?? getenv('ENV') ?: 'production',
-            'ENABLE_PHP'      => $this->parseBool($_ENV['ENABLE_PHP'] ?? getenv('ENABLE_PHP') ?: 'true'),
-            'ENABLE_NODE'     => $this->parseBool($_ENV['ENABLE_NODE'] ?? getenv('ENABLE_NODE') ?: 'false'),
-            'ENABLE_DATABASE' => $this->parseBool($_ENV['ENABLE_DATABASE'] ?? getenv('ENABLE_DATABASE') ?: 'false'),
-            'ENABLE_REDIS'    => $this->parseBool($_ENV['ENABLE_REDIS'] ?? getenv('ENABLE_REDIS') ?: 'false'),
-            'DB_TYPE'         => $_ENV['DB_TYPE'] ?? getenv('DB_TYPE') ?: null,
-            'NODE_MODE'       => $_ENV['NODE_MODE'] ?? getenv('NODE_MODE') ?: 'none',
+            'ENV'                  => $_ENV['ENV'] ?? getenv('ENV') ?: 'production',
+            'ENABLE_PHP'           => $this->parseBool($_ENV['ENABLE_PHP'] ?? getenv('ENABLE_PHP') ?: 'true'),
+            'ENABLE_NODE'          => $this->parseBool($_ENV['ENABLE_NODE'] ?? getenv('ENABLE_NODE') ?: 'false'),
+            'ENABLE_DATABASE'      => $this->parseBool($_ENV['ENABLE_DATABASE'] ?? getenv('ENABLE_DATABASE') ?: 'false'),
+            'ENABLE_REDIS'         => $this->parseBool($_ENV['ENABLE_REDIS'] ?? getenv('ENABLE_REDIS') ?: 'false'),
+            'ENABLE_MERCURE'       => $this->parseBool($_ENV['ENABLE_MERCURE'] ?? getenv('ENABLE_MERCURE') ?: 'false'),
+            'ENABLE_MEILISEARCH'   => $this->parseBool($_ENV['ENABLE_MEILISEARCH'] ?? getenv('ENABLE_MEILISEARCH') ?: 'false'),
+            'ENABLE_ELASTICSEARCH' => $this->parseBool($_ENV['ENABLE_ELASTICSEARCH'] ?? getenv('ENABLE_ELASTICSEARCH') ?: 'false'),
+            'ENABLE_MAILPIT'       => $this->parseBool($_ENV['ENABLE_MAILPIT'] ?? getenv('ENABLE_MAILPIT') ?: 'false'),
+            'ENABLE_MINIO'         => $this->parseBool($_ENV['ENABLE_MINIO'] ?? getenv('ENABLE_MINIO') ?: 'false'),
+            'ENABLE_RABBITMQ'      => $this->parseBool($_ENV['ENABLE_RABBITMQ'] ?? getenv('ENABLE_RABBITMQ') ?: 'false'),
+            'DB_TYPE'              => $_ENV['DB_TYPE'] ?? getenv('DB_TYPE') ?: null,
+            'NODE_MODE'            => $_ENV['NODE_MODE'] ?? getenv('NODE_MODE') ?: 'none',
         ];
     }
 
@@ -122,6 +135,22 @@ class HealthCheck
                 'status'  => 'disabled',
                 'enabled' => false,
             ];
+        }
+
+        // Check optional services
+        $optionalServices = [
+            'ENABLE_MERCURE'       => 'checkMercure',
+            'ENABLE_MEILISEARCH'   => 'checkMeilisearch',
+            'ENABLE_ELASTICSEARCH' => 'checkElasticsearch',
+            'ENABLE_MAILPIT'       => 'checkMailpit',
+            'ENABLE_MINIO'         => 'checkMinio',
+            'ENABLE_RABBITMQ'      => 'checkRabbitmq',
+        ];
+
+        foreach ($optionalServices as $envKey => $method) {
+            if ($this->env[$envKey]) {
+                $this->$method();
+            }
         }
 
         // Set overall status to 'degraded' if any service is down
@@ -395,5 +424,170 @@ class HealthCheck
     public function getEnvironment(): array
     {
         return $this->env;
+    }
+
+    /**
+     * Check Mercure connection
+     */
+    private function checkMercure(): void
+    {
+        $result = $this->checkTcpConnection('mercure', 80);
+
+        $this->status['services']['mercure'] = [
+            'status'  => $result['connected'] ? 'ok' : 'error',
+            'enabled' => true,
+        ] + ($result['connected'] ? [] : ['message' => $result['error'] ?? 'Connection failed']);
+    }
+
+    /**
+     * Check Meilisearch connection
+     */
+    private function checkMeilisearch(): void
+    {
+        try {
+            $url     = 'http://meilisearch:7700/health';
+            $context = stream_context_create([
+                'http' => [
+                    'timeout'       => 2,
+                    'ignore_errors' => true,
+                ],
+            ]);
+
+            $response = file_get_contents($url, false, $context);
+
+            if ($response !== false) {
+                $data                                    = json_decode($response, true);
+                $this->status['services']['meilisearch'] = [
+                    'status'  => ($data['status'] ?? '') === 'available' ? 'ok' : 'error',
+                    'enabled' => true,
+                ];
+                return;
+            }
+        } catch (Exception) {
+            // Fall through to error
+        }
+
+        $this->status['services']['meilisearch'] = [
+            'status'  => 'error',
+            'message' => 'Meilisearch not reachable',
+            'enabled' => true,
+        ];
+    }
+
+    /**
+     * Check Elasticsearch connection
+     */
+    private function checkElasticsearch(): void
+    {
+        try {
+            $url     = 'http://elasticsearch:9200/_cluster/health';
+            $context = stream_context_create([
+                'http' => [
+                    'timeout'       => 2,
+                    'ignore_errors' => true,
+                ],
+            ]);
+
+            $response = file_get_contents($url, false, $context);
+
+            if ($response !== false) {
+                $data                                      = json_decode($response, true);
+                $status                                    = $data['status'] ?? 'unknown';
+                $this->status['services']['elasticsearch'] = [
+                    'status'         => in_array($status, ['green', 'yellow'], true) ? 'ok' : 'error',
+                    'cluster_status' => $status,
+                    'enabled'        => true,
+                ];
+                return;
+            }
+        } catch (Exception) {
+            // Fall through to error
+        }
+
+        $this->status['services']['elasticsearch'] = [
+            'status'  => 'error',
+            'message' => 'Elasticsearch not reachable',
+            'enabled' => true,
+        ];
+    }
+
+    /**
+     * Check Mailpit connection
+     */
+    private function checkMailpit(): void
+    {
+        $result = $this->checkTcpConnection('mailpit', 8025);
+
+        $this->status['services']['mailpit'] = [
+            'status'  => $result['connected'] ? 'ok' : 'error',
+            'enabled' => true,
+        ] + ($result['connected'] ? [] : ['message' => $result['error'] ?? 'Connection failed']);
+    }
+
+    /**
+     * Check MinIO connection
+     */
+    private function checkMinio(): void
+    {
+        try {
+            $url     = 'http://minio:9000/minio/health/live';
+            $context = stream_context_create([
+                'http' => [
+                    'timeout'       => 2,
+                    'ignore_errors' => true,
+                ],
+            ]);
+
+            $response = file_get_contents($url, false, $context);
+
+            // MinIO returns empty body with 200 OK on success
+            if ($response !== false) {
+                $this->status['services']['minio'] = [
+                    'status'  => 'ok',
+                    'enabled' => true,
+                ];
+                return;
+            }
+        } catch (Exception) {
+            // Fall through to error
+        }
+
+        $this->status['services']['minio'] = [
+            'status'  => 'error',
+            'message' => 'MinIO not reachable',
+            'enabled' => true,
+        ];
+    }
+
+    /**
+     * Check RabbitMQ connection
+     */
+    private function checkRabbitmq(): void
+    {
+        $result = $this->checkTcpConnection('rabbitmq', 5672);
+
+        $this->status['services']['rabbitmq'] = [
+            'status'  => $result['connected'] ? 'ok' : 'error',
+            'enabled' => true,
+        ] + ($result['connected'] ? [] : ['message' => $result['error'] ?? 'Connection failed']);
+    }
+
+    /**
+     * Check TCP connection to a service
+     *
+     * @return array<string, mixed>
+     * @SuppressWarnings("PHPMD.ErrorControlOperator")
+     * @SuppressWarnings("PHPMD.UnusedLocalVariable") $errno required by fsockopen signature
+     */
+    private function checkTcpConnection(string $host, int $port): array
+    {
+        $socket = @fsockopen($host, $port, $_errno, $errstr, 2);
+
+        if ($socket) {
+            fclose($socket);
+            return ['connected' => true];
+        }
+
+        return ['connected' => false, 'error' => $errstr ?: 'Connection failed'];
     }
 }

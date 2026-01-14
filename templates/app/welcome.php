@@ -104,15 +104,46 @@ declare(strict_types=1);
     <div class="card">
         <h2>🔗 Available Endpoints</h2>
         <ul style="list-style: disc; padding-left: 1.5rem;">
-            <li><a href="/" style="color: #007bff; text-decoration: none;"><strong>GET /</strong></a> - Service dashboard with live status (via Router)</li>
-            <li><a href="/welcome" style="color: #007bff; text-decoration: none;"><strong>GET /welcome</strong></a> - Alias for / (via Router)</li>
-            <li><a href="/_dev" style="color: #007bff; text-decoration: none;"><strong>GET /_dev</strong></a> - 🛠️ Development Dashboard (System Health, Monitoring & Tools)</li>
+            <!-- Pages -->
+            <li><a href="/" style="color: #007bff; text-decoration: none;"><strong>GET /</strong></a> - Main landing page</li>
+            <li><a href="/welcome" style="color: #007bff; text-decoration: none;"><strong>GET /welcome</strong></a> - Alias for /</li>
+            <!-- Health Checks -->
+            <li><a href="/api/health" style="color: #007bff; text-decoration: none;"><strong>GET /api/health</strong></a> - Simple JSON health check</li>
             <li><a href="/status" style="color: #007bff; text-decoration: none;"><strong>GET /status</strong></a> - Detailed JSON health check (all services)</li>
-            <li><a href="/api/health" style="color: #007bff; text-decoration: none;"><strong>GET /api/health</strong></a> - Simple JSON health (PHP-FPM only)</li>
-            <li><a href="/health.php" style="color: #007bff; text-decoration: none;"><strong>GET /health.php</strong></a> - Minimal health check for Docker HEALTHCHECK</li>
-            <?php if ($env['ENABLE_NODE']): ?>
-            <li><a href="http://localhost:3000/health" target="_blank" style="color: #007bff; text-decoration: none;"><strong>Node: /health</strong></a> - Node.js backend health (port 3000)</li>
+            <li><a href="/health.php" style="color: #007bff; text-decoration: none;"><strong>GET /health.php</strong></a> - Docker HEALTHCHECK (minimal overhead)</li>
+            <!-- Node.js API -->
+            <?php if ($env['ENABLE_NODE'] && in_array($env['NODE_MODE'], ['full-stack', 'backend-only'], true)): ?>
+            <li><a href="http://localhost:3000/health" target="_blank" style="color: #007bff; text-decoration: none;"><strong>GET /api/node/health</strong></a> - Node.js backend health</li>
+            <li><a href="http://localhost:3000/api/hello" target="_blank" style="color: #007bff; text-decoration: none;"><strong>GET /api/node/hello</strong></a> - Hello endpoint (?name=)</li>
+            <li>
+                <strong>POST /api/node/echo</strong> - Echo request body (JSON)
+                <span
+                    id="copy-curl-btn"
+                    title="Click to copy curl command"
+                    style="cursor: pointer; margin-left: 0.4rem; padding: 0.1rem 0.4rem; font-size: 0.75rem; font-weight: bold; color: #007bff; background: #e7f1ff; border: 1px solid #007bff; border-radius: 4px; user-select: none;"
+                >i</span>
+                <script>
+                    document.getElementById('copy-curl-btn').addEventListener('click', function() {
+                        var cmd = "curl -X POST https://localhost:8443/api/node/echo -H 'Content-Type: application/json' -d '{\"hello\": \"world\"}'";
+                        var btn = this;
+                        navigator.clipboard.writeText(cmd).then(function() {
+                            btn.textContent = '✓';
+                            btn.style.background = '#d4edda';
+                            btn.style.borderColor = '#28a745';
+                            btn.style.color = '#28a745';
+                            setTimeout(function() {
+                                btn.textContent = 'i';
+                                btn.style.background = '#e7f1ff';
+                                btn.style.borderColor = '#007bff';
+                                btn.style.color = '#007bff';
+                            }, 1500);
+                        });
+                    });
+                </script>
+            </li>
             <?php endif; ?>
+            <!-- Development -->
+            <li><a href="/_dev" style="color: #007bff; text-decoration: none;"><strong>GET /_dev</strong></a> - Development Dashboard</li>
         </ul>
         <p style="margin-top: 1rem; font-size: 0.9em; color: #666;">
             <strong>Tip:</strong> Use <code>/health.php</code> for Docker HEALTHCHECK (minimal overhead)
