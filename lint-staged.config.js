@@ -14,8 +14,8 @@ export default {
     'pnpm exec eslint --max-warnings=0 --no-warn-ignored',
   ],
 
-  // JSON files
-  '*.json': ['pnpm exec prettier --check'],
+  // JSON files (excluding auto-generated package manager configs)
+  '!(composer|package|package-lock).json': ['pnpm exec prettier --check'],
 
   // Markdown files
   '*.md': ['pnpm exec markdownlint-cli2'],

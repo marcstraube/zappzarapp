@@ -227,15 +227,12 @@ clean: ## Remove containers, networks and dangling images (keeps data volumes)
 	@echo -e "\033[0;32mCleanup completed!\033[0m"
 
 composer: ## Execute Composer command in running container (e.g. make composer CMD="require vendor/package")
-	@docker compose exec php composer $(CMD)
+	@docker compose exec -u www-data php composer $(CMD)
 
-composer-update: ## Update Composer dependencies and sync lock file to host
+composer-update: ## Update Composer dependencies (updates composer.lock on host, vendor stays in container)
 	@echo -e "\033[0;33mUpdating Composer dependencies...\033[0m"
-	@XDEBUG_MODE=off $(DC) run --rm --no-TTY php composer update
-	@echo -e "\033[0;33mSyncing composer.lock to host...\033[0m"
-	@docker cp $$(docker compose ps -q php):/var/www/html/composer.lock ./ 2>/dev/null || \
-		$(DC) run --rm --no-TTY --entrypoint cat php /var/www/html/composer.lock > composer.lock
-	@echo -e "\033[0;32mDependencies updated and lock file synced!\033[0m"
+	@XDEBUG_MODE=off $(DC) run --rm --no-TTY -u $${USER_ID:-1000}:$${GROUP_ID:-1000} --entrypoint composer php update
+	@echo -e "\033[0;32mDependencies updated!\033[0m"
 
 down: ## Stop containers
 	@echo -e "\033[0;33mStopping containers...\033[0m"

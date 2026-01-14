@@ -1,12 +1,34 @@
 # Docker WebDev Boilerplate - Changelog
 
 **Erstellt:** 2025-12-19
-**Letzte Aktualisierung:** 2026-01-13 (IDE Integration Update)
-**Version:** 3.27
+**Letzte Aktualisierung:** 2026-01-14 (Composer Volume Mount Fix)
+**Version:** 3.28
 
 ---
 
 ## Changelog
+
+### Version 3.28 (2026-01-14) - Composer Volume Mount Fix
+
+#### Fixed
+
+- **Composer write permissions on Linux**: Fixed `composer update/require/remove` failing with "Permission denied" on Linux due to overlay-fs limitations
+  - Root cause: Single-file bind mounts combined with Docker overlay-fs prevented writing to files copied via `COPY` in Dockerfile
+  - Solution: Mount `composer.json` and `composer.lock` as volumes instead of copying them into the development image
+
+#### Changed
+
+- **Dockerfile (PHP Development Stage)**: Removed `COPY composer.json composer.lock* ./` - files are now mounted as volumes in development
+- **compose.override.yaml**: Added bidirectional volume mounts for `composer.json` and `composer.lock`
+- **Makefile `composer-update`**: Now runs as user 1000:1000 with direct composer entrypoint (bypasses root-requiring entrypoint)
+- **Makefile `composer`**: Now runs as `www-data` user for consistent permissions
+
+#### Updated
+
+- **rector/rector**: 2.3.0 → 2.3.1
+- **lint-staged.config.js**: Exclude package manager configs (`composer.json`, `package.json`, `package-lock.json`) from prettier checks
+
+---
 
 ### Version 3.27 (2026-01-13) - IDE Integration Update
 

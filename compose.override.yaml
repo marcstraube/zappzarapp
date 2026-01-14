@@ -31,7 +31,7 @@ services:
     command: ["php-fpm"]
     develop:
       watch:
-        # Composer files trigger rebuild (ensures fresh dependencies)
+        # Composer files trigger rebuild (ensures fresh dependencies in image)
         - action: rebuild
           path: ./composer.json
         - action: rebuild
@@ -39,6 +39,11 @@ services:
     volumes:
       # Entrypoint Script
       - ./docker/php/entrypoint.development.sh:/entrypoint.development.sh:ro
+
+      # Composer files (bidirectional bind mount for composer update/require/remove)
+      # Not copied in Dockerfile development stage to avoid overlay-fs write issues
+      - ./composer.json:/var/www/html/composer.json
+      - ./composer.lock:/var/www/html/composer.lock
 
       # Dependencies (named volume for best cross-platform performance)
       - php_vendor:/var/www/html/vendor
