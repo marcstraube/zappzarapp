@@ -324,13 +324,6 @@
       "presentation": { "reveal": "always", "panel": "new" }
     },
     {
-      "label": "Sync: Lock Files",
-      "type": "shell",
-      "command": "make sync-lockfiles",
-      "problemMatcher": [],
-      "presentation": { "reveal": "always", "panel": "new" }
-    },
-    {
       "label": "Database: PostgreSQL CLI",
       "type": "shell",
       "command": "make postgres-cli",

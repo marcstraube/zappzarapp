@@ -132,7 +132,6 @@ COPY docker/php/entrypoint.sh /usr/local/bin/entrypoint.sh
 RUN chmod +x /usr/local/bin/entrypoint.sh
 
 # Copy source code into image (Docker Compose Watch will sync changes)
-# Note: composer.json/lock are mounted as volumes in development (see compose.override.yaml)
 COPY --chown=www-data:www-data src/php/ ./src/php/
 COPY --chown=www-data:www-data tests/php/ ./tests/php/
 COPY --chown=www-data:www-data templates/ ./templates/

@@ -40,18 +40,8 @@ composer-install: ## Install/update Composer dependencies (Docker - guaranteed c
 		XDEBUG_MODE=off $(DC) run --rm --no-TTY php composer install --prefer-dist --no-interaction --no-scripts; \
 	fi
 	@echo -e "\033[0;32mDependencies ready!\033[0m"
-	@# Sync lockfile from container to host
-	@if docker compose ps php 2>/dev/null | grep -q "Up"; then \
-		docker cp $$(docker compose ps -q php):/var/www/html/composer.lock ./ 2>/dev/null && \
-		echo -e "\033[0;34m✓ composer.lock synced\033[0m" || true; \
-	fi
 
 composer-install-local: ## Install/update Composer dependencies (Local - IDE code completion only)
-	@# Sync lockfile from container if running (ensures consistency)
-	@if docker compose ps php 2>/dev/null | grep -q "Up"; then \
-		docker cp $$(docker compose ps -q php):/var/www/html/composer.lock ./ 2>/dev/null && \
-		echo -e "\033[0;34m✓ composer.lock synced from container\033[0m" || true; \
-	fi
 	@if command -v composer >/dev/null 2>&1; then \
 		echo -e "\033[0;33m⚠️  Using local Composer (version may differ from Docker).\033[0m"; \
 		if [ ! -f "vendor/autoload.php" ]; then \
@@ -461,26 +451,22 @@ node-install: ## Install Node.js dependencies (Docker - requires ENV=development
 	@docker compose exec --user root node chown -R node:node /app/node_modules
 	@docker compose exec node sh -c 'TMPDIR=/tmp pnpm install'
 	@echo -e "\033[0;32mDependencies installed!\033[0m"
-	@# Sync lockfile from container to host
-	@if docker compose ps node 2>/dev/null | grep -q "Up"; then \
-		docker cp $$(docker compose ps -q node):/app/pnpm-lock.yaml ./ 2>/dev/null && \
-		echo -e "\033[0;34m✓ pnpm-lock.yaml synced\033[0m" || true; \
-	fi
 
-node-update: ## Update Node.js dependencies and sync lock file to host
+node-update: ## Update Node.js dependencies (updates pnpm-lock.yaml on host, node_modules stays in container)
 	@echo -e "\033[0;33mUpdating Node.js dependencies...\033[0m"
-	@docker compose exec node pnpm update
-	@echo -e "\033[0;33mSyncing pnpm-lock.yaml to host...\033[0m"
-	@docker cp $$(docker compose ps -q node):/app/pnpm-lock.yaml ./ 2>/dev/null || \
-		docker compose exec node cat /app/pnpm-lock.yaml > pnpm-lock.yaml
-	@echo -e "\033[0;32mDependencies updated and lock file synced!\033[0m"
+	@# Copy files to avoid Linux bind mount atomic rename issues
+	@CONTAINER=$$(docker create --entrypoint sh \
+		-v docker-webdev_node_modules:/app/node_modules \
+		docker-webdev-node:latest -c 'pnpm update') && \
+	docker cp package.json $$CONTAINER:/app/package.json && \
+	docker cp pnpm-lock.yaml $$CONTAINER:/app/pnpm-lock.yaml 2>/dev/null || true && \
+	docker start -a $$CONTAINER && \
+	docker cp $$CONTAINER:/app/package.json ./package.json && \
+	docker cp $$CONTAINER:/app/pnpm-lock.yaml ./pnpm-lock.yaml && \
+	docker rm $$CONTAINER >/dev/null
+	@echo -e "\033[0;32mDependencies updated!\033[0m"
 
 node-install-local: ## Install Node.js dependencies (Local - IDE code completion only)
-	@# Sync lockfile from container if running (ensures consistency)
-	@if docker compose ps node 2>/dev/null | grep -q "Up"; then \
-		docker cp $$(docker compose ps -q node):/app/pnpm-lock.yaml ./ 2>/dev/null && \
-		echo -e "\033[0;34m✓ pnpm-lock.yaml synced from container\033[0m" || true; \
-	fi
 	@if command -v pnpm >/dev/null 2>&1; then \
 		echo -e "\033[0;33m⚠️  Using local pnpm (version may differ from Docker).\033[0m"; \
 		pnpm install; \
@@ -489,20 +475,6 @@ node-install-local: ## Install Node.js dependencies (Local - IDE code completion
 		echo -e "\033[0;31mError: Local pnpm not found. Use 'make node-install' instead.\033[0m"; \
 		exit 1; \
 	fi
-
-sync-lockfiles: ## Sync lock files from containers to host (for IDE/Git)
-	@echo -e "\033[0;33mSynchronizing lock files from containers...\033[0m"
-	@if docker compose ps node | grep -q "Up"; then \
-		docker cp $$(docker compose ps -q node):/app/pnpm-lock.yaml ./ 2>/dev/null && \
-		echo -e "\033[0;32m✓ pnpm-lock.yaml synced\033[0m" || \
-		echo -e "\033[0;33m⚠ pnpm-lock.yaml not found in container\033[0m"; \
-	fi
-	@if docker compose ps php | grep -q "Up"; then \
-		docker cp $$(docker compose ps -q php):/var/www/html/composer.lock ./ 2>/dev/null && \
-		echo -e "\033[0;32m✓ composer.lock synced\033[0m" || \
-		echo -e "\033[0;33m⚠ composer.lock not found in container\033[0m"; \
-	fi
-	@echo -e "\033[0;32mLock files synchronized!\033[0m"
 
 node-build: ## Executes the frontend build inside the Node container (uses 'build' stage)
 	@echo -e "\033[0;33mExecuting frontend build...\033[0m"

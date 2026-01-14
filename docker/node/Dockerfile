@@ -44,8 +44,6 @@ COPY --chown=node:node docker/node/entrypoint.sh /usr/local/bin/entrypoint.sh
 RUN chmod +x /usr/local/bin/entrypoint.sh
 
 # Copy configuration files (Docker Compose Watch will sync changes)
-# Note: pnpm-lock.yaml* uses glob to make it optional (not all projects have it initially)
-COPY --chown=node:node package.json pnpm-lock.yaml* ./
 COPY --chown=node:node tsconfig.json ./
 COPY --chown=node:node tsconfig.build.json ./
 COPY --chown=node:node tsconfig.vitest.json ./

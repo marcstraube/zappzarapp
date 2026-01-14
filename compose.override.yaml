@@ -159,6 +159,11 @@ services:
           path: ./ecosystem.config.cjs
           target: /app/ecosystem.config.cjs
     volumes:
+      # Package manager files (bidirectional bind mount for pnpm update/add/remove)
+      # Not copied in Dockerfile development stage to avoid frozen-lockfile issues
+      - ./package.json:/app/package.json
+      - ./pnpm-lock.yaml:/app/pnpm-lock.yaml
+
       # Dependencies (named volumes for best cross-platform performance)
       - node_modules:/app/node_modules
 

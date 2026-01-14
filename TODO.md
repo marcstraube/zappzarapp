@@ -1,12 +1,42 @@
 # Docker WebDev Boilerplate - Changelog
 
 **Erstellt:** 2025-12-19
-**Letzte Aktualisierung:** 2026-01-14 (Composer Volume Mount Fix)
-**Version:** 3.28
+**Letzte Aktualisierung:** 2026-01-14 (Node.js Major Updates & Volume Mount Fixes)
+**Version:** 3.29
 
 ---
 
 ## Changelog
+
+### Version 3.29 (2026-01-14) - Node.js Major Updates
+
+#### Fixed
+
+- **Node package manager operations on Linux**: Fixed `pnpm update` failing with "EBUSY: resource busy" on Linux due to overlay-fs limitations (same issue as Composer in 3.28)
+  - Solution: Use docker create/cp approach to avoid single-file bind mount atomic rename issues
+
+#### Changed
+
+- **Dockerfile (Node Development Stage)**: Removed `COPY package.json pnpm-lock.yaml ./` - files are now mounted as volumes
+- **compose.override.yaml**: Added bidirectional volume mounts for Node package manager files
+- **Makefile `node-update`**: Now uses docker create/cp approach to avoid bind mount issues
+
+#### Removed
+
+- **Makefile `sync-lockfiles`**: No longer needed - lock files are now bidirectionally mounted
+- **docker cp sync operations**: Removed from `composer-install`, `composer-install-local`, `node-install`, `node-install-local`
+
+#### Updated (Node.js - Major Versions)
+
+- **express**: 4.x → 5.x (new routing engine, async middleware support)
+- **vite**: 6.x → 7.x (improved HMR, faster builds)
+- **pino**: 9.x → 10.x (performance improvements)
+- **pino-http**: 10.x → 11.x (Express 5 compatibility)
+- **@types/node**: 22.x → 24.x (Node.js 24 LTS types)
+- **eslint-config-prettier**: 9.x → 10.x (ESLint 9 flat config support)
+- **markdownlint-cli2**: 0.18 → 0.20
+
+---
 
 ### Version 3.28 (2026-01-14) - Composer Volume Mount Fix
 
@@ -25,7 +55,7 @@
 
 #### Updated
 
-- **rector/rector**: 2.3.0 → 2.3.1
+- **rector/rector**: 2.2 → 2.3
 - **lint-staged.config.js**: Exclude package manager configs (`composer.json`, `package.json`, `package-lock.json`) from prettier checks
 
 ---
