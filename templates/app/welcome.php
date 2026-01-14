@@ -156,7 +156,12 @@ make up
 make down
 
 # Rebuild images (only when Dockerfile changes)
-make build</pre>
+make build
+
+# Service-specific commands (optional service names)
+make restart php nginx    # Restart specific services
+make logs php             # View logs of specific services
+make build php            # Build specific images</pre>
 
         <h3 style="margin-top: 1rem;">⚙️ Service Configuration</h3>
         <pre style="background: #f5f5f5; padding: 0.5rem; border-radius: 4px; overflow-x: auto;"># Enable/disable services in .env:

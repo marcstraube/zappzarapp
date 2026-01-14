@@ -25,12 +25,22 @@ calculations. Extended Makefile with service-specific container control.
 
 #### Makefile
 
-- **Service-specific control**: `make up`, `make down`, and `make restart` now
-  accept optional service names
+- **Service-specific control**: Multiple commands now accept optional service
+  names for targeted operations:
   - `make up php nginx` - Start specific services
   - `make down php` - Stop specific service
   - `make restart php nginx` - Restart specific services
+  - `make build php` - Build specific images
+  - `make build-no-cache php` - Force rebuild specific images
+  - `make logs php nginx` - View logs of specific services
 - Without arguments, commands work as before (profile-based logic)
+
+#### Documentation
+
+- **MAKEFILE-REFERENCE.md**: Added "Service-Specific Commands" section with
+  examples
+- **QUICKSTART.md**: Added tip about service-specific commands
+- **Welcome Page**: Updated Quick Start section with service-specific examples
 
 #### Configuration
 

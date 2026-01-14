@@ -59,12 +59,32 @@ Container lifecycle management.
 | `make rebuild`        | Complete rebuild (clean + build + up)                                |
 | `make prune`          | Remove untagged/dangling images related to this project              |
 
+### Service-Specific Commands
+
+Many commands accept optional service names to operate on specific containers:
+
+```bash
+# Start/stop/restart specific services
+make up php nginx          # Start only PHP and Nginx
+make down php              # Stop only PHP
+make restart php nginx     # Restart PHP and Nginx
+
+# Build specific images
+make build php             # Build only PHP image
+make build-no-cache php    # Force rebuild PHP without cache
+
+# View logs of specific services
+make logs php nginx        # Show combined logs of PHP and Nginx
+```
+
+Without arguments, commands operate on all enabled services (based on `.env`).
+
 ### Container Information
 
 | Command              | Description                                         |
 | -------------------- | --------------------------------------------------- |
 | `make status`        | Show running containers status and image disk usage |
-| `make logs`          | Show logs of all containers                         |
+| `make logs`          | Show logs of all containers (or specific services)  |
 | `make logs-nginx`    | Show Nginx logs only                                |
 | `make logs-php`      | Show PHP logs only                                  |
 | `make logs-node`     | Show Node.js logs only                              |

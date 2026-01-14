@@ -144,63 +144,91 @@ setup: ## Create directories, install dev dependencies and ensure structure
 
 ##@ Docker
 
-build: ## Build Docker images
-	@echo -e "\033[0;33mBuilding Docker images...\033[0m"
-	@if [ -f .env ]; then \
-		. ./.env && \
-		PROFILES=""; \
-		if [ "$${ENABLE_DATABASE:-true}" = "true" ]; then \
-			PROFILES="$$PROFILES --profile $${DB_TYPE:-postgres}"; \
-		fi; \
-		if [ "$${ENABLE_PHP:-true}" = "true" ]; then PROFILES="$$PROFILES --profile php"; fi; \
-		if [ "$${ENABLE_NODE:-true}" = "true" ]; then PROFILES="$$PROFILES --profile node"; fi; \
-		if [ "$${ENABLE_REDIS:-true}" = "true" ]; then PROFILES="$$PROFILES --profile redis"; fi; \
-		if [ "$${ENABLE_MERCURE:-false}" = "true" ]; then PROFILES="$$PROFILES --profile mercure"; fi; \
-		if [ "$${ENABLE_MEILISEARCH:-false}" = "true" ]; then PROFILES="$$PROFILES --profile meilisearch"; fi; \
-		if [ "$${ENABLE_ELASTICSEARCH:-false}" = "true" ]; then PROFILES="$$PROFILES --profile elasticsearch"; fi; \
-		if [ "$${ENABLE_MAILPIT:-false}" = "true" ]; then PROFILES="$$PROFILES --profile mailpit"; fi; \
-		if [ "$${ENABLE_MINIO:-false}" = "true" ]; then PROFILES="$$PROFILES --profile minio"; fi; \
-		if [ "$${ENABLE_RABBITMQ:-false}" = "true" ]; then PROFILES="$$PROFILES --profile rabbitmq"; fi; \
-		if [ "$$ENV" = "production" ]; then \
-			echo -e "\033[0;34mBuilding Node image first (required by PHP and NGINX)...\033[0m" && \
-			$(DC) -f compose.yaml -f compose.production.yaml $$PROFILES build node && \
-			echo -e "\033[0;34mBuilding remaining images...\033[0m" && \
-			$(DC) -f compose.yaml -f compose.production.yaml $$PROFILES build; \
+build: ## Build Docker images (optionally specify service names: make build php nginx)
+	@SERVICES="$(filter-out $@,$(MAKECMDGOALS))"; \
+	if [ -n "$$SERVICES" ]; then \
+		echo -e "\033[0;33mBuilding images: $$SERVICES...\033[0m"; \
+		if [ -f .env ]; then \
+			. ./.env && if [ "$$ENV" = "production" ]; then \
+				$(DC) -f compose.yaml -f compose.production.yaml build $$SERVICES; \
+			else \
+				$(DC) build $$SERVICES; \
+			fi; \
 		else \
-			$(DC) $$PROFILES build; \
+			$(DC) build $$SERVICES; \
 		fi; \
 	else \
-		$(DC) --profile php --profile node --profile redis --profile postgres build; \
+		echo -e "\033[0;33mBuilding Docker images...\033[0m"; \
+		if [ -f .env ]; then \
+			. ./.env && \
+			PROFILES=""; \
+			if [ "$${ENABLE_DATABASE:-true}" = "true" ]; then \
+				PROFILES="$$PROFILES --profile $${DB_TYPE:-postgres}"; \
+			fi; \
+			if [ "$${ENABLE_PHP:-true}" = "true" ]; then PROFILES="$$PROFILES --profile php"; fi; \
+			if [ "$${ENABLE_NODE:-true}" = "true" ]; then PROFILES="$$PROFILES --profile node"; fi; \
+			if [ "$${ENABLE_REDIS:-true}" = "true" ]; then PROFILES="$$PROFILES --profile redis"; fi; \
+			if [ "$${ENABLE_MERCURE:-false}" = "true" ]; then PROFILES="$$PROFILES --profile mercure"; fi; \
+			if [ "$${ENABLE_MEILISEARCH:-false}" = "true" ]; then PROFILES="$$PROFILES --profile meilisearch"; fi; \
+			if [ "$${ENABLE_ELASTICSEARCH:-false}" = "true" ]; then PROFILES="$$PROFILES --profile elasticsearch"; fi; \
+			if [ "$${ENABLE_MAILPIT:-false}" = "true" ]; then PROFILES="$$PROFILES --profile mailpit"; fi; \
+			if [ "$${ENABLE_MINIO:-false}" = "true" ]; then PROFILES="$$PROFILES --profile minio"; fi; \
+			if [ "$${ENABLE_RABBITMQ:-false}" = "true" ]; then PROFILES="$$PROFILES --profile rabbitmq"; fi; \
+			if [ "$$ENV" = "production" ]; then \
+				echo -e "\033[0;34mBuilding Node image first (required by PHP and NGINX)...\033[0m" && \
+				$(DC) -f compose.yaml -f compose.production.yaml $$PROFILES build node && \
+				echo -e "\033[0;34mBuilding remaining images...\033[0m" && \
+				$(DC) -f compose.yaml -f compose.production.yaml $$PROFILES build; \
+			else \
+				$(DC) $$PROFILES build; \
+			fi; \
+		else \
+			$(DC) --profile php --profile node --profile redis --profile postgres build; \
+		fi; \
 	fi
 	@echo -e "\033[0;32mBuild completed!\033[0m"
 
-build-no-cache: ## Build Docker images without cache
-	@echo -e "\033[0;33mBuilding Docker images (no cache)...\033[0m"
-	@if [ -f .env ]; then \
-		. ./.env && \
-		PROFILES=""; \
-		if [ "$${ENABLE_DATABASE:-true}" = "true" ]; then \
-			PROFILES="$$PROFILES --profile $${DB_TYPE:-postgres}"; \
-		fi; \
-		if [ "$${ENABLE_PHP:-true}" = "true" ]; then PROFILES="$$PROFILES --profile php"; fi; \
-		if [ "$${ENABLE_NODE:-true}" = "true" ]; then PROFILES="$$PROFILES --profile node"; fi; \
-		if [ "$${ENABLE_REDIS:-true}" = "true" ]; then PROFILES="$$PROFILES --profile redis"; fi; \
-		if [ "$${ENABLE_MERCURE:-false}" = "true" ]; then PROFILES="$$PROFILES --profile mercure"; fi; \
-		if [ "$${ENABLE_MEILISEARCH:-false}" = "true" ]; then PROFILES="$$PROFILES --profile meilisearch"; fi; \
-		if [ "$${ENABLE_ELASTICSEARCH:-false}" = "true" ]; then PROFILES="$$PROFILES --profile elasticsearch"; fi; \
-		if [ "$${ENABLE_MAILPIT:-false}" = "true" ]; then PROFILES="$$PROFILES --profile mailpit"; fi; \
-		if [ "$${ENABLE_MINIO:-false}" = "true" ]; then PROFILES="$$PROFILES --profile minio"; fi; \
-		if [ "$${ENABLE_RABBITMQ:-false}" = "true" ]; then PROFILES="$$PROFILES --profile rabbitmq"; fi; \
-		if [ "$$ENV" = "production" ]; then \
-			echo -e "\033[0;34mBuilding Node image first (required by PHP and NGINX)...\033[0m" && \
-			$(DC) -f compose.yaml -f compose.production.yaml $$PROFILES build --no-cache node && \
-			echo -e "\033[0;34mBuilding remaining images...\033[0m" && \
-			$(DC) -f compose.yaml -f compose.production.yaml $$PROFILES build --no-cache; \
+build-no-cache: ## Build Docker images without cache (optionally specify service names: make build-no-cache php)
+	@SERVICES="$(filter-out $@,$(MAKECMDGOALS))"; \
+	if [ -n "$$SERVICES" ]; then \
+		echo -e "\033[0;33mBuilding images (no cache): $$SERVICES...\033[0m"; \
+		if [ -f .env ]; then \
+			. ./.env && if [ "$$ENV" = "production" ]; then \
+				$(DC) -f compose.yaml -f compose.production.yaml build --no-cache $$SERVICES; \
+			else \
+				$(DC) build --no-cache $$SERVICES; \
+			fi; \
 		else \
-			$(DC) $$PROFILES build --no-cache; \
+			$(DC) build --no-cache $$SERVICES; \
 		fi; \
 	else \
-		$(DC) --profile php --profile node --profile redis --profile postgres build --no-cache; \
+		echo -e "\033[0;33mBuilding Docker images (no cache)...\033[0m"; \
+		if [ -f .env ]; then \
+			. ./.env && \
+			PROFILES=""; \
+			if [ "$${ENABLE_DATABASE:-true}" = "true" ]; then \
+				PROFILES="$$PROFILES --profile $${DB_TYPE:-postgres}"; \
+			fi; \
+			if [ "$${ENABLE_PHP:-true}" = "true" ]; then PROFILES="$$PROFILES --profile php"; fi; \
+			if [ "$${ENABLE_NODE:-true}" = "true" ]; then PROFILES="$$PROFILES --profile node"; fi; \
+			if [ "$${ENABLE_REDIS:-true}" = "true" ]; then PROFILES="$$PROFILES --profile redis"; fi; \
+			if [ "$${ENABLE_MERCURE:-false}" = "true" ]; then PROFILES="$$PROFILES --profile mercure"; fi; \
+			if [ "$${ENABLE_MEILISEARCH:-false}" = "true" ]; then PROFILES="$$PROFILES --profile meilisearch"; fi; \
+			if [ "$${ENABLE_ELASTICSEARCH:-false}" = "true" ]; then PROFILES="$$PROFILES --profile elasticsearch"; fi; \
+			if [ "$${ENABLE_MAILPIT:-false}" = "true" ]; then PROFILES="$$PROFILES --profile mailpit"; fi; \
+			if [ "$${ENABLE_MINIO:-false}" = "true" ]; then PROFILES="$$PROFILES --profile minio"; fi; \
+			if [ "$${ENABLE_RABBITMQ:-false}" = "true" ]; then PROFILES="$$PROFILES --profile rabbitmq"; fi; \
+			if [ "$$ENV" = "production" ]; then \
+				echo -e "\033[0;34mBuilding Node image first (required by PHP and NGINX)...\033[0m" && \
+				$(DC) -f compose.yaml -f compose.production.yaml $$PROFILES build --no-cache node && \
+				echo -e "\033[0;34mBuilding remaining images...\033[0m" && \
+				$(DC) -f compose.yaml -f compose.production.yaml $$PROFILES build --no-cache; \
+			else \
+				$(DC) $$PROFILES build --no-cache; \
+			fi; \
+		else \
+			$(DC) --profile php --profile node --profile redis --profile postgres build --no-cache; \
+		fi; \
 	fi
 	@echo -e "\033[0;32mBuild completed!\033[0m"
 
@@ -281,29 +309,42 @@ down: ## Stop containers (optionally specify service names: make down php nginx)
 	fi
 	@echo -e "\033[0;32mContainers stopped!\033[0m"
 
-logs: ## Show logs of all containers
-	@if [ -f .env ]; then \
-		. ./.env && \
-		PROFILES=""; \
-		if [ "$${ENABLE_DATABASE:-true}" = "true" ]; then \
-			PROFILES="$$PROFILES --profile $${DB_TYPE:-postgres}"; \
-		fi; \
-		if [ "$${ENABLE_PHP:-true}" = "true" ]; then PROFILES="$$PROFILES --profile php"; fi; \
-		if [ "$${ENABLE_NODE:-true}" = "true" ]; then PROFILES="$$PROFILES --profile node"; fi; \
-		if [ "$${ENABLE_REDIS:-true}" = "true" ]; then PROFILES="$$PROFILES --profile redis"; fi; \
-		if [ "$${ENABLE_MERCURE:-false}" = "true" ]; then PROFILES="$$PROFILES --profile mercure"; fi; \
-		if [ "$${ENABLE_MEILISEARCH:-false}" = "true" ]; then PROFILES="$$PROFILES --profile meilisearch"; fi; \
-		if [ "$${ENABLE_ELASTICSEARCH:-false}" = "true" ]; then PROFILES="$$PROFILES --profile elasticsearch"; fi; \
-		if [ "$${ENABLE_MAILPIT:-false}" = "true" ]; then PROFILES="$$PROFILES --profile mailpit"; fi; \
-		if [ "$${ENABLE_MINIO:-false}" = "true" ]; then PROFILES="$$PROFILES --profile minio"; fi; \
-		if [ "$${ENABLE_RABBITMQ:-false}" = "true" ]; then PROFILES="$$PROFILES --profile rabbitmq"; fi; \
-		if [ "$$ENV" = "production" ]; then \
-			docker compose -f compose.yaml -f compose.production.yaml $$PROFILES logs -f; \
+logs: ## Show logs (optionally specify service names: make logs php nginx)
+	@SERVICES="$(filter-out $@,$(MAKECMDGOALS))"; \
+	if [ -n "$$SERVICES" ]; then \
+		if [ -f .env ]; then \
+			. ./.env && if [ "$$ENV" = "production" ]; then \
+				docker compose -f compose.yaml -f compose.production.yaml logs -f $$SERVICES; \
+			else \
+				docker compose logs -f $$SERVICES; \
+			fi; \
 		else \
-			docker compose $$PROFILES logs -f; \
+			docker compose logs -f $$SERVICES; \
 		fi; \
 	else \
-		docker compose --profile php --profile node --profile redis --profile postgres logs -f; \
+		if [ -f .env ]; then \
+			. ./.env && \
+			PROFILES=""; \
+			if [ "$${ENABLE_DATABASE:-true}" = "true" ]; then \
+				PROFILES="$$PROFILES --profile $${DB_TYPE:-postgres}"; \
+			fi; \
+			if [ "$${ENABLE_PHP:-true}" = "true" ]; then PROFILES="$$PROFILES --profile php"; fi; \
+			if [ "$${ENABLE_NODE:-true}" = "true" ]; then PROFILES="$$PROFILES --profile node"; fi; \
+			if [ "$${ENABLE_REDIS:-true}" = "true" ]; then PROFILES="$$PROFILES --profile redis"; fi; \
+			if [ "$${ENABLE_MERCURE:-false}" = "true" ]; then PROFILES="$$PROFILES --profile mercure"; fi; \
+			if [ "$${ENABLE_MEILISEARCH:-false}" = "true" ]; then PROFILES="$$PROFILES --profile meilisearch"; fi; \
+			if [ "$${ENABLE_ELASTICSEARCH:-false}" = "true" ]; then PROFILES="$$PROFILES --profile elasticsearch"; fi; \
+			if [ "$${ENABLE_MAILPIT:-false}" = "true" ]; then PROFILES="$$PROFILES --profile mailpit"; fi; \
+			if [ "$${ENABLE_MINIO:-false}" = "true" ]; then PROFILES="$$PROFILES --profile minio"; fi; \
+			if [ "$${ENABLE_RABBITMQ:-false}" = "true" ]; then PROFILES="$$PROFILES --profile rabbitmq"; fi; \
+			if [ "$$ENV" = "production" ]; then \
+				docker compose -f compose.yaml -f compose.production.yaml $$PROFILES logs -f; \
+			else \
+				docker compose $$PROFILES logs -f; \
+			fi; \
+		else \
+			docker compose --profile php --profile node --profile redis --profile postgres logs -f; \
+		fi; \
 	fi
 
 logs-nginx: ## Show Nginx logs only

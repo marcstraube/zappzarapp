@@ -128,12 +128,17 @@ make phpmd       # PHPMD
 | `make up`         | Start all containers         |
 | `make down`       | Stop all containers          |
 | `make restart`    | Restart containers           |
+| `make build`      | Build Docker images          |
 | `make logs`       | Show all logs                |
 | `make status`     | Show container status        |
 | `make shell-php`  | Open shell in PHP container  |
 | `make shell-node` | Open shell in Node container |
 
-See [MAKEFILE-REFERENCE.md](MAKEFILE-REFERENCE.md) for all available commands.
+**Tip:** Many commands accept service names: `make restart php nginx`,
+`make logs php`, `make build php`.
+
+See [MAKEFILE-REFERENCE.md](development/MAKEFILE-REFERENCE.md) for all available
+commands.
 
 ## Stack Configuration
 
