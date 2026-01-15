@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { add, multiply, divide, isEven } from '@node/utils/math';
+import { add, multiply, divide, isEven } from '@backend/utils/math';
 
 describe('Math Utilities', () => {
   describe('add', () => {

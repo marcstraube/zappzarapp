@@ -3,7 +3,7 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { EncryptionService } from '@node/services/EncryptionService';
+import { EncryptionService } from '@backend/services/EncryptionService';
 
 describe('EncryptionService', () => {
   const TEST_KEY = 'test-encryption-key-32-bytes-long';

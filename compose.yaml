@@ -18,8 +18,11 @@ services:
     volumes:
       # Shared socket directory for PHP-FPM Unix socket communication
       - php-fpm-socket:/var/run/php-fpm
-      # SSL/HTTPS certificates
-      - ./docker/certs:/etc/nginx/certs:ro
+    secrets:
+      - source: ssl_cert
+        target: /etc/nginx/certs/cert.crt
+      - source: ssl_key
+        target: /etc/nginx/certs/cert.key
     depends_on:
       node:
         condition: service_started
@@ -98,8 +101,9 @@ services:
       context: .
       dockerfile: docker/node/Dockerfile
       # Conditionally set the build target based on the environment variable,
-      # defaulting to the secure 'asset-server' stage (the idle state).
-      target: ${NODE_TARGET:-asset-server}
+      # defaulting to the secure 'vite-assets' stage (the idle state).
+      # Available targets: development, vite-assets, frontend, backend
+      target: ${NODE_TARGET:-vite-assets}
     image: ${COMPOSE_PROJECT_NAME:-zappzarapp}-node:latest
     container_name: ${COMPOSE_PROJECT_NAME:-zappzarapp}-node
     restart: unless-stopped
@@ -161,14 +165,14 @@ services:
       --maxmemory-policy allkeys-lru
       --tls-port 6379
       --port 0
-      --tls-cert-file /etc/ssl/certs/redis.crt
-      --tls-key-file /etc/ssl/private/redis.key
+      --tls-cert-file /run/secrets/ssl_cert
+      --tls-key-file /run/secrets/ssl_key
       --tls-auth-clients no
     volumes:
       - redis-data:/data
-      # SSL/TLS certificates for encrypted connections
-      - ./docker/certs/cert.crt:/etc/ssl/certs/redis.crt:ro
-      - ./docker/certs/cert.key:/etc/ssl/private/redis.key:ro
+    secrets:
+      - ssl_cert
+      - ssl_key
     networks:
       - database
     # Health check defined in Dockerfile (with TLS support)
@@ -502,6 +506,12 @@ volumes:
 # Secrets are mounted at /run/secrets/<secret_name> in containers
 # Use *_FILE environment variables to reference them (e.g., DB_PASSWORD_FILE=/run/secrets/db_password)
 secrets:
+  # SSL/TLS Certificates
+  ssl_cert:
+    file: ./docker/certs/cert.crt
+  ssl_key:
+    file: ./docker/certs/cert.key
+  # Application Secrets
   db_password:
     file: ./secrets/db_password.txt
   db_root_password:

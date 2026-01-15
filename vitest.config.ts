@@ -6,9 +6,9 @@ export default defineConfig({
     // Test environment
     environment: 'node',
 
-    // Test file patterns (Node.js tests only in tests/node/App/)
-    include: ['tests/node/App/**/*.{test,spec}.{ts,js}', 'src/node/App/**/*.{test,spec}.{ts,js}'],
-    exclude: ['node_modules', 'dist', 'build', 'vendor', 'tests/php', 'src/node/server.ts'],
+    // Test file patterns (Node.js backend tests only in tests/node/backend/)
+    include: ['tests/node/backend/**/*.{test,spec}.{ts,js}'],
+    exclude: ['**/node_modules/**', 'dist', 'build', 'vendor', 'tests/php', 'src/node/frontend'],
 
     // Coverage configuration (targeting 80% parity with PHPUnit)
     coverage: {
@@ -20,6 +20,7 @@ export default defineConfig({
         ...coverageConfigDefaults.exclude,
         '**/*.test.{ts,js}',
         '**/*.spec.{ts,js}',
+        'src/node/frontend/**',
       ],
       // Coverage thresholds: 80% parity with PHP
       thresholds: {
@@ -50,8 +51,8 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
-      '@node': path.resolve(__dirname, './src/node/App'),
-      '@tests': path.resolve(__dirname, './tests/node/App'),
+      '@backend': path.resolve(__dirname, './src/node/backend'),
+      '@tests': path.resolve(__dirname, './tests/node/backend'),
     },
   },
 });

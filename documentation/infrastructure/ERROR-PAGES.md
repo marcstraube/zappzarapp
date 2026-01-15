@@ -146,7 +146,7 @@ You can extend the class to add:
 
 ### Node.js Error Responses
 
-Location: `src/node/App/app.ts`
+Location: `src/node/backend/app.ts`
 
 Node.js always returns JSON for errors:
 

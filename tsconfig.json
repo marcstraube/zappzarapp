@@ -1,13 +1,10 @@
 {
+  "extends": "./tsconfig.base.json",
   "compilerOptions": {
-    /* Language and Environment */
-    "target": "ES2022",
-    "lib": ["ES2022"],
-    "module": "ESNext",
-    "moduleResolution": "bundler",
-
-    /* Emit */
+    /* Output */
     "outDir": "./dist",
+
+    /* Emit Settings */
     "removeComments": true,
     "sourceMap": true,
     "declaration": true,
@@ -17,42 +14,22 @@
     "baseUrl": ".",
     "paths": {
       "@/*": ["./src/*"],
-      "@node/*": ["./src/node/App/*"],
-      "@tests/*": ["./tests/node/App/*"]
-    },
-
-    /* Type Checking */
-    "strict": true,
-    "noUnusedLocals": true,
-    "noUnusedParameters": true,
-    "noImplicitReturns": true,
-    "noFallthroughCasesInSwitch": true,
-    "noUncheckedIndexedAccess": true,
-    "allowUnusedLabels": false,
-    "allowUnreachableCode": false,
-
-    /* Interop Constraints */
-    "esModuleInterop": true,
-    "allowSyntheticDefaultImports": true,
-    "forceConsistentCasingInFileNames": true,
-    "isolatedModules": true,
-
-    /* Completeness */
-    "skipLibCheck": true,
-
-    /* Advanced */
-    "resolveJsonModule": true
+      "@backend/*": ["./src/node/backend/*"],
+      "@tests/*": ["./tests/node/backend/*"]
+    }
   },
   "include": [
-    "src/node/App/**/*",
-    "src/node/server.ts",
-    "tests/node/App/**/*"
+    "src/node/backend/**/*",
+    "tests/node/backend/**/*",
+    "vite.config.js",
+    "vitest.config.ts"
   ],
   "exclude": [
     "node_modules",
     "dist",
     "vendor",
     "build",
-    "tests/php"
+    "tests/php",
+    "src/node/frontend"
   ]
 }

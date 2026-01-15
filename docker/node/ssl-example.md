@@ -3,29 +3,31 @@
 ## Overview
 
 This document describes how to enable SSL/TLS for the Node.js backend server
-(app-server mode).
+(backend mode).
 
 ## When to Use SSL for Node.js
 
 ### Scenario A: Nginx as Reverse Proxy (Recommended)
-**Do NOT enable SSL in Node.js**
+
+Do NOT enable SSL in Node.js.
 
 When using Nginx as a reverse proxy (default setup), SSL termination happens
 at Nginx. Node.js backend communicates with Nginx over HTTP internally.
 
-```
+```text
 Client (HTTPS) → Nginx (SSL Termination) → Node.js (HTTP)
 ```
 
 **Configuration:** Use the Nginx SSL setup (see docker/certs/README.md)
 
 ### Scenario B: Direct Node.js Exposure
-**Enable SSL in Node.js**
+
+Enable SSL in Node.js when exposing directly.
 
 If you expose the Node.js backend directly to the internet (without Nginx),
 you need to configure SSL in the Node.js application.
 
-```
+```text
 Client (HTTPS) → Node.js (HTTPS)
 ```
 

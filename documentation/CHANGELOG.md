@@ -1,11 +1,272 @@
 # zappzarapp - Changelog
 
-**Erstellt:** 2025-12-19 **Letzte Aktualisierung:** 2026-01-15 (Nginx Security &
-Config Refactoring) **Version:** 3.41
+**Erstellt:** 2025-12-19 **Letzte Aktualisierung:** 2026-01-16 (Docker Swarm &
+Security Hardening) **Version:** 3.42
 
 ---
 
 ## Changelog
+
+### Version 3.42 (2026-01-16) - Docker Swarm, Security Hardening & Node.js Workspaces
+
+Major security improvements with Docker Swarm for production deployments,
+capability hardening, Docker secrets for SSL certificates, pids limits for fork
+bomb protection, and restructured Node.js architecture with pnpm workspaces for
+backend/frontend separation.
+
+#### Security: Docker Secrets for SSL
+
+All services now use Docker secrets instead of bind-mounted certificate files:
+
+- **New**: `ssl_cert` and `ssl_key` secrets defined in `compose.yaml`
+- **Updated**: nginx, redis, postgres, mariadb, minio, rabbitmq to use
+  `/run/secrets/ssl_cert` and `/run/secrets/ssl_key`
+- **Fixed**: Removed `mode` from base `compose.yaml` secrets (Swarm-only option
+  caused warnings in Compose; production config has full uid/gid/mode)
+- **Fixed**: `HealthCheck.php` now uses `DatabaseConfig` for consistent SSL
+  handling (MariaDB connections failed without explicit SSL options)
+- **Benefit**: Secrets are only accessible to containers that need them, not
+  exposed in image layers or visible via `docker inspect`
+
+#### Security: Process Limits (pids_limit)
+
+Added `pids` limits to all services in `compose.production.yaml` to prevent fork
+bomb attacks:
+
+| Service       | pids_limit |
+| ------------- | ---------- |
+| nginx         | 64         |
+| php           | 256        |
+| node          | 128        |
+| redis         | 32         |
+| postgres      | 128        |
+| mariadb       | 128        |
+| mercure       | 32         |
+| meilisearch   | 64         |
+| elasticsearch | 256        |
+| minio         | 64         |
+| rabbitmq      | 128        |
+
+#### Security: Capability Hardening
+
+Tested and minimized Linux capabilities for production containers. Docker Swarm
+is now required for production to enable proper secrets permissions
+(uid/gid/mode).
+
+**Final capability configuration:**
+
+| Service  | Capabilities                           |
+| -------- | -------------------------------------- |
+| nginx    | DAC_READ_SEARCH, CHOWN, SETUID, SETGID |
+| php      | CHOWN, SETUID, SETGID                  |
+| node     | (none)                                 |
+| redis    | SETUID, SETGID                         |
+| postgres | CHOWN, SETUID, SETGID, FOWNER          |
+| mariadb  | CHOWN, SETUID, SETGID                  |
+
+**Changes from initial configuration:**
+
+- **Removed**: DAC_OVERRIDE from PHP (socket mode 0666 allows healthcheck
+  access)
+- **Removed**: DAC_OVERRIDE from postgres, mariadb (Swarm uid/gid/mode for
+  secrets)
+
+**tmpfs restrictive modes** applied where possible:
+
+- php, redis, postgres, mariadb: `mode=0770,uid=<uid>,gid=<gid>`
+- nginx: `mode=1777` (required for root → nginx user switch)
+
+See `CAPABILITY-TESTING-CHECKLIST.md` for test methodology and results.
+
+#### Infrastructure: Docker Swarm Deployment
+
+Docker Swarm is now **required for production** because Compose standalone
+ignores `uid`, `gid`, and `mode` options for secrets.
+
+**New Makefile targets:**
+
+| Command                                  | Description                         |
+| ---------------------------------------- | ----------------------------------- |
+| `make swarm-init`                        | Initialize Swarm (single-node)      |
+| `make swarm-init ADDR=<ip>`              | Initialize as multi-node manager    |
+| `make swarm-join TOKEN=<t> MANAGER=<ip>` | Join cluster as worker              |
+| `make swarm-deploy`                      | Deploy stack (supports DOCKER_HOST) |
+| `make swarm-status`                      | Show services and tasks             |
+| `make swarm-logs [service]`              | View service logs                   |
+| `make swarm-remove`                      | Remove deployed stack               |
+| `make swarm-leave`                       | Leave Swarm mode                    |
+
+**Remote deployment** via `DOCKER_HOST` in `.env`:
+
+```bash
+DOCKER_HOST=ssh://user@manager-server
+make swarm-deploy
+```
+
+**External secrets support**: If `compose.production-external.yaml` exists, it
+is automatically loaded by `swarm-deploy`.
+
+**New files:**
+
+- `compose.production-external.yaml.example` - Template for external Swarm
+  secrets
+- `documentation/infrastructure/SWARM.md` - Comprehensive deployment guide
+
+#### Infrastructure: CI/CD Deployment
+
+Added commented deployment jobs for automatic Swarm deployment:
+
+- `.gitlab-ci.yml`: `deploy:swarm` job (manual trigger)
+- `.github/workflows/ci.yml`: `deploy-swarm` job (after build-production)
+
+**Required secrets:** `SWARM_MANAGER_HOST`, `SSH_PRIVATE_KEY`
+
+#### Makefile: ENV Validation
+
+- **Error**: `swarm-deploy` requires `ENV=production`
+- **Warning**: `make up` with `ENV=production` suggests using `swarm-deploy`
+
+#### Git Hooks: File Permissions
+
+Added CaptainHook actions to fix file permissions automatically, ensuring Docker
+bind mounts work correctly regardless of developer's umask settings.
+
+**Hooks enabled:**
+
+| Hook            | Trigger                           | Scope             |
+| --------------- | --------------------------------- | ----------------- |
+| `pre-commit`    | Before commit                     | Staged files only |
+| `post-checkout` | After `git checkout`, `git clone` | All project files |
+| `post-merge`    | After `git pull`, `git merge`     | All project files |
+
+**Permissions applied:**
+
+- Shell scripts (`*.sh`): 755 (executable)
+- Config files (`.json`, `.js`, `.ts`, `.yaml`, etc.): 644
+- Documentation (`*.md`): 644
+
+#### Node.js: Workspace Architecture
+
+Restructured Node.js codebase for backend/frontend separation:
+
+- **Moved**: `src/node/App/` → `src/node/backend/`
+- **New**: `src/node/frontend/` for optional frontend frameworks (Next.js, Nuxt,
+  Remix, SvelteKit)
+- **New**: `pnpm-workspace.yaml` with workspace packages
+- **New**: Workspace-specific `package.json` and `tsconfig.json` files
+- **New**: Named volumes `backend_node_modules` and `frontend_node_modules`
+
+#### Node.js: Dockerfile Build Targets
+
+Renamed and added build targets for clearer purpose:
+
+| Old Target     | New Target    | Purpose                        |
+| -------------- | ------------- | ------------------------------ |
+| `asset-server` | `vite-assets` | Serves pre-built Vite assets   |
+| `app-server`   | `backend`     | Runs Node.js backend API       |
+| -              | `frontend`    | Runs frontend frameworks (new) |
+
+#### Node.js: Frontend Scaffolding
+
+New `make frontend-*` commands for scaffolding frontend frameworks:
+
+- **New**: `docker/node/frontend-patches/` with post-install scripts
+- **Supported**: Next.js, Nuxt, Remix, SvelteKit
+- **See**: `documentation/development/FRONTEND-SCAFFOLDING.md`
+
+#### Entrypoint Consolidation
+
+Simplified and separated entrypoints by environment:
+
+**PHP:**
+
+- **New**: `docker/php/entrypoint.production.sh` (minimal, production-only)
+- **Renamed**: `docker/php/entrypoint.sh` → `entrypoint.development.sh`
+- **Benefit**: Production has minimal attack surface, development has full
+  debugging tools
+
+**Node:**
+
+- **New**: `docker/node/entrypoint.development.sh` (consolidated, with su-exec
+  privilege drop)
+- **Deleted**: `docker/node/entrypoint.sh` (production stages use direct CMD)
+- **Benefit**: Simpler architecture, production containers start directly as
+  non-root
+
+**Databases:**
+
+- **Updated**: `docker/postgres/entrypoint.sh` for Docker secrets path handling
+- **Updated**: `docker/mariadb/entrypoint.sh` for Docker secrets path handling
+
+#### Redis: Healthcheck Improvement
+
+- **New**: `docker/redis/healthcheck.sh` - Handles both development (bind-mount)
+  and production (Docker secrets) certificate paths automatically
+
+#### Documentation
+
+- **New**: `documentation/infrastructure/SWARM.md` - Docker Swarm deployment
+  guide
+- **Updated**: `documentation/infrastructure/DEPLOYMENT.md` - Swarm references
+- **Updated**: `documentation/development/MAKEFILE-REFERENCE.md` - Docker Swarm
+  section
+- **Updated**: `documentation/testing/TESTING-NODE.md` - Fixed path aliases
+  (`@node` → `@backend`)
+- **Updated**: `.env.example` - Added `DOCKER_HOST` section for remote
+  deployment
+
+#### TypeDoc: Backend/Frontend Separation
+
+Split Node.js documentation generation for the new workspace architecture:
+
+- **Renamed**: `typedoc.json` → `typedoc.backend.json` + `typedoc.frontend.json`
+- **New**: `tsconfig.typedoc.json` - Excludes test files from documentation
+- **New Makefile targets**:
+  - `make docs-node-backend` - Generate backend API docs
+  - `make docs-node-frontend` - Generate frontend docs (skips if no TS files)
+  - `make docs-node` - Generates both
+- **Output paths**: `docs/api/node-backend/`, `docs/api/node-frontend/`
+- **Updated**: Documentation links in welcome page, sidebar, and guides
+
+#### Static Fallback Page
+
+New `public/index.html` as fallback when `index.php` is not present:
+
+- **Design**: Branded landing page with logo, name, pronunciation, tagline
+- **Links**: GitHub repository, Dev Dashboard
+- **Use case**: Static/JAMstack deployments where PHP is disabled
+
+#### HealthCheck: Error Suppression
+
+Fixed PHP warnings when Docker secrets are not readable:
+
+- **Changed**: `file_exists()` → `is_readable()` for secret files
+- **Added**: `@` error suppression on all `file_get_contents()` calls
+- **Affected methods**: `getSecret()`, `checkNodeBackend()`,
+  `checkMeilisearch()`, `checkElasticsearch()`, `checkMinio()`
+
+#### .env.example Cleanup
+
+- **Removed**: 12-Factor App compliance checklist and related comments
+- **Reason**: Unnecessary documentation clutter, compliance is implicit
+
+#### Git Hooks: Container User Context
+
+- **Changed**: All `docker compose exec` commands in `captainhook.json` now use
+  `-u node` flag
+- **Reason**: Ensures consistent UID (1000) matching between host and container
+- **Benefit**: Eliminates "dubious ownership" errors and permission issues
+
+#### Cleanup
+
+- **Deleted**: `docker/php/conf.d/timezone.php` (obsolete, TZ handled by
+  entrypoint)
+- **Renamed**: `docker/nginx/snippets/node-api-proxy.conf` →
+  `node-backend-proxy.conf`
+- **New**: `docker/nginx/snippets/node-frontend-proxy.conf` for frontend
+  framework proxy locations (Next.js, Nuxt, etc.)
+
+---
 
 ### Version 3.41 (2026-01-15) - Nginx Security & Config Refactoring
 
@@ -3601,7 +3862,7 @@ Complete feature parity between VS Code and PhpStorm:
         (Performance)
     - **Service-Start basierend auf NODE_MODE:**
       - `NODE_MODE=full-stack` → `pnpm run dev:full` (PM2 mit Vite + Express)
-      - `NODE_MODE=vite-only` → `pnpm run dev:frontend` (PM2 nur Vite)
+      - `NODE_MODE=vite-only` → `pnpm run dev:vite` (PM2 nur Vite)
       - `NODE_MODE=backend-only` → `pnpm run dev:backend` (PM2 nur Express)
       - `NODE_MODE=none` → `sleep infinity` (Idle Container für manuelle
         Commands)

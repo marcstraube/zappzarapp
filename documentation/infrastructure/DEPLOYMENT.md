@@ -172,6 +172,9 @@ curl http://localhost:8080/health
 
 ## Deployment Strategies
 
+> **Important:** Production deployments require Docker Swarm for proper secrets
+> permission handling. See [SWARM.md](./SWARM.md) for details.
+
 ### Manual Deployment
 
 1. **Build production images locally:**
@@ -187,11 +190,21 @@ curl http://localhost:8080/health
    docker push registry.example.com/myapp/php:v1.0.0
    ```
 
-3. **Deploy on server:**
+3. **Initialize Swarm on server (once):**
+
+   ```bash
+   # Single-node production
+   make swarm-init
+
+   # Multi-node (allows workers to join later)
+   make swarm-init ADDR=<server-ip>
+   ```
+
+4. **Deploy with Swarm:**
 
    ```bash
    docker pull registry.example.com/myapp/php:v1.0.0
-   docker compose -f compose.yaml -f compose.production.yaml up -d
+   make swarm-deploy
    ```
 
 ### Docker Registry Integration
@@ -235,18 +248,33 @@ deploy:registry:
 ### Docker Swarm Deployment
 
 ```bash
-# Initialize Swarm (on manager node)
-docker swarm init
+# Initialize Swarm (single-node or multi-node manager)
+make swarm-init                    # Single-node (127.0.0.1)
+make swarm-init ADDR=192.168.1.10  # Multi-node manager
+
+# Join workers to cluster (on each worker node)
+make swarm-join TOKEN=SWMTKN-1-xxx MANAGER=192.168.1.10:2377
 
 # Deploy stack
-docker stack deploy -c compose.yaml -c compose.production.yaml myapp
+make swarm-deploy
+
+# Check status
+make swarm-status
 
 # Scale services
-docker service scale myapp_php=3
+docker service scale zappzarapp_php=3
 
 # Update service
-docker service update --image registry.example.com/myapp/php:v1.0.1 myapp_php
+docker service update --image registry.example.com/myapp/php:v1.0.1 zappzarapp_php
 ```
+
+For remote deployment, set `DOCKER_HOST` in `.env` or inline:
+
+```bash
+DOCKER_HOST=ssh://user@server make swarm-deploy
+```
+
+See [SWARM.md](./SWARM.md) for complete documentation.
 
 ### Kubernetes Deployment
 

@@ -3,7 +3,7 @@
     "enabled": true,
     "actions": [
       {
-        "action": "docker compose exec -T node pnpm exec commitlint --edit /app/.git/COMMIT_EDITMSG",
+        "action": "docker compose exec -T -u node node pnpm exec commitlint --edit /app/.git/COMMIT_EDITMSG",
         "options": [],
         "type": "cli",
         "description": "Validate commit message format against Conventional Commits standard"
@@ -14,10 +14,16 @@
     "enabled": true,
     "actions": [
       {
-        "action": "docker compose exec -T node pnpm exec lint-staged",
+        "action": "git diff --name-only --cached --diff-filter=d | xargs -r -I {} sh -c 'case \"{}\" in *.sh) [ \"$(stat -c %a \"{}\")\" != \"755\" ] && chmod 755 \"{}\" && git add \"{}\" && echo \"Fixed: {} -> 755\" ;; *.md|*.json|*.js|*.cjs|*.ts|*.yaml|*.yml|*.php|*.neon|*.xml|.prettier*|.npm*|.markdown*) [ \"$(stat -c %a \"{}\")\" = \"600\" ] || [ \"$(stat -c %a \"{}\")\" = \"660\" ] && chmod 644 \"{}\" && git add \"{}\" && echo \"Fixed: {} -> 644\" ;; esac' || true",
         "options": [],
         "type": "cli",
-        "description": "Fix code style on staged Node.js files (TS/JS, JSON, MD) via Prettier, ESLint, Markdownlint (auto-fix and re-stage)"
+        "description": "Fix file permissions on staged files (scripts: 755, configs: 644)"
+      },
+      {
+        "action": "docker compose exec -T -u node node pnpm exec lint-staged --no-stash",
+        "options": [],
+        "type": "cli",
+        "description": "Fix code style on staged Node.js files (TS/JS, JSON, MD) via Prettier, ESLint, Markdownlint (auto-fix and re-stage). Uses --no-stash to avoid git stash issues with bind-mounted files in Docker."
       },
       {
         "action": "git diff --name-only --cached --diff-filter=d | grep '.php$' | grep -v '^docker/' | grep -v '^\\.php-cs-fixer' | grep -v '^rector\\.php$' | xargs -r -I {} docker compose exec -T php php -l /var/www/html/{}",
@@ -49,13 +55,13 @@
         "description": "Run PHPUnit tests (PHP unit & integration tests)"
       },
       {
-        "action": "docker compose exec -T node pnpm run type-check",
+        "action": "docker compose exec -T -u node node pnpm run type-check",
         "options": [],
         "type": "cli",
         "description": "Run TypeScript type checking (static analysis)"
       },
       {
-        "action": "docker compose exec -T node pnpm test",
+        "action": "docker compose exec -T -u node node pnpm test",
         "options": [],
         "type": "cli",
         "description": "Run Vitest tests (Node.js unit & integration tests)"
@@ -63,12 +69,50 @@
     ]
   },
   "post-checkout": {
-    "enabled": false,
-    "actions": []
+    "enabled": true,
+    "actions": [
+      {
+        "action": "find . -maxdepth 1 -type f \\( -name '*.json' -o -name '*.js' -o -name '*.cjs' -o -name '*.ts' -o -name '*.yaml' -o -name '*.yml' -o -name '*.neon' -o -name '*.md' -o -name '.prettier*' -o -name '.npmrc' -o -name '.markdown*' -o -name '.depcheck*' -o -name '.gitmessage' -o -name 'LICENSE' \\) -not -perm 644 -exec chmod 644 {} +",
+        "options": [],
+        "type": "cli",
+        "description": "Fix root config file permissions (644)"
+      },
+      {
+        "action": "find documentation -type f -name '*.md' -not -perm 644 -exec chmod 644 {} +",
+        "options": [],
+        "type": "cli",
+        "description": "Fix documentation file permissions (644)"
+      },
+      {
+        "action": "find docker -type f -name '*.sh' -not -perm 755 -exec chmod 755 {} +",
+        "options": [],
+        "type": "cli",
+        "description": "Fix shell script permissions (755)"
+      }
+    ]
   },
   "post-merge": {
-    "enabled": false,
-    "actions": []
+    "enabled": true,
+    "actions": [
+      {
+        "action": "find . -maxdepth 1 -type f \\( -name '*.json' -o -name '*.js' -o -name '*.cjs' -o -name '*.ts' -o -name '*.yaml' -o -name '*.yml' -o -name '*.neon' -o -name '*.md' -o -name '.prettier*' -o -name '.npmrc' -o -name '.markdown*' -o -name '.depcheck*' -o -name '.gitmessage' -o -name 'LICENSE' \\) -not -perm 644 -exec chmod 644 {} +",
+        "options": [],
+        "type": "cli",
+        "description": "Fix root config file permissions (644)"
+      },
+      {
+        "action": "find documentation -type f -name '*.md' -not -perm 644 -exec chmod 644 {} +",
+        "options": [],
+        "type": "cli",
+        "description": "Fix documentation file permissions (644)"
+      },
+      {
+        "action": "find docker -type f -name '*.sh' -not -perm 755 -exec chmod 755 {} +",
+        "options": [],
+        "type": "cli",
+        "description": "Fix shell script permissions (755)"
+      }
+    ]
   },
   "post-rewrite": {
     "enabled": false,

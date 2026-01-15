@@ -1,0 +1,63 @@
+# ./compose.production-external.yaml.example
+# External Secrets Configuration for Docker Swarm
+#
+# Copy this file to compose.production-external.yaml and adjust for your setup.
+# When present, this file is automatically loaded by 'make swarm-deploy'.
+#
+# Usage:
+#   1. Create secrets in Swarm:
+#      echo "mypassword" | docker secret create zappzarapp_db_password -
+#
+#   2. Copy this file:
+#      cp compose.production-external.yaml.example compose.production-external.yaml
+#
+#   3. Deploy:
+#      make swarm-deploy
+#
+# For external secret providers (Vault, AWS, etc.), see:
+# https://docs.docker.com/engine/swarm/secrets/#use-secrets-in-compose
+
+secrets:
+  # SSL/TLS Certificates
+  ssl_cert:
+    external: true
+    name: zappzarapp_ssl_cert
+  ssl_key:
+    external: true
+    name: zappzarapp_ssl_key
+
+  # Database Secrets
+  db_password:
+    external: true
+    name: zappzarapp_db_password
+  db_root_password:
+    external: true
+    name: zappzarapp_db_root_password
+
+  # Application Secrets
+  encryption_key:
+    external: true
+    name: zappzarapp_encryption_key
+  backup_encryption_key:
+    external: true
+    name: zappzarapp_backup_encryption_key
+
+  # Optional Service Secrets (uncomment as needed)
+  # meilisearch_master_key:
+  #   external: true
+  #   name: zappzarapp_meilisearch_master_key
+  # minio_root_user:
+  #   external: true
+  #   name: zappzarapp_minio_root_user
+  # minio_root_password:
+  #   external: true
+  #   name: zappzarapp_minio_root_password
+  # rabbitmq_user:
+  #   external: true
+  #   name: zappzarapp_rabbitmq_user
+  # rabbitmq_password:
+  #   external: true
+  #   name: zappzarapp_rabbitmq_password
+  # mercure_jwt_secret:
+  #   external: true
+  #   name: zappzarapp_mercure_jwt_secret

@@ -1,0 +1,12 @@
+# pnpm Workspace Configuration
+# https://pnpm.io/workspaces
+#
+# Workspaces share dependencies from root and use a single lock file.
+# Each workspace can have framework-specific dependencies while inheriting
+# shared tooling (TypeScript, ESLint, Prettier) from root.
+
+packages:
+  # Node.js Backend (Express API)
+  - 'src/node/backend'
+  # Node.js Frontend (User's choice: Nuxt, Next.js, SvelteKit, etc.)
+  - 'src/node/frontend'

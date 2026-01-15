@@ -72,7 +72,7 @@ poll.
 }
 ```
 
-**Implementation:** `src/node/App/app.ts`
+**Implementation:** `src/node/backend/app.ts`
 
 ## Uptime Monitoring
 
@@ -257,7 +257,7 @@ docker compose exec node pnpm add @sentry/node
 ```
 
 ```typescript
-// src/node/App/app.ts
+// src/node/backend/app.ts
 import * as Sentry from '@sentry/node';
 
 Sentry.init({
@@ -488,7 +488,7 @@ docker compose exec node pnpm add prom-client
 ```
 
 ```typescript
-// src/node/App/metrics.ts
+// src/node/backend/metrics.ts
 import { Registry, collectDefaultMetrics } from 'prom-client';
 
 const register = new Registry();

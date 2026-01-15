@@ -1,14 +1,22 @@
 #!/bin/sh
 # Docker PHP Entrypoint Script (Development)
-# Validates dependencies (for php-fpm), sets up timezone and Git configuration
+# Validates dependencies (for php-fpm) and configures development environment
 
 set -e
 
-# Set up timezone from TZ environment variable
-# Creates /etc/localtime symlink required for PHP on Alpine Linux
-if [ -n "$TZ" ] && [ -f "/usr/share/zoneinfo/$TZ" ]; then
-    ln -sf "/usr/share/zoneinfo/$TZ" /etc/localtime
-    echo "$TZ" > /etc/timezone
+# Copy secrets to readable location (development only)
+# Host files stay secure at 600, copies at /tmp/secrets are 444
+# Application code checks /tmp/secrets first, falls back to /run/secrets
+if [ -d "/run/secrets" ]; then
+    mkdir -p /tmp/secrets
+    chmod 755 /tmp/secrets
+    for secret in /run/secrets/*; do
+        if [ -f "$secret" ]; then
+            name=$(basename "$secret")
+            cp "$secret" "/tmp/secrets/$name" && chmod 444 "/tmp/secrets/$name"
+        fi
+    done
+    echo "[entrypoint.development] Secrets copied to /tmp/secrets (readable)"
 fi
 
 # Configure Git safe directory for Dev Dashboard (system-wide, applies to all users)
@@ -21,13 +29,13 @@ fi
 
 # Only validate dependencies when starting php-fpm service (not for composer/other commands)
 if [ "$1" = "php-fpm" ]; then
-    echo "[entrypoint] Starting PHP-FPM service..."
+    echo "[entrypoint.development] Starting PHP-FPM service..."
     if [ ! -d "/var/www/html/vendor" ] || [ ! -f "/var/www/html/vendor/autoload.php" ]; then
-        echo "[entrypoint] ERROR: Composer dependencies not installed!"
-        echo "[entrypoint] Run 'make composer-install' to install dependencies."
+        echo "[entrypoint.development] ERROR: Composer dependencies not installed!"
+        echo "[entrypoint.development] Run 'make composer-install' to install dependencies."
         exit 1
     fi
-    echo "[entrypoint] Dependencies OK"
+    echo "[entrypoint.development] Dependencies OK"
 fi
 
 # Execute the main command

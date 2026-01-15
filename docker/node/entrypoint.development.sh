@@ -1,0 +1,119 @@
+#!/bin/sh
+# Docker Node.js Development Entrypoint Script
+# Runs as root initially to fix volume permissions, then re-execs as node user
+#
+# Why root first:
+# Docker named volumes are created as root. Workspace node_modules volumes
+# need ownership changed to the node user before pnpm can write to them.
+
+set -e
+
+# ═══════════════════════════════════════════════════════════════════════════
+# ROOT-ONLY TASKS (runs first, before privilege drop)
+# ═══════════════════════════════════════════════════════════════════════════
+if [ "$(id -u)" = "0" ]; then
+    # Fix ownership of workspace node_modules volumes (only when empty = first run)
+    fix_workspace_permissions() {
+        local backend_nm="/app/src/node/backend/node_modules"
+        local frontend_nm="/app/src/node/frontend/node_modules"
+        local needs_fix=false
+
+        if [ -d "$backend_nm" ] && [ -z "$(ls -A "$backend_nm" 2>/dev/null)" ]; then
+            needs_fix=true
+        fi
+        if [ -d "$frontend_nm" ] && [ -z "$(ls -A "$frontend_nm" 2>/dev/null)" ]; then
+            needs_fix=true
+        fi
+
+        if [ "$needs_fix" = true ]; then
+            echo "[entrypoint.development] Fixing workspace node_modules permissions..."
+            NODE_UID=$(id -u node)
+            NODE_GID=$(id -g node)
+            [ -d "$backend_nm" ] && chown -R "$NODE_UID:$NODE_GID" "$backend_nm"
+            [ -d "$frontend_nm" ] && chown -R "$NODE_UID:$NODE_GID" "$frontend_nm"
+            echo "[entrypoint.development] Permissions fixed for node:node ($NODE_UID:$NODE_GID)"
+        fi
+    }
+
+    fix_workspace_permissions
+
+    # Copy secrets to readable location (as root, for all users)
+    if [ -d "/run/secrets" ]; then
+        mkdir -p /tmp/secrets
+        chmod 755 /tmp/secrets
+        for secret in /run/secrets/*; do
+            if [ -f "$secret" ]; then
+                name=$(basename "$secret")
+                cp "$secret" "/tmp/secrets/$name" && chmod 444 "/tmp/secrets/$name"
+            fi
+        done
+        echo "[entrypoint.development] Secrets copied to /tmp/secrets (readable)"
+    fi
+
+    # Fix stdout/stderr permissions for PM2 (needed after privilege drop)
+    chmod 666 /dev/stdout /dev/stderr 2>/dev/null || true
+
+    # Re-exec this script as node user (privilege drop)
+    exec su-exec node "$0" "$@"
+fi
+
+# ═══════════════════════════════════════════════════════════════════════════
+# NODE USER TASKS (runs after privilege drop)
+# ═══════════════════════════════════════════════════════════════════════════
+
+# If arguments are passed, run them directly (command mode, e.g., pnpm install)
+if [ $# -gt 0 ]; then
+    exec "$@"
+fi
+
+# Service mode: validate dependencies before starting
+echo "[entrypoint.development] Starting Node.js container..."
+echo "[entrypoint.development] NODE_MODE: ${NODE_MODE:-none}"
+
+# Fail fast if dependencies are missing (explicit install required)
+if [ ! -d "/app/node_modules" ] || [ -z "$(ls -A /app/node_modules 2>/dev/null)" ]; then
+    echo "[entrypoint.development] ERROR: Node.js dependencies not installed!"
+    echo "[entrypoint.development] Run 'make pnpm-install' to install dependencies."
+    exit 1
+fi
+echo "[entrypoint.development] Dependencies OK"
+
+# Start services based on NODE_MODE
+case "${NODE_MODE:-none}" in
+    full-stack)
+        echo "[entrypoint.development] Starting Full-Stack mode (Vite + Express via PM2)..."
+        exec pnpm run dev:full
+        ;;
+    vite-only)
+        echo "[entrypoint.development] Starting Vite-Only mode (Frontend HMR via PM2)..."
+        exec pnpm run dev:vite
+        ;;
+    backend-only)
+        echo "[entrypoint.development] Starting Backend-Only mode (Express API via PM2)..."
+        exec pnpm run dev:backend
+        ;;
+    frontend-only)
+        echo "[entrypoint.development] Starting Frontend-Only mode (Node frontend framework)..."
+        if [ ! -f "/app/src/node/frontend/package.json" ]; then
+            echo "[entrypoint.development] ERROR: No frontend framework installed!"
+            echo "[entrypoint.development] See src/node/frontend/README.md for setup instructions."
+            exit 1
+        fi
+        exec pnpm run frontend:dev
+        ;;
+    frontend-backend)
+        echo "[entrypoint.development] Starting Frontend-Backend mode (Node frontend + Express)..."
+        if [ ! -f "/app/src/node/frontend/package.json" ]; then
+            echo "[entrypoint.development] ERROR: No frontend framework installed!"
+            echo "[entrypoint.development] See src/node/frontend/README.md for setup instructions."
+            exit 1
+        fi
+        # Start Express backend in background, frontend in foreground
+        pnpm run dev:backend &
+        exec pnpm run frontend:dev
+        ;;
+    none|*)
+        echo "[entrypoint.development] Idle mode - container running without services"
+        exec sleep infinity
+        ;;
+esac

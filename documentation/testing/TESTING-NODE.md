@@ -7,7 +7,7 @@ PHPUnit for PHP).
 
 ```text
 tests/node/              # Node.js tests (Vitest)
-└── App/
+└── backend/
     ├── unit/            # Unit tests for individual functions/utilities
     │   ├── math.test.ts
     │   └── services/
@@ -59,11 +59,11 @@ Coverage reports are generated in `build/coverage/node/`:
 
 ### Unit Tests
 
-Place unit tests in `tests/node/App/unit/` directory. Example:
+Place unit tests in `tests/node/backend/unit/` directory. Example:
 
 ```typescript
 import { describe, it, expect } from 'vitest';
-import { myFunction } from '@node/utils/myFunction';
+import { myFunction } from '@backend/utils/myFunction';
 
 describe('MyFunction', () => {
   it('should return expected result', () => {
@@ -74,11 +74,11 @@ describe('MyFunction', () => {
 
 ### Service Tests
 
-Place service tests in `tests/node/App/unit/services/`. Example:
+Place service tests in `tests/node/backend/unit/services/`. Example:
 
 ```typescript
 import { describe, it, expect, beforeEach } from 'vitest';
-import { EncryptionService } from '@node/App/services/EncryptionService';
+import { EncryptionService } from '@backend/services/EncryptionService';
 
 describe('EncryptionService', () => {
   const testKey = 'test-encryption-key-32-chars-!!';
@@ -95,12 +95,12 @@ describe('EncryptionService', () => {
 
 ### Integration Tests
 
-Place integration tests in `tests/node/App/integration/` directory. Example:
+Place integration tests in `tests/node/backend/integration/` directory. Example:
 
 ```typescript
 import { describe, it, expect, beforeAll } from 'vitest';
 import request from 'supertest';
-import { createApp } from '@node/app';
+import { createApp } from '@backend/app';
 import type { Express } from 'express';
 
 describe('API Tests', () => {
@@ -118,11 +118,11 @@ describe('API Tests', () => {
 
 ## Path Aliases
 
-The following aliases are available in tests:
+The following aliases are available in tests (defined in `tsconfig.json`):
 
-- `@` -> `./src`
-- `@node` -> `./src/node`
-- `@tests` -> `./tests/node`
+- `@/*` -> `./src/*`
+- `@backend/*` -> `./src/node/backend/*`
+- `@tests/*` -> `./tests/node/backend/*`
 
 ## Quality Thresholds
 

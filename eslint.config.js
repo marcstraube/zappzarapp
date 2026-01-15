@@ -16,6 +16,8 @@ export default [
       '*.config.js',
       '*.config.cjs',
       'ecosystem.config.cjs',
+      // Frontend has its own ESLint config via Nuxt/Vue
+      'src/node/frontend/**',
     ],
   },
 

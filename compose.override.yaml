@@ -106,7 +106,6 @@ services:
       # Development-only overrides (loaded last due to zz-* prefix)
       - ./docker/php/conf.d/development.ini:/usr/local/etc/php/conf.d/zz-development.ini:ro
       - ./docker/php/conf.d/xdebug.ini:/usr/local/etc/php/conf.d/zz-xdebug.ini:ro
-      - ./docker/php/conf.d/timezone.php:/usr/local/etc/php/conf.d/timezone.php:ro
     extra_hosts:
       - "host.docker.internal:host-gateway"
     environment:
@@ -146,9 +145,16 @@ services:
         USER_ID: ${USER_ID:-1000}
         GROUP_ID: ${GROUP_ID:-1000}
     ports:
+      # Only Vite HMR exposed for development (hot reload requires direct WebSocket)
+      # Backend (3000) and Frontend (3001) accessed via Nginx only (HTTPS on 8443)
       - "${VITE_PORT:-5173}:5173"
-      - "${NODE_PORT:-3000}:3000"
     volumes:
+      # Entrypoint Script (production stages use direct CMD, no entrypoint needed)
+      - ./docker/node/entrypoint.development.sh:/usr/local/bin/entrypoint.development.sh:ro
+
+      # Frontend scaffolding patches (for make frontend-* commands)
+      - ./docker/node/frontend-patches:/app/docker/node/frontend-patches:ro
+
       # Package manager files (bidirectional bind mount for pnpm update/add/remove)
       # Not copied in Dockerfile development stage to avoid frozen-lockfile issues
       - ./package.json:/app/package.json
@@ -160,6 +166,11 @@ services:
       # Source and Tests (bidirectional bind mounts for ESLint, Prettier, etc.)
       # Note: src/php and tests/php are mounted for lint-staged git restore operations
       - ./src:/app/src
+
+      # Workspace node_modules (override bind mount - MUST be after ./src mount)
+      # These volumes are populated by 'make pnpm-install' and persist workspace deps
+      - backend_node_modules:/app/src/node/backend/node_modules
+      - frontend_node_modules:/app/src/node/frontend/node_modules
       - ./tests:/app/tests
       - ./resources:/app/resources
 
@@ -172,10 +183,13 @@ services:
       # Build config files (needed for Vite, TypeScript, PM2)
       - ./vite.config.js:/app/vite.config.js:ro
       - ./tsconfig.json:/app/tsconfig.json:ro
+      - ./tsconfig.base.json:/app/tsconfig.base.json:ro
       - ./tsconfig.build.json:/app/tsconfig.build.json:ro
       - ./tsconfig.vitest.json:/app/tsconfig.vitest.json:ro
+      - ./tsconfig.typedoc.json:/app/tsconfig.typedoc.json:ro
       - ./vitest.config.ts:/app/vitest.config.ts:ro
       - ./ecosystem.config.cjs:/app/ecosystem.config.cjs:ro
+      - ./pnpm-workspace.yaml:/app/pnpm-workspace.yaml:ro
 
       # Static config files (read-only bind mounts, rarely change)
       - ./postcss.config.js:/app/postcss.config.js:ro
@@ -183,7 +197,8 @@ services:
       - ./.prettierrc.json:/app/.prettierrc.json:ro
       - ./.prettierignore:/app/.prettierignore:ro
       - ./commitlint.config.js:/app/commitlint.config.js:ro
-      - ./typedoc.json:/app/typedoc.json:ro
+      - ./typedoc.backend.json:/app/typedoc.backend.json:ro
+      - ./typedoc.frontend.json:/app/typedoc.frontend.json:ro
       - ./.markdownlint-cli2.jsonc:/app/.markdownlint-cli2.jsonc:ro
       - ./lint-staged.config.js:/app/lint-staged.config.js:ro
       - ./.depcheckrc.json:/app/.depcheckrc.json:ro
@@ -350,6 +365,11 @@ services:
 
 volumes:
   node_modules:
+    driver: local
+  # Workspace node_modules (pnpm workspaces install here)
+  backend_node_modules:
+    driver: local
+  frontend_node_modules:
     driver: local
   php_vendor:
     driver: local

@@ -32,5 +32,5 @@
   },
 
   // Files to ignore
-  "ignores": ["node_modules/**", "vendor/**", "build/**", "docs/**", ".git/**", "CHANGELOG.md"]
+  "ignores": ["**/node_modules/**", "vendor/**", "build/**", "docs/**", ".git/**", "CHANGELOG.md"]
 }

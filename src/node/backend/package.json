@@ -1,0 +1,23 @@
+{
+  "name": "@zappzarapp/backend",
+  "version": "1.0.0",
+  "description": "Node.js backend API server with Express and Pino logging",
+  "type": "module",
+  "private": true,
+  "main": "dist/server.js",
+  "scripts": {
+    "dev": "tsx watch server.ts",
+    "build": "tsc -p tsconfig.build.json",
+    "start": "node dist/server.js"
+  },
+  "dependencies": {
+    "express": "^5.2.1",
+    "pg": "^8.16.3",
+    "pino": "^10.1.1",
+    "pino-http": "^11.0.0"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.6",
+    "@types/pg": "^8.16.0"
+  }
+}

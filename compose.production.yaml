@@ -1,5 +1,16 @@
 # ./compose.production.yaml
 # Docker Compose Production Environment
+#
+# IMPORTANT: Production requires Docker Swarm for proper secrets permissions.
+# Usage: make swarm-deploy
+#
+# UIDs reference (from container images):
+#   nginx:    101 (nginx user in Alpine)
+#   php:      82  (www-data in Alpine)
+#   node:     50000 (custom node user)
+#   redis:    999 (redis user)
+#   postgres: 70  (postgres user in Alpine)
+#   mariadb:  999 (mysql user)
 
 services:
   nginx:
@@ -8,18 +19,39 @@ services:
     volumes:
       # Shared socket directory for PHP-FPM Unix socket communication
       - php-fpm-socket:/var/run/php-fpm
-      # Production SSL config and certificates
+      # Production SSL config
       - ./docker/nginx/conf.d/ssl-production.conf:/etc/nginx/conf.d/ssl.conf:ro
-      - ./docker/certs:/etc/nginx/certs:ro
+    # SSL certificates via secrets (defined in compose.yaml)
     read_only: true
     tmpfs:
-      - /var/cache/nginx:mode=0770,uid=101,gid=101,size=64M
-      - /tmp/nginx:mode=0770,uid=101,gid=101,size=32M
-      - /var/run/nginx:mode=0770,uid=101,gid=101,size=16M
+      # Mode 1777 REQUIRED: nginx starts as root, needs write access before user switch
+      - /var/cache/nginx:mode=1777,size=64M
+      - /var/log/nginx:mode=1777,size=32M
+      - /var/lib/nginx/tmp:mode=1777,size=64M
+      - /tmp:mode=1777,size=32M
+      - /var/run:mode=1777,size=16M
     security_opt:
       - no-new-privileges:true
     cap_drop:
       - ALL
+    cap_add:
+      # REQUIRED: nginx needs this for dlopen() to load dynamic modules (brotli etc)
+      - DAC_READ_SEARCH
+      # REQUIRED: chown tmpfs and user switch
+      - CHOWN
+      - SETUID
+      - SETGID
+    secrets:
+      - source: ssl_cert
+        target: /etc/nginx/certs/cert.crt
+        uid: '101'
+        gid: '101'
+        mode: 0444
+      - source: ssl_key
+        target: /etc/nginx/certs/cert.key
+        uid: '101'
+        gid: '101'
+        mode: 0400
     logging:
       driver: "json-file"
       options:
@@ -30,6 +62,7 @@ services:
         limits:
           cpus: '2.0'
           memory: 2G
+          pids: 64
         reservations:
           cpus: '1.0'
           memory: 1G
@@ -49,6 +82,24 @@ services:
       - no-new-privileges:true
     cap_drop:
       - ALL
+    cap_add:
+      # REQUIRED: PHP-FPM socket chown and user switch
+      - CHOWN
+      - SETUID
+      - SETGID
+    secrets:
+      - source: db_password
+        uid: '82'
+        gid: '82'
+        mode: 0400
+      - source: encryption_key
+        uid: '82'
+        gid: '82'
+        mode: 0400
+      - source: backup_encryption_key
+        uid: '82'
+        gid: '82'
+        mode: 0400
     environment:
       - ENV=production
     logging:
@@ -61,6 +112,7 @@ services:
         limits:
           cpus: '2.0'
           memory: 2G
+          pids: 256
         reservations:
           cpus: '1.0'
           memory: 1G
@@ -74,6 +126,19 @@ services:
       - no-new-privileges:true
     cap_drop:
       - ALL
+    secrets:
+      - source: db_password
+        uid: '50000'
+        gid: '50000'
+        mode: 0400
+      - source: encryption_key
+        uid: '50000'
+        gid: '50000'
+        mode: 0400
+      - source: backup_encryption_key
+        uid: '50000'
+        gid: '50000'
+        mode: 0400
     logging:
       driver: "json-file"
       options:
@@ -84,6 +149,7 @@ services:
         limits:
           cpus: '0.5'
           memory: 512M
+          pids: 128
         reservations:
           cpus: '0.25'
           memory: 256M
@@ -94,13 +160,24 @@ services:
       - /tmp:mode=0770,uid=999,gid=999,size=64M
     volumes:
       - redis-data:/data
-      # SSL certificates for encrypted connections
-      - ./docker/certs/cert.crt:/etc/ssl/certs/redis.crt:ro
-      - ./docker/certs/cert.key:/etc/ssl/private/redis.key:ro
+    # SSL certificates via secrets (defined in compose.yaml)
     security_opt:
       - no-new-privileges:true
     cap_drop:
       - ALL
+    cap_add:
+      # REQUIRED: redis entrypoint needs to fix data dir permissions and switch user
+      - SETUID
+      - SETGID
+    secrets:
+      - source: ssl_cert
+        uid: '999'
+        gid: '999'
+        mode: 0444
+      - source: ssl_key
+        uid: '999'
+        gid: '999'
+        mode: 0400
     command: >
       redis-server
       --appendonly yes
@@ -112,8 +189,8 @@ services:
       --save 60 10000
       --tls-port 6379
       --port 0
-      --tls-cert-file /etc/ssl/certs/redis.crt
-      --tls-key-file /etc/ssl/private/redis.key
+      --tls-cert-file /run/secrets/ssl_cert
+      --tls-key-file /run/secrets/ssl_key
       --tls-auth-clients no
     logging:
       driver: "json-file"
@@ -125,6 +202,7 @@ services:
         limits:
           cpus: '0.5'
           memory: 512M
+          pids: 32
         reservations:
           cpus: '0.25'
           memory: 256M
@@ -138,12 +216,29 @@ services:
       - no-new-privileges:true
     cap_drop:
       - ALL
+    cap_add:
+      # REQUIRED: SSL cert ownership and user switch
+      - CHOWN
+      - SETUID
+      - SETGID
+      # REQUIRED: entrypoint needs chmod on SSL certs
+      - FOWNER
     shm_size: 256mb
     volumes:
       - postgres-data:/var/lib/postgresql/data
-      # SSL certificates for encrypted connections
-      - ./docker/certs/cert.crt:/var/lib/postgresql/server.crt:ro
-      - ./docker/certs/cert.key:/var/lib/postgresql/server.key:ro
+    secrets:
+      - source: db_password
+        uid: '70'
+        gid: '70'
+        mode: 0400
+      - source: ssl_cert
+        uid: '70'
+        gid: '70'
+        mode: 0444
+      - source: ssl_key
+        uid: '70'
+        gid: '70'
+        mode: 0400
     command: >
       postgres
       -c shared_buffers=256MB
@@ -176,6 +271,7 @@ services:
         limits:
           cpus: '1.0'
           memory: 1G
+          pids: 128
         reservations:
           cpus: '0.5'
           memory: 512M
@@ -189,12 +285,31 @@ services:
       - no-new-privileges:true
     cap_drop:
       - ALL
+    cap_add:
+      # REQUIRED: user switch to mysql
+      - CHOWN
+      - SETUID
+      - SETGID
     shm_size: 256mb
     volumes:
       - mariadb-data:/var/lib/mysql
-      # SSL certificates for encrypted connections
-      - ./docker/certs/cert.crt:/etc/mysql/certs/server.crt:ro
-      - ./docker/certs/cert.key:/etc/mysql/certs/server.key:ro
+    secrets:
+      - source: db_password
+        uid: '999'
+        gid: '999'
+        mode: 0400
+      - source: db_root_password
+        uid: '999'
+        gid: '999'
+        mode: 0400
+      - source: ssl_cert
+        uid: '999'
+        gid: '999'
+        mode: 0444
+      - source: ssl_key
+        uid: '999'
+        gid: '999'
+        mode: 0400
     command: >
       --innodb-buffer-pool-size=256M
       --max-connections=100
@@ -204,9 +319,9 @@ services:
       --slow-query-log=1
       --slow-query-log-file=/var/log/mysql/slow.log
       --long-query-time=1
-      --ssl-ca=/etc/mysql/certs/server.crt
-      --ssl-cert=/etc/mysql/certs/server.crt
-      --ssl-key=/etc/mysql/certs/server.key
+      --ssl-ca=/run/secrets/ssl_cert
+      --ssl-cert=/run/secrets/ssl_cert
+      --ssl-key=/run/secrets/ssl_key
       --require-secure-transport=ON
     logging:
       driver: "json-file"
@@ -218,6 +333,7 @@ services:
         limits:
           cpus: '1.0'
           memory: 1G
+          pids: 128
         reservations:
           cpus: '0.5'
           memory: 512M
@@ -234,6 +350,11 @@ services:
       - no-new-privileges:true
     cap_drop:
       - ALL
+    secrets:
+      - source: mercure_jwt_secret
+        uid: '0'
+        gid: '0'
+        mode: 0400
     environment:
       # Production: Restrict CORS to specific origins
       MERCURE_EXTRA_DIRECTIVES: |
@@ -248,6 +369,7 @@ services:
         limits:
           cpus: '0.5'
           memory: 256M
+          pids: 32
         reservations:
           cpus: '0.1'
           memory: 64M
@@ -258,6 +380,11 @@ services:
       - no-new-privileges:true
     cap_drop:
       - ALL
+    secrets:
+      - source: meilisearch_master_key
+        uid: '0'
+        gid: '0'
+        mode: 0400
     environment:
       # Production environment
       MEILI_ENV: production
@@ -273,6 +400,7 @@ services:
         limits:
           cpus: '1.0'
           memory: 1G
+          pids: 64
         reservations:
           cpus: '0.25'
           memory: 256M
@@ -298,6 +426,7 @@ services:
         limits:
           cpus: '2.0'
           memory: 2G
+          pids: 256
         reservations:
           cpus: '0.5'
           memory: 1G
@@ -316,8 +445,25 @@ services:
       - ALL
     volumes:
       - minio-data:/data
-      # SSL/TLS Certificates for encrypted connections
-      - ./docker/certs:/root/.minio/certs:ro
+    secrets:
+      - source: minio_root_user
+        uid: '0'
+        gid: '0'
+        mode: 0400
+      - source: minio_root_password
+        uid: '0'
+        gid: '0'
+        mode: 0400
+      - source: ssl_cert
+        target: /root/.minio/certs/public.crt
+        uid: '0'
+        gid: '0'
+        mode: 0444
+      - source: ssl_key
+        target: /root/.minio/certs/private.key
+        uid: '0'
+        gid: '0'
+        mode: 0400
     environment:
       # Enable TLS (MinIO auto-detects certs in /root/.minio/certs/)
       MINIO_SERVER_URL: https://minio:9000
@@ -331,6 +477,7 @@ services:
         limits:
           cpus: '1.0'
           memory: 1G
+          pids: 64
         reservations:
           cpus: '0.25'
           memory: 256M
@@ -343,11 +490,27 @@ services:
       - ALL
     volumes:
       - rabbitmq-data:/var/lib/rabbitmq
-      # SSL/TLS Certificates for encrypted connections
-      - ./docker/certs/cert.crt:/etc/rabbitmq/certs/server.crt:ro
-      - ./docker/certs/cert.key:/etc/rabbitmq/certs/server.key:ro
       # RabbitMQ TLS configuration (production - TLS only)
       - ./docker/rabbitmq/rabbitmq-production.conf:/etc/rabbitmq/rabbitmq.conf:ro
+    secrets:
+      - source: rabbitmq_user
+        uid: '999'
+        gid: '999'
+        mode: 0400
+      - source: rabbitmq_password
+        uid: '999'
+        gid: '999'
+        mode: 0400
+      - source: ssl_cert
+        target: /etc/rabbitmq/certs/server.crt
+        uid: '999'
+        gid: '999'
+        mode: 0444
+      - source: ssl_key
+        target: /etc/rabbitmq/certs/server.key
+        uid: '999'
+        gid: '999'
+        mode: 0400
     logging:
       driver: "json-file"
       options:
@@ -358,6 +521,7 @@ services:
         limits:
           cpus: '1.0'
           memory: 512M
+          pids: 128
         reservations:
           cpus: '0.25'
           memory: 128M

@@ -347,9 +347,9 @@
       "isBackground": true
     },
     {
-      "label": "Node: Dev Frontend Only",
+      "label": "Node: Dev Vite Only",
       "type": "shell",
-      "command": "make node-dev-frontend",
+      "command": "make node-dev-vite",
       "problemMatcher": [],
       "presentation": { "reveal": "always", "panel": "dedicated" },
       "isBackground": true
@@ -361,6 +361,42 @@
       "problemMatcher": [],
       "presentation": { "reveal": "always", "panel": "dedicated" },
       "isBackground": true
+    },
+    {
+      "label": "Node: Frontend Dev",
+      "type": "shell",
+      "command": "make node-frontend-dev",
+      "problemMatcher": [],
+      "presentation": { "reveal": "always", "panel": "dedicated" },
+      "isBackground": true
+    },
+    {
+      "label": "Node: Frontend Build",
+      "type": "shell",
+      "command": "make node-frontend-build",
+      "problemMatcher": []
+    },
+    {
+      "label": "Node: Frontend Start",
+      "type": "shell",
+      "command": "make node-frontend-start",
+      "problemMatcher": [],
+      "presentation": { "reveal": "always", "panel": "dedicated" },
+      "isBackground": true
+    },
+    {
+      "label": "Node: Backend Up",
+      "type": "shell",
+      "command": "make node-backend-up",
+      "problemMatcher": [],
+      "presentation": { "reveal": "always", "panel": "new" }
+    },
+    {
+      "label": "Node: Frontend Up",
+      "type": "shell",
+      "command": "make node-frontend-up",
+      "problemMatcher": [],
+      "presentation": { "reveal": "always", "panel": "new" }
     },
     {
       "label": "Node: Server Dev (Watch)",

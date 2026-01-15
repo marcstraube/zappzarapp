@@ -9,6 +9,7 @@
 - **Development**
   - [Makefile Reference](development/MAKEFILE-REFERENCE.md)
   - [Dependencies](development/DEPENDENCIES.md)
+  - [Frontend Scaffolding](development/FRONTEND-SCAFFOLDING.md)
   - [Dev Dashboard](development/DEV-DASHBOARD.md)
   - [Xdebug](development/XDEBUG.md)
   - [Renovate](development/RENOVATE.md)
@@ -41,4 +42,5 @@
 
 - **API Documentation**
   - <a href="/docs/api/php/" target="_top">PHP API</a>
-  - <a href="/docs/api/node/" target="_top">Node.js API</a>
+  - <a href="/docs/api/node-backend/" target="_top">Node.js Backend API</a>
+  - <a href="/docs/api/node-frontend/" target="_top">Node.js Frontend</a>

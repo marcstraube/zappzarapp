@@ -44,7 +44,7 @@ module.exports = {
     {
       name: 'backend',
       script: 'node',
-      args: '--import tsx src/node/server.ts',
+      args: '--import tsx src/node/backend/server.ts',
       cwd: '/app',
       interpreter: 'none',
       exec_mode: 'fork_mode',

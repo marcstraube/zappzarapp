@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeAll } from 'vitest';
 import request from 'supertest';
-import { createApp } from '@node/app';
+import { createApp } from '@backend/app';
 import type { Express } from 'express';
 
 describe('API Integration Tests', () => {

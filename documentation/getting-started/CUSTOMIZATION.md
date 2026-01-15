@@ -127,7 +127,8 @@ git push -u origin main
 Replace `public/favicon.svg` with your own icon. The file is used by:
 
 - Main application (`/`)
-- API documentation (`/docs/api/php/`, `/docs/api/node/`)
+- API documentation (`/docs/api/php/`, `/docs/api/node-backend/`,
+  `/docs/api/node-frontend/`)
 
 The Dev Dashboard and Docsify guides use separate favicons in:
 
@@ -140,7 +141,8 @@ Titles are generated automatically from package files:
 
 ```text
 {ProjectName} - PHP API - v{version}
-{ProjectName} - Node API - v{version}
+{ProjectName} - Backend API - v{version}
+{ProjectName} - Frontend - v{version}
 ```
 
 - **ProjectName**: Extracted from `composer.json` / `package.json` `name` field

@@ -163,7 +163,8 @@ use App\Infrastructure\ViteHelper;
         <ul style="list-style: disc; padding-left: 1.5rem;">
             <li><a href="/docs/" style="color: #007bff; text-decoration: none;"><strong>/docs/</strong></a> - Guides & Documentation (Docsify)</li>
             <li><a href="/docs/api/php/" style="color: #007bff; text-decoration: none;"><strong>/docs/api/php/</strong></a> - PHP API Documentation (phpDocumentor)</li>
-            <li><a href="/docs/api/node/" style="color: #007bff; text-decoration: none;"><strong>/docs/api/node/</strong></a> - Node/TypeScript API Documentation (TypeDoc)</li>
+            <li><a href="/docs/api/node-backend/" style="color: #007bff; text-decoration: none;"><strong>/docs/api/node-backend/</strong></a> - Node.js Backend API Documentation (TypeDoc)</li>
+            <li><a href="/docs/api/node-frontend/" style="color: #007bff; text-decoration: none;"><strong>/docs/api/node-frontend/</strong></a> - Node.js Frontend Documentation (TypeDoc)</li>
         </ul>
         <p style="margin-top: 1rem; font-size: 0.9em; color: #666;">
             <strong>Generate API Docs:</strong> Run <code>make docs</code> to generate/update API documentation.

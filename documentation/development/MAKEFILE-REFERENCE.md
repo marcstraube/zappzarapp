@@ -103,6 +103,37 @@ Without arguments, commands operate on all enabled services (based on `.env`).
 | `make shell-postgres` | Open shell in PostgreSQL container |
 | `make shell-mariadb`  | Open shell in MariaDB container    |
 
+### Docker Swarm
+
+Production deployment using Docker Swarm. See
+[SWARM.md](../infrastructure/SWARM.md) for details.
+
+| Command                                       | Description                                    |
+| --------------------------------------------- | ---------------------------------------------- |
+| `make swarm-init`                             | Initialize Swarm (single-node, 127.0.0.1)      |
+| `make swarm-init ADDR=<ip>`                   | Initialize Swarm as multi-node manager         |
+| `make swarm-join TOKEN=<t> MANAGER=<ip:port>` | Join existing cluster as worker                |
+| `make swarm-leave`                            | Leave Swarm mode                               |
+| `make swarm-deploy`                           | Deploy stack (supports DOCKER_HOST for remote) |
+| `make swarm-remove`                           | Remove deployed stack (supports DOCKER_HOST)   |
+| `make swarm-status`                           | Show services and tasks (supports DOCKER_HOST) |
+| `make swarm-logs [service]`                   | View logs (supports DOCKER_HOST)               |
+
+**Remote Deployment:**
+
+```bash
+# Via .env
+DOCKER_HOST=ssh://user@manager-server
+
+# Or inline
+DOCKER_HOST=ssh://user@server make swarm-deploy
+```
+
+**External Secrets:**
+
+If `compose.production-external.yaml` exists, it is automatically loaded by
+`swarm-deploy`.
+
 ### Package Managers
 
 | Command                   | Description                                            |
@@ -123,17 +154,21 @@ make pnpm CMD="add vue"
 
 Commands for frontend and Node.js backend development.
 
-| Command                   | Description                                                    |
-| ------------------------- | -------------------------------------------------------------- |
-| `make node-dev`           | Start Vite dev server with HMR (Hot Module Replacement)        |
-| `make node-dev-full`      | Start full-stack development (Vite + Express backend with PM2) |
-| `make node-dev-frontend`  | Start only Vite dev server with PM2                            |
-| `make node-dev-backend`   | Start only Node.js backend with PM2                            |
-| `make node-server-dev`    | Start Node.js backend in development watch mode (tsx watch)    |
-| `make node-server-build`  | Build Node.js backend (TypeScript -> JavaScript)               |
-| `make node-build`         | Execute the frontend build inside the Node container           |
-| `make node-up`            | Start Node service (asset-server target)                       |
-| `make node-app-server-up` | Start Node.js App Server (app-server target)                   |
+| Command                    | Description                                                    |
+| -------------------------- | -------------------------------------------------------------- |
+| `make node-dev`            | Start Vite dev server with HMR (Hot Module Replacement)        |
+| `make node-dev-full`       | Start full-stack development (Vite + Express backend with PM2) |
+| `make node-dev-vite`       | Start only Vite dev server with PM2                            |
+| `make node-dev-backend`    | Start only Node.js backend with PM2                            |
+| `make node-frontend-dev`   | Start Node frontend framework dev server (Next.js, Nuxt, etc.) |
+| `make node-frontend-build` | Build Node frontend framework                                  |
+| `make node-frontend-start` | Start Node frontend framework production server                |
+| `make node-server-dev`     | Start Node.js backend in development watch mode (tsx watch)    |
+| `make node-server-build`   | Build Node.js backend (TypeScript -> JavaScript)               |
+| `make node-build`          | Execute the frontend build inside the Node container           |
+| `make node-up`             | Start Node service (vite-assets target)                        |
+| `make node-backend-up`     | Start Node.js Backend API Server (backend target)              |
+| `make node-frontend-up`    | Start Node.js Frontend Server (frontend target)                |
 
 ### PM2 Process Manager
 
@@ -143,6 +178,18 @@ Commands for frontend and Node.js backend development.
 | `make node-pm2-logs`    | Show PM2 logs           |
 | `make node-pm2-restart` | Restart PM2 processes   |
 | `make node-pm2-stop`    | Stop PM2 processes      |
+
+### Frontend Scaffolding
+
+| Command                   | Description                                      |
+| ------------------------- | ------------------------------------------------ |
+| `make frontend-clean`     | Remove existing frontend (confirms if not empty) |
+| `make frontend-nuxt`      | Scaffold Nuxt 3 frontend                         |
+| `make frontend-next`      | Scaffold Next.js frontend                        |
+| `make frontend-remix`     | Scaffold React Router (formerly Remix v2)        |
+| `make frontend-sveltekit` | Scaffold SvelteKit frontend                      |
+
+See [Frontend Scaffolding](FRONTEND-SCAFFOLDING.md) for details.
 
 ### Development URLs
 
@@ -331,17 +378,20 @@ documentation.
 
 API documentation generation.
 
-| Command           | Description                                              |
-| ----------------- | -------------------------------------------------------- |
-| `make docs`       | Generate all API documentation (PHP + Node)              |
-| `make docs-php`   | Generate PHP API documentation using phpDocumentor       |
-| `make docs-node`  | Generate Node/TypeScript API documentation using TypeDoc |
-| `make docs-clean` | Remove generated documentation                           |
+| Command                   | Description                                                     |
+| ------------------------- | --------------------------------------------------------------- |
+| `make docs`               | Generate all API documentation (PHP + Node)                     |
+| `make docs-php`           | Generate PHP API documentation using phpDocumentor              |
+| `make docs-node`          | Generate all Node/TypeScript documentation (Backend + Frontend) |
+| `make docs-node-backend`  | Generate Node.js Backend API documentation                      |
+| `make docs-node-frontend` | Generate Node.js Frontend documentation (if code exists)        |
+| `make docs-clean`         | Remove generated documentation                                  |
 
 Documentation output:
 
 - PHP: `docs/api/php/`
-- Node: `docs/api/node/`
+- Node Backend: `docs/api/node-backend/`
+- Node Frontend: `docs/api/node-frontend/`
 
 ## Workflow Commands
 

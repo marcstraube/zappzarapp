@@ -1,0 +1,12 @@
+{
+  "name": "@zappzarapp/frontend",
+  "version": "1.0.0",
+  "description": "Placeholder for frontend framework (Next.js, Nuxt, Remix, SvelteKit)",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "dev": "echo 'No frontend framework installed. Run: make frontend-next|nuxt|remix|svelte'",
+    "build": "echo 'No frontend framework installed'",
+    "start": "echo 'No frontend framework installed'"
+  }
+}

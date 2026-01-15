@@ -273,3 +273,36 @@ build:production:
     when: on_success
     expire_in: 7 days
 
+# ============================================================================
+# SWARM DEPLOYMENT (Optional)
+# ============================================================================
+# Uncomment to enable automatic deployment to Docker Swarm.
+#
+# Required CI/CD Variables (Settings > CI/CD > Variables):
+#   SWARM_MANAGER_HOST: ssh://user@manager-server (or tcp://manager:2376)
+#   SSH_PRIVATE_KEY:    Private key for SSH access (if using ssh://)
+#
+# For SSH deployment, the runner needs SSH access to the manager node.
+# See: documentation/infrastructure/SWARM.md
+#
+# deploy:swarm:
+#   <<: *docker-setup
+#   stage: deploy
+#   only:
+#     - master
+#   when: manual
+#   before_script:
+#     - *setup-docker
+#     # Setup SSH for remote deployment
+#     - mkdir -p ~/.ssh
+#     - echo "$SSH_PRIVATE_KEY" > ~/.ssh/id_rsa
+#     - chmod 600 ~/.ssh/id_rsa
+#     - ssh-keyscan -H "${SWARM_MANAGER_HOST#ssh://}" >> ~/.ssh/known_hosts 2>/dev/null || true
+#   script:
+#     - export DOCKER_HOST="$SWARM_MANAGER_HOST"
+#     - docker info
+#     - docker stack deploy -c compose.yaml -c compose.production.yaml zappzarapp
+#     - docker stack services zappzarapp
+#   environment:
+#     name: production
+#     url: https://$DOMAIN

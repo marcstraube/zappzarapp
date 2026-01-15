@@ -158,17 +158,14 @@ COPY docker/php/php-fpm.conf /usr/local/etc/php-fpm.d/www.conf
 # Override zz-docker.conf to use Unix socket instead of TCP
 COPY docker/php/zz-docker.conf /usr/local/etc/php-fpm.d/zz-docker.conf
 
-# Copy entrypoint script (sets up timezone from TZ env var)
-COPY docker/php/entrypoint.sh /usr/local/bin/entrypoint.sh
-RUN chmod +x /usr/local/bin/entrypoint.sh
-
 # Note: Source code, configs, and dependencies are provided via bind mounts
 # in development (see compose.override.yaml). No COPY needed here.
 
-# Keep as root for entrypoint (entrypoint will handle permissions and su to www-data)
-# PHP-FPM will still run as www-data (configured in php-fpm.conf)
+# Copy development entrypoint script
+COPY docker/php/entrypoint.development.sh /entrypoint.development.sh
+RUN chmod +x /entrypoint.development.sh
 
-ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
+ENTRYPOINT ["/entrypoint.development.sh"]
 CMD ["php-fpm"]
 
 # --- 4. PRODUCTION STAGE ---
@@ -181,9 +178,9 @@ COPY docker/php/php-fpm.conf /usr/local/etc/php-fpm.d/www.conf
 # Override zz-docker.conf to use Unix socket instead of TCP
 COPY docker/php/zz-docker.conf /usr/local/etc/php-fpm.d/zz-docker.conf
 
-# Copy entrypoint script (sets up timezone from TZ env var)
-COPY docker/php/entrypoint.sh /usr/local/bin/entrypoint.sh
-RUN chmod +x /usr/local/bin/entrypoint.sh
+# Copy production entrypoint script
+COPY docker/php/entrypoint.production.sh /entrypoint.production.sh
+RUN chmod +x /entrypoint.production.sh
 
 # Install Composer temporarily for dependency installation
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
@@ -219,6 +216,6 @@ RUN chown -R root:root /var/www/html && \
     chmod 770 /var/www/html/storage && \
     find /var/www/html/storage -type f -exec chmod 660 {} \; 2>/dev/null || true
 
-# Entrypoint runs as root to set up timezone, PHP-FPM runs as www-data (configured in php-fpm.conf)
-ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
+# PHP-FPM runs as www-data (configured in php-fpm.conf)
+ENTRYPOINT ["/entrypoint.production.sh"]
 CMD ["php-fpm"]

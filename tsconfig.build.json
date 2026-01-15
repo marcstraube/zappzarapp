@@ -1,18 +1,12 @@
 {
   "extends": "./tsconfig.json",
   "compilerOptions": {
-    /* Override outDir for build output */
-    "outDir": "./dist",
-
     /* Build-specific settings */
-    "removeComments": true,
-    "sourceMap": true,
     "declaration": false,
     "declarationMap": false
   },
   "include": [
-    "src/node/App/**/*",
-    "src/node/server.ts"
+    "src/node/backend/**/*"
   ],
   "exclude": [
     "node_modules",
@@ -21,6 +15,7 @@
     "build",
     "tests",
     "**/*.test.ts",
-    "**/*.spec.ts"
+    "**/*.spec.ts",
+    "src/node/frontend"
   ]
 }

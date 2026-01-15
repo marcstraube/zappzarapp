@@ -22,10 +22,10 @@ docker/mariadb/my.cnf
 
 # Build outputs
 /public/build/*
-/dist/
+dist/
 
 # Dependencies
-/node_modules/
+node_modules/
 /vendor/
 
 # Xdebug artifacts
@@ -96,3 +96,9 @@ Thumbs.db
 !/docs/assets/
 /.phpdoc/
 /tools/
+
+# Claude Code (keep commands, ignore runtime state)
+.claude/*
+!.claude/commands/
+!.claude/CLAUDE.md
+!.claude/settings.json

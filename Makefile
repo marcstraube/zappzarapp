@@ -80,7 +80,8 @@ setup: ## Create directories, install dev dependencies and ensure structure
 
 	# Source directories
 	@mkdir -p src/php/App/{Http/{Controller,Middleware},Domain,Infrastructure/{Database,Cache}}
-	@mkdir -p src/node/App/{routes,controllers,services,middleware}
+	@mkdir -p src/node/backend/{routes,controllers,services,middleware}
+	@mkdir -p src/node/frontend
 	@mkdir -p src/php/DevDashboard/{Controllers,Services,Views}
 
 	# Resources directories (Frontend source)
@@ -91,7 +92,8 @@ setup: ## Create directories, install dev dependencies and ensure structure
 
 	# Tests (separated by language like src/)
 	@mkdir -p tests/php/App/{Unit,Feature}
-	@mkdir -p tests/node/App/{unit,integration}
+	@mkdir -p tests/node/backend/{unit,integration}
+	@mkdir -p tests/node/frontend/{unit,integration}
 	@mkdir -p tests/php/DevDashboard/{Services,Controllers}
 
 	# Build & Coverage directories (excluded from IDE indexing)
@@ -556,6 +558,11 @@ status: ## Show running containers status and image disk usage
 
 up: ## Start containers (optionally specify service names: make up php nginx)
 	@if [ ! -f .env ]; then echo -e "\033[0;31mError: .env not found. Run 'make init' first.\033[0m"; exit 1; fi
+	@. ./.env && if [ "$${ENV:-development}" = "production" ]; then \
+		echo -e "\033[0;33m⚠️  WARNING: Running Compose with ENV=production.\033[0m"; \
+		echo -e "\033[0;33m   For production deployments, use 'make swarm-deploy' instead.\033[0m"; \
+		echo ""; \
+	fi
 	@SERVICES="$(filter-out $@,$(MAKECMDGOALS))"; \
 	if [ -n "$$SERVICES" ]; then \
 		echo -e "\033[0;33mStarting services: $$SERVICES...\033[0m"; \
@@ -606,9 +613,10 @@ up: ## Start containers (optionally specify service names: make up php nginx)
 		if [ "$${ENABLE_RABBITMQ:-false}" = "true" ]; then PROFILES="$$PROFILES --profile rabbitmq"; fi; \
 		echo -e "\033[0;33mStarting containers in $${ENV:-development} mode...\033[0m"; \
 		if [ "$$ENV" = "production" ]; then \
-			NODE_TARGET_AUTO="asset-server"; \
+			NODE_TARGET_AUTO="vite-assets"; \
 			case "$${NODE_MODE:-full-stack}" in \
-				full-stack|backend-only) NODE_TARGET_AUTO="app-server" ;; \
+				full-stack|backend-only) NODE_TARGET_AUTO="backend" ;; \
+				frontend-only|frontend-backend) NODE_TARGET_AUTO="frontend" ;; \
 			esac; \
 			export NODE_TARGET="$${NODE_TARGET:-$$NODE_TARGET_AUTO}"; \
 			$(DC) -f compose.yaml -f compose.production.yaml $$PROFILES up -d; \
@@ -617,6 +625,110 @@ up: ## Start containers (optionally specify service names: make up php nginx)
 		fi; \
 		echo -e "\033[0;32mContainers started!\033[0m"; \
 		echo -e "\033[0;34mNginx is running at http://localhost:$${NGINX_PORT:-8080}\033[0m"; \
+	fi
+
+##@ Docker Swarm
+
+swarm-init: ## Initialize Swarm (single-node). Multi-node manager: make swarm-init ADDR=<ip>
+	@ADDR="$(ADDR)"; \
+	if [ -z "$$ADDR" ]; then ADDR="127.0.0.1"; fi; \
+	echo -e "\033[0;33mInitializing Docker Swarm (advertise: $$ADDR)...\033[0m"; \
+	if docker info --format '{{.Swarm.LocalNodeState}}' 2>/dev/null | grep -q "active"; then \
+		echo -e "\033[0;32mSwarm is already active!\033[0m"; \
+	else \
+		docker swarm init --advertise-addr "$$ADDR" && \
+		echo -e "\033[0;32mSwarm initialized!\033[0m"; \
+		if [ "$$ADDR" != "127.0.0.1" ]; then \
+			echo ""; \
+			echo -e "\033[0;34mTo add workers, run on each worker node:\033[0m"; \
+			docker swarm join-token worker 2>/dev/null | grep "docker swarm join"; \
+		fi; \
+	fi
+
+swarm-leave: ## Leave Docker Swarm (removes local node)
+	@echo -e "\033[0;33mLeaving Docker Swarm...\033[0m"
+	@docker swarm leave --force 2>/dev/null || echo "Not in swarm mode"
+	@echo -e "\033[0;32mSwarm node removed!\033[0m"
+
+swarm-join: ## Join existing Swarm as worker: make swarm-join TOKEN=<token> MANAGER=<ip:port>
+	@if [ -z "$(TOKEN)" ] || [ -z "$(MANAGER)" ]; then \
+		echo -e "\033[0;31mError: TOKEN and MANAGER required\033[0m"; \
+		echo "Usage: make swarm-join TOKEN=SWMTKN-1-xxx MANAGER=192.168.1.10:2377"; \
+		exit 1; \
+	fi
+	@echo -e "\033[0;33mJoining Docker Swarm as worker...\033[0m"
+	@if docker info --format '{{.Swarm.LocalNodeState}}' 2>/dev/null | grep -q "active"; then \
+		echo -e "\033[0;31mError: Already in a Swarm. Run 'make swarm-leave' first.\033[0m"; \
+		exit 1; \
+	fi
+	@docker swarm join --token "$(TOKEN)" "$(MANAGER)" && \
+	echo -e "\033[0;32mJoined Swarm as worker!\033[0m"
+
+swarm-deploy: ## Deploy stack to Swarm (supports DOCKER_HOST for remote deployment)
+	@if [ ! -f .env ]; then \
+		echo -e "\033[0;31mError: .env file not found. Run 'make init' first.\033[0m"; \
+		exit 1; \
+	fi
+	@. ./.env && if [ "$${ENV:-development}" != "production" ]; then \
+		echo -e "\033[0;31mError: swarm-deploy requires ENV=production\033[0m"; \
+		exit 1; \
+	fi
+	@. ./.env && export DOCKER_HOST="$${DOCKER_HOST:-}"; \
+	if [ -n "$$DOCKER_HOST" ]; then \
+		echo -e "\033[0;33mDeploying to remote Swarm ($$DOCKER_HOST)...\033[0m"; \
+	else \
+		echo -e "\033[0;33mDeploying to local Swarm...\033[0m"; \
+	fi; \
+	if ! docker info --format '{{.Swarm.LocalNodeState}}' 2>/dev/null | grep -q "active"; then \
+		echo -e "\033[0;31mError: Swarm is not active on target host.\033[0m"; \
+		exit 1; \
+	fi; \
+	STACK_NAME="$${COMPOSE_PROJECT_NAME:-zappzarapp}" && \
+	COMPOSE_FILES="-c compose.yaml -c compose.production.yaml" && \
+	if [ -f compose.production-external.yaml ]; then \
+		echo -e "\033[0;34mUsing external secrets (compose.production-external.yaml)\033[0m"; \
+		COMPOSE_FILES="$$COMPOSE_FILES -c compose.production-external.yaml"; \
+	fi && \
+	echo -e "\033[0;34mDeploying stack: $$STACK_NAME\033[0m" && \
+	docker stack deploy $$COMPOSE_FILES "$$STACK_NAME" && \
+	echo -e "\033[0;32mStack deployed! View with: make swarm-status\033[0m"
+
+swarm-remove: ## Remove stack from Swarm (supports DOCKER_HOST for remote)
+	@. ./.env 2>/dev/null && export DOCKER_HOST="$${DOCKER_HOST:-}"; \
+	if [ -n "$$DOCKER_HOST" ]; then \
+		echo -e "\033[0;33mRemoving stack from remote Swarm ($$DOCKER_HOST)...\033[0m"; \
+	else \
+		echo -e "\033[0;33mRemoving stack from local Swarm...\033[0m"; \
+	fi; \
+	STACK_NAME="$${COMPOSE_PROJECT_NAME:-zappzarapp}" && \
+	docker stack rm "$$STACK_NAME" 2>/dev/null || echo "Stack not found" && \
+	echo -e "\033[0;32mStack removed!\033[0m"
+
+swarm-status: ## Show Swarm stack status (supports DOCKER_HOST for remote)
+	@. ./.env 2>/dev/null && export DOCKER_HOST="$${DOCKER_HOST:-}"; \
+	STACK_NAME="$${COMPOSE_PROJECT_NAME:-zappzarapp}" && \
+	if [ -n "$$DOCKER_HOST" ]; then \
+		echo -e "\033[0;34mStack: $$STACK_NAME ($$DOCKER_HOST)\033[0m"; \
+	else \
+		echo -e "\033[0;34mStack: $$STACK_NAME\033[0m"; \
+	fi && \
+	echo "" && \
+	echo -e "\033[0;33mServices:\033[0m" && \
+	docker stack services "$$STACK_NAME" 2>/dev/null || echo "Stack not deployed" && \
+	echo "" && \
+	echo -e "\033[0;33mTasks:\033[0m" && \
+	docker stack ps "$$STACK_NAME" 2>/dev/null || echo "Stack not deployed"
+
+swarm-logs: ## Show Swarm logs (supports DOCKER_HOST): make swarm-logs [service]
+	@SERVICE="$(filter-out $@,$(MAKECMDGOALS))"; \
+	. ./.env 2>/dev/null && export DOCKER_HOST="$${DOCKER_HOST:-}"; \
+	STACK_NAME="$${COMPOSE_PROJECT_NAME:-zappzarapp}" && \
+	if [ -n "$$SERVICE" ]; then \
+		docker service logs -f "$${STACK_NAME}_$$SERVICE"; \
+	else \
+		echo -e "\033[0;33mUsage: make swarm-logs <service>\033[0m"; \
+		echo "Available services:"; \
+		docker stack services "$$STACK_NAME" --format '{{.Name}}' 2>/dev/null | sed "s/$${STACK_NAME}_//"; \
 	fi
 
 ##@ Node.js Development
@@ -628,13 +740,25 @@ node-dev-full: ## Start full-stack development (Vite + Node.js backend with PM2)
 	@echo -e "\033[0;34mNginx Proxy: http://localhost:8080\033[0m"
 	@docker compose exec node pnpm run dev:full
 
-node-dev-frontend: ## Start only Vite dev server with PM2
+node-dev-vite: ## Start only Vite dev server with PM2
 	@echo -e "\033[0;33mStarting Vite dev server...\033[0m"
-	@docker compose exec node pnpm run dev:frontend
+	@docker compose exec node pnpm run dev:vite
 
 node-dev-backend: ## Start only Node.js backend with PM2
 	@echo -e "\033[0;33mStarting Node.js backend server...\033[0m"
 	@docker compose exec node pnpm run dev:backend
+
+node-frontend-dev: ## Start Node frontend framework dev server (Next.js, Nuxt, etc.)
+	@echo -e "\033[0;33mStarting Node frontend framework dev server...\033[0m"
+	@docker compose exec node pnpm run frontend:dev
+
+node-frontend-build: ## Build Node frontend framework (Next.js, Nuxt, etc.)
+	@echo -e "\033[0;33mBuilding Node frontend framework...\033[0m"
+	@docker compose exec node pnpm run frontend:build
+
+node-frontend-start: ## Start Node frontend framework production server
+	@echo -e "\033[0;33mStarting Node frontend framework production server...\033[0m"
+	@docker compose exec node pnpm run frontend:start
 
 pnpm-install: ## Install Node.js dependencies (Docker - guaranteed consistency)
 	@echo -e "\033[0;33mInstalling Node.js dependencies (Docker)...\033[0m"
@@ -664,19 +788,93 @@ pnpm-install-local: ## Install Node.js dependencies (Local - IDE code completion
 		exit 1; \
 	fi
 
+# ─────────────────────────────────────────────────────────────────────────────
+# FRONTEND SCAFFOLDING
+# ─────────────────────────────────────────────────────────────────────────────
+# These commands scaffold a Node.js frontend framework in src/node/frontend/
+# Each framework is configured to work with the zappzarapp infrastructure:
+# - Port 3001 (frontend), with proxy to backend on port 3000
+# - Docker-compatible (0.0.0.0 host binding)
+# - Workspace-compatible (@zappzarapp/frontend package name)
+
+FRONTEND_DIR := src/node/frontend
+FRONTEND_PATCHES := docker/node/frontend-patches
+
+frontend-clean: ## Remove existing frontend (keeps package.json placeholder)
+	@# Check if frontend has scaffolded content (more than just package.json)
+	@FILE_COUNT=$$(find $(FRONTEND_DIR) -mindepth 1 ! -name 'package.json' | wc -l); \
+	if [ "$$FILE_COUNT" -gt 0 ]; then \
+		echo -e "\033[0;31m!!! WARNING: Frontend directory contains scaffolded content. !!!\033[0m"; \
+		ls -la $(FRONTEND_DIR); \
+		read -p "Are you sure you want to delete it? Type 'YES' to confirm: " CONFIRM; \
+		if [ "$$CONFIRM" != "YES" ]; then \
+			echo -e "\033[0;34mOperation cancelled.\033[0m"; \
+			exit 1; \
+		fi; \
+	fi
+	@echo -e "\033[0;33mCleaning frontend directory...\033[0m"
+	@find $(FRONTEND_DIR) -mindepth 1 ! -name 'package.json' -exec rm -rf {} + 2>/dev/null || true
+	@echo -e "\033[0;32mFrontend directory cleaned!\033[0m"
+
+frontend-nuxt: frontend-clean ## Scaffold Nuxt 3 frontend (interactive)
+	@echo -e "\033[0;33mScaffolding Nuxt 3 frontend...\033[0m"
+	@$(DC) run --rm -it node sh -c '\
+		cd /app/src/node/frontend && \
+		pnpm dlx nuxi@latest init . --packageManager pnpm --gitInit false && \
+		sh /app/docker/node/frontend-patches/nuxt.post-install.sh .'
+	@echo -e "\033[0;32mNuxt 3 scaffolded! Run 'make pnpm-install' to install dependencies.\033[0m"
+
+frontend-next: frontend-clean ## Scaffold Next.js frontend (interactive)
+	@echo -e "\033[0;33mScaffolding Next.js frontend...\033[0m"
+	@$(DC) run --rm -it node sh -c '\
+		cd /app/src/node/frontend && \
+		pnpm dlx create-next-app@latest . --use-pnpm && \
+		sh /app/docker/node/frontend-patches/next.post-install.sh .'
+	@echo -e "\033[0;32mNext.js scaffolded! Run 'make pnpm-install' to install dependencies.\033[0m"
+
+frontend-remix: frontend-clean ## Scaffold React Router frontend (formerly Remix v2)
+	@echo -e "\033[0;33mScaffolding React Router frontend...\033[0m"
+	@$(DC) run --rm -it node sh -c '\
+		TEMP_DIR=$$(mktemp -d) && \
+		cd "$$TEMP_DIR" && \
+		pnpm dlx create-react-router@latest frontend --no-install && \
+		cp -r frontend/. /app/src/node/frontend/ && \
+		rm -rf "$$TEMP_DIR" && \
+		cd /app/src/node/frontend && \
+		sh /app/docker/node/frontend-patches/remix.post-install.sh .'
+	@echo -e "\033[0;32mReact Router scaffolded! Run 'make pnpm-install' to install dependencies.\033[0m"
+
+frontend-sveltekit: frontend-clean ## Scaffold SvelteKit frontend (interactive)
+	@echo -e "\033[0;33mScaffolding SvelteKit frontend...\033[0m"
+	@$(DC) run --rm -it node sh -c '\
+		TEMP_DIR=$$(mktemp -d) && \
+		cd "$$TEMP_DIR" && \
+		pnpm dlx sv create frontend --template minimal --types ts --no-add-ons --no-install && \
+		cp -r frontend/. /app/src/node/frontend/ && \
+		rm -rf "$$TEMP_DIR" && \
+		cd /app/src/node/frontend && \
+		pnpm add -D @sveltejs/adapter-node && \
+		sh /app/docker/node/frontend-patches/sveltekit.post-install.sh .'
+	@echo -e "\033[0;32mSvelteKit scaffolded! Run 'make pnpm-install' to install dependencies.\033[0m"
+
 node-build: ## Executes the frontend build inside the Node container (uses 'build' stage)
 	@echo -e "\033[0;33mExecuting frontend build...\033[0m"
 	@$(DC) run --rm --build --target build node pnpm run build
 
-node-up: ## Starts the Node service alongside the standard stack (Uses the default 'asset-server' target)
-	@echo -e "\033[0;33mStarting Node service (asset-server target)...\033[0m"
-	# NODE_TARGET is unset, so compose.yaml defaults to the 'asset-server' target (sleep infinity).
+node-up: ## Starts the Node service alongside the standard stack (Uses the default 'vite-assets' target)
+	@echo -e "\033[0;33mStarting Node service (vite-assets target)...\033[0m"
+	# NODE_TARGET is unset, so compose.yaml defaults to the 'vite-assets' target (sleep infinity).
 	@$(MAKE) --silent up
 
-node-app-server-up: ## Starts the Node.js App Server (long-running, uses 'app-server' target) alongside the stack
-	@echo -e "\033[0;33mStarting Node.js App Server (app-server target)...\033[0m"
-	# Sets NODE_TARGET environment variable to switch the build target to 'app-server'.
-	@NODE_TARGET="app-server" $(MAKE) --silent up
+node-backend-up: ## Starts the Node.js Backend API Server (uses 'backend' target) alongside the stack
+	@echo -e "\033[0;33mStarting Node.js Backend API Server (backend target)...\033[0m"
+	# Sets NODE_TARGET environment variable to switch the build target to 'backend'.
+	@NODE_TARGET="backend" $(MAKE) --silent up
+
+node-frontend-up: ## Starts the Node.js Frontend Server (Next.js, Nuxt, etc., uses 'frontend' target)
+	@echo -e "\033[0;33mStarting Node.js Frontend Server (frontend target)...\033[0m"
+	# Sets NODE_TARGET environment variable to switch the build target to 'frontend'.
+	@NODE_TARGET="frontend" $(MAKE) --silent up
 
 node-dev: ## Start Vite dev server with HMR (Hot Module Replacement)
 	@echo -e "\033[0;33mStarting Vite dev server with HMR...\033[0m"
@@ -687,12 +885,12 @@ node-dev: ## Start Vite dev server with HMR (Hot Module Replacement)
 node-server-dev: ## Start Node.js backend in development watch mode (tsx watch)
 	@echo -e "\033[0;33mStarting Node.js backend in watch mode...\033[0m"
 	@echo -e "\033[0;34mAccess: http://localhost:3000/health\033[0m"
-	@docker compose exec node pnpm run server:dev
+	@docker compose exec node pnpm run backend:dev
 
 node-server-build: ## Build Node.js backend (TypeScript -> JavaScript)
 	@echo -e "\033[0;33mBuilding Node.js backend...\033[0m"
-	@docker compose exec node pnpm run server:build
-	@echo -e "\033[0;32mBackend built successfully! Output: dist/server.js\033[0m"
+	@docker compose exec node pnpm run backend:build
+	@echo -e "\033[0;32mBackend built successfully! Output: src/node/backend/dist/\033[0m"
 
 node-pm2-status: ## Show PM2 process status
 	@docker compose exec node pnpm run pm2:status
@@ -1120,6 +1318,9 @@ fresh: ## Complete clean slate rebuild, removing all data volumes (DANGEROUS!)
 		$(DC) --profile php --profile node --profile redis --profile postgres --profile mariadb --profile mercure --profile meilisearch --profile elasticsearch --profile mailpit --profile minio --profile rabbitmq down -v --rmi all && \
 		$(DC) --profile php --profile node --profile redis --profile postgres --profile mariadb --profile mercure --profile meilisearch --profile elasticsearch --profile mailpit --profile minio --profile rabbitmq build --no-cache; \
 	fi
+	@echo -e "\033[0;33mInstalling dependencies...\033[0m"
+	@$(MAKE) --silent composer-install
+	@$(MAKE) --silent pnpm-install
 	@$(MAKE) --silent up
 
 rebuild: clean build up ## Complete rebuild
@@ -1525,16 +1726,33 @@ docs-php: $(PHPDOC_PHAR) ## Generate PHP API documentation using phpDocumentor
 		find /var/www/html/docs/api/php -name "*.html" -exec sed -i "s|>PHP API</a>|>$$PROJECT_NAME - PHP API</a>|g" {} \;'
 	@echo -e "\033[0;32mPHP documentation generated in docs/api/php/\033[0m"
 
-docs-node: ## Generate Node/TypeScript API documentation using TypeDoc
-	@echo -e "\033[0;33mGenerating Node/TypeScript API documentation...\033[0m"
-	@docker compose exec node pnpm run docs
+docs-node: docs-node-backend docs-node-frontend ## Generate all Node/TypeScript API documentation
+
+docs-node-backend: ## Generate Node.js Backend API documentation using TypeDoc
+	@echo -e "\033[0;33mGenerating Node.js Backend API documentation...\033[0m"
+	@docker compose exec -u node node pnpm run docs:backend
 	@echo -e "\033[0;33mSetting dynamic title...\033[0m"
-	@docker compose exec node sh -c '\
+	@docker compose exec -u node node sh -c '\
 		PROJECT_NAME=$$(node -e "console.log(require(\"/app/package.json\").name.split(\"/\").pop().replace(/^./, c => c.toUpperCase()))"); \
 		PROJECT_VERSION=$$(node -e "console.log(require(\"/app/package.json\").version || \"0.0.0\")"); \
-		find /app/docs/api/node -name "*.html" -exec sed -i "s|<title>Node API - v$$PROJECT_VERSION</title>|<title>$$PROJECT_NAME - Node API - v$$PROJECT_VERSION</title>|g" {} \; ; \
-		find /app/docs/api/node -name "*.html" -exec sed -i "s|>Node API - v$$PROJECT_VERSION</a>|>$$PROJECT_NAME - Node API</a>|g" {} \;'
-	@echo -e "\033[0;32mNode documentation generated in docs/api/node/\033[0m"
+		find /app/docs/api/node-backend -name "*.html" -exec sed -i "s|<title>Node Backend API - v$$PROJECT_VERSION</title>|<title>$$PROJECT_NAME - Backend API - v$$PROJECT_VERSION</title>|g" {} \; ; \
+		find /app/docs/api/node-backend -name "*.html" -exec sed -i "s|>Node Backend API - v$$PROJECT_VERSION</a>|>$$PROJECT_NAME - Backend API</a>|g" {} \;'
+	@echo -e "\033[0;32mBackend documentation generated in docs/api/node-backend/\033[0m"
+
+docs-node-frontend: ## Generate Node.js Frontend documentation using TypeDoc
+	@if [ -z "$$(find src/node/frontend -name '*.ts' -o -name '*.tsx' 2>/dev/null | grep -v node_modules | head -1)" ]; then \
+		echo -e "\033[0;33mNo TypeScript files in src/node/frontend/ - skipping frontend docs\033[0m"; \
+	else \
+		echo -e "\033[0;33mGenerating Node.js Frontend documentation...\033[0m"; \
+		docker compose exec -u node node pnpm run docs:frontend; \
+		echo -e "\033[0;33mSetting dynamic title...\033[0m"; \
+		docker compose exec -u node node sh -c '\
+			PROJECT_NAME=$$(node -e "console.log(require(\"/app/package.json\").name.split(\"/\").pop().replace(/^./, c => c.toUpperCase()))"); \
+			PROJECT_VERSION=$$(node -e "console.log(require(\"/app/package.json\").version || \"0.0.0\")"); \
+			find /app/docs/api/node-frontend -name "*.html" -exec sed -i "s|<title>Node Frontend - v$$PROJECT_VERSION</title>|<title>$$PROJECT_NAME - Frontend - v$$PROJECT_VERSION</title>|g" {} \; ; \
+			find /app/docs/api/node-frontend -name "*.html" -exec sed -i "s|>Node Frontend - v$$PROJECT_VERSION</a>|>$$PROJECT_NAME - Frontend</a>|g" {} \;'; \
+		echo -e "\033[0;32mFrontend documentation generated in docs/api/node-frontend/\033[0m"; \
+	fi
 
 docs-clean: ## Remove generated documentation
 	@echo -e "\033[0;33mCleaning documentation...\033[0m"

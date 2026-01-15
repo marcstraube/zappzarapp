@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>zappzarapp</title>
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+        }
+        .card {
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+            padding: 3rem;
+            text-align: center;
+            max-width: 500px;
+        }
+        .logo {
+            width: 96px;
+            height: 96px;
+            margin-bottom: 1.5rem;
+        }
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+            color: #1a1a2e;
+        }
+        .pronunciation {
+            font-family: monospace;
+            color: #666;
+            margin-bottom: 0.5rem;
+        }
+        .tagline {
+            font-style: italic;
+            color: #555;
+            margin-bottom: 2rem;
+            line-height: 1.5;
+        }
+        .links {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        .links a {
+            color: #667eea;
+            text-decoration: none;
+            padding: 0.5rem 1rem;
+            border: 1px solid #667eea;
+            border-radius: 6px;
+            transition: all 0.2s;
+        }
+        .links a:hover {
+            background: #667eea;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <svg class="logo" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+                <linearGradient id="bolt" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" style="stop-color:#FFD700"/>
+                    <stop offset="100%" style="stop-color:#FFA500"/>
+                </linearGradient>
+            </defs>
+            <circle cx="32" cy="32" r="30" fill="#1a1a2e"/>
+            <path d="M36 8 L18 34 L28 34 L24 56 L46 28 L34 28 Z" fill="url(#bolt)"/>
+        </svg>
+        <h1>zappzarapp</h1>
+        <p class="pronunciation">/ˈt͡sapt͡saˈʁap/</p>
+        <p class="tagline">
+            German for "in a flash" — a professional web dev stack
+            that gets you coding in minutes.
+        </p>
+        <div class="links">
+            <a href="https://github.com/marcstraube/zappzarapp">GitHub</a>
+            <a href="/_dev">Dev Dashboard</a>
+        </div>
+    </div>
+</body>
+</html>

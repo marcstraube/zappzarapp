@@ -9,7 +9,7 @@
  */
 
 import { createServer, Server } from 'http';
-import { createApp, logger } from './App/app';
+import { createApp, logger } from './app.js';
 import { fileURLToPath } from 'url';
 
 export const PORT = process.env.PORT ?? '3000';

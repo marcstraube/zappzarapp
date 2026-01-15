@@ -269,7 +269,7 @@ const decrypted = EncryptionService.decrypt(encrypted, encryptionKey);
 // decrypted === '123-45-6789'
 ```
 
-**File:** `src/node/App/services/EncryptionService.ts`
+**File:** `src/node/backend/services/EncryptionService.ts`
 
 **Algorithm:** AES-256-GCM (authenticated encryption)
 

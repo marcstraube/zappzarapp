@@ -27,7 +27,7 @@ async function loadDatabaseConfig(env: Record<string, string | undefined>) {
 
   // Reset module cache and re-import
   vi.resetModules();
-  return await import('@node/config/database');
+  return await import('@backend/config/database');
 }
 
 describe('Database Configuration', () => {

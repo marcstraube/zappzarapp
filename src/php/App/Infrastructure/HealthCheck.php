@@ -64,28 +64,6 @@ class HealthCheck
     }
 
     /**
-     * Get secret value from Docker Secret file or environment variable
-     *
-     * Docker Secrets pattern: Check for {VAR}_FILE first, then fall back to {VAR}
-     */
-    private function getSecret(string $name, string $default = ''): string
-    {
-        // First try Docker Secret file (e.g., DB_PASSWORD_FILE -> /run/secrets/db_password)
-        $fileEnv  = $name . '_FILE';
-        $filePath = $_ENV[$fileEnv] ?? getenv($fileEnv) ?: null;
-
-        if ($filePath !== null && file_exists($filePath)) {
-            $content = file_get_contents($filePath);
-            if ($content !== false) {
-                return trim($content);
-            }
-        }
-
-        // Fall back to environment variable
-        return $_ENV[$name] ?? getenv($name) ?: $default;
-    }
-
-    /**
      * Check all services and return status array
      *
      * @return array<string, mixed>
@@ -179,7 +157,7 @@ class HealthCheck
                 ],
             ]);
 
-            $response = file_get_contents($url, false, $context);
+            $response = @file_get_contents($url, false, $context);
 
             if ($response === false) {
                 $this->status['services']['node-backend'] = [
@@ -281,109 +259,48 @@ class HealthCheck
     }
 
     /**
-     * Check Database connection
+     * Check Database connection using DatabaseConfig for consistent SSL handling.
      */
     private function checkDatabase(): void
     {
-        $dbType = $this->env['DB_TYPE'];
+        $config = new DatabaseConfig();
+        $dbType = $config->getType();
 
-        if ($dbType === 'postgres') {
-            $this->checkPostgreSQL();
-        } elseif ($dbType === 'mariadb') {
-            $this->checkMariaDB();
-        } else {
+        // Check if required extension is loaded
+        $requiredExt = $config->isPostgres() ? 'pdo_pgsql' : 'pdo_mysql';
+        if (!extension_loaded($requiredExt)) {
             $this->status['services']['database'] = [
                 'status'  => 'error',
-                'message' => 'Unknown database type: ' . $dbType,
+                'type'    => $dbType,
+                'message' => "PDO {$dbType} extension not installed",
                 'enabled' => true,
             ];
-        }
-    }
 
-    /**
-     * Check PostgreSQL connection
-     */
-    private function checkPostgreSQL(): void
-    {
-        if (!extension_loaded('pdo_pgsql')) {
-            $this->status['services']['database'] = [
-                'status'  => 'error',
-                'type'    => 'postgres',
-                'message' => 'PDO PostgreSQL extension not installed',
-                'enabled' => true,
-            ];
             return;
         }
 
         try {
-            $dbName = $_ENV['DB_NAME'] ?? getenv('DB_NAME') ?: 'app';
-            $dbUser = $_ENV['DB_USER'] ?? getenv('DB_USER') ?: 'app';
-            $dbPass = $this->getSecret('DB_PASSWORD', 'secret');
-
-            $dsn = 'pgsql:host=postgres;port=5432;dbname=' . $dbName;
-            $pdo = new PDO($dsn, $dbUser, $dbPass, [
+            $options = [
                 PDO::ATTR_TIMEOUT => 2,
                 PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
-            ]);
+            ] + $config->getPdoSslOptions();
 
-            $stmt    = $pdo->query('SELECT version()');
+            $pdo = new PDO($config->getDsn(), $config->getUser(), $config->getPassword(), $options);
+
+            $query   = $config->isPostgres() ? 'SELECT version()' : 'SELECT VERSION()';
+            $stmt    = $pdo->query($query);
             $version = $stmt !== false ? $stmt->fetchColumn() : 'unknown';
 
             $this->status['services']['database'] = [
                 'status'  => 'ok',
-                'type'    => 'postgres',
+                'type'    => $dbType,
                 'version' => $version,
                 'enabled' => true,
             ];
         } catch (Exception $exception) {
             $this->status['services']['database'] = [
                 'status'  => 'error',
-                'type'    => 'postgres',
-                'message' => $exception->getMessage(),
-                'enabled' => true,
-            ];
-        }
-    }
-
-    /**
-     * Check MariaDB connection
-     */
-    private function checkMariaDB(): void
-    {
-        if (!extension_loaded('pdo_mysql')) {
-            $this->status['services']['database'] = [
-                'status'  => 'error',
-                'type'    => 'mariadb',
-                'message' => 'PDO MySQL extension not installed',
-                'enabled' => true,
-            ];
-            return;
-        }
-
-        try {
-            $dbName = $_ENV['DB_NAME'] ?? getenv('DB_NAME') ?: 'app';
-            $dbUser = $_ENV['DB_USER'] ?? getenv('DB_USER') ?: 'app';
-            $dbPass = $this->getSecret('DB_PASSWORD', 'secret');
-
-            $dsn = 'mysql:host=mariadb;port=3306;dbname=' . $dbName;
-            $pdo = new PDO($dsn, $dbUser, $dbPass, [
-                PDO::ATTR_TIMEOUT => 2,
-                PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
-            ]);
-
-            $stmt    = $pdo->query('SELECT VERSION()');
-            $version = $stmt !== false ? $stmt->fetchColumn() : 'unknown';
-
-            $this->status['services']['database'] = [
-                'status'  => 'ok',
-                'type'    => 'mariadb',
-                'version' => $version,
-                'enabled' => true,
-            ];
-        } catch (Exception $exception) {
-            $this->status['services']['database'] = [
-                'status'  => 'error',
-                'type'    => 'mariadb',
+                'type'    => $dbType,
                 'message' => $exception->getMessage(),
                 'enabled' => true,
             ];
@@ -453,7 +370,7 @@ class HealthCheck
                 ],
             ]);
 
-            $response = file_get_contents($url, false, $context);
+            $response = @file_get_contents($url, false, $context);
 
             if ($response !== false) {
                 $data                                    = json_decode($response, true);
@@ -488,7 +405,7 @@ class HealthCheck
                 ],
             ]);
 
-            $response = file_get_contents($url, false, $context);
+            $response = @file_get_contents($url, false, $context);
 
             if ($response !== false) {
                 $data                                      = json_decode($response, true);
@@ -538,7 +455,7 @@ class HealthCheck
                 ],
             ]);
 
-            $response = file_get_contents($url, false, $context);
+            $response = @file_get_contents($url, false, $context);
 
             // MinIO returns empty body with 200 OK on success
             if ($response !== false) {
