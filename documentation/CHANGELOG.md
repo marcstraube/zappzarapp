@@ -1,11 +1,52 @@
 # zappzarapp - Changelog
 
-**Erstellt:** 2025-12-19 **Letzte Aktualisierung:** 2026-01-15 (Branding &
-Project Identity) **Version:** 3.40
+**Erstellt:** 2025-12-19 **Letzte Aktualisierung:** 2026-01-15 (Nginx Security &
+Config Refactoring) **Version:** 3.41
 
 ---
 
 ## Changelog
+
+### Version 3.41 (2026-01-15) - Nginx Security & Config Refactoring
+
+Security hardening with HTTPS-only configuration and DRY refactoring of nginx
+config using shared snippets.
+
+#### Security: HTTPS-Only
+
+- **Removed**: `docker/nginx/conf.d/default.conf` - All HTTP traffic now
+  redirects to HTTPS via SSL templates
+- **Removed**: `docker/nginx/conf.d/csp-production.conf` - CSP is now defined
+  directly in SSL templates (development: relaxed, production: strict)
+- **Updated**: Dockerfile and compose files to remove obsolete config references
+
+#### Nginx Config Snippets (DRY)
+
+New `docker/nginx/snippets/` directory with shared configuration:
+
+- `deny-rules.conf` - Block access to hidden/sensitive files
+- `error-pages.conf` - Custom error page configuration
+- `node-api-proxy.conf` - Node.js API proxy locations
+- `security-headers.conf` - X-Frame-Options, X-Content-Type-Options, etc.
+- `server-defaults.conf` - Rate limiting and logging
+- `ssl-settings.conf` - TLS protocols, ciphers, session settings
+
+Both `ssl-development.conf.template` and `ssl-production.conf.template` now use
+`include` directives for shared config, reducing duplication and ensuring
+consistency.
+
+#### Development Experience
+
+- **Changed**: Static file caching in development now uses `no-cache` instead of
+  1-day expiry, ensuring changes to storage files are immediately visible
+
+#### Documentation
+
+- **Updated**: `documentation/infrastructure/ERROR-PAGES.md` to reference new
+  snippet location
+- **Updated**: `public/index.php` CSP comments to reflect dev/prod differences
+
+---
 
 ### Version 3.40 (2026-01-14) - Branding & Project Identity
 

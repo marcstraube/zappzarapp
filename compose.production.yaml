@@ -8,8 +8,7 @@ services:
     volumes:
       # Shared socket directory for PHP-FPM Unix socket communication
       - php-fpm-socket:/var/run/php-fpm
-      # Production configs and SSL certificates
-      - ./docker/nginx/conf.d/csp-production.conf:/etc/nginx/conf.d/csp.conf:ro
+      # Production SSL config and certificates
       - ./docker/nginx/conf.d/ssl-production.conf:/etc/nginx/conf.d/ssl.conf:ro
       - ./docker/certs:/etc/nginx/certs:ro
     read_only: true

@@ -20,15 +20,13 @@ RUN apk add --no-cache \
         wget \
         gettext \
         tzdata && \
-    mkdir -p /var/cache/nginx /var/log/nginx /tmp/nginx /var/www/html /etc/nginx/conf.d && \
+    mkdir -p /var/cache/nginx /var/log/nginx /tmp/nginx /var/www/html /etc/nginx/conf.d /etc/nginx/snippets && \
     touch /var/run/nginx.pid && \
-    chown -R nginx:nginx /var/cache/nginx /var/log/nginx /etc/nginx/conf.d /var/run/nginx.pid /tmp/nginx
+    chown -R nginx:nginx /var/cache/nginx /var/log/nginx /etc/nginx/conf.d /etc/nginx/snippets /var/run/nginx.pid /tmp/nginx
 
 # Copy Config
 COPY docker/nginx/nginx.conf /etc/nginx/nginx.conf
-# Copy only base configs (SSL configs are mounted via volumes when enabled)
-COPY docker/nginx/conf.d/default.conf /etc/nginx/conf.d/default.conf
-COPY docker/nginx/conf.d/csp-production.conf /etc/nginx/conf.d/csp-production.conf
+COPY docker/nginx/snippets/ /etc/nginx/snippets/
 # Copy custom error pages
 COPY docker/nginx/errors/ /usr/share/nginx/html/errors/
 

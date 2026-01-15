@@ -68,7 +68,8 @@ These are served when:
 **Note:** Non-existent `.php` files are routed through PHP for consistent error
 handling with content negotiation.
 
-**Configuration** in `docker/nginx/conf.d/default.conf`:
+**Configuration** in `docker/nginx/snippets/error-pages.conf` (included by SSL
+templates):
 
 ```nginx
 error_page 404 /errors/404.html;

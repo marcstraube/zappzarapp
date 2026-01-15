@@ -75,10 +75,11 @@ if ($isDevelopment && str_starts_with($requestPath, '/_dev')) {
  * ============================================================================
  *
  * CURRENT STATE:
- * A basic CSP is configured in docker/nginx/conf.d/default.conf with
- * 'unsafe-inline' for immediate compatibility.
+ * CSP is configured in the nginx SSL config templates:
+ * - Development: Relaxed CSP with 'unsafe-inline'/'unsafe-eval' for Vite HMR
+ * - Production: Strict CSP without 'unsafe-inline'/'unsafe-eval'
  *
- * FOR MAXIMUM SECURITY (Production):
+ * FOR MAXIMUM SECURITY (Nonce-based CSP):
  * 1. REMOVE the static CSP header from Nginx config
  * 2. UNCOMMENT the code below (lines 27-47)
  * 3. Use CSP_NONCE constant in your inline <script> and <style> tags:
