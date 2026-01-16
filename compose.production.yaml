@@ -16,11 +16,14 @@ services:
   nginx:
     build:
       target: production
+    environment:
+      - DOMAIN=${DOMAIN:-localhost}
+      - ENABLE_PHP=${ENABLE_PHP:-true}
     volumes:
       # Shared socket directory for PHP-FPM Unix socket communication
       - php-fpm-socket:/var/run/php-fpm
-      # Production SSL config
-      - ./docker/nginx/conf.d/ssl-production.conf:/etc/nginx/conf.d/ssl.conf:ro
+      # Production SSL config template (processed by entrypoint at runtime)
+      - ./docker/nginx/conf.d/ssl-production.conf.template:/etc/nginx/conf.d/ssl-production.conf.template:ro
     # SSL certificates via secrets (defined in compose.yaml)
     read_only: true
     tmpfs:
@@ -77,7 +80,8 @@ services:
       - ${STORAGE_DIR:-./storage}:/var/www/html/storage:rw
     read_only: true
     tmpfs:
-      - /tmp:mode=0770,uid=82,gid=82,size=1G
+      # mode=1777: Entrypoint runs as root and needs write access for secrets copying
+      - /tmp:mode=1777,size=1G
     security_opt:
       - no-new-privileges:true
     cap_drop:
@@ -120,7 +124,8 @@ services:
   node:
     read_only: true
     tmpfs:
-      - /tmp:mode=0770,uid=50000,gid=50000,size=256M
+      # mode=1777: Entrypoint runs as root and needs write access for secrets copying
+      - /tmp:mode=1777,size=256M
       - /home/node/.cache:mode=0770,uid=50000,gid=50000,size=256M
     security_opt:
       - no-new-privileges:true

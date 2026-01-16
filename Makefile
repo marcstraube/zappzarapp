@@ -177,7 +177,13 @@ build: ## Build Docker images (optionally specify service names: make build php 
 			if [ "$${ENABLE_MINIO:-false}" = "true" ]; then PROFILES="$$PROFILES --profile minio"; fi; \
 			if [ "$${ENABLE_RABBITMQ:-false}" = "true" ]; then PROFILES="$$PROFILES --profile rabbitmq"; fi; \
 			if [ "$$ENV" = "production" ]; then \
-				echo -e "\033[0;34mBuilding Node image first (required by PHP and NGINX)...\033[0m" && \
+				NODE_TARGET_AUTO="static"; \
+				case "$${NODE_MODE:-static-api}" in \
+					static-api|api) NODE_TARGET_AUTO="api" ;; \
+					framework|framework-api) NODE_TARGET_AUTO="framework" ;; \
+				esac; \
+				export NODE_TARGET="$${NODE_TARGET:-$$NODE_TARGET_AUTO}"; \
+				echo -e "\033[0;34mBuilding Node image first (target: $$NODE_TARGET)...\033[0m" && \
 				$(DC) -f compose.yaml -f compose.production.yaml $$PROFILES build node && \
 				echo -e "\033[0;34mBuilding remaining images...\033[0m" && \
 				$(DC) -f compose.yaml -f compose.production.yaml $$PROFILES build; \
@@ -221,7 +227,13 @@ build-no-cache: ## Build Docker images without cache (optionally specify service
 			if [ "$${ENABLE_MINIO:-false}" = "true" ]; then PROFILES="$$PROFILES --profile minio"; fi; \
 			if [ "$${ENABLE_RABBITMQ:-false}" = "true" ]; then PROFILES="$$PROFILES --profile rabbitmq"; fi; \
 			if [ "$$ENV" = "production" ]; then \
-				echo -e "\033[0;34mBuilding Node image first (required by PHP and NGINX)...\033[0m" && \
+				NODE_TARGET_AUTO="static"; \
+				case "$${NODE_MODE:-static-api}" in \
+					static-api|api) NODE_TARGET_AUTO="api" ;; \
+					framework|framework-api) NODE_TARGET_AUTO="framework" ;; \
+				esac; \
+				export NODE_TARGET="$${NODE_TARGET:-$$NODE_TARGET_AUTO}"; \
+				echo -e "\033[0;34mBuilding Node image first (target: $$NODE_TARGET)...\033[0m" && \
 				$(DC) -f compose.yaml -f compose.production.yaml $$PROFILES build --no-cache node && \
 				echo -e "\033[0;34mBuilding remaining images...\033[0m" && \
 				$(DC) -f compose.yaml -f compose.production.yaml $$PROFILES build --no-cache; \
@@ -561,6 +573,7 @@ up: ## Start containers (optionally specify service names: make up php nginx)
 	@. ./.env && if [ "$${ENV:-development}" = "production" ]; then \
 		echo -e "\033[0;33m⚠️  WARNING: Running Compose with ENV=production.\033[0m"; \
 		echo -e "\033[0;33m   For production deployments, use 'make swarm-deploy' instead.\033[0m"; \
+		echo -e "\033[0;33m   Note: DAC_OVERRIDE capability added for Compose mode (not needed in Swarm).\033[0m"; \
 		echo ""; \
 	fi
 	@SERVICES="$(filter-out $@,$(MAKECMDGOALS))"; \
@@ -613,13 +626,13 @@ up: ## Start containers (optionally specify service names: make up php nginx)
 		if [ "$${ENABLE_RABBITMQ:-false}" = "true" ]; then PROFILES="$$PROFILES --profile rabbitmq"; fi; \
 		echo -e "\033[0;33mStarting containers in $${ENV:-development} mode...\033[0m"; \
 		if [ "$$ENV" = "production" ]; then \
-			NODE_TARGET_AUTO="vite-assets"; \
-			case "$${NODE_MODE:-full-stack}" in \
-				full-stack|backend-only) NODE_TARGET_AUTO="backend" ;; \
-				frontend-only|frontend-backend) NODE_TARGET_AUTO="frontend" ;; \
+			NODE_TARGET_AUTO="static"; \
+			case "$${NODE_MODE:-static-api}" in \
+				static-api|api) NODE_TARGET_AUTO="api" ;; \
+				framework|framework-api) NODE_TARGET_AUTO="framework" ;; \
 			esac; \
 			export NODE_TARGET="$${NODE_TARGET:-$$NODE_TARGET_AUTO}"; \
-			$(DC) -f compose.yaml -f compose.production.yaml $$PROFILES up -d; \
+			$(DC) -f compose.yaml -f compose.production.yaml -f compose.production-compose.yaml $$PROFILES up -d; \
 		else \
 			$(DC) $$PROFILES up -d; \
 		fi; \
@@ -861,20 +874,20 @@ node-build: ## Executes the frontend build inside the Node container (uses 'buil
 	@echo -e "\033[0;33mExecuting frontend build...\033[0m"
 	@$(DC) run --rm --build --target build node pnpm run build
 
-node-up: ## Starts the Node service alongside the standard stack (Uses the default 'vite-assets' target)
-	@echo -e "\033[0;33mStarting Node service (vite-assets target)...\033[0m"
-	# NODE_TARGET is unset, so compose.yaml defaults to the 'vite-assets' target (sleep infinity).
+node-up: ## Starts the Node service alongside the standard stack (Uses the default 'static' target)
+	@echo -e "\033[0;33mStarting Node service (static target)...\033[0m"
+	# NODE_TARGET is unset, so compose.yaml defaults to the 'static' target (sleep infinity).
 	@$(MAKE) --silent up
 
-node-backend-up: ## Starts the Node.js Backend API Server (uses 'backend' target) alongside the stack
-	@echo -e "\033[0;33mStarting Node.js Backend API Server (backend target)...\033[0m"
-	# Sets NODE_TARGET environment variable to switch the build target to 'backend'.
-	@NODE_TARGET="backend" $(MAKE) --silent up
+node-api-up: ## Starts the Node.js Backend API Server (uses 'api' target) alongside the stack
+	@echo -e "\033[0;33mStarting Node.js Backend API Server (api target)...\033[0m"
+	# Sets NODE_TARGET environment variable to switch the build target to 'api'.
+	@NODE_TARGET="api" $(MAKE) --silent up
 
-node-frontend-up: ## Starts the Node.js Frontend Server (Next.js, Nuxt, etc., uses 'frontend' target)
-	@echo -e "\033[0;33mStarting Node.js Frontend Server (frontend target)...\033[0m"
-	# Sets NODE_TARGET environment variable to switch the build target to 'frontend'.
-	@NODE_TARGET="frontend" $(MAKE) --silent up
+node-framework-up: ## Starts the Node.js Frontend Server (Next.js, Nuxt, etc., uses 'framework' target)
+	@echo -e "\033[0;33mStarting Node.js Frontend Server (framework target)...\033[0m"
+	# Sets NODE_TARGET environment variable to switch the build target to 'framework'.
+	@NODE_TARGET="framework" $(MAKE) --silent up
 
 node-dev: ## Start Vite dev server with HMR (Hot Module Replacement)
 	@echo -e "\033[0;33mStarting Vite dev server with HMR...\033[0m"

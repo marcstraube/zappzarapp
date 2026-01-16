@@ -166,9 +166,9 @@ Commands for frontend and Node.js backend development.
 | `make node-server-dev`     | Start Node.js backend in development watch mode (tsx watch)    |
 | `make node-server-build`   | Build Node.js backend (TypeScript -> JavaScript)               |
 | `make node-build`          | Execute the frontend build inside the Node container           |
-| `make node-up`             | Start Node service (vite-assets target)                        |
-| `make node-backend-up`     | Start Node.js Backend API Server (backend target)              |
-| `make node-frontend-up`    | Start Node.js Frontend Server (frontend target)                |
+| `make node-up`             | Start Node service (static target)                             |
+| `make node-api-up`         | Start Node.js Backend API Server (api target)                  |
+| `make node-framework-up`   | Start Node.js Frontend Server (framework target)               |
 
 ### PM2 Process Manager
 

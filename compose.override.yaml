@@ -125,7 +125,7 @@ services:
       - ENABLE_MAILPIT=${ENABLE_MAILPIT:-false}
       - ENABLE_MINIO=${ENABLE_MINIO:-false}
       - ENABLE_RABBITMQ=${ENABLE_RABBITMQ:-false}
-      - NODE_MODE=${NODE_MODE:-full-stack}
+      - NODE_MODE=${NODE_MODE:-static-api}
       # Database (12-Factor: DATABASE_URL takes precedence)
       - DATABASE_URL=${DATABASE_URL:-}
       - DB_TYPE=${DB_TYPE:-postgres}
@@ -217,7 +217,7 @@ services:
     environment:
       - TZ=${TZ:-UTC}
       - NODE_ENV=development
-      - NODE_MODE=${NODE_MODE:-full-stack}
+      - NODE_MODE=${NODE_MODE:-static-api}
       - LOG_LEVEL=${LOG_LEVEL:-info}
       - LOG_FORMAT=${LOG_FORMAT:-pretty}
       - CORS_ORIGINS=${CORS_ORIGINS:-*}

@@ -41,7 +41,7 @@ RUN apk add --no-cache su-exec && \
     mkdir -p /home/node/.cache/node/corepack /app/node_modules && \
     chown -R node:node /home/node /app /usr/local/bin/pnpm
 
-# Copy development entrypoint (production stages use direct CMD, no entrypoint)
+# Copy development entrypoint
 COPY docker/node/entrypoint.development.sh /usr/local/bin/entrypoint.development.sh
 RUN chmod +x /usr/local/bin/entrypoint.development.sh
 
@@ -89,12 +89,15 @@ COPY --chown=node:node src/node/backend/ ./src/node/backend/
 # Execute the build commands (Frontend assets + Backend)
 RUN pnpm run build && pnpm --filter @zappzarapp/backend build
 
-# Image Slimming - Remove DevDependencies
-RUN CI=true pnpm prune --prod
+# Image Slimming - Reinstall production dependencies only
+# Note: pnpm prune breaks workspace symlinks, so we reinstall instead
+RUN rm -rf node_modules src/node/backend/node_modules && \
+    pnpm install --prod --frozen-lockfile
 
-# --- 4. PRODUCTION VITE ASSETS STAGE ---
+# --- 4. PRODUCTION STATIC ASSETS STAGE ---
 # Serves pre-built Vite assets via nginx (container sleeps, nginx serves static files)
-FROM base AS vite-assets
+# Used for: NODE_MODE=static
+FROM base AS static
 
 # Copy user/group from build stage
 COPY --from=build /etc/passwd /etc/group /etc/
@@ -115,18 +118,26 @@ USER node
 
 CMD ["sleep", "infinity"]
 
-# --- 5. PRODUCTION FRONTEND STAGE ---
+# --- 5. PRODUCTION FRAMEWORK STAGE ---
 # Runs Node.js frontend frameworks (Next.js, Nuxt, Remix, SvelteKit) in production
-FROM base AS frontend
+# Used for: NODE_MODE=framework, NODE_MODE=framework-api
+FROM base AS framework
 
 # Using a high, non-conflicting UID for maximum security in production.
-RUN apk add --no-cache --virtual .user-deps shadow && \
+# Install su-exec for privilege dropping in entrypoint (secrets handling in Compose mode)
+RUN apk add --no-cache su-exec && \
+    apk add --no-cache --virtual .user-deps shadow && \
     usermod -u 50000 node && \
     groupmod -g 50000 node && \
     apk del .user-deps && \
     mkdir -p /home/node/.cache/node/corepack /app && \
     chown -R node:node /home/node /app /usr/local/bin/pnpm
 
+# Copy production entrypoint (handles secrets for Compose mode, drops to node user)
+COPY docker/node/entrypoint.production.sh /usr/local/bin/entrypoint.production.sh
+RUN chmod +x /usr/local/bin/entrypoint.production.sh
+
+# Build as node user for security
 USER node
 
 # Copy frontend package files (frontend has its own package.json)
@@ -145,23 +156,35 @@ RUN pnpm run build
 HEALTHCHECK --interval=15s --timeout=3s --start-period=30s --retries=3 \
     CMD curl --fail http://localhost:3000 || exit 1
 
-# Start the production server (Next.js: next start, Nuxt: node .output/server/index.mjs, etc.)
+# Run as root initially, entrypoint drops to node after copying secrets
+USER root
+ENTRYPOINT ["/usr/local/bin/entrypoint.production.sh"]
 CMD ["pnpm", "run", "start"]
 
-# --- 6. PRODUCTION BACKEND STAGE ---
+# --- 6. PRODUCTION API STAGE ---
 # Runs the Node.js backend API server
-FROM base AS backend
+# Used for: NODE_MODE=api, NODE_MODE=static-api
+FROM base AS api
 
 # Copy user/group from build stage
 COPY --from=build /etc/passwd /etc/group /etc/
 
+# Install su-exec for privilege dropping in entrypoint (secrets handling in Compose mode)
 # Create cache directory with correct permissions for the node user (UID 50000 from build stage)
-RUN mkdir -p /home/node/.cache/node/corepack && \
+RUN apk add --no-cache su-exec && \
+    mkdir -p /home/node/.cache/node/corepack && \
     chown -R 50000:50000 /home/node
+
+# Copy production entrypoint (handles secrets for Compose mode, drops to node user)
+COPY docker/node/entrypoint.production.sh /usr/local/bin/entrypoint.production.sh
+RUN chmod +x /usr/local/bin/entrypoint.production.sh
 
 # Health Check: Pings the running Node.js server to ensure it is responsive.
 HEALTHCHECK --interval=15s --timeout=3s --start-period=10s --retries=3 \
     CMD curl --fail http://localhost:3000/health || exit 1
+
+# Copy Vite build artifacts (needed by nginx/php for static-api mode)
+COPY --from=build --chown=node:node /app/public/build /app/public/build
 
 # Copy production dependencies and built application
 COPY --from=build --chown=node:node /app/node_modules /app/node_modules
@@ -170,6 +193,6 @@ COPY --from=build --chown=node:node /app/src/node/backend/dist /app/src/node/bac
 COPY --from=build --chown=node:node /app/package.json /app/package.json
 COPY --from=build --chown=node:node /app/src/node/backend/package.json /app/src/node/backend/package.json
 
-USER node
-
+# Run as root initially, entrypoint drops to node after copying secrets
+ENTRYPOINT ["/usr/local/bin/entrypoint.production.sh"]
 CMD ["node", "src/node/backend/dist/server.js"]

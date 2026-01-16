@@ -2,10 +2,10 @@
  * PM2 Ecosystem Configuration
  *
  * Manages multiple Node.js processes in development and production.
- * Supports three runtime modes:
- * - vite-only: Frontend development server with HMR
- * - backend-only: Node.js API server
- * - full-stack: Both Vite + Backend running concurrently
+ * Supports runtime modes:
+ * - static: Vite development server with HMR
+ * - api: Node.js API server
+ * - static-api: Both Vite + Backend running concurrently
  *
  * @see https://pm2.keymetrics.io/docs/usage/application-declaration/
  */

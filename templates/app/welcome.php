@@ -117,7 +117,7 @@ use App\Infrastructure\ViteHelper;
             <li><a href="/status" style="color: #007bff; text-decoration: none;"><strong>GET /status</strong></a> - Detailed JSON health check (all services)</li>
             <li><a href="/health.php" style="color: #007bff; text-decoration: none;"><strong>GET /health.php</strong></a> - Docker HEALTHCHECK (minimal overhead)</li>
             <!-- Node.js API -->
-            <?php if ($env['ENABLE_NODE'] && in_array($env['NODE_MODE'], ['full-stack', 'backend-only'], true)): ?>
+            <?php if ($env['ENABLE_NODE'] && in_array($env['NODE_MODE'], ['static-api', 'api'], true)): ?>
             <li><a href="http://localhost:3000/health" target="_blank" style="color: #007bff; text-decoration: none;"><strong>GET /api/node/health</strong></a> - Node.js backend health</li>
             <li><a href="http://localhost:3000/api/hello" target="_blank" style="color: #007bff; text-decoration: none;"><strong>GET /api/node/hello</strong></a> - Hello endpoint (?name=)</li>
             <li>
@@ -210,8 +210,8 @@ ENABLE_REDIS=true     # Redis Cache
 # Database type (postgres or mariadb)
 DB_TYPE=postgres
 
-# Node.js mode (full-stack|vite-only|backend-only|none)
-NODE_MODE=full-stack</pre>
+# Node.js mode (static-api|static|api|framework|framework-api|idle)
+NODE_MODE=static-api</pre>
     </div>
 
     <?php if ($vite->isDevelopment()): ?>

@@ -1,0 +1,59 @@
+# ./compose.production-compose.yaml
+# Docker Compose Override for Production Testing (non-Swarm)
+#
+# This file adds capabilities required ONLY when testing production config
+# with `docker compose` instead of Docker Swarm.
+#
+# WHY THIS IS NEEDED:
+# - In Swarm mode: secrets uid/gid/mode options work correctly
+# - In Compose mode: secrets are bind-mounted with host uid, uid/gid/mode ignored
+# - compose.production.yaml uses cap_drop: ALL for security hardening
+# - DAC_OVERRIDE is needed so entrypoint scripts can read host-owned secrets
+#
+# HOW IT WORKS:
+# - Entrypoint runs as root with DAC_OVERRIDE, reads secrets, copies to /tmp/secrets/
+# - Application processes (www-data, node) read from /tmp/secrets/ (no caps needed)
+# - See: docker/php/entrypoint.production.sh, docker/node/entrypoint.production.sh
+#
+# USAGE:
+# - Testing: `make up` with ENV=production (automatically includes this file)
+# - Production: `make swarm-deploy` (does NOT use this file - more secure)
+#
+# SECURITY NOTE:
+# DAC_OVERRIDE bypasses file permission checks. This is acceptable for testing
+# but should NOT be used in production Swarm deployments where proper secret
+# permissions are enforced.
+
+services:
+  php:
+    cap_add:
+      # REQUIRED for Compose mode: entrypoint needs to read host-owned secrets before copying
+      # NOT needed in Swarm mode (secrets have proper uid/gid there)
+      - DAC_OVERRIDE
+
+  node:
+    cap_add:
+      # REQUIRED for Compose mode: entrypoint needs to read host-owned secrets before copying
+      # NOT needed in Swarm mode (secrets have proper uid/gid there)
+      - DAC_OVERRIDE
+      # REQUIRED for su-exec to drop privileges to node user
+      - SETUID
+      - SETGID
+
+  redis:
+    cap_add:
+      # REQUIRED for Compose mode: entrypoint reads root-owned secrets (ssl_cert, ssl_key)
+      # NOT needed in Swarm mode (secrets have proper uid/gid there)
+      - DAC_OVERRIDE
+
+  postgres:
+    cap_add:
+      # REQUIRED for Compose mode: entrypoint reads root-owned secrets, writes SSL certs
+      # NOT needed in Swarm mode (secrets have proper uid/gid there)
+      - DAC_OVERRIDE
+
+  mariadb:
+    cap_add:
+      # REQUIRED for Compose mode: entrypoint reads root-owned secrets
+      # NOT needed in Swarm mode (secrets have proper uid/gid there)
+      - DAC_OVERRIDE

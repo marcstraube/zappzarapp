@@ -14,6 +14,81 @@ capability hardening, Docker secrets for SSL certificates, pids limits for fork
 bomb protection, and restructured Node.js architecture with pnpm workspaces for
 backend/frontend separation.
 
+#### Refactor: NODE_MODE Naming
+
+Renamed all NODE_MODE values for clarity:
+
+| Old Name          | New Name        | Description                    |
+| ----------------- | --------------- | ------------------------------ |
+| `full-stack`      | `static-api`    | Vite HMR + Express Backend     |
+| `vite-only`       | `static`        | Vite HMR only                  |
+| `backend-only`    | `api`           | Express API only               |
+| `frontend-only`   | `framework`     | Node frontend (Next.js, Nuxt)  |
+| `frontend-backend`| `framework-api` | Node frontend + Express        |
+| `none`            | `idle`          | Container sleeps               |
+
+Dockerfile stages also renamed: `vite-assets` → `static`, `backend` → `api`,
+`frontend` → `framework`.
+
+#### Fix: Secrets Handling in Production Compose
+
+Added production entrypoints for PHP and Node that copy secrets from
+`/run/secrets/` to `/tmp/secrets/` with mode 0444. This is required because:
+
+- `compose.production.yaml` uses `cap_drop: ALL` for security hardening
+- Root without capabilities can't read files owned by other users
+- Entrypoints run as root with `DAC_OVERRIDE`, copy secrets, then drop privileges
+
+**New files:**
+
+- `docker/php/entrypoint.production.sh` - Copies secrets, starts PHP-FPM
+- `docker/node/entrypoint.production.sh` - Copies secrets, drops to node user
+
+**Updated `compose.production-compose.yaml`:**
+
+- PHP: `DAC_OVERRIDE` (entrypoint reads secrets)
+- Node: `DAC_OVERRIDE`, `SETUID`, `SETGID` (entrypoint + su-exec)
+- Documentation explains why capabilities are needed
+
+**Updated `compose.production.yaml`:**
+
+- PHP/Node tmpfs: `mode=1777` (allows root entrypoint to write)
+
+**Note:** In Docker Swarm, secrets have proper uid/gid/mode, so entrypoint logic
+is harmless (idempotent).
+
+#### Fix: pnpm prune breaks workspace symlinks
+
+Changed Node Dockerfile from `pnpm prune --prod` to delete + reinstall:
+
+```dockerfile
+RUN rm -rf node_modules src/node/backend/node_modules && \
+    pnpm install --prod --frozen-lockfile
+```
+
+This preserves workspace symlinks that `pnpm prune` would break.
+
+#### Fix: Nginx Dynamic PHP/Static Mode
+
+Nginx now dynamically configures itself based on `ENABLE_PHP`:
+
+- **INDEX_DIRECTIVE**: `index.php index.html` (PHP) or `index.html` (static)
+- **TRY_FILES_FALLBACK**: `/index.php?$query_string` (PHP) or `/index.html` (static)
+- **Health check snippet**: Generated at runtime in `/run/nginx/snippets/`
+  - PHP mode: Routes to PHP-FPM with fallback to static JSON
+  - Static mode: Returns static JSON directly
+
+Updated templates: `ssl-development.conf.template`, `ssl-production.conf.template`
+
+#### Fix: ViteHelper Manifest Path
+
+Fixed `ViteHelper.php` manifest path for relocated source structure:
+
+```php
+// Old: __DIR__ . '/../../../public/build/.vite/manifest.json'
+// New: __DIR__ . '/../../../../public/build/.vite/manifest.json'
+```
+
 #### Security: Docker Secrets for SSL
 
 All services now use Docker secrets instead of bind-mounted certificate files:

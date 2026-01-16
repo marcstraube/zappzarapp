@@ -79,21 +79,21 @@ fi
 echo "[entrypoint.development] Dependencies OK"
 
 # Start services based on NODE_MODE
-case "${NODE_MODE:-none}" in
-    full-stack)
-        echo "[entrypoint.development] Starting Full-Stack mode (Vite + Express via PM2)..."
+case "${NODE_MODE:-idle}" in
+    static-api)
+        echo "[entrypoint.development] Starting static-api mode (Vite HMR + Express via PM2)..."
         exec pnpm run dev:full
         ;;
-    vite-only)
-        echo "[entrypoint.development] Starting Vite-Only mode (Frontend HMR via PM2)..."
+    static)
+        echo "[entrypoint.development] Starting static mode (Vite HMR via PM2)..."
         exec pnpm run dev:vite
         ;;
-    backend-only)
-        echo "[entrypoint.development] Starting Backend-Only mode (Express API via PM2)..."
+    api)
+        echo "[entrypoint.development] Starting api mode (Express API via PM2)..."
         exec pnpm run dev:backend
         ;;
-    frontend-only)
-        echo "[entrypoint.development] Starting Frontend-Only mode (Node frontend framework)..."
+    framework)
+        echo "[entrypoint.development] Starting framework mode (Node frontend framework)..."
         if [ ! -f "/app/src/node/frontend/package.json" ]; then
             echo "[entrypoint.development] ERROR: No frontend framework installed!"
             echo "[entrypoint.development] See src/node/frontend/README.md for setup instructions."
@@ -101,8 +101,8 @@ case "${NODE_MODE:-none}" in
         fi
         exec pnpm run frontend:dev
         ;;
-    frontend-backend)
-        echo "[entrypoint.development] Starting Frontend-Backend mode (Node frontend + Express)..."
+    framework-api)
+        echo "[entrypoint.development] Starting framework-api mode (Node frontend + Express)..."
         if [ ! -f "/app/src/node/frontend/package.json" ]; then
             echo "[entrypoint.development] ERROR: No frontend framework installed!"
             echo "[entrypoint.development] See src/node/frontend/README.md for setup instructions."
@@ -112,7 +112,7 @@ case "${NODE_MODE:-none}" in
         pnpm run dev:backend &
         exec pnpm run frontend:dev
         ;;
-    none|*)
+    idle|*)
         echo "[entrypoint.development] Idle mode - container running without services"
         exec sleep infinity
         ;;

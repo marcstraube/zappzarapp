@@ -25,7 +25,7 @@ class ViteHelper
     {
         // Determine environment from ENV variable, default to production
         $this->env          = $_ENV['ENV'] ?? getenv('ENV') ?: 'production';
-        $this->manifestPath = __DIR__ . '/../../../public/build/.vite/manifest.json';
+        $this->manifestPath = __DIR__ . '/../../../../public/build/.vite/manifest.json';
 
         // Determine Vite Dev Server URL based on request context
         // For HTTPS requests: Use nginx proxy (same origin) to avoid mixed content

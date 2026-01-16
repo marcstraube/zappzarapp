@@ -12,6 +12,7 @@ services:
     environment:
       - TZ=${TZ:-UTC}
       - NGINX_SSL_PORT=${NGINX_SSL_PORT:-8443}
+      - ENABLE_PHP=${ENABLE_PHP:-true}
     ports:
       - "${NGINX_PORT:-8080}:8080"
       - "${NGINX_SSL_PORT:-8443}:${NGINX_SSL_PORT:-8443}"
@@ -101,9 +102,9 @@ services:
       context: .
       dockerfile: docker/node/Dockerfile
       # Conditionally set the build target based on the environment variable,
-      # defaulting to the secure 'vite-assets' stage (the idle state).
-      # Available targets: development, vite-assets, frontend, backend
-      target: ${NODE_TARGET:-vite-assets}
+      # defaulting to the secure 'static' stage (pre-built assets, idle container).
+      # Available targets: development, static, api, framework
+      target: ${NODE_TARGET:-static}
     image: ${COMPOSE_PROJECT_NAME:-zappzarapp}-node:latest
     container_name: ${COMPOSE_PROJECT_NAME:-zappzarapp}-node
     restart: unless-stopped

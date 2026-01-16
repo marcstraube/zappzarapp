@@ -1,10 +1,18 @@
 #!/bin/sh
-# PHP-FPM Production Entrypoint
-# Runs as root, copies secrets to readable location, then starts PHP-FPM
+# Node.js Production Entrypoint
+# Runs as root, copies secrets to readable location, then drops to node user
+#
+# WHY THIS IS NEEDED:
+# In Docker Compose, secrets are mounted with host UID and mode 0600.
+# The node user (UID 50000) cannot read them directly.
+# This entrypoint copies secrets to /tmp/secrets/ with mode 0444 before
+# dropping privileges to the node user.
+#
+# In Docker Swarm, secrets have proper uid/gid/mode, so this is a harmless no-op.
 
 set -e
 
-# Copy secrets to readable location (as root, for www-data user)
+# Copy secrets to readable location (as root, for node user)
 if [ -d "/run/secrets" ]; then
     mkdir -p /tmp/secrets
     chmod 755 /tmp/secrets
@@ -27,4 +35,5 @@ if [ -d "/run/secrets" ]; then
     fi
 fi
 
-exec "$@"
+# Drop privileges and execute command as node user
+exec su-exec node "$@"
