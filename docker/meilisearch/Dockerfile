@@ -6,6 +6,12 @@ ARG MEILISEARCH_VERSION=1.12
 
 FROM getmeili/meilisearch:v${MEILISEARCH_VERSION}
 
+# Copy entrypoint script for secrets handling
+COPY docker/meilisearch/entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
+
+ENTRYPOINT ["/entrypoint.sh"]
+
 # Health check for Meilisearch (HTTPS for zero-trust internal TLS)
 # Meilisearch exposes a health endpoint at /health
 # Use 127.0.0.1 instead of localhost to avoid IPv6 resolution issues

@@ -235,9 +235,9 @@ services:
       - CHOWN
       - SETUID
       - SETGID
-      # REQUIRED: entrypoint copies certs and sets permissions
-      - DAC_OVERRIDE
+      # FOWNER: allows chmod on files not owned by root (for cert permissions)
       - FOWNER
+      # Note: DAC_OVERRIDE not needed - secrets/certs are 0644 (world-readable)
     shm_size: 256mb
     volumes:
       - postgres-data:/var/lib/postgresql/data
@@ -295,9 +295,9 @@ services:
       - CHOWN
       - SETUID
       - SETGID
-      # REQUIRED: entrypoint copies certs and sets permissions
-      - DAC_OVERRIDE
+      # FOWNER: allows chmod on files not owned by root (for cert permissions)
       - FOWNER
+      # Note: DAC_OVERRIDE not needed - secrets/certs are 0644 (world-readable)
     shm_size: 256mb
     volumes:
       - mariadb-data:/var/lib/mysql
@@ -349,9 +349,8 @@ services:
     cap_drop:
       - ALL
     environment:
-      # Production: Restrict CORS to specific origins
-      MERCURE_EXTRA_DIRECTIVES: |
-        cors_origins ${CORS_ORIGINS:-}
+      # Production: Restrict CORS to specific origins (default: allow all)
+      MERCURE_EXTRA_DIRECTIVES: 'cors_origins "${CORS_ORIGINS:-*}"'
     logging:
       driver: "json-file"
       options:
@@ -444,6 +443,13 @@ services:
     environment:
       # Enable TLS (MinIO auto-detects certs in /root/.minio/certs/)
       MINIO_SERVER_URL: https://minio:9000
+    # Override healthcheck for TLS (mc ready doesn't work well with self-signed certs)
+    healthcheck:
+      test: ["CMD", "curl", "-sfk", "https://127.0.0.1:9000/minio/health/live"]
+      interval: 10s
+      timeout: 5s
+      start_period: 15s
+      retries: 3
     logging:
       driver: "json-file"
       options:
@@ -465,6 +471,12 @@ services:
       - no-new-privileges:true
     cap_drop:
       - ALL
+    cap_add:
+      # REQUIRED: RabbitMQ entrypoint uses chown/chmod for cookie permissions
+      - CHOWN
+      - SETUID
+      - SETGID
+      # Note: DAC_READ_SEARCH not needed - healthcheck uses su-exec to run as rabbitmq user
     volumes:
       - rabbitmq-data:/var/lib/rabbitmq
       # RabbitMQ TLS configuration (production - TLS only)

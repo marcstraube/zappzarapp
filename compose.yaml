@@ -334,7 +334,8 @@ services:
     networks:
       - database
     healthcheck:
-      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      # Uses gosu to run as mysql user (avoids DAC_OVERRIDE for reading .my-healthcheck.cnf)
+      test: ["CMD", "/custom-healthcheck.sh"]
       interval: 10s
       timeout: 3s
       retries: 3
@@ -361,12 +362,10 @@ services:
       SERVER_NAME: ':443'
       # JWT keys loaded from secret file via entrypoint.sh
       # Allow anonymous subscribers (set to 0 in production for auth-only)
-      MERCURE_EXTRA_DIRECTIVES: |
-        anonymous
-        cors_origins *
+      # Mercure configuration - anonymous subscribers and CORS
+      MERCURE_EXTRA_DIRECTIVES: anonymous
       # Caddy TLS configuration - use custom certificates
-      CADDY_SERVER_EXTRA_DIRECTIVES: |
-        tls /etc/mercure/certs/cert.crt /etc/mercure/certs/cert.key
+      CADDY_SERVER_EXTRA_DIRECTIVES: "tls /etc/mercure/certs/cert.crt /etc/mercure/certs/cert.key"
     expose:
       - "443"
     volumes:

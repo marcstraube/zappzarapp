@@ -60,54 +60,39 @@ source "$ENV_FILE"
 # Development Dependency Check
 # ============================================================================
 check_and_install_dependencies() {
-    local needs_composer=false
-    local needs_pnpm=false
+    # NOTE: Development GOSS tests use isolated Docker volumes.
+    # These volumes need to be populated before tests can pass.
+    # For CI/CD, use production tests (make goss-test-matrix-prod).
+    # For local development, volumes are populated by normal 'make up' workflow.
 
-    # Check PHP dependencies
+    # Check if host dependencies exist (required for volume bind mounts)
     if [ "${ENABLE_PHP:-false}" = "true" ]; then
         if [ ! -d "vendor" ] || [ ! -f "vendor/autoload.php" ]; then
-            echo -e "${YELLOW}[preset-runner] PHP dependencies missing (vendor/)${NC}"
-            needs_composer=true
+            echo -e "${YELLOW}[preset-runner] WARNING: PHP dependencies missing on host${NC}"
+            echo -e "${YELLOW}Development tests may fail. Run 'make composer-install' first.${NC}"
         fi
     fi
 
-    # Check Node dependencies
     if [ "${ENABLE_NODE:-false}" = "true" ]; then
         if [ ! -d "node_modules" ] || [ ! -d "node_modules/.pnpm" ]; then
-            echo -e "${YELLOW}[preset-runner] Node dependencies missing (node_modules/)${NC}"
-            needs_pnpm=true
+            echo -e "${YELLOW}[preset-runner] WARNING: Node dependencies missing on host${NC}"
+            echo -e "${YELLOW}Development tests may fail. Run 'make pnpm-install' first.${NC}"
         fi
     fi
 
-    # Install missing dependencies
-    if [ "$needs_composer" = true ]; then
-        echo -e "${BLUE}[preset-runner] Installing Composer dependencies...${NC}"
-        # Use docker to run composer if available, otherwise fail gracefully
-        if docker compose --env-file .env run --rm --no-deps php composer install --no-interaction --prefer-dist 2>/dev/null; then
-            echo -e "${GREEN}[preset-runner] Composer dependencies installed${NC}"
-        else
-            echo -e "${YELLOW}[preset-runner] Could not install via Docker, trying local composer...${NC}"
-            if command -v composer &>/dev/null; then
-                composer install --no-interaction --prefer-dist
-                echo -e "${GREEN}[preset-runner] Composer dependencies installed (local)${NC}"
-            else
-                echo -e "${RED}[preset-runner] ERROR: Cannot install Composer dependencies${NC}"
-                echo -e "${RED}Run 'make composer-install' manually first${NC}"
-                exit 1
-            fi
-        fi
+    # Populate isolated GOSS volumes using docker compose run
+    echo -e "${BLUE}[preset-runner] Populating GOSS test volumes...${NC}"
+
+    if [ "${ENABLE_PHP:-false}" = "true" ]; then
+        # shellcheck disable=SC2086
+        docker compose $COMPOSE_FILES --env-file "$ENV_FILE" $PROFILES \
+            run --rm --no-deps php composer install --no-interaction --prefer-dist >/dev/null 2>&1 || true
     fi
 
-    if [ "$needs_pnpm" = true ]; then
-        echo -e "${BLUE}[preset-runner] Installing Node dependencies...${NC}"
-        if command -v pnpm &>/dev/null; then
-            pnpm install --frozen-lockfile 2>/dev/null || pnpm install
-            echo -e "${GREEN}[preset-runner] Node dependencies installed${NC}"
-        else
-            echo -e "${RED}[preset-runner] ERROR: pnpm not found${NC}"
-            echo -e "${RED}Run 'make pnpm-install' manually first${NC}"
-            exit 1
-        fi
+    if [ "${ENABLE_NODE:-false}" = "true" ]; then
+        # shellcheck disable=SC2086
+        docker compose $COMPOSE_FILES --env-file "$ENV_FILE" $PROFILES \
+            run --rm --no-deps node sh -c "cd /app && pnpm install --frozen-lockfile 2>/dev/null || pnpm install" >/dev/null 2>&1 || true
     fi
 }
 
@@ -178,22 +163,36 @@ calculate_profiles() {
 }
 
 # ============================================================================
+# Cleanup Function
+# ============================================================================
+cleanup_preset() {
+    # Clean up ALL GOSS test containers to avoid port conflicts
+    # Development presets share internal service ports (6379, 5432, etc.)
+    # so we need to ensure no other goss test is running
+
+    # Stop and remove ALL goss test containers (filter by zappzarapp-goss prefix)
+    docker ps -aq --filter "name=zappzarapp-goss" 2>/dev/null | xargs -r docker rm -f >/dev/null 2>&1 || true
+
+    # Remove networks for all goss tests
+    docker network ls -q --filter "name=zappzarapp-goss" 2>/dev/null | xargs -r docker network rm >/dev/null 2>&1 || true
+
+    # Remove volumes for all goss tests
+    docker volume ls -q --filter "name=zappzarapp-goss" 2>/dev/null | xargs -r docker volume rm >/dev/null 2>&1 || true
+}
+
+# ============================================================================
 # Main
 # ============================================================================
 
-# For development presets: check dependencies before starting
-if [ "${ENV:-development}" = "development" ]; then
-    # Only check dependencies for "up" commands
-    if [[ "$COMMAND" == *"up"* ]]; then
-        echo -e "${BLUE}[preset-runner] Development mode - checking dependencies...${NC}"
-        check_and_install_dependencies
-    fi
+# For "up" commands: always cleanup first to avoid port conflicts
+if [[ "$COMMAND" == *"up"* ]]; then
+    cleanup_preset
 fi
 
 # Calculate profiles
 calculate_profiles
 
-# Determine compose files
+# Determine compose files (needed for dependency installation)
 COMPOSE_FILES="-f compose.yaml"
 if [ "${ENV:-development}" = "production" ]; then
     COMPOSE_FILES="$COMPOSE_FILES -f compose.production.yaml"
@@ -201,6 +200,15 @@ else
     # Development uses override
     if [ -f "compose.override.yaml" ]; then
         COMPOSE_FILES="$COMPOSE_FILES -f compose.override.yaml"
+    fi
+fi
+
+# For development presets: check dependencies before starting
+if [ "${ENV:-development}" = "development" ]; then
+    # Only check dependencies for "up" commands
+    if [[ "$COMMAND" == *"up"* ]]; then
+        echo -e "${BLUE}[preset-runner] Development mode - checking dependencies...${NC}"
+        check_and_install_dependencies
     fi
 fi
 

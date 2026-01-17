@@ -1,11 +1,74 @@
 # zappzarapp - Changelog
 
-**Erstellt:** 2025-12-19 **Letzte Aktualisierung:** 2026-01-16 (Kubernetes
-Migration) **Version:** 3.43
+**Erstellt:** 2025-12-19 **Letzte Aktualisierung:** 2026-01-17 (Security
+Hardening) **Version:** 3.44
 
 ---
 
 ## Changelog
+
+### Version 3.44 (2026-01-17) - Security Hardening & GOSS Test Matrix
+
+Security improvements for RabbitMQ and comprehensive GOSS test infrastructure.
+
+#### Security: DAC_OVERRIDE and DAC_READ_SEARCH Removed
+
+Eliminated dangerous capabilities from all production services by using privilege
+dropping (su-exec/gosu) for healthchecks instead of running as root:
+
+**RabbitMQ:** Removed DAC_READ_SEARCH
+- Healthcheck uses `su-exec rabbitmq` to run as rabbitmq user
+- New file: `docker/rabbitmq/healthcheck.sh`
+
+**MariaDB:** Removed DAC_OVERRIDE
+- Healthcheck uses `gosu mysql` to run as mysql user
+- New file: `docker/mariadb/healthcheck.sh`
+
+**PostgreSQL:** Removed DAC_OVERRIDE
+- Secrets and certificates are now world-readable (0644) via `make setup`
+- No capability bypass needed - standard file permissions work
+
+**Remaining capabilities per service:**
+| Service | Capabilities |
+|---------|-------------|
+| nginx | CHOWN, SETUID, SETGID, DAC_READ_SEARCH (required for dlopen) |
+| php | CHOWN, SETUID, SETGID |
+| node | none (runs as node user) |
+| redis | none (runs as redis user) |
+| postgres | CHOWN, SETUID, SETGID, FOWNER |
+| mariadb | CHOWN, SETUID, SETGID, FOWNER |
+| rabbitmq | CHOWN, SETUID, SETGID |
+
+Note: nginx still requires DAC_READ_SEARCH for loading dynamic modules (brotli).
+This is a known limitation when using `cap_drop: ALL` with dynamically linked modules.
+
+#### Testing: GOSS Preset Matrix
+
+Added comprehensive GOSS test infrastructure with preset-based configuration:
+
+- 6 production presets (fullstack, mariadb, optional services, minimal, node-only, php-only)
+- 9 development presets (assets, framework, idle, fullstack variants)
+- `make goss-test-matrix` - Run all tests
+- `make goss-test-matrix-prod` - Production tests only
+- `make goss-test-matrix-dev` - Development tests only
+
+**Port allocation:**
+- Development presets: 20xxx range
+- Production presets: 30xxx range
+
+**New/Updated files:**
+- `tests/goss/preset-runner.sh` - Intelligent preset runner with cleanup
+- `tests/goss/presets/*.env` - Configuration for each preset
+- `tests/goss/runtime-tests.sh` - Updated with su-exec for RabbitMQ
+
+#### Fix: Meilisearch Secrets Entrypoint
+
+Added entrypoint for Meilisearch to load master key from Docker secrets:
+
+- `docker/meilisearch/entrypoint.sh` - Reads `/run/secrets/meilisearch_master_key`
+- Updated Dockerfile to use custom entrypoint
+
+---
 
 ### Version 3.43 (2026-01-16) - Kubernetes Migration
 

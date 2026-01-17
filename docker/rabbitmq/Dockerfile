@@ -12,10 +12,15 @@ FROM rabbitmq:${RABBITMQ_VERSION}-management-alpine
 COPY docker/rabbitmq/entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
 
+# Copy healthcheck script (uses su-exec to run as rabbitmq user)
+COPY docker/rabbitmq/healthcheck.sh /healthcheck.sh
+RUN chmod +x /healthcheck.sh
+
 # Health check for RabbitMQ
-# Uses rabbitmq-diagnostics to check node health
+# Uses su-exec to run rabbitmq-diagnostics as rabbitmq user
+# This avoids needing DAC_READ_SEARCH capability to read .erlang.cookie
 HEALTHCHECK --interval=15s --timeout=10s --start-period=30s --retries=5 \
-    CMD rabbitmq-diagnostics -q ping || exit 1
+    CMD /healthcheck.sh || exit 1
 
 ENTRYPOINT ["/entrypoint.sh"]
 CMD ["rabbitmq-server"]

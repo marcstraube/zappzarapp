@@ -211,8 +211,8 @@ test_mariadb() {
         return
     fi
 
-    # Test healthcheck
-    if $DOCKER_COMPOSE exec -T mariadb healthcheck.sh --connect --innodb_initialized >/dev/null 2>&1; then
+    # Test healthcheck using custom script (uses gosu to run as mysql user)
+    if $DOCKER_COMPOSE exec -T mariadb /custom-healthcheck.sh >/dev/null 2>&1; then
         log_pass "mariadb: healthcheck succeeds"
     else
         log_fail "mariadb: healthcheck failed"
@@ -343,7 +343,8 @@ test_rabbitmq() {
         return
     fi
 
-    if $DOCKER_COMPOSE exec -T rabbitmq rabbitmqctl status >/dev/null 2>&1; then
+    # Use su-exec to run as rabbitmq user (needed to read .erlang.cookie without DAC_READ_SEARCH)
+    if $DOCKER_COMPOSE exec -T rabbitmq su-exec rabbitmq rabbitmqctl status >/dev/null 2>&1; then
         log_pass "rabbitmq: rabbitmqctl status succeeds"
     else
         log_fail "rabbitmq: rabbitmqctl status failed"
