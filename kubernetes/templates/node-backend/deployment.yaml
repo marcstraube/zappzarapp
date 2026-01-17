@@ -1,0 +1,101 @@
+{{- if .Values.nodeBackend.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "zappzarapp.fullname" . }}-node-backend
+  namespace: {{ include "zappzarapp.namespace" . }}
+  labels:
+    {{- include "zappzarapp.labels" . | nindent 4 }}
+    app.kubernetes.io/component: node-backend
+spec:
+  replicas: {{ .Values.nodeBackend.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "zappzarapp.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: node-backend
+  template:
+    metadata:
+      labels:
+        {{- include "zappzarapp.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: node-backend
+    spec:
+      containers:
+        - name: node-backend
+          image: "{{ include "zappzarapp.imageRepository" (dict "global" .Values.global "image" .Values.nodeBackend.image) }}:{{ include "zappzarapp.imageTag" (dict "global" .Values.global "image" .Values.nodeBackend.image "appVersion" .Chart.AppVersion) }}"
+          imagePullPolicy: {{ .Values.global.imagePullPolicy }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.config.node.backendPort }}
+              protocol: TCP
+          envFrom:
+            - configMapRef:
+                name: {{ include "zappzarapp.fullname" . }}-config
+          env:
+            - name: DB_PASSWORD_FILE
+              value: /run/secrets/db_password
+            - name: ENCRYPTION_KEY_FILE
+              value: /run/secrets/encryption_key
+            - name: BACKUP_ENCRYPTION_KEY_FILE
+              value: /run/secrets/backup_encryption_key
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 15
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 3
+          resources:
+            {{- toYaml .Values.nodeBackend.resources | nindent 12 }}
+          securityContext:
+            readOnlyRootFilesystem: {{ .Values.nodeBackend.securityContext.readOnlyRootFilesystem }}
+            runAsNonRoot: {{ .Values.nodeBackend.securityContext.runAsNonRoot }}
+            capabilities:
+              drop:
+                {{- toYaml .Values.nodeBackend.securityContext.capabilities.drop | nindent 16 }}
+              {{- if .Values.nodeBackend.securityContext.capabilities.add }}
+              add:
+                {{- toYaml .Values.nodeBackend.securityContext.capabilities.add | nindent 16 }}
+              {{- end }}
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+            - name: cache
+              mountPath: /home/node/.cache
+            - name: db-password
+              mountPath: /run/secrets/db_password
+              subPath: db_password
+              readOnly: true
+            - name: encryption-key
+              mountPath: /run/secrets/encryption_key
+              subPath: encryption_key
+              readOnly: true
+            - name: backup-encryption-key
+              mountPath: /run/secrets/backup_encryption_key
+              subPath: backup_encryption_key
+              readOnly: true
+      volumes:
+        - name: tmp
+          emptyDir:
+            sizeLimit: 256Mi
+        - name: cache
+          emptyDir:
+            sizeLimit: 256Mi
+        - name: db-password
+          secret:
+            secretName: {{ .Values.secrets.existingSecrets.dbPassword | default (printf "%s-db-password" (include "zappzarapp.fullname" .)) }}
+        - name: encryption-key
+          secret:
+            secretName: {{ .Values.secrets.existingSecrets.encryptionKey | default (printf "%s-encryption-key" (include "zappzarapp.fullname" .)) }}
+        - name: backup-encryption-key
+          secret:
+            secretName: {{ .Values.secrets.existingSecrets.backupEncryptionKey | default (printf "%s-backup-encryption-key" (include "zappzarapp.fullname" .)) }}
+{{- end }}

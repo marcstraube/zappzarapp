@@ -1,0 +1,24 @@
+{{- if and .Values.mailpit.enabled (ne .Values.global.env "production") }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "zappzarapp.fullname" . }}-mailpit
+  namespace: {{ include "zappzarapp.namespace" . }}
+  labels:
+    {{- include "zappzarapp.labels" . | nindent 4 }}
+    app.kubernetes.io/component: mailpit
+spec:
+  type: {{ .Values.mailpit.service.type | default "ClusterIP" }}
+  ports:
+    - name: smtp
+      port: {{ .Values.mailpit.service.smtpPort }}
+      targetPort: smtp
+      protocol: TCP
+    - name: web
+      port: {{ .Values.mailpit.service.webPort }}
+      targetPort: web
+      protocol: TCP
+  selector:
+    {{- include "zappzarapp.selectorLabels" . | nindent 4 }}
+    app.kubernetes.io/component: mailpit
+{{- end }}

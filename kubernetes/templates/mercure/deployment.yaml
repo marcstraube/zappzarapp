@@ -1,0 +1,69 @@
+{{- if .Values.mercure.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "zappzarapp.fullname" . }}-mercure
+  namespace: {{ include "zappzarapp.namespace" . }}
+  labels:
+    {{- include "zappzarapp.labels" . | nindent 4 }}
+    app.kubernetes.io/component: mercure
+spec:
+  replicas: {{ .Values.mercure.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "zappzarapp.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: mercure
+  template:
+    metadata:
+      labels:
+        {{- include "zappzarapp.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: mercure
+    spec:
+      containers:
+        - name: mercure
+          image: "{{ .Values.mercure.image.repository }}:{{ .Values.mercure.image.tag }}"
+          imagePullPolicy: {{ .Values.global.imagePullPolicy }}
+          ports:
+            - name: http
+              containerPort: 80
+              protocol: TCP
+          env:
+            - name: MERCURE_PUBLISHER_JWT_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.secrets.existingSecrets.mercureJwtSecret | default (printf "%s-mercure-jwt" (include "zappzarapp.fullname" .)) }}
+                  key: mercure_jwt_secret
+            - name: MERCURE_SUBSCRIBER_JWT_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.secrets.existingSecrets.mercureJwtSecret | default (printf "%s-mercure-jwt" (include "zappzarapp.fullname" .)) }}
+                  key: mercure_jwt_secret
+            - name: SERVER_NAME
+              value: ":80"
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 5
+          resources:
+            {{- toYaml .Values.mercure.resources | nindent 12 }}
+          securityContext:
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: tmp
+          emptyDir:
+            sizeLimit: 64Mi
+{{- end }}

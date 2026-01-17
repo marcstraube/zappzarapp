@@ -1,0 +1,40 @@
+# GOSS Tests for PostgreSQL container
+#
+# Build-time tests: Files, commands, configuration
+# Runtime tests: Processes, ports, connections (see runtime-tests.sh)
+
+# ============================================================================
+# FILE TESTS (Build-time)
+# ============================================================================
+file:
+  # pg_cron extension
+  /usr/local/lib/postgresql/pg_cron.so:
+    exists: true
+  /usr/local/share/postgresql/extension/pg_cron.control:
+    exists: true
+
+  # Custom entrypoint
+  /entrypoint-wrapper.sh:
+    exists: true
+    mode: "0755"
+
+# ============================================================================
+# COMMAND TESTS (Build-time)
+# ============================================================================
+command:
+  # PostgreSQL version
+  postgres --version:
+    exit-status: 0
+    timeout: 5000
+    stdout:
+      - "/PostgreSQL 1[7-9]|2[0-9]/"
+
+  # pg_isready is available
+  which pg_isready:
+    exit-status: 0
+    timeout: 5000
+
+  # psql is available
+  which psql:
+    exit-status: 0
+    timeout: 5000

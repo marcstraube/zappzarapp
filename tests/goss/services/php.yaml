@@ -1,0 +1,87 @@
+# GOSS Tests for PHP container
+#
+# Build-time tests: Files, commands, configuration
+# Runtime tests: Processes, ports, HTTP (see runtime-tests.sh)
+
+# ============================================================================
+# FILE TESTS (Build-time)
+# ============================================================================
+file:
+  # PHP-FPM configuration
+  /usr/local/etc/php/php.ini:
+    exists: true
+  /usr/local/etc/php-fpm.d/www.conf:
+    exists: true
+  /usr/local/etc/php-fpm.d/zz-docker.conf:
+    exists: true
+
+  # Application files
+  /var/www/html/public/index.php:
+    exists: true
+  /var/www/html/vendor/autoload.php:
+    exists: true
+  /var/www/html/config:
+    exists: true
+    filetype: directory
+
+  # Extension INI files
+  /usr/local/etc/php/conf.d/opcache.ini:
+    exists: true
+  /usr/local/etc/php/conf.d/pdo_pgsql.ini:
+    exists: true
+  /usr/local/etc/php/conf.d/redis.ini:
+    exists: true
+
+  # Entrypoint
+  /entrypoint.production.sh:
+    exists: true
+    mode: "0755"
+
+  # Log directories
+  /var/log/app:
+    exists: true
+    filetype: directory
+  /var/log/php:
+    exists: true
+    filetype: directory
+
+# ============================================================================
+# COMMAND TESTS (Build-time)
+# ============================================================================
+command:
+  # PHP version check
+  php -v:
+    exit-status: 0
+    timeout: 5000
+    stdout:
+      - "/PHP 8\\.[0-9]+/"
+
+  # Check required extensions are loaded
+  php -m:
+    exit-status: 0
+    timeout: 5000
+    stdout:
+      - "pdo_pgsql"
+      - "redis"
+      - "opcache"
+      - "gd"
+      - "intl"
+      - "zip"
+
+  # Composer autoload works
+  php -r "require '/var/www/html/vendor/autoload.php'; echo 'OK';":
+    exit-status: 0
+    timeout: 5000
+    stdout:
+      - "OK"
+
+  # PHP-FPM configuration is valid
+  php-fpm -t:
+    exit-status: 0
+    timeout: 5000
+
+  # OPcache is enabled
+  php -r "echo opcache_get_status() ? 'enabled' : 'disabled';":
+    exit-status: 0
+    stdout:
+      - "enabled"

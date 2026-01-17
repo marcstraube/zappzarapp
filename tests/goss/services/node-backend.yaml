@@ -1,0 +1,65 @@
+# GOSS Tests for node-backend container (Express API)
+#
+# Build-time tests: Files, commands, configuration
+# Runtime tests: Processes, ports, HTTP (see runtime-tests.sh)
+
+# ============================================================================
+# FILE TESTS (Build-time)
+# ============================================================================
+file:
+  # Application files (production build)
+  /app/src/node/backend/dist:
+    exists: true
+    filetype: directory
+  /app/src/node/backend/dist/server.js:
+    exists: true
+
+  # Package files
+  /app/package.json:
+    exists: true
+  /app/src/node/backend/package.json:
+    exists: true
+
+  # Node modules
+  /app/node_modules:
+    exists: true
+    filetype: directory
+  /app/src/node/backend/node_modules:
+    exists: true
+    filetype: directory
+
+  # Vite build assets (for assets-api mode)
+  /app/public/build:
+    exists: true
+    filetype: directory
+
+  # Entrypoint
+  /usr/local/bin/entrypoint.production.sh:
+    exists: true
+    mode: "0755"
+
+# ============================================================================
+# COMMAND TESTS (Build-time)
+# ============================================================================
+command:
+  # Node.js version check
+  node -v:
+    exit-status: 0
+    timeout: 5000
+    stdout:
+      - "/v2[0-9]+\\./"
+
+  # pnpm is available
+  pnpm -v:
+    exit-status: 0
+    timeout: 5000
+
+  # curl is available (for health checks)
+  which curl:
+    exit-status: 0
+    timeout: 5000
+
+  # Server file can be parsed (syntax check)
+  node --check /app/src/node/backend/dist/server.js:
+    exit-status: 0
+    timeout: 5000

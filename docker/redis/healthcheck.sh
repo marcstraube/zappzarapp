@@ -1,14 +1,14 @@
 #!/bin/sh
 # Redis TLS Health Check
-# Handles both development (bind-mount) and production (Docker secrets) cert paths
+# Handles both development and production cert paths (bind mounts)
+
+# Production paths (bind-mounted to /etc/redis/certs/)
+PROD_CERT="/etc/redis/certs/cert.crt"
+PROD_KEY="/etc/redis/certs/cert.key"
 
 # Development paths (compose.override.yaml bind-mounts)
 DEV_CERT="/etc/ssl/certs/redis.crt"
 DEV_KEY="/etc/ssl/private/redis.key"
-
-# Production paths (Docker secrets)
-PROD_CERT="/run/secrets/ssl_cert"
-PROD_KEY="/run/secrets/ssl_key"
 
 # Determine which paths to use
 if [ -f "$PROD_CERT" ] && [ -f "$PROD_KEY" ]; then

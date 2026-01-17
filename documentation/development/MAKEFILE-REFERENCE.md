@@ -103,36 +103,33 @@ Without arguments, commands operate on all enabled services (based on `.env`).
 | `make shell-postgres` | Open shell in PostgreSQL container |
 | `make shell-mariadb`  | Open shell in MariaDB container    |
 
-### Docker Swarm
+### Kubernetes Deployment
 
-Production deployment using Docker Swarm. See
-[SWARM.md](../infrastructure/SWARM.md) for details.
+Deploy to Kubernetes using Helm. See
+[KUBERNETES.md](../infrastructure/KUBERNETES.md) for details.
 
-| Command                                       | Description                                    |
-| --------------------------------------------- | ---------------------------------------------- |
-| `make swarm-init`                             | Initialize Swarm (single-node, 127.0.0.1)      |
-| `make swarm-init ADDR=<ip>`                   | Initialize Swarm as multi-node manager         |
-| `make swarm-join TOKEN=<t> MANAGER=<ip:port>` | Join existing cluster as worker                |
-| `make swarm-leave`                            | Leave Swarm mode                               |
-| `make swarm-deploy`                           | Deploy stack (supports DOCKER_HOST for remote) |
-| `make swarm-remove`                           | Remove deployed stack (supports DOCKER_HOST)   |
-| `make swarm-status`                           | Show services and tasks (supports DOCKER_HOST) |
-| `make swarm-logs [service]`                   | View logs (supports DOCKER_HOST)               |
+| Command              | Description                             |
+| -------------------- | --------------------------------------- |
+| `make k8s-deploy`    | Deploy to Kubernetes using Helm         |
+| `make k8s-remove`    | Remove deployment from Kubernetes       |
+| `make k8s-status`    | Show pods, services, and Helm status    |
+| `make k8s-logs [pod]`| View logs from a specific pod           |
 
-**Remote Deployment:**
+**Examples:**
 
 ```bash
-# Via .env
-DOCKER_HOST=ssh://user@manager-server
+# Deploy with default values
+make k8s-deploy
 
-# Or inline
-DOCKER_HOST=ssh://user@server make swarm-deploy
+# Deploy with production values
+ENV=production make k8s-deploy
+
+# View logs
+make k8s-logs zappzarapp-php-xxxxx
+
+# Remove deployment
+make k8s-remove
 ```
-
-**External Secrets:**
-
-If `compose.production-external.yaml` exists, it is automatically loaded by
-`swarm-deploy`.
 
 ### Package Managers
 

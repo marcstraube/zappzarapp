@@ -1,0 +1,74 @@
+# GOSS Tests for elasticsearch container
+# Two-phase testing: dgoss (external) + docker exec (internal)
+#
+# Elasticsearch on port 9200 (HTTP) and 9300 (transport)
+# Internal service, accessed via PHP/Node
+
+# ============================================================================
+# PROCESS TESTS (Internal)
+# ============================================================================
+process:
+  java:
+    running: true
+
+# ============================================================================
+# PORT TESTS (Internal)
+# ============================================================================
+port:
+  tcp:9200:
+    listening: true
+    ip:
+      - 0.0.0.0
+  tcp:9300:
+    listening: true
+    ip:
+      - 0.0.0.0
+
+# ============================================================================
+# FILE TESTS (Internal)
+# ============================================================================
+file:
+  # Data directory
+  /usr/share/elasticsearch/data:
+    exists: true
+    filetype: directory
+
+  # Backup directory
+  /usr/share/elasticsearch/backup:
+    exists: true
+    filetype: directory
+
+  # Config
+  /usr/share/elasticsearch/config/elasticsearch.yml:
+    exists: true
+
+# ============================================================================
+# HTTP TESTS (Internal - localhost)
+# ============================================================================
+http:
+  # Cluster health endpoint
+  http://localhost:9200/_cluster/health:
+    status: 200
+    timeout: 30000
+    body:
+      - '"cluster_name"'
+      - '"status"'
+
+  # Root endpoint (version info)
+  http://localhost:9200/:
+    status: 200
+    timeout: 10000
+    body:
+      - '"version"'
+      - '"tagline":"You Know, for Search"'
+
+# ============================================================================
+# COMMAND TESTS (Internal)
+# ============================================================================
+command:
+  # Elasticsearch is responsive
+  curl -s http://localhost:9200/_cluster/health?wait_for_status=yellow&timeout=30s:
+    exit-status: 0
+    timeout: 35000
+    stdout:
+      - '"status"'

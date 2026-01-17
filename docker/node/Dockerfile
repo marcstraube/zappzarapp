@@ -94,10 +94,10 @@ RUN pnpm run build && pnpm --filter @zappzarapp/backend build
 RUN rm -rf node_modules src/node/backend/node_modules && \
     pnpm install --prod --frozen-lockfile
 
-# --- 4. PRODUCTION STATIC ASSETS STAGE ---
-# Serves pre-built Vite assets via nginx (container sleeps, nginx serves static files)
-# Used for: NODE_MODE=static
-FROM base AS static
+# --- 4. PRODUCTION ASSETS STAGE ---
+# Serves pre-built Vite assets via nginx (container sleeps, nginx serves files)
+# Used for: NODE_MODE=assets
+FROM base AS assets
 
 # Copy user/group from build stage
 COPY --from=build /etc/passwd /etc/group /etc/
@@ -124,16 +124,15 @@ CMD ["sleep", "infinity"]
 FROM base AS framework
 
 # Using a high, non-conflicting UID for maximum security in production.
-# Install su-exec for privilege dropping in entrypoint (secrets handling in Compose mode)
-RUN apk add --no-cache su-exec && \
-    apk add --no-cache --virtual .user-deps shadow && \
+# In Compose, container runs as node user via 'user: 50000:50000' directive.
+RUN apk add --no-cache --virtual .user-deps shadow && \
     usermod -u 50000 node && \
     groupmod -g 50000 node && \
     apk del .user-deps && \
     mkdir -p /home/node/.cache/node/corepack /app && \
     chown -R node:node /home/node /app /usr/local/bin/pnpm
 
-# Copy production entrypoint (handles secrets for Compose mode, drops to node user)
+# Copy production entrypoint (sets up secret file paths)
 COPY docker/node/entrypoint.production.sh /usr/local/bin/entrypoint.production.sh
 RUN chmod +x /usr/local/bin/entrypoint.production.sh
 
@@ -152,30 +151,32 @@ COPY --chown=node:node src/node/frontend/ ./
 # Build the frontend (Next.js: next build, Nuxt: nuxt build, etc.)
 RUN pnpm run build
 
+# Framework server port (nginx proxies /app to node:3001)
+# Nitro (Nuxt) uses NITRO_PORT, Next.js/others use PORT
+ENV PORT=3001 NITRO_PORT=3001
+
 # Health Check: Verifies that the frontend server is responsive
 HEALTHCHECK --interval=15s --timeout=3s --start-period=30s --retries=3 \
-    CMD curl --fail http://localhost:3000 || exit 1
+    CMD curl --fail http://localhost:3001 || exit 1
 
-# Run as root initially, entrypoint drops to node after copying secrets
-USER root
+# Run as node user (Compose sets 'user: 50000:50000', K8s uses securityContext)
 ENTRYPOINT ["/usr/local/bin/entrypoint.production.sh"]
 CMD ["pnpm", "run", "start"]
 
 # --- 6. PRODUCTION API STAGE ---
 # Runs the Node.js backend API server
-# Used for: NODE_MODE=api, NODE_MODE=static-api
+# Used for: NODE_MODE=api, NODE_MODE=assets-api
 FROM base AS api
 
 # Copy user/group from build stage
 COPY --from=build /etc/passwd /etc/group /etc/
 
-# Install su-exec for privilege dropping in entrypoint (secrets handling in Compose mode)
 # Create cache directory with correct permissions for the node user (UID 50000 from build stage)
-RUN apk add --no-cache su-exec && \
-    mkdir -p /home/node/.cache/node/corepack && \
+# In Compose, container runs as node user via 'user: 50000:50000' directive.
+RUN mkdir -p /home/node/.cache/node/corepack && \
     chown -R 50000:50000 /home/node
 
-# Copy production entrypoint (handles secrets for Compose mode, drops to node user)
+# Copy production entrypoint (sets up secret file paths)
 COPY docker/node/entrypoint.production.sh /usr/local/bin/entrypoint.production.sh
 RUN chmod +x /usr/local/bin/entrypoint.production.sh
 
@@ -183,7 +184,7 @@ RUN chmod +x /usr/local/bin/entrypoint.production.sh
 HEALTHCHECK --interval=15s --timeout=3s --start-period=10s --retries=3 \
     CMD curl --fail http://localhost:3000/health || exit 1
 
-# Copy Vite build artifacts (needed by nginx/php for static-api mode)
+# Copy Vite build artifacts (needed by nginx/php for assets-api mode)
 COPY --from=build --chown=node:node /app/public/build /app/public/build
 
 # Copy production dependencies and built application
@@ -193,6 +194,39 @@ COPY --from=build --chown=node:node /app/src/node/backend/dist /app/src/node/bac
 COPY --from=build --chown=node:node /app/package.json /app/package.json
 COPY --from=build --chown=node:node /app/src/node/backend/package.json /app/src/node/backend/package.json
 
-# Run as root initially, entrypoint drops to node after copying secrets
+# Run as node user (Compose sets 'user: 50000:50000', K8s uses securityContext)
+USER node
 ENTRYPOINT ["/usr/local/bin/entrypoint.production.sh"]
 CMD ["node", "src/node/backend/dist/server.js"]
+
+# --- 7. TEST API STAGE (CI only) ---
+# Validates the API production image using GOSS
+# Usage: docker build --target test-api -f docker/node/Dockerfile .
+FROM api AS test-api
+
+USER root
+
+# Copy GOSS binary from official image
+COPY --from=ghcr.io/goss-org/goss:latest /goss /usr/local/bin/goss
+
+# Copy test specification
+COPY tests/goss/services/node-backend.yaml /goss.yaml
+
+# Run GOSS tests (fails build if tests fail)
+RUN goss validate --format documentation
+
+# --- 8. TEST FRAMEWORK STAGE (CI only) ---
+# Validates the framework production image using GOSS
+# Usage: docker build --target test-framework -f docker/node/Dockerfile .
+FROM framework AS test-framework
+
+USER root
+
+# Copy GOSS binary from official image
+COPY --from=ghcr.io/goss-org/goss:latest /goss /usr/local/bin/goss
+
+# Copy test specification
+COPY tests/goss/services/node-frontend.yaml /goss.yaml
+
+# Run GOSS tests (fails build if tests fail)
+RUN goss validate --format documentation

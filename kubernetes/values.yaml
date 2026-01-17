@@ -1,0 +1,426 @@
+# Default values for zappzarapp.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+# Global settings
+global:
+  # Environment: development or production
+  env: development
+  # Domain for ingress
+  domain: localhost
+  # Image pull policy (use "Never" for local minikube images)
+  imagePullPolicy: Never
+  # Image registry (leave empty for local images)
+  imageRegistry: ""
+  # Image tag (defaults to Chart appVersion, use "latest" for local development)
+  imageTag: "latest"
+
+# Namespace configuration
+namespace:
+  # Set to false - Helm --create-namespace handles this (avoids "already exists" errors)
+  create: false
+  name: zappzarapp
+
+# ============================================================================
+# CORE SERVICES
+# ============================================================================
+
+nginx:
+  enabled: true
+  replicaCount: 1
+  image:
+    repository: zappzarapp-nginx
+    tag: ""
+  resources:
+    limits:
+      cpu: "2"
+      memory: 2Gi
+    requests:
+      cpu: "1"
+      memory: 1Gi
+  service:
+    type: ClusterIP
+    port: 80
+    httpsPort: 443
+  securityContext:
+    readOnlyRootFilesystem: true
+    runAsNonRoot: false  # nginx needs root for initial setup
+    capabilities:
+      drop:
+        - ALL
+      add:
+        - DAC_READ_SEARCH
+        - CHOWN
+        - SETUID
+        - SETGID
+
+php:
+  enabled: true
+  replicaCount: 1
+  image:
+    repository: zappzarapp-php
+    tag: ""
+  resources:
+    limits:
+      cpu: "2"
+      memory: 2Gi
+    requests:
+      cpu: "1"
+      memory: 1Gi
+  service:
+    type: ClusterIP
+    port: 9000
+  securityContext:
+    readOnlyRootFilesystem: true
+    runAsNonRoot: false  # needs root for secrets copying
+    capabilities:
+      drop:
+        - ALL
+      add:
+        - CHOWN
+        - SETUID
+        - SETGID
+
+# Node Frontend (Nuxt/Next.js/Remix) - Only for framework/framework-api modes
+node:
+  # Enable for: framework, framework-api modes
+  enabled: false
+  replicaCount: 1
+  image:
+    repository: zappzarapp-node
+    tag: ""
+  resources:
+    limits:
+      cpu: "0.5"
+      memory: 512Mi
+    requests:
+      cpu: "0.25"
+      memory: 256Mi
+  service:
+    type: ClusterIP
+    port: 3001  # Frontend frameworks run on 3001
+  securityContext:
+    readOnlyRootFilesystem: true
+    runAsNonRoot: false  # needs root for secrets copying, then drops to node
+    capabilities:
+      drop:
+        - ALL
+      add:
+        - SETUID    # required for su-exec to switch user
+        - SETGID    # required for su-exec to switch groups
+
+# Node Backend (Express API) - For api, assets-api, framework-api modes
+nodeBackend:
+  # Enable for: api, assets-api, framework-api modes
+  enabled: true
+  replicaCount: 1
+  image:
+    repository: zappzarapp-node-backend
+    tag: ""
+  resources:
+    limits:
+      cpu: "0.5"
+      memory: 512Mi
+    requests:
+      cpu: "0.25"
+      memory: 256Mi
+  service:
+    type: ClusterIP
+    port: 3000  # Express API runs on 3000
+  securityContext:
+    readOnlyRootFilesystem: true
+    runAsNonRoot: false  # needs root for secrets copying, then drops to node
+    capabilities:
+      drop:
+        - ALL
+      add:
+        - SETUID    # required for su-exec to switch user
+        - SETGID    # required for su-exec to switch groups
+
+# ============================================================================
+# DATABASE SERVICES
+# ============================================================================
+
+postgres:
+  enabled: true
+  replicaCount: 1
+  image:
+    repository: zappzarapp-postgres
+    tag: ""
+  resources:
+    limits:
+      cpu: "1"
+      memory: 1Gi
+    requests:
+      cpu: "0.5"
+      memory: 512Mi
+  persistence:
+    enabled: true
+    size: 10Gi
+    storageClass: ""
+  service:
+    type: ClusterIP
+    port: 5432
+  securityContext:
+    readOnlyRootFilesystem: false
+    runAsNonRoot: false
+    capabilities:
+      drop:
+        - ALL
+      add:
+        - CHOWN
+        - SETUID
+        - SETGID
+        - FOWNER
+
+mariadb:
+  enabled: false
+  replicaCount: 1
+  image:
+    repository: mariadb
+    tag: "11"
+  resources:
+    limits:
+      cpu: "1"
+      memory: 1Gi
+    requests:
+      cpu: "0.5"
+      memory: 512Mi
+  persistence:
+    enabled: true
+    size: 10Gi
+    storageClass: ""
+  service:
+    type: ClusterIP
+    port: 3306
+  securityContext:
+    readOnlyRootFilesystem: false
+    runAsNonRoot: false
+    capabilities:
+      drop:
+        - ALL
+      add:
+        - CHOWN
+        - SETUID
+        - SETGID
+
+redis:
+  enabled: true
+  replicaCount: 1
+  image:
+    repository: redis
+    tag: "7-alpine"
+  resources:
+    limits:
+      cpu: "0.5"
+      memory: 512Mi
+    requests:
+      cpu: "0.25"
+      memory: 256Mi
+  persistence:
+    enabled: true
+    size: 1Gi
+    storageClass: ""
+  service:
+    type: ClusterIP
+    port: 6379
+  securityContext:
+    readOnlyRootFilesystem: true
+    runAsNonRoot: false
+    capabilities:
+      drop:
+        - ALL
+      add:
+        - SETUID
+        - SETGID
+
+# ============================================================================
+# OPTIONAL SERVICES
+# ============================================================================
+
+mercure:
+  enabled: false
+  replicaCount: 1
+  image:
+    repository: dunglas/mercure
+    tag: "latest"
+  resources:
+    limits:
+      cpu: "0.5"
+      memory: 256Mi
+    requests:
+      cpu: "0.1"
+      memory: 64Mi
+  service:
+    type: ClusterIP
+    port: 80
+
+meilisearch:
+  enabled: false
+  replicaCount: 1
+  image:
+    repository: getmeili/meilisearch
+    tag: "v1.6"
+  resources:
+    limits:
+      cpu: "1"
+      memory: 1Gi
+    requests:
+      cpu: "0.25"
+      memory: 256Mi
+  persistence:
+    enabled: true
+    size: 5Gi
+    storageClass: ""
+  service:
+    type: ClusterIP
+    port: 7700
+
+elasticsearch:
+  enabled: false
+  replicaCount: 1
+  image:
+    repository: elasticsearch
+    tag: "8.12.0"
+  resources:
+    limits:
+      cpu: "2"
+      memory: 2Gi
+    requests:
+      cpu: "0.5"
+      memory: 1Gi
+  persistence:
+    enabled: true
+    size: 10Gi
+    storageClass: ""
+  service:
+    type: ClusterIP
+    port: 9200
+
+minio:
+  enabled: false
+  replicaCount: 1
+  image:
+    repository: minio/minio
+    tag: "latest"
+  resources:
+    limits:
+      cpu: "1"
+      memory: 1Gi
+    requests:
+      cpu: "0.25"
+      memory: 256Mi
+  persistence:
+    enabled: true
+    size: 10Gi
+    storageClass: ""
+  service:
+    type: ClusterIP
+    port: 9000
+    consolePort: 9001
+
+rabbitmq:
+  enabled: false
+  replicaCount: 1
+  image:
+    repository: rabbitmq
+    tag: "3-management-alpine"
+  resources:
+    limits:
+      cpu: "1"
+      memory: 512Mi
+    requests:
+      cpu: "0.25"
+      memory: 128Mi
+  persistence:
+    enabled: true
+    size: 1Gi
+    storageClass: ""
+  service:
+    type: ClusterIP
+    port: 5672
+    managementPort: 15672
+
+mailpit:
+  # Only for development - disabled in production
+  enabled: false
+  replicaCount: 1
+  image:
+    repository: axllent/mailpit
+    tag: "latest"
+  resources:
+    limits:
+      cpu: "0.25"
+      memory: 128Mi
+    requests:
+      cpu: "0.1"
+      memory: 64Mi
+  service:
+    type: ClusterIP
+    smtpPort: 1025
+    webPort: 8025
+
+# ============================================================================
+# INGRESS
+# ============================================================================
+
+ingress:
+  enabled: false
+  className: nginx
+  annotations: {}
+    # kubernetes.io/tls-acme: "true"
+  hosts:
+    - host: localhost
+      paths:
+        - path: /
+          pathType: Prefix
+  tls: []
+  #  - secretName: zappzarapp-tls
+  #    hosts:
+  #      - example.com
+
+# ============================================================================
+# SECRETS
+# ============================================================================
+
+secrets:
+  # Use existing secrets instead of creating new ones
+  existingSecrets:
+    dbPassword: ""
+    dbRootPassword: ""
+    encryptionKey: ""
+    backupEncryptionKey: ""
+    sslCert: ""
+    sslKey: ""
+    mercureJwtSecret: ""
+    meilisearchMasterKey: ""
+    minioRootUser: ""
+    minioRootPassword: ""
+    rabbitmqUser: ""
+    rabbitmqPassword: ""
+
+# ============================================================================
+# CONFIG
+# ============================================================================
+
+config:
+  # Database configuration
+  database:
+    name: app
+    user: app
+    host: postgres  # or mariadb if using MariaDB
+
+  # Logging
+  logLevel: debug
+  logFormat: text
+
+  # PHP specific
+  php:
+    memoryLimit: 256M
+    maxExecutionTime: 30
+    uploadMaxFilesize: 64M
+
+  # Node specific
+  node:
+    frontendPort: 3001  # Frontend frameworks (Nuxt/Next.js)
+    backendPort: 3000   # Express API

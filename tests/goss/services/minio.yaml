@@ -1,0 +1,78 @@
+# GOSS Tests for minio container
+# Two-phase testing: dgoss (external) + docker exec (internal)
+#
+# MinIO S3-compatible storage
+# API on port 9000 (TLS), Console on port 9001 (TLS)
+
+# ============================================================================
+# PROCESS TESTS (Internal)
+# ============================================================================
+process:
+  minio:
+    running: true
+
+# ============================================================================
+# PORT TESTS (Internal)
+# ============================================================================
+port:
+  # S3 API port
+  tcp:9000:
+    listening: true
+    ip:
+      - 0.0.0.0
+  # Console port
+  tcp:9001:
+    listening: true
+    ip:
+      - 0.0.0.0
+
+# ============================================================================
+# FILE TESTS (Internal)
+# ============================================================================
+file:
+  # Data directory
+  /data:
+    exists: true
+    filetype: directory
+
+  # TLS certificates (auto-detected by MinIO)
+  /root/.minio/certs/public.crt:
+    exists: true
+  /root/.minio/certs/private.key:
+    exists: true
+
+  # Secrets (bind mount)
+  /run/secrets/minio_root_user.txt:
+    exists: true
+  /run/secrets/minio_root_password.txt:
+    exists: true
+
+# ============================================================================
+# HTTP TESTS (Internal - localhost with TLS)
+# ============================================================================
+http:
+  # Health endpoint (TLS)
+  https://localhost:9000/minio/health/live:
+    status: 200
+    timeout: 5000
+    insecure: true
+
+  # Readiness endpoint (TLS)
+  https://localhost:9000/minio/health/ready:
+    status: 200
+    timeout: 5000
+    insecure: true
+
+# ============================================================================
+# COMMAND TESTS (Internal)
+# ============================================================================
+command:
+  # MinIO client ready check
+  mc ready local:
+    exit-status: 0
+    timeout: 10000
+
+  # MinIO admin info
+  mc admin info local --insecure:
+    exit-status: 0
+    timeout: 10000

@@ -1,0 +1,24 @@
+{{- if .Values.minio.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "zappzarapp.fullname" . }}-minio
+  namespace: {{ include "zappzarapp.namespace" . }}
+  labels:
+    {{- include "zappzarapp.labels" . | nindent 4 }}
+    app.kubernetes.io/component: minio
+spec:
+  type: {{ .Values.minio.service.type }}
+  ports:
+    - name: api
+      port: {{ .Values.minio.service.port }}
+      targetPort: api
+      protocol: TCP
+    - name: console
+      port: {{ .Values.minio.service.consolePort }}
+      targetPort: console
+      protocol: TCP
+  selector:
+    {{- include "zappzarapp.selectorLabels" . | nindent 4 }}
+    app.kubernetes.io/component: minio
+{{- end }}

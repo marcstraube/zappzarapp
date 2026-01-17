@@ -1,0 +1,67 @@
+{{- if .Values.php.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "zappzarapp.fullname" . }}-php-config
+  namespace: {{ include "zappzarapp.namespace" . }}
+  labels:
+    {{- include "zappzarapp.labels" . | nindent 4 }}
+    app.kubernetes.io/component: php
+data:
+  # PHP-FPM Pool Configuration for Kubernetes
+  # Uses TCP instead of Unix socket (separate pods)
+  www.conf: |
+    [www]
+    ; FPM Pool Configuration for Kubernetes
+
+    ; User and Group
+    user = www-data
+    group = www-data
+
+    ; TCP Configuration (required for Kubernetes - pods are separate)
+    listen = 0.0.0.0:9000
+
+    ; Process Manager
+    pm = dynamic
+    pm.max_children = 25
+    pm.start_servers = 5
+    pm.min_spare_servers = 2
+    pm.max_spare_servers = 8
+    pm.max_requests = 500
+    pm.process_idle_timeout = 10s
+
+    ; Request Timeouts
+    request_terminate_timeout = 90s
+    request_slowlog_timeout = 30s
+
+    ; Logging
+    access.log = /proc/self/fd/2
+    slowlog = /proc/self/fd/2
+    php_admin_value[error_log] = /proc/self/fd/2
+
+    ; Environment
+    clear_env = no
+
+    ; Security
+    php_admin_flag[log_errors] = on
+
+    ; Catch workers output
+    catch_workers_output = yes
+    decorate_workers_output = no
+
+    ; Status and Health Endpoints (for Kubernetes probes)
+    pm.status_path = /php-status
+    ping.path = /php-ping
+    ping.response = pong
+
+  # PHP-FPM Global Configuration
+  zz-docker.conf: |
+    [global]
+    daemonize = no
+    error_log = /proc/self/fd/2
+    log_level = warning
+
+    [www]
+    ; Override to use TCP for Kubernetes
+    listen = 0.0.0.0:9000
+{{- end }}

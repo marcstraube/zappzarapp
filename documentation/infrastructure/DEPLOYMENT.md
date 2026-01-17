@@ -172,40 +172,37 @@ curl http://localhost:8080/health
 
 ## Deployment Strategies
 
-> **Important:** Production deployments require Docker Swarm for proper secrets
-> permission handling. See [SWARM.md](./SWARM.md) for details.
+### Single-Server Production (Docker Compose)
 
-### Manual Deployment
+For single-server deployments, use Docker Compose with production overrides:
 
-1. **Build production images locally:**
+```bash
+# Build production images
+ENV=production make build
+
+# Start in production mode
+ENV=production make up
+```
+
+### Multi-Node Production (Kubernetes)
+
+For multi-node or cloud deployments, use Kubernetes with Helm.
+
+1. **Build and push images to registry:**
 
    ```bash
    ENV=production make build
-   ```
-
-2. **Tag and push to registry:**
-
-   ```bash
    docker tag zappzarapp-php:latest registry.example.com/myapp/php:v1.0.0
    docker push registry.example.com/myapp/php:v1.0.0
    ```
 
-3. **Initialize Swarm on server (once):**
+2. **Deploy with Helm:**
 
    ```bash
-   # Single-node production
-   make swarm-init
-
-   # Multi-node (allows workers to join later)
-   make swarm-init ADDR=<server-ip>
+   make k8s-deploy
    ```
 
-4. **Deploy with Swarm:**
-
-   ```bash
-   docker pull registry.example.com/myapp/php:v1.0.0
-   make swarm-deploy
-   ```
+See [KUBERNETES.md](./KUBERNETES.md) for complete Kubernetes documentation.
 
 ### Docker Registry Integration
 
@@ -245,78 +242,34 @@ deploy:registry:
     tags: ghcr.io/${{ github.repository }}/php:${{ github.sha }}
 ```
 
-### Docker Swarm Deployment
-
-```bash
-# Initialize Swarm (single-node or multi-node manager)
-make swarm-init                    # Single-node (127.0.0.1)
-make swarm-init ADDR=192.168.1.10  # Multi-node manager
-
-# Join workers to cluster (on each worker node)
-make swarm-join TOKEN=SWMTKN-1-xxx MANAGER=192.168.1.10:2377
-
-# Deploy stack
-make swarm-deploy
-
-# Check status
-make swarm-status
-
-# Scale services
-docker service scale zappzarapp_php=3
-
-# Update service
-docker service update --image registry.example.com/myapp/php:v1.0.1 zappzarapp_php
-```
-
-For remote deployment, set `DOCKER_HOST` in `.env` or inline:
-
-```bash
-DOCKER_HOST=ssh://user@server make swarm-deploy
-```
-
-See [SWARM.md](./SWARM.md) for complete documentation.
-
 ### Kubernetes Deployment
 
-Generate Kubernetes manifests from Docker Compose:
+Deploy using the project's Helm chart:
 
 ```bash
-# Using Kompose
-kompose convert -f compose.yaml -f compose.production.yaml
+# Deploy to Kubernetes
+make k8s-deploy
 
-# Apply to cluster
-kubectl apply -f .
+# Check status
+make k8s-status
+
+# View logs
+make k8s-logs
+
+# Remove deployment
+make k8s-remove
 ```
 
-Or use the production compose file with Kubernetes:
+For production deployment with custom values:
 
-```yaml
-# k8s/deployment.yaml
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: php
-spec:
-  replicas: 3
-  selector:
-    matchLabels:
-      app: php
-  template:
-    spec:
-      containers:
-        - name: php
-          image: registry.example.com/myapp/php:latest
-          resources:
-            limits:
-              memory: '512Mi'
-              cpu: '500m'
-          readinessProbe:
-            httpGet:
-              path: /health
-              port: 9000
-            initialDelaySeconds: 5
-            periodSeconds: 10
+```bash
+helm upgrade --install zappzarapp ./kubernetes \
+  --namespace zappzarapp \
+  --create-namespace \
+  -f kubernetes/values.production.yaml
 ```
+
+See [KUBERNETES.md](./KUBERNETES.md) for complete documentation.
 
 ## Environment Configuration
 
@@ -337,22 +290,24 @@ CORS_ORIGINS=https://your-domain.com
 
 **Production options:**
 
-- Docker Swarm secrets
 - Kubernetes secrets
 - HashiCorp Vault
 - AWS Secrets Manager
 - Azure Key Vault
 
-Example for Docker Swarm:
+Example for Kubernetes:
 
 ```bash
 # Create secret
-echo "your-db-password" | docker secret create db_password -
+kubectl create secret generic db-credentials \
+  --from-literal=db_password=your-db-password \
+  --namespace zappzarapp
 
-# Reference in compose
+# Reference in Helm values
+# kubernetes/values.yaml
 secrets:
   db_password:
-    external: true
+    existingSecret: db-credentials
 ```
 
 ## Health Checks
@@ -389,30 +344,35 @@ docker tag zappzarapp-php:previous zappzarapp-php:latest
 docker compose up -d
 ```
 
-### Docker Swarm
+### Kubernetes (Helm)
 
 ```bash
-# Automatic rollback on failure
-docker service update --rollback myapp_php
+# Automatic rollback to previous revision
+helm rollback zappzarapp --namespace zappzarapp
 
-# Or specify previous image
-docker service update --image registry.example.com/myapp/php:v1.0.0 myapp_php
+# Or specify revision number
+helm rollback zappzarapp 2 --namespace zappzarapp
+
+# List release history
+helm history zappzarapp --namespace zappzarapp
 ```
 
-### Blue-Green Deployment
+### Blue-Green Deployment (Kubernetes)
 
 ```bash
-# Deploy new version to "green" stack
-docker stack deploy -c compose.green.yaml myapp-green
+# Deploy new version to "green" namespace
+helm upgrade --install zappzarapp-green ./kubernetes \
+  --namespace zappzarapp-green --create-namespace
 
 # Test green deployment
-curl http://green.example.com/health
+kubectl port-forward svc/nginx 8081:80 -n zappzarapp-green
+curl http://localhost:8081/health
 
-# Switch traffic (update load balancer/DNS)
-# ...
+# Switch traffic (update Ingress or Service)
+kubectl patch ingress ... -n zappzarapp
 
-# Remove old "blue" stack
-docker stack rm myapp-blue
+# Remove old "blue" deployment
+helm uninstall zappzarapp-blue -n zappzarapp-blue
 ```
 
 ## Monitoring Deployments

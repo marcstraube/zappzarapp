@@ -1,0 +1,73 @@
+# GOSS Tests for nginx container
+#
+# Build-time tests: Files, commands, configuration
+# Runtime tests: Processes, ports, HTTP (see runtime-tests.sh)
+
+# ============================================================================
+# FILE TESTS (Build-time)
+# ============================================================================
+file:
+  # Nginx configuration
+  /etc/nginx/nginx.conf:
+    exists: true
+  /etc/nginx/snippets:
+    exists: true
+    filetype: directory
+
+  # Public assets
+  /var/www/html/public:
+    exists: true
+    filetype: directory
+  /var/www/html/public/favicon.svg:
+    exists: true
+
+  # Error pages
+  /usr/share/nginx/html/errors:
+    exists: true
+    filetype: directory
+
+  # Entrypoint
+  /docker-entrypoint.sh:
+    exists: true
+    mode: "0755"
+
+  # Cache directories
+  /var/cache/nginx:
+    exists: true
+    filetype: directory
+  /var/log/nginx:
+    exists: true
+    filetype: directory
+
+# ============================================================================
+# COMMAND TESTS (Build-time)
+# ============================================================================
+command:
+  # Nginx version check
+  nginx -v:
+    exit-status: 0
+    timeout: 5000
+    stderr:
+      - "/nginx/"
+
+  # Nginx configuration is valid
+  nginx -t:
+    exit-status: 0
+    timeout: 5000
+
+  # Brotli module is loaded
+  nginx -V:
+    exit-status: 0
+    timeout: 5000
+    stderr:
+      - "brotli"
+
+  # envsubst is available (for SSL template processing)
+  which envsubst:
+    exit-status: 0
+    timeout: 5000
+
+  # wget is available (for health checks)
+  which wget:
+    exit-status: 0
+    timeout: 5000

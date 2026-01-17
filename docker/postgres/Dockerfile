@@ -49,3 +49,17 @@ RUN chmod +x /entrypoint-wrapper.sh
 
 ENTRYPOINT ["/entrypoint-wrapper.sh"]
 CMD ["postgres"]
+
+# --- TEST STAGE (CI only) ---
+# Validates the production image using GOSS
+# Usage: docker build --target test -f docker/postgres/Dockerfile .
+FROM final AS test
+
+# Copy GOSS binary from official image
+COPY --from=ghcr.io/goss-org/goss:latest /goss /usr/local/bin/goss
+
+# Copy test specification
+COPY tests/goss/services/postgres.yaml /goss.yaml
+
+# Run GOSS tests (fails build if tests fail)
+RUN goss validate --format documentation

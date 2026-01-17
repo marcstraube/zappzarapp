@@ -1,12 +1,20 @@
 # ./compose.yaml
 # Docker Compose Base Configuration
+#
+# SECRETS HANDLING:
+#   Uses bind mounts (./secrets:/run/secrets:ro) instead of Docker secrets.
+#   Docker Compose (standalone) does NOT support uid/gid/mode for secrets.
+#   Secret files are created with mode 0644 by 'make setup'.
+#   For stricter security, use Kubernetes with native K8s Secrets + securityContext.fsGroup.
 
 services:
   nginx:
     build:
       context: .
       dockerfile: docker/nginx/Dockerfile
-      target: production
+      # NGINX_TARGET: production (with Vite assets) or production-proxy (framework modes)
+      # Auto-detected by Makefile based on NODE_MODE
+      target: ${NGINX_TARGET:-production}
     container_name: ${COMPOSE_PROJECT_NAME:-zappzarapp}-nginx
     restart: unless-stopped
     environment:
@@ -19,13 +27,14 @@ services:
     volumes:
       # Shared socket directory for PHP-FPM Unix socket communication
       - php-fpm-socket:/var/run/php-fpm
-    secrets:
-      - source: ssl_cert
-        target: /etc/nginx/certs/cert.crt
-      - source: ssl_key
-        target: /etc/nginx/certs/cert.key
+      # SSL certificates (bind mount)
+      - ./docker/certs/cert.crt:/etc/nginx/certs/cert.crt:ro
+      - ./docker/certs/cert.key:/etc/nginx/certs/cert.key:ro
     depends_on:
       node:
+        condition: service_started
+        required: false
+      node-backend:
         condition: service_started
         required: false
       php:
@@ -39,7 +48,7 @@ services:
     build:
       context: .
       dockerfile: docker/php/Dockerfile
-      target: production
+      target: ${PHP_TARGET:-production}
     container_name: ${COMPOSE_PROJECT_NAME:-zappzarapp}-php
     restart: unless-stopped
     profiles: ["php"]
@@ -48,6 +57,8 @@ services:
       - php-fpm-socket:/var/run/php-fpm
       # SSL certificates for external database connections
       - ./docker/certs:/etc/ssl/db-certs:ro
+      # Secrets (bind mount)
+      - ./secrets:/run/secrets:ro
     depends_on:
       node:
         condition: service_started
@@ -80,13 +91,9 @@ services:
       - DB_SSL_VERIFY=${DB_SSL_VERIFY:-false}
       - REDIS_URL=${REDIS_URL:-rediss://redis:6379}
       # Secrets (mounted as files at /run/secrets/)
-      - DB_PASSWORD_FILE=/run/secrets/db_password
-      - ENCRYPTION_KEY_FILE=/run/secrets/encryption_key
-      - BACKUP_ENCRYPTION_KEY_FILE=/run/secrets/backup_encryption_key
-    secrets:
-      - db_password
-      - encryption_key
-      - backup_encryption_key
+      - DB_PASSWORD_FILE=/run/secrets/db_password.txt
+      - ENCRYPTION_KEY_FILE=/run/secrets/encryption_key.txt
+      - BACKUP_ENCRYPTION_KEY_FILE=/run/secrets/backup_encryption_key.txt
     networks:
       - backend
       - database
@@ -97,14 +104,29 @@ services:
       retries: 3
       start_period: 40s
 
+  # ─────────────────────────────────────────────────────────────────────────────
+  # NODE.JS SERVICES
+  # ─────────────────────────────────────────────────────────────────────────────
+  # Two separate services for clean architecture:
+  #   - node:         Frontend/Assets (assets, framework modes) - Port 3001
+  #   - node-backend: Express API (api, assets-api modes) - Port 3000
+  #
+  # Usage by NODE_MODE:
+  #   assets       → node (assets target, sleeps)
+  #   api          → node-backend (api target)
+  #   assets-api   → node-backend (api target)
+  #   framework    → node (framework target)
+  #   framework-api→ node-backend + node (both containers)
+  #   idle         → node (development target, sleeps)
+  # ─────────────────────────────────────────────────────────────────────────────
+
   node:
     build:
       context: .
       dockerfile: docker/node/Dockerfile
-      # Conditionally set the build target based on the environment variable,
-      # defaulting to the secure 'static' stage (pre-built assets, idle container).
-      # Available targets: development, static, api, framework
-      target: ${NODE_TARGET:-static}
+      # Build target for frontend/assets container.
+      # Available targets: development, assets, framework
+      target: ${NODE_TARGET:-assets}
     image: ${COMPOSE_PROJECT_NAME:-zappzarapp}-node:latest
     container_name: ${COMPOSE_PROJECT_NAME:-zappzarapp}-node
     restart: unless-stopped
@@ -112,6 +134,8 @@ services:
     volumes:
       # SSL certificates for external database connections
       - ./docker/certs:/etc/ssl/db-certs:ro
+      # Secrets (bind mount)
+      - ./secrets:/run/secrets:ro
     environment:
       - TZ=${TZ:-UTC}
       - NODE_ENV=${ENV:-production}
@@ -129,14 +153,57 @@ services:
       - DB_SSL_VERIFY=${DB_SSL_VERIFY:-false}
       - REDIS_URL=${REDIS_URL:-rediss://redis:6379}
       # Secrets (mounted as files at /run/secrets/)
-      - DB_PASSWORD_FILE=/run/secrets/db_password
-      - ENCRYPTION_KEY_FILE=/run/secrets/encryption_key
-      - BACKUP_ENCRYPTION_KEY_FILE=/run/secrets/backup_encryption_key
-    secrets:
-      - db_password
-      - encryption_key
-      - backup_encryption_key
-    # Expose port 3000 if Node runs as an upstream server for Nginx or is accessed directly.
+      - DB_PASSWORD_FILE=/run/secrets/db_password.txt
+      - ENCRYPTION_KEY_FILE=/run/secrets/encryption_key.txt
+      - BACKUP_ENCRYPTION_KEY_FILE=/run/secrets/backup_encryption_key.txt
+    # Port 3001 for frontend framework (Nuxt/Next/etc)
+    expose:
+      - "3001"
+    networks:
+      - backend
+      - database
+    depends_on:
+      redis:
+        condition: service_healthy
+        required: false
+
+  node-backend:
+    build:
+      context: .
+      dockerfile: docker/node/Dockerfile
+      # Build target for Express API backend.
+      # Available targets: development, api
+      target: ${NODE_BACKEND_TARGET:-api}
+    image: ${COMPOSE_PROJECT_NAME:-zappzarapp}-node-backend:latest
+    container_name: ${COMPOSE_PROJECT_NAME:-zappzarapp}-node-backend
+    restart: unless-stopped
+    profiles: ["node-backend"]
+    volumes:
+      # SSL certificates for external database connections
+      - ./docker/certs:/etc/ssl/db-certs:ro
+      # Secrets (bind mount)
+      - ./secrets:/run/secrets:ro
+    environment:
+      - TZ=${TZ:-UTC}
+      - NODE_ENV=${ENV:-production}
+      - LOG_LEVEL=${LOG_LEVEL:-info}
+      - LOG_FORMAT=${LOG_FORMAT:-json}
+      - CORS_ORIGINS=${CORS_ORIGINS:-}
+      # Database (12-Factor: DATABASE_URL takes precedence)
+      - DATABASE_URL=${DATABASE_URL:-}
+      - DB_TYPE=${DB_TYPE:-postgres}
+      - DB_HOST=${DB_HOST:-postgres}
+      - DB_PORT=${DB_PORT:-5432}
+      - DB_NAME=${DB_NAME:-app}
+      - DB_USER=${DB_USER:-app}
+      - DB_SSL_CA=${DB_SSL_CA:-}
+      - DB_SSL_VERIFY=${DB_SSL_VERIFY:-false}
+      - REDIS_URL=${REDIS_URL:-rediss://redis:6379}
+      # Secrets (mounted as files at /run/secrets/)
+      - DB_PASSWORD_FILE=/run/secrets/db_password.txt
+      - ENCRYPTION_KEY_FILE=/run/secrets/encryption_key.txt
+      - BACKUP_ENCRYPTION_KEY_FILE=/run/secrets/backup_encryption_key.txt
+    # Port 3000 for Express API backend
     expose:
       - "3000"
     networks:
@@ -166,14 +233,14 @@ services:
       --maxmemory-policy allkeys-lru
       --tls-port 6379
       --port 0
-      --tls-cert-file /run/secrets/ssl_cert
-      --tls-key-file /run/secrets/ssl_key
+      --tls-cert-file /etc/redis/certs/cert.crt
+      --tls-key-file /etc/redis/certs/cert.key
       --tls-auth-clients no
     volumes:
       - redis-data:/data
-    secrets:
-      - ssl_cert
-      - ssl_key
+      # SSL certificates (bind mount)
+      - ./docker/certs/cert.crt:/etc/redis/certs/cert.crt:ro
+      - ./docker/certs/cert.key:/etc/redis/certs/cert.key:ro
     networks:
       - database
     # Health check defined in Dockerfile (with TLS support)
@@ -198,10 +265,10 @@ services:
       # ─────────────────────────────────────────────────────────────────
       # PASSWORD CONFIGURATION - Choose ONE option (mutually exclusive!)
       # ─────────────────────────────────────────────────────────────────
-      # Option 1: Docker Secrets (recommended, default)
-      #   Reads password from /run/secrets/db_password file.
+      # Option 1: Secrets via bind mount (recommended, default)
+      #   Reads password from /run/secrets/db_password.txt file.
       #   Secrets are generated by 'make setup' or 'make secrets'.
-      POSTGRES_PASSWORD_FILE: /run/secrets/db_password
+      POSTGRES_PASSWORD_FILE: /run/secrets/db_password.txt
       #
       # Option 2: Environment Variable (for external DB or legacy setups)
       #   Uncomment below AND comment out POSTGRES_PASSWORD_FILE above.
@@ -210,10 +277,10 @@ services:
       # ─────────────────────────────────────────────────────────────────
       POSTGRES_INITDB_ARGS: "--encoding=UTF8 --lc-collate=en_US.UTF-8 --lc-ctype=en_US.UTF-8"
       PGDATA: /var/lib/postgresql/data/pgdata
-    secrets:
-      - db_password
     volumes:
       - postgres-data:/var/lib/postgresql/data
+      # Secrets (bind mount)
+      - ./secrets:/run/secrets:ro
     networks:
       - database
     healthcheck:
@@ -239,11 +306,11 @@ services:
       # ─────────────────────────────────────────────────────────────────
       # PASSWORD CONFIGURATION - Choose ONE option (mutually exclusive!)
       # ─────────────────────────────────────────────────────────────────
-      # Option 1: Docker Secrets (recommended, default)
+      # Option 1: Secrets via bind mount (recommended, default)
       #   Reads passwords from /run/secrets/ files.
       #   Secrets are generated by 'make setup' or 'make secrets'.
-      MARIADB_PASSWORD_FILE: /run/secrets/db_password
-      MARIADB_ROOT_PASSWORD_FILE: /run/secrets/db_root_password
+      MARIADB_PASSWORD_FILE: /run/secrets/db_password.txt
+      MARIADB_ROOT_PASSWORD_FILE: /run/secrets/db_root_password.txt
       #
       # Option 2: Environment Variables (for external DB or legacy setups)
       #   Uncomment below AND comment out the _FILE options above.
@@ -251,11 +318,10 @@ services:
       #MARIADB_PASSWORD: ${DB_PASSWORD:-secret}
       #MARIADB_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-rootsecret}
       # ─────────────────────────────────────────────────────────────────
-    secrets:
-      - db_password
-      - db_root_password
     volumes:
       - mariadb-data:/var/lib/mysql
+      # Secrets (bind mount)
+      - ./secrets:/run/secrets:ro
     networks:
       - database
     healthcheck:
@@ -289,12 +355,12 @@ services:
       MERCURE_EXTRA_DIRECTIVES: |
         anonymous
         cors_origins *
-    secrets:
-      - mercure_jwt_secret
     expose:
       - "80"
     volumes:
       - mercure-data:/data
+      # Secrets (bind mount)
+      - ./secrets:/run/secrets:ro
     networks:
       - backend
     # Health check defined in Dockerfile
@@ -313,17 +379,17 @@ services:
     environment:
       TZ: ${TZ:-UTC}
       # Master key for API authentication (required in production)
-      MEILI_MASTER_KEY_FILE: /run/secrets/meilisearch_master_key
+      MEILI_MASTER_KEY_FILE: /run/secrets/meilisearch_master_key.txt
       # Environment: development or production
       MEILI_ENV: ${ENV:-development}
       # Disable analytics
-      MEILI_NO_ANALYTICS: true
-    secrets:
-      - meilisearch_master_key
+      MEILI_NO_ANALYTICS: "true"
     expose:
       - "7700"
     volumes:
       - meilisearch-data:/meili_data
+      # Secrets (bind mount)
+      - ./secrets:/run/secrets:ro
     networks:
       - database
     # Health check defined in Dockerfile
@@ -403,17 +469,16 @@ services:
     environment:
       TZ: ${TZ:-UTC}
       # Root credentials (change in production!)
-      MINIO_ROOT_USER_FILE: /run/secrets/minio_root_user
-      MINIO_ROOT_PASSWORD_FILE: /run/secrets/minio_root_password
+      MINIO_ROOT_USER_FILE: /run/secrets/minio_root_user.txt
+      MINIO_ROOT_PASSWORD_FILE: /run/secrets/minio_root_password.txt
     command: server /data --console-address ":9001"
-    secrets:
-      - minio_root_user
-      - minio_root_password
     expose:
       - "9000"
       - "9001"
     volumes:
       - minio-data:/data
+      # Secrets (bind mount)
+      - ./secrets:/run/secrets:ro
     networks:
       - backend
     healthcheck:
@@ -437,18 +502,15 @@ services:
     profiles: ["rabbitmq"]
     environment:
       TZ: ${TZ:-UTC}
-      # Default user and vhost
-      RABBITMQ_DEFAULT_USER_FILE: /run/secrets/rabbitmq_user
-      RABBITMQ_DEFAULT_PASS_FILE: /run/secrets/rabbitmq_password
+      # Default vhost (user/pass loaded from secrets via entrypoint.sh)
       RABBITMQ_DEFAULT_VHOST: ${RABBITMQ_VHOST:-/}
-    secrets:
-      - rabbitmq_user
-      - rabbitmq_password
     expose:
       - "5672"
       - "15672"
     volumes:
       - rabbitmq-data:/var/lib/rabbitmq
+      # Secrets (bind mount)
+      - ./secrets:/run/secrets:ro
     networks:
       - backend
     # Health check defined in Dockerfile
@@ -503,33 +565,3 @@ volumes:
     driver: local
     name: ${COMPOSE_PROJECT_NAME:-zappzarapp}-rabbitmq-data
 
-# Docker Secrets (file-based for development, external for production/swarm)
-# Secrets are mounted at /run/secrets/<secret_name> in containers
-# Use *_FILE environment variables to reference them (e.g., DB_PASSWORD_FILE=/run/secrets/db_password)
-secrets:
-  # SSL/TLS Certificates
-  ssl_cert:
-    file: ./docker/certs/cert.crt
-  ssl_key:
-    file: ./docker/certs/cert.key
-  # Application Secrets
-  db_password:
-    file: ./secrets/db_password.txt
-  db_root_password:
-    file: ./secrets/db_root_password.txt
-  encryption_key:
-    file: ./secrets/encryption_key.txt
-  backup_encryption_key:
-    file: ./secrets/backup_encryption_key.txt
-  meilisearch_master_key:
-    file: ./secrets/meilisearch_master_key.txt
-  minio_root_user:
-    file: ./secrets/minio_root_user.txt
-  minio_root_password:
-    file: ./secrets/minio_root_password.txt
-  rabbitmq_user:
-    file: ./secrets/rabbitmq_user.txt
-  rabbitmq_password:
-    file: ./secrets/rabbitmq_password.txt
-  mercure_jwt_secret:
-    file: ./secrets/mercure_jwt_secret.txt

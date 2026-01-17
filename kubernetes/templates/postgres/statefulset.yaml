@@ -1,0 +1,112 @@
+{{- if .Values.postgres.enabled }}
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ include "zappzarapp.fullname" . }}-postgres
+  namespace: {{ include "zappzarapp.namespace" . }}
+  labels:
+    {{- include "zappzarapp.labels" . | nindent 4 }}
+    app.kubernetes.io/component: postgres
+spec:
+  serviceName: {{ include "zappzarapp.fullname" . }}-postgres
+  replicas: {{ .Values.postgres.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "zappzarapp.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: postgres
+  template:
+    metadata:
+      labels:
+        {{- include "zappzarapp.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: postgres
+    spec:
+      # fsGroup ensures volume is writable by postgres group (gid 70)
+      # Container starts as root, entrypoint switches to postgres user
+      securityContext:
+        fsGroup: 70
+      containers:
+        - name: postgres
+          image: "{{ .Values.postgres.image.repository }}:{{ .Values.postgres.image.tag | default .Values.global.imageTag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.global.imagePullPolicy }}
+          ports:
+            - name: postgres
+              containerPort: 5432
+              protocol: TCP
+          env:
+            - name: POSTGRES_DB
+              value: {{ .Values.config.database.name | quote }}
+            - name: POSTGRES_USER
+              value: {{ .Values.config.database.user | quote }}
+            - name: POSTGRES_PASSWORD_FILE
+              value: /run/secrets/db_password
+            - name: PGDATA
+              value: /var/lib/postgresql/data/pgdata
+          livenessProbe:
+            exec:
+              command:
+                - pg_isready
+                - -U
+                - {{ .Values.config.database.user }}
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+          readinessProbe:
+            exec:
+              command:
+                - pg_isready
+                - -U
+                - {{ .Values.config.database.user }}
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 3
+          resources:
+            {{- toYaml .Values.postgres.resources | nindent 12 }}
+          securityContext:
+            readOnlyRootFilesystem: {{ .Values.postgres.securityContext.readOnlyRootFilesystem }}
+            runAsNonRoot: {{ .Values.postgres.securityContext.runAsNonRoot }}
+            capabilities:
+              drop:
+                {{- toYaml .Values.postgres.securityContext.capabilities.drop | nindent 16 }}
+              add:
+                {{- toYaml .Values.postgres.securityContext.capabilities.add | nindent 16 }}
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/postgresql/data
+            - name: tmp
+              mountPath: /tmp
+            - name: run
+              mountPath: /run/postgresql
+            - name: db-password
+              mountPath: /run/secrets/db_password
+              subPath: db_password
+              readOnly: true
+      volumes:
+        - name: tmp
+          emptyDir:
+            sizeLimit: 256Mi
+        - name: run
+          emptyDir:
+            sizeLimit: 64Mi
+        - name: db-password
+          secret:
+            secretName: {{ .Values.secrets.existingSecrets.dbPassword | default (printf "%s-db-password" (include "zappzarapp.fullname" .)) }}
+  {{- if .Values.postgres.persistence.enabled }}
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        {{- if .Values.postgres.persistence.storageClass }}
+        storageClassName: {{ .Values.postgres.persistence.storageClass | quote }}
+        {{- end }}
+        resources:
+          requests:
+            storage: {{ .Values.postgres.persistence.size }}
+  {{- else }}
+      volumes:
+        - name: data
+          emptyDir: {}
+  {{- end }}
+{{- end }}

@@ -1,0 +1,20 @@
+{{- if .Values.mariadb.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "zappzarapp.fullname" . }}-mariadb
+  namespace: {{ include "zappzarapp.namespace" . }}
+  labels:
+    {{- include "zappzarapp.labels" . | nindent 4 }}
+    app.kubernetes.io/component: mariadb
+spec:
+  type: {{ .Values.mariadb.service.type }}
+  ports:
+    - name: mysql
+      port: {{ .Values.mariadb.service.port }}
+      targetPort: mysql
+      protocol: TCP
+  selector:
+    {{- include "zappzarapp.selectorLabels" . | nindent 4 }}
+    app.kubernetes.io/component: mariadb
+{{- end }}

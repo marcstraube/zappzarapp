@@ -68,7 +68,9 @@ RUN if [ "$USER_ID" != "101" ]; then \
 
 # Note: Container runs as root to process SSL templates via entrypoint, then starts nginx
 
-# --- 3. PRODUCTION STAGE ---
+# --- 3. PRODUCTION STAGE (with Vite Assets) ---
+# Use for: NODE_MODE=assets, assets-api, api
+# Serves Vite-built frontend assets directly
 FROM base AS production
 
 USER root
@@ -76,10 +78,39 @@ USER root
 # Copy Public Assets
 COPY --chown=nginx:nginx public/ /var/www/html/public/
 
-# Copy built frontend assets from Node build stage
+# Copy built frontend assets from Node backend build stage
 # This allows NGINX to serve production-built Vite assets directly
-# Note: NODE_IMAGE must be built first (see compose.yaml build order)
-COPY --from=zappzarapp-node:latest --chown=nginx:nginx /app/public/build/ /var/www/html/public/build/
+# Note: node-backend image must be built first (see Makefile build order)
+COPY --from=zappzarapp-node-backend:latest --chown=nginx:nginx /app/public/build/ /var/www/html/public/build/
+
+# Harden permissions (read-only)
+RUN chmod -R 555 /var/www/html/public
+
+# Note: Container runs as root to process SSL templates via entrypoint, then starts nginx
+
+# --- 4. TEST STAGE (CI only) ---
+# Validates the production image using GOSS
+# Usage: docker build --target test -f docker/nginx/Dockerfile .
+FROM production AS test
+
+# Copy GOSS binary from official image
+COPY --from=ghcr.io/goss-org/goss:latest /goss /usr/local/bin/goss
+
+# Copy test specification
+COPY tests/goss/services/nginx.yaml /goss.yaml
+
+# Run GOSS tests (fails build if tests fail)
+RUN goss validate --format documentation
+
+# --- 5. PRODUCTION PROXY STAGE (no Vite Assets) ---
+# Use for: NODE_MODE=framework, framework-api
+# Pure reverse proxy - frontend frameworks (Nuxt/Next) serve their own assets
+FROM base AS production-proxy
+
+USER root
+
+# Copy Public Assets (favicon, robots.txt, etc. - but no Vite build)
+COPY --chown=nginx:nginx public/ /var/www/html/public/
 
 # Harden permissions (read-only)
 RUN chmod -R 555 /var/www/html/public

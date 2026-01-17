@@ -79,13 +79,14 @@ fi
 echo "[entrypoint.development] Dependencies OK"
 
 # Start services based on NODE_MODE
+# Note: framework-api mode is handled by running two containers (node + node-backend)
 case "${NODE_MODE:-idle}" in
-    static-api)
-        echo "[entrypoint.development] Starting static-api mode (Vite HMR + Express via PM2)..."
+    assets-api)
+        echo "[entrypoint.development] Starting assets-api mode (Vite HMR + Express via PM2)..."
         exec pnpm run dev:full
         ;;
-    static)
-        echo "[entrypoint.development] Starting static mode (Vite HMR via PM2)..."
+    assets)
+        echo "[entrypoint.development] Starting assets mode (Vite HMR via PM2)..."
         exec pnpm run dev:vite
         ;;
     api)
@@ -99,17 +100,6 @@ case "${NODE_MODE:-idle}" in
             echo "[entrypoint.development] See src/node/frontend/README.md for setup instructions."
             exit 1
         fi
-        exec pnpm run frontend:dev
-        ;;
-    framework-api)
-        echo "[entrypoint.development] Starting framework-api mode (Node frontend + Express)..."
-        if [ ! -f "/app/src/node/frontend/package.json" ]; then
-            echo "[entrypoint.development] ERROR: No frontend framework installed!"
-            echo "[entrypoint.development] See src/node/frontend/README.md for setup instructions."
-            exit 1
-        fi
-        # Start Express backend in background, frontend in foreground
-        pnpm run dev:backend &
         exec pnpm run frontend:dev
         ;;
     idle|*)

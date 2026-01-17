@@ -1,0 +1,65 @@
+
+==========================================================
+  {{ .Chart.Name }} {{ .Chart.Version }} has been deployed!
+==========================================================
+
+{{ if .Values.nginx.enabled }}
+** Nginx is running **
+{{- if .Values.ingress.enabled }}
+  Access the application at:
+  {{- range $host := .Values.ingress.hosts }}
+    - http{{ if $.Values.ingress.tls }}s{{ end }}://{{ $host.host }}
+  {{- end }}
+{{- else }}
+  To access the application, run:
+    kubectl port-forward svc/{{ include "zappzarapp.fullname" . }}-nginx {{ .Values.nginx.service.port }}:{{ .Values.nginx.service.port }} -n {{ include "zappzarapp.namespace" . }}
+
+  Then open: http://localhost:{{ .Values.nginx.service.port }}
+{{- end }}
+{{ end }}
+
+** Check deployment status: **
+  kubectl get pods -n {{ include "zappzarapp.namespace" . }}
+
+** View logs: **
+  kubectl logs -f deployment/{{ include "zappzarapp.fullname" . }}-nginx -n {{ include "zappzarapp.namespace" . }}
+  kubectl logs -f deployment/{{ include "zappzarapp.fullname" . }}-php -n {{ include "zappzarapp.namespace" . }}
+  kubectl logs -f deployment/{{ include "zappzarapp.fullname" . }}-node -n {{ include "zappzarapp.namespace" . }}
+
+** Services enabled: **
+{{- if .Values.nginx.enabled }}
+  - nginx: {{ include "zappzarapp.fullname" . }}-nginx:{{ .Values.nginx.service.port }}
+{{- end }}
+{{- if .Values.php.enabled }}
+  - php-fpm: {{ include "zappzarapp.fullname" . }}-php:{{ .Values.php.service.port }}
+{{- end }}
+{{- if .Values.node.enabled }}
+  - node: {{ include "zappzarapp.fullname" . }}-node:{{ .Values.node.service.port }}
+{{- end }}
+{{- if .Values.postgres.enabled }}
+  - postgres: {{ include "zappzarapp.fullname" . }}-postgres:{{ .Values.postgres.service.port }}
+{{- end }}
+{{- if .Values.mariadb.enabled }}
+  - mariadb: {{ include "zappzarapp.fullname" . }}-mariadb:{{ .Values.mariadb.service.port }}
+{{- end }}
+{{- if .Values.redis.enabled }}
+  - redis: {{ include "zappzarapp.fullname" . }}-redis:{{ .Values.redis.service.port }}
+{{- end }}
+
+** For production deployment: **
+  helm upgrade --install {{ .Release.Name }} ./kubernetes \
+    -f kubernetes/values.production.yaml \
+    --namespace {{ include "zappzarapp.namespace" . }}
+
+** Troubleshooting: **
+  # Check all resources
+  kubectl get all -n {{ include "zappzarapp.namespace" . }}
+
+  # Describe pods for detailed info
+  kubectl describe pods -n {{ include "zappzarapp.namespace" . }}
+
+  # Check secrets
+  kubectl get secrets -n {{ include "zappzarapp.namespace" . }}
+
+** Documentation: **
+  See documentation/infrastructure/KUBERNETES.md for full documentation.

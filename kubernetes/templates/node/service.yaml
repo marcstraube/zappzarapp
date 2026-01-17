@@ -1,0 +1,23 @@
+{{- if .Values.node.enabled }}
+# Node Frontend Service
+# For framework modes (Nuxt/Next.js/Remix) - exposes SSR on port 3001
+# Enable for: framework, framework-api modes
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "zappzarapp.fullname" . }}-node
+  namespace: {{ include "zappzarapp.namespace" . }}
+  labels:
+    {{- include "zappzarapp.labels" . | nindent 4 }}
+    app.kubernetes.io/component: node
+spec:
+  type: {{ .Values.node.service.type }}
+  ports:
+    - name: http
+      port: {{ .Values.node.service.port }}
+      targetPort: http
+      protocol: TCP
+  selector:
+    {{- include "zappzarapp.selectorLabels" . | nindent 4 }}
+    app.kubernetes.io/component: node
+{{- end }}

@@ -1,0 +1,64 @@
+# GOSS Tests for mailpit container
+# Two-phase testing: dgoss (external) + docker exec (internal)
+#
+# Mailpit email testing tool
+# SMTP on port 1025, Web UI on port 8025
+# Development only - no TLS required
+
+# ============================================================================
+# PROCESS TESTS (Internal)
+# ============================================================================
+process:
+  mailpit:
+    running: true
+
+# ============================================================================
+# PORT TESTS (Internal)
+# ============================================================================
+port:
+  # SMTP port
+  tcp:1025:
+    listening: true
+    ip:
+      - 0.0.0.0
+  # Web UI port
+  tcp:8025:
+    listening: true
+    ip:
+      - 0.0.0.0
+
+# ============================================================================
+# FILE TESTS (Internal)
+# ============================================================================
+file:
+  # Data directory
+  /data:
+    exists: true
+    filetype: directory
+
+# ============================================================================
+# HTTP TESTS (Internal - localhost)
+# ============================================================================
+http:
+  # Web UI root
+  http://localhost:8025/:
+    status: 200
+    timeout: 5000
+    body:
+      - "Mailpit"
+
+  # API endpoint
+  http://localhost:8025/api/v1/info:
+    status: 200
+    timeout: 5000
+    body:
+      - '"Version"'
+
+# ============================================================================
+# COMMAND TESTS (Internal)
+# ============================================================================
+command:
+  # Mailpit version
+  mailpit version:
+    exit-status: 0
+    timeout: 5000

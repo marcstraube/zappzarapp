@@ -251,19 +251,18 @@ jobs:
         uses: ./.github/actions/docker-cleanup
 
   # ============================================================================
-  # SWARM DEPLOYMENT (Optional)
+  # KUBERNETES DEPLOYMENT (Optional)
   # ============================================================================
-  # Uncomment to enable automatic deployment to Docker Swarm.
+  # Uncomment to enable automatic deployment to Kubernetes.
   #
   # Required Secrets (Settings > Secrets and variables > Actions):
-  #   SWARM_MANAGER_HOST: ssh://user@manager-server (or tcp://manager:2376)
-  #   SSH_PRIVATE_KEY:    Private key for SSH access (if using ssh://)
+  #   KUBECONFIG_DATA:  Base64-encoded kubeconfig file
+  #   KUBE_NAMESPACE:   Target namespace (default: zappzarapp)
   #
-  # For SSH deployment, configure SSH access to the manager node.
-  # See: documentation/infrastructure/SWARM.md
+  # See: documentation/infrastructure/KUBERNETES.md
   #
-  # deploy-swarm:
-  #   name: Deploy to Swarm
+  # deploy-kubernetes:
+  #   name: Deploy to Kubernetes
   #   runs-on: ubuntu-latest
   #   timeout-minutes: 10
   #   needs: build-production
@@ -276,17 +275,21 @@ jobs:
   #     - name: Checkout code
   #       uses: actions/checkout@v4
   #
-  #     - name: Setup SSH
-  #       run: |
-  #         mkdir -p ~/.ssh
-  #         echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
-  #         chmod 600 ~/.ssh/id_rsa
-  #         ssh-keyscan -H $(echo "${{ secrets.SWARM_MANAGER_HOST }}" | sed 's|ssh://||; s|:.*||') >> ~/.ssh/known_hosts 2>/dev/null || true
+  #     - name: Setup kubectl
+  #       uses: azure/setup-kubectl@v3
   #
-  #     - name: Deploy to Swarm
-  #       env:
-  #         DOCKER_HOST: ${{ secrets.SWARM_MANAGER_HOST }}
+  #     - name: Setup Helm
+  #       uses: azure/setup-helm@v4
+  #
+  #     - name: Configure kubeconfig
   #       run: |
-  #         docker info
-  #         docker stack deploy -c compose.yaml -c compose.production.yaml zappzarapp
-  #         docker stack services zappzarapp
+  #         mkdir -p ~/.kube
+  #         echo "${{ secrets.KUBECONFIG_DATA }}" | base64 -d > ~/.kube/config
+  #
+  #     - name: Deploy to Kubernetes
+  #       run: |
+  #         helm upgrade --install zappzarapp ./kubernetes \
+  #           --namespace ${{ vars.KUBE_NAMESPACE || 'zappzarapp' }} \
+  #           --create-namespace \
+  #           -f kubernetes/values.production.yaml
+  #         kubectl get pods -n ${{ vars.KUBE_NAMESPACE || 'zappzarapp' }}

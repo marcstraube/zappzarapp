@@ -48,9 +48,10 @@ ln -sf selfsigned.key "$CERT_DIR/cert.key"
 # Cleanup CSR
 rm -f "$CERT_DIR/selfsigned.csr"
 
-# Set permissions
+# Set permissions (644 needed for bind-mount access by different container UIDs)
+# For stricter security, use Kubernetes with native K8s Secrets + securityContext.fsGroup
 chmod 644 "$CERT_DIR/selfsigned.crt" "$CERT_DIR/cert.crt"
-chmod 600 "$CERT_DIR/selfsigned.key" "$CERT_DIR/cert.key"
+chmod 644 "$CERT_DIR/selfsigned.key" "$CERT_DIR/cert.key"
 
 echo "============================================================================"
 echo "✅ Self-signed certificate generated successfully!"

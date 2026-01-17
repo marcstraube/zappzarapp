@@ -1,0 +1,70 @@
+# GOSS Tests for mariadb container
+# Two-phase testing: dgoss (external) + docker exec (internal)
+#
+# MariaDB with SSL/TLS enabled (require-secure-transport)
+# Uses healthcheck.sh for health checks
+
+# ============================================================================
+# PROCESS TESTS (Internal)
+# ============================================================================
+process:
+  mariadbd:
+    running: true
+
+# ============================================================================
+# PORT TESTS (Internal)
+# ============================================================================
+port:
+  tcp:3306:
+    listening: true
+    ip:
+      - 0.0.0.0
+
+# ============================================================================
+# FILE TESTS (Internal)
+# ============================================================================
+file:
+  # Data directory
+  /var/lib/mysql:
+    exists: true
+    filetype: directory
+
+  # SSL certificates (copied by entrypoint)
+  /etc/mysql/certs/server.crt:
+    exists: true
+  /etc/mysql/certs/server.key:
+    exists: true
+
+  # Secrets (bind mount)
+  /run/secrets/db_password.txt:
+    exists: true
+  /run/secrets/db_root_password.txt:
+    exists: true
+
+# ============================================================================
+# COMMAND TESTS (Internal)
+# ============================================================================
+command:
+  # MariaDB health check
+  healthcheck.sh --connect --innodb_initialized:
+    exit-status: 0
+    timeout: 10000
+
+  # MariaDB version
+  mariadb --version:
+    exit-status: 0
+    timeout: 5000
+    stdout:
+      - "/mariadb.*1[01]\\.[0-9]+/"
+
+  # SSL is required
+  mariadb -u {{.Env.DB_USER}} -p$(cat /run/secrets/db_password.txt) -e "SHOW VARIABLES LIKE 'require_secure_transport';":
+    exit-status: 0
+    timeout: 5000
+    stdout:
+      - "ON"
+
+  # Database exists
+  mariadb -u {{.Env.DB_USER}} -p$(cat /run/secrets/db_password.txt) -e "USE {{.Env.DB_NAME}};":
+    exit-status: 0
+    timeout: 5000

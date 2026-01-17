@@ -10,4 +10,4 @@ and this project adheres to
 
 ---
 
-[Unreleased]: https://github.com/your-org/zappzarapp/compare/v1.0.0...HEAD
+[Unreleased]: https://github.com/marcstraube/zappzarapp/compare/v1.0.0...HEAD

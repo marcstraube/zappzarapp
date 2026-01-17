@@ -1,0 +1,249 @@
+# GOSS Container Tests
+
+Comprehensive container testing using [GOSS](https://github.com/goss-org/goss) with a two-phase strategy:
+
+1. **Build-time tests**: Run during `docker build` (catch missing files, broken configs)
+2. **Runtime tests**: Run against live containers (catch network issues, TLS, service communication)
+
+## Quick Start
+
+```bash
+# Runtime tests (requires running containers)
+make goss-test
+
+# Build-time tests (validates Docker images)
+make goss-test-build
+
+# Both build-time and runtime tests
+make goss-test-all
+
+# Full matrix test (all configuration presets)
+make goss-test-matrix
+```
+
+## Directory Structure
+
+```
+tests/goss/
+├── services/           # GOSS YAML specs for build-time tests
+│   ├── nginx.yaml
+│   ├── php.yaml
+│   ├── node-backend.yaml
+│   ├── node-frontend.yaml
+│   ├── postgres.yaml
+│   ├── mariadb.yaml
+│   ├── redis.yaml
+│   ├── mercure.yaml
+│   ├── meilisearch.yaml
+│   ├── elasticsearch.yaml
+│   ├── mailpit.yaml
+│   ├── minio.yaml
+│   └── rabbitmq.yaml
+├── presets/            # Environment presets for matrix testing
+│   ├── fullstack.env
+│   ├── php-only.env
+│   ├── node-only.env
+│   ├── minimal.env
+│   ├── fullstack-mariadb.env
+│   ├── fullstack-optional.env
+│   └── framework.env
+├── runtime-tests.sh    # Runtime integration test script
+└── README.md
+```
+
+## Two-Phase Testing Strategy
+
+### Phase 1: Build-Time Tests (GOSS in Dockerfile)
+
+Tests run during `docker build --target test`:
+
+- **File existence**: Config files, application code, entrypoints
+- **Commands**: Version checks, config validation, extension loading
+- **Permissions**: Correct file modes
+
+```dockerfile
+# Example from docker/php/Dockerfile
+FROM production-base AS test
+COPY --from=ghcr.io/goss-org/goss:latest /goss /usr/local/bin/goss
+COPY tests/goss/services/php.yaml /goss.yaml
+RUN goss validate --format documentation
+```
+
+**Benefits:**
+- Fails fast during CI build
+- No test tools in production image
+- Catches issues before deployment
+
+### Phase 2: Runtime Tests (Shell Script)
+
+Tests run against live containers:
+
+- **HTTP/HTTPS endpoints**: Health checks, TLS handshake
+- **TLS verification**: Certificate validity, non-TLS rejection
+- **Database connectivity**: pg_isready, healthcheck.sh
+- **Service communication**: PHP→DB, Node→Redis
+
+```bash
+# Run all runtime tests
+make goss-test
+
+# Run for specific service
+make goss-test-nginx
+make goss-test-php
+make goss-test-redis
+```
+
+## Makefile Targets
+
+### Basic Tests
+
+| Target | Description |
+|--------|-------------|
+| `make goss-test` | Runtime tests for running containers |
+| `make goss-test-build` | Build-time tests (validates images) |
+| `make goss-test-all` | Both build-time and runtime tests |
+
+### Individual Service Tests (Runtime)
+
+| Target | Description |
+|--------|-------------|
+| `make goss-test-nginx` | Test nginx (HTTPS, TLS) |
+| `make goss-test-php` | Test PHP-FPM (health, ping) |
+| `make goss-test-node-backend` | Test Express API |
+| `make goss-test-node-frontend` | Test framework server |
+| `make goss-test-postgres` | Test PostgreSQL (SSL) |
+| `make goss-test-mariadb` | Test MariaDB (SSL) |
+| `make goss-test-redis` | Test Redis (TLS) |
+| `make goss-test-mercure` | Test Mercure Hub |
+| `make goss-test-meilisearch` | Test Meilisearch |
+| `make goss-test-elasticsearch` | Test Elasticsearch |
+| `make goss-test-mailpit` | Test Mailpit |
+| `make goss-test-minio` | Test MinIO (TLS) |
+| `make goss-test-rabbitmq` | Test RabbitMQ |
+
+### Preset Tests (Full Stack Testing)
+
+| Target | Description |
+|--------|-------------|
+| `make goss-test-preset-fullstack` | PHP + Node + Postgres + Redis |
+| `make goss-test-preset-php-only` | PHP + Postgres + Redis |
+| `make goss-test-preset-node-only` | Node + Postgres + Redis |
+| `make goss-test-preset-minimal` | Nginx only |
+| `make goss-test-preset-fullstack-mariadb` | Full-Stack with MariaDB |
+| `make goss-test-preset-fullstack-optional` | All services enabled |
+| `make goss-test-preset-framework` | Nuxt/Next + Express |
+| `make goss-test-matrix` | Run ALL presets (CI/CD) |
+
+## What Gets Tested
+
+### Build-Time (GOSS YAML)
+
+| Category | Examples |
+|----------|----------|
+| Files | Config exists, correct permissions |
+| Commands | `php -v`, `nginx -t`, `node --check` |
+| Extensions | PHP modules, nginx brotli |
+
+### Runtime (Shell Script)
+
+| Category | Examples |
+|----------|----------|
+| HTTPS | Endpoints respond, TLS handshake |
+| Health | `/health`, `/ping`, `pg_isready` |
+| TLS | Certificate valid, non-TLS rejected |
+| Connectivity | Service-to-service communication |
+
+## CI/CD Integration
+
+### GitHub Actions
+
+```yaml
+jobs:
+  container-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # Build-time tests (validates images)
+      - name: Run GOSS build-time tests
+        run: make goss-test-build
+
+      # Runtime tests
+      - name: Start containers
+        run: make up
+      - name: Run runtime tests
+        run: make goss-test
+
+  matrix-tests:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        preset: [fullstack, php-only, node-only, minimal]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Test preset
+        run: make goss-test-preset PRESET=${{ matrix.preset }}
+```
+
+### GitLab CI
+
+```yaml
+container-tests:
+  stage: test
+  script:
+    - make goss-test-build
+    - make up
+    - make goss-test
+
+matrix-tests:
+  stage: test
+  parallel:
+    matrix:
+      - PRESET: [fullstack, php-only, node-only, minimal]
+  script:
+    - make goss-test-preset PRESET=$PRESET
+```
+
+## Extending Tests
+
+### Adding Build-Time Tests
+
+1. Edit `tests/goss/services/<service>.yaml`
+2. Add file/command checks
+3. Tests run automatically during build
+
+### Adding Runtime Tests
+
+1. Edit `tests/goss/runtime-tests.sh`
+2. Add `test_<service>()` function
+3. Add to `run_all_tests()` and `case` statement
+
+## Troubleshooting
+
+### Build-time test fails
+
+```bash
+# Build with verbose output
+docker build --target test -f docker/php/Dockerfile . --progress=plain
+```
+
+### Runtime test fails
+
+```bash
+# Run with debug output
+bash -x tests/goss/runtime-tests.sh nginx
+```
+
+### Container not responding
+
+```bash
+# Check container status
+docker compose ps
+docker compose logs <service>
+```
+
+## Related Documentation
+
+- [GOSS Documentation](https://github.com/goss-org/goss)
+- [Docker Multi-Stage Builds](https://docs.docker.com/build/building/multi-stage/)
+- [Project Deployment Guide](../../documentation/infrastructure/DEPLOYMENT.md)

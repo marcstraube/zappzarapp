@@ -125,7 +125,7 @@ services:
       - ENABLE_MAILPIT=${ENABLE_MAILPIT:-false}
       - ENABLE_MINIO=${ENABLE_MINIO:-false}
       - ENABLE_RABBITMQ=${ENABLE_RABBITMQ:-false}
-      - NODE_MODE=${NODE_MODE:-static-api}
+      - NODE_MODE=${NODE_MODE:-assets-api}
       # Database (12-Factor: DATABASE_URL takes precedence)
       - DATABASE_URL=${DATABASE_URL:-}
       - DB_TYPE=${DB_TYPE:-postgres}
@@ -217,7 +217,67 @@ services:
     environment:
       - TZ=${TZ:-UTC}
       - NODE_ENV=development
-      - NODE_MODE=${NODE_MODE:-static-api}
+      - NODE_MODE=${NODE_MODE:-assets-api}
+      - LOG_LEVEL=${LOG_LEVEL:-info}
+      - LOG_FORMAT=${LOG_FORMAT:-pretty}
+      - CORS_ORIGINS=${CORS_ORIGINS:-*}
+      # Database (12-Factor: DATABASE_URL takes precedence)
+      - DATABASE_URL=${DATABASE_URL:-}
+      - DB_TYPE=${DB_TYPE:-postgres}
+      - DB_HOST=${DB_HOST:-postgres}
+      - DB_PORT=${DB_PORT:-5432}
+      - DB_NAME=${DB_NAME:-app}
+      - DB_USER=${DB_USER:-app}
+      - DB_PASSWORD=${DB_PASSWORD:-secret}
+      - DB_SSL_CA=${DB_SSL_CA:-}
+      - DB_SSL_VERIFY=${DB_SSL_VERIFY:-false}
+      - REDIS_URL=${REDIS_URL:-rediss://redis:6379}
+    tty: true
+
+  node-backend:
+    build:
+      target: development
+      args:
+        USER_ID: ${USER_ID:-1000}
+        GROUP_ID: ${GROUP_ID:-1000}
+    volumes:
+      # Entrypoint Script (production stages use direct CMD, no entrypoint needed)
+      - ./docker/node/entrypoint.development.sh:/usr/local/bin/entrypoint.development.sh:ro
+
+      # Package manager files (bidirectional bind mount for pnpm update/add/remove)
+      - ./package.json:/app/package.json
+      - ./pnpm-lock.yaml:/app/pnpm-lock.yaml
+
+      # Dependencies (named volumes for best cross-platform performance)
+      - node_modules:/app/node_modules
+
+      # Source and Tests (bidirectional bind mounts for ESLint, Prettier, etc.)
+      - ./src:/app/src
+
+      # Workspace node_modules (override bind mount - MUST be after ./src mount)
+      - backend_node_modules:/app/src/node/backend/node_modules
+      - frontend_node_modules:/app/src/node/frontend/node_modules
+      - ./tests:/app/tests
+
+      # Build output and public assets
+      - ./dist:/app/dist
+      - ./public:/app/public
+      - ./build:/app/build
+
+      # Build config files (needed for TypeScript, PM2)
+      - ./tsconfig.json:/app/tsconfig.json:ro
+      - ./tsconfig.base.json:/app/tsconfig.base.json:ro
+      - ./tsconfig.build.json:/app/tsconfig.build.json:ro
+      - ./ecosystem.config.cjs:/app/ecosystem.config.cjs:ro
+      - ./pnpm-workspace.yaml:/app/pnpm-workspace.yaml:ro
+
+      # Git repository (for commitlint)
+      - ./.git:/app/.git
+    environment:
+      - TZ=${TZ:-UTC}
+      - NODE_ENV=development
+      # node-backend always runs the Express API backend
+      - NODE_MODE=api
       - LOG_LEVEL=${LOG_LEVEL:-info}
       - LOG_FORMAT=${LOG_FORMAT:-pretty}
       - CORS_ORIGINS=${CORS_ORIGINS:-*}

@@ -1,0 +1,114 @@
+{{- if .Values.mariadb.enabled }}
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ include "zappzarapp.fullname" . }}-mariadb
+  namespace: {{ include "zappzarapp.namespace" . }}
+  labels:
+    {{- include "zappzarapp.labels" . | nindent 4 }}
+    app.kubernetes.io/component: mariadb
+spec:
+  serviceName: {{ include "zappzarapp.fullname" . }}-mariadb
+  replicas: {{ .Values.mariadb.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "zappzarapp.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: mariadb
+  template:
+    metadata:
+      labels:
+        {{- include "zappzarapp.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: mariadb
+    spec:
+      containers:
+        - name: mariadb
+          image: "{{ .Values.mariadb.image.repository }}:{{ .Values.mariadb.image.tag }}"
+          imagePullPolicy: {{ .Values.global.imagePullPolicy }}
+          ports:
+            - name: mysql
+              containerPort: 3306
+              protocol: TCP
+          env:
+            - name: MARIADB_DATABASE
+              value: {{ .Values.config.database.name | quote }}
+            - name: MARIADB_USER
+              value: {{ .Values.config.database.user | quote }}
+            - name: MARIADB_PASSWORD_FILE
+              value: /run/secrets/db_password
+            - name: MARIADB_ROOT_PASSWORD_FILE
+              value: /run/secrets/db_root_password
+          livenessProbe:
+            exec:
+              command:
+                - healthcheck.sh
+                - --connect
+                - --innodb_initialized
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+          readinessProbe:
+            exec:
+              command:
+                - healthcheck.sh
+                - --connect
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 3
+          resources:
+            {{- toYaml .Values.mariadb.resources | nindent 12 }}
+          securityContext:
+            readOnlyRootFilesystem: {{ .Values.mariadb.securityContext.readOnlyRootFilesystem }}
+            runAsNonRoot: {{ .Values.mariadb.securityContext.runAsNonRoot }}
+            capabilities:
+              drop:
+                {{- toYaml .Values.mariadb.securityContext.capabilities.drop | nindent 16 }}
+              add:
+                {{- toYaml .Values.mariadb.securityContext.capabilities.add | nindent 16 }}
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/mysql
+            - name: tmp
+              mountPath: /tmp
+            - name: run
+              mountPath: /var/run/mysqld
+            - name: db-password
+              mountPath: /run/secrets/db_password
+              subPath: db_password
+              readOnly: true
+            - name: db-root-password
+              mountPath: /run/secrets/db_root_password
+              subPath: db_root_password
+              readOnly: true
+      volumes:
+        - name: tmp
+          emptyDir:
+            sizeLimit: 256Mi
+        - name: run
+          emptyDir:
+            sizeLimit: 64Mi
+        - name: db-password
+          secret:
+            secretName: {{ .Values.secrets.existingSecrets.dbPassword | default (printf "%s-db-password" (include "zappzarapp.fullname" .)) }}
+        - name: db-root-password
+          secret:
+            secretName: {{ .Values.secrets.existingSecrets.dbRootPassword | default (printf "%s-db-root-password" (include "zappzarapp.fullname" .)) }}
+  {{- if .Values.mariadb.persistence.enabled }}
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        {{- if .Values.mariadb.persistence.storageClass }}
+        storageClassName: {{ .Values.mariadb.persistence.storageClass | quote }}
+        {{- end }}
+        resources:
+          requests:
+            storage: {{ .Values.mariadb.persistence.size }}
+  {{- else }}
+      volumes:
+        - name: data
+          emptyDir: {}
+  {{- end }}
+{{- end }}

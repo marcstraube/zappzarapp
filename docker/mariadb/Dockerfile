@@ -15,6 +15,9 @@ ARG MARIADB_PATCH=2
 
 FROM mariadb:${MARIADB_VERSION}.${MARIADB_PATCH}
 
+# Create certs directory (owned by root, entrypoint will chown files after copy)
+RUN mkdir -p /etc/mysql/certs
+
 # Copy custom entrypoint for SSL certificate setup
 # Path matches compose.override.yaml volume mount for development hot-reload
 COPY docker/mariadb/entrypoint.sh /entrypoint-wrapper.sh

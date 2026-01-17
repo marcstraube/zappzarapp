@@ -1,0 +1,20 @@
+{{- if .Values.php.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "zappzarapp.fullname" . }}-php
+  namespace: {{ include "zappzarapp.namespace" . }}
+  labels:
+    {{- include "zappzarapp.labels" . | nindent 4 }}
+    app.kubernetes.io/component: php
+spec:
+  type: {{ .Values.php.service.type }}
+  ports:
+    - name: fpm
+      port: {{ .Values.php.service.port }}
+      targetPort: fpm
+      protocol: TCP
+  selector:
+    {{- include "zappzarapp.selectorLabels" . | nindent 4 }}
+    app.kubernetes.io/component: php
+{{- end }}

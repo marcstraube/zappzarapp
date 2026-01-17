@@ -1,0 +1,374 @@
+{{/*
+Network Policies for zappzarapp
+These restrict traffic between services for better security isolation.
+*/}}
+
+{{- if and .Values.nginx.enabled (eq .Values.global.env "production") }}
+---
+# Nginx: Allow ingress from anywhere, egress to PHP and Node only
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ include "zappzarapp.fullname" . }}-nginx
+  namespace: {{ include "zappzarapp.namespace" . }}
+  labels:
+    {{- include "zappzarapp.labels" . | nindent 4 }}
+spec:
+  podSelector:
+    matchLabels:
+      {{- include "zappzarapp.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: nginx
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    - from: []  # Allow from anywhere (Ingress controller)
+      ports:
+        - protocol: TCP
+          port: 80
+        - protocol: TCP
+          port: 443
+  egress:
+    {{- if .Values.php.enabled }}
+    - to:
+        - podSelector:
+            matchLabels:
+              {{- include "zappzarapp.selectorLabels" . | nindent 14 }}
+              app.kubernetes.io/component: php
+      ports:
+        - protocol: TCP
+          port: 9000
+    {{- end }}
+    {{- if .Values.node.enabled }}
+    - to:
+        - podSelector:
+            matchLabels:
+              {{- include "zappzarapp.selectorLabels" . | nindent 14 }}
+              app.kubernetes.io/component: node
+      ports:
+        - protocol: TCP
+          port: {{ .Values.config.node.frontendPort }}
+    {{- end }}
+    {{- if .Values.nodeBackend.enabled }}
+    - to:
+        - podSelector:
+            matchLabels:
+              {{- include "zappzarapp.selectorLabels" . | nindent 14 }}
+              app.kubernetes.io/component: node-backend
+      ports:
+        - protocol: TCP
+          port: {{ .Values.config.node.backendPort }}
+    {{- end }}
+    # Allow DNS
+    - to: []
+      ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53
+{{- end }}
+
+{{- if and .Values.php.enabled (eq .Values.global.env "production") }}
+---
+# PHP: Allow from Nginx, egress to Database and Redis
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ include "zappzarapp.fullname" . }}-php
+  namespace: {{ include "zappzarapp.namespace" . }}
+  labels:
+    {{- include "zappzarapp.labels" . | nindent 4 }}
+spec:
+  podSelector:
+    matchLabels:
+      {{- include "zappzarapp.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: php
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              {{- include "zappzarapp.selectorLabels" . | nindent 14 }}
+              app.kubernetes.io/component: nginx
+      ports:
+        - protocol: TCP
+          port: 9000
+  egress:
+    {{- if .Values.postgres.enabled }}
+    - to:
+        - podSelector:
+            matchLabels:
+              {{- include "zappzarapp.selectorLabels" . | nindent 14 }}
+              app.kubernetes.io/component: postgres
+      ports:
+        - protocol: TCP
+          port: 5432
+    {{- end }}
+    {{- if .Values.mariadb.enabled }}
+    - to:
+        - podSelector:
+            matchLabels:
+              {{- include "zappzarapp.selectorLabels" . | nindent 14 }}
+              app.kubernetes.io/component: mariadb
+      ports:
+        - protocol: TCP
+          port: 3306
+    {{- end }}
+    {{- if .Values.redis.enabled }}
+    - to:
+        - podSelector:
+            matchLabels:
+              {{- include "zappzarapp.selectorLabels" . | nindent 14 }}
+              app.kubernetes.io/component: redis
+      ports:
+        - protocol: TCP
+          port: 6379
+    {{- end }}
+    # Allow DNS
+    - to: []
+      ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53
+{{- end }}
+
+{{- if and .Values.node.enabled (eq .Values.global.env "production") }}
+---
+# Node Frontend: Allow from Nginx, egress to Database and Redis
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ include "zappzarapp.fullname" . }}-node
+  namespace: {{ include "zappzarapp.namespace" . }}
+  labels:
+    {{- include "zappzarapp.labels" . | nindent 4 }}
+spec:
+  podSelector:
+    matchLabels:
+      {{- include "zappzarapp.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: node
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              {{- include "zappzarapp.selectorLabels" . | nindent 14 }}
+              app.kubernetes.io/component: nginx
+      ports:
+        - protocol: TCP
+          port: {{ .Values.config.node.frontendPort }}
+  egress:
+    {{- if .Values.postgres.enabled }}
+    - to:
+        - podSelector:
+            matchLabels:
+              {{- include "zappzarapp.selectorLabels" . | nindent 14 }}
+              app.kubernetes.io/component: postgres
+      ports:
+        - protocol: TCP
+          port: 5432
+    {{- end }}
+    {{- if .Values.mariadb.enabled }}
+    - to:
+        - podSelector:
+            matchLabels:
+              {{- include "zappzarapp.selectorLabels" . | nindent 14 }}
+              app.kubernetes.io/component: mariadb
+      ports:
+        - protocol: TCP
+          port: 3306
+    {{- end }}
+    {{- if .Values.redis.enabled }}
+    - to:
+        - podSelector:
+            matchLabels:
+              {{- include "zappzarapp.selectorLabels" . | nindent 14 }}
+              app.kubernetes.io/component: redis
+      ports:
+        - protocol: TCP
+          port: 6379
+    {{- end }}
+    # Allow DNS
+    - to: []
+      ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53
+{{- end }}
+
+{{- if and .Values.nodeBackend.enabled (eq .Values.global.env "production") }}
+---
+# Node Backend (Express API): Allow from Nginx, egress to Database and Redis
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ include "zappzarapp.fullname" . }}-node-backend
+  namespace: {{ include "zappzarapp.namespace" . }}
+  labels:
+    {{- include "zappzarapp.labels" . | nindent 4 }}
+spec:
+  podSelector:
+    matchLabels:
+      {{- include "zappzarapp.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: node-backend
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              {{- include "zappzarapp.selectorLabels" . | nindent 14 }}
+              app.kubernetes.io/component: nginx
+      ports:
+        - protocol: TCP
+          port: {{ .Values.config.node.backendPort }}
+  egress:
+    {{- if .Values.postgres.enabled }}
+    - to:
+        - podSelector:
+            matchLabels:
+              {{- include "zappzarapp.selectorLabels" . | nindent 14 }}
+              app.kubernetes.io/component: postgres
+      ports:
+        - protocol: TCP
+          port: 5432
+    {{- end }}
+    {{- if .Values.mariadb.enabled }}
+    - to:
+        - podSelector:
+            matchLabels:
+              {{- include "zappzarapp.selectorLabels" . | nindent 14 }}
+              app.kubernetes.io/component: mariadb
+      ports:
+        - protocol: TCP
+          port: 3306
+    {{- end }}
+    {{- if .Values.redis.enabled }}
+    - to:
+        - podSelector:
+            matchLabels:
+              {{- include "zappzarapp.selectorLabels" . | nindent 14 }}
+              app.kubernetes.io/component: redis
+      ports:
+        - protocol: TCP
+          port: 6379
+    {{- end }}
+    # Allow DNS
+    - to: []
+      ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53
+{{- end }}
+
+{{- if and (or .Values.postgres.enabled .Values.mariadb.enabled) (eq .Values.global.env "production") }}
+---
+# Database: Only allow from PHP, Node Frontend, and Node Backend
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ include "zappzarapp.fullname" . }}-database
+  namespace: {{ include "zappzarapp.namespace" . }}
+  labels:
+    {{- include "zappzarapp.labels" . | nindent 4 }}
+spec:
+  podSelector:
+    matchLabels:
+      {{- include "zappzarapp.selectorLabels" . | nindent 6 }}
+      {{- if .Values.postgres.enabled }}
+      app.kubernetes.io/component: postgres
+      {{- else }}
+      app.kubernetes.io/component: mariadb
+      {{- end }}
+  policyTypes:
+    - Ingress
+  ingress:
+    {{- if .Values.php.enabled }}
+    - from:
+        - podSelector:
+            matchLabels:
+              {{- include "zappzarapp.selectorLabels" . | nindent 14 }}
+              app.kubernetes.io/component: php
+      ports:
+        - protocol: TCP
+          port: {{ if .Values.postgres.enabled }}5432{{ else }}3306{{ end }}
+    {{- end }}
+    {{- if .Values.node.enabled }}
+    - from:
+        - podSelector:
+            matchLabels:
+              {{- include "zappzarapp.selectorLabels" . | nindent 14 }}
+              app.kubernetes.io/component: node
+      ports:
+        - protocol: TCP
+          port: {{ if .Values.postgres.enabled }}5432{{ else }}3306{{ end }}
+    {{- end }}
+    {{- if .Values.nodeBackend.enabled }}
+    - from:
+        - podSelector:
+            matchLabels:
+              {{- include "zappzarapp.selectorLabels" . | nindent 14 }}
+              app.kubernetes.io/component: node-backend
+      ports:
+        - protocol: TCP
+          port: {{ if .Values.postgres.enabled }}5432{{ else }}3306{{ end }}
+    {{- end }}
+{{- end }}
+
+{{- if and .Values.redis.enabled (eq .Values.global.env "production") }}
+---
+# Redis: Only allow from PHP, Node Frontend, and Node Backend
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ include "zappzarapp.fullname" . }}-redis
+  namespace: {{ include "zappzarapp.namespace" . }}
+  labels:
+    {{- include "zappzarapp.labels" . | nindent 4 }}
+spec:
+  podSelector:
+    matchLabels:
+      {{- include "zappzarapp.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: redis
+  policyTypes:
+    - Ingress
+  ingress:
+    {{- if .Values.php.enabled }}
+    - from:
+        - podSelector:
+            matchLabels:
+              {{- include "zappzarapp.selectorLabels" . | nindent 14 }}
+              app.kubernetes.io/component: php
+      ports:
+        - protocol: TCP
+          port: 6379
+    {{- end }}
+    {{- if .Values.node.enabled }}
+    - from:
+        - podSelector:
+            matchLabels:
+              {{- include "zappzarapp.selectorLabels" . | nindent 14 }}
+              app.kubernetes.io/component: node
+      ports:
+        - protocol: TCP
+          port: 6379
+    {{- end }}
+    {{- if .Values.nodeBackend.enabled }}
+    - from:
+        - podSelector:
+            matchLabels:
+              {{- include "zappzarapp.selectorLabels" . | nindent 14 }}
+              app.kubernetes.io/component: node-backend
+      ports:
+        - protocol: TCP
+          port: 6379
+    {{- end }}
+{{- end }}

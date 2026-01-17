@@ -1,0 +1,36 @@
+# GOSS Tests for Redis container
+#
+# Build-time tests: Files, commands, configuration
+# Runtime tests: Processes, ports, TLS (see runtime-tests.sh)
+
+# ============================================================================
+# FILE TESTS (Build-time)
+# ============================================================================
+file:
+  # Health check script
+  /usr/local/bin/healthcheck.sh:
+    exists: true
+    mode: "0755"
+
+# ============================================================================
+# COMMAND TESTS (Build-time)
+# ============================================================================
+command:
+  # Redis server version
+  redis-server --version:
+    exit-status: 0
+    timeout: 5000
+    stdout:
+      - "/Redis server v=7\\./"
+
+  # redis-cli is available
+  which redis-cli:
+    exit-status: 0
+    timeout: 5000
+
+  # TLS support is compiled in
+  redis-cli --help:
+    exit-status: 0
+    timeout: 5000
+    stdout:
+      - "--tls"

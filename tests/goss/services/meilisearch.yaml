@@ -1,0 +1,63 @@
+# GOSS Tests for meilisearch container
+# Two-phase testing: dgoss (external) + docker exec (internal)
+#
+# Meilisearch search engine on port 7700
+# Internal service, accessed via PHP/Node
+
+# ============================================================================
+# PROCESS TESTS (Internal)
+# ============================================================================
+process:
+  meilisearch:
+    running: true
+
+# ============================================================================
+# PORT TESTS (Internal)
+# ============================================================================
+port:
+  tcp:7700:
+    listening: true
+    ip:
+      - 0.0.0.0
+
+# ============================================================================
+# FILE TESTS (Internal)
+# ============================================================================
+file:
+  # Data directory
+  /meili_data:
+    exists: true
+    filetype: directory
+
+  # Secrets (bind mount)
+  /run/secrets/meilisearch_master_key.txt:
+    exists: true
+
+# ============================================================================
+# HTTP TESTS (Internal - localhost)
+# ============================================================================
+http:
+  # Health endpoint
+  http://localhost:7700/health:
+    status: 200
+    timeout: 5000
+    body:
+      - '"status":"available"'
+
+  # Version endpoint
+  http://localhost:7700/version:
+    status: 200
+    timeout: 5000
+    body:
+      - '"pkgVersion"'
+
+# ============================================================================
+# COMMAND TESTS (Internal)
+# ============================================================================
+command:
+  # Meilisearch version
+  meilisearch --version:
+    exit-status: 0
+    timeout: 5000
+    stdout:
+      - "meilisearch"

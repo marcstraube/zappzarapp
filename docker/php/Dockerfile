@@ -168,8 +168,8 @@ RUN chmod +x /entrypoint.development.sh
 ENTRYPOINT ["/entrypoint.development.sh"]
 CMD ["php-fpm"]
 
-# --- 4. PRODUCTION STAGE ---
-FROM base AS production
+# --- 4. PRODUCTION BASE STAGE (Shared) ---
+FROM base AS production-base
 
 # Copy configuration files
 COPY docker/php/php.ini /usr/local/etc/php/php.ini
@@ -198,12 +198,53 @@ COPY --chown=www-data:www-data public/ ./public
 COPY --chown=www-data:www-data src/php ./src/php
 COPY --chown=www-data:www-data templates ./templates
 
-# Copy built frontend assets from Node build stage
+# --- 5. PRODUCTION STAGE (with Vite Assets) ---
+# Use for: NODE_MODE=assets, assets-api, api
+# Serves Vite-built frontend assets (copied from node-backend build)
+FROM production-base AS production
+
+# Copy built frontend assets from Node backend build stage
 # This allows serving production-built Vite assets via NGINX
-# Note: NODE_IMAGE must be built first (see compose.yaml build order)
-COPY --from=zappzarapp-node:latest --chown=www-data:www-data /app/public/build/ ./public/build/
+# Note: node-backend image must be built first (see Makefile build order)
+COPY --from=zappzarapp-node-backend:latest --chown=www-data:www-data /app/public/build/ ./public/build/
 
 # Optimize Autoloader & Cleanup
+RUN composer dump-autoload --optimize --no-dev --classmap-authoritative && \
+    rm -rf /usr/bin/composer /home/www-data/.composer /tmp/* && \
+    apk del .composer-deps
+
+# Permission Hardening
+RUN chown -R root:root /var/www/html && \
+    chmod -R 555 /var/www/html && \
+    mkdir -p /var/www/html/storage && \
+    chown -R www-data:www-data /var/www/html/storage && \
+    chmod 770 /var/www/html/storage && \
+    find /var/www/html/storage -type f -exec chmod 660 {} \; 2>/dev/null || true
+
+# PHP-FPM runs as www-data (configured in php-fpm.conf)
+ENTRYPOINT ["/entrypoint.production.sh"]
+CMD ["php-fpm"]
+
+# --- 6. TEST STAGE (CI only) ---
+# Validates the production image using GOSS
+# Usage: docker build --target test -f docker/php/Dockerfile .
+FROM production-base AS test
+
+# Copy GOSS binary from official image
+COPY --from=ghcr.io/goss-org/goss:latest /goss /usr/local/bin/goss
+
+# Copy test specification
+COPY tests/goss/services/php.yaml /goss.yaml
+
+# Run GOSS tests (fails build if tests fail)
+RUN goss validate --format documentation
+
+# --- 7. PRODUCTION FRAMEWORK STAGE (no Vite Assets) ---
+# Use for: NODE_MODE=framework, framework-api
+# Pure PHP backend - frontend frameworks (Nuxt/Next) serve their own assets
+FROM production-base AS production-framework
+
+# Optimize Autoloader & Cleanup (no Vite assets to copy)
 RUN composer dump-autoload --optimize --no-dev --classmap-authoritative && \
     rm -rf /usr/bin/composer /home/www-data/.composer /tmp/* && \
     apk del .composer-deps

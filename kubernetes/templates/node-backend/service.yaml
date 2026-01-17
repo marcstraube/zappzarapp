@@ -1,0 +1,20 @@
+{{- if .Values.nodeBackend.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "zappzarapp.fullname" . }}-node-backend
+  namespace: {{ include "zappzarapp.namespace" . }}
+  labels:
+    {{- include "zappzarapp.labels" . | nindent 4 }}
+    app.kubernetes.io/component: node-backend
+spec:
+  type: {{ .Values.nodeBackend.service.type }}
+  ports:
+    - name: http
+      port: {{ .Values.nodeBackend.service.port }}
+      targetPort: http
+      protocol: TCP
+  selector:
+    {{- include "zappzarapp.selectorLabels" . | nindent 4 }}
+    app.kubernetes.io/component: node-backend
+{{- end }}

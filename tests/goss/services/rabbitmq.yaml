@@ -1,0 +1,95 @@
+# GOSS Tests for rabbitmq container
+# Two-phase testing: dgoss (external) + docker exec (internal)
+#
+# RabbitMQ message broker
+# AMQP on port 5672 (TLS), Management on port 15672
+
+# ============================================================================
+# PROCESS TESTS (Internal)
+# ============================================================================
+process:
+  beam.smp:
+    running: true
+
+# ============================================================================
+# PORT TESTS (Internal)
+# ============================================================================
+port:
+  # AMQP port (TLS)
+  tcp:5672:
+    listening: true
+    ip:
+      - 0.0.0.0
+  # Management UI port
+  tcp:15672:
+    listening: true
+    ip:
+      - 0.0.0.0
+
+# ============================================================================
+# FILE TESTS (Internal)
+# ============================================================================
+file:
+  # Data directory
+  /var/lib/rabbitmq:
+    exists: true
+    filetype: directory
+
+  # TLS certificates
+  /etc/rabbitmq/certs/server.crt:
+    exists: true
+  /etc/rabbitmq/certs/server.key:
+    exists: true
+
+  # Configuration
+  /etc/rabbitmq/rabbitmq.conf:
+    exists: true
+
+  # Secrets (bind mount)
+  /run/secrets/rabbitmq_user.txt:
+    exists: true
+  /run/secrets/rabbitmq_password.txt:
+    exists: true
+
+# ============================================================================
+# HTTP TESTS (Internal - Management API)
+# ============================================================================
+http:
+  # Management API health
+  http://localhost:15672/api/health/checks/alarms:
+    status: 200
+    timeout: 10000
+    body:
+      - '"status":"ok"'
+
+  # Management API overview
+  http://localhost:15672/api/overview:
+    status: 200
+    timeout: 10000
+    body:
+      - '"rabbitmq_version"'
+
+# ============================================================================
+# COMMAND TESTS (Internal)
+# ============================================================================
+command:
+  # RabbitMQ status
+  rabbitmqctl status:
+    exit-status: 0
+    timeout: 15000
+    stdout:
+      - "Status of node"
+
+  # RabbitMQ cluster status
+  rabbitmqctl cluster_status:
+    exit-status: 0
+    timeout: 10000
+    stdout:
+      - "Running Nodes"
+
+  # Check TLS listeners
+  rabbitmqctl eval 'application:get_env(rabbit, ssl_listeners).':
+    exit-status: 0
+    timeout: 5000
+    stdout:
+      - "5672"

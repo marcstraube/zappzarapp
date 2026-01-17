@@ -1,0 +1,16 @@
+apiVersion: v2
+name: zappzarapp
+description: A Helm chart for deploying the zappzarapp application stack
+type: application
+version: 0.1.0
+appVersion: "3.43"
+keywords:
+  - php
+  - nodejs
+  - nginx
+  - postgres
+  - redis
+maintainers:
+  - name: zappzarapp
+sources:
+  - https://github.com/marcstraube/zappzarapp

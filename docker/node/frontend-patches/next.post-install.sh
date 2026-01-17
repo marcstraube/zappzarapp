@@ -255,4 +255,4 @@ next-env.d.ts
 EOF
 
 echo "[next] Configuration complete!"
-echo "[next] Run 'make pnpm-install' to install dependencies."
+echo "[next] Run 'make pnpm-sync' to install dependencies."

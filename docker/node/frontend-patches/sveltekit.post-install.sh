@@ -9,8 +9,8 @@ cd "$FRONTEND_DIR"
 
 echo "[sveltekit] Configuring for zappzarapp infrastructure..."
 
-# 1. Update package.json
-echo "[sveltekit] Setting package name and scripts..."
+# 1. Update package.json (including adapter-node dependency)
+echo "[sveltekit] Setting package name, scripts, and dependencies..."
 node -e "
 const fs = require('fs');
 const pkg = JSON.parse(fs.readFileSync('package.json', 'utf8'));
@@ -23,6 +23,9 @@ pkg.scripts.dev = 'vite dev --host 0.0.0.0 --port 3001';
 pkg.scripts.build = 'vite build';
 pkg.scripts.preview = 'vite preview --host 0.0.0.0 --port 3001';
 pkg.scripts.start = 'node build';
+// Add adapter-node as devDependency (installed via make pnpm CMD=\"install\")
+pkg.devDependencies = pkg.devDependencies || {};
+pkg.devDependencies['@sveltejs/adapter-node'] = '^5.2.0';
 fs.writeFileSync('package.json', JSON.stringify(pkg, null, 2) + '\n');
 "
 
@@ -309,4 +312,4 @@ node_modules
 EOF
 
 echo "[sveltekit] Configuration complete!"
-echo "[sveltekit] Run 'make pnpm-install' to install dependencies."
+echo "[sveltekit] Run 'make pnpm-sync' to install dependencies."

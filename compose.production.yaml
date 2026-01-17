@@ -1,8 +1,15 @@
 # ./compose.production.yaml
 # Docker Compose Production Environment
 #
-# IMPORTANT: Production requires Docker Swarm for proper secrets permissions.
-# Usage: make swarm-deploy
+# Usage:
+#   Single-server: make up (with ENV=production)
+#   Multi-node:    make k8s-deploy (Kubernetes/Helm)
+#
+# SECRETS HANDLING:
+#   Docker Compose (standalone) does NOT support uid/gid/mode for secrets.
+#   We use bind mounts instead: ./secrets:/run/secrets:ro
+#   Secret files are created with mode 0644 by 'make setup'.
+#   For production with stricter security, use Kubernetes (native secrets with fsGroup).
 #
 # UIDs reference (from container images):
 #   nginx:    101 (nginx user in Alpine)
@@ -24,7 +31,9 @@ services:
       - php-fpm-socket:/var/run/php-fpm
       # Production SSL config template (processed by entrypoint at runtime)
       - ./docker/nginx/conf.d/ssl-production.conf.template:/etc/nginx/conf.d/ssl-production.conf.template:ro
-    # SSL certificates via secrets (defined in compose.yaml)
+      # SSL certificates (bind mount, readable by all container users)
+      - ./docker/certs/cert.crt:/etc/nginx/certs/cert.crt:ro
+      - ./docker/certs/cert.key:/etc/nginx/certs/cert.key:ro
     read_only: true
     tmpfs:
       # Mode 1777 REQUIRED: nginx starts as root, needs write access before user switch
@@ -44,17 +53,6 @@ services:
       - CHOWN
       - SETUID
       - SETGID
-    secrets:
-      - source: ssl_cert
-        target: /etc/nginx/certs/cert.crt
-        uid: '101'
-        gid: '101'
-        mode: 0444
-      - source: ssl_key
-        target: /etc/nginx/certs/cert.key
-        uid: '101'
-        gid: '101'
-        mode: 0400
     logging:
       driver: "json-file"
       options:
@@ -78,9 +76,10 @@ services:
       - php-fpm-socket:/var/run/php-fpm
       # Persistent Storage for Uploads and generated files
       - ${STORAGE_DIR:-./storage}:/var/www/html/storage:rw
+      # Secrets (bind mount, readable by all container users)
+      - ./secrets:/run/secrets:ro
     read_only: true
     tmpfs:
-      # mode=1777: Entrypoint runs as root and needs write access for secrets copying
       - /tmp:mode=1777,size=1G
     security_opt:
       - no-new-privileges:true
@@ -91,19 +90,6 @@ services:
       - CHOWN
       - SETUID
       - SETGID
-    secrets:
-      - source: db_password
-        uid: '82'
-        gid: '82'
-        mode: 0400
-      - source: encryption_key
-        uid: '82'
-        gid: '82'
-        mode: 0400
-      - source: backup_encryption_key
-        uid: '82'
-        gid: '82'
-        mode: 0400
     environment:
       - ENV=production
     logging:
@@ -122,28 +108,48 @@ services:
           memory: 1G
 
   node:
+    # Run directly as node user (no privilege dropping needed with bind-mounted secrets)
+    user: "50000:50000"
     read_only: true
     tmpfs:
-      # mode=1777: Entrypoint runs as root and needs write access for secrets copying
       - /tmp:mode=1777,size=256M
       - /home/node/.cache:mode=0770,uid=50000,gid=50000,size=256M
+    volumes:
+      # Secrets (bind mount, readable by all container users)
+      - ./secrets:/run/secrets:ro
     security_opt:
       - no-new-privileges:true
     cap_drop:
       - ALL
-    secrets:
-      - source: db_password
-        uid: '50000'
-        gid: '50000'
-        mode: 0400
-      - source: encryption_key
-        uid: '50000'
-        gid: '50000'
-        mode: 0400
-      - source: backup_encryption_key
-        uid: '50000'
-        gid: '50000'
-        mode: 0400
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+          pids: 128
+        reservations:
+          cpus: '0.25'
+          memory: 256M
+
+  node-backend:
+    # Run directly as node user (no privilege dropping needed with bind-mounted secrets)
+    user: "50000:50000"
+    read_only: true
+    tmpfs:
+      - /tmp:mode=1777,size=256M
+      - /home/node/.cache:mode=0770,uid=50000,gid=50000,size=256M
+    volumes:
+      # Secrets (bind mount, readable by all container users)
+      - ./secrets:/run/secrets:ro
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
     logging:
       driver: "json-file"
       options:
@@ -160,43 +166,47 @@ services:
           memory: 256M
 
   redis:
+    # Run directly as redis user (no privilege dropping needed with no-new-privileges)
+    user: "999:1000"
     read_only: true
     tmpfs:
-      - /tmp:mode=0770,uid=999,gid=999,size=64M
+      - /tmp:mode=0770,uid=999,gid=1000,size=64M
     volumes:
       - redis-data:/data
-    # SSL certificates via secrets (defined in compose.yaml)
+      # SSL certificates (bind mount)
+      - ./docker/certs/cert.crt:/etc/redis/certs/cert.crt:ro
+      - ./docker/certs/cert.key:/etc/redis/certs/cert.key:ro
     security_opt:
       - no-new-privileges:true
     cap_drop:
       - ALL
-    cap_add:
-      # REQUIRED: redis entrypoint needs to fix data dir permissions and switch user
-      - SETUID
-      - SETGID
-    secrets:
-      - source: ssl_cert
-        uid: '999'
-        gid: '999'
-        mode: 0444
-      - source: ssl_key
-        uid: '999'
-        gid: '999'
-        mode: 0400
-    command: >
-      redis-server
-      --appendonly yes
-      --appendfsync everysec
-      --maxmemory 512mb
-      --maxmemory-policy allkeys-lru
-      --save 900 1
-      --save 300 10
-      --save 60 10000
-      --tls-port 6379
-      --port 0
-      --tls-cert-file /run/secrets/ssl_cert
-      --tls-key-file /run/secrets/ssl_key
-      --tls-auth-clients no
+    # Skip redis entrypoint and run redis-server directly
+    entrypoint: ["redis-server"]
+    command:
+      - --appendonly
+      - "yes"
+      - --appendfsync
+      - everysec
+      - --maxmemory
+      - 512mb
+      - --maxmemory-policy
+      - allkeys-lru
+      - --save
+      - "900 1"
+      - --save
+      - "300 10"
+      - --save
+      - "60 10000"
+      - --tls-port
+      - "6379"
+      - --port
+      - "0"
+      - --tls-cert-file
+      - /etc/redis/certs/cert.crt
+      - --tls-key-file
+      - /etc/redis/certs/cert.key
+      - --tls-auth-clients
+      - "no"
     logging:
       driver: "json-file"
       options:
@@ -215,7 +225,6 @@ services:
   postgres:
     read_only: false
     tmpfs:
-      - /tmp:mode=0770,uid=70,gid=70,size=256M
       - /run/postgresql:mode=0770,uid=70,gid=70,size=64M
     security_opt:
       - no-new-privileges:true
@@ -226,24 +235,16 @@ services:
       - CHOWN
       - SETUID
       - SETGID
-      # REQUIRED: entrypoint needs chmod on SSL certs
+      # REQUIRED: entrypoint copies certs and sets permissions
+      - DAC_OVERRIDE
       - FOWNER
     shm_size: 256mb
     volumes:
       - postgres-data:/var/lib/postgresql/data
-    secrets:
-      - source: db_password
-        uid: '70'
-        gid: '70'
-        mode: 0400
-      - source: ssl_cert
-        uid: '70'
-        gid: '70'
-        mode: 0444
-      - source: ssl_key
-        uid: '70'
-        gid: '70'
-        mode: 0400
+      # Secrets (bind mount)
+      - ./secrets:/run/secrets:ro
+      # SSL certificates (mounted to /tmp/certs, entrypoint copies with correct ownership)
+      - ./docker/certs:/tmp/certs:ro
     command: >
       postgres
       -c shared_buffers=256MB
@@ -284,37 +285,26 @@ services:
   mariadb:
     read_only: false
     tmpfs:
-      - /tmp:mode=0770,uid=999,gid=999,size=256M
       - /var/run/mysqld:mode=0770,uid=999,gid=999,size=64M
     security_opt:
       - no-new-privileges:true
     cap_drop:
       - ALL
     cap_add:
-      # REQUIRED: user switch to mysql
+      # REQUIRED: user switch to mysql and cert ownership
       - CHOWN
       - SETUID
       - SETGID
+      # REQUIRED: entrypoint copies certs and sets permissions
+      - DAC_OVERRIDE
+      - FOWNER
     shm_size: 256mb
     volumes:
       - mariadb-data:/var/lib/mysql
-    secrets:
-      - source: db_password
-        uid: '999'
-        gid: '999'
-        mode: 0400
-      - source: db_root_password
-        uid: '999'
-        gid: '999'
-        mode: 0400
-      - source: ssl_cert
-        uid: '999'
-        gid: '999'
-        mode: 0444
-      - source: ssl_key
-        uid: '999'
-        gid: '999'
-        mode: 0400
+      # Secrets (bind mount)
+      - ./secrets:/run/secrets:ro
+      # SSL certificates (mounted to /tmp/certs, entrypoint copies with correct ownership)
+      - ./docker/certs:/tmp/certs:ro
     command: >
       --innodb-buffer-pool-size=256M
       --max-connections=100
@@ -324,9 +314,9 @@ services:
       --slow-query-log=1
       --slow-query-log-file=/var/log/mysql/slow.log
       --long-query-time=1
-      --ssl-ca=/run/secrets/ssl_cert
-      --ssl-cert=/run/secrets/ssl_cert
-      --ssl-key=/run/secrets/ssl_key
+      --ssl-ca=/etc/mysql/certs/server.crt
+      --ssl-cert=/etc/mysql/certs/server.crt
+      --ssl-key=/etc/mysql/certs/server.key
       --require-secure-transport=ON
     logging:
       driver: "json-file"
@@ -351,15 +341,13 @@ services:
     read_only: true
     tmpfs:
       - /tmp:mode=0770,size=64M
+    volumes:
+      # Secrets (bind mount)
+      - ./secrets:/run/secrets:ro
     security_opt:
       - no-new-privileges:true
     cap_drop:
       - ALL
-    secrets:
-      - source: mercure_jwt_secret
-        uid: '0'
-        gid: '0'
-        mode: 0400
     environment:
       # Production: Restrict CORS to specific origins
       MERCURE_EXTRA_DIRECTIVES: |
@@ -381,15 +369,13 @@ services:
 
   meilisearch:
     read_only: false
+    volumes:
+      # Secrets (bind mount)
+      - ./secrets:/run/secrets:ro
     security_opt:
       - no-new-privileges:true
     cap_drop:
       - ALL
-    secrets:
-      - source: meilisearch_master_key
-        uid: '0'
-        gid: '0'
-        mode: 0400
     environment:
       # Production environment
       MEILI_ENV: production
@@ -450,25 +436,11 @@ services:
       - ALL
     volumes:
       - minio-data:/data
-    secrets:
-      - source: minio_root_user
-        uid: '0'
-        gid: '0'
-        mode: 0400
-      - source: minio_root_password
-        uid: '0'
-        gid: '0'
-        mode: 0400
-      - source: ssl_cert
-        target: /root/.minio/certs/public.crt
-        uid: '0'
-        gid: '0'
-        mode: 0444
-      - source: ssl_key
-        target: /root/.minio/certs/private.key
-        uid: '0'
-        gid: '0'
-        mode: 0400
+      # Secrets (bind mount)
+      - ./secrets:/run/secrets:ro
+      # SSL certificates (bind mount to MinIO's expected location)
+      - ./docker/certs/cert.crt:/root/.minio/certs/public.crt:ro
+      - ./docker/certs/cert.key:/root/.minio/certs/private.key:ro
     environment:
       # Enable TLS (MinIO auto-detects certs in /root/.minio/certs/)
       MINIO_SERVER_URL: https://minio:9000
@@ -497,25 +469,11 @@ services:
       - rabbitmq-data:/var/lib/rabbitmq
       # RabbitMQ TLS configuration (production - TLS only)
       - ./docker/rabbitmq/rabbitmq-production.conf:/etc/rabbitmq/rabbitmq.conf:ro
-    secrets:
-      - source: rabbitmq_user
-        uid: '999'
-        gid: '999'
-        mode: 0400
-      - source: rabbitmq_password
-        uid: '999'
-        gid: '999'
-        mode: 0400
-      - source: ssl_cert
-        target: /etc/rabbitmq/certs/server.crt
-        uid: '999'
-        gid: '999'
-        mode: 0444
-      - source: ssl_key
-        target: /etc/rabbitmq/certs/server.key
-        uid: '999'
-        gid: '999'
-        mode: 0400
+      # Secrets (bind mount)
+      - ./secrets:/run/secrets:ro
+      # SSL certificates (bind mount)
+      - ./docker/certs/cert.crt:/etc/rabbitmq/certs/server.crt:ro
+      - ./docker/certs/cert.key:/etc/rabbitmq/certs/server.key:ro
     logging:
       driver: "json-file"
       options:

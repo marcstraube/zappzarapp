@@ -1,0 +1,53 @@
+# GOSS Tests for mercure container
+# Two-phase testing: dgoss (external) + docker exec (internal)
+#
+# Mercure Hub for Server-Sent Events (SSE)
+# Runs on port 80 (internal), accessed via nginx
+
+# ============================================================================
+# PROCESS TESTS (Internal)
+# ============================================================================
+process:
+  mercure:
+    running: true
+
+# ============================================================================
+# PORT TESTS (Internal)
+# ============================================================================
+port:
+  tcp:80:
+    listening: true
+    ip:
+      - 0.0.0.0
+
+# ============================================================================
+# FILE TESTS (Internal)
+# ============================================================================
+file:
+  # Data directory
+  /data:
+    exists: true
+    filetype: directory
+
+  # Secrets (bind mount)
+  /run/secrets/mercure_jwt_key.txt:
+    exists: true
+
+# ============================================================================
+# HTTP TESTS (Internal - localhost)
+# ============================================================================
+http:
+  # Mercure well-known endpoint
+  http://localhost:80/.well-known/mercure:
+    status: 200
+    timeout: 5000
+    allow-insecure: true
+
+# ============================================================================
+# COMMAND TESTS (Internal)
+# ============================================================================
+command:
+  # Mercure version
+  mercure version:
+    exit-status: 0
+    timeout: 5000

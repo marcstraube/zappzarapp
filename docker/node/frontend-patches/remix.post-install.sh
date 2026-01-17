@@ -138,4 +138,4 @@ node_modules
 EOF
 
 echo "[react-router] Configuration complete!"
-echo "[react-router] Run 'make pnpm-install' to install dependencies."
+echo "[react-router] Run 'make pnpm-sync' to install dependencies."

@@ -59,9 +59,9 @@ export default defineNuxtConfig({
   },
 
   // TypeScript configuration
+  // Note: Set typeCheck: true after installing vue-tsc (pnpm add -D vue-tsc)
   typescript: {
     strict: true,
-    typeCheck: true,
   },
 });
 EOF
@@ -233,4 +233,4 @@ node_modules
 EOF
 
 echo "[nuxt] Configuration complete!"
-echo "[nuxt] Run 'make pnpm-install' to install dependencies."
+echo "[nuxt] Run 'make pnpm-sync' to install dependencies."

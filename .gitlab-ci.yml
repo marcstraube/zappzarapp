@@ -274,35 +274,35 @@ build:production:
     expire_in: 7 days
 
 # ============================================================================
-# SWARM DEPLOYMENT (Optional)
+# KUBERNETES DEPLOYMENT (Optional)
 # ============================================================================
-# Uncomment to enable automatic deployment to Docker Swarm.
+# Uncomment to enable automatic deployment to Kubernetes.
 #
 # Required CI/CD Variables (Settings > CI/CD > Variables):
-#   SWARM_MANAGER_HOST: ssh://user@manager-server (or tcp://manager:2376)
-#   SSH_PRIVATE_KEY:    Private key for SSH access (if using ssh://)
+#   KUBECONFIG_DATA:    Base64-encoded kubeconfig file
+#   KUBE_NAMESPACE:     Target namespace (default: zappzarapp)
 #
-# For SSH deployment, the runner needs SSH access to the manager node.
-# See: documentation/infrastructure/SWARM.md
+# See: documentation/infrastructure/KUBERNETES.md
 #
-# deploy:swarm:
+# deploy:kubernetes:
 #   <<: *docker-setup
 #   stage: deploy
 #   only:
 #     - master
 #   when: manual
 #   before_script:
-#     - *setup-docker
-#     # Setup SSH for remote deployment
-#     - mkdir -p ~/.ssh
-#     - echo "$SSH_PRIVATE_KEY" > ~/.ssh/id_rsa
-#     - chmod 600 ~/.ssh/id_rsa
-#     - ssh-keyscan -H "${SWARM_MANAGER_HOST#ssh://}" >> ~/.ssh/known_hosts 2>/dev/null || true
+#     - apk add --no-cache curl
+#     - curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+#     - chmod +x kubectl && mv kubectl /usr/local/bin/
+#     - curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | sh
+#     - mkdir -p ~/.kube
+#     - echo "$KUBECONFIG_DATA" | base64 -d > ~/.kube/config
 #   script:
-#     - export DOCKER_HOST="$SWARM_MANAGER_HOST"
-#     - docker info
-#     - docker stack deploy -c compose.yaml -c compose.production.yaml zappzarapp
-#     - docker stack services zappzarapp
+#     - helm upgrade --install zappzarapp ./kubernetes
+#       --namespace ${KUBE_NAMESPACE:-zappzarapp}
+#       --create-namespace
+#       -f kubernetes/values.production.yaml
+#     - kubectl get pods -n ${KUBE_NAMESPACE:-zappzarapp}
 #   environment:
 #     name: production
 #     url: https://$DOMAIN

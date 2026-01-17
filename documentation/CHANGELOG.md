@@ -1,13 +1,37 @@
 # zappzarapp - Changelog
 
-**Erstellt:** 2025-12-19 **Letzte Aktualisierung:** 2026-01-16 (Docker Swarm &
-Security Hardening) **Version:** 3.42
+**Erstellt:** 2025-12-19 **Letzte Aktualisierung:** 2026-01-16 (Kubernetes
+Migration) **Version:** 3.43
 
 ---
 
 ## Changelog
 
+### Version 3.43 (2026-01-16) - Kubernetes Migration
+
+Migrated from Docker Swarm to Kubernetes for multi-node production deployments.
+Single-server production continues to use Docker Compose.
+
+#### Removed: Docker Swarm Support
+
+**DEPRECATED:** All Docker Swarm functionality has been removed in favor of
+Kubernetes:
+
+- Removed `make swarm-*` targets from Makefile
+- Removed `compose.production-compose.yaml` (DAC_OVERRIDE workaround)
+- Removed `compose.production-external.yaml.example` (external Swarm secrets)
+- Removed `documentation/infrastructure/SWARM.md`
+- Updated CI/CD templates to reference Kubernetes instead of Swarm
+
+**Migration Path:**
+- Single-server: Use `make up` with `ENV=production` (unchanged)
+- Multi-node: Use `make k8s-deploy` with Kubernetes/Helm
+
+---
+
 ### Version 3.42 (2026-01-16) - Docker Swarm, Security Hardening & Node.js Workspaces
+
+> **DEPRECATED:** Docker Swarm support removed in v3.43. See Kubernetes migration above.
 
 Major security improvements with Docker Swarm for production deployments,
 capability hardening, Docker secrets for SSL certificates, pids limits for fork
@@ -20,14 +44,14 @@ Renamed all NODE_MODE values for clarity:
 
 | Old Name          | New Name        | Description                    |
 | ----------------- | --------------- | ------------------------------ |
-| `full-stack`      | `static-api`    | Vite HMR + Express Backend     |
-| `vite-only`       | `static`        | Vite HMR only                  |
+| `full-stack`      | `assets-api`    | Vite HMR + Express Backend     |
+| `vite-only`       | `assets`        | Vite HMR only                  |
 | `backend-only`    | `api`           | Express API only               |
 | `frontend-only`   | `framework`     | Node frontend (Next.js, Nuxt)  |
 | `frontend-backend`| `framework-api` | Node frontend + Express        |
 | `none`            | `idle`          | Container sleeps               |
 
-Dockerfile stages also renamed: `vite-assets` → `static`, `backend` → `api`,
+Dockerfile stages also renamed: `vite-assets` → `assets`, `backend` → `api`,
 `frontend` → `framework`.
 
 #### Fix: Secrets Handling in Production Compose

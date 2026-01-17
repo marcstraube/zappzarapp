@@ -1,0 +1,109 @@
+# Production values for zappzarapp.
+# These values override the defaults in values.yaml for production deployments.
+
+global:
+  env: production
+  # Set your production domain
+  domain: example.com
+  imagePullPolicy: Always
+
+# ============================================================================
+# CORE SERVICES - Production Settings
+# ============================================================================
+
+nginx:
+  replicaCount: 2
+  resources:
+    limits:
+      cpu: "2"
+      memory: 2Gi
+    requests:
+      cpu: "1"
+      memory: 1Gi
+
+php:
+  replicaCount: 2
+  resources:
+    limits:
+      cpu: "2"
+      memory: 2Gi
+    requests:
+      cpu: "1"
+      memory: 1Gi
+
+node:
+  replicaCount: 2
+  resources:
+    limits:
+      cpu: "0.5"
+      memory: 512Mi
+    requests:
+      cpu: "0.25"
+      memory: 256Mi
+
+# ============================================================================
+# DATABASE SERVICES - Production Settings
+# ============================================================================
+
+postgres:
+  resources:
+    limits:
+      cpu: "1"
+      memory: 1Gi
+    requests:
+      cpu: "0.5"
+      memory: 512Mi
+  persistence:
+    size: 50Gi
+
+redis:
+  resources:
+    limits:
+      cpu: "0.5"
+      memory: 512Mi
+    requests:
+      cpu: "0.25"
+      memory: 256Mi
+  persistence:
+    size: 5Gi
+
+# ============================================================================
+# OPTIONAL SERVICES - Disabled by default in production
+# ============================================================================
+
+# Mailpit is NEVER enabled in production
+mailpit:
+  enabled: false
+
+# ============================================================================
+# INGRESS - Production Settings
+# ============================================================================
+
+ingress:
+  enabled: true
+  className: nginx
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+  hosts:
+    - host: example.com
+      paths:
+        - path: /
+          pathType: Prefix
+  tls:
+    - secretName: zappzarapp-tls
+      hosts:
+        - example.com
+
+# ============================================================================
+# CONFIG - Production Settings
+# ============================================================================
+
+config:
+  logLevel: warning
+  logFormat: json
+
+  php:
+    memoryLimit: 512M
+    maxExecutionTime: 60
+    uploadMaxFilesize: 128M

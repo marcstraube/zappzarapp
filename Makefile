@@ -52,6 +52,17 @@ composer-install-local: ## Install/update Composer dependencies (Local - IDE cod
 		exit 1; \
 	fi
 
+composer-sync: ## Sync Composer dependencies (after composer.json changes)
+	@echo -e "\033[0;33mSyncing Composer dependencies...\033[0m"
+	@XDEBUG_MODE=off $(DC) run --rm --no-TTY php composer install --prefer-dist --no-interaction
+	@echo -e "\033[0;32mDependencies synced!\033[0m"
+
+sync-lockfiles: ## Sync both Composer and pnpm lockfiles (after branch switch, fresh clone)
+	@echo -e "\033[0;33mSyncing all lockfiles...\033[0m"
+	@$(MAKE) --silent composer-sync
+	@$(MAKE) --silent pnpm-sync
+	@echo -e "\033[0;32mAll lockfiles synced!\033[0m"
+
 hooks-install: ## Install Git hooks using CaptainHook
 	@if [ ! -f vendor/bin/captainhook ]; then \
 		echo -e "\033[0;31mError: CaptainHook not found. Please ensure vendor dependencies are installed.\033[0m"; \
@@ -152,6 +163,20 @@ build: ## Build Docker images (optionally specify service names: make build php 
 		echo -e "\033[0;33mBuilding images: $$SERVICES...\033[0m"; \
 		if [ -f .env ]; then \
 			. ./.env && if [ "$$ENV" = "production" ]; then \
+				NODE_TARGET_AUTO="assets"; \
+				NODE_BACKEND_TARGET_AUTO="api"; \
+				NGINX_TARGET_AUTO="production"; \
+				PHP_TARGET_AUTO="production"; \
+				case "$${NODE_MODE:-assets-api}" in \
+					assets) NODE_TARGET_AUTO="assets"; NGINX_TARGET_AUTO="production"; PHP_TARGET_AUTO="production" ;; \
+					api|assets-api) NODE_BACKEND_TARGET_AUTO="api"; NGINX_TARGET_AUTO="production"; PHP_TARGET_AUTO="production" ;; \
+					framework) NODE_TARGET_AUTO="framework"; NGINX_TARGET_AUTO="production-proxy"; PHP_TARGET_AUTO="production-framework" ;; \
+					framework-api) NODE_TARGET_AUTO="framework"; NODE_BACKEND_TARGET_AUTO="api"; NGINX_TARGET_AUTO="production-proxy"; PHP_TARGET_AUTO="production-framework" ;; \
+				esac; \
+				export NODE_TARGET="$${NODE_TARGET:-$$NODE_TARGET_AUTO}"; \
+				export NODE_BACKEND_TARGET="$${NODE_BACKEND_TARGET:-$$NODE_BACKEND_TARGET_AUTO}"; \
+				export NGINX_TARGET="$${NGINX_TARGET:-$$NGINX_TARGET_AUTO}"; \
+				export PHP_TARGET="$${PHP_TARGET:-$$PHP_TARGET_AUTO}"; \
 				$(DC) -f compose.yaml -f compose.production.yaml build $$SERVICES; \
 			else \
 				$(DC) build $$SERVICES; \
@@ -168,7 +193,16 @@ build: ## Build Docker images (optionally specify service names: make build php 
 				PROFILES="$$PROFILES --profile $${DB_TYPE:-postgres}"; \
 			fi; \
 			if [ "$${ENABLE_PHP:-true}" = "true" ]; then PROFILES="$$PROFILES --profile php"; fi; \
-			if [ "$${ENABLE_NODE:-true}" = "true" ]; then PROFILES="$$PROFILES --profile node"; fi; \
+			if [ "$${ENABLE_NODE:-true}" = "true" ]; then \
+				case "$${NODE_MODE:-assets-api}" in \
+					assets|idle) PROFILES="$$PROFILES --profile node" ;; \
+					api) PROFILES="$$PROFILES --profile node-backend" ;; \
+					assets-api) PROFILES="$$PROFILES --profile node-backend" ;; \
+					framework) PROFILES="$$PROFILES --profile node" ;; \
+					framework-api) PROFILES="$$PROFILES --profile node --profile node-backend" ;; \
+					*) PROFILES="$$PROFILES --profile node" ;; \
+				esac; \
+			fi; \
 			if [ "$${ENABLE_REDIS:-true}" = "true" ]; then PROFILES="$$PROFILES --profile redis"; fi; \
 			if [ "$${ENABLE_MERCURE:-false}" = "true" ]; then PROFILES="$$PROFILES --profile mercure"; fi; \
 			if [ "$${ENABLE_MEILISEARCH:-false}" = "true" ]; then PROFILES="$$PROFILES --profile meilisearch"; fi; \
@@ -177,21 +211,29 @@ build: ## Build Docker images (optionally specify service names: make build php 
 			if [ "$${ENABLE_MINIO:-false}" = "true" ]; then PROFILES="$$PROFILES --profile minio"; fi; \
 			if [ "$${ENABLE_RABBITMQ:-false}" = "true" ]; then PROFILES="$$PROFILES --profile rabbitmq"; fi; \
 			if [ "$$ENV" = "production" ]; then \
-				NODE_TARGET_AUTO="static"; \
-				case "$${NODE_MODE:-static-api}" in \
-					static-api|api) NODE_TARGET_AUTO="api" ;; \
-					framework|framework-api) NODE_TARGET_AUTO="framework" ;; \
+				NODE_TARGET_AUTO="assets"; \
+				NODE_BACKEND_TARGET_AUTO="api"; \
+				NGINX_TARGET_AUTO="production"; \
+				PHP_TARGET_AUTO="production"; \
+				case "$${NODE_MODE:-assets-api}" in \
+					assets) NODE_TARGET_AUTO="assets"; NGINX_TARGET_AUTO="production"; PHP_TARGET_AUTO="production" ;; \
+					api|assets-api) NODE_BACKEND_TARGET_AUTO="api"; NGINX_TARGET_AUTO="production"; PHP_TARGET_AUTO="production" ;; \
+					framework) NODE_TARGET_AUTO="framework"; NGINX_TARGET_AUTO="production-proxy"; PHP_TARGET_AUTO="production-framework" ;; \
+					framework-api) NODE_TARGET_AUTO="framework"; NODE_BACKEND_TARGET_AUTO="api"; NGINX_TARGET_AUTO="production-proxy"; PHP_TARGET_AUTO="production-framework" ;; \
 				esac; \
 				export NODE_TARGET="$${NODE_TARGET:-$$NODE_TARGET_AUTO}"; \
-				echo -e "\033[0;34mBuilding Node image first (target: $$NODE_TARGET)...\033[0m" && \
-				$(DC) -f compose.yaml -f compose.production.yaml $$PROFILES build node && \
+				export NODE_BACKEND_TARGET="$${NODE_BACKEND_TARGET:-$$NODE_BACKEND_TARGET_AUTO}"; \
+				export NGINX_TARGET="$${NGINX_TARGET:-$$NGINX_TARGET_AUTO}"; \
+				export PHP_TARGET="$${PHP_TARGET:-$$PHP_TARGET_AUTO}"; \
+				echo -e "\033[0;34mBuilding Node images first (NODE_TARGET=$$NODE_TARGET, NGINX_TARGET=$$NGINX_TARGET, PHP_TARGET=$$PHP_TARGET)...\033[0m" && \
+				$(DC) -f compose.yaml -f compose.production.yaml $$PROFILES build node node-backend 2>/dev/null || true && \
 				echo -e "\033[0;34mBuilding remaining images...\033[0m" && \
 				$(DC) -f compose.yaml -f compose.production.yaml $$PROFILES build; \
 			else \
 				$(DC) $$PROFILES build; \
 			fi; \
 		else \
-			$(DC) --profile php --profile node --profile redis --profile postgres build; \
+			$(DC) --profile php --profile node --profile node-backend --profile redis --profile postgres build; \
 		fi; \
 	fi
 	@echo -e "\033[0;32mBuild completed!\033[0m"
@@ -202,6 +244,20 @@ build-no-cache: ## Build Docker images without cache (optionally specify service
 		echo -e "\033[0;33mBuilding images (no cache): $$SERVICES...\033[0m"; \
 		if [ -f .env ]; then \
 			. ./.env && if [ "$$ENV" = "production" ]; then \
+				NODE_TARGET_AUTO="assets"; \
+				NODE_BACKEND_TARGET_AUTO="api"; \
+				NGINX_TARGET_AUTO="production"; \
+				PHP_TARGET_AUTO="production"; \
+				case "$${NODE_MODE:-assets-api}" in \
+					assets) NODE_TARGET_AUTO="assets"; NGINX_TARGET_AUTO="production"; PHP_TARGET_AUTO="production" ;; \
+					api|assets-api) NODE_BACKEND_TARGET_AUTO="api"; NGINX_TARGET_AUTO="production"; PHP_TARGET_AUTO="production" ;; \
+					framework) NODE_TARGET_AUTO="framework"; NGINX_TARGET_AUTO="production-proxy"; PHP_TARGET_AUTO="production-framework" ;; \
+					framework-api) NODE_TARGET_AUTO="framework"; NODE_BACKEND_TARGET_AUTO="api"; NGINX_TARGET_AUTO="production-proxy"; PHP_TARGET_AUTO="production-framework" ;; \
+				esac; \
+				export NODE_TARGET="$${NODE_TARGET:-$$NODE_TARGET_AUTO}"; \
+				export NODE_BACKEND_TARGET="$${NODE_BACKEND_TARGET:-$$NODE_BACKEND_TARGET_AUTO}"; \
+				export NGINX_TARGET="$${NGINX_TARGET:-$$NGINX_TARGET_AUTO}"; \
+				export PHP_TARGET="$${PHP_TARGET:-$$PHP_TARGET_AUTO}"; \
 				$(DC) -f compose.yaml -f compose.production.yaml build --no-cache $$SERVICES; \
 			else \
 				$(DC) build --no-cache $$SERVICES; \
@@ -218,7 +274,16 @@ build-no-cache: ## Build Docker images without cache (optionally specify service
 				PROFILES="$$PROFILES --profile $${DB_TYPE:-postgres}"; \
 			fi; \
 			if [ "$${ENABLE_PHP:-true}" = "true" ]; then PROFILES="$$PROFILES --profile php"; fi; \
-			if [ "$${ENABLE_NODE:-true}" = "true" ]; then PROFILES="$$PROFILES --profile node"; fi; \
+			if [ "$${ENABLE_NODE:-true}" = "true" ]; then \
+				case "$${NODE_MODE:-assets-api}" in \
+					assets|idle) PROFILES="$$PROFILES --profile node" ;; \
+					api) PROFILES="$$PROFILES --profile node-backend" ;; \
+					assets-api) PROFILES="$$PROFILES --profile node-backend" ;; \
+					framework) PROFILES="$$PROFILES --profile node" ;; \
+					framework-api) PROFILES="$$PROFILES --profile node --profile node-backend" ;; \
+					*) PROFILES="$$PROFILES --profile node" ;; \
+				esac; \
+			fi; \
 			if [ "$${ENABLE_REDIS:-true}" = "true" ]; then PROFILES="$$PROFILES --profile redis"; fi; \
 			if [ "$${ENABLE_MERCURE:-false}" = "true" ]; then PROFILES="$$PROFILES --profile mercure"; fi; \
 			if [ "$${ENABLE_MEILISEARCH:-false}" = "true" ]; then PROFILES="$$PROFILES --profile meilisearch"; fi; \
@@ -227,21 +292,29 @@ build-no-cache: ## Build Docker images without cache (optionally specify service
 			if [ "$${ENABLE_MINIO:-false}" = "true" ]; then PROFILES="$$PROFILES --profile minio"; fi; \
 			if [ "$${ENABLE_RABBITMQ:-false}" = "true" ]; then PROFILES="$$PROFILES --profile rabbitmq"; fi; \
 			if [ "$$ENV" = "production" ]; then \
-				NODE_TARGET_AUTO="static"; \
-				case "$${NODE_MODE:-static-api}" in \
-					static-api|api) NODE_TARGET_AUTO="api" ;; \
-					framework|framework-api) NODE_TARGET_AUTO="framework" ;; \
+				NODE_TARGET_AUTO="assets"; \
+				NODE_BACKEND_TARGET_AUTO="api"; \
+				NGINX_TARGET_AUTO="production"; \
+				PHP_TARGET_AUTO="production"; \
+				case "$${NODE_MODE:-assets-api}" in \
+					assets) NODE_TARGET_AUTO="assets"; NGINX_TARGET_AUTO="production"; PHP_TARGET_AUTO="production" ;; \
+					api|assets-api) NODE_BACKEND_TARGET_AUTO="api"; NGINX_TARGET_AUTO="production"; PHP_TARGET_AUTO="production" ;; \
+					framework) NODE_TARGET_AUTO="framework"; NGINX_TARGET_AUTO="production-proxy"; PHP_TARGET_AUTO="production-framework" ;; \
+					framework-api) NODE_TARGET_AUTO="framework"; NODE_BACKEND_TARGET_AUTO="api"; NGINX_TARGET_AUTO="production-proxy"; PHP_TARGET_AUTO="production-framework" ;; \
 				esac; \
 				export NODE_TARGET="$${NODE_TARGET:-$$NODE_TARGET_AUTO}"; \
-				echo -e "\033[0;34mBuilding Node image first (target: $$NODE_TARGET)...\033[0m" && \
-				$(DC) -f compose.yaml -f compose.production.yaml $$PROFILES build --no-cache node && \
+				export NODE_BACKEND_TARGET="$${NODE_BACKEND_TARGET:-$$NODE_BACKEND_TARGET_AUTO}"; \
+				export NGINX_TARGET="$${NGINX_TARGET:-$$NGINX_TARGET_AUTO}"; \
+				export PHP_TARGET="$${PHP_TARGET:-$$PHP_TARGET_AUTO}"; \
+				echo -e "\033[0;34mBuilding Node images first (NODE_TARGET=$$NODE_TARGET, NGINX_TARGET=$$NGINX_TARGET, PHP_TARGET=$$PHP_TARGET)...\033[0m" && \
+				$(DC) -f compose.yaml -f compose.production.yaml $$PROFILES build --no-cache node node-backend 2>/dev/null || true && \
 				echo -e "\033[0;34mBuilding remaining images...\033[0m" && \
 				$(DC) -f compose.yaml -f compose.production.yaml $$PROFILES build --no-cache; \
 			else \
 				$(DC) $$PROFILES build --no-cache; \
 			fi; \
 		else \
-			$(DC) --profile php --profile node --profile redis --profile postgres build --no-cache; \
+			$(DC) --profile php --profile node --profile node-backend --profile redis --profile postgres build --no-cache; \
 		fi; \
 	fi
 	@echo -e "\033[0;32mBuild completed!\033[0m"
@@ -571,9 +644,8 @@ status: ## Show running containers status and image disk usage
 up: ## Start containers (optionally specify service names: make up php nginx)
 	@if [ ! -f .env ]; then echo -e "\033[0;31mError: .env not found. Run 'make init' first.\033[0m"; exit 1; fi
 	@. ./.env && if [ "$${ENV:-development}" = "production" ]; then \
-		echo -e "\033[0;33m⚠️  WARNING: Running Compose with ENV=production.\033[0m"; \
-		echo -e "\033[0;33m   For production deployments, use 'make swarm-deploy' instead.\033[0m"; \
-		echo -e "\033[0;33m   Note: DAC_OVERRIDE capability added for Compose mode (not needed in Swarm).\033[0m"; \
+		echo -e "\033[0;33m⚠️  WARNING: Running Compose in production mode.\033[0m"; \
+		echo -e "\033[0;33m   For multi-node deployments, use 'make k8s-deploy' (Kubernetes).\033[0m"; \
 		echo ""; \
 	fi
 	@SERVICES="$(filter-out $@,$(MAKECMDGOALS))"; \
@@ -616,7 +688,16 @@ up: ## Start containers (optionally specify service names: make up php nginx)
 			PROFILES="$$PROFILES --profile $${DB_TYPE:-postgres}"; \
 		fi; \
 		if [ "$${ENABLE_PHP:-true}" = "true" ]; then PROFILES="$$PROFILES --profile php"; fi; \
-		if [ "$${ENABLE_NODE:-true}" = "true" ]; then PROFILES="$$PROFILES --profile node"; fi; \
+		if [ "$${ENABLE_NODE:-true}" = "true" ]; then \
+			case "$${NODE_MODE:-assets-api}" in \
+				assets|idle) PROFILES="$$PROFILES --profile node" ;; \
+				api) PROFILES="$$PROFILES --profile node-backend" ;; \
+				assets-api) PROFILES="$$PROFILES --profile node-backend" ;; \
+				framework) PROFILES="$$PROFILES --profile node" ;; \
+				framework-api) PROFILES="$$PROFILES --profile node --profile node-backend" ;; \
+				*) PROFILES="$$PROFILES --profile node" ;; \
+			esac; \
+		fi; \
 		if [ "$${ENABLE_REDIS:-true}" = "true" ]; then PROFILES="$$PROFILES --profile redis"; fi; \
 		if [ "$${ENABLE_MERCURE:-false}" = "true" ]; then PROFILES="$$PROFILES --profile mercure"; fi; \
 		if [ "$${ENABLE_MEILISEARCH:-false}" = "true" ]; then PROFILES="$$PROFILES --profile meilisearch"; fi; \
@@ -626,13 +707,21 @@ up: ## Start containers (optionally specify service names: make up php nginx)
 		if [ "$${ENABLE_RABBITMQ:-false}" = "true" ]; then PROFILES="$$PROFILES --profile rabbitmq"; fi; \
 		echo -e "\033[0;33mStarting containers in $${ENV:-development} mode...\033[0m"; \
 		if [ "$$ENV" = "production" ]; then \
-			NODE_TARGET_AUTO="static"; \
-			case "$${NODE_MODE:-static-api}" in \
-				static-api|api) NODE_TARGET_AUTO="api" ;; \
-				framework|framework-api) NODE_TARGET_AUTO="framework" ;; \
+			NODE_TARGET_AUTO="assets"; \
+			NODE_BACKEND_TARGET_AUTO="api"; \
+			NGINX_TARGET_AUTO="production"; \
+			PHP_TARGET_AUTO="production"; \
+			case "$${NODE_MODE:-assets-api}" in \
+				assets) NODE_TARGET_AUTO="assets"; NGINX_TARGET_AUTO="production"; PHP_TARGET_AUTO="production" ;; \
+				api|assets-api) NODE_BACKEND_TARGET_AUTO="api"; NGINX_TARGET_AUTO="production"; PHP_TARGET_AUTO="production" ;; \
+				framework) NODE_TARGET_AUTO="framework"; NGINX_TARGET_AUTO="production-proxy"; PHP_TARGET_AUTO="production-framework" ;; \
+				framework-api) NODE_TARGET_AUTO="framework"; NODE_BACKEND_TARGET_AUTO="api"; NGINX_TARGET_AUTO="production-proxy"; PHP_TARGET_AUTO="production-framework" ;; \
 			esac; \
 			export NODE_TARGET="$${NODE_TARGET:-$$NODE_TARGET_AUTO}"; \
-			$(DC) -f compose.yaml -f compose.production.yaml -f compose.production-compose.yaml $$PROFILES up -d; \
+			export NODE_BACKEND_TARGET="$${NODE_BACKEND_TARGET:-$$NODE_BACKEND_TARGET_AUTO}"; \
+			export NGINX_TARGET="$${NGINX_TARGET:-$$NGINX_TARGET_AUTO}"; \
+			export PHP_TARGET="$${PHP_TARGET:-$$PHP_TARGET_AUTO}"; \
+			$(DC) -f compose.yaml -f compose.production.yaml $$PROFILES up -d; \
 		else \
 			$(DC) $$PROFILES up -d; \
 		fi; \
@@ -640,108 +729,58 @@ up: ## Start containers (optionally specify service names: make up php nginx)
 		echo -e "\033[0;34mNginx is running at http://localhost:$${NGINX_PORT:-8080}\033[0m"; \
 	fi
 
-##@ Docker Swarm
+##@ Kubernetes Deployment
 
-swarm-init: ## Initialize Swarm (single-node). Multi-node manager: make swarm-init ADDR=<ip>
-	@ADDR="$(ADDR)"; \
-	if [ -z "$$ADDR" ]; then ADDR="127.0.0.1"; fi; \
-	echo -e "\033[0;33mInitializing Docker Swarm (advertise: $$ADDR)...\033[0m"; \
-	if docker info --format '{{.Swarm.LocalNodeState}}' 2>/dev/null | grep -q "active"; then \
-		echo -e "\033[0;32mSwarm is already active!\033[0m"; \
-	else \
-		docker swarm init --advertise-addr "$$ADDR" && \
-		echo -e "\033[0;32mSwarm initialized!\033[0m"; \
-		if [ "$$ADDR" != "127.0.0.1" ]; then \
-			echo ""; \
-			echo -e "\033[0;34mTo add workers, run on each worker node:\033[0m"; \
-			docker swarm join-token worker 2>/dev/null | grep "docker swarm join"; \
-		fi; \
-	fi
-
-swarm-leave: ## Leave Docker Swarm (removes local node)
-	@echo -e "\033[0;33mLeaving Docker Swarm...\033[0m"
-	@docker swarm leave --force 2>/dev/null || echo "Not in swarm mode"
-	@echo -e "\033[0;32mSwarm node removed!\033[0m"
-
-swarm-join: ## Join existing Swarm as worker: make swarm-join TOKEN=<token> MANAGER=<ip:port>
-	@if [ -z "$(TOKEN)" ] || [ -z "$(MANAGER)" ]; then \
-		echo -e "\033[0;31mError: TOKEN and MANAGER required\033[0m"; \
-		echo "Usage: make swarm-join TOKEN=SWMTKN-1-xxx MANAGER=192.168.1.10:2377"; \
+k8s-deploy: ## Deploy to Kubernetes using Helm
+	@if [ ! -d "kubernetes" ]; then \
+		echo -e "\033[0;31mError: kubernetes/ directory not found\033[0m"; \
 		exit 1; \
 	fi
-	@echo -e "\033[0;33mJoining Docker Swarm as worker...\033[0m"
-	@if docker info --format '{{.Swarm.LocalNodeState}}' 2>/dev/null | grep -q "active"; then \
-		echo -e "\033[0;31mError: Already in a Swarm. Run 'make swarm-leave' first.\033[0m"; \
-		exit 1; \
-	fi
-	@docker swarm join --token "$(TOKEN)" "$(MANAGER)" && \
-	echo -e "\033[0;32mJoined Swarm as worker!\033[0m"
-
-swarm-deploy: ## Deploy stack to Swarm (supports DOCKER_HOST for remote deployment)
-	@if [ ! -f .env ]; then \
-		echo -e "\033[0;31mError: .env file not found. Run 'make init' first.\033[0m"; \
-		exit 1; \
-	fi
-	@. ./.env && if [ "$${ENV:-development}" != "production" ]; then \
-		echo -e "\033[0;31mError: swarm-deploy requires ENV=production\033[0m"; \
-		exit 1; \
-	fi
-	@. ./.env && export DOCKER_HOST="$${DOCKER_HOST:-}"; \
-	if [ -n "$$DOCKER_HOST" ]; then \
-		echo -e "\033[0;33mDeploying to remote Swarm ($$DOCKER_HOST)...\033[0m"; \
-	else \
-		echo -e "\033[0;33mDeploying to local Swarm...\033[0m"; \
-	fi; \
-	if ! docker info --format '{{.Swarm.LocalNodeState}}' 2>/dev/null | grep -q "active"; then \
-		echo -e "\033[0;31mError: Swarm is not active on target host.\033[0m"; \
-		exit 1; \
-	fi; \
-	STACK_NAME="$${COMPOSE_PROJECT_NAME:-zappzarapp}" && \
-	COMPOSE_FILES="-c compose.yaml -c compose.production.yaml" && \
-	if [ -f compose.production-external.yaml ]; then \
-		echo -e "\033[0;34mUsing external secrets (compose.production-external.yaml)\033[0m"; \
-		COMPOSE_FILES="$$COMPOSE_FILES -c compose.production-external.yaml"; \
+	@echo -e "\033[0;33mDeploying to Kubernetes...\033[0m"
+	@. ./.env 2>/dev/null && \
+	NAMESPACE="$${KUBE_NAMESPACE:-zappzarapp}" && \
+	VALUES_FILE="kubernetes/values.yaml" && \
+	if [ "$${ENV:-development}" = "production" ]; then \
+		VALUES_FILE="kubernetes/values.production.yaml"; \
 	fi && \
-	echo -e "\033[0;34mDeploying stack: $$STACK_NAME\033[0m" && \
-	docker stack deploy $$COMPOSE_FILES "$$STACK_NAME" && \
-	echo -e "\033[0;32mStack deployed! View with: make swarm-status\033[0m"
+	helm upgrade --install zappzarapp ./kubernetes \
+		--namespace "$$NAMESPACE" \
+		--create-namespace \
+		-f "$$VALUES_FILE" && \
+	echo -e "\033[0;32mDeployed to Kubernetes!\033[0m" && \
+	echo -e "\033[0;34mView status with: make k8s-status\033[0m"
 
-swarm-remove: ## Remove stack from Swarm (supports DOCKER_HOST for remote)
-	@. ./.env 2>/dev/null && export DOCKER_HOST="$${DOCKER_HOST:-}"; \
-	if [ -n "$$DOCKER_HOST" ]; then \
-		echo -e "\033[0;33mRemoving stack from remote Swarm ($$DOCKER_HOST)...\033[0m"; \
-	else \
-		echo -e "\033[0;33mRemoving stack from local Swarm...\033[0m"; \
-	fi; \
-	STACK_NAME="$${COMPOSE_PROJECT_NAME:-zappzarapp}" && \
-	docker stack rm "$$STACK_NAME" 2>/dev/null || echo "Stack not found" && \
-	echo -e "\033[0;32mStack removed!\033[0m"
+k8s-remove: ## Remove deployment from Kubernetes
+	@. ./.env 2>/dev/null && \
+	NAMESPACE="$${KUBE_NAMESPACE:-zappzarapp}" && \
+	echo -e "\033[0;33mRemoving deployment from Kubernetes...\033[0m" && \
+	helm uninstall zappzarapp --namespace "$$NAMESPACE" 2>/dev/null || echo "Release not found" && \
+	echo -e "\033[0;32mDeployment removed!\033[0m"
 
-swarm-status: ## Show Swarm stack status (supports DOCKER_HOST for remote)
-	@. ./.env 2>/dev/null && export DOCKER_HOST="$${DOCKER_HOST:-}"; \
-	STACK_NAME="$${COMPOSE_PROJECT_NAME:-zappzarapp}" && \
-	if [ -n "$$DOCKER_HOST" ]; then \
-		echo -e "\033[0;34mStack: $$STACK_NAME ($$DOCKER_HOST)\033[0m"; \
-	else \
-		echo -e "\033[0;34mStack: $$STACK_NAME\033[0m"; \
-	fi && \
+k8s-status: ## Show Kubernetes deployment status
+	@. ./.env 2>/dev/null && \
+	NAMESPACE="$${KUBE_NAMESPACE:-zappzarapp}" && \
+	echo -e "\033[0;34mNamespace: $$NAMESPACE\033[0m" && \
+	echo "" && \
+	echo -e "\033[0;33mHelm Release:\033[0m" && \
+	helm status zappzarapp --namespace "$$NAMESPACE" 2>/dev/null || echo "Release not found" && \
+	echo "" && \
+	echo -e "\033[0;33mPods:\033[0m" && \
+	kubectl get pods -n "$$NAMESPACE" 2>/dev/null || echo "No pods found" && \
 	echo "" && \
 	echo -e "\033[0;33mServices:\033[0m" && \
-	docker stack services "$$STACK_NAME" 2>/dev/null || echo "Stack not deployed" && \
-	echo "" && \
-	echo -e "\033[0;33mTasks:\033[0m" && \
-	docker stack ps "$$STACK_NAME" 2>/dev/null || echo "Stack not deployed"
+	kubectl get services -n "$$NAMESPACE" 2>/dev/null || echo "No services found"
 
-swarm-logs: ## Show Swarm logs (supports DOCKER_HOST): make swarm-logs [service]
-	@SERVICE="$(filter-out $@,$(MAKECMDGOALS))"; \
-	. ./.env 2>/dev/null && export DOCKER_HOST="$${DOCKER_HOST:-}"; \
-	STACK_NAME="$${COMPOSE_PROJECT_NAME:-zappzarapp}" && \
-	if [ -n "$$SERVICE" ]; then \
-		docker service logs -f "$${STACK_NAME}_$$SERVICE"; \
+k8s-logs: ## Show Kubernetes logs: make k8s-logs [pod]
+	@POD="$(filter-out $@,$(MAKECMDGOALS))"; \
+	. ./.env 2>/dev/null && \
+	NAMESPACE="$${KUBE_NAMESPACE:-zappzarapp}" && \
+	if [ -n "$$POD" ]; then \
+		kubectl logs -f "$$POD" -n "$$NAMESPACE"; \
 	else \
-		echo -e "\033[0;33mUsage: make swarm-logs <service>\033[0m"; \
-		echo "Available services:"; \
-		docker stack services "$$STACK_NAME" --format '{{.Name}}' 2>/dev/null | sed "s/$${STACK_NAME}_//"; \
+		echo -e "\033[0;33mUsage: make k8s-logs <pod-name>\033[0m"; \
+		echo "Available pods:"; \
+		kubectl get pods -n "$$NAMESPACE" --no-headers -o custom-columns=":metadata.name" 2>/dev/null; \
 	fi
 
 ##@ Node.js Development
@@ -801,6 +840,11 @@ pnpm-install-local: ## Install Node.js dependencies (Local - IDE code completion
 		exit 1; \
 	fi
 
+pnpm-sync: ## Sync Node.js dependencies (after package.json changes, e.g., frontend scaffold)
+	@echo -e "\033[0;33mSyncing Node.js dependencies...\033[0m"
+	@$(DC) run --rm --no-TTY node pnpm install
+	@echo -e "\033[0;32mDependencies synced!\033[0m"
+
 # ─────────────────────────────────────────────────────────────────────────────
 # FRONTEND SCAFFOLDING
 # ─────────────────────────────────────────────────────────────────────────────
@@ -833,17 +877,17 @@ frontend-nuxt: frontend-clean ## Scaffold Nuxt 3 frontend (interactive)
 	@echo -e "\033[0;33mScaffolding Nuxt 3 frontend...\033[0m"
 	@$(DC) run --rm -it node sh -c '\
 		cd /app/src/node/frontend && \
-		pnpm dlx nuxi@latest init . --packageManager pnpm --gitInit false && \
+		pnpm dlx nuxi@latest init . --packageManager pnpm --gitInit false --no-install && \
 		sh /app/docker/node/frontend-patches/nuxt.post-install.sh .'
-	@echo -e "\033[0;32mNuxt 3 scaffolded! Run 'make pnpm-install' to install dependencies.\033[0m"
+	@echo -e "\033[0;32mNuxt 3 scaffolded! Run 'make pnpm-sync' to install dependencies.\033[0m"
 
 frontend-next: frontend-clean ## Scaffold Next.js frontend (interactive)
 	@echo -e "\033[0;33mScaffolding Next.js frontend...\033[0m"
 	@$(DC) run --rm -it node sh -c '\
 		cd /app/src/node/frontend && \
-		pnpm dlx create-next-app@latest . --use-pnpm && \
+		pnpm dlx create-next-app@latest . --use-pnpm --skip-install && \
 		sh /app/docker/node/frontend-patches/next.post-install.sh .'
-	@echo -e "\033[0;32mNext.js scaffolded! Run 'make pnpm-install' to install dependencies.\033[0m"
+	@echo -e "\033[0;32mNext.js scaffolded! Run 'make pnpm-sync' to install dependencies.\033[0m"
 
 frontend-remix: frontend-clean ## Scaffold React Router frontend (formerly Remix v2)
 	@echo -e "\033[0;33mScaffolding React Router frontend...\033[0m"
@@ -855,7 +899,7 @@ frontend-remix: frontend-clean ## Scaffold React Router frontend (formerly Remix
 		rm -rf "$$TEMP_DIR" && \
 		cd /app/src/node/frontend && \
 		sh /app/docker/node/frontend-patches/remix.post-install.sh .'
-	@echo -e "\033[0;32mReact Router scaffolded! Run 'make pnpm-install' to install dependencies.\033[0m"
+	@echo -e "\033[0;32mReact Router scaffolded! Run 'make pnpm-sync' to install dependencies.\033[0m"
 
 frontend-sveltekit: frontend-clean ## Scaffold SvelteKit frontend (interactive)
 	@echo -e "\033[0;33mScaffolding SvelteKit frontend...\033[0m"
@@ -866,17 +910,16 @@ frontend-sveltekit: frontend-clean ## Scaffold SvelteKit frontend (interactive)
 		cp -r frontend/. /app/src/node/frontend/ && \
 		rm -rf "$$TEMP_DIR" && \
 		cd /app/src/node/frontend && \
-		pnpm add -D @sveltejs/adapter-node && \
 		sh /app/docker/node/frontend-patches/sveltekit.post-install.sh .'
-	@echo -e "\033[0;32mSvelteKit scaffolded! Run 'make pnpm-install' to install dependencies.\033[0m"
+	@echo -e "\033[0;32mSvelteKit scaffolded! Run 'make pnpm-sync' to install dependencies.\033[0m"
 
 node-build: ## Executes the frontend build inside the Node container (uses 'build' stage)
 	@echo -e "\033[0;33mExecuting frontend build...\033[0m"
 	@$(DC) run --rm --build --target build node pnpm run build
 
-node-up: ## Starts the Node service alongside the standard stack (Uses the default 'static' target)
-	@echo -e "\033[0;33mStarting Node service (static target)...\033[0m"
-	# NODE_TARGET is unset, so compose.yaml defaults to the 'static' target (sleep infinity).
+node-up: ## Starts the Node service alongside the standard stack (Uses the default 'assets' target)
+	@echo -e "\033[0;33mStarting Node service (assets target)...\033[0m"
+	# NODE_TARGET is unset, so compose.yaml defaults to the 'assets' target (sleep infinity).
 	@$(MAKE) --silent up
 
 node-api-up: ## Starts the Node.js Backend API Server (uses 'api' target) alongside the stack
@@ -1513,6 +1556,132 @@ test-coverage-node: ## Generate Vitest coverage report (HTML in build/coverage/n
 	@docker compose exec node pnpm test:coverage
 	@echo -e "\033[0;32mNode.js coverage report generated in build/coverage/node/index.html!\033[0m"
 
+##@ GOSS Container Tests
+#
+# Two-phase testing strategy:
+# 1. Build-time: GOSS tests run during docker build (--target test)
+# 2. Runtime: Integration tests verify running containers
+#
+# Build-time tests catch: Missing files, broken configs, wrong versions
+# Runtime tests catch: Network issues, TLS, service communication
+
+goss-test: ## Run runtime integration tests for all running containers
+	@echo -e "\033[0;33mRunning runtime integration tests...\033[0m"
+	@tests/goss/runtime-tests.sh all
+
+goss-test-build: ## Run GOSS build-time tests for all images
+	@echo -e "\033[0;33mRunning GOSS build-time tests...\033[0m"
+	@echo -e "\033[0;34mBuilding PHP with test stage...\033[0m"
+	@docker build --target test -f docker/php/Dockerfile . >/dev/null && echo -e "\033[0;32m✓ PHP tests passed\033[0m" || echo -e "\033[0;31m✗ PHP tests failed\033[0m"
+	@echo -e "\033[0;34mBuilding nginx with test stage...\033[0m"
+	@docker build --target test -f docker/nginx/Dockerfile . >/dev/null && echo -e "\033[0;32m✓ nginx tests passed\033[0m" || echo -e "\033[0;31m✗ nginx tests failed\033[0m"
+	@echo -e "\033[0;34mBuilding node-backend with test stage...\033[0m"
+	@docker build --target test-api -f docker/node/Dockerfile . >/dev/null && echo -e "\033[0;32m✓ node-backend tests passed\033[0m" || echo -e "\033[0;31m✗ node-backend tests failed\033[0m"
+	@echo -e "\033[0;34mBuilding postgres with test stage...\033[0m"
+	@docker build --target test -f docker/postgres/Dockerfile . >/dev/null && echo -e "\033[0;32m✓ postgres tests passed\033[0m" || echo -e "\033[0;31m✗ postgres tests failed\033[0m"
+	@echo -e "\033[0;34mBuilding redis with test stage...\033[0m"
+	@docker build --target test -f docker/redis/Dockerfile . >/dev/null && echo -e "\033[0;32m✓ redis tests passed\033[0m" || echo -e "\033[0;31m✗ redis tests failed\033[0m"
+	@echo -e "\033[0;32m✓ All build-time tests completed!\033[0m"
+
+goss-test-all: goss-test-build goss-test ## Run both build-time and runtime tests
+	@echo -e "\033[0;32m✓ All GOSS tests (build + runtime) completed!\033[0m"
+
+# Individual service runtime tests
+goss-test-nginx: ## Test nginx container (runtime)
+	@tests/goss/runtime-tests.sh nginx
+
+goss-test-php: ## Test PHP container (runtime)
+	@tests/goss/runtime-tests.sh php
+
+goss-test-node-backend: ## Test node-backend container (runtime)
+	@tests/goss/runtime-tests.sh node-backend
+
+goss-test-node-frontend: ## Test node-frontend container (runtime)
+	@tests/goss/runtime-tests.sh node-frontend
+
+goss-test-postgres: ## Test PostgreSQL container (runtime)
+	@tests/goss/runtime-tests.sh postgres
+
+goss-test-mariadb: ## Test MariaDB container (runtime)
+	@tests/goss/runtime-tests.sh mariadb
+
+goss-test-redis: ## Test Redis container (runtime)
+	@tests/goss/runtime-tests.sh redis
+
+goss-test-mercure: ## Test Mercure container (runtime)
+	@tests/goss/runtime-tests.sh mercure
+
+goss-test-meilisearch: ## Test Meilisearch container (runtime)
+	@tests/goss/runtime-tests.sh meilisearch
+
+goss-test-elasticsearch: ## Test Elasticsearch container (runtime)
+	@tests/goss/runtime-tests.sh elasticsearch
+
+goss-test-mailpit: ## Test Mailpit container (runtime)
+	@tests/goss/runtime-tests.sh mailpit
+
+goss-test-minio: ## Test MinIO container (runtime)
+	@tests/goss/runtime-tests.sh minio
+
+goss-test-rabbitmq: ## Test RabbitMQ container (runtime)
+	@tests/goss/runtime-tests.sh rabbitmq
+
+# Preset test targets (build + start + runtime test + stop)
+goss-test-preset: ## Test a specific preset (PRESET=fullstack)
+	@if [ -z "$(PRESET)" ]; then \
+		echo -e "\033[0;31mError: PRESET not specified. Usage: make goss-test-preset PRESET=fullstack\033[0m"; \
+		exit 1; \
+	fi
+	@if [ ! -f "tests/goss/presets/$(PRESET).env" ]; then \
+		echo -e "\033[0;31mError: tests/goss/presets/$(PRESET).env not found\033[0m"; \
+		echo -e "\033[0;34mAvailable presets:\033[0m"; \
+		ls -1 tests/goss/presets/*.env 2>/dev/null | xargs -n1 basename | sed 's/.env//'; \
+		exit 1; \
+	fi
+	@echo -e "\033[0;33mTesting preset: $(PRESET)\033[0m"
+	@echo -e "\033[0;34mStarting containers with preset configuration...\033[0m"
+	@docker compose --env-file tests/goss/presets/$(PRESET).env up -d --wait --build
+	@tests/goss/runtime-tests.sh all || (docker compose --env-file tests/goss/presets/$(PRESET).env down -v && exit 1)
+	@echo -e "\033[0;34mStopping preset containers...\033[0m"
+	@docker compose --env-file tests/goss/presets/$(PRESET).env down -v
+
+goss-test-preset-fullstack: ## Test Full-Stack preset (PHP + Node + Postgres + Redis)
+	@$(MAKE) --no-print-directory goss-test-preset PRESET=fullstack
+
+goss-test-preset-php-only: ## Test PHP-Only preset (PHP + Postgres + Redis)
+	@$(MAKE) --no-print-directory goss-test-preset PRESET=php-only
+
+goss-test-preset-node-only: ## Test Node-Only preset (Node + Postgres + Redis)
+	@$(MAKE) --no-print-directory goss-test-preset PRESET=node-only
+
+goss-test-preset-minimal: ## Test Minimal preset (Nginx only)
+	@$(MAKE) --no-print-directory goss-test-preset PRESET=minimal
+
+goss-test-preset-fullstack-mariadb: ## Test Full-Stack with MariaDB preset
+	@$(MAKE) --no-print-directory goss-test-preset PRESET=fullstack-mariadb
+
+goss-test-preset-fullstack-optional: ## Test Full-Stack with all optional services
+	@$(MAKE) --no-print-directory goss-test-preset PRESET=fullstack-optional
+
+goss-test-preset-framework: ## Test Framework mode preset (Nuxt/Next + Express)
+	@$(MAKE) --no-print-directory goss-test-preset PRESET=framework
+
+goss-test-matrix: ## Run all preset tests (CI/CD matrix)
+	@echo -e "\033[0;33mRunning GOSS test matrix (all presets)...\033[0m"
+	@FAILED=0; \
+	for preset in tests/goss/presets/*.env; do \
+		PRESET_NAME=$$(basename "$$preset" .env); \
+		echo -e "\n\033[0;35m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\033[0m"; \
+		echo -e "\033[0;35mPreset: $$PRESET_NAME\033[0m"; \
+		echo -e "\033[0;35m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\033[0m"; \
+		$(MAKE) --no-print-directory goss-test-preset PRESET=$$PRESET_NAME || FAILED=1; \
+	done; \
+	if [ $$FAILED -eq 1 ]; then \
+		echo -e "\033[0;31m✗ Some preset tests failed!\033[0m"; \
+		exit 1; \
+	fi
+	@echo -e "\033[0;32m✓ All preset tests passed!\033[0m"
+
 validate: ## Validate composer.json/lock and package.json/lock files
 	@echo -e "\033[0;33mValidating Composer configuration...\033[0m"
 	@docker compose exec php composer validate
@@ -1535,12 +1704,14 @@ validate: ## Validate composer.json/lock and package.json/lock files
 
 secrets: ## Generate missing Docker Secrets (idempotent)
 	@mkdir -p secrets
-	@chmod 700 secrets
+	# Mode 755: Directory readable by all (needed for bind-mount in Docker Compose)
+	# For stricter security, use Kubernetes with native K8s Secrets + securityContext.fsGroup
+	@chmod 755 secrets
 	@echo -e "\033[0;33mChecking Docker Secrets...\033[0m"
 	@if [ ! -f secrets/db_password.txt ]; then \
 		echo -e "\033[0;34mGenerating db_password secret...\033[0m"; \
 		openssl rand -base64 24 | tr -dc 'a-zA-Z0-9' | head -c 24 > secrets/db_password.txt; \
-		chmod 600 secrets/db_password.txt; \
+		chmod 644 secrets/db_password.txt; \
 		echo -e "\033[0;32mdb_password secret generated.\033[0m"; \
 	else \
 		echo -e "\033[0;32mdb_password secret already exists.\033[0m"; \
@@ -1548,7 +1719,7 @@ secrets: ## Generate missing Docker Secrets (idempotent)
 	@if [ ! -f secrets/db_root_password.txt ]; then \
 		echo -e "\033[0;34mGenerating db_root_password secret...\033[0m"; \
 		openssl rand -base64 24 | tr -dc 'a-zA-Z0-9' | head -c 24 > secrets/db_root_password.txt; \
-		chmod 600 secrets/db_root_password.txt; \
+		chmod 644 secrets/db_root_password.txt; \
 		echo -e "\033[0;32mdb_root_password secret generated.\033[0m"; \
 	else \
 		echo -e "\033[0;32mdb_root_password secret already exists.\033[0m"; \
@@ -1556,7 +1727,7 @@ secrets: ## Generate missing Docker Secrets (idempotent)
 	@if [ ! -f secrets/encryption_key.txt ]; then \
 		echo -e "\033[0;34mGenerating encryption_key secret...\033[0m"; \
 		openssl rand -base64 32 > secrets/encryption_key.txt; \
-		chmod 600 secrets/encryption_key.txt; \
+		chmod 644 secrets/encryption_key.txt; \
 		echo -e "\033[0;32mencryption_key secret generated.\033[0m"; \
 	else \
 		echo -e "\033[0;32mencryption_key secret already exists.\033[0m"; \
@@ -1564,7 +1735,7 @@ secrets: ## Generate missing Docker Secrets (idempotent)
 	@if [ ! -f secrets/backup_encryption_key.txt ]; then \
 		echo -e "\033[0;34mGenerating backup_encryption_key secret...\033[0m"; \
 		openssl rand -base64 32 > secrets/backup_encryption_key.txt; \
-		chmod 600 secrets/backup_encryption_key.txt; \
+		chmod 644 secrets/backup_encryption_key.txt; \
 		echo -e "\033[0;32mbackup_encryption_key secret generated.\033[0m"; \
 	else \
 		echo -e "\033[0;32mbackup_encryption_key secret already exists.\033[0m"; \
@@ -1572,7 +1743,7 @@ secrets: ## Generate missing Docker Secrets (idempotent)
 	@if [ ! -f secrets/meilisearch_master_key.txt ]; then \
 		echo -e "\033[0;34mGenerating meilisearch_master_key secret...\033[0m"; \
 		openssl rand -base64 32 | tr -dc 'a-zA-Z0-9' | head -c 32 > secrets/meilisearch_master_key.txt; \
-		chmod 600 secrets/meilisearch_master_key.txt; \
+		chmod 644 secrets/meilisearch_master_key.txt; \
 		echo -e "\033[0;32mmeilisearch_master_key secret generated.\033[0m"; \
 	else \
 		echo -e "\033[0;32mmeilisearch_master_key secret already exists.\033[0m"; \
@@ -1580,7 +1751,7 @@ secrets: ## Generate missing Docker Secrets (idempotent)
 	@if [ ! -f secrets/minio_root_user.txt ]; then \
 		echo -e "\033[0;34mGenerating minio_root_user secret...\033[0m"; \
 		echo "minioadmin" > secrets/minio_root_user.txt; \
-		chmod 600 secrets/minio_root_user.txt; \
+		chmod 644 secrets/minio_root_user.txt; \
 		echo -e "\033[0;32mminio_root_user secret generated.\033[0m"; \
 	else \
 		echo -e "\033[0;32mminio_root_user secret already exists.\033[0m"; \
@@ -1588,7 +1759,7 @@ secrets: ## Generate missing Docker Secrets (idempotent)
 	@if [ ! -f secrets/minio_root_password.txt ]; then \
 		echo -e "\033[0;34mGenerating minio_root_password secret...\033[0m"; \
 		openssl rand -base64 24 | tr -dc 'a-zA-Z0-9' | head -c 24 > secrets/minio_root_password.txt; \
-		chmod 600 secrets/minio_root_password.txt; \
+		chmod 644 secrets/minio_root_password.txt; \
 		echo -e "\033[0;32mminio_root_password secret generated.\033[0m"; \
 	else \
 		echo -e "\033[0;32mminio_root_password secret already exists.\033[0m"; \
@@ -1596,7 +1767,7 @@ secrets: ## Generate missing Docker Secrets (idempotent)
 	@if [ ! -f secrets/rabbitmq_user.txt ]; then \
 		echo -e "\033[0;34mGenerating rabbitmq_user secret...\033[0m"; \
 		echo "app" > secrets/rabbitmq_user.txt; \
-		chmod 600 secrets/rabbitmq_user.txt; \
+		chmod 644 secrets/rabbitmq_user.txt; \
 		echo -e "\033[0;32mrabbitmq_user secret generated.\033[0m"; \
 	else \
 		echo -e "\033[0;32mrabbitmq_user secret already exists.\033[0m"; \
@@ -1604,7 +1775,7 @@ secrets: ## Generate missing Docker Secrets (idempotent)
 	@if [ ! -f secrets/rabbitmq_password.txt ]; then \
 		echo -e "\033[0;34mGenerating rabbitmq_password secret...\033[0m"; \
 		openssl rand -base64 24 | tr -dc 'a-zA-Z0-9' | head -c 24 > secrets/rabbitmq_password.txt; \
-		chmod 600 secrets/rabbitmq_password.txt; \
+		chmod 644 secrets/rabbitmq_password.txt; \
 		echo -e "\033[0;32mrabbitmq_password secret generated.\033[0m"; \
 	else \
 		echo -e "\033[0;32mrabbitmq_password secret already exists.\033[0m"; \
@@ -1612,7 +1783,7 @@ secrets: ## Generate missing Docker Secrets (idempotent)
 	@if [ ! -f secrets/mercure_jwt_secret.txt ]; then \
 		echo -e "\033[0;34mGenerating mercure_jwt_secret secret...\033[0m"; \
 		openssl rand -base64 32 > secrets/mercure_jwt_secret.txt; \
-		chmod 600 secrets/mercure_jwt_secret.txt; \
+		chmod 644 secrets/mercure_jwt_secret.txt; \
 		echo -e "\033[0;32mmercure_jwt_secret secret generated.\033[0m"; \
 	else \
 		echo -e "\033[0;32mmercure_jwt_secret secret already exists.\033[0m"; \

@@ -1,0 +1,73 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "zappzarapp.fullname" . }}-config
+  namespace: {{ include "zappzarapp.namespace" . }}
+  labels:
+    {{- include "zappzarapp.labels" . | nindent 4 }}
+data:
+  # Environment
+  ENV: {{ .Values.global.env | quote }}
+  DOMAIN: {{ .Values.global.domain | quote }}
+
+  # Database configuration
+  DB_NAME: {{ .Values.config.database.name | quote }}
+  DB_USER: {{ .Values.config.database.user | quote }}
+  DB_HOST: {{ include "zappzarapp.databaseHost" . | quote }}
+  DB_PORT: {{ include "zappzarapp.databasePort" . | quote }}
+  {{- if .Values.postgres.enabled }}
+  DB_TYPE: "postgres"
+  {{- else if .Values.mariadb.enabled }}
+  DB_TYPE: "mariadb"
+  {{- end }}
+
+  # Redis configuration
+  {{- if .Values.redis.enabled }}
+  REDIS_HOST: {{ printf "%s-redis" (include "zappzarapp.fullname" .) | quote }}
+  REDIS_PORT: {{ .Values.redis.service.port | quote }}
+  {{- end }}
+
+  # Logging
+  LOG_LEVEL: {{ .Values.config.logLevel | quote }}
+  LOG_FORMAT: {{ .Values.config.logFormat | quote }}
+
+  # PHP configuration
+  PHP_MEMORY_LIMIT: {{ .Values.config.php.memoryLimit | quote }}
+  PHP_MAX_EXECUTION_TIME: {{ .Values.config.php.maxExecutionTime | quote }}
+  PHP_UPLOAD_MAX_FILESIZE: {{ .Values.config.php.uploadMaxFilesize | quote }}
+
+  # Node configuration
+  {{- if .Values.node.enabled }}
+  NODE_MODE: {{ .Values.node.mode | quote }}
+  NODE_PORT: {{ .Values.config.node.port | quote }}
+  {{- end }}
+
+  # Optional services URLs (only if enabled)
+  {{- if .Values.mercure.enabled }}
+  MERCURE_URL: {{ printf "http://%s-mercure:%d/.well-known/mercure" (include "zappzarapp.fullname" .) (.Values.mercure.service.port | int) | quote }}
+  MERCURE_PUBLIC_URL: {{ printf "https://%s/.well-known/mercure" .Values.global.domain | quote }}
+  {{- end }}
+
+  {{- if .Values.meilisearch.enabled }}
+  MEILISEARCH_HOST: {{ printf "%s-meilisearch" (include "zappzarapp.fullname" .) | quote }}
+  MEILISEARCH_PORT: {{ .Values.meilisearch.service.port | quote }}
+  {{- end }}
+
+  {{- if .Values.elasticsearch.enabled }}
+  ELASTICSEARCH_HOST: {{ printf "%s-elasticsearch" (include "zappzarapp.fullname" .) | quote }}
+  ELASTICSEARCH_PORT: {{ .Values.elasticsearch.service.port | quote }}
+  {{- end }}
+
+  {{- if .Values.minio.enabled }}
+  MINIO_ENDPOINT: {{ printf "%s-minio:%d" (include "zappzarapp.fullname" .) (.Values.minio.service.port | int) | quote }}
+  {{- end }}
+
+  {{- if .Values.rabbitmq.enabled }}
+  RABBITMQ_HOST: {{ printf "%s-rabbitmq" (include "zappzarapp.fullname" .) | quote }}
+  RABBITMQ_PORT: {{ .Values.rabbitmq.service.port | quote }}
+  {{- end }}
+
+  {{- if .Values.mailpit.enabled }}
+  MAIL_HOST: {{ printf "%s-mailpit" (include "zappzarapp.fullname" .) | quote }}
+  MAIL_PORT: {{ .Values.mailpit.service.smtpPort | quote }}
+  {{- end }}
