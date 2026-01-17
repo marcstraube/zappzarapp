@@ -119,8 +119,8 @@ HEALTHCHECK --interval=30s --timeout=3s --start-period=40s --retries=3 \
     CMD SCRIPT_NAME=/ping SCRIPT_FILENAME=/ping REQUEST_METHOD=GET cgi-fcgi -bind -connect /var/run/php-fpm/php-fpm.sock || exit 1
 
 # Setup Log Directories
-RUN mkdir -p /var/log/{app,php} && \
-    chown -R www-data:www-data /var/log/{app,php}
+RUN mkdir -p /var/log/app /var/log/php && \
+    chown -R www-data:www-data /var/log/app /var/log/php
 
 # Set Working Directory
 WORKDIR /var/www/html
@@ -139,7 +139,7 @@ RUN apk add --no-cache git unzip su-exec $PHPIZE_DEPS linux-headers && \
         groupmod -g $GROUP_ID www-data && \
         apk del .user-deps; \
     fi && \
-    chown -R www-data:www-data /var/log/{app,php} /home/www-data
+    chown -R www-data:www-data /var/log/app /var/log/php /home/www-data
 
 # Install Composer (only in development)
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
@@ -230,14 +230,18 @@ CMD ["php-fpm"]
 # Usage: docker build --target test -f docker/php/Dockerfile .
 FROM production-base AS test
 
+# Generate autoloader (normally done in production stage, but test runs on production-base)
+RUN composer dump-autoload --optimize --no-dev --classmap-authoritative
+
 # Copy GOSS binary from official image
-COPY --from=ghcr.io/goss-org/goss:latest /goss /usr/local/bin/goss
+COPY --from=ghcr.io/goss-org/goss:latest /usr/bin/goss /usr/local/bin/goss
+RUN chmod +x /usr/local/bin/goss
 
 # Copy test specification
 COPY tests/goss/services/php.yaml /goss.yaml
 
 # Run GOSS tests (fails build if tests fail)
-RUN goss validate --format documentation
+RUN goss -g /goss.yaml validate --format documentation
 
 # --- 7. PRODUCTION FRAMEWORK STAGE (no Vite Assets) ---
 # Use for: NODE_MODE=framework, framework-api

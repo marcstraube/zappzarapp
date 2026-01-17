@@ -384,8 +384,8 @@ services:
       - "${ELASTICSEARCH_PORT:-9200}:9200"
       - "${ELASTICSEARCH_TRANSPORT_PORT:-9300}:9300"
     environment:
-      # Development: Disable security for easier local testing
-      xpack.security.enabled: 'false'
+      # Development: Keep security enabled for internal TLS (dev/prod parity)
+      # Security settings are inherited from compose.yaml
       # Enable verbose logging
       logger.level: INFO
 
@@ -404,7 +404,9 @@ services:
       - "${MINIO_CONSOLE_PORT:-9001}:9001"
     volumes:
       # SSL/TLS Certificates for encrypted connections
-      - ./docker/certs:/root/.minio/certs:ro
+      # MinIO expects public.crt and private.key in /root/.minio/certs/
+      - ./docker/certs/cert.crt:/root/.minio/certs/public.crt:ro
+      - ./docker/certs/cert.key:/root/.minio/certs/private.key:ro
     environment:
       # Enable TLS (MinIO auto-detects certs in /root/.minio/certs/)
       MINIO_SERVER_URL: https://minio:9000

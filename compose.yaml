@@ -134,6 +134,9 @@ services:
     volumes:
       # SSL certificates for external database connections
       - ./docker/certs:/etc/ssl/db-certs:ro
+      # SSL certificates for internal HTTPS server (Nuxt/Nitro)
+      - ./docker/certs/cert.crt:/etc/ssl/certs/cert.crt:ro
+      - ./docker/certs/cert.key:/etc/ssl/private/cert.key:ro
       # Secrets (bind mount)
       - ./secrets:/run/secrets:ro
     environment:
@@ -142,6 +145,9 @@ services:
       - LOG_LEVEL=${LOG_LEVEL:-info}
       - LOG_FORMAT=${LOG_FORMAT:-json}
       - CORS_ORIGINS=${CORS_ORIGINS:-}
+      # Internal TLS for Nitro server (Nuxt)
+      - NITRO_SSL_CERT=/etc/ssl/certs/cert.crt
+      - NITRO_SSL_KEY=/etc/ssl/private/cert.key
       # Database (12-Factor: DATABASE_URL takes precedence)
       - DATABASE_URL=${DATABASE_URL:-}
       - DB_TYPE=${DB_TYPE:-postgres}
@@ -181,6 +187,9 @@ services:
     volumes:
       # SSL certificates for external database connections
       - ./docker/certs:/etc/ssl/db-certs:ro
+      # SSL certificates for internal HTTPS server
+      - ./docker/certs/cert.crt:/etc/ssl/certs/cert.crt:ro
+      - ./docker/certs/cert.key:/etc/ssl/private/cert.key:ro
       # Secrets (bind mount)
       - ./secrets:/run/secrets:ro
     environment:
@@ -348,19 +357,25 @@ services:
     profiles: ["mercure"]
     environment:
       TZ: ${TZ:-UTC}
-      # Server configuration
-      SERVER_NAME: ':80'
+      # Server configuration (HTTPS for zero-trust internal TLS)
+      SERVER_NAME: ':443'
       # JWT keys loaded from secret file via entrypoint.sh
       # Allow anonymous subscribers (set to 0 in production for auth-only)
       MERCURE_EXTRA_DIRECTIVES: |
         anonymous
         cors_origins *
+      # Caddy TLS configuration - use custom certificates
+      CADDY_SERVER_EXTRA_DIRECTIVES: |
+        tls /etc/mercure/certs/cert.crt /etc/mercure/certs/cert.key
     expose:
-      - "80"
+      - "443"
     volumes:
       - mercure-data:/data
       # Secrets (bind mount)
       - ./secrets:/run/secrets:ro
+      # TLS certificates for internal HTTPS
+      - ./docker/certs/cert.crt:/etc/mercure/certs/cert.crt:ro
+      - ./docker/certs/cert.key:/etc/mercure/certs/cert.key:ro
     networks:
       - backend
     # Health check defined in Dockerfile
@@ -384,12 +399,18 @@ services:
       MEILI_ENV: ${ENV:-development}
       # Disable analytics
       MEILI_NO_ANALYTICS: "true"
+      # TLS configuration for zero-trust internal HTTPS
+      MEILI_SSL_CERT_PATH: /etc/ssl/certs/cert.crt
+      MEILI_SSL_KEY_PATH: /etc/ssl/private/cert.key
     expose:
       - "7700"
     volumes:
       - meilisearch-data:/meili_data
       # Secrets (bind mount)
       - ./secrets:/run/secrets:ro
+      # TLS certificates for internal HTTPS
+      - ./docker/certs/cert.crt:/etc/ssl/certs/cert.crt:ro
+      - ./docker/certs/cert.key:/etc/ssl/private/cert.key:ro
     networks:
       - database
     # Health check defined in Dockerfile
@@ -410,8 +431,17 @@ services:
       TZ: ${TZ:-UTC}
       # Single-node discovery (no cluster)
       discovery.type: single-node
-      # Disable security features for development (enable in production!)
-      xpack.security.enabled: 'false'
+      # Security with TLS for zero-trust internal HTTPS
+      xpack.security.enabled: 'true'
+      xpack.security.http.ssl.enabled: 'true'
+      xpack.security.http.ssl.key: /usr/share/elasticsearch/config/certs/cert.key
+      xpack.security.http.ssl.certificate: /usr/share/elasticsearch/config/certs/cert.crt
+      xpack.security.http.ssl.verification_mode: 'none'
+      # Disable transport TLS (single-node, no inter-node communication)
+      xpack.security.transport.ssl.enabled: 'false'
+      # Allow anonymous access for internal services
+      xpack.security.authc.anonymous.roles: 'superuser'
+      xpack.security.authc.anonymous.username: 'anonymous_user'
       # JVM heap size (should be ~50% of available container memory)
       ES_JAVA_OPTS: '-Xms${ELASTICSEARCH_HEAP_SIZE:-512m} -Xmx${ELASTICSEARCH_HEAP_SIZE:-512m}'
       # Disable machine learning (reduces memory footprint)
@@ -424,6 +454,9 @@ services:
     volumes:
       - elasticsearch-data:/usr/share/elasticsearch/data
       - elasticsearch-backup:/usr/share/elasticsearch/backup
+      # TLS certificates for internal HTTPS
+      - ./docker/certs/cert.crt:/usr/share/elasticsearch/config/certs/cert.crt:ro
+      - ./docker/certs/cert.key:/usr/share/elasticsearch/config/certs/cert.key:ro
     networks:
       - database
     # Health check defined in Dockerfile

@@ -32,10 +32,11 @@ COPY docker/redis/healthcheck.sh /usr/local/bin/healthcheck.sh
 RUN chmod +x /usr/local/bin/healthcheck.sh
 
 # Copy GOSS binary from official image
-COPY --from=ghcr.io/goss-org/goss:latest /goss /usr/local/bin/goss
+COPY --from=ghcr.io/goss-org/goss:latest /usr/bin/goss /usr/local/bin/goss
+RUN chmod +x /usr/local/bin/goss
 
 # Copy test specification
 COPY tests/goss/services/redis.yaml /goss.yaml
 
 # Run GOSS tests (fails build if tests fail)
-RUN goss validate --format documentation
+RUN goss -g /goss.yaml validate --format documentation

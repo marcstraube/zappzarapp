@@ -1627,7 +1627,7 @@ goss-test-rabbitmq: ## Test RabbitMQ container (runtime)
 	@tests/goss/runtime-tests.sh rabbitmq
 
 # Preset test targets (build + start + runtime test + stop)
-goss-test-preset: ## Test a specific preset (PRESET=fullstack)
+goss-test-preset: ## Test a preset (PRESET=dev-fullstack, VERBOSE=1 for details)
 	@if [ -z "$(PRESET)" ]; then \
 		echo -e "\033[0;31mError: PRESET not specified. Usage: make goss-test-preset PRESET=fullstack\033[0m"; \
 		exit 1; \
@@ -1639,34 +1639,59 @@ goss-test-preset: ## Test a specific preset (PRESET=fullstack)
 		exit 1; \
 	fi
 	@echo -e "\033[0;33mTesting preset: $(PRESET)\033[0m"
-	@echo -e "\033[0;34mStarting containers with preset configuration...\033[0m"
-	@docker compose --env-file tests/goss/presets/$(PRESET).env up -d --wait --build
-	@tests/goss/runtime-tests.sh all || (docker compose --env-file tests/goss/presets/$(PRESET).env down -v && exit 1)
-	@echo -e "\033[0;34mStopping preset containers...\033[0m"
-	@docker compose --env-file tests/goss/presets/$(PRESET).env down -v
+	@VERBOSE=$(VERBOSE) tests/goss/preset-runner.sh $(PRESET) "up -d --wait --build --force-recreate"
+	@tests/goss/runtime-tests.sh all --env-file tests/goss/presets/$(PRESET).env || (VERBOSE=$(VERBOSE) tests/goss/preset-runner.sh $(PRESET) "down -v" && exit 1)
+	@VERBOSE=$(VERBOSE) tests/goss/preset-runner.sh $(PRESET) "down -v"
 
-goss-test-preset-fullstack: ## Test Full-Stack preset (PHP + Node + Postgres + Redis)
-	@$(MAKE) --no-print-directory goss-test-preset PRESET=fullstack
+# Development Presets (use host-mounted volumes, require dependencies)
+goss-test-dev-fullstack: ## [DEV] Full-Stack (PHP + Node + Postgres + Redis)
+	@$(MAKE) --no-print-directory goss-test-preset PRESET=dev-fullstack
 
-goss-test-preset-php-only: ## Test PHP-Only preset (PHP + Postgres + Redis)
-	@$(MAKE) --no-print-directory goss-test-preset PRESET=php-only
+goss-test-dev-php-only: ## [DEV] PHP-Only (PHP + Postgres + Redis)
+	@$(MAKE) --no-print-directory goss-test-preset PRESET=dev-php-only
 
-goss-test-preset-node-only: ## Test Node-Only preset (Node + Postgres + Redis)
-	@$(MAKE) --no-print-directory goss-test-preset PRESET=node-only
+goss-test-dev-node-only: ## [DEV] Node-Only (Node + Postgres + Redis)
+	@$(MAKE) --no-print-directory goss-test-preset PRESET=dev-node-only
 
-goss-test-preset-minimal: ## Test Minimal preset (Nginx only)
-	@$(MAKE) --no-print-directory goss-test-preset PRESET=minimal
+goss-test-dev-minimal: ## [DEV] Minimal (Nginx only)
+	@$(MAKE) --no-print-directory goss-test-preset PRESET=dev-minimal
 
-goss-test-preset-fullstack-mariadb: ## Test Full-Stack with MariaDB preset
-	@$(MAKE) --no-print-directory goss-test-preset PRESET=fullstack-mariadb
+goss-test-dev-fullstack-mariadb: ## [DEV] Full-Stack with MariaDB
+	@$(MAKE) --no-print-directory goss-test-preset PRESET=dev-fullstack-mariadb
 
-goss-test-preset-fullstack-optional: ## Test Full-Stack with all optional services
-	@$(MAKE) --no-print-directory goss-test-preset PRESET=fullstack-optional
+goss-test-dev-fullstack-optional: ## [DEV] Full-Stack with all optional services
+	@$(MAKE) --no-print-directory goss-test-preset PRESET=dev-fullstack-optional
 
-goss-test-preset-framework: ## Test Framework mode preset (Nuxt/Next + Express)
-	@$(MAKE) --no-print-directory goss-test-preset PRESET=framework
+goss-test-dev-framework: ## [DEV] Framework mode (Nuxt/Next + Express)
+	@$(MAKE) --no-print-directory goss-test-preset PRESET=dev-framework
 
-goss-test-matrix: ## Run all preset tests (CI/CD matrix)
+goss-test-dev-assets: ## [DEV] Assets-only (Vite HMR, no Express)
+	@$(MAKE) --no-print-directory goss-test-preset PRESET=dev-assets
+
+goss-test-dev-idle: ## [DEV] Idle mode (Node container idle)
+	@$(MAKE) --no-print-directory goss-test-preset PRESET=dev-idle
+
+# Production Presets (self-contained images, no host dependencies)
+goss-test-prod-fullstack: ## [PROD] Full-Stack (PHP + Node + Postgres + Redis)
+	@$(MAKE) --no-print-directory goss-test-preset PRESET=prod-fullstack
+
+goss-test-prod-fullstack-mariadb: ## [PROD] Full-Stack with MariaDB
+	@$(MAKE) --no-print-directory goss-test-preset PRESET=prod-fullstack-mariadb
+
+goss-test-prod-fullstack-optional: ## [PROD] Full-Stack with all optional services
+	@$(MAKE) --no-print-directory goss-test-preset PRESET=prod-fullstack-optional
+
+goss-test-prod-php-only: ## [PROD] PHP-Only (PHP + Postgres + Redis)
+	@$(MAKE) --no-print-directory goss-test-preset PRESET=prod-php-only
+
+goss-test-prod-node-only: ## [PROD] Node-Only (Node + Postgres + Redis)
+	@$(MAKE) --no-print-directory goss-test-preset PRESET=prod-node-only
+
+goss-test-prod-minimal: ## [PROD] Minimal (Nginx only)
+	@$(MAKE) --no-print-directory goss-test-preset PRESET=prod-minimal
+
+# Matrix Tests (VERBOSE=1 for full output)
+goss-test-matrix: ## Run ALL preset tests (dev + prod, VERBOSE=1 for details)
 	@echo -e "\033[0;33mRunning GOSS test matrix (all presets)...\033[0m"
 	@FAILED=0; \
 	for preset in tests/goss/presets/*.env; do \
@@ -1674,13 +1699,45 @@ goss-test-matrix: ## Run all preset tests (CI/CD matrix)
 		echo -e "\n\033[0;35m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\033[0m"; \
 		echo -e "\033[0;35mPreset: $$PRESET_NAME\033[0m"; \
 		echo -e "\033[0;35m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\033[0m"; \
-		$(MAKE) --no-print-directory goss-test-preset PRESET=$$PRESET_NAME || FAILED=1; \
+		$(MAKE) --no-print-directory goss-test-preset PRESET=$$PRESET_NAME VERBOSE=$(VERBOSE) || FAILED=1; \
 	done; \
 	if [ $$FAILED -eq 1 ]; then \
 		echo -e "\033[0;31m✗ Some preset tests failed!\033[0m"; \
 		exit 1; \
 	fi
 	@echo -e "\033[0;32m✓ All preset tests passed!\033[0m"
+
+goss-test-matrix-dev: ## Run development preset tests only (VERBOSE=1 for details)
+	@echo -e "\033[0;33mRunning GOSS test matrix (development presets)...\033[0m"
+	@FAILED=0; \
+	for preset in tests/goss/presets/dev-*.env; do \
+		PRESET_NAME=$$(basename "$$preset" .env); \
+		echo -e "\n\033[0;35m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\033[0m"; \
+		echo -e "\033[0;35mPreset: $$PRESET_NAME\033[0m"; \
+		echo -e "\033[0;35m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\033[0m"; \
+		$(MAKE) --no-print-directory goss-test-preset PRESET=$$PRESET_NAME VERBOSE=$(VERBOSE) || FAILED=1; \
+	done; \
+	if [ $$FAILED -eq 1 ]; then \
+		echo -e "\033[0;31m✗ Some development preset tests failed!\033[0m"; \
+		exit 1; \
+	fi
+	@echo -e "\033[0;32m✓ All development preset tests passed!\033[0m"
+
+goss-test-matrix-prod: ## Run production preset tests only (CI/CD, VERBOSE=1 for details)
+	@echo -e "\033[0;33mRunning GOSS test matrix (production presets)...\033[0m"
+	@FAILED=0; \
+	for preset in tests/goss/presets/prod-*.env; do \
+		PRESET_NAME=$$(basename "$$preset" .env); \
+		echo -e "\n\033[0;35m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\033[0m"; \
+		echo -e "\033[0;35mPreset: $$PRESET_NAME\033[0m"; \
+		echo -e "\033[0;35m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\033[0m"; \
+		$(MAKE) --no-print-directory goss-test-preset PRESET=$$PRESET_NAME VERBOSE=$(VERBOSE) || FAILED=1; \
+	done; \
+	if [ $$FAILED -eq 1 ]; then \
+		echo -e "\033[0;31m✗ Some production preset tests failed!\033[0m"; \
+		exit 1; \
+	fi
+	@echo -e "\033[0;32m✓ All production preset tests passed!\033[0m"
 
 validate: ## Validate composer.json/lock and package.json/lock files
 	@echo -e "\033[0;33mValidating Composer configuration...\033[0m"

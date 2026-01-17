@@ -94,13 +94,14 @@ RUN chmod -R 555 /var/www/html/public
 FROM production AS test
 
 # Copy GOSS binary from official image
-COPY --from=ghcr.io/goss-org/goss:latest /goss /usr/local/bin/goss
+COPY --from=ghcr.io/goss-org/goss:latest /usr/bin/goss /usr/local/bin/goss
+RUN chmod +x /usr/local/bin/goss
 
 # Copy test specification
 COPY tests/goss/services/nginx.yaml /goss.yaml
 
 # Run GOSS tests (fails build if tests fail)
-RUN goss validate --format documentation
+RUN goss -g /goss.yaml validate --format documentation
 
 # --- 5. PRODUCTION PROXY STAGE (no Vite Assets) ---
 # Use for: NODE_MODE=framework, framework-api

@@ -6,7 +6,7 @@ ARG ELASTICSEARCH_VERSION=8.17.0
 
 FROM docker.elastic.co/elasticsearch/elasticsearch:${ELASTICSEARCH_VERSION}
 
-# Health check for Elasticsearch
+# Health check for Elasticsearch (HTTPS for zero-trust internal TLS)
 # Uses the cluster health API with local node check
 HEALTHCHECK --interval=15s --timeout=5s --start-period=60s --retries=5 \
-    CMD curl -sf http://localhost:9200/_cluster/health?local=true | grep -qE '"status":"(green|yellow)"' || exit 1
+    CMD curl -sf --insecure https://localhost:9200/_cluster/health?local=true | grep -qE '"status":"(green|yellow)"' || exit 1

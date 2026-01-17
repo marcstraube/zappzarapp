@@ -10,11 +10,11 @@ FROM dunglas/mercure:v${MERCURE_VERSION}
 COPY docker/mercure/entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
 
-# Health check for Mercure Hub
+# Health check for Mercure Hub (HTTPS for zero-trust internal TLS)
 # Mercure exposes a health endpoint at /healthz
 # See: https://github.com/dunglas/mercure/blob/main/docs/hub/config.md
 # Use 127.0.0.1 instead of localhost to avoid IPv6 resolution issues
 HEALTHCHECK --interval=10s --timeout=3s --start-period=5s --retries=3 \
-    CMD wget --no-verbose --tries=1 --spider http://127.0.0.1:80/healthz || exit 1
+    CMD wget --no-verbose --tries=1 --spider --no-check-certificate https://127.0.0.1:443/healthz || exit 1
 
 ENTRYPOINT ["/entrypoint.sh"]

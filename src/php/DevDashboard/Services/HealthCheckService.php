@@ -257,7 +257,7 @@ class HealthCheckService
     }
 
     /**
-     * Check Mercure connection
+     * Check Mercure connection (HTTPS on port 443)
      *
      * @return array<string, mixed>
      * @SuppressWarnings("PHPMD.UnusedLocalVariable")
@@ -266,19 +266,19 @@ class HealthCheckService
     private function checkMercure(): array
     {
         $host = 'mercure';
-        $port = 80;
+        $port = 443;
 
         $socket = @fsockopen($host, $port, $_errno, $errstr, 1);
         if ($socket) {
             fclose($socket);
-            return ['connected' => true, 'host' => $host, 'port' => $port];
+            return ['connected' => true, 'host' => $host, 'port' => $port, 'tls' => true];
         }
 
         return ['connected' => false, 'error' => $errstr];
     }
 
     /**
-     * Check Meilisearch connection
+     * Check Meilisearch connection (HTTPS on port 7700)
      *
      * @return array<string, mixed>
      * @SuppressWarnings("PHPMD.UnusedLocalVariable")
@@ -292,14 +292,14 @@ class HealthCheckService
         $socket = @fsockopen($host, $port, $_errno, $errstr, 1);
         if ($socket) {
             fclose($socket);
-            return ['connected' => true, 'host' => $host, 'port' => $port];
+            return ['connected' => true, 'host' => $host, 'port' => $port, 'tls' => true];
         }
 
         return ['connected' => false, 'error' => $errstr];
     }
 
     /**
-     * Check Elasticsearch connection
+     * Check Elasticsearch connection (HTTPS on port 9200)
      *
      * @return array<string, mixed>
      * @SuppressWarnings("PHPMD.UnusedLocalVariable")
@@ -313,7 +313,7 @@ class HealthCheckService
         $socket = @fsockopen($host, $port, $_errno, $errstr, 1);
         if ($socket) {
             fclose($socket);
-            return ['connected' => true, 'host' => $host, 'port' => $port];
+            return ['connected' => true, 'host' => $host, 'port' => $port, 'tls' => true];
         }
 
         return ['connected' => false, 'error' => $errstr];

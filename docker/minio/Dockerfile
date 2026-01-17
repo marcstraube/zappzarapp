@@ -13,7 +13,7 @@ ARG MINIO_VERSION=latest
 
 FROM minio/minio:${MINIO_VERSION}
 
-# Health check for MinIO
+# Health check for MinIO (HTTPS for zero-trust internal TLS)
 # MinIO exposes a health endpoint at /minio/health/live
 HEALTHCHECK --interval=10s --timeout=5s --start-period=10s --retries=3 \
-    CMD mc ready local || exit 1
+    CMD curl -sfk https://localhost:9000/minio/health/live || exit 1

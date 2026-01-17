@@ -27,7 +27,8 @@ command:
     exit-status: 0
     timeout: 5000
     stdout:
-      - "/PostgreSQL 1[7-9]|2[0-9]/"
+      - "PostgreSQL"
+      - "/1[7-9]\\.|2[0-9]\\./"
 
   # pg_isready is available
   which pg_isready:

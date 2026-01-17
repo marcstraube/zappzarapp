@@ -39,7 +39,7 @@ openssl x509 -req -days $DAYS \
     -in "$CERT_DIR/selfsigned.csr" \
     -signkey "$CERT_DIR/selfsigned.key" \
     -out "$CERT_DIR/selfsigned.crt" \
-    -extfile <(printf "subjectAltName=DNS:$DOMAIN,DNS:*.$DOMAIN,DNS:localhost,IP:127.0.0.1")
+    -extfile <(printf "subjectAltName=DNS:$DOMAIN,DNS:*.$DOMAIN,DNS:localhost,IP:127.0.0.1,DNS:nginx,DNS:php,DNS:node,DNS:node-backend,DNS:redis,DNS:postgres,DNS:mariadb,DNS:meilisearch,DNS:elasticsearch,DNS:mercure,DNS:rabbitmq,DNS:minio,DNS:mailpit")
 
 # Create symlinks for easier reference
 ln -sf selfsigned.crt "$CERT_DIR/cert.crt"

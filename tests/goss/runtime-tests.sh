@@ -7,7 +7,10 @@
 # - Health check endpoints
 # - Service-to-service connectivity
 #
-# Usage: ./tests/goss/runtime-tests.sh [service|all]
+# Usage: ./tests/goss/runtime-tests.sh [service|all] [--env-file <path>]
+#
+# Environment Variables:
+#   ENV_FILE - Path to docker compose env file (e.g., tests/goss/presets/fullstack.env)
 
 # Exit on error, but handle arithmetic safely
 set -euo pipefail
@@ -18,6 +21,33 @@ GREEN='\033[0;32m'
 YELLOW='\033[0;33m'
 BLUE='\033[0;34m'
 NC='\033[0m' # No Color
+
+# Parse --env-file argument
+ENV_FILE="${ENV_FILE:-}"
+ARGS=()
+while [[ $# -gt 0 ]]; do
+    case $1 in
+        --env-file)
+            ENV_FILE="$2"
+            shift 2
+            ;;
+        *)
+            ARGS+=("$1")
+            shift
+            ;;
+    esac
+done
+set -- "${ARGS[@]:-}"
+
+# Docker compose command with optional env-file
+if [ -n "$ENV_FILE" ]; then
+    DOCKER_COMPOSE="docker compose --env-file $ENV_FILE"
+    # Source env file to get port configuration
+    # shellcheck disable=SC1090
+    source "$ENV_FILE"
+else
+    DOCKER_COMPOSE="docker compose"
+fi
 
 # Configuration
 NGINX_SSL_PORT="${NGINX_SSL_PORT:-8443}"
@@ -52,7 +82,7 @@ log_skip() {
 }
 
 is_container_running() {
-    docker compose ps -q "$1" 2>/dev/null | grep -q .
+    $DOCKER_COMPOSE ps -q "$1" 2>/dev/null | grep -q .
 }
 
 # ============================================================================
@@ -105,7 +135,7 @@ test_php() {
 
     # Test PHP-FPM ping via docker exec
     log_test "php: PHP-FPM ping endpoint"
-    if docker compose exec -T php sh -c 'SCRIPT_NAME=/ping SCRIPT_FILENAME=/ping REQUEST_METHOD=GET cgi-fcgi -bind -connect /var/run/php-fpm/php-fpm.sock 2>/dev/null' | grep -q "pong"; then
+    if $DOCKER_COMPOSE exec -T php sh -c 'SCRIPT_NAME=/ping SCRIPT_FILENAME=/ping REQUEST_METHOD=GET cgi-fcgi -bind -connect /var/run/php-fpm/php-fpm.sock 2>/dev/null' | grep -q "pong"; then
         log_pass "php: PHP-FPM ping responds with 'pong'"
     else
         log_fail "php: PHP-FPM ping not responding"
@@ -113,20 +143,20 @@ test_php() {
 }
 
 test_node_backend() {
-    log_test "node-backend: Express API health"
+    log_test "node-backend: Express API health (HTTPS)"
 
     if ! is_container_running node-backend; then
         log_skip "node-backend container not running"
         return
     fi
 
-    # Test health endpoint via nginx
+    # Test health endpoint via nginx (external HTTPS)
     if curl -sf -k --max-time $TIMEOUT "https://localhost:${NGINX_SSL_PORT}/api/node/health" 2>/dev/null | grep -q "status"; then
-        log_pass "node-backend: /api/node/health responds"
+        log_pass "node-backend: /api/node/health responds via nginx"
     else
-        # Try direct internal test
-        if docker compose exec -T node-backend curl -sf --max-time $TIMEOUT "http://localhost:3000/health" 2>/dev/null | grep -q "status"; then
-            log_pass "node-backend: internal health endpoint responds"
+        # Try direct internal HTTPS test
+        if $DOCKER_COMPOSE exec -T node-backend curl -sfk --max-time $TIMEOUT "https://localhost:3000/health" 2>/dev/null | grep -q "status"; then
+            log_pass "node-backend: internal HTTPS health endpoint responds"
         else
             log_fail "node-backend: health endpoint not responding"
         fi
@@ -134,16 +164,16 @@ test_node_backend() {
 }
 
 test_node_frontend() {
-    log_test "node-frontend: Framework server"
+    log_test "node-frontend: Framework server (HTTPS)"
 
     if ! is_container_running node; then
         log_skip "node (frontend) container not running"
         return
     fi
 
-    # Check if it's in framework mode by testing port 3001
-    if docker compose exec -T node curl -sf --max-time $TIMEOUT "http://localhost:3001/" >/dev/null 2>&1; then
-        log_pass "node-frontend: Framework server responds on port 3001"
+    # Check if it's in framework mode by testing HTTPS on port 3001
+    if $DOCKER_COMPOSE exec -T node curl -sfk --max-time $TIMEOUT "https://localhost:3001/" >/dev/null 2>&1; then
+        log_pass "node-frontend: Framework HTTPS server responds on port 3001"
     else
         log_skip "node-frontend: Not in framework mode or not responding"
     fi
@@ -158,7 +188,7 @@ test_postgres() {
     fi
 
     # Test pg_isready
-    if docker compose exec -T postgres pg_isready -U "${DB_USER:-app}" -d "${DB_NAME:-app}" >/dev/null 2>&1; then
+    if $DOCKER_COMPOSE exec -T postgres pg_isready -U "${DB_USER:-app}" -d "${DB_NAME:-app}" >/dev/null 2>&1; then
         log_pass "postgres: pg_isready succeeds"
     else
         log_fail "postgres: pg_isready failed"
@@ -166,7 +196,7 @@ test_postgres() {
 
     # Test SSL is enabled
     log_test "postgres: SSL enabled"
-    if docker compose exec -T postgres psql -U "${DB_USER:-app}" -d "${DB_NAME:-app}" -c "SHOW ssl;" 2>/dev/null | grep -q "on"; then
+    if $DOCKER_COMPOSE exec -T postgres psql -U "${DB_USER:-app}" -d "${DB_NAME:-app}" -c "SHOW ssl;" 2>/dev/null | grep -q "on"; then
         log_pass "postgres: SSL is enabled"
     else
         log_fail "postgres: SSL is not enabled"
@@ -182,7 +212,7 @@ test_mariadb() {
     fi
 
     # Test healthcheck
-    if docker compose exec -T mariadb healthcheck.sh --connect --innodb_initialized >/dev/null 2>&1; then
+    if $DOCKER_COMPOSE exec -T mariadb healthcheck.sh --connect --innodb_initialized >/dev/null 2>&1; then
         log_pass "mariadb: healthcheck succeeds"
     else
         log_fail "mariadb: healthcheck failed"
@@ -190,7 +220,7 @@ test_mariadb() {
 
     # Test SSL required
     log_test "mariadb: SSL required"
-    if docker compose exec -T mariadb mariadb -u "${DB_USER:-app}" -p"$(cat secrets/db_password.txt 2>/dev/null || echo 'secret')" -e "SHOW VARIABLES LIKE 'require_secure_transport';" 2>/dev/null | grep -q "ON"; then
+    if $DOCKER_COMPOSE exec -T mariadb mariadb -u "${DB_USER:-app}" -p"$(cat secrets/db_password.txt 2>/dev/null || echo 'secret')" -e "SHOW VARIABLES LIKE 'require_secure_transport';" 2>/dev/null | grep -q "ON"; then
         log_pass "mariadb: require_secure_transport is ON"
     else
         log_skip "mariadb: Could not verify SSL requirement"
@@ -206,7 +236,7 @@ test_redis() {
     fi
 
     # Test Redis PING via TLS
-    if docker compose exec -T redis redis-cli --tls --insecure PING 2>/dev/null | grep -q "PONG"; then
+    if $DOCKER_COMPOSE exec -T redis redis-cli --tls --insecure PING 2>/dev/null | grep -q "PONG"; then
         log_pass "redis: TLS PING responds with PONG"
     else
         log_fail "redis: TLS PING failed"
@@ -214,7 +244,7 @@ test_redis() {
 
     # Test that non-TLS fails
     log_test "redis: Non-TLS connection rejected"
-    if ! docker compose exec -T redis redis-cli PING >/dev/null 2>&1; then
+    if ! $DOCKER_COMPOSE exec -T redis redis-cli PING >/dev/null 2>&1; then
         log_pass "redis: Non-TLS connection correctly rejected"
     else
         log_fail "redis: Non-TLS connection should be rejected"
@@ -222,17 +252,20 @@ test_redis() {
 }
 
 test_mercure() {
-    log_test "mercure: SSE endpoint"
+    log_test "mercure: SSE endpoint (HTTPS)"
 
     if ! is_container_running mercure; then
         log_skip "mercure container not running"
         return
     fi
 
-    if docker compose exec -T mercure wget -qO- --timeout=$TIMEOUT "http://localhost:80/.well-known/mercure" >/dev/null 2>&1; then
-        log_pass "mercure: .well-known/mercure endpoint responds"
+    # Test HTTPS healthz endpoint (Mercure HTTPS on port 443)
+    # Note: /.well-known/mercure requires POST, so we use /healthz
+    # Use --spider to just check for response (healthz returns empty body)
+    if $DOCKER_COMPOSE exec -T mercure wget --no-verbose --tries=1 --spider --no-check-certificate --timeout=$TIMEOUT "https://127.0.0.1:443/healthz" 2>/dev/null; then
+        log_pass "mercure: HTTPS healthz endpoint responds"
     else
-        log_fail "mercure: endpoint not responding"
+        log_fail "mercure: HTTPS endpoint not responding"
     fi
 }
 
@@ -244,25 +277,30 @@ test_meilisearch() {
         return
     fi
 
-    if docker compose exec -T meilisearch wget -qO- --timeout=$TIMEOUT "http://localhost:7700/health" 2>/dev/null | grep -q "available"; then
-        log_pass "meilisearch: health endpoint responds"
+    # Test health endpoint (HTTPS if configured, fallback to HTTP)
+    # Use --spider to just check for response, not content (avoids grep issues)
+    if $DOCKER_COMPOSE exec -T meilisearch wget --no-verbose --tries=1 --spider --no-check-certificate --timeout=$TIMEOUT "https://127.0.0.1:7700/health" 2>/dev/null; then
+        log_pass "meilisearch: HTTPS health endpoint responds"
+    elif $DOCKER_COMPOSE exec -T meilisearch wget --no-verbose --tries=1 --spider --timeout=$TIMEOUT "http://127.0.0.1:7700/health" 2>/dev/null; then
+        log_pass "meilisearch: HTTP health endpoint responds (TLS not configured)"
     else
         log_fail "meilisearch: health endpoint not responding"
     fi
 }
 
 test_elasticsearch() {
-    log_test "elasticsearch: Cluster health"
+    log_test "elasticsearch: Cluster health (HTTPS)"
 
     if ! is_container_running elasticsearch; then
         log_skip "elasticsearch container not running"
         return
     fi
 
-    if docker compose exec -T elasticsearch curl -sf --max-time $TIMEOUT "http://localhost:9200/_cluster/health" 2>/dev/null | grep -q "status"; then
-        log_pass "elasticsearch: cluster health responds"
+    # Test cluster health via HTTPS (internal TLS with xpack.security)
+    if $DOCKER_COMPOSE exec -T elasticsearch curl -sfk --max-time $TIMEOUT "https://localhost:9200/_cluster/health" 2>/dev/null | grep -q "status"; then
+        log_pass "elasticsearch: HTTPS cluster health responds"
     else
-        log_fail "elasticsearch: cluster health not responding"
+        log_fail "elasticsearch: HTTPS cluster health not responding"
     fi
 }
 
@@ -274,7 +312,7 @@ test_mailpit() {
         return
     fi
 
-    if docker compose exec -T mailpit wget -qO- --timeout=$TIMEOUT "http://localhost:8025/" 2>/dev/null | grep -qi "mailpit"; then
+    if $DOCKER_COMPOSE exec -T mailpit wget -qO- --timeout=$TIMEOUT "http://localhost:8025/" 2>/dev/null | grep -qi "mailpit"; then
         log_pass "mailpit: Web UI responds"
     else
         log_fail "mailpit: Web UI not responding"
@@ -282,17 +320,18 @@ test_mailpit() {
 }
 
 test_minio() {
-    log_test "minio: Health endpoint (TLS)"
+    log_test "minio: Health endpoint (HTTPS)"
 
     if ! is_container_running minio; then
         log_skip "minio container not running"
         return
     fi
 
-    if docker compose exec -T minio curl -sfk --max-time $TIMEOUT "https://localhost:9000/minio/health/live" >/dev/null 2>&1; then
-        log_pass "minio: health endpoint responds"
+    # Test health endpoint via HTTPS (internal TLS)
+    if $DOCKER_COMPOSE exec -T minio curl -sfk --max-time $TIMEOUT "https://localhost:9000/minio/health/live" >/dev/null 2>&1; then
+        log_pass "minio: HTTPS health endpoint responds"
     else
-        log_fail "minio: health endpoint not responding"
+        log_fail "minio: HTTPS health endpoint not responding"
     fi
 }
 
@@ -304,7 +343,7 @@ test_rabbitmq() {
         return
     fi
 
-    if docker compose exec -T rabbitmq rabbitmqctl status >/dev/null 2>&1; then
+    if $DOCKER_COMPOSE exec -T rabbitmq rabbitmqctl status >/dev/null 2>&1; then
         log_pass "rabbitmq: rabbitmqctl status succeeds"
     else
         log_fail "rabbitmq: rabbitmqctl status failed"

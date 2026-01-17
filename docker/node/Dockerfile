@@ -155,9 +155,11 @@ RUN pnpm run build
 # Nitro (Nuxt) uses NITRO_PORT, Next.js/others use PORT
 ENV PORT=3001 NITRO_PORT=3001
 
-# Health Check: Verifies that the frontend server is responsive
+# Health Check: Verifies that the frontend HTTPS server is responsive
+# Note: Only Nuxt/Nitro supports internal HTTPS via NITRO_SSL_CERT/NITRO_SSL_KEY
+# Other frameworks (Next.js, SvelteKit, Remix) require custom server setup for HTTPS
 HEALTHCHECK --interval=15s --timeout=3s --start-period=30s --retries=3 \
-    CMD curl --fail http://localhost:3001 || exit 1
+    CMD curl --fail --insecure https://localhost:3001 || exit 1
 
 # Run as node user (Compose sets 'user: 50000:50000', K8s uses securityContext)
 ENTRYPOINT ["/usr/local/bin/entrypoint.production.sh"]
@@ -180,9 +182,9 @@ RUN mkdir -p /home/node/.cache/node/corepack && \
 COPY docker/node/entrypoint.production.sh /usr/local/bin/entrypoint.production.sh
 RUN chmod +x /usr/local/bin/entrypoint.production.sh
 
-# Health Check: Pings the running Node.js server to ensure it is responsive.
+# Health Check: Pings the running Node.js HTTPS server to ensure it is responsive.
 HEALTHCHECK --interval=15s --timeout=3s --start-period=10s --retries=3 \
-    CMD curl --fail http://localhost:3000/health || exit 1
+    CMD curl --fail --insecure https://localhost:3000/health || exit 1
 
 # Copy Vite build artifacts (needed by nginx/php for assets-api mode)
 COPY --from=build --chown=node:node /app/public/build /app/public/build
@@ -207,13 +209,14 @@ FROM api AS test-api
 USER root
 
 # Copy GOSS binary from official image
-COPY --from=ghcr.io/goss-org/goss:latest /goss /usr/local/bin/goss
+COPY --from=ghcr.io/goss-org/goss:latest /usr/bin/goss /usr/local/bin/goss
+RUN chmod +x /usr/local/bin/goss
 
 # Copy test specification
 COPY tests/goss/services/node-backend.yaml /goss.yaml
 
 # Run GOSS tests (fails build if tests fail)
-RUN goss validate --format documentation
+RUN goss -g /goss.yaml validate --format documentation
 
 # --- 8. TEST FRAMEWORK STAGE (CI only) ---
 # Validates the framework production image using GOSS
@@ -223,10 +226,11 @@ FROM framework AS test-framework
 USER root
 
 # Copy GOSS binary from official image
-COPY --from=ghcr.io/goss-org/goss:latest /goss /usr/local/bin/goss
+COPY --from=ghcr.io/goss-org/goss:latest /usr/bin/goss /usr/local/bin/goss
+RUN chmod +x /usr/local/bin/goss
 
 # Copy test specification
 COPY tests/goss/services/node-frontend.yaml /goss.yaml
 
 # Run GOSS tests (fails build if tests fail)
-RUN goss validate --format documentation
+RUN goss -g /goss.yaml validate --format documentation

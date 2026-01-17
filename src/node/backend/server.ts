@@ -5,10 +5,11 @@
  * Only used when NODE_TARGET=app-server in docker-compose.
  *
  * Build output: dist/server.js
- * Runtime: Node.js container on port 3000
+ * Runtime: Node.js container on port 3000 (HTTPS)
  */
 
-import { createServer, Server } from 'http';
+import { createServer as createHttpsServer, Server } from 'https';
+import { readFileSync, existsSync } from 'fs';
 import { createApp, logger } from './app.js';
 import { fileURLToPath } from 'url';
 
@@ -17,23 +18,50 @@ export const NODE_ENV = process.env.NODE_ENV ?? 'production';
 export const LOG_LEVEL = process.env.LOG_LEVEL ?? 'info';
 export const LOG_FORMAT = process.env.LOG_FORMAT ?? 'json';
 
+// Certificate paths (mounted from docker/certs/)
+const CERT_PATH = '/etc/ssl/certs/cert.crt';
+const KEY_PATH = '/etc/ssl/private/cert.key';
+
+// TLS verification: auto-detect from environment
+// Development (self-signed) = no verify, Production (Let's Encrypt) = verify
+const tlsRejectUnauthorized = NODE_ENV === 'production';
+process.env.NODE_TLS_REJECT_UNAUTHORIZED = tlsRejectUnauthorized ? '1' : '0';
+
 /**
- * Create and start the server
+ * Create and start the HTTPS server
  */
 export function startServer(): Server {
   const app = createApp();
-  const server: Server = createServer(app);
+
+  // Verify certificates exist
+  if (!existsSync(CERT_PATH) || !existsSync(KEY_PATH)) {
+    logger.error(
+      { certPath: CERT_PATH, keyPath: KEY_PATH },
+      'TLS certificates not found. Run "make ssl-selfsigned" to generate them.'
+    );
+    process.exit(1);
+  }
+
+  const server: Server = createHttpsServer(
+    {
+      key: readFileSync(KEY_PATH),
+      cert: readFileSync(CERT_PATH),
+    },
+    app
+  );
 
   server.listen(PORT, (): void => {
     logger.info(
       {
         port: PORT,
+        protocol: 'https',
         environment: NODE_ENV,
+        tlsVerify: tlsRejectUnauthorized,
         logLevel: LOG_LEVEL,
         logFormat: LOG_FORMAT,
-        healthUrl: `http://localhost:${PORT}/health`,
+        healthUrl: `https://localhost:${PORT}/health`,
       },
-      '🚀 Node.js server started'
+      '🚀 Node.js server started (TLS enabled)'
     );
   });
 

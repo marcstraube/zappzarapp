@@ -5,13 +5,17 @@
 
 set -e
 
-# Load user from secret file if available
-if [ -f /run/secrets/rabbitmq_user ]; then
+# Load user from secret file if available (support both with and without .txt)
+if [ -f /run/secrets/rabbitmq_user.txt ]; then
+    export RABBITMQ_DEFAULT_USER=$(cat /run/secrets/rabbitmq_user.txt)
+elif [ -f /run/secrets/rabbitmq_user ]; then
     export RABBITMQ_DEFAULT_USER=$(cat /run/secrets/rabbitmq_user)
 fi
 
-# Load password from secret file if available
-if [ -f /run/secrets/rabbitmq_password ]; then
+# Load password from secret file if available (support both with and without .txt)
+if [ -f /run/secrets/rabbitmq_password.txt ]; then
+    export RABBITMQ_DEFAULT_PASS=$(cat /run/secrets/rabbitmq_password.txt)
+elif [ -f /run/secrets/rabbitmq_password ]; then
     export RABBITMQ_DEFAULT_PASS=$(cat /run/secrets/rabbitmq_password)
 fi
 

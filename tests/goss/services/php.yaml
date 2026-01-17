@@ -63,7 +63,7 @@ command:
     stdout:
       - "pdo_pgsql"
       - "redis"
-      - "opcache"
+      - "/[Oo][Pp][Cc]ache/"
       - "gd"
       - "intl"
       - "zip"
@@ -80,8 +80,9 @@ command:
     exit-status: 0
     timeout: 5000
 
-  # OPcache is enabled
-  php -r "echo opcache_get_status() ? 'enabled' : 'disabled';":
+  # OPcache is configured for FPM (CLI is disabled by design)
+  php -i | grep 'opcache.enable ':
     exit-status: 0
+    timeout: 5000
     stdout:
-      - "enabled"
+      - "On"
