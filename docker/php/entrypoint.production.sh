@@ -1,29 +1,21 @@
 #!/bin/sh
-# PHP-FPM Production Entrypoint
-# Runs as root, copies secrets to readable location, then starts PHP-FPM
+# PHP-FPM Production Entrypoint (Unprivileged)
+# Runs as www-data user - no root, no capabilities needed
+# Secrets are bind-mounted with mode 0644 (world-readable) in compose.production.yaml
 
 set -e
 
-# Copy secrets to readable location (as root, for www-data user)
+# Set environment variables for secrets (direct access, no copy needed)
+# Secrets are already readable via ./secrets:/run/secrets:ro mount
 if [ -d "/run/secrets" ]; then
-    mkdir -p /tmp/secrets
-    chmod 755 /tmp/secrets
-    for secret in /run/secrets/*; do
-        if [ -f "$secret" ]; then
-            name=$(basename "$secret")
-            cp "$secret" "/tmp/secrets/$name" && chmod 444 "/tmp/secrets/$name"
-        fi
-    done
-
-    # Update environment variables to point to readable location
-    if [ -f "/tmp/secrets/db_password" ]; then
-        export DB_PASSWORD_FILE=/tmp/secrets/db_password
+    if [ -f "/run/secrets/db_password" ]; then
+        export DB_PASSWORD_FILE=/run/secrets/db_password
     fi
-    if [ -f "/tmp/secrets/encryption_key" ]; then
-        export ENCRYPTION_KEY_FILE=/tmp/secrets/encryption_key
+    if [ -f "/run/secrets/encryption_key" ]; then
+        export ENCRYPTION_KEY_FILE=/run/secrets/encryption_key
     fi
-    if [ -f "/tmp/secrets/backup_encryption_key" ]; then
-        export BACKUP_ENCRYPTION_KEY_FILE=/tmp/secrets/backup_encryption_key
+    if [ -f "/run/secrets/backup_encryption_key" ]; then
+        export BACKUP_ENCRYPTION_KEY_FILE=/run/secrets/backup_encryption_key
     fi
 fi
 

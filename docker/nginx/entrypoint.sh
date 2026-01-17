@@ -1,4 +1,6 @@
 #!/bin/sh
+# nginx Entrypoint (Unprivileged)
+# Runs entirely as nginx user - no root, no chown needed
 set -e
 
 # Default values if not set
@@ -54,17 +56,16 @@ mkdir -p /run/nginx/conf.d
 
 # Process SSL config template if it exists (development or production)
 # Output goes to /run/nginx/conf.d/ which is writable (tmpfs in production)
+# Note: Running as nginx user, directories already owned by nginx (see Dockerfile)
 if [ -f /etc/nginx/conf.d/ssl-development.conf.template ]; then
     echo "Processing SSL development configuration template..."
     envsubst '${NGINX_SSL_PORT} ${INDEX_DIRECTIVE} ${TRY_FILES_FALLBACK}' < /etc/nginx/conf.d/ssl-development.conf.template > /run/nginx/conf.d/ssl.conf
-    chown nginx:nginx /run/nginx/conf.d/ssl.conf
     echo "SSL configuration generated with NGINX_SSL_PORT=${NGINX_SSL_PORT}, INDEX=${INDEX_DIRECTIVE}"
 elif [ -f /etc/nginx/conf.d/ssl-production.conf.template ]; then
     echo "Processing SSL production configuration template..."
     envsubst '${NGINX_SSL_PORT} ${DOMAIN} ${INDEX_DIRECTIVE} ${TRY_FILES_FALLBACK}' < /etc/nginx/conf.d/ssl-production.conf.template > /run/nginx/conf.d/ssl.conf
-    chown nginx:nginx /run/nginx/conf.d/ssl.conf
     echo "SSL configuration generated for DOMAIN=${DOMAIN}, NGINX_SSL_PORT=${NGINX_SSL_PORT}, INDEX=${INDEX_DIRECTIVE}"
 fi
 
-# Start nginx as nginx user (not root)
+# Start nginx (already running as nginx user)
 exec "$@"

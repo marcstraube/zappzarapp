@@ -9,12 +9,30 @@ Hardening) **Version:** 3.44
 
 ### Version 3.44 (2026-01-17) - Security Hardening & GOSS Test Matrix
 
-Security improvements for RabbitMQ and comprehensive GOSS test infrastructure.
+Security improvements achieving zero-capability operation for nginx and PHP,
+plus comprehensive GOSS test infrastructure.
+
+#### Security: Unprivileged nginx and PHP (Zero Capabilities)
+
+**nginx:** Complete unprivileged operation
+- Runs as nginx user (uid 101) from startup - no root at any point
+- All capabilities dropped (CapEff=0)
+- Brotli module works via Alpine's nginx-mod-http-brotli package
+- Entrypoint simplified - no chown needed
+- Updated Dockerfile: `docker/nginx/Dockerfile`
+- Updated entrypoint: `docker/nginx/entrypoint.sh`
+
+**PHP:** Complete unprivileged operation
+- Runs as www-data user (uid 82) from startup - no root at any point
+- All capabilities dropped (CapEff=0)
+- Secrets accessed directly via bind mount (0644 permissions)
+- Entrypoint simplified - no root operations needed
+- Updated: `docker/php/Dockerfile` (both production stages)
+- Updated: `docker/php/entrypoint.production.sh`
 
 #### Security: DAC_OVERRIDE and DAC_READ_SEARCH Removed
 
-Eliminated dangerous capabilities from all production services by using privilege
-dropping (su-exec/gosu) for healthchecks instead of running as root:
+Eliminated dangerous capabilities from healthcheck operations:
 
 **RabbitMQ:** Removed DAC_READ_SEARCH
 - Healthcheck uses `su-exec rabbitmq` to run as rabbitmq user
@@ -28,19 +46,20 @@ dropping (su-exec/gosu) for healthchecks instead of running as root:
 - Secrets and certificates are now world-readable (0644) via `make setup`
 - No capability bypass needed - standard file permissions work
 
-**Remaining capabilities per service:**
-| Service | Capabilities |
-|---------|-------------|
-| nginx | CHOWN, SETUID, SETGID, DAC_READ_SEARCH (required for dlopen) |
-| php | CHOWN, SETUID, SETGID |
-| node | none (runs as node user) |
-| redis | none (runs as redis user) |
-| postgres | CHOWN, SETUID, SETGID, FOWNER |
-| mariadb | CHOWN, SETUID, SETGID, FOWNER |
-| rabbitmq | CHOWN, SETUID, SETGID |
+**Capability summary per service:**
+| Service | Capabilities | Notes |
+|---------|-------------|-------|
+| nginx | none | Fully unprivileged (uid 101) |
+| php | none | Fully unprivileged (uid 82) |
+| node | none | Runs as node user (uid 50000) |
+| redis | none | Runs as redis user (uid 999) |
+| postgres | CHOWN, SETUID, SETGID, FOWNER | Required for cert ownership |
+| mariadb | CHOWN, SETUID, SETGID, FOWNER | Required for cert ownership |
+| rabbitmq | CHOWN, SETUID, SETGID | Required for erlang cookie |
 
-Note: nginx still requires DAC_READ_SEARCH for loading dynamic modules (brotli).
-This is a known limitation when using `cap_drop: ALL` with dynamically linked modules.
+Public-facing services (nginx, PHP) now run with zero capabilities, significantly
+reducing the attack surface. Database containers retain minimal capabilities
+for TLS certificate ownership changes.
 
 #### Testing: GOSS Preset Matrix
 

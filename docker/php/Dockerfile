@@ -201,6 +201,7 @@ COPY --chown=www-data:www-data templates ./templates
 # --- 5. PRODUCTION STAGE (with Vite Assets) ---
 # Use for: NODE_MODE=assets, assets-api, api
 # Serves Vite-built frontend assets (copied from node-backend build)
+# Security: Runs entirely as www-data user - NO capabilities needed
 FROM production-base AS production
 
 # Copy built frontend assets from Node backend build stage
@@ -219,9 +220,14 @@ RUN chown -R root:root /var/www/html && \
     mkdir -p /var/www/html/storage && \
     chown -R www-data:www-data /var/www/html/storage && \
     chmod 770 /var/www/html/storage && \
-    find /var/www/html/storage -type f -exec chmod 660 {} \; 2>/dev/null || true
+    find /var/www/html/storage -type f -exec chmod 660 {} \; 2>/dev/null || true && \
+    # Prepare socket directory for unprivileged operation
+    mkdir -p /var/run/php-fpm && \
+    chown www-data:www-data /var/run/php-fpm
 
-# PHP-FPM runs as www-data (configured in php-fpm.conf)
+# Run as www-data user (unprivileged) - NO root, NO capabilities
+USER www-data
+
 ENTRYPOINT ["/entrypoint.production.sh"]
 CMD ["php-fpm"]
 
@@ -259,8 +265,13 @@ RUN chown -R root:root /var/www/html && \
     mkdir -p /var/www/html/storage && \
     chown -R www-data:www-data /var/www/html/storage && \
     chmod 770 /var/www/html/storage && \
-    find /var/www/html/storage -type f -exec chmod 660 {} \; 2>/dev/null || true
+    find /var/www/html/storage -type f -exec chmod 660 {} \; 2>/dev/null || true && \
+    # Prepare socket directory for unprivileged operation
+    mkdir -p /var/run/php-fpm && \
+    chown www-data:www-data /var/run/php-fpm
 
-# PHP-FPM runs as www-data (configured in php-fpm.conf)
+# Run as www-data user (unprivileged) - NO root, NO capabilities
+USER www-data
+
 ENTRYPOINT ["/entrypoint.production.sh"]
 CMD ["php-fpm"]

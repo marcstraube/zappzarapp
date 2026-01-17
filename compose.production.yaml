@@ -23,6 +23,8 @@ services:
   nginx:
     build:
       target: production
+    # Run as nginx user (uid 101) - completely unprivileged
+    user: "101:101"
     environment:
       - DOMAIN=${DOMAIN:-localhost}
       - ENABLE_PHP=${ENABLE_PHP:-true}
@@ -36,23 +38,17 @@ services:
       - ./docker/certs/cert.key:/etc/nginx/certs/cert.key:ro
     read_only: true
     tmpfs:
-      # Mode 1777 REQUIRED: nginx starts as root, needs write access before user switch
-      - /var/cache/nginx:mode=1777,size=64M
-      - /var/log/nginx:mode=1777,size=32M
-      - /var/lib/nginx/tmp:mode=1777,size=64M
-      - /tmp:mode=1777,size=32M
-      - /var/run:mode=1777,size=16M
+      # All tmpfs owned by nginx user (uid 101) - no root needed
+      - /var/cache/nginx:mode=0770,uid=101,gid=101,size=64M
+      - /var/log/nginx:mode=0770,uid=101,gid=101,size=32M
+      - /var/lib/nginx/tmp:mode=0770,uid=101,gid=101,size=64M
+      - /tmp:mode=0770,uid=101,gid=101,size=32M
+      - /run:mode=0770,uid=101,gid=101,size=16M
     security_opt:
       - no-new-privileges:true
     cap_drop:
       - ALL
-    cap_add:
-      # REQUIRED: nginx needs this for dlopen() to load dynamic modules (brotli etc)
-      - DAC_READ_SEARCH
-      # REQUIRED: chown tmpfs and user switch
-      - CHOWN
-      - SETUID
-      - SETGID
+    # NO cap_add needed - runs entirely as unprivileged nginx user
     logging:
       driver: "json-file"
       options:
@@ -71,25 +67,25 @@ services:
   php:
     build:
       target: production
+    # Run as www-data user (uid 82) - completely unprivileged
+    user: "82:82"
     volumes:
       # Shared socket directory for PHP-FPM Unix socket communication
+      # Socket mode 0666 (set in php-fpm.conf) allows nginx to connect
       - php-fpm-socket:/var/run/php-fpm
       # Persistent Storage for Uploads and generated files
       - ${STORAGE_DIR:-./storage}:/var/www/html/storage:rw
-      # Secrets (bind mount, readable by all container users)
+      # Secrets (bind mount, readable by all container users - mode 0644)
       - ./secrets:/run/secrets:ro
     read_only: true
     tmpfs:
-      - /tmp:mode=1777,size=1G
+      # Owned by www-data (uid 82) - no root needed
+      - /tmp:mode=0770,uid=82,gid=82,size=1G
     security_opt:
       - no-new-privileges:true
     cap_drop:
       - ALL
-    cap_add:
-      # REQUIRED: PHP-FPM socket chown and user switch
-      - CHOWN
-      - SETUID
-      - SETGID
+    # NO cap_add needed - runs entirely as unprivileged www-data user
     environment:
       - ENV=production
     logging:
