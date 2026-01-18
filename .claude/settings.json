@@ -1,0 +1,20 @@
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "command": "if echo \"$TOOL_INPUT\" | grep -qE '^make (goss-test|test)'; then docker compose ps -q 2>/dev/null | head -1 >/dev/null || echo '[Hook] Warning: No containers running. Run make up first.'; fi"
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Edit",
+        "command": "if echo \"$TOOL_INPUT\" | grep -qE '(Dockerfile|compose\\.yaml|compose\\.override|compose\\.production|\\.env\\.example|entrypoint)'; then echo '[Hook] Config file changed. Remember: make build && make down && make up'; fi"
+      },
+      {
+        "matcher": "Bash",
+        "command": "if echo \"$TOOL_INPUT\" | grep -qE 'git commit'; then echo '[Hook] Commit done. Update session log if not already done.'; fi"
+      }
+    ]
+  }
+}
