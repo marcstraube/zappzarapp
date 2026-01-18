@@ -277,7 +277,7 @@ class HealthCheck
             $this->status['services']['database'] = [
                 'status'  => 'error',
                 'type'    => $dbType,
-                'message' => "PDO {$dbType} extension not installed",
+                'message' => sprintf('PDO %s extension not installed', $dbType),
                 'enabled' => true,
             ];
 

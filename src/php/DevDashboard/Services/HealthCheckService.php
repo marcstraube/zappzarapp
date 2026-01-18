@@ -721,6 +721,7 @@ class HealthCheckService
             if ($context !== null) {
                 return $redis->connect($host, $port, 2, '', 0, 0, $context);
             }
+
             return $redis->connect($host, $port, 2);
         } finally {
             restore_error_handler();

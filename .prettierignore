@@ -6,6 +6,9 @@ vendor
 dist
 build
 
+# Generated files
+.nuxt
+
 # Coverage reports
 coverage
 .nyc_output
