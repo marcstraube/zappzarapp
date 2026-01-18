@@ -2,10 +2,12 @@
 .git
 .gitignore
 .gitattributes
+.gitmessage
 
-# IDE
+# IDE & Development Tools
 .idea
 .vscode
+.claude
 *.swp
 *.swo
 
@@ -13,6 +15,7 @@
 .env
 .env.*
 !.env.example
+secrets/
 
 # Dependencies (installed in container)
 vendor/
@@ -21,30 +24,67 @@ node_modules/
 # Development artifacts
 .phpunit.result.cache
 .php-cs-fixer.cache
+.phpstan.cache
+.rector.cache
+.eslintcache
 
 # Logs
 logs/
 *.log
 
-# Documentation (exclude markdown files but keep necessary ones)
+# Documentation
 documentation/
 README.md
 CHANGELOG.md
 CONTRIBUTING.md
 LICENSE.md
+LICENSE
 
 # Docker (compose files not needed in build context)
 docker-compose*.yml
 compose*.yaml
 .dockerignore
 
+# Kubernetes (not needed in Docker images)
+kubernetes/
+
 # CI/CD
 .github/
 .gitlab/
 .gitlab-ci.yml
+renovate.json
 
 # Build tools (not needed in container)
 Makefile
+
+# Linting & Formatting configs
+.depcheckrc.json
+.hadolint.yaml
+.markdownlint-cli2.jsonc
+.prettierrc.json
+.prettierignore
+phpmd.xml.dist
+eslint.config.js
+knip.config.js
+lint-staged.config.js
+
+# Git hooks & commit tooling
+captainhook.json
+commitlint.config.js
+
+# Documentation generation
+phpdoc.xml
+typedoc.backend.json
+typedoc.frontend.json
+
+# Testing configs
+vitest.config.ts
+phpunit.xml.dist
+
+# TypeScript configs (not needed at runtime)
+tsconfig.build.json
+tsconfig.typedoc.json
+tsconfig.vitest.json
 
 # Temporary files
 tmp/
@@ -57,6 +97,7 @@ build/
 dist/
 docs/
 backups/
+tools/
 
 # Test coverage
 coverage/

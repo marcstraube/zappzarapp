@@ -20,7 +20,7 @@ In practice this means:
 
 ## Project Structure
 
-```
+```text
 src/php/App/           → Main PHP application
 src/php/DevDashboard/  → Dev Dashboard (separate module)
 src/node/backend/      → Node.js backend (Express API)
@@ -36,7 +36,7 @@ docker/                → Docker configurations
 
 ## Key Make Targets
 
-```
+```bash
 make up / make down    → Start/stop containers
 make check             → All quality checks (before commit!)
 make test              → Run all tests
@@ -75,12 +75,15 @@ Available commands in `.claude/commands/`:
 
 | Command | Purpose |
 |---------|---------|
-| `/plan` | Create implementation plan before coding |
+| `/session-start` | Initialize new session with previous context |
+| `/status` | Project overview (Git, Docker, backlog) |
+| `/plan` | Create implementation plan (use `--scope-only` for quick analysis) |
+| `/review` | Review changes before committing |
+| `/test` | Smart test runner (detects changed files) |
 | `/commit` | Guided commit workflow with quality checks |
 | `/changelog` | Generate changelog from session logs |
+| `/learnings` | View, search, and aggregate project learnings |
 | `/sync-check` | Check configuration files for sync |
-| `/test` | Smart test runner (detects changed files) |
-| `/status` | Project overview (Git, Docker, backlog) |
 | `/quality-audit` | Comprehensive quality audit with progress tracking |
 | `/security-audit` | Security audit of all components |
 | `/docs-audit` | Documentation validation |
@@ -104,17 +107,39 @@ Available commands in `.claude/commands/`:
 - After changes to Dockerfiles, compose.*, entrypoints, php.ini or other Docker configurations: rebuild containers (`make build-*`) and restart (`make down && make up`) for changes to take effect
 - For problems with Make commands or Docker: analyze and fix the root cause! Never manually edit files to work around tooling issues
 
-## Session Log
+## Session Workflow
+
+### Starting a Session
+
+Use `/session-start` to:
+- Review previous session summary and open items
+- Check backlog for pending high-priority tasks
+- Create a new session log from template
+
+### Session Log
 
 Maintain a session log in `.claude/sessions/session-YYYY-MM-DD-HHMM.md`:
 
 - **For every file change**: timestamp, action (add/modify/delete/move), file, purpose
-- **For learnings**: document insights, decisions, trade-offs
+- **For learnings**: document insights in `## Learnings` section
+- **For decisions**: record trade-offs and reasoning
 - **Don't log**: unimportant intermediate communication, read-only access
 
-The log serves as the basis for `/changelog` to generate changelog entries.
+Use `SESSION-TEMPLATE.md` as the base for new session logs.
 
-On session start: create new log. On session continuation: continue using existing log.
+### Ending a Session
+
+Before ending:
+- Fill in `## Session Summary` with what was accomplished
+- List `## Open Items` for follow-up
+- Add `**Next Steps**` recommendations
+- Run `/learnings --sync` to aggregate new learnings
+
+### Knowledge Management
+
+- **LEARNINGS.md**: Central repository of project knowledge
+- **BACKLOG.md**: Pending tasks and improvements
+- Session logs serve as basis for `/changelog`
 
 ## Hooks
 
@@ -122,6 +147,16 @@ Automatic hooks in `settings.local.json`:
 
 - **PreToolUse**: Warning when containers not running (for test commands)
 - **PostToolUse**: Notification via ntfy after task completion
+
+## Communication
+
+Rules for effective collaboration:
+
+- **Answer questions first**: When asked a question, ALWAYS answer and wait for response BEFORE making changes
+- **On errors**: Provide error message + context
+- **On options**: State preference or say "you decide"
+- **Limit scope**: "Only X, not Y" when boundaries matter
+- **Feedback**: Brief "worked" or "problem with X" helps
 
 ## Miscellaneous
 

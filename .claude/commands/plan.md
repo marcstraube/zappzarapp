@@ -1,9 +1,8 @@
----
 description: Create implementation plan before making changes
 context: fork
 allowed-tools: Read, Grep, Glob, Bash(git:*), Bash(ls:*), Bash(make:*),
   Bash(docker:*), Bash(docker compose:*), AskUserQuestion
-argument-hint: <task description>
+argument-hint: [--scope-only] <task description>
 ---
 
 # Plan Mode
@@ -21,15 +20,34 @@ Planning before implementation:
 
 ## Arguments
 
-`$ARGUMENTS` contains the task description. If empty, ask the user what to plan.
+`$ARGUMENTS` contains the task description and optional flags.
+
+- `--scope-only`: Only analyze scope and affected files, skip detailed implementation steps
+- (default): Full implementation plan
 
 Examples:
 
 ```bash
 /plan add user authentication with JWT
-/plan refactor the payment service
+/plan --scope-only refactor the payment service
 /plan fix the race condition in order processing
 ```
+
+### --scope-only Mode
+
+When `--scope-only` is specified, output only:
+
+1. **Scope Analysis**: What the task involves
+2. **Affected Files**: Which files will be touched
+3. **Dependencies**: What this depends on / what depends on this
+4. **Risks**: Potential issues or blockers
+5. **Complexity Estimate**: Low / Medium / High
+
+Skip the detailed implementation steps. Useful for:
+
+- Quick assessment before deciding to proceed
+- Estimating effort for multiple tasks
+- Identifying if more research is needed
 
 ## Planning Process
 

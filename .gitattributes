@@ -17,13 +17,19 @@
 Makefile text eol=lf
 Dockerfile text eol=lf
 
-# Exclude files from export
+# Exclude files from export (git archive / GitHub releases)
 /.* export-ignore
+/.claude export-ignore
 /tests export-ignore
 /docker export-ignore
+/kubernetes export-ignore
+/secrets export-ignore
 /Makefile export-ignore
 /phpunit.xml export-ignore
+/phpunit.xml.dist export-ignore
 /phpstan.neon export-ignore
 /rector.php export-ignore
 /.php-cs-fixer.dist.php export-ignore
 /captainhook.json export-ignore
+/commitlint.config.js export-ignore
+/renovate.json export-ignore
