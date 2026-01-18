@@ -294,6 +294,73 @@ services:
       - REDIS_URL=${REDIS_URL:-rediss://redis:6379}
     tty: true
 
+  # ═══════════════════════════════════════════════════════════════════════════
+  # DEV-TOOLS - Dedicated container for Git hooks and linting
+  # ═══════════════════════════════════════════════════════════════════════════
+  # Usage: docker compose run --rm dev-tools pnpm exec <command>
+  #
+  # This container is independent of NODE_MODE and always has devDependencies.
+  # Used by captainhook for pre-commit, commit-msg, and pre-push hooks.
+  # ═══════════════════════════════════════════════════════════════════════════
+  dev-tools:
+    build:
+      context: .
+      dockerfile: docker/node/Dockerfile
+      target: development
+      args:
+        USER_ID: ${USER_ID:-1000}
+        GROUP_ID: ${GROUP_ID:-1000}
+    profiles:
+      - tools
+    working_dir: /app
+    user: node
+    volumes:
+      # Package manager files
+      - ./package.json:/app/package.json:ro
+      - ./pnpm-lock.yaml:/app/pnpm-lock.yaml:ro
+      - ./pnpm-workspace.yaml:/app/pnpm-workspace.yaml:ro
+
+      # Dependencies (shared with node/node-backend for consistency)
+      - node_modules:/app/node_modules
+
+      # Source and Tests (read-write for lint-staged auto-fix)
+      - ./src:/app/src
+      - ./tests:/app/tests
+      - ./templates:/app/templates
+
+      # Workspace node_modules (MUST be after ./src mount)
+      - backend_node_modules:/app/src/node/backend/node_modules
+      - frontend_node_modules:/app/src/node/frontend/node_modules
+
+      # Documentation (read-write for Prettier/markdownlint)
+      - ./documentation:/app/documentation
+      - ./README.md:/app/README.md
+      - ./CHANGELOG.md:/app/CHANGELOG.md
+
+      # Linting/Formatting config files
+      - ./eslint.config.js:/app/eslint.config.js:ro
+      - ./.prettierrc.json:/app/.prettierrc.json:ro
+      - ./.prettierignore:/app/.prettierignore:ro
+      - ./commitlint.config.js:/app/commitlint.config.js:ro
+      - ./.markdownlint-cli2.jsonc:/app/.markdownlint-cli2.jsonc:ro
+      - ./lint-staged.config.js:/app/lint-staged.config.js:ro
+
+      # TypeScript config (for type-check)
+      - ./tsconfig.json:/app/tsconfig.json:ro
+      - ./tsconfig.base.json:/app/tsconfig.base.json:ro
+      - ./tsconfig.build.json:/app/tsconfig.build.json:ro
+      - ./tsconfig.vitest.json:/app/tsconfig.vitest.json:ro
+      - ./vitest.config.ts:/app/vitest.config.ts:ro
+
+      # Git repository (required for commitlint, lint-staged)
+      - ./.git:/app/.git
+    environment:
+      - TZ=${TZ:-UTC}
+      - NODE_ENV=development
+    # No entrypoint - run commands directly
+    entrypoint: []
+    command: ["echo", "dev-tools container ready"]
+
   redis:
     ports:
       - "${REDIS_PORT:-6379}:6379"

@@ -1,9 +1,12 @@
 # GOSS Container Tests
 
-Comprehensive container testing using [GOSS](https://github.com/goss-org/goss) with a two-phase strategy:
+Comprehensive container testing using [GOSS](https://github.com/goss-org/goss)
+with a two-phase strategy:
 
-1. **Build-time tests**: Run during `docker build` (catch missing files, broken configs)
-2. **Runtime tests**: Run against live containers (catch network issues, TLS, service communication)
+1. **Build-time tests**: Run during `docker build` (catch missing files, broken
+   configs)
+2. **Runtime tests**: Run against live containers (catch network issues, TLS,
+   service communication)
 
 ## Quick Start
 
@@ -23,7 +26,7 @@ make goss-test-matrix
 
 ## Directory Structure
 
-```
+```text
 tests/goss/
 ├── services/           # GOSS YAML specs for build-time tests
 │   ├── nginx.yaml
@@ -65,13 +68,17 @@ Tests run during `docker build --target test`:
 # Example from docker/php/Dockerfile
 ARG GOSS_VERSION=v0.4.9
 
+# GOSS stage (workaround: --from doesn't support ARG expansion)
+FROM ghcr.io/goss-org/goss:${GOSS_VERSION} AS goss
+
 FROM production-base AS test
-COPY --from=ghcr.io/goss-org/goss:${GOSS_VERSION} /usr/bin/goss /usr/local/bin/goss
+COPY --from=goss /usr/bin/goss /usr/local/bin/goss
 COPY tests/goss/services/php.yaml /goss.yaml
 RUN goss validate --format documentation
 ```
 
 **Benefits:**
+
 - Fails fast during CI build
 - No test tools in production image
 - Catches issues before deployment
@@ -99,61 +106,61 @@ make goss-test-redis
 
 ### Basic Tests
 
-| Target | Description |
-|--------|-------------|
-| `make goss-test` | Runtime tests for running containers |
-| `make goss-test-build` | Build-time tests (validates images) |
-| `make goss-test-all` | Both build-time and runtime tests |
+| Target                 | Description                          |
+| ---------------------- | ------------------------------------ |
+| `make goss-test`       | Runtime tests for running containers |
+| `make goss-test-build` | Build-time tests (validates images)  |
+| `make goss-test-all`   | Both build-time and runtime tests    |
 
 ### Individual Service Tests (Runtime)
 
-| Target | Description |
-|--------|-------------|
-| `make goss-test-nginx` | Test nginx (HTTPS, TLS) |
-| `make goss-test-php` | Test PHP-FPM (health, ping) |
-| `make goss-test-node-backend` | Test Express API |
-| `make goss-test-node-frontend` | Test framework server |
-| `make goss-test-postgres` | Test PostgreSQL (SSL) |
-| `make goss-test-mariadb` | Test MariaDB (SSL) |
-| `make goss-test-redis` | Test Redis (TLS) |
-| `make goss-test-mercure` | Test Mercure Hub |
-| `make goss-test-meilisearch` | Test Meilisearch |
-| `make goss-test-elasticsearch` | Test Elasticsearch |
-| `make goss-test-mailpit` | Test Mailpit |
-| `make goss-test-minio` | Test MinIO (TLS) |
-| `make goss-test-rabbitmq` | Test RabbitMQ |
+| Target                         | Description                 |
+| ------------------------------ | --------------------------- |
+| `make goss-test-nginx`         | Test nginx (HTTPS, TLS)     |
+| `make goss-test-php`           | Test PHP-FPM (health, ping) |
+| `make goss-test-node-backend`  | Test Express API            |
+| `make goss-test-node-frontend` | Test framework server       |
+| `make goss-test-postgres`      | Test PostgreSQL (SSL)       |
+| `make goss-test-mariadb`       | Test MariaDB (SSL)          |
+| `make goss-test-redis`         | Test Redis (TLS)            |
+| `make goss-test-mercure`       | Test Mercure Hub            |
+| `make goss-test-meilisearch`   | Test Meilisearch            |
+| `make goss-test-elasticsearch` | Test Elasticsearch          |
+| `make goss-test-mailpit`       | Test Mailpit                |
+| `make goss-test-minio`         | Test MinIO (TLS)            |
+| `make goss-test-rabbitmq`      | Test RabbitMQ               |
 
 ### Preset Tests (Full Stack Testing)
 
-| Target | Description |
-|--------|-------------|
-| `make goss-test-preset-fullstack` | PHP + Node + Postgres + Redis |
-| `make goss-test-preset-php-only` | PHP + Postgres + Redis |
-| `make goss-test-preset-node-only` | Node + Postgres + Redis |
-| `make goss-test-preset-minimal` | Nginx only |
-| `make goss-test-preset-fullstack-mariadb` | Full-Stack with MariaDB |
-| `make goss-test-preset-fullstack-optional` | All services enabled |
-| `make goss-test-preset-framework` | Nuxt/Next + Express |
-| `make goss-test-matrix` | Run ALL presets (CI/CD) |
+| Target                                     | Description                   |
+| ------------------------------------------ | ----------------------------- |
+| `make goss-test-preset-fullstack`          | PHP + Node + Postgres + Redis |
+| `make goss-test-preset-php-only`           | PHP + Postgres + Redis        |
+| `make goss-test-preset-node-only`          | Node + Postgres + Redis       |
+| `make goss-test-preset-minimal`            | Nginx only                    |
+| `make goss-test-preset-fullstack-mariadb`  | Full-Stack with MariaDB       |
+| `make goss-test-preset-fullstack-optional` | All services enabled          |
+| `make goss-test-preset-framework`          | Nuxt/Next + Express           |
+| `make goss-test-matrix`                    | Run ALL presets (CI/CD)       |
 
 ## What Gets Tested
 
 ### Build-Time (GOSS YAML)
 
-| Category | Examples |
-|----------|----------|
-| Files | Config exists, correct permissions |
-| Commands | `php -v`, `nginx -t`, `node --check` |
-| Extensions | PHP modules, nginx brotli |
+| Category   | Examples                             |
+| ---------- | ------------------------------------ |
+| Files      | Config exists, correct permissions   |
+| Commands   | `php -v`, `nginx -t`, `node --check` |
+| Extensions | PHP modules, nginx brotli            |
 
 ### Runtime (Shell Script)
 
-| Category | Examples |
-|----------|----------|
-| HTTPS | Endpoints respond, TLS handshake |
-| Health | `/health`, `/ping`, `pg_isready` |
-| TLS | Certificate valid, non-TLS rejected |
-| Connectivity | Service-to-service communication |
+| Category     | Examples                            |
+| ------------ | ----------------------------------- |
+| HTTPS        | Endpoints respond, TLS handshake    |
+| Health       | `/health`, `/ping`, `pg_isready`    |
+| TLS          | Certificate valid, non-TLS rejected |
+| Connectivity | Service-to-service communication    |
 
 ## CI/CD Integration
 

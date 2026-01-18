@@ -10,6 +10,9 @@ ARG NODE_VERSION=24.12
 ARG ALPINE_VERSION=3.23
 ARG GOSS_VERSION=v0.4.9
 
+# GOSS stage for test stages (workaround: --from doesn't support ARG expansion)
+FROM ghcr.io/goss-org/goss:${GOSS_VERSION} AS goss
+
 # --- 1. BASE STAGE (Shared Foundation) ---
 # Installs pnpm and curl.
 # Use a recent Node.js LTS version on Alpine for a slim image
@@ -209,7 +212,7 @@ FROM api AS test-api
 USER root
 
 # Copy GOSS binary from official image
-COPY --from=ghcr.io/goss-org/goss:${GOSS_VERSION} /usr/bin/goss /usr/local/bin/goss
+COPY --from=goss /usr/bin/goss /usr/local/bin/goss
 RUN chmod +x /usr/local/bin/goss
 
 # Copy test specification
@@ -226,7 +229,7 @@ FROM framework AS test-framework
 USER root
 
 # Copy GOSS binary from official image
-COPY --from=ghcr.io/goss-org/goss:${GOSS_VERSION} /usr/bin/goss /usr/local/bin/goss
+COPY --from=goss /usr/bin/goss /usr/local/bin/goss
 RUN chmod +x /usr/local/bin/goss
 
 # Copy test specification

@@ -12,6 +12,9 @@
 ARG ALPINE_VERSION=3.23
 ARG GOSS_VERSION=v0.4.9
 
+# GOSS stage for test stages (workaround: --from doesn't support ARG expansion)
+FROM ghcr.io/goss-org/goss:${GOSS_VERSION} AS goss
+
 # --- 1. BASE STAGE (Shared) ---
 # Using Alpine 3.23 directly for version-matched nginx + brotli module
 FROM alpine:${ALPINE_VERSION} AS base
@@ -104,7 +107,7 @@ FROM production AS test
 
 # Copy GOSS binary from official image (needs root temporarily)
 USER root
-COPY --from=ghcr.io/goss-org/goss:${GOSS_VERSION} /usr/bin/goss /usr/local/bin/goss
+COPY --from=goss /usr/bin/goss /usr/local/bin/goss
 RUN chmod +x /usr/local/bin/goss
 
 # Copy test specification

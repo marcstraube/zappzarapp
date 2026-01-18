@@ -3,7 +3,7 @@
     "enabled": true,
     "actions": [
       {
-        "action": "docker compose exec -T -u node node-backend pnpm exec commitlint --edit /app/.git/COMMIT_EDITMSG",
+        "action": "docker compose run --rm -T dev-tools pnpm exec commitlint --edit /app/.git/COMMIT_EDITMSG",
         "options": [],
         "type": "cli",
         "description": "Validate commit message format against Conventional Commits standard"
@@ -20,7 +20,7 @@
         "description": "Fix file permissions on staged files (scripts: 755, configs: 644)"
       },
       {
-        "action": "docker compose exec -T -u node node-backend pnpm exec lint-staged --no-stash",
+        "action": "docker compose run --rm -T dev-tools pnpm exec lint-staged --config /app/lint-staged.config.js --no-stash",
         "options": [],
         "type": "cli",
         "description": "Fix code style on staged Node.js files (TS/JS, JSON, MD) via Prettier, ESLint, Markdownlint (auto-fix and re-stage). Uses --no-stash to avoid git stash issues with bind-mounted files in Docker."
@@ -55,13 +55,13 @@
         "description": "Run PHPUnit tests (PHP unit & integration tests)"
       },
       {
-        "action": "docker compose exec -T -u node node-backend pnpm run type-check",
+        "action": "docker compose run --rm -T dev-tools pnpm run type-check",
         "options": [],
         "type": "cli",
         "description": "Run TypeScript type checking (static analysis)"
       },
       {
-        "action": "docker compose exec -T -u node node-backend pnpm test",
+        "action": "docker compose run --rm -T dev-tools pnpm test",
         "options": [],
         "type": "cli",
         "description": "Run Vitest tests (Node.js unit & integration tests)"
