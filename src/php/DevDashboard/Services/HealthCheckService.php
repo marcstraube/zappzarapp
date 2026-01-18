@@ -207,7 +207,7 @@ class HealthCheckService
         $host = 'postgres';
         $port = 5432;
 
-        $socket = fsockopen($host, $port, $_errno, $errstr, 1);
+        $socket = $this->safeSocketOpen($host, $port, $_errno, $errstr, 1);
         if ($socket) {
             fclose($socket);
             return ['connected' => true, 'host' => $host, 'port' => $port];
@@ -227,7 +227,7 @@ class HealthCheckService
         $host = 'mariadb';
         $port = 3306;
 
-        $socket = fsockopen($host, $port, $_errno, $errstr, 1);
+        $socket = $this->safeSocketOpen($host, $port, $_errno, $errstr, 1);
         if ($socket) {
             fclose($socket);
             return ['connected' => true, 'host' => $host, 'port' => $port];
@@ -247,7 +247,7 @@ class HealthCheckService
         $host = 'redis';
         $port = 6379;
 
-        $socket = fsockopen($host, $port, $_errno, $errstr, 1);
+        $socket = $this->safeSocketOpen($host, $port, $_errno, $errstr, 1);
         if ($socket) {
             fclose($socket);
             return ['connected' => true, 'host' => $host, 'port' => $port];
@@ -261,14 +261,13 @@ class HealthCheckService
      *
      * @return array<string, mixed>
      * @SuppressWarnings("PHPMD.UnusedLocalVariable")
-     * @SuppressWarnings("PHPMD.ErrorControlOperator")
      */
     private function checkMercure(): array
     {
         $host = 'mercure';
         $port = 443;
 
-        $socket = @fsockopen($host, $port, $_errno, $errstr, 1);
+        $socket = $this->safeSocketOpen($host, $port, $_errno, $errstr, 1);
         if ($socket) {
             fclose($socket);
             return ['connected' => true, 'host' => $host, 'port' => $port, 'tls' => true];
@@ -282,14 +281,13 @@ class HealthCheckService
      *
      * @return array<string, mixed>
      * @SuppressWarnings("PHPMD.UnusedLocalVariable")
-     * @SuppressWarnings("PHPMD.ErrorControlOperator")
      */
     private function checkMeilisearch(): array
     {
         $host = 'meilisearch';
         $port = 7700;
 
-        $socket = @fsockopen($host, $port, $_errno, $errstr, 1);
+        $socket = $this->safeSocketOpen($host, $port, $_errno, $errstr, 1);
         if ($socket) {
             fclose($socket);
             return ['connected' => true, 'host' => $host, 'port' => $port, 'tls' => true];
@@ -303,14 +301,13 @@ class HealthCheckService
      *
      * @return array<string, mixed>
      * @SuppressWarnings("PHPMD.UnusedLocalVariable")
-     * @SuppressWarnings("PHPMD.ErrorControlOperator")
      */
     private function checkElasticsearch(): array
     {
         $host = 'elasticsearch';
         $port = 9200;
 
-        $socket = @fsockopen($host, $port, $_errno, $errstr, 1);
+        $socket = $this->safeSocketOpen($host, $port, $_errno, $errstr, 1);
         if ($socket) {
             fclose($socket);
             return ['connected' => true, 'host' => $host, 'port' => $port, 'tls' => true];
@@ -324,14 +321,13 @@ class HealthCheckService
      *
      * @return array<string, mixed>
      * @SuppressWarnings("PHPMD.UnusedLocalVariable")
-     * @SuppressWarnings("PHPMD.ErrorControlOperator")
      */
     private function checkMailpit(): array
     {
         $host = 'mailpit';
         $port = 8025;
 
-        $socket = @fsockopen($host, $port, $_errno, $errstr, 1);
+        $socket = $this->safeSocketOpen($host, $port, $_errno, $errstr, 1);
         if ($socket) {
             fclose($socket);
             return ['connected' => true, 'host' => $host, 'port' => $port];
@@ -345,14 +341,13 @@ class HealthCheckService
      *
      * @return array<string, mixed>
      * @SuppressWarnings("PHPMD.UnusedLocalVariable")
-     * @SuppressWarnings("PHPMD.ErrorControlOperator")
      */
     private function checkMinio(): array
     {
         $host = 'minio';
         $port = 9000;
 
-        $socket = @fsockopen($host, $port, $_errno, $errstr, 1);
+        $socket = $this->safeSocketOpen($host, $port, $_errno, $errstr, 1);
         if ($socket) {
             fclose($socket);
             return ['connected' => true, 'host' => $host, 'port' => $port];
@@ -366,14 +361,13 @@ class HealthCheckService
      *
      * @return array<string, mixed>
      * @SuppressWarnings("PHPMD.UnusedLocalVariable")
-     * @SuppressWarnings("PHPMD.ErrorControlOperator")
      */
     private function checkRabbitmq(): array
     {
         $host = 'rabbitmq';
         $port = 5672;
 
-        $socket = @fsockopen($host, $port, $_errno, $errstr, 1);
+        $socket = $this->safeSocketOpen($host, $port, $_errno, $errstr, 1);
         if ($socket) {
             fclose($socket);
             return ['connected' => true, 'host' => $host, 'port' => $port];
@@ -411,7 +405,6 @@ class HealthCheckService
      * Check Redis with detailed info (PING test, version)
      *
      * @return array<string, mixed>
-     * @SuppressWarnings("PHPMD.ErrorControlOperator")
      */
     private function checkRedisDetailed(): array
     {
@@ -433,7 +426,7 @@ class HealthCheckService
             $port      = $parsedUrl['port'] ?? 6379;
 
             if ($useTls) {
-                $connected = @$redis->connect($host, $port, 2, '', 0, 0, [
+                $connected = $this->safeRedisConnect($redis, $host, $port, [
                     'stream' => [
                         'verify_peer'       => false,
                         'verify_peer_name'  => false,
@@ -441,7 +434,7 @@ class HealthCheckService
                     ],
                 ]);
             } else {
-                $connected = @$redis->connect($host, $port, 2);
+                $connected = $this->safeRedisConnect($redis, $host, $port);
             }
 
             if (!$connected) {
@@ -599,10 +592,10 @@ class HealthCheckService
      */
     private function checkNode(): array
     {
-        $host = 'node';
+        $host = 'node-backend';
         $port = 3000;
 
-        $socket = fsockopen($host, $port, $_errno, $errstr, 1);
+        $socket = $this->safeSocketOpen($host, $port, $_errno, $errstr, 1);
         if ($socket) {
             fclose($socket);
             return [
@@ -627,7 +620,7 @@ class HealthCheckService
     private function checkNginx(): array
     {
         // Check if we can connect to nginx
-        $socket = fsockopen('nginx', 8080, $_errno, $errstr, 1);
+        $socket = $this->safeSocketOpen('nginx', 8080, $_errno, $errstr, 1);
         if ($socket) {
             fclose($socket);
             return [
@@ -695,4 +688,42 @@ class HealthCheckService
         ];
     }
 
+    /**
+     * Safe wrapper for fsockopen that suppresses warnings without @ operator
+     *
+     * Uses set_error_handler to suppress DNS resolution and connection warnings
+     * that occur when services are unavailable (expected in health checks).
+     *
+     * @param int<0, max> $timeout Connection timeout in seconds
+     * @return resource|false Socket resource on success, false on failure
+     */
+    private function safeSocketOpen(string $host, int $port, ?int &$errno, ?string &$errstr, int $timeout = 1): mixed
+    {
+        set_error_handler(static fn (): bool => true);
+
+        try {
+            return fsockopen($host, $port, $errno, $errstr, $timeout);
+        } finally {
+            restore_error_handler();
+        }
+    }
+
+    /**
+     * Safe wrapper for Redis::connect that suppresses warnings without @ operator
+     *
+     * @param array<string, mixed>|null $context TLS stream context options
+     */
+    private function safeRedisConnect(Redis $redis, string $host, int $port, ?array $context = null): bool
+    {
+        set_error_handler(static fn (): bool => true);
+
+        try {
+            if ($context !== null) {
+                return $redis->connect($host, $port, 2, '', 0, 0, $context);
+            }
+            return $redis->connect($host, $port, 2);
+        } finally {
+            restore_error_handler();
+        }
+    }
 }

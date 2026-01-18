@@ -148,12 +148,17 @@ class HealthCheck
     private function checkNodeBackend(): void
     {
         try {
-            // Use internal Docker network hostname
-            $url     = 'http://node:3000/health';
+            // Use internal Docker network hostname with TLS (self-signed certs)
+            $url     = 'https://node-backend:3000/health';
             $context = stream_context_create([
                 'http' => [
                     'timeout'       => 2,
                     'ignore_errors' => true,
+                ],
+                'ssl' => [
+                    'verify_peer'       => false,
+                    'verify_peer_name'  => false,
+                    'allow_self_signed' => true,
                 ],
             ]);
 
@@ -493,12 +498,11 @@ class HealthCheck
      * Check TCP connection to a service
      *
      * @return array<string, mixed>
-     * @SuppressWarnings("PHPMD.ErrorControlOperator")
      * @SuppressWarnings("PHPMD.UnusedLocalVariable") $errno required by fsockopen signature
      */
     private function checkTcpConnection(string $host, int $port): array
     {
-        $socket = @fsockopen($host, $port, $_errno, $errstr, 2);
+        $socket = $this->safeSocketOpen($host, $port, $_errno, $errstr, 2);
 
         if ($socket) {
             fclose($socket);
@@ -506,6 +510,23 @@ class HealthCheck
         }
 
         return ['connected' => false, 'error' => $errstr ?: 'Connection failed'];
+    }
+
+    /**
+     * Safe wrapper for fsockopen that suppresses warnings without @ operator
+     *
+     * @param int<0, max> $timeout Connection timeout in seconds
+     * @return resource|false Socket resource on success, false on failure
+     */
+    private function safeSocketOpen(string $host, int $port, ?int &$errno, ?string &$errstr, int $timeout = 1): mixed
+    {
+        set_error_handler(static fn (): bool => true);
+
+        try {
+            return fsockopen($host, $port, $errno, $errstr, $timeout);
+        } finally {
+            restore_error_handler();
+        }
     }
 
     /**

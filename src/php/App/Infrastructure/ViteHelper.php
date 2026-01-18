@@ -188,7 +188,6 @@ class ViteHelper
     /**
      * Check if Vite dev server is running (development mode only)
      *
-     * @SuppressWarnings("PHPMD.ErrorControlOperator")
      * @SuppressWarnings("PHPMD.UnusedLocalVariable")
      */
     public function isViteDevServerRunning(): bool
@@ -198,7 +197,7 @@ class ViteHelper
         }
 
         // Try to connect to Vite dev server via Node container
-        $socket = @fsockopen('node', 5173, $_errno, $errstr, 1);
+        $socket = $this->safeSocketOpen('node', 5173, $_errno, $errstr, 1);
         if ($socket !== false) {
             fclose($socket);
 
@@ -206,6 +205,23 @@ class ViteHelper
         }
 
         return false;
+    }
+
+    /**
+     * Safe wrapper for fsockopen that suppresses warnings without @ operator
+     *
+     * @param int<0, max> $timeout Connection timeout in seconds
+     * @return resource|false Socket resource on success, false on failure
+     */
+    private function safeSocketOpen(string $host, int $port, ?int &$errno, ?string &$errstr, int $timeout = 1): mixed
+    {
+        set_error_handler(static fn (): bool => true);
+
+        try {
+            return fsockopen($host, $port, $errno, $errstr, $timeout);
+        } finally {
+            restore_error_handler();
+        }
     }
 
     /**
