@@ -8,6 +8,7 @@
 
 ARG NODE_VERSION=24.12
 ARG ALPINE_VERSION=3.23
+ARG GOSS_VERSION=v0.4.9
 
 # --- 1. BASE STAGE (Shared Foundation) ---
 # Installs pnpm and curl.
@@ -86,12 +87,11 @@ COPY --chown=node:node postcss.config.js ./
 COPY --chown=node:node resources/ ./resources/
 COPY --chown=node:node src/node/backend/ ./src/node/backend/
 
-# Execute the build commands (Frontend assets + Backend)
-RUN pnpm run build && pnpm --filter @zappzarapp/backend build
-
-# Image Slimming - Reinstall production dependencies only
-# Note: pnpm prune breaks workspace symlinks, so we reinstall instead
-RUN rm -rf node_modules src/node/backend/node_modules && \
+# Execute the build commands (Frontend assets + Backend) and slim image
+# Note: We delete node_modules and reinstall with --prod instead of using
+# 'pnpm prune --prod' because prune breaks pnpm workspace symlinks
+RUN pnpm run build && pnpm --filter @zappzarapp/backend build && \
+    rm -rf node_modules src/node/backend/node_modules && \
     pnpm install --prod --frozen-lockfile
 
 # --- 4. PRODUCTION ASSETS STAGE ---
@@ -209,7 +209,7 @@ FROM api AS test-api
 USER root
 
 # Copy GOSS binary from official image
-COPY --from=ghcr.io/goss-org/goss:latest /usr/bin/goss /usr/local/bin/goss
+COPY --from=ghcr.io/goss-org/goss:${GOSS_VERSION} /usr/bin/goss /usr/local/bin/goss
 RUN chmod +x /usr/local/bin/goss
 
 # Copy test specification
@@ -226,7 +226,7 @@ FROM framework AS test-framework
 USER root
 
 # Copy GOSS binary from official image
-COPY --from=ghcr.io/goss-org/goss:latest /usr/bin/goss /usr/local/bin/goss
+COPY --from=ghcr.io/goss-org/goss:${GOSS_VERSION} /usr/bin/goss /usr/local/bin/goss
 RUN chmod +x /usr/local/bin/goss
 
 # Copy test specification

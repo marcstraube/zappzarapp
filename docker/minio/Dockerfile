@@ -3,13 +3,13 @@
 # Use same SDKs as AWS S3, switch to real S3 in production without code changes
 # https://min.io/
 #
-# VERSION NOTE:
-# MinIO uses date-based releases (e.g., RELEASE.2025-01-01T00-00-00Z) instead of
-# semantic versioning. For production, pin to a specific release:
-#   ARG MINIO_VERSION=RELEASE.2025-01-01T00-00-00Z
-# See available tags: https://hub.docker.com/r/minio/minio/tags
+# Version Pinning:
+# - MinIO uses date-based releases (RELEASE.YYYY-MM-DDTHH-MM-SSZ)
+# - To update: check https://hub.docker.com/r/minio/minio/tags
+# - For SHA digest pinning in production, use:
+#   FROM minio/minio:RELEASE.2025-10-15T17-29-55Z@sha256:<digest>
 
-ARG MINIO_VERSION=latest
+ARG MINIO_VERSION=RELEASE.2025-10-15T17-29-55Z
 
 FROM minio/minio:${MINIO_VERSION}
 

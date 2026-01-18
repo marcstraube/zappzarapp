@@ -1,11 +1,74 @@
 # zappzarapp - Changelog
 
-**Erstellt:** 2025-12-19 **Letzte Aktualisierung:** 2026-01-17 (Security
-Hardening) **Version:** 3.44
+**Erstellt:** 2025-12-19 **Letzte Aktualisierung:** 2026-01-18 (Dockerfile
+Improvements) **Version:** 3.45
 
 ---
 
 ## Changelog
+
+### Version 3.45 (2026-01-18) - Dockerfile Improvements & Documentation Index
+
+Dockerfile hardening with version pinning, layer optimization, and comprehensive
+documentation index in README.
+
+#### Dockerfile: Version Pinning as ARGs
+
+All version numbers now defined as ARGs at the top of each Dockerfile for easy
+maintenance:
+
+- `GOSS_VERSION=v0.4.9` - Pinned across all test stages (was `:latest`)
+- `GMAGICK_VERSION=2.0.6RC1` - PHP gmagick extension
+- `COMPOSER_VERSION=2` - Composer major version (was `:latest`)
+- `PG_CRON_VERSION=1.6.4` - PostgreSQL pg_cron extension (moved to top)
+- `MINIO_VERSION=RELEASE.2025-10-15T17-29-55Z` - MinIO (was `:latest`)
+
+**Affected files:**
+- `docker/node/Dockerfile`
+- `docker/nginx/Dockerfile`
+- `docker/php/Dockerfile`
+- `docker/postgres/Dockerfile`
+- `docker/redis/Dockerfile`
+- `docker/minio/Dockerfile`
+
+#### Dockerfile: Layer Optimization
+
+Combined consecutive RUN commands to reduce image layers:
+
+- `docker/node/Dockerfile` - Build + prune in single RUN
+- `docker/php/Dockerfile` - Autoloader + cleanup + permissions in single RUN
+- `docker/mariadb/Dockerfile` - Combined chmod commands
+- `docker/rabbitmq/Dockerfile` - Combined chmod commands
+- `docker/redis/Dockerfile` - Test stage now inherits from base (no duplication)
+
+#### Dockerfile: Security Documentation
+
+Added security comments explaining why no USER directive for database containers:
+
+- `docker/mariadb/Dockerfile` - Explains root requirement for initialization
+- `docker/postgres/Dockerfile` - Explains root requirement for initialization
+- `docker/rabbitmq/Dockerfile` - Explains root requirement for Erlang cookie
+
+#### Git Hooks: Fixed Container Reference
+
+- `captainhook.json` - Changed `node` → `node-backend` for all hooks
+- Fixes hooks failing when using NODE_MODE=assets-api (default)
+
+#### Documentation: Comprehensive Index
+
+Added complete documentation index to root `README.md`:
+
+- Getting Started (Quickstart, Customization, Troubleshooting, Windows)
+- Development (Dev Dashboard, Makefile, Frontend Scaffolding, Xdebug, etc.)
+- Testing (PHP, Node.js, GOSS Container Tests)
+- Infrastructure (Architecture, Network, Deployment, Kubernetes, etc.)
+- Security (SSL, Internal TLS, Secrets, Encryption, Audit Logging, etc.)
+- IDE Setup (JetBrains, VS Code)
+- Components (Node.js Frontend)
+
+All paths corrected to match actual file locations.
+
+---
 
 ### Version 3.44 (2026-01-17) - Security Hardening & GOSS Test Matrix
 

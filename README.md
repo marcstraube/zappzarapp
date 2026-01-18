@@ -68,20 +68,65 @@ The application is available at:
 
 Detailed documentation is available in [`documentation/`](documentation/):
 
-### Security & Compliance
+### Getting Started
 
-- [SSL Certificates](documentation/SSL-CERTIFICATES.md)
-- [Database Encryption](documentation/ENCRYPTION.md)
-- [Audit Logging](documentation/AUDIT-LOGGING.md)
-- [Network Architecture](documentation/NETWORK.md)
+- [Quickstart Guide](documentation/QUICKSTART.md)
+- [Customization](documentation/getting-started/CUSTOMIZATION.md)
+- [Troubleshooting](documentation/TROUBLESHOOTING.md)
+- [Windows Setup](documentation/setup/WINDOWS.md)
 
 ### Development
 
-- [Dev Dashboard](documentation/DEV-DASHBOARD.md)
-- [Xdebug Configuration](documentation/XDEBUG.md)
-- [PHP Testing](documentation/TESTING-PHP.md)
-- [Node.js Testing](documentation/TESTING-NODE.md)
-- [Renovate (Auto-Updates)](documentation/RENOVATE.md)
+- [Dev Dashboard](documentation/development/DEV-DASHBOARD.md)
+- [Makefile Reference](documentation/development/MAKEFILE-REFERENCE.md)
+- [Frontend Scaffolding](documentation/development/FRONTEND-SCAFFOLDING.md)
+- [Xdebug Configuration](documentation/development/XDEBUG.md)
+- [Dependencies](documentation/development/DEPENDENCIES.md)
+- [Renovate (Auto-Updates)](documentation/development/RENOVATE.md)
+
+### Testing
+
+- [PHP Testing](documentation/testing/TESTING-PHP.md)
+- [Node.js Testing](documentation/testing/TESTING-NODE.md)
+- [GOSS Container Tests](tests/goss/README.md)
+
+### Infrastructure
+
+- [Architecture Overview](documentation/infrastructure/ARCHITECTURE.md)
+- [Network Configuration](documentation/infrastructure/NETWORK.md)
+- [Nginx Configuration](documentation/infrastructure/NGINX.md)
+- [Deployment Guide](documentation/infrastructure/DEPLOYMENT.md)
+- [Kubernetes](documentation/infrastructure/KUBERNETES.md)
+- [Optional Services](documentation/infrastructure/OPTIONAL-SERVICES.md)
+- [Performance Tuning](documentation/infrastructure/PERFORMANCE.md)
+- [Error Pages](documentation/infrastructure/ERROR-PAGES.md)
+- [Monitoring](documentation/infrastructure/MONITORING.md)
+
+### Security
+
+- [SSL Certificates](documentation/security/SSL-CERTIFICATES.md)
+- [Internal TLS](documentation/security/INTERNAL-TLS.md)
+- [Secrets Management](documentation/security/SECRETS.md)
+- [Database Encryption](documentation/security/ENCRYPTION.md)
+- [Audit Logging](documentation/security/AUDIT-LOGGING.md)
+- [Access Log Monitoring](documentation/security/ACCESS-LOG-MONITORING.md)
+- [Security Scanning](documentation/security/SECURITY-SCANNING.md)
+- [Backup & Recovery](documentation/security/BACKUP.md)
+- [Data Retention Policy](documentation/security/RETENTION-POLICY.md)
+
+### IDE Setup
+
+- [JetBrains (PhpStorm/WebStorm)](.idea/README.md)
+- [VS Code](.vscode/README.md)
+
+### Components
+
+- [Node.js Frontend](src/node/frontend/README.md)
+
+### Other
+
+- [Contributing](documentation/CONTRIBUTING.md)
+- [Changelog](documentation/CHANGELOG.md)
 
 ## Make Commands
 

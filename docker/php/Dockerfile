@@ -8,6 +8,9 @@
 
 ARG PHP_VERSION=8.4
 ARG ALPINE_VERSION=3.23
+ARG GOSS_VERSION=v0.4.9
+ARG GMAGICK_VERSION=2.0.6RC1
+ARG COMPOSER_VERSION=2
 
 # --- 1. PHP BUILDER STAGE (Compilation) ---
 # This stage installs all build dependencies and compiles the extensions.
@@ -59,7 +62,7 @@ RUN apk add --no-cache \
     && docker-php-ext-install -j$(nproc) gd \
     # gmagick 2.0.6RC1 is the only version supporting PHP 8.4 (no stable release yet)
     # Check https://pecl.php.net/package/gmagick for updates
-    && pecl install gmagick-2.0.6RC1 \
+    && pecl install gmagick-${GMAGICK_VERSION} \
     && pecl install redis \
     && pecl install amqp \
     && docker-php-ext-enable gmagick redis amqp \
@@ -142,9 +145,10 @@ RUN apk add --no-cache git unzip su-exec $PHPIZE_DEPS linux-headers && \
     chown -R www-data:www-data /var/log/app /var/log/php /home/www-data
 
 # Install Composer (only in development)
-COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
+COPY --from=composer:${COMPOSER_VERSION} /usr/bin/composer /usr/bin/composer
 
 # Install PIE (PHP Installer for Extensions)
+# Note: PIE only provides :bin tag, no versioned releases available yet
 COPY --from=ghcr.io/php/pie:bin /pie /usr/bin/pie
 
 # Install Xdebug (INI is mounted via volumes in compose.override.yaml)
@@ -183,7 +187,7 @@ COPY docker/php/entrypoint.production.sh /entrypoint.production.sh
 RUN chmod +x /entrypoint.production.sh
 
 # Install Composer temporarily for dependency installation
-COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
+COPY --from=composer:${COMPOSER_VERSION} /usr/bin/composer /usr/bin/composer
 
 # Install unzip temporarily (required by composer)
 RUN apk add --no-cache --virtual .composer-deps unzip
@@ -209,13 +213,12 @@ FROM production-base AS production
 # Note: node-backend image must be built first (see Makefile build order)
 COPY --from=zappzarapp-node-backend:latest --chown=www-data:www-data /app/public/build/ ./public/build/
 
-# Optimize Autoloader & Cleanup
+# Optimize Autoloader, Cleanup & Permission Hardening
 RUN composer dump-autoload --optimize --no-dev --classmap-authoritative && \
     rm -rf /usr/bin/composer /home/www-data/.composer /tmp/* && \
-    apk del .composer-deps
-
-# Permission Hardening
-RUN chown -R root:root /var/www/html && \
+    apk del .composer-deps && \
+    # Permission hardening
+    chown -R root:root /var/www/html && \
     chmod -R 555 /var/www/html && \
     mkdir -p /var/www/html/storage && \
     chown -R www-data:www-data /var/www/html/storage && \
@@ -240,7 +243,7 @@ FROM production-base AS test
 RUN composer dump-autoload --optimize --no-dev --classmap-authoritative
 
 # Copy GOSS binary from official image
-COPY --from=ghcr.io/goss-org/goss:latest /usr/bin/goss /usr/local/bin/goss
+COPY --from=ghcr.io/goss-org/goss:${GOSS_VERSION} /usr/bin/goss /usr/local/bin/goss
 RUN chmod +x /usr/local/bin/goss
 
 # Copy test specification
@@ -254,13 +257,12 @@ RUN goss -g /goss.yaml validate --format documentation
 # Pure PHP backend - frontend frameworks (Nuxt/Next) serve their own assets
 FROM production-base AS production-framework
 
-# Optimize Autoloader & Cleanup (no Vite assets to copy)
+# Optimize Autoloader, Cleanup & Permission Hardening (no Vite assets to copy)
 RUN composer dump-autoload --optimize --no-dev --classmap-authoritative && \
     rm -rf /usr/bin/composer /home/www-data/.composer /tmp/* && \
-    apk del .composer-deps
-
-# Permission Hardening
-RUN chown -R root:root /var/www/html && \
+    apk del .composer-deps && \
+    # Permission hardening
+    chown -R root:root /var/www/html && \
     chmod -R 555 /var/www/html && \
     mkdir -p /var/www/html/storage && \
     chown -R www-data:www-data /var/www/html/storage && \

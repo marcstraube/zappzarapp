@@ -4,6 +4,14 @@
 # Usage: CREATE EXTENSION pg_cron;
 # See: documentation/security/RETENTION-POLICY.md
 #
+# Security Note: No USER directive is set because PostgreSQL requires root
+# privileges during container startup for:
+# - Data directory initialization (/var/lib/postgresql/data)
+# - SSL certificate permission setup
+# - Locale and encoding configuration
+# The official entrypoint (docker-entrypoint.sh) drops privileges to the
+# postgres user (uid 70 on Alpine) via gosu before starting postgres.
+#
 # Version Pinning:
 # - Minor version pinned for stability
 # - To update: check https://hub.docker.com/_/postgres/tags
@@ -12,6 +20,8 @@
 
 ARG POSTGRES_VERSION=17.7
 ARG ALPINE_VERSION=3.23
+ARG GOSS_VERSION=v0.4.9
+ARG PG_CRON_VERSION=1.6.4
 
 FROM postgres:${POSTGRES_VERSION}-alpine${ALPINE_VERSION} AS builder
 
@@ -24,7 +34,6 @@ RUN apk add --no-cache --virtual .build-deps \
     make
 
 # Clone and build pg_cron
-ARG PG_CRON_VERSION=1.6.4
 RUN git clone --branch v${PG_CRON_VERSION} --depth 1 https://github.com/citusdata/pg_cron.git /tmp/pg_cron \
     && cd /tmp/pg_cron \
     # PostgreSQL 17 expects LLVM 19 tools, Alpine has LLVM 21
@@ -56,7 +65,7 @@ CMD ["postgres"]
 FROM final AS test
 
 # Copy GOSS binary from official image
-COPY --from=ghcr.io/goss-org/goss:latest /usr/bin/goss /usr/local/bin/goss
+COPY --from=ghcr.io/goss-org/goss:${GOSS_VERSION} /usr/bin/goss /usr/local/bin/goss
 RUN chmod +x /usr/local/bin/goss
 
 # Copy test specification

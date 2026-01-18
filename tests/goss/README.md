@@ -63,8 +63,10 @@ Tests run during `docker build --target test`:
 
 ```dockerfile
 # Example from docker/php/Dockerfile
+ARG GOSS_VERSION=v0.4.9
+
 FROM production-base AS test
-COPY --from=ghcr.io/goss-org/goss:latest /goss /usr/local/bin/goss
+COPY --from=ghcr.io/goss-org/goss:${GOSS_VERSION} /usr/bin/goss /usr/local/bin/goss
 COPY tests/goss/services/php.yaml /goss.yaml
 RUN goss validate --format documentation
 ```
