@@ -20,11 +20,7 @@
 
 ARG POSTGRES_VERSION=17.7
 ARG ALPINE_VERSION=3.23
-ARG GOSS_VERSION=v0.4.9
 ARG PG_CRON_VERSION=1.6.4
-
-# GOSS stage for test stages (workaround: --from doesn't support ARG expansion)
-FROM ghcr.io/goss-org/goss:${GOSS_VERSION} AS goss
 
 FROM postgres:${POSTGRES_VERSION}-alpine${ALPINE_VERSION} AS builder
 
@@ -67,8 +63,8 @@ CMD ["postgres"]
 # Usage: docker build --target test -f docker/postgres/Dockerfile .
 FROM final AS test
 
-# Copy GOSS binary from official image
-COPY --from=goss /usr/bin/goss /usr/local/bin/goss
+# Copy GOSS binary from centralized image
+COPY --from=zappzarapp-goss:latest /usr/bin/goss /usr/local/bin/goss
 RUN chmod +x /usr/local/bin/goss
 
 # Copy test specification

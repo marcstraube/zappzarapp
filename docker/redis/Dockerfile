@@ -11,10 +11,6 @@
 
 ARG REDIS_VERSION=7.4
 ARG ALPINE_VERSION=3.21
-ARG GOSS_VERSION=v0.4.9
-
-# GOSS stage for test stages (workaround: --from doesn't support ARG expansion)
-FROM ghcr.io/goss-org/goss:${GOSS_VERSION} AS goss
 
 FROM redis:${REDIS_VERSION}-alpine${ALPINE_VERSION} AS base
 
@@ -31,8 +27,8 @@ HEALTHCHECK --interval=10s --timeout=3s --start-period=5s --retries=3 \
 # Usage: docker build --target test -f docker/redis/Dockerfile .
 FROM base AS test
 
-# Copy GOSS binary from official image
-COPY --from=goss /usr/bin/goss /usr/local/bin/goss
+# Copy GOSS binary from centralized image
+COPY --from=zappzarapp-goss:latest /usr/bin/goss /usr/local/bin/goss
 RUN chmod +x /usr/local/bin/goss
 
 # Copy test specification

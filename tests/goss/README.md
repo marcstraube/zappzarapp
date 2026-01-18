@@ -65,16 +65,15 @@ Tests run during `docker build --target test`:
 - **Permissions**: Correct file modes
 
 ```dockerfile
+# GOSS version is centralized in docker/goss/Dockerfile
+# Build it first: make build-goss
+
 # Example from docker/php/Dockerfile
-ARG GOSS_VERSION=v0.4.9
-
-# GOSS stage (workaround: --from doesn't support ARG expansion)
-FROM ghcr.io/goss-org/goss:${GOSS_VERSION} AS goss
-
 FROM production-base AS test
-COPY --from=goss /usr/bin/goss /usr/local/bin/goss
+COPY --from=zappzarapp-goss:latest /usr/bin/goss /usr/local/bin/goss
+RUN chmod +x /usr/local/bin/goss
 COPY tests/goss/services/php.yaml /goss.yaml
-RUN goss validate --format documentation
+RUN goss -g /goss.yaml validate --format documentation
 ```
 
 **Benefits:**

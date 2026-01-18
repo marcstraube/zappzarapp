@@ -8,12 +8,8 @@
 
 ARG PHP_VERSION=8.4
 ARG ALPINE_VERSION=3.23
-ARG GOSS_VERSION=v0.4.9
 ARG GMAGICK_VERSION=2.0.6RC1
 ARG COMPOSER_VERSION=2
-
-# GOSS stage for test stages (workaround: --from doesn't support ARG expansion)
-FROM ghcr.io/goss-org/goss:${GOSS_VERSION} AS goss
 
 # --- 1. PHP BUILDER STAGE (Compilation) ---
 # This stage installs all build dependencies and compiles the extensions.
@@ -245,8 +241,8 @@ FROM production-base AS test
 # Generate autoloader (normally done in production stage, but test runs on production-base)
 RUN composer dump-autoload --optimize --no-dev --classmap-authoritative
 
-# Copy GOSS binary from official image
-COPY --from=goss /usr/bin/goss /usr/local/bin/goss
+# Copy GOSS binary from centralized image
+COPY --from=zappzarapp-goss:latest /usr/bin/goss /usr/local/bin/goss
 RUN chmod +x /usr/local/bin/goss
 
 # Copy test specification
