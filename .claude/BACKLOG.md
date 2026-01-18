@@ -67,7 +67,16 @@ Future tasks and improvements to be implemented.
 
 ## Medium Priority
 
-(No items yet)
+### Code Quality Improvements
+
+**Status:** Completed
+**Created:** 2026-01-18
+**Completed:** 2026-01-18
+
+- [x] Move hooks from `settings.local.json` to `settings.json` (committable)
+- [x] Fix PHPUnit warnings (node -> node-backend hostname)
+- [x] Harden PHP error handling (safeSocketOpen/safeRedisConnect wrappers)
+- [x] Review PHP code with suppressed PHPMD warnings (ErrorControlOperator eliminated)
 
 ---
 
