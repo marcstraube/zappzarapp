@@ -1513,23 +1513,35 @@ test: ## Run all tests (PHP + Node.js) - continues even if some fail
 	@failed=0; \
 	$(MAKE) test-php || failed=1; \
 	$(MAKE) test-node || failed=1; \
+	echo ""; \
+	echo "════════════════════════════════════════════════════════════"; \
+	echo "                      TEST SUMMARY                          "; \
+	echo "════════════════════════════════════════════════════════════"; \
 	if [ $$failed -eq 1 ]; then \
-		echo -e "\033[0;31mSome tests failed!\033[0m"; \
+		echo -e "\033[0;31m  Result: FAILED - Some tests did not pass\033[0m"; \
+		echo "════════════════════════════════════════════════════════════"; \
 		exit 1; \
 	fi; \
-	echo -e "\033[0;32mAll tests passed!\033[0m"
+	echo -e "\033[0;32m  Result: PASSED - All tests successful\033[0m"; \
+	echo "════════════════════════════════════════════════════════════"
 
 test-coverage: ## Generate coverage reports for PHP and Node.js - continues even if some fail
 	@failed=0; \
 	$(MAKE) test-coverage-php || failed=1; \
 	$(MAKE) test-coverage-node || failed=1; \
-	echo -e "\033[0;34mPHP Coverage: build/coverage/php/index.html\033[0m"; \
-	echo -e "\033[0;34mNode.js Coverage: build/coverage/node/index.html\033[0m"; \
+	echo ""; \
+	echo "════════════════════════════════════════════════════════════"; \
+	echo "                   COVERAGE SUMMARY                         "; \
+	echo "════════════════════════════════════════════════════════════"; \
+	echo -e "\033[0;34m  PHP Coverage:     build/coverage/php/index.html\033[0m"; \
+	echo -e "\033[0;34m  Node.js Coverage: build/coverage/node/index.html\033[0m"; \
 	if [ $$failed -eq 1 ]; then \
-		echo -e "\033[0;31mSome tests failed!\033[0m"; \
+		echo -e "\033[0;31m  Result: FAILED - Some tests did not pass\033[0m"; \
+		echo "════════════════════════════════════════════════════════════"; \
 		exit 1; \
 	fi; \
-	echo -e "\033[0;32mAll coverage reports generated!\033[0m"
+	echo -e "\033[0;32m  Result: PASSED - All coverage reports generated\033[0m"; \
+	echo "════════════════════════════════════════════════════════════"
 
 test-php: ## Run PHPUnit tests
 	@echo -e "\033[0;33mRunning PHPUnit tests...\033[0m"
