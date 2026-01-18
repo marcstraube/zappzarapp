@@ -92,6 +92,8 @@ Available commands in `.claude/commands/`:
 ## Git & Commits
 
 - Do not commit unless the user explicitly requests it
+- **After each completed todo**: Inform user that changes are ready for review, then wait for approval before committing
+- One todo = one focused commit (prevents mixed changes that need splitting later)
 - Use `/commit` for the guided commit workflow
 - Run `/sync-check` before commits that touch configuration files
 

@@ -107,6 +107,7 @@ Aggregated knowledge from all development sessions. Use this as reference to avo
 ### Commits
 
 - **Commit after each completed todo**: Prevents mixed changes that need to be split later. Each todo = one focused commit.
+- **User review before commit**: After completing a todo, inform user that changes are ready for review. Wait for approval before committing.
 - **Thematically grouped commits**: Keep commits focused on one topic (feature, fix, docs) for cleaner history.
 
 ### Bash Commands
