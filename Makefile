@@ -370,28 +370,15 @@ down: ## Stop containers (optionally specify service names: make down php nginx)
 		fi; \
 	else \
 		echo -e "\033[0;33mStopping containers...\033[0m"; \
+		ALL_PROFILES="--profile postgres --profile mariadb --profile php --profile node --profile node-backend --profile redis --profile mercure --profile meilisearch --profile elasticsearch --profile mailpit --profile minio --profile rabbitmq"; \
 		if [ -f .env ]; then \
-			. ./.env && \
-			PROFILES=""; \
-			if [ "$${ENABLE_DATABASE:-true}" = "true" ]; then \
-				PROFILES="$$PROFILES --profile $${DB_TYPE:-postgres}"; \
-			fi; \
-			if [ "$${ENABLE_PHP:-true}" = "true" ]; then PROFILES="$$PROFILES --profile php"; fi; \
-			if [ "$${ENABLE_NODE:-true}" = "true" ]; then PROFILES="$$PROFILES --profile node"; fi; \
-			if [ "$${ENABLE_REDIS:-true}" = "true" ]; then PROFILES="$$PROFILES --profile redis"; fi; \
-			if [ "$${ENABLE_MERCURE:-false}" = "true" ]; then PROFILES="$$PROFILES --profile mercure"; fi; \
-			if [ "$${ENABLE_MEILISEARCH:-false}" = "true" ]; then PROFILES="$$PROFILES --profile meilisearch"; fi; \
-			if [ "$${ENABLE_ELASTICSEARCH:-false}" = "true" ]; then PROFILES="$$PROFILES --profile elasticsearch"; fi; \
-			if [ "$${ENABLE_MAILPIT:-false}" = "true" ]; then PROFILES="$$PROFILES --profile mailpit"; fi; \
-			if [ "$${ENABLE_MINIO:-false}" = "true" ]; then PROFILES="$$PROFILES --profile minio"; fi; \
-			if [ "$${ENABLE_RABBITMQ:-false}" = "true" ]; then PROFILES="$$PROFILES --profile rabbitmq"; fi; \
-			if [ "$$ENV" = "production" ]; then \
-				$(DC) -f compose.yaml -f compose.production.yaml $$PROFILES down; \
+			. ./.env && if [ "$$ENV" = "production" ]; then \
+				$(DC) -f compose.yaml -f compose.production.yaml $$ALL_PROFILES down --remove-orphans; \
 			else \
-				$(DC) $$PROFILES down; \
+				$(DC) $$ALL_PROFILES down --remove-orphans; \
 			fi; \
 		else \
-			$(DC) down; \
+			$(DC) $$ALL_PROFILES down --remove-orphans; \
 		fi; \
 	fi
 	@echo -e "\033[0;32mContainers stopped!\033[0m"
