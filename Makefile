@@ -1446,37 +1446,37 @@ lint-docker: ## Lint Dockerfiles with hadolint
 
 lint-md: ## Check Markdown files for style issues
 	@echo -e "\033[0;33mChecking Markdown files...\033[0m"
-	@docker compose exec node pnpm run lint:md
+	@$(DC) run --rm -T dev-tools pnpm run lint:md
 	@echo -e "\033[0;32mMarkdown check completed!\033[0m"
 
 lint-md-fix: ## Fix Markdown style issues automatically
 	@echo -e "\033[0;33mFixing Markdown files...\033[0m"
-	@docker compose exec node pnpm run lint:md:fix
+	@$(DC) run --rm -T dev-tools pnpm run lint:md:fix
 	@echo -e "\033[0;32mMarkdown files fixed!\033[0m"
 
 lint-node: ## Run ESLint on TypeScript/JavaScript files
 	@echo -e "\033[0;33mRunning ESLint...\033[0m"
-	@docker compose exec node pnpm run lint
+	@$(DC) run --rm -T dev-tools pnpm run lint
 	@echo -e "\033[0;32mESLint check completed!\033[0m"
 
 lint-node-fix: ## Fix ESLint issues automatically
 	@echo -e "\033[0;33mFixing ESLint issues...\033[0m"
-	@docker compose exec node pnpm run lint:fix
+	@$(DC) run --rm -T dev-tools pnpm run lint:fix
 	@echo -e "\033[0;32mESLint issues fixed!\033[0m"
 
 type-check: ## Run TypeScript type checking (static analysis)
 	@echo -e "\033[0;33mRunning TypeScript type check...\033[0m"
-	@docker compose exec node pnpm run type-check
+	@$(DC) run --rm -T dev-tools pnpm run type-check
 	@echo -e "\033[0;32mTypeScript check completed!\033[0m"
 
 prettier-check: ## Check code formatting with Prettier
 	@echo -e "\033[0;33mChecking code formatting (Prettier)...\033[0m"
-	@docker compose exec node pnpm run format:check
+	@$(DC) run --rm -T dev-tools pnpm run format:check
 	@echo -e "\033[0;32mPrettier check completed!\033[0m"
 
 prettier-fix: ## Fix code formatting with Prettier
 	@echo -e "\033[0;33mFixing code formatting (Prettier)...\033[0m"
-	@docker compose exec node pnpm run format
+	@$(DC) run --rm -T dev-tools pnpm run format
 	@echo -e "\033[0;32mPrettier formatting applied!\033[0m"
 
 outdated: ## Check for outdated Composer dependencies
@@ -1486,12 +1486,12 @@ outdated: ## Check for outdated Composer dependencies
 
 depcheck: ## Find unused Node.js dependencies
 	@echo -e "\033[0;33mChecking for unused dependencies...\033[0m"
-	@docker compose exec node pnpm exec depcheck
+	@$(DC) run --rm -T dev-tools pnpm exec depcheck
 	@echo -e "\033[0;32mDepcheck completed!\033[0m"
 
 knip: ## Find dead code, unused exports and dependencies
 	@echo -e "\033[0;33mRunning knip dead code detection...\033[0m"
-	@docker compose exec node pnpm exec knip
+	@$(DC) run --rm -T dev-tools pnpm exec knip
 	@echo -e "\033[0;32mKnip completed!\033[0m"
 
 dive: ## Analyze Docker image layers and sizes
@@ -1532,15 +1532,15 @@ test-coverage-php: ## Generate PHPUnit coverage report (HTML in build/coverage/p
 
 test-node: ## Run Vitest tests
 	@echo -e "\033[0;33mRunning Vitest tests...\033[0m"
-	@docker compose exec node pnpm test
+	@$(DC) run --rm -T dev-tools pnpm test
 
-test-node-watch: ## Run Vitest in watch mode
+test-node-watch: ## Run Vitest in watch mode (interactive)
 	@echo -e "\033[0;33mRunning Vitest in watch mode...\033[0m"
-	@docker compose exec node pnpm test:watch
+	@$(DC) run --rm dev-tools pnpm test:watch
 
 test-coverage-node: ## Generate Vitest coverage report (HTML in build/coverage/node)
 	@echo -e "\033[0;33mRunning Vitest with coverage report...\033[0m"
-	@docker compose exec node pnpm test:coverage
+	@$(DC) run --rm -T dev-tools pnpm test:coverage
 	@echo -e "\033[0;32mNode.js coverage report generated in build/coverage/node/index.html!\033[0m"
 
 ##@ GOSS Container Tests
@@ -1923,7 +1923,7 @@ security-scan: ## Scan Docker images for vulnerabilities
 
 security-audit-node: ## Scan Node.js dependencies for known vulnerabilities
 	@echo -e "\033[0;33mScanning Node.js dependencies with pnpm audit...\033[0m"
-	@docker compose exec node pnpm audit
+	@$(DC) run --rm -T dev-tools pnpm audit
 
 ##@ Documentation
 

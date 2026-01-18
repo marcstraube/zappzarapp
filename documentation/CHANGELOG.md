@@ -1,11 +1,56 @@
 # zappzarapp - Changelog
 
-**Erstellt:** 2025-12-19 **Letzte Aktualisierung:** 2026-01-18 (Dockerfile
-Improvements) **Version:** 3.45
+**Erstellt:** 2025-12-19 **Letzte Aktualisierung:** 2026-01-18 (Dev-Tools
+Container) **Version:** 3.46
 
 ---
 
 ## Changelog
+
+### Version 3.46 (2026-01-18) - Dev-Tools Container & GOSS Centralization
+
+Dedicated dev-tools container for Git hooks and Makefile commands. Centralized
+GOSS version in single Dockerfile.
+
+#### Dev-Tools Container
+
+New dedicated container for all development tooling (lint, test, type-check):
+
+- Added `dev-tools` service in `compose.override.yaml` with `tools` profile
+- Uses `docker compose run --rm dev-tools` instead of `exec node`
+- Always has devDependencies available regardless of NODE_MODE setting
+- Git hooks and Makefile commands now work consistently
+
+**Updated Makefile targets:**
+
+- `lint-node`, `lint-node-fix` - ESLint
+- `lint-md`, `lint-md-fix` - Markdownlint
+- `type-check` - TypeScript checking
+- `prettier-check`, `prettier-fix` - Code formatting
+- `test-node`, `test-node-watch`, `test-coverage-node` - Vitest
+- `depcheck`, `knip` - Dependency analysis
+- `security-audit-node` - pnpm audit
+
+#### GOSS Centralization
+
+GOSS version now defined in single location:
+
+- Added `docker/goss/Dockerfile` - centralized version pinning (v0.4.9)
+- All Dockerfiles use `COPY --from=zappzarapp-goss:latest`
+- Removed duplicated `GOSS_VERSION` ARG from nginx, node, php, postgres, redis
+- Added `make build-goss` target (auto-runs before `goss-test-build`)
+
+**Affected files:**
+
+- `docker/goss/Dockerfile` (new)
+- `docker/nginx/Dockerfile`
+- `docker/node/Dockerfile`
+- `docker/php/Dockerfile`
+- `docker/postgres/Dockerfile`
+- `docker/redis/Dockerfile`
+- `Makefile`
+- `captainhook.json`
+- `compose.override.yaml`
 
 ### Version 3.45 (2026-01-18) - Dockerfile Improvements & Documentation Index
 
@@ -24,6 +69,7 @@ maintenance:
 - `MINIO_VERSION=RELEASE.2025-10-15T17-29-55Z` - MinIO (was `:latest`)
 
 **Affected files:**
+
 - `docker/node/Dockerfile`
 - `docker/nginx/Dockerfile`
 - `docker/php/Dockerfile`
@@ -43,7 +89,8 @@ Combined consecutive RUN commands to reduce image layers:
 
 #### Dockerfile: Security Documentation
 
-Added security comments explaining why no USER directive for database containers:
+Added security comments explaining why no USER directive for database
+containers:
 
 - `docker/mariadb/Dockerfile` - Explains root requirement for initialization
 - `docker/postgres/Dockerfile` - Explains root requirement for initialization
@@ -78,6 +125,7 @@ plus comprehensive GOSS test infrastructure.
 #### Security: Unprivileged nginx and PHP (Zero Capabilities)
 
 **nginx:** Complete unprivileged operation
+
 - Runs as nginx user (uid 101) from startup - no root at any point
 - All capabilities dropped (CapEff=0)
 - Brotli module works via Alpine's nginx-mod-http-brotli package
@@ -86,6 +134,7 @@ plus comprehensive GOSS test infrastructure.
 - Updated entrypoint: `docker/nginx/entrypoint.sh`
 
 **PHP:** Complete unprivileged operation
+
 - Runs as www-data user (uid 82) from startup - no root at any point
 - All capabilities dropped (CapEff=0)
 - Secrets accessed directly via bind mount (0644 permissions)
@@ -98,47 +147,50 @@ plus comprehensive GOSS test infrastructure.
 Eliminated dangerous capabilities from healthcheck operations:
 
 **RabbitMQ:** Removed DAC_READ_SEARCH
+
 - Healthcheck uses `su-exec rabbitmq` to run as rabbitmq user
 - New file: `docker/rabbitmq/healthcheck.sh`
 
 **MariaDB:** Removed DAC_OVERRIDE
+
 - Healthcheck uses `gosu mysql` to run as mysql user
 - New file: `docker/mariadb/healthcheck.sh`
 
 **PostgreSQL:** Removed DAC_OVERRIDE
+
 - Secrets and certificates are now world-readable (0644) via `make setup`
 - No capability bypass needed - standard file permissions work
 
-**Capability summary per service:**
-| Service | Capabilities | Notes |
-|---------|-------------|-------|
-| nginx | none | Fully unprivileged (uid 101) |
-| php | none | Fully unprivileged (uid 82) |
-| node | none | Runs as node user (uid 50000) |
-| redis | none | Runs as redis user (uid 999) |
-| postgres | CHOWN, SETUID, SETGID, FOWNER | Required for cert ownership |
-| mariadb | CHOWN, SETUID, SETGID, FOWNER | Required for cert ownership |
-| rabbitmq | CHOWN, SETUID, SETGID | Required for erlang cookie |
+**Capability summary per service:** | Service | Capabilities | Notes |
+|---------|-------------|-------| | nginx | none | Fully unprivileged (uid 101)
+| | php | none | Fully unprivileged (uid 82) | | node | none | Runs as node user
+(uid 50000) | | redis | none | Runs as redis user (uid 999) | | postgres |
+CHOWN, SETUID, SETGID, FOWNER | Required for cert ownership | | mariadb | CHOWN,
+SETUID, SETGID, FOWNER | Required for cert ownership | | rabbitmq | CHOWN,
+SETUID, SETGID | Required for erlang cookie |
 
-Public-facing services (nginx, PHP) now run with zero capabilities, significantly
-reducing the attack surface. Database containers retain minimal capabilities
-for TLS certificate ownership changes.
+Public-facing services (nginx, PHP) now run with zero capabilities,
+significantly reducing the attack surface. Database containers retain minimal
+capabilities for TLS certificate ownership changes.
 
 #### Testing: GOSS Preset Matrix
 
 Added comprehensive GOSS test infrastructure with preset-based configuration:
 
-- 6 production presets (fullstack, mariadb, optional services, minimal, node-only, php-only)
+- 6 production presets (fullstack, mariadb, optional services, minimal,
+  node-only, php-only)
 - 9 development presets (assets, framework, idle, fullstack variants)
 - `make goss-test-matrix` - Run all tests
 - `make goss-test-matrix-prod` - Production tests only
 - `make goss-test-matrix-dev` - Development tests only
 
 **Port allocation:**
+
 - Development presets: 20xxx range
 - Production presets: 30xxx range
 
 **New/Updated files:**
+
 - `tests/goss/preset-runner.sh` - Intelligent preset runner with cleanup
 - `tests/goss/presets/*.env` - Configuration for each preset
 - `tests/goss/runtime-tests.sh` - Updated with su-exec for RabbitMQ
@@ -147,7 +199,8 @@ Added comprehensive GOSS test infrastructure with preset-based configuration:
 
 Added entrypoint for Meilisearch to load master key from Docker secrets:
 
-- `docker/meilisearch/entrypoint.sh` - Reads `/run/secrets/meilisearch_master_key`
+- `docker/meilisearch/entrypoint.sh` - Reads
+  `/run/secrets/meilisearch_master_key`
 - Updated Dockerfile to use custom entrypoint
 
 ---
@@ -169,6 +222,7 @@ Kubernetes:
 - Updated CI/CD templates to reference Kubernetes instead of Swarm
 
 **Migration Path:**
+
 - Single-server: Use `make up` with `ENV=production` (unchanged)
 - Multi-node: Use `make k8s-deploy` with Kubernetes/Helm
 
@@ -176,7 +230,8 @@ Kubernetes:
 
 ### Version 3.42 (2026-01-16) - Docker Swarm, Security Hardening & Node.js Workspaces
 
-> **DEPRECATED:** Docker Swarm support removed in v3.43. See Kubernetes migration above.
+> **DEPRECATED:** Docker Swarm support removed in v3.43. See Kubernetes
+> migration above.
 
 Major security improvements with Docker Swarm for production deployments,
 capability hardening, Docker secrets for SSL certificates, pids limits for fork
@@ -187,14 +242,14 @@ backend/frontend separation.
 
 Renamed all NODE_MODE values for clarity:
 
-| Old Name          | New Name        | Description                    |
-| ----------------- | --------------- | ------------------------------ |
-| `full-stack`      | `assets-api`    | Vite HMR + Express Backend     |
-| `vite-only`       | `assets`        | Vite HMR only                  |
-| `backend-only`    | `api`           | Express API only               |
-| `frontend-only`   | `framework`     | Node frontend (Next.js, Nuxt)  |
-| `frontend-backend`| `framework-api` | Node frontend + Express        |
-| `none`            | `idle`          | Container sleeps               |
+| Old Name           | New Name        | Description                   |
+| ------------------ | --------------- | ----------------------------- |
+| `full-stack`       | `assets-api`    | Vite HMR + Express Backend    |
+| `vite-only`        | `assets`        | Vite HMR only                 |
+| `backend-only`     | `api`           | Express API only              |
+| `frontend-only`    | `framework`     | Node frontend (Next.js, Nuxt) |
+| `frontend-backend` | `framework-api` | Node frontend + Express       |
+| `none`             | `idle`          | Container sleeps              |
 
 Dockerfile stages also renamed: `vite-assets` → `assets`, `backend` → `api`,
 `frontend` → `framework`.
@@ -206,7 +261,8 @@ Added production entrypoints for PHP and Node that copy secrets from
 
 - `compose.production.yaml` uses `cap_drop: ALL` for security hardening
 - Root without capabilities can't read files owned by other users
-- Entrypoints run as root with `DAC_OVERRIDE`, copy secrets, then drop privileges
+- Entrypoints run as root with `DAC_OVERRIDE`, copy secrets, then drop
+  privileges
 
 **New files:**
 
@@ -242,12 +298,14 @@ This preserves workspace symlinks that `pnpm prune` would break.
 Nginx now dynamically configures itself based on `ENABLE_PHP`:
 
 - **INDEX_DIRECTIVE**: `index.php index.html` (PHP) or `index.html` (static)
-- **TRY_FILES_FALLBACK**: `/index.php?$query_string` (PHP) or `/index.html` (static)
+- **TRY_FILES_FALLBACK**: `/index.php?$query_string` (PHP) or `/index.html`
+  (static)
 - **Health check snippet**: Generated at runtime in `/run/nginx/snippets/`
   - PHP mode: Routes to PHP-FPM with fallback to static JSON
   - Static mode: Returns static JSON directly
 
-Updated templates: `ssl-development.conf.template`, `ssl-production.conf.template`
+Updated templates: `ssl-development.conf.template`,
+`ssl-production.conf.template`
 
 #### Fix: ViteHelper Manifest Path
 
