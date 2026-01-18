@@ -21,7 +21,9 @@
 - **Infrastructure**
   - [Architecture](infrastructure/ARCHITECTURE.md)
   - [Network](infrastructure/NETWORK.md)
+  - [Nginx](infrastructure/NGINX.md)
   - [Deployment](infrastructure/DEPLOYMENT.md)
+  - [Kubernetes](infrastructure/KUBERNETES.md)
   - [Error Pages](infrastructure/ERROR-PAGES.md)
   - [Monitoring](infrastructure/MONITORING.md)
   - [Performance](infrastructure/PERFORMANCE.md)
@@ -29,6 +31,7 @@
 
 - **Security**
   - [SSL Certificates](security/SSL-CERTIFICATES.md)
+  - [Internal TLS](security/INTERNAL-TLS.md)
   - [Encryption](security/ENCRYPTION.md)
   - [Audit Logging](security/AUDIT-LOGGING.md)
   - [Backup](security/BACKUP.md)

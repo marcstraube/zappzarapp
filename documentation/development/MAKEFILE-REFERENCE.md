@@ -108,12 +108,12 @@ Without arguments, commands operate on all enabled services (based on `.env`).
 Deploy to Kubernetes using Helm. See
 [KUBERNETES.md](../infrastructure/KUBERNETES.md) for details.
 
-| Command              | Description                             |
-| -------------------- | --------------------------------------- |
-| `make k8s-deploy`    | Deploy to Kubernetes using Helm         |
-| `make k8s-remove`    | Remove deployment from Kubernetes       |
-| `make k8s-status`    | Show pods, services, and Helm status    |
-| `make k8s-logs [pod]`| View logs from a specific pod           |
+| Command               | Description                          |
+| --------------------- | ------------------------------------ |
+| `make k8s-deploy`     | Deploy to Kubernetes using Helm      |
+| `make k8s-remove`     | Remove deployment from Kubernetes    |
+| `make k8s-status`     | Show pods, services, and Helm status |
+| `make k8s-logs [pod]` | View logs from a specific pod        |
 
 **Examples:**
 
@@ -246,7 +246,7 @@ Data backup and database migration commands.
 | `make db-migrations`                | Run database migrations (encryption helpers, audit logs) |
 | `make db-cleanup`                   | Run retention policy cleanup (delete old logs)           |
 
-See [BACKUP.md](security/BACKUP.md) for detailed backup documentation.
+See [BACKUP.md](../security/BACKUP.md) for detailed backup documentation.
 
 ## Quality Assurance
 
@@ -338,8 +338,8 @@ Security scanning and secrets management.
 | `make security-audit-node` | Scan Node.js dependencies for known vulnerabilities      |
 | `make falco-run`           | Start Falco for Runtime Security Monitoring              |
 
-See [SECURITY-SCANNING.md](security/SECURITY-SCANNING.md) for detailed security
-documentation.
+See [SECURITY-SCANNING.md](../security/SECURITY-SCANNING.md) for detailed
+security documentation.
 
 ## SSL/TLS
 
@@ -368,7 +368,7 @@ make ssl-prod-enable
 ENV=production make build && make up
 ```
 
-See [SSL-CERTIFICATES.md](security/SSL-CERTIFICATES.md) for detailed
+See [SSL-CERTIFICATES.md](../security/SSL-CERTIFICATES.md) for detailed
 documentation.
 
 ## Documentation

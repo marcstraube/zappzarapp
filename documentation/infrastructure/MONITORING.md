@@ -504,6 +504,6 @@ app.get('/metrics', async (req, res) => {
 
 - [ARCHITECTURE.md](ARCHITECTURE.md) - System architecture
 - [PERFORMANCE.md](PERFORMANCE.md) - Performance tuning
-- [TROUBLESHOOTING.md](TROUBLESHOOTING.md) - Common issues
-- [security/ACCESS-LOG-MONITORING.md](security/ACCESS-LOG-MONITORING.md) -
-  Access log analysis
+- [TROUBLESHOOTING.md](../TROUBLESHOOTING.md) - Common issues
+- [ACCESS-LOG-MONITORING.md](../security/ACCESS-LOG-MONITORING.md) - Access log
+  analysis

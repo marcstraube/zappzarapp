@@ -431,6 +431,5 @@ variables:
 - [ARCHITECTURE.md](ARCHITECTURE.md) - System architecture
 - [PERFORMANCE.md](PERFORMANCE.md) - Performance tuning for production
 - [MONITORING.md](MONITORING.md) - External monitoring integration
-- [security/SECRETS.md](security/SECRETS.md) - Secrets management
-- [security/SSL-CERTIFICATES.md](security/SSL-CERTIFICATES.md) - SSL for
-  production
+- [SECRETS.md](../security/SECRETS.md) - Secrets management
+- [SSL-CERTIFICATES.md](../security/SSL-CERTIFICATES.md) - SSL for production

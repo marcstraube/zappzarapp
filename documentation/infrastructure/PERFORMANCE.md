@@ -471,4 +471,4 @@ sysbench oltp_read_write --mysql-host=localhost --mysql-port=3306 run
 
 - [ARCHITECTURE.md](ARCHITECTURE.md) - System architecture
 - [MONITORING.md](MONITORING.md) - External monitoring integration
-- [TROUBLESHOOTING.md](TROUBLESHOOTING.md) - Common issues
+- [TROUBLESHOOTING.md](../TROUBLESHOOTING.md) - Common issues

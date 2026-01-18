@@ -83,5 +83,4 @@ vendor/bin/captainhook install
 
 ## Questions?
 
-Check the [Troubleshooting Guide](documentation/TROUBLESHOOTING.md) or open an
-issue.
+Check the [Troubleshooting Guide](TROUBLESHOOTING.md) or open an issue.

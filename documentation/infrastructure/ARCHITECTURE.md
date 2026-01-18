@@ -65,8 +65,7 @@ The architecture implements GDPR-compliant network isolation:
 2. **Backend Network**: Application layer (nginx, php, node)
 3. **Database Network**: Data layer (databases + php/node as gateways)
 
-See [NETWORK.md](infrastructure/NETWORK.md) for detailed network security
-documentation.
+See [NETWORK.md](NETWORK.md) for detailed network security documentation.
 
 ## Stack Presets
 
@@ -291,8 +290,8 @@ This architecture follows all 12 factors:
 
 ## Related Documentation
 
-- [Network Security](infrastructure/NETWORK.md) - Detailed network architecture
-- [SSL Certificates](security/SSL-CERTIFICATES.md) - Certificate management
-- [Secrets Management](security/SECRETS.md) - Docker Secrets
-- [Backup & Restore](security/BACKUP.md) - Encrypted backups
-- [Testing](testing/TESTING-PHP.md) - Test infrastructure
+- [Network Security](NETWORK.md) - Detailed network architecture
+- [SSL Certificates](../security/SSL-CERTIFICATES.md) - Certificate management
+- [Secrets Management](../security/SECRETS.md) - Docker Secrets
+- [Backup & Restore](../security/BACKUP.md) - Encrypted backups
+- [Testing](../testing/TESTING-PHP.md) - Test infrastructure

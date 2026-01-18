@@ -91,7 +91,7 @@ make node-dev-full
 | Nginx (HTTPS) | <https://localhost:8443>     | SSL entry point       |
 | Vite HMR      | <http://localhost:5173>      | Frontend dev server   |
 | Node API      | <http://localhost:3000>      | Express backend       |
-| Dev Dashboard | <http://localhost:8080/dev/> | PHP development tools |
+| Dev Dashboard | <http://localhost:8080/_dev> | PHP development tools |
 
 ### Run Tests
 
@@ -266,8 +266,9 @@ See [TROUBLESHOOTING.md](TROUBLESHOOTING.md) for more solutions.
 
 ## Next Steps
 
-1. **Read the Architecture**: [ARCHITECTURE.md](ARCHITECTURE.md)
-2. **Explore Makefile**: [MAKEFILE-REFERENCE.md](MAKEFILE-REFERENCE.md)
+1. **Read the Architecture**: [ARCHITECTURE.md](infrastructure/ARCHITECTURE.md)
+2. **Explore Makefile**:
+   [MAKEFILE-REFERENCE.md](development/MAKEFILE-REFERENCE.md)
 3. **Set up Debugging**: [XDEBUG.md](development/XDEBUG.md)
 4. **Configure SSL**: [SSL-CERTIFICATES.md](security/SSL-CERTIFICATES.md)
 5. **Learn Testing**: [TESTING-PHP.md](testing/TESTING-PHP.md) |

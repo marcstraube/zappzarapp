@@ -101,7 +101,7 @@ Key settings to customize:
 | ------------------------------------- | ----------------------- | ----------------------- |
 | `COMPOSE_PROJECT_NAME`                | Docker container prefix | `myapp`                 |
 | `USER_ID` / `GROUP_ID`                | Match your host user    | `1000`                  |
-| `HTTP_PORT` / `HTTPS_PORT`            | Web server ports        | `8080` / `8443`         |
+| `NGINX_PORT` / `NGINX_SSL_PORT`       | Web server ports        | `8080` / `8443`         |
 | `DB_TYPE`                             | Database type           | `postgres` or `mariadb` |
 | `DB_NAME` / `DB_USER` / `DB_PASSWORD` | Database credentials    | -                       |
 
