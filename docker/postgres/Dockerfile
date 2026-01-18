@@ -24,6 +24,9 @@ ARG PG_CRON_VERSION=1.6.4
 
 FROM postgres:${POSTGRES_VERSION}-alpine${ALPINE_VERSION} AS builder
 
+# Redeclare ARG (global scope ARGs don't persist after FROM)
+ARG PG_CRON_VERSION
+
 # Install build dependencies
 RUN apk add --no-cache --virtual .build-deps \
     git \

@@ -11,9 +11,15 @@ ARG ALPINE_VERSION=3.23
 ARG GMAGICK_VERSION=2.0.6RC1
 ARG COMPOSER_VERSION=2
 
+# Alias stages for external images (BuildKit doesn't support variable expansion in --from)
+FROM composer:${COMPOSER_VERSION} AS composer-image
+
 # --- 1. PHP BUILDER STAGE (Compilation) ---
 # This stage installs all build dependencies and compiles the extensions.
 FROM php:${PHP_VERSION}-fpm-alpine${ALPINE_VERSION} AS php-builder
+
+# Redeclare ARG (global scope ARGs don't persist after FROM)
+ARG GMAGICK_VERSION
 
 # Install ALL necessary dependencies to compile extensions
 # We do NOT use --virtual here, as we will discard the builder stage later.
@@ -144,7 +150,7 @@ RUN apk add --no-cache git unzip su-exec $PHPIZE_DEPS linux-headers && \
     chown -R www-data:www-data /var/log/app /var/log/php /home/www-data
 
 # Install Composer (only in development)
-COPY --from=composer:${COMPOSER_VERSION} /usr/bin/composer /usr/bin/composer
+COPY --from=composer-image /usr/bin/composer /usr/bin/composer
 
 # Install PIE (PHP Installer for Extensions)
 # Note: PIE only provides :bin tag, no versioned releases available yet
@@ -186,7 +192,7 @@ COPY docker/php/entrypoint.production.sh /entrypoint.production.sh
 RUN chmod +x /entrypoint.production.sh
 
 # Install Composer temporarily for dependency installation
-COPY --from=composer:${COMPOSER_VERSION} /usr/bin/composer /usr/bin/composer
+COPY --from=composer-image /usr/bin/composer /usr/bin/composer
 
 # Install unzip temporarily (required by composer)
 RUN apk add --no-cache --virtual .composer-deps unzip

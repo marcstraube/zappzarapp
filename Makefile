@@ -4,6 +4,10 @@ SHELL := /bin/bash
 # Docker Compose with plain progress output to avoid terminal corruption
 DC := docker compose --progress=plain
 
+# Run commands always use development context with all required profiles
+# This ensures make pnpm/composer/etc. work regardless of .env settings
+DC_RUN := COMPOSE_PROFILES=php,node,node-backend,dev-tools $(DC)
+
 .PHONY: $(shell awk '/^[a-zA-Z_-]+:.*?## / { print $$1 }' $(MAKEFILE_LIST) | sed 's/://')
 
 help: ## Show this help
@@ -34,7 +38,7 @@ help: ## Show this help
 
 composer-install: ## Install Composer dependencies (Docker - guaranteed consistency)
 	@echo -e "\033[0;33mInstalling Composer dependencies (Docker)...\033[0m"
-	@XDEBUG_MODE=off $(DC) run --rm --no-TTY php composer install --prefer-dist --no-interaction
+	@XDEBUG_MODE=off $(DC_RUN) run --rm --no-TTY php composer install --prefer-dist --no-interaction
 	@echo -e "\033[0;32mDependencies installed!\033[0m"
 
 composer-install-local: ## Install/update Composer dependencies (Local - IDE code completion only)
@@ -54,7 +58,7 @@ composer-install-local: ## Install/update Composer dependencies (Local - IDE cod
 
 composer-sync: ## Sync Composer dependencies (after composer.json changes)
 	@echo -e "\033[0;33mSyncing Composer dependencies...\033[0m"
-	@XDEBUG_MODE=off $(DC) run --rm --no-TTY php composer install --prefer-dist --no-interaction
+	@XDEBUG_MODE=off $(DC_RUN) run --rm --no-TTY php composer install --prefer-dist --no-interaction
 	@echo -e "\033[0;32mDependencies synced!\033[0m"
 
 sync-lockfiles: ## Sync both Composer and pnpm lockfiles (after branch switch, fresh clone)
@@ -348,11 +352,11 @@ clean: ## Remove containers, networks and dangling images (keeps data volumes)
 	@echo -e "\033[0;32mCleanup completed!\033[0m"
 
 composer: ## Execute Composer command (e.g. make composer CMD="require --dev vendor/package")
-	@XDEBUG_MODE=off $(DC) run --rm --no-TTY php composer $(CMD)
+	@XDEBUG_MODE=off $(DC_RUN) run --rm --no-TTY php composer $(CMD)
 
 composer-update: ## Update Composer dependencies (updates composer.lock on host, vendor stays in container)
 	@echo -e "\033[0;33mUpdating Composer dependencies...\033[0m"
-	@XDEBUG_MODE=off $(DC) run --rm --no-TTY php composer update
+	@XDEBUG_MODE=off $(DC_RUN) run --rm --no-TTY php composer update
 	@echo -e "\033[0;32mDependencies updated!\033[0m"
 
 down: ## Stop containers (optionally specify service names: make down php nginx)
@@ -556,7 +560,7 @@ logs-rabbitmq: ## Show RabbitMQ logs only
 pnpm: ## Execute pnpm command (e.g. make pnpm CMD="add -D vue")
 	@# Docker bind mounts don't support atomic rename (EBUSY error)
 	@# Solution: Run pnpm with lock file in temp location, then copy back
-	@$(DC) run --rm --no-TTY node sh -c ' \
+	@$(DC_RUN) run --rm --no-TTY node sh -c ' \
 		cp /app/package.json /tmp/package.json && \
 		cp /app/pnpm-lock.yaml /tmp/pnpm-lock.yaml 2>/dev/null || true && \
 		cd /tmp && pnpm $(CMD) && \
@@ -653,13 +657,14 @@ up: ## Start containers (optionally specify service names: make up php nginx)
 			echo ""; \
 		fi; \
 		MISSING=""; \
-		if [ "$${ENABLE_PHP:-true}" = "true" ] && ! docker image inspect zappzarapp-php >/dev/null 2>&1; then \
+		TAG="$$([ "$${ENV:-development}" = "production" ] && echo "" || echo ":development")"; \
+		if [ "$${ENABLE_PHP:-true}" = "true" ] && ! docker image inspect zappzarapp-php$$TAG >/dev/null 2>&1; then \
 			MISSING="$$MISSING php"; \
 		fi; \
-		if [ "$${ENABLE_NODE:-true}" = "true" ] && ! docker image inspect zappzarapp-node >/dev/null 2>&1; then \
+		if [ "$${ENABLE_NODE:-true}" = "true" ] && ! docker image inspect zappzarapp-node$$TAG >/dev/null 2>&1; then \
 			MISSING="$$MISSING node"; \
 		fi; \
-		if ! docker image inspect zappzarapp-nginx >/dev/null 2>&1; then \
+		if ! docker image inspect zappzarapp-nginx$$TAG >/dev/null 2>&1; then \
 			MISSING="$$MISSING nginx"; \
 		fi; \
 		if [ "$${ENABLE_DATABASE:-true}" = "true" ] && [ "$${DB_TYPE:-postgres}" = "postgres" ] && ! docker image inspect zappzarapp-postgres >/dev/null 2>&1; then \
@@ -801,14 +806,14 @@ node-frontend-start: ## Start Node frontend framework production server
 
 pnpm-install: ## Install Node.js dependencies (Docker - guaranteed consistency)
 	@echo -e "\033[0;33mInstalling Node.js dependencies (Docker)...\033[0m"
-	@$(DC) run --rm --no-TTY node pnpm install --frozen-lockfile
+	@$(DC_RUN) run --rm --no-TTY node pnpm install --frozen-lockfile
 	@echo -e "\033[0;32mDependencies installed!\033[0m"
 
 pnpm-update: ## Update Node.js dependencies (updates pnpm-lock.yaml on host)
 	@echo -e "\033[0;33mUpdating Node.js dependencies...\033[0m"
 	@# Docker bind mounts don't support atomic rename (EBUSY error)
 	@# Solution: Run pnpm with lock file in temp location, then copy back
-	@$(DC) run --rm --no-TTY node sh -c ' \
+	@$(DC_RUN) run --rm --no-TTY node sh -c ' \
 		cp /app/package.json /tmp/package.json && \
 		cp /app/pnpm-lock.yaml /tmp/pnpm-lock.yaml 2>/dev/null || true && \
 		cd /tmp && pnpm update && \
@@ -829,7 +834,7 @@ pnpm-install-local: ## Install Node.js dependencies (Local - IDE code completion
 
 pnpm-sync: ## Sync Node.js dependencies (after package.json changes, e.g., frontend scaffold)
 	@echo -e "\033[0;33mSyncing Node.js dependencies...\033[0m"
-	@$(DC) run --rm --no-TTY node pnpm install
+	@$(DC_RUN) run --rm --no-TTY node pnpm install
 	@echo -e "\033[0;32mDependencies synced!\033[0m"
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -862,7 +867,7 @@ frontend-clean: ## Remove existing frontend (keeps package.json placeholder)
 
 frontend-nuxt: frontend-clean ## Scaffold Nuxt 3 frontend (interactive)
 	@echo -e "\033[0;33mScaffolding Nuxt 3 frontend...\033[0m"
-	@$(DC) run --rm -it node sh -c '\
+	@$(DC_RUN) run --rm -it node sh -c '\
 		cd /app/src/node/frontend && \
 		pnpm dlx nuxi@latest init . --packageManager pnpm --gitInit false --no-install && \
 		sh /app/docker/node/frontend-patches/nuxt.post-install.sh .'
@@ -870,7 +875,7 @@ frontend-nuxt: frontend-clean ## Scaffold Nuxt 3 frontend (interactive)
 
 frontend-next: frontend-clean ## Scaffold Next.js frontend (interactive)
 	@echo -e "\033[0;33mScaffolding Next.js frontend...\033[0m"
-	@$(DC) run --rm -it node sh -c '\
+	@$(DC_RUN) run --rm -it node sh -c '\
 		cd /app/src/node/frontend && \
 		pnpm dlx create-next-app@latest . --use-pnpm --skip-install && \
 		sh /app/docker/node/frontend-patches/next.post-install.sh .'
@@ -878,7 +883,7 @@ frontend-next: frontend-clean ## Scaffold Next.js frontend (interactive)
 
 frontend-remix: frontend-clean ## Scaffold React Router frontend (formerly Remix v2)
 	@echo -e "\033[0;33mScaffolding React Router frontend...\033[0m"
-	@$(DC) run --rm -it node sh -c '\
+	@$(DC_RUN) run --rm -it node sh -c '\
 		TEMP_DIR=$$(mktemp -d) && \
 		cd "$$TEMP_DIR" && \
 		pnpm dlx create-react-router@latest frontend --no-install && \
@@ -890,7 +895,7 @@ frontend-remix: frontend-clean ## Scaffold React Router frontend (formerly Remix
 
 frontend-sveltekit: frontend-clean ## Scaffold SvelteKit frontend (interactive)
 	@echo -e "\033[0;33mScaffolding SvelteKit frontend...\033[0m"
-	@$(DC) run --rm -it node sh -c '\
+	@$(DC_RUN) run --rm -it node sh -c '\
 		TEMP_DIR=$$(mktemp -d) && \
 		cd "$$TEMP_DIR" && \
 		pnpm dlx sv create frontend --template minimal --types ts --no-add-ons --no-install && \
@@ -902,7 +907,7 @@ frontend-sveltekit: frontend-clean ## Scaffold SvelteKit frontend (interactive)
 
 node-build: ## Executes the frontend build inside the Node container (uses 'build' stage)
 	@echo -e "\033[0;33mExecuting frontend build...\033[0m"
-	@$(DC) run --rm --build --target build node pnpm run build
+	@$(DC_RUN) run --rm --build --target build node pnpm run build
 
 node-up: ## Starts the Node service alongside the standard stack (Uses the default 'assets' target)
 	@echo -e "\033[0;33mStarting Node service (assets target)...\033[0m"

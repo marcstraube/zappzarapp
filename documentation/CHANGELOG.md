@@ -1,11 +1,61 @@
 # zappzarapp - Changelog
 
-**Erstellt:** 2025-12-19 **Letzte Aktualisierung:** 2026-01-18 (Dev-Tools
-Container) **Version:** 3.46
+**Erstellt:** 2025-12-19 **Letzte Aktualisierung:** 2026-01-19 (Target-based
+Image Tags) **Version:** 3.47
 
 ---
 
 ## Changelog
+
+### Version 3.47 (2026-01-19) - Target-based Image Tags & Makefile DC_RUN
+
+Target-based Docker image tagging for all services and consistent Makefile
+profile handling for run commands.
+
+#### Target-based Image Tags
+
+Image tags now match Dockerfile targets, preventing dev/prod image overwrites:
+
+| Service      | Development    | Production               |
+| ------------ | -------------- | ------------------------ |
+| nginx        | `:development` | `:production`            |
+| php          | `:development` | `:production`            |
+| node         | `:development` | `:assets` / `:framework` |
+| node-backend | `:development` | `:api`                   |
+
+**Benefits:**
+
+- Dev and prod images can coexist for parallel testing
+- `docker images` shows target at a glance
+- No accidental overwrites between environments
+
+#### Makefile DC_RUN Variable
+
+New `DC_RUN` variable ensures `run` commands work regardless of `.env` settings:
+
+```makefile
+DC_RUN := COMPOSE_PROFILES=php,node,node-backend,dev-tools $(DC)
+```
+
+**Updated targets:** `composer`, `composer-install`, `composer-sync`,
+`composer-update`, `pnpm`, `pnpm-install`, `pnpm-update`, `pnpm-sync`,
+`frontend-nuxt`, `frontend-next`, `frontend-remix`, `frontend-sveltekit`,
+`node-build`
+
+#### Dockerfile Fixes
+
+- **PHP:** Added `composer-image` alias stage (BuildKit ARG expansion fix)
+- **PHP:** Added `ARG GMAGICK_VERSION` after FROM (scope fix)
+- **Postgres:** Added `ARG PG_CRON_VERSION` after FROM (scope fix)
+- **compose.yaml:** Added `target: base` for redis, `target: final` for postgres
+
+**Affected files:**
+
+- `compose.yaml`
+- `compose.override.yaml`
+- `Makefile`
+- `docker/php/Dockerfile`
+- `docker/postgres/Dockerfile`
 
 ### Version 3.46 (2026-01-18) - Dev-Tools Container & GOSS Centralization
 

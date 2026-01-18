@@ -8,6 +8,7 @@ services:
       args:
         USER_ID: ${USER_ID:-1000}
         GROUP_ID: ${GROUP_ID:-1000}
+    image: ${COMPOSE_PROJECT_NAME:-zappzarapp}-nginx:development
     volumes:
       # Application
       - ./public:/var/www/html/public:ro
@@ -26,6 +27,7 @@ services:
       args:
         USER_ID: ${USER_ID:-1000}
         GROUP_ID: ${GROUP_ID:-1000}
+    image: ${COMPOSE_PROJECT_NAME:-zappzarapp}-php:development
     entrypoint: ["/entrypoint.development.sh"]
     command: ["php-fpm"]
     volumes:
@@ -144,6 +146,7 @@ services:
       args:
         USER_ID: ${USER_ID:-1000}
         GROUP_ID: ${GROUP_ID:-1000}
+    image: ${COMPOSE_PROJECT_NAME:-zappzarapp}-node:development
     ports:
       # Only Vite HMR exposed for development (hot reload requires direct WebSocket)
       # Backend (3000) and Frontend (3001) accessed via Nginx only (HTTPS on 8443)
@@ -240,6 +243,7 @@ services:
       args:
         USER_ID: ${USER_ID:-1000}
         GROUP_ID: ${GROUP_ID:-1000}
+    image: ${COMPOSE_PROJECT_NAME:-zappzarapp}-node-backend:development
     volumes:
       # Entrypoint Script (production stages use direct CMD, no entrypoint needed)
       - ./docker/node/entrypoint.development.sh:/usr/local/bin/entrypoint.development.sh:ro

@@ -37,6 +37,12 @@ Aggregated knowledge from all development sessions. Use this as reference to avo
 - **`pnpm prune --prod` breaks workspace symlinks** - use `rm -rf node_modules && pnpm install --prod` instead.
 - **EBUSY on pnpm-lock.yaml**: Docker bind-mounts don't support atomic rename. Use `--no-install` flags, run `make pnpm-sync` separately.
 
+### Sync vs Install Targets
+
+- **`*-install` targets**: Use `--frozen-lockfile` for CI/Production reproducibility. Fails if lockfile doesn't match package.json.
+- **`*-sync` targets**: No frozen-lockfile, for after package.json changes (scaffolds, branch switches).
+- **`sync-lockfiles`**: Convenience target that syncs both Composer and pnpm lockfiles.
+
 ### NODE_MODE Architecture
 
 | Mode | Frontend | Backend | Description |

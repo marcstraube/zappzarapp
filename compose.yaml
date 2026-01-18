@@ -15,6 +15,7 @@ services:
       # NGINX_TARGET: production (with Vite assets) or production-proxy (framework modes)
       # Auto-detected by Makefile based on NODE_MODE
       target: ${NGINX_TARGET:-production}
+    image: ${COMPOSE_PROJECT_NAME:-zappzarapp}-nginx:${NGINX_TARGET:-production}
     container_name: ${COMPOSE_PROJECT_NAME:-zappzarapp}-nginx
     restart: unless-stopped
     environment:
@@ -49,6 +50,7 @@ services:
       context: .
       dockerfile: docker/php/Dockerfile
       target: ${PHP_TARGET:-production}
+    image: ${COMPOSE_PROJECT_NAME:-zappzarapp}-php:${PHP_TARGET:-production}
     container_name: ${COMPOSE_PROJECT_NAME:-zappzarapp}-php
     restart: unless-stopped
     profiles: ["php"]
@@ -127,7 +129,7 @@ services:
       # Build target for frontend/assets container.
       # Available targets: development, assets, framework
       target: ${NODE_TARGET:-assets}
-    image: ${COMPOSE_PROJECT_NAME:-zappzarapp}-node:latest
+    image: ${COMPOSE_PROJECT_NAME:-zappzarapp}-node:${NODE_TARGET:-assets}
     container_name: ${COMPOSE_PROJECT_NAME:-zappzarapp}-node
     restart: unless-stopped
     profiles: ["node"]
@@ -180,7 +182,7 @@ services:
       # Build target for Express API backend.
       # Available targets: development, api
       target: ${NODE_BACKEND_TARGET:-api}
-    image: ${COMPOSE_PROJECT_NAME:-zappzarapp}-node-backend:latest
+    image: ${COMPOSE_PROJECT_NAME:-zappzarapp}-node-backend:${NODE_BACKEND_TARGET:-api}
     container_name: ${COMPOSE_PROJECT_NAME:-zappzarapp}-node-backend
     restart: unless-stopped
     profiles: ["node-backend"]
@@ -227,6 +229,7 @@ services:
     build:
       context: .
       dockerfile: docker/redis/Dockerfile
+      target: base
     container_name: ${COMPOSE_PROJECT_NAME:-zappzarapp}-redis
     restart: unless-stopped
     profiles: ["redis"]
@@ -261,6 +264,7 @@ services:
     build:
       context: .
       dockerfile: docker/postgres/Dockerfile
+      target: final
     container_name: ${COMPOSE_PROJECT_NAME:-zappzarapp}-postgres
     restart: unless-stopped
     profiles: ["postgres"]
