@@ -67,16 +67,16 @@ helm upgrade --install zappzarapp ./kubernetes \
 
 ## Make Targets
 
-| Command          | Description                              |
-| ---------------- | ---------------------------------------- |
-| `make k8s-deploy`| Deploy to Kubernetes using Helm          |
-| `make k8s-remove`| Remove deployment from Kubernetes        |
-| `make k8s-status`| Show deployment status (pods, services)  |
-| `make k8s-logs`  | View logs: `make k8s-logs <pod-name>`    |
+| Command           | Description                             |
+| ----------------- | --------------------------------------- |
+| `make k8s-deploy` | Deploy to Kubernetes using Helm         |
+| `make k8s-remove` | Remove deployment from Kubernetes       |
+| `make k8s-status` | Show deployment status (pods, services) |
+| `make k8s-logs`   | View logs: `make k8s-logs <pod-name>`   |
 
 ## Helm Chart Structure
 
-```
+```text
 kubernetes/
 ├── Chart.yaml              # Chart metadata
 ├── values.yaml             # Default values (development)
@@ -114,10 +114,10 @@ php:
   enabled: true
 # Node Frontend (Nuxt/Next.js) - for framework/framework-api modes
 node:
-  enabled: false  # Enable for framework modes
+  enabled: false # Enable for framework modes
 # Node Backend (Express API) - for api/assets-api/framework-api modes
 nodeBackend:
-  enabled: true   # Enable for API modes
+  enabled: true # Enable for API modes
 redis:
   enabled: true
 postgres:
@@ -130,10 +130,10 @@ mariadb:
 
 The chart supports a dual-container architecture for Node.js:
 
-| Service        | Port | Use Case                              |
-| -------------- | ---- | ------------------------------------- |
-| `node`         | 3001 | Frontend frameworks (Nuxt, Next.js)   |
-| `node-backend` | 3000 | Express API backend                   |
+| Service        | Port | Use Case                            |
+| -------------- | ---- | ----------------------------------- |
+| `node`         | 3001 | Frontend frameworks (Nuxt, Next.js) |
+| `node-backend` | 3000 | Express API backend                 |
 
 Enable services based on your NODE_MODE:
 
@@ -151,10 +151,10 @@ Enable services based on your NODE_MODE:
 php:
   resources:
     limits:
-      cpu: "2"
+      cpu: '2'
       memory: 2Gi
     requests:
-      cpu: "1"
+      cpu: '1'
       memory: 1Gi
 ```
 
@@ -165,7 +165,7 @@ postgres:
   persistence:
     enabled: true
     size: 50Gi
-    storageClass: ""  # Use default storage class
+    storageClass: '' # Use default storage class
 ```
 
 ### Ingress

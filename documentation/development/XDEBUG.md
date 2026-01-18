@@ -64,7 +64,7 @@ Xdebug is automatically configured in the development environment:
 ### Option 1: Browser Extension (Recommended)
 
 1. **Install extension:**
-   - [Chrome: Xdebug Helper](https://chrome.google.com/webstore/detail/xdebug-helper/eadndfjplgieldjbigjakmdgkmoaaaoc)
+   - [Chrome: Xdebug Helper](https://chromewebstore.google.com/detail/xdebug-helper/eadndfjplgieldjbigjakmdgkmoaaaoc)
    - [Firefox: Xdebug Helper](https://addons.mozilla.org/en-US/firefox/addon/xdebug-helper-for-firefox/)
 
 2. **Configure extension:** Set IDE key to `PHPSTORM`
