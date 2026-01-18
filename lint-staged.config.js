@@ -28,7 +28,7 @@ export default {
   ],
 
   // JSON files (auto-fix and re-stage, excluding auto-generated and config files)
-  '!(composer|package|package-lock|tsconfig*|typedoc|.prettierrc|.markdownlint*|.depcheckrc).json': [
+  '!(composer|package|package-lock|tsconfig*|typedoc|.prettierrc|.markdownlint*|.depcheckrc|captainhook|renovate).json': [
     'pnpm exec prettier --write',
   ],
 

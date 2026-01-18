@@ -20,10 +20,10 @@
         "description": "Fix file permissions on staged files (scripts: 755, configs: 644)"
       },
       {
-        "action": "docker compose run --rm -T dev-tools pnpm exec lint-staged --config /app/lint-staged.config.js --no-stash",
+        "action": "docker compose run --rm -T dev-tools pnpm exec lint-staged --config /app/lint-staged.config.js --no-stash --no-hide-partially-staged",
         "options": [],
         "type": "cli",
-        "description": "Fix code style on staged Node.js files (TS/JS, JSON, MD) via Prettier, ESLint, Markdownlint (auto-fix and re-stage). Uses --no-stash to avoid git stash issues with bind-mounted files in Docker."
+        "description": "Fix code style on staged Node.js files (TS/JS, JSON, MD) via Prettier, ESLint, Markdownlint (auto-fix and re-stage). Uses --no-stash and --no-hide-partially-staged to avoid git stash/restore issues with bind-mounted files in Docker."
       },
       {
         "action": "git diff --name-only --cached --diff-filter=d | grep '.php$' | grep -v '^docker/' | grep -v '^\\.php-cs-fixer' | grep -v '^rector\\.php$' | xargs -r -I {} docker compose exec -T php php -l /var/www/html/{}",
