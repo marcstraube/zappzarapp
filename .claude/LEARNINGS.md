@@ -104,6 +104,11 @@ Aggregated knowledge from all development sessions. Use this as reference to avo
 
 ## Development Workflow
 
+### Commits
+
+- **Commit after each completed todo**: Prevents mixed changes that need to be split later. Each todo = one focused commit.
+- **Thematically grouped commits**: Keep commits focused on one topic (feature, fix, docs) for cleaner history.
+
 ### Bash Commands
 
 - **Single commands > chaining**: `cmd1 && cmd2 && cmd3` requires manual confirmation. Single Bash calls are auto-approved.
