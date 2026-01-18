@@ -1509,13 +1509,27 @@ dive: ## Analyze Docker image layers and sizes
 	esac; \
 	docker run --rm -it -v /var/run/docker.sock:/var/run/docker.sock wagoodman/dive:latest $$IMAGE
 
-test: test-php test-node ## Run all tests (PHP + Node.js)
-	@echo -e "\033[0;32mAll tests completed!\033[0m"
+test: ## Run all tests (PHP + Node.js) - continues even if some fail
+	@failed=0; \
+	$(MAKE) test-php || failed=1; \
+	$(MAKE) test-node || failed=1; \
+	if [ $$failed -eq 1 ]; then \
+		echo -e "\033[0;31mSome tests failed!\033[0m"; \
+		exit 1; \
+	fi; \
+	echo -e "\033[0;32mAll tests passed!\033[0m"
 
-test-coverage: test-coverage-php test-coverage-node ## Generate coverage reports for PHP and Node.js
-	@echo -e "\033[0;32mAll coverage reports generated!\033[0m"
-	@echo -e "\033[0;34mPHP Coverage: build/coverage/php/index.html\033[0m"
-	@echo -e "\033[0;34mNode.js Coverage: build/coverage/node/index.html\033[0m"
+test-coverage: ## Generate coverage reports for PHP and Node.js - continues even if some fail
+	@failed=0; \
+	$(MAKE) test-coverage-php || failed=1; \
+	$(MAKE) test-coverage-node || failed=1; \
+	echo -e "\033[0;34mPHP Coverage: build/coverage/php/index.html\033[0m"; \
+	echo -e "\033[0;34mNode.js Coverage: build/coverage/node/index.html\033[0m"; \
+	if [ $$failed -eq 1 ]; then \
+		echo -e "\033[0;31mSome tests failed!\033[0m"; \
+		exit 1; \
+	fi; \
+	echo -e "\033[0;32mAll coverage reports generated!\033[0m"
 
 test-php: ## Run PHPUnit tests
 	@echo -e "\033[0;33mRunning PHPUnit tests...\033[0m"
