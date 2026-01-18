@@ -28,11 +28,13 @@ export default {
   ],
 
   // JSON files (auto-fix and re-stage, excluding auto-generated and config files)
-  '!(composer|package|package-lock|tsconfig*|typedoc|.prettierrc|.markdownlint*|.depcheckrc|captainhook|renovate).json': [
+  // Note: .claude/ is excluded because it's not mounted in containers
+  '!(.claude/**|composer|package|package-lock|tsconfig*|typedoc|.prettierrc|.markdownlint*|.depcheckrc|captainhook|renovate).json': [
     'pnpm exec prettier --write',
   ],
 
   // Markdown files (auto-fix and re-stage)
   // Prettier first (formats tables), then markdownlint (checks remaining issues)
-  '*.md': ['pnpm exec prettier --write', 'pnpm exec markdownlint-cli2 --fix'],
+  // Note: .claude/ is excluded because it's not mounted in containers
+  '!(.claude/**)*.md': ['pnpm exec prettier --write', 'pnpm exec markdownlint-cli2 --fix'],
 };
