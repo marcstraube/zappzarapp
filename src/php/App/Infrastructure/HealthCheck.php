@@ -157,7 +157,7 @@ class HealthCheck
                 ],
             ]);
 
-            $response = @file_get_contents($url, false, $context);
+            $response = $this->fetchUrl($url, $context);
 
             if ($response === false) {
                 $this->status['services']['node-backend'] = [
@@ -370,7 +370,7 @@ class HealthCheck
                 ],
             ]);
 
-            $response = @file_get_contents($url, false, $context);
+            $response = $this->fetchUrl($url, $context);
 
             if ($response !== false) {
                 $data                                    = json_decode($response, true);
@@ -405,7 +405,7 @@ class HealthCheck
                 ],
             ]);
 
-            $response = @file_get_contents($url, false, $context);
+            $response = $this->fetchUrl($url, $context);
 
             if ($response !== false) {
                 $data                                      = json_decode($response, true);
@@ -455,7 +455,7 @@ class HealthCheck
                 ],
             ]);
 
-            $response = @file_get_contents($url, false, $context);
+            $response = $this->fetchUrl($url, $context);
 
             // MinIO returns empty body with 200 OK on success
             if ($response !== false) {
@@ -506,5 +506,24 @@ class HealthCheck
         }
 
         return ['connected' => false, 'error' => $errstr ?: 'Connection failed'];
+    }
+
+    /**
+     * Fetch URL content with error suppression
+     *
+     * Uses set_error_handler instead of @ operator to satisfy PHPMD.
+     * Errors are intentionally ignored as we check the return value.
+     *
+     * @param resource|null $context Stream context from stream_context_create()
+     */
+    private function fetchUrl(string $url, mixed $context = null): string|false
+    {
+        set_error_handler(static fn (): bool => true);
+
+        try {
+            return file_get_contents($url, false, $context);
+        } finally {
+            restore_error_handler();
+        }
     }
 }
