@@ -30,6 +30,16 @@ Aggregated knowledge from all development sessions. Use this as reference to avo
 
 ---
 
+## Makefile
+
+### Shell Compatibility
+
+- **Use `SHELL := bash` not `/bin/bash`**: PATH-based lookup works on Linux, macOS, WSL, and Git Bash.
+- **Brace expansion `{a,b}` requires Bash**: POSIX sh doesn't support it. Our Makefile uses Bash explicitly.
+- **Windows support**: Requires WSL or Git Bash. Native cmd.exe/PowerShell not supported.
+
+---
+
 ## Node.js
 
 ### pnpm Workspaces

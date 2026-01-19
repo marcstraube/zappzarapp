@@ -1,11 +1,27 @@
 # zappzarapp - Changelog
 
-**Erstellt:** 2025-12-19 **Letzte Aktualisierung:** 2026-01-19 (pnpm Upgrade)
-**Version:** 3.52
+**Erstellt:** 2025-12-19 **Letzte Aktualisierung:** 2026-01-19 (Shell
+Compatibility) **Version:** 3.53
 
 ---
 
 ## Changelog
+
+### Version 3.53 (2026-01-19) - Makefile Shell Compatibility
+
+Improved cross-platform compatibility for Windows (WSL/Git Bash) users.
+
+#### Changes
+
+- **Makefile SHELL**: Changed from `/bin/bash` to `bash` (PATH-based lookup)
+- **Documentation**: Added Makefile shell compatibility notes to LEARNINGS.md
+
+#### Updated Files
+
+- `Makefile` - Use PATH-based bash lookup
+- `.claude/LEARNINGS.md` - New "Makefile" section with shell compatibility info
+
+---
 
 ### Version 3.52 (2026-01-19) - pnpm Upgrade Target
 

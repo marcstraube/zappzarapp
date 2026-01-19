@@ -1,4 +1,4 @@
-SHELL := /bin/bash
+SHELL := bash
 .SHELLFLAGS := -c
 
 # Docker Compose with plain progress output to avoid terminal corruption

@@ -310,27 +310,6 @@ Each task has a **Scope** indicator to help with session planning:
 
 ---
 
-#### DevDashboard Update Check
-
-**Status:** Planned
-**Scope:** Small
-**Created:** 2026-01-19
-**Context:** Recent changes to health endpoints and services
-
-**Task:** Verify DevDashboard is up-to-date with recent changes.
-
-**Checklist:**
-- [ ] Health endpoint URLs updated (`/health`, `/ready`, `/api/health`)
-- [ ] Service status display reflects new response format
-- [ ] Any new services added that should appear?
-- [ ] Remove references to deprecated endpoints
-
-**Files to review:**
-- `src/php/DevDashboard/`
-- `templates/dev-dashboard/`
-
----
-
 ### Code Quality
 
 #### PHP Code Quality: SuppressWarnings Cleanup
@@ -357,27 +336,6 @@ Each task has a **Scope** indicator to help with session planning:
 **Files to review:**
 - All files with `@SuppressWarnings` annotations
 - Classes flagged by PHPMD for complexity
-
----
-
-#### Shell Compatibility (Brace Expansion)
-
-**Status:** Planned
-**Scope:** Small
-**Created:** 2026-01-19
-**Context:** Brace expansion `{a,b}` is Bash-specific, not POSIX sh compatible
-
-**Task:** Audit codebase for brace expansion usage and decide whether to fix for sh compatibility.
-
-**Questions to answer:**
-- Where is brace expansion used? (scripts, Makefile, entrypoints)
-- Do we need POSIX sh compatibility? (Alpine uses ash/busybox)
-- What's the fix cost vs. benefit?
-
-**Files to check:**
-- `docker/*/entrypoint.sh`
-- `Makefile`
-- `tests/goss/*.sh`
 
 ---
 
