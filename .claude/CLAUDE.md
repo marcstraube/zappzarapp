@@ -106,6 +106,7 @@ Available commands in `.claude/commands/`:
 
 - Containers not running? → `make up` first
 - Composer/pnpm changes always via `make composer`/`make pnpm`, never directly in composer.json/package.json
+- **Never commit lockfiles** (`composer.lock`, `pnpm-lock.yaml`) - this is a boilerplate, users generate their own
 - After changes to Dockerfiles, compose.*, entrypoints, php.ini or other Docker configurations: rebuild containers (`make build-*`) and restart (`make down && make up`) for changes to take effect
 - For problems with Make commands or Docker: analyze and fix the root cause! Never manually edit files to work around tooling issues
 
