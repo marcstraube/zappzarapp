@@ -77,7 +77,6 @@ Available commands in `.claude/commands/`:
 |---------|---------|
 | `/session-start` | Initialize new session with previous context |
 | `/status` | Project overview (Git, Docker, backlog) |
-| `/plan` | Create implementation plan (use `--scope-only` for quick analysis) |
 | `/review` | Review changes before committing |
 | `/test` | Smart test runner (detects changed files) |
 | `/commit` | Guided commit workflow with quality checks |

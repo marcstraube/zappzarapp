@@ -152,6 +152,35 @@ make build && make up
 
 ---
 
+## Claude Workflow
+
+### Post-Implementation Verification
+
+**After completing each task, automatically run relevant checks:**
+
+| Change Type | Verification Steps |
+|-------------|-------------------|
+| Docker/Compose changes | `docker compose config`, restart containers, test health |
+| PHP code changes | `make check` (includes PHPStan, PHPMD, CS-Fixer) |
+| Node code changes | `make lint-node`, `make test-node` |
+| Configuration files | `docker compose config`, relevant service tests |
+| Database-related | Restart DB container or `make fresh` if schema changed |
+
+**Workflow:**
+1. Implement change
+2. Run relevant checks/tests
+3. Verify functionality (health endpoints, manual tests)
+4. Only then report completion to user
+
+**Important:** Database password or credential changes require fresh initialization:
+```bash
+make down
+docker volume rm <project>-postgres-data
+make up
+```
+
+---
+
 ## Last Updated
 
-2026-01-18 (aggregated from sessions 2026-01-15 to 2026-01-17)
+2026-01-19 (aggregated from sessions 2026-01-15 to 2026-01-19)

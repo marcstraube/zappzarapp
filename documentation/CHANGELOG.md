@@ -1,11 +1,67 @@
 # zappzarapp - Changelog
 
-**Erstellt:** 2025-12-19 **Letzte Aktualisierung:** 2026-01-19 (Target-based
-Image Tags) **Version:** 3.47
+**Erstellt:** 2025-12-19 **Letzte Aktualisierung:** 2026-01-19 (DATABASE_URL
+Support) **Version:** 3.48
 
 ---
 
 ## Changelog
+
+### Version 3.48 (2026-01-19) - DATABASE_URL Support & Secure Password Handling
+
+Security-focused improvements for database credential handling with DATABASE_URL
+support and removal of insecure defaults.
+
+#### DATABASE_URL Support
+
+New `parse-db-url.sh` helper script for 12-Factor App compliant configuration:
+
+```bash
+# Supports all common database URL formats:
+postgresql://user:pass@host:port/dbname
+postgres://user:pass@host:port/dbname
+mysql://user:pass@host:port/dbname
+```
+
+**Priority:** `DATABASE_URL` > `DB_PASSWORD_FILE` (secrets) > `DB_PASSWORD` (env
+var)
+
+**Updated Makefile targets:** `postgres-cli`, `postgres-dump`,
+`postgres-restore`, `mariadb-cli`, `mariadb-dump`, `mariadb-restore`, `db-cli`,
+`db-dump`
+
+**Updated scripts:** `backup-databases.sh`, `restore-database.sh`
+
+#### Security: No More Hardcoded Password Defaults
+
+Removed insecure `:-secret` defaults from all components:
+
+| Component          | Before                   | After                   |
+| ------------------ | ------------------------ | ----------------------- |
+| PHP DatabaseConfig | Falls back to "secret"   | Throws RuntimeException |
+| Node database.ts   | Falls back to "secret"   | Throws Error            |
+| compose files      | `${DB_PASSWORD:-secret}` | `${DB_PASSWORD:-}`      |
+| Documentation      | Shows "secret" default   | Shows `${DB_PASSWORD}`  |
+
+**Benefits:**
+
+- Explicit failure over silent misconfiguration
+- Faster debugging when credentials are missing
+- Security by design (no default passwords)
+
+#### Affected Files
+
+- `docker/scripts/parse-db-url.sh` (new)
+- `docker/scripts/backup-databases.sh`
+- `docker/scripts/restore-database.sh`
+- `Makefile`
+- `compose.yaml`
+- `compose.override.yaml`
+- `src/php/App/Infrastructure/DatabaseConfig.php`
+- `src/node/backend/config/database.ts`
+- `documentation/security/SECRETS.md`
+
+---
 
 ### Version 3.47 (2026-01-19) - Target-based Image Tags & Makefile DC_RUN
 

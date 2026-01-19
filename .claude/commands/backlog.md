@@ -77,6 +77,18 @@ Collect task details interactively or from context:
 - **Implementation steps**: How to accomplish it
 - **Files to modify**: Known files that will be changed
 - **Prerequisites**: Other tasks that must complete first
+- **Requires Planning**: Ask user if task needs Plan Mode analysis before implementation
+
+**Planning Question (ask via AskUserQuestion):**
+
+```text
+Does this task require planning before implementation?
+
+○ Yes - Complex task, needs codebase analysis first (Recommended for new features, architectural changes)
+○ No - Straightforward implementation, can start directly
+```
+
+If "Yes": Add `**Planning:** Required` field and "Before starting" section to task.
 
 ### Step 2: Determine Placement
 
@@ -108,11 +120,16 @@ If no category fits, create a new one or place directly under Medium Priority.
 
 **Status:** Open
 **Created:** YYYY-MM-DD
+**Planning:** Required ← (only if planning needed)
 **Context:** [How/why this was discovered]
 
 **Problem:** [What's wrong or missing]
 
 **Goal:** [What success looks like]
+
+**Before starting:** Use Plan Mode to analyze: ← (only if Planning: Required)
+- [What to investigate]
+- [Architecture considerations]
 
 **Implementation:**
 1. Step one
@@ -131,9 +148,13 @@ If no category fits, create a new one or place directly under Medium Priority.
 
 **Status:** Open
 **Created:** YYYY-MM-DD
+**Planning:** Required ← (only if planning needed)
 **Context:** [Brief context]
 
 **Task:** [What needs to be done]
+
+**Before starting:** Use Plan Mode to analyze: ← (only if Planning: Required)
+- [What to investigate]
 
 **Files to check/modify:**
 - `path/to/file.ext`
@@ -175,6 +196,7 @@ Task Added to Backlog
 Title:    [Task Title]
 Priority: [High/Medium/Low]
 Category: [Category if Medium]
+Planning: [Required/Not required]
 Created:  [Date]
 ════════════════════════════════════════════════
 ```
@@ -467,6 +489,32 @@ Task Added to Backlog
 ════════════════════════════════════════════════
 Title:    Fix authentication bypass vulnerability
 Priority: High
+Created:  2026-01-19
+════════════════════════════════════════════════
+```
+
+### Adding a Task That Requires Planning
+
+```text
+$ /backlog --add
+
+Title: Add .env.local override support
+Priority: Medium
+Category: Environment Configuration
+Context: Feature request for flexible local configuration
+
+Does this task require planning before implementation?
+● Yes - Complex task, needs codebase analysis first
+
+What should be analyzed in Plan Mode?
+> Docker Compose env handling, PHP/Node dotenv libraries, impact on workflows
+
+Task Added to Backlog
+════════════════════════════════════════════════
+Title:    Add .env.local override support
+Priority: Medium
+Category: Environment Configuration
+Planning: Required
 Created:  2026-01-19
 ════════════════════════════════════════════════
 ```

@@ -6,28 +6,6 @@ Future tasks and improvements to be implemented.
 
 ## High Priority
 
-### Database Password Configuration Issue
-
-**Status:** Open
-**Created:** 2026-01-19
-**Context:** Discovered during health endpoint testing
-
-**Problem:** PostgreSQL returns "password authentication failed for user 'app'" when health checks attempt database connections.
-
-**Root Cause:** The `DB_PASSWORD` in `.env.example` doesn't match the password configured in PostgreSQL container.
-
-**Fix Required:**
-1. Verify PostgreSQL is initialized with correct password from `DB_PASSWORD`
-2. Check if `POSTGRES_PASSWORD` in compose.yaml uses `${DB_PASSWORD}`
-3. Update `.env.example` documentation
-
-**Files to check:**
-- `.env.example` (DB_PASSWORD default)
-- `compose.yaml` (postgres service environment)
-- `docker/postgres/init-scripts/` (if any)
-
----
-
 ### v1.0 Release Preparation
 
 **Status:** Planned
@@ -88,6 +66,66 @@ Future tasks and improvements to be implemented.
 
 ---
 
+### Makefile Target Testing with BATS + Goss Integration
+
+**Status:** Planned
+**Created:** 2026-01-19
+**Planning:** Required
+**Context:** Feature request for environment-specific testing of Make targets
+
+**Goal:** Add automated tests for Makefile targets using BATS for command execution and Goss for state validation.
+
+**Before starting:** Use Plan Mode to analyze:
+- Current Makefile structure and target dependencies
+- Which targets are environment-sensitive (DB_TYPE, NODE_MODE, etc.)
+- Existing Goss test structure and how to integrate
+- CI/CD pipeline integration
+
+**Tools:**
+
+| Tool | Purpose |
+|------|---------|
+| BATS | Command execution, exit codes, output validation |
+| Goss | Container/system state validation after commands |
+
+**Combined approach:**
+```bash
+@test "make up creates healthy containers" {
+  run make up
+  [ "$status" -eq 0 ]
+
+  # Goss validates resulting state
+  run make goss-test
+  [ "$status" -eq 0 ]
+}
+```
+
+**Test scenarios:**
+
+1. **BATS-only tests:**
+   - Target exit codes and basic functionality
+   - Error handling (missing dependencies, containers not running)
+   - Output validation for help/info targets
+
+2. **BATS + Goss combined tests:**
+   - `make up` → Goss validates container state
+   - `make build-*` → Goss validates image contents
+   - Environment matrix (DB_TYPE, NODE_MODE) → Goss validates config
+
+**Files to create:**
+- `tests/bats/` directory structure
+- `tests/bats/make-targets.bats` (core command tests)
+- `tests/bats/make-environment.bats` (env-specific with Goss)
+- `tests/bats/helpers/` (shared setup, Goss integration)
+- `Makefile` (new `test-bats` and `test-full` targets)
+
+**Dependencies:**
+- BATS installation (via package manager or git submodule)
+- `bats-support` and `bats-assert` helper libraries
+- Existing Goss setup (already in project)
+
+---
+
 ### Service Integration Examples
 
 **Status:** Planned (v1.1)
@@ -135,6 +173,50 @@ Future tasks and improvements to be implemented.
 ---
 
 ## Medium Priority
+
+### Environment Configuration
+
+#### .env.local Override Support
+
+**Status:** Planned
+**Created:** 2026-01-19
+**Context:** Feature request for flexible local configuration overrides
+
+**Goal:** Allow `.env.local` to override/extend `.env` for temporary or developer-specific changes.
+
+**Benefits:**
+- `.env.local` stays out of Git (in `.gitignore`)
+- Main `.env` remains clean and versioned
+- Quick temporary changes without commit risk
+- Individual developer settings possible
+
+**Typical hierarchy:**
+```
+.env              → Base config (committed, defaults)
+.env.local        → Local overrides (not committed)
+.env.development  → Environment-specific (optional)
+```
+
+**Before starting:** Use Plan Mode to analyze:
+- How Docker Compose currently loads `.env`
+- How PHP/Node applications load environment variables
+- Which dotenv libraries are in use
+- Impact on existing workflows
+
+**Implementation areas to investigate:**
+1. Docker Compose `env_file` configuration
+2. PHP dotenv loading (vlucas/phpdotenv or similar)
+3. Node.js dotenv configuration
+4. Documentation updates
+
+**Files to modify (after analysis):**
+- `.gitignore` (add `.env.local`)
+- `compose.yaml` (env_file order)
+- PHP bootstrap/config files
+- Node.js config files
+- `documentation/` (usage docs)
+
+---
 
 ### Quick Wins
 
