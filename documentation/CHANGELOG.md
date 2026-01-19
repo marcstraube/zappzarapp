@@ -13,8 +13,11 @@ Enhanced `make security-scan` with Node.js image support and smarter scanning.
 
 #### Changes
 
-- **Added Node images to security-scan**: Now scans `php`, `nginx`, `node`, and
-  `node-backend` images
+- **Scans all service images**: Now scans all 13 project images:
+  - Core: `php`, `nginx`, `node`, `node-backend`
+  - Data: `postgres`, `mariadb`, `redis`
+  - Optional: `elasticsearch`, `meilisearch`, `rabbitmq`, `mercure`, `mailpit`,
+    `seaweedfs`
 - **Image existence check**: Automatically scans only existing images
   - Silently skips non-existent images (no more warnings)
   - Shows summary of how many images were scanned

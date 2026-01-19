@@ -1948,7 +1948,10 @@ security-scan: ## Scan all existing Docker images for vulnerabilities
 	@if [ -f .env ]; then . ./.env; fi && \
 	PROJECT=$${COMPOSE_PROJECT_NAME:-zappzarapp} && \
 	SCANNED=0 && \
-	for IMAGE in php nginx node node-backend; do \
+	for IMAGE in php nginx node node-backend \
+	             postgres mariadb redis \
+	             elasticsearch meilisearch \
+	             rabbitmq mercure mailpit seaweedfs; do \
 		FULL_IMAGE="$${PROJECT}-$${IMAGE}:latest"; \
 		if docker image inspect "$$FULL_IMAGE" >/dev/null 2>&1; then \
 			[ $$SCANNED -gt 0 ] && echo ""; \
