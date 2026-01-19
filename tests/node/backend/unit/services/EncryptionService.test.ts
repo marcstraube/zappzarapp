@@ -81,7 +81,7 @@ describe('EncryptionService', () => {
     });
 
     it('should handle special characters', () => {
-      const specialChars = "Line1\nLine2\tTabbed\r\nWindows\0Null'Quote\"DoubleQuote";
+      const specialChars = 'Line1\nLine2\tTabbed\r\nWindows\0Null\'Quote"DoubleQuote';
       const encrypted = EncryptionService.encrypt(specialChars, TEST_KEY);
       const decrypted = EncryptionService.decrypt(encrypted, TEST_KEY);
 

@@ -12,6 +12,20 @@ interface MockPool {
   query: Mock<(...args: unknown[]) => Promise<QueryResult>>;
 }
 
+// Type for parsed log file entries
+interface LogFileEntry {
+  action: string;
+  entity_type: string;
+  entity_id: string;
+  data?: {
+    changed_fields?: string[];
+    reason?: string;
+    admin_user_id?: number;
+    role?: string;
+    [key: string]: unknown;
+  };
+}
+
 describe('AuditLogger', () => {
   const TEST_KEY = 'test-encryption-key';
   const TEST_LOG_FILE = '/tmp/audit-test.log';
@@ -104,7 +118,7 @@ describe('AuditLogger', () => {
       const contents = await fs.readFile(TEST_LOG_FILE, 'utf-8');
       expect(contents).toBeTruthy();
 
-      const logEntry = JSON.parse(contents.trim());
+      const logEntry = JSON.parse(contents.trim()) as LogFileEntry;
       expect(logEntry.action).toBe('user.delete');
       expect(logEntry.entity_type).toBe('user');
       expect(logEntry.entity_id).toBe('789');
@@ -156,9 +170,9 @@ describe('AuditLogger', () => {
 
       // Verify file contains the additional data
       const contents = await fs.readFile(TEST_LOG_FILE, 'utf-8');
-      const logEntry = JSON.parse(contents.trim());
-      expect(logEntry.data.changed_fields).toEqual(['email', 'phone']);
-      expect(logEntry.data.reason).toBe('User requested update');
+      const logEntry = JSON.parse(contents.trim()) as LogFileEntry;
+      expect(logEntry.data?.changed_fields).toEqual(['email', 'phone']);
+      expect(logEntry.data?.reason).toBe('User requested update');
     });
 
     it('should handle null userId', async () => {
@@ -269,9 +283,9 @@ describe('AuditLogger', () => {
 
       // Verify admin_user_id is included in data
       const contents = await fs.readFile(TEST_LOG_FILE, 'utf-8');
-      const logEntry = JSON.parse(contents.trim());
-      expect(logEntry.data.admin_user_id).toBe(1);
-      expect(logEntry.data.role).toBe('moderator');
+      const logEntry = JSON.parse(contents.trim()) as LogFileEntry;
+      expect(logEntry.data?.admin_user_id).toBe(1);
+      expect(logEntry.data?.role).toBe('moderator');
     });
   });
 

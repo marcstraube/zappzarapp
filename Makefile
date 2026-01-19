@@ -156,8 +156,42 @@ setup: ## Create directories, install dev dependencies and ensure structure
 	@echo -e "\033[0;33mStarting containers...\033[0m"
 	@$(MAKE) --silent up
 
+	# Configure IDE database connections
+	@$(MAKE) --silent ide-config
+
 	@echo -e "\033[0;32mSetup completed!\033[0m"
 	@echo -e "\033[0;34mNote: For IDE code completion, run 'make composer-install-local' and 'make pnpm-install-local'\033[0m"
+
+ide-config: ## Configure IDE (PHPStorm) database connections from secrets
+	@if [ ! -d .idea ]; then \
+		echo -e "\033[0;33mSkipping IDE config (.idea directory not found)\033[0m"; \
+		exit 0; \
+	fi
+	@if [ ! -f secrets/db_password.txt ]; then \
+		echo -e "\033[0;33mSkipping IDE config (secrets not generated yet)\033[0m"; \
+		exit 0; \
+	fi
+	@echo -e "\033[0;33mConfiguring IDE database connections...\033[0m"
+	@. ./.env && { \
+		echo '<?xml version="1.0" encoding="UTF-8"?>'; \
+		echo '<project version="4">'; \
+		echo '  <component name="dataSourceStorageLocal" created-in="IntelliJ IDEA">'; \
+		echo '    <data-source name="PostgreSQL (Docker)" uuid="postgres-zappzarapp">'; \
+		echo '      <database-info product="" version="" jdbc-version="" driver-name="" driver-version="" dbms="POSTGRES" />'; \
+		echo "      <user-name>$${DB_USER:-app}</user-name>"; \
+		echo '      <schema-mapping />'; \
+		echo '    </data-source>'; \
+		echo '    <data-source name="MariaDB (Docker)" uuid="mariadb-zappzarapp">'; \
+		echo '      <database-info product="" version="" jdbc-version="" driver-name="" driver-version="" dbms="MARIADB" />'; \
+		echo "      <user-name>$${DB_USER:-app}</user-name>"; \
+		echo '      <schema-mapping />'; \
+		echo '    </data-source>'; \
+		echo '  </component>'; \
+		echo '</project>'; \
+	} > .idea/dataSources.local.xml
+	@echo -e "\033[0;32mIDE database config updated (.idea/dataSources.local.xml)\033[0m"
+	@echo -e "\033[0;34mNote: Password must be entered manually in PHPStorm on first connection.\033[0m"
+	@echo -e "\033[0;34mPassword is in: secrets/db_password.txt\033[0m"
 
 ##@ Docker
 
@@ -1899,6 +1933,7 @@ secrets-rotate-passwords: ## Rotate database passwords only (safe, keeps encrypt
 	@echo -e "\033[0;33mRotating database passwords...\033[0m"
 	@rm -f secrets/db_password.txt secrets/db_root_password.txt
 	@$(MAKE) --silent secrets
+	@$(MAKE) --silent ide-config
 	@echo -e "\033[0;32mPasswords rotated. Run 'make down && make up' to apply changes.\033[0m"
 
 secrets-rotate: ## Rotate ALL secrets (DANGER: breaks existing backups!)

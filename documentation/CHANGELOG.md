@@ -1,11 +1,40 @@
 # zappzarapp - Changelog
 
-**Erstellt:** 2025-12-19 **Letzte Aktualisierung:** 2026-01-19 (Session
-Auto-Start) **Version:** 3.54
+**Erstellt:** 2025-12-19 **Letzte Aktualisierung:** 2026-01-19 (ESLint & IDE
+Config) **Version:** 3.55
 
 ---
 
 ## Changelog
+
+### Version 3.55 (2026-01-19) - ESLint Test Coverage & IDE Config
+
+Quality improvements: ESLint now lints tests, PHPStorm gets auto-configured DB
+connections.
+
+#### Changes
+
+- **ESLint Test Coverage**: `make lint-node` now includes `tests/**/*.{ts,js}`
+  - Fixed 10 type safety errors in `AuditLogger.test.ts` (added `LogFileEntry`
+    interface)
+  - Fixed 1 Prettier error in `EncryptionService.test.ts`
+  - Consistent with PHP approach (PHPStan also lints tests)
+- **Make Help Spacing**: Fixed column width (26→35) for long command names
+- **IDE Config** (`make ide-config`): Auto-generates
+  `.idea/dataSources.local.xml`
+  - Runs automatically during `make setup`
+  - Updates on `make secrets-rotate-passwords`
+  - Enables PHPStorm SQL validation in code
+
+#### Updated Files
+
+- `package.json` - lint scripts include tests
+- `tests/node/backend/unit/services/AuditLogger.test.ts` - Type-safe JSON
+  parsing
+- `tests/node/backend/unit/services/EncryptionService.test.ts` - Quote style fix
+- `Makefile` - `ide-config` target, help spacing fix
+
+---
 
 ### Version 3.54 (2026-01-19) - Session Auto-Start/End Workflow
 
