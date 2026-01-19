@@ -9,23 +9,22 @@ Improvements) **Version:** 3.50
 
 ### Version 3.50 (2026-01-19) - Security Scan Improvements
 
-Enhanced `make security-scan` with Node.js image support and conditional
-scanning.
+Enhanced `make security-scan` with Node.js image support and smarter scanning.
 
 #### Changes
 
-- **Added Node images to security-scan**: Now scans `node` and `node-backend`
-  images in addition to PHP and Nginx
-- **Conditional scanning**: Respects `ENABLE_PHP` and `ENABLE_NODE` environment
-  variables
-  - `ENABLE_PHP=false` → Skips PHP/Nginx image scans
-  - `ENABLE_NODE=false` → Skips Node image scans
-- **Improved output**: Fixed newline formatting, clearer "image not found"
-  messages with specific build commands
+- **Added Node images to security-scan**: Now scans `php`, `nginx`, `node`, and
+  `node-backend` images
+- **Image existence check**: Automatically scans only existing images
+  - Silently skips non-existent images (no more warnings)
+  - Shows summary of how many images were scanned
+  - Only warns if NO images exist at all
+- **Cleaner implementation**: Refactored to use a loop instead of repetitive
+  blocks
 
 #### Updated Files
 
-- `Makefile` - Extended `security-scan` target
+- `Makefile` - Refactored `security-scan` target
 
 ---
 
