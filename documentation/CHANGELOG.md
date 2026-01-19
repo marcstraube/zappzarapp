@@ -72,6 +72,29 @@ Documentation comments added to explain this pattern in affected Dockerfiles.
 - `docker/php/Dockerfile`
 - `docker/postgres/Dockerfile`
 
+#### Performance: CaptainHook Smart Container Detection
+
+Optimized Git hooks with intelligent container state detection (Backlog:
+Pre-Commit Hook Container Dependency):
+
+**New scripts in `docker/hooks/`:**
+
+- `hook-runner.sh` - Smart wrapper that uses `exec` when container is running
+  (~0.3s), falls back to `run` when stopped
+- `php-hooks.sh` - Batched PHP lint and fix commands in single container
+  invocation
+
+**Performance improvement:**
+
+- ~5x faster when containers are running (uses `exec`)
+- No regression when containers are stopped (falls back to `run`)
+- Hooks now work regardless of container state
+
+**Updated hooks:** commit-msg, pre-commit (PHP syntax, PHP-CS-Fixer), pre-push
+(PHPStan, PHPUnit, TypeScript, Vitest)
+
+---
+
 #### Claude Code: /backlog Command
 
 New slash command for consistent backlog task management:

@@ -28,32 +28,6 @@ Future tasks and improvements to be implemented.
 
 ---
 
-### Pre-Commit Hook Container Dependency
-
-**Status:** Open
-**Created:** 2026-01-19
-**Context:** Pre-commit hook fails when containers aren't running
-
-**Problem:** The CaptainHook pre-commit hook uses `docker compose exec` for PHP linting, which requires the PHP container to be running. If containers are down, commits fail.
-
-**Current behavior:**
-```bash
-git diff --name-only --cached --diff-filter=d | grep '.php$' | ... | xargs -r -I {} docker compose exec -T php php -l /var/www/html/{}
-# Fails with: service "php" is not running
-```
-
-**Expected behavior:** Hook should work regardless of container state by using `docker compose run` (starts temporary container) instead of `docker compose exec` (requires running container).
-
-**Fix options:**
-1. Change `exec` to `run` in captainhook.json
-2. Add auto-start logic: check if running, start if needed
-3. Use dev-tools container which is always available via `docker compose run`
-
-**Files to modify:**
-- `captainhook.json`
-
----
-
 ### v1.0 Release Preparation
 
 **Status:** Planned

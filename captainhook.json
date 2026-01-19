@@ -3,7 +3,7 @@
     "enabled": true,
     "actions": [
       {
-        "action": "docker compose run --rm -T dev-tools pnpm exec commitlint --edit /app/.git/COMMIT_EDITMSG",
+        "action": "./docker/hooks/hook-runner.sh dev-tools pnpm exec commitlint --edit /app/.git/COMMIT_EDITMSG",
         "options": [],
         "type": "cli",
         "description": "Validate commit message format against Conventional Commits standard"
@@ -20,19 +20,19 @@
         "description": "Fix file permissions on staged files (scripts: 755, configs: 644)"
       },
       {
-        "action": "docker compose run --rm -T dev-tools pnpm exec lint-staged --config /app/lint-staged.config.js --no-stash --no-hide-partially-staged",
+        "action": "./docker/hooks/hook-runner.sh dev-tools pnpm exec lint-staged --config /app/lint-staged.config.js --no-stash --no-hide-partially-staged",
         "options": [],
         "type": "cli",
         "description": "Fix code style on staged Node.js files (TS/JS, JSON, MD) via Prettier, ESLint, Markdownlint (auto-fix and re-stage). Uses --no-stash and --no-hide-partially-staged to avoid git stash/restore issues with bind-mounted files in Docker."
       },
       {
-        "action": "git diff --name-only --cached --diff-filter=d | grep '.php$' | grep -v '^docker/' | grep -v '^\\.php-cs-fixer' | grep -v '^rector\\.php$' | xargs -r -I {} docker compose exec -T php php -l /var/www/html/{}",
+        "action": "git diff --name-only --cached --diff-filter=d | grep '.php$' | grep -v '^docker/' | grep -v '^\\.php-cs-fixer' | grep -v '^rector\\.php$' | xargs -r ./docker/hooks/php-hooks.sh lint",
         "options": [],
         "type": "cli",
         "description": "Check PHP syntax on staged files (excludes root config files)"
       },
       {
-        "action": "git diff --name-only --cached --diff-filter=d | grep '.php$' | grep -v '^docker/' | grep -v '^\\.php-cs-fixer' | grep -v '^rector\\.php$' | xargs -r sh -c 'docker compose exec -T php vendor/bin/php-cs-fixer fix --config=.php-cs-fixer.dist.php $(echo \"$@\" | sed \"s|[^ ]*|/var/www/html/&|g\") && git add $@' _",
+        "action": "git diff --name-only --cached --diff-filter=d | grep '.php$' | grep -v '^docker/' | grep -v '^\\.php-cs-fixer' | grep -v '^rector\\.php$' | xargs -r ./docker/hooks/php-hooks.sh fix",
         "options": [],
         "type": "cli",
         "description": "Fix PHP coding style on staged files (excludes root config files)"
@@ -43,25 +43,25 @@
     "enabled": true,
     "actions": [
       {
-        "action": "docker compose exec -T php vendor/bin/phpstan analyse --configuration=phpstan.neon --memory-limit=1G",
+        "action": "./docker/hooks/hook-runner.sh php vendor/bin/phpstan analyse --configuration=phpstan.neon --memory-limit=1G",
         "options": [],
         "type": "cli",
         "description": "Run PHPStan static analysis (Level 5) before pushing to remote"
       },
       {
-        "action": "docker compose exec -T php vendor/bin/phpunit",
+        "action": "./docker/hooks/hook-runner.sh php vendor/bin/phpunit",
         "options": [],
         "type": "cli",
         "description": "Run PHPUnit tests (PHP unit & integration tests)"
       },
       {
-        "action": "docker compose run --rm -T dev-tools pnpm run type-check",
+        "action": "./docker/hooks/hook-runner.sh dev-tools pnpm run type-check",
         "options": [],
         "type": "cli",
         "description": "Run TypeScript type checking (static analysis)"
       },
       {
-        "action": "docker compose run --rm -T dev-tools pnpm test",
+        "action": "./docker/hooks/hook-runner.sh dev-tools pnpm test",
         "options": [],
         "type": "cli",
         "description": "Run Vitest tests (Node.js unit & integration tests)"
