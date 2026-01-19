@@ -1,5 +1,27 @@
 # Claude Instructions
 
+## Session Auto-Start
+
+**At conversation start (first user message), automatically:**
+
+1. Find and read last session: `ls -1t .claude/sessions/session-*.md | grep -v TEMPLATE | head -1`
+2. Extract: Goal, Open Items, Session Summary, Next Steps
+3. Read `.claude/BACKLOG.md` for high-priority items
+4. Create new session log from `SESSION-TEMPLATE.md` with timestamp
+5. Brief user on context (previous session, open items, backlog)
+6. Ask: "What would you like to work on?"
+
+**Skip if:** User's first message is a direct task (then create session silently and start working).
+
+## Session End
+
+When ending a session (user confirms):
+1. Update session log with Summary, Open Items, Next Steps
+2. Run `/clear` to start fresh context
+3. New conversation will auto-start new session
+
+---
+
 ## Solution Principles
 
 When proposing solutions, prioritize in this order:
@@ -75,7 +97,6 @@ Available commands in `.claude/commands/`:
 
 | Command | Purpose |
 |---------|---------|
-| `/session-start` | Initialize new session with previous context |
 | `/status` | Project overview (Git, Docker, backlog) |
 | `/review` | Review changes before committing |
 | `/test` | Smart test runner (detects changed files) |
@@ -115,10 +136,7 @@ Available commands in `.claude/commands/`:
 
 ### Starting a Session
 
-Use `/session-start` to:
-- Review previous session summary and open items
-- Check backlog for pending high-priority tasks
-- Create a new session log from template
+Sessions start automatically (see "Session Auto-Start" at top of this file).
 
 ### Session Log
 

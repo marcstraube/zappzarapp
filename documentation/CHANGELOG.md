@@ -1,11 +1,39 @@
 # zappzarapp - Changelog
 
-**Erstellt:** 2025-12-19 **Letzte Aktualisierung:** 2026-01-19 (Shell
-Compatibility) **Version:** 3.53
+**Erstellt:** 2025-12-19 **Letzte Aktualisierung:** 2026-01-19 (Session
+Auto-Start) **Version:** 3.54
 
 ---
 
 ## Changelog
+
+### Version 3.54 (2026-01-19) - Session Auto-Start/End Workflow
+
+Automated session management to reduce context loss and improve continuity.
+
+#### Changes
+
+- **Auto Session Start**: Sessions now start automatically at conversation begin
+  - Reads last session summary and open items
+  - Checks backlog for high-priority tasks
+  - Creates new session log from template
+  - No more manual `/session-start` needed
+- **Session End**: After user confirms session end, `/clear` starts fresh
+  context
+- **Removed**: `/session-start` command (now automatic)
+
+#### Benefits
+
+- Less manual overhead
+- Reduced context compression (proactive session cycling)
+- No knowledge or tasks lost between sessions
+
+#### Updated Files
+
+- `.claude/CLAUDE.md` - Added "Session Auto-Start" and "Session End" sections
+- `.claude/commands/session-start.md` - Deleted (obsolete)
+
+---
 
 ### Version 3.53 (2026-01-19) - Makefile Shell Compatibility
 
