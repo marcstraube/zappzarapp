@@ -203,9 +203,9 @@
       "isBackground": true
     },
     {
-      "label": "Logs: MinIO",
+      "label": "Logs: SeaweedFS",
       "type": "shell",
-      "command": "make logs-minio",
+      "command": "make logs-seaweedfs",
       "problemMatcher": [],
       "presentation": { "reveal": "always", "panel": "dedicated" },
       "isBackground": true
@@ -289,9 +289,9 @@
       "presentation": { "reveal": "always", "panel": "dedicated" }
     },
     {
-      "label": "Shell: MinIO",
+      "label": "Shell: SeaweedFS",
       "type": "shell",
-      "command": "make shell-minio",
+      "command": "make shell-seaweedfs",
       "problemMatcher": [],
       "presentation": { "reveal": "always", "panel": "dedicated" }
     },
@@ -584,23 +584,23 @@
       "presentation": { "reveal": "always", "panel": "new" }
     },
     {
-      "label": "Backup: MinIO",
+      "label": "Backup: SeaweedFS",
       "type": "shell",
-      "command": "make backup-minio",
+      "command": "make backup-seaweedfs",
       "problemMatcher": [],
       "presentation": { "reveal": "always", "panel": "new" }
     },
     {
-      "label": "Backup: MinIO List",
+      "label": "Backup: SeaweedFS List",
       "type": "shell",
-      "command": "make backup-minio-list",
+      "command": "make backup-seaweedfs-list",
       "problemMatcher": [],
       "presentation": { "reveal": "always", "panel": "new" }
     },
     {
-      "label": "Backup: MinIO Restore",
+      "label": "Backup: SeaweedFS Restore",
       "type": "shell",
-      "command": "make backup-minio-restore",
+      "command": "make backup-seaweedfs-restore",
       "problemMatcher": [],
       "presentation": { "reveal": "always", "panel": "new" }
     },

@@ -423,29 +423,20 @@ services:
     deploy:
       replicas: 0
 
-  minio:
+  seaweedfs:
     read_only: false
     security_opt:
       - no-new-privileges:true
     cap_drop:
       - ALL
     volumes:
-      - minio-data:/data
+      - seaweedfs-data:/data
       # Secrets (bind mount)
       - ./secrets:/run/secrets:ro
-      # SSL certificates (bind mount to MinIO's expected location)
-      - ./docker/certs/cert.crt:/root/.minio/certs/public.crt:ro
-      - ./docker/certs/cert.key:/root/.minio/certs/private.key:ro
-    environment:
-      # Enable TLS (MinIO auto-detects certs in /root/.minio/certs/)
-      MINIO_SERVER_URL: https://minio:9000
-    # Override healthcheck for TLS (mc ready doesn't work well with self-signed certs)
-    healthcheck:
-      test: ["CMD", "curl", "-sfk", "https://127.0.0.1:9000/minio/health/live"]
-      interval: 10s
-      timeout: 5s
-      start_period: 15s
-      retries: 3
+      # SSL certificates (TLS is configured via entrypoint)
+      - ./docker/certs/cert.crt:/etc/ssl/certs/cert.crt:ro
+      - ./docker/certs/cert.key:/etc/ssl/private/cert.key:ro
+    # Healthcheck defined in Dockerfile
     logging:
       driver: "json-file"
       options:

@@ -49,7 +49,7 @@ Services are organized by category:
 
 - **Core Services**: Nginx, PHP-FPM, Node.js (if enabled)
 - **Data Services**: PostgreSQL/MariaDB, Redis (if enabled)
-- **Optional Services**: Mercure, Meilisearch, Elasticsearch, Mailpit, MinIO,
+- **Optional Services**: Mercure, Meilisearch, Elasticsearch, Mailpit, SeaweedFS,
   RabbitMQ (when enabled)
 
 Additional health information:
@@ -419,7 +419,7 @@ their `ENABLE_*` environment variables:
 | Meilisearch   | `ENABLE_MEILISEARCH`   | false   |
 | Elasticsearch | `ENABLE_ELASTICSEARCH` | false   |
 | Mailpit       | `ENABLE_MAILPIT`       | false   |
-| MinIO         | `ENABLE_MINIO`         | false   |
+| SeaweedFS     | `ENABLE_SEAWEEDFS`     | false   |
 | RabbitMQ      | `ENABLE_RABBITMQ`      | false   |
 
 When a service is enabled, it appears in:

@@ -40,7 +40,7 @@ tests/goss/
 │   ├── meilisearch.yaml
 │   ├── elasticsearch.yaml
 │   ├── mailpit.yaml
-│   ├── minio.yaml
+│   ├── seaweedfs.yaml
 │   └── rabbitmq.yaml
 ├── presets/            # Environment presets for matrix testing
 │   ├── fullstack.env
@@ -127,7 +127,7 @@ make goss-test-redis
 | `make goss-test-meilisearch`   | Test Meilisearch            |
 | `make goss-test-elasticsearch` | Test Elasticsearch          |
 | `make goss-test-mailpit`       | Test Mailpit                |
-| `make goss-test-minio`         | Test MinIO (TLS)            |
+| `make goss-test-seaweedfs`     | Test SeaweedFS (TLS)        |
 | `make goss-test-rabbitmq`      | Test RabbitMQ               |
 
 ### Preset Tests (Full Stack Testing)

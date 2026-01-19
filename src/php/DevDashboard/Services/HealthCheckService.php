@@ -135,8 +135,8 @@ class HealthCheckService
             'meilisearch'   => ['env' => 'ENABLE_MEILISEARCH', 'name' => 'Meilisearch', 'desc' => 'Search Engine'],
             'elasticsearch' => ['env' => 'ENABLE_ELASTICSEARCH', 'name' => 'Elasticsearch', 'desc' => 'Search & Analytics'],
             'mailpit'       => ['env' => 'ENABLE_MAILPIT', 'name' => 'Mailpit', 'desc' => 'Email Testing'],
-            'minio'         => ['env' => 'ENABLE_MINIO', 'name' => 'MinIO', 'desc' => 'S3-Compatible Storage'],
             'rabbitmq'      => ['env' => 'ENABLE_RABBITMQ', 'name' => 'RabbitMQ', 'desc' => 'Message Broker'],
+            'seaweedfs'     => ['env' => 'ENABLE_SEAWEEDFS', 'name' => 'SeaweedFS', 'desc' => 'S3-Compatible Storage'],
         ];
 
         foreach ($optionalConfig as $key => $config) {
@@ -185,8 +185,8 @@ class HealthCheckService
             'meilisearch'   => $this->checkMeilisearch(...),
             'elasticsearch' => $this->checkElasticsearch(...),
             'mailpit'       => $this->checkMailpit(...),
-            'minio'         => $this->checkMinio(...),
             'rabbitmq'      => $this->checkRabbitmq(...),
+            'seaweedfs'     => $this->checkSeaweedfs(...),
         ];
 
         if (!isset($checks[$serviceName])) {
@@ -351,28 +351,6 @@ class HealthCheckService
     }
 
     /**
-     * Check MinIO connection
-     *
-     * @return array<string, mixed>
-     * @SuppressWarnings("PHPMD.UnusedLocalVariable")
-     */
-    private function checkMinio(): array
-    {
-        $host = 'minio';
-        $port = 9000;
-
-        $errno  = null;
-        $errstr = null;
-        $socket = $this->safeSocketOpen($host, $port, $errno, $errstr, 1);
-        if ($socket) {
-            fclose($socket);
-            return ['connected' => true, 'host' => $host, 'port' => $port];
-        }
-
-        return ['connected' => false, 'error' => $errstr];
-    }
-
-    /**
      * Check RabbitMQ connection
      *
      * @return array<string, mixed>
@@ -389,6 +367,28 @@ class HealthCheckService
         if ($socket) {
             fclose($socket);
             return ['connected' => true, 'host' => $host, 'port' => $port];
+        }
+
+        return ['connected' => false, 'error' => $errstr];
+    }
+
+    /**
+     * Check SeaweedFS connection (S3 API port)
+     *
+     * @return array<string, mixed>
+     * @SuppressWarnings("PHPMD.UnusedLocalVariable")
+     */
+    private function checkSeaweedfs(): array
+    {
+        $host = 'seaweedfs';
+        $port = 8333;
+
+        $errno  = null;
+        $errstr = null;
+        $socket = $this->safeSocketOpen($host, $port, $errno, $errstr, 1);
+        if ($socket) {
+            fclose($socket);
+            return ['connected' => true, 'host' => $host, 'port' => $port, 'tls' => true];
         }
 
         return ['connected' => false, 'error' => $errstr];

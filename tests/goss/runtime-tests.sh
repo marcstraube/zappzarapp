@@ -340,19 +340,34 @@ test_mailpit() {
     fi
 }
 
-test_minio() {
-    log_test "minio: Health endpoint (HTTPS)"
+test_seaweedfs() {
+    log_test "seaweedfs: Master cluster status"
 
-    if ! is_container_running minio; then
-        log_skip "minio container not running"
+    if ! is_container_running seaweedfs; then
+        log_skip "seaweedfs container not running"
         return
     fi
 
-    # Test health endpoint via HTTPS (internal TLS)
-    if $DOCKER_COMPOSE exec -T minio curl -sfk --max-time $TIMEOUT "https://localhost:9000/minio/health/live" >/dev/null 2>&1; then
-        log_pass "minio: HTTPS health endpoint responds"
+    # Test master cluster status endpoint (returns 200)
+    # Note: Use 127.0.0.1 instead of localhost - Alpine doesn't always resolve localhost
+    if $DOCKER_COMPOSE exec -T seaweedfs wget -q -O /dev/null --timeout=$TIMEOUT "http://127.0.0.1:9333/cluster/status" 2>/dev/null; then
+        log_pass "seaweedfs: Master cluster status responds"
     else
-        log_fail "minio: HTTPS health endpoint not responding"
+        log_fail "seaweedfs: Master cluster status not responding"
+        return
+    fi
+
+    # Test S3 API endpoint via HTTPS (returns 403 without auth, proves TLS works)
+    log_test "seaweedfs: S3 API HTTPS (expects 403)"
+    # wget returns exit code 8 on 403, so we capture output regardless of exit code
+    HTTP_OUTPUT=$($DOCKER_COMPOSE exec -T seaweedfs wget -q -O /dev/null --server-response --no-check-certificate --timeout=$TIMEOUT "https://127.0.0.1:8333/" 2>&1 || true)
+    HTTP_CODE=$(echo "$HTTP_OUTPUT" | grep "HTTP/" | head -1 | awk '{print $2}')
+    if [ "$HTTP_CODE" = "403" ]; then
+        log_pass "seaweedfs: S3 HTTPS returns 403 (expected)"
+    elif [ -n "$HTTP_CODE" ]; then
+        log_pass "seaweedfs: S3 HTTPS responds with $HTTP_CODE"
+    else
+        log_fail "seaweedfs: S3 HTTPS endpoint not responding"
     fi
 }
 
@@ -655,7 +670,7 @@ run_all_tests() {
     test_meilisearch
     test_elasticsearch
     test_mailpit
-    test_minio
+    test_seaweedfs
     test_rabbitmq
 
     echo -e "\n${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
@@ -681,13 +696,13 @@ case "${1:-all}" in
     meilisearch) test_meilisearch ;;
     elasticsearch) test_elasticsearch ;;
     mailpit) test_mailpit ;;
-    minio) test_minio ;;
+    seaweedfs) test_seaweedfs ;;
     rabbitmq) test_rabbitmq ;;
     all) run_all_tests ;;
     *)
         echo "Usage: $0 [service|all]"
         echo "Services: nginx, health-routing, php, node-backend, node-frontend, postgres, mariadb,"
-        echo "          redis, mercure, meilisearch, elasticsearch, mailpit, minio, rabbitmq"
+        echo "          redis, mercure, meilisearch, elasticsearch, mailpit, seaweedfs, rabbitmq"
         exit 1
         ;;
 esac

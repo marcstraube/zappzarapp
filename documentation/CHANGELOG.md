@@ -1,11 +1,66 @@
 # zappzarapp - Changelog
 
-**Erstellt:** 2025-12-19 **Letzte Aktualisierung:** 2026-01-19 (DATABASE_URL
-Support) **Version:** 3.48
+**Erstellt:** 2025-12-19 **Letzte Aktualisierung:** 2026-01-19 (SeaweedFS
+Migration) **Version:** 3.49
 
 ---
 
 ## Changelog
+
+### Version 3.49 (2026-01-19) - MinIO → SeaweedFS Migration
+
+Replaced MinIO with SeaweedFS as S3-compatible object storage due to MinIO
+entering maintenance mode in December 2025.
+
+#### Why SeaweedFS?
+
+| Criteria     | MinIO                    | SeaweedFS                     |
+| ------------ | ------------------------ | ----------------------------- |
+| License      | AGPL-3.0 (since 2021)    | Apache 2.0                    |
+| Status       | Maintenance mode (2025)  | Active development            |
+| Maturity     | Since 2014               | Since 2015                    |
+| Docker pulls | 1B+                      | 100M+                         |
+| GitHub stars | 50k+                     | 29k+                          |
+| Architecture | Monolithic               | Distributed (master/volume)   |
+
+#### Configuration Changes
+
+| Setting        | Old (MinIO)         | New (SeaweedFS)         |
+| -------------- | ------------------- | ----------------------- |
+| Enable flag    | `ENABLE_MINIO`      | `ENABLE_SEAWEEDFS`      |
+| S3 API port    | 9000                | 8333                    |
+| Console port   | 9001                | 8888 (Filer UI)         |
+| Access key     | `minio_root_user`   | `seaweedfs_access_key`  |
+| Secret key     | `minio_root_password` | `seaweedfs_secret_key` |
+| Volume name    | `minio-data`        | `seaweedfs-data`        |
+
+#### New Files
+
+- `docker/seaweedfs/Dockerfile` - Custom image based on chrislusf/seaweedfs:4.07
+- `docker/seaweedfs/entrypoint.sh` - Secret handling and TLS setup
+- `docker/scripts/backup-seaweedfs.sh` - Encrypted backup script
+- `docker/scripts/restore-seaweedfs.sh` - Restore with confirmation
+- `tests/goss/services/seaweedfs.yaml` - Container tests
+- `kubernetes/templates/seaweedfs/` - Kubernetes deployment
+
+#### Deleted Files
+
+- `docker/minio/Dockerfile`
+- `docker/scripts/backup-minio.sh`
+- `docker/scripts/restore-minio.sh`
+- `tests/goss/services/minio.yaml`
+- `kubernetes/templates/minio/`
+
+#### Updated Components
+
+- All Makefile targets (`backup-minio` → `backup-seaweedfs`, etc.)
+- PHP health checks (`HealthCheck.php`, `HealthCheckService.php`, `LogService.php`)
+- IDE configurations (JetBrains, VSCode)
+- Documentation (OPTIONAL-SERVICES.md, BACKUP.md, INTERNAL-TLS.md, etc.)
+- Kubernetes templates (values.yaml, secrets.yaml, configmap.yaml)
+- Goss test presets (all 18 preset files)
+
+---
 
 ### Version 3.48 (2026-01-19) - DATABASE_URL Support & Secure Password Handling
 

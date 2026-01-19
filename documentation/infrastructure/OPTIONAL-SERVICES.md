@@ -10,7 +10,7 @@ This document describes the optional services available in zappzarapp.
 | Meilisearch   | `meilisearch`   | 7700        | database | Lightweight search engine        |
 | Elasticsearch | `elasticsearch` | 9200, 9300  | database | Full-featured search & analytics |
 | Mailpit       | `mailpit`       | 1025, 8025  | backend  | Email testing (SMTP catch-all)   |
-| MinIO         | `minio`         | 9000, 9001  | backend  | S3-compatible object storage     |
+| SeaweedFS     | `seaweedfs`     | 8333, 8888  | backend  | S3-compatible object storage     |
 | RabbitMQ      | `rabbitmq`      | 5672, 15672 | backend  | Enterprise message broker        |
 
 ## Enabling Services
@@ -23,7 +23,7 @@ ENABLE_MERCURE=true
 ENABLE_MEILISEARCH=true
 ENABLE_ELASTICSEARCH=true
 ENABLE_MAILPIT=true
-ENABLE_MINIO=true
+ENABLE_SEAWEEDFS=true
 ENABLE_RABBITMQ=true
 ```
 
@@ -324,34 +324,34 @@ provider (SendGrid, Mailgun, SES) for production.
 
 ---
 
-## MinIO
+## SeaweedFS
 
 S3-compatible object storage for local development. Your application code using
-AWS S3 SDK will work seamlessly with both MinIO and real AWS S3.
+AWS S3 SDK will work seamlessly with both SeaweedFS and real AWS S3.
 
 ### Configuration
 
 ```bash
 # .env
-ENABLE_MINIO=true
-MINIO_API_PORT=9000
-MINIO_CONSOLE_PORT=9001
+ENABLE_SEAWEEDFS=true
+SEAWEEDFS_S3_PORT=8333
+SEAWEEDFS_CONSOLE_PORT=8888
 
-# For external S3/MinIO instances (production)
-#S3_ENDPOINT=https://minio:9000
+# For external S3/SeaweedFS instances (production)
+#S3_ENDPOINT=https://seaweedfs:8333
 #S3_ACCESS_KEY=your-access-key
 #S3_SECRET_KEY=your-secret-key
 #S3_BUCKET=uploads
 #S3_REGION=us-east-1
 ```
 
-**Credentials:** Auto-generated in `secrets/minio_root_user.txt` and
-`secrets/minio_root_password.txt` by `make setup`.
+**Credentials:** Auto-generated in `secrets/seaweedfs_admin_user.txt` and
+`secrets/seaweedfs_admin_password.txt` by `make setup`.
 
 ### Usage
 
-**Console URL:** `https://localhost:9001` **API Endpoint:**
-`https://localhost:9000`
+**Console URL:** `https://localhost:8888` **API Endpoint:**
+`https://localhost:8333`
 
 **PHP Integration (AWS SDK):**
 
@@ -361,11 +361,11 @@ use Aws\S3\S3Client;
 $client = new S3Client([
     'version' => 'latest',
     'region' => 'us-east-1',
-    'endpoint' => 'https://minio:9000',
-    'use_path_style_endpoint' => true,  // Required for MinIO
+    'endpoint' => 'https://seaweedfs:8333',
+    'use_path_style_endpoint' => true,  // Required for SeaweedFS
     'credentials' => [
-        'key' => trim(file_get_contents('/run/secrets/minio_root_user')),
-        'secret' => trim(file_get_contents('/run/secrets/minio_root_password'))
+        'key' => trim(file_get_contents('/run/secrets/seaweedfs_admin_user')),
+        'secret' => trim(file_get_contents('/run/secrets/seaweedfs_admin_password'))
     ]
 ]);
 
@@ -373,7 +373,7 @@ $client = new S3Client([
 $client->putObject([
     'Bucket' => 'uploads',
     'Key' => 'example.txt',
-    'Body' => 'Hello, MinIO!'
+    'Body' => 'Hello, SeaweedFS!'
 ]);
 ```
 
@@ -385,12 +385,12 @@ import { readFileSync } from 'fs';
 
 const client = new S3Client({
   region: 'us-east-1',
-  endpoint: 'https://minio:9000',
-  forcePathStyle: true, // Required for MinIO
+  endpoint: 'https://seaweedfs:8333',
+  forcePathStyle: true, // Required for SeaweedFS
   credentials: {
-    accessKeyId: readFileSync('/run/secrets/minio_root_user', 'utf8').trim(),
+    accessKeyId: readFileSync('/run/secrets/seaweedfs_admin_user', 'utf8').trim(),
     secretAccessKey: readFileSync(
-      '/run/secrets/minio_root_password',
+      '/run/secrets/seaweedfs_admin_password',
       'utf8'
     ).trim(),
   },
@@ -400,7 +400,7 @@ await client.send(
   new PutObjectCommand({
     Bucket: 'uploads',
     Key: 'example.txt',
-    Body: 'Hello, MinIO!',
+    Body: 'Hello, SeaweedFS!',
   })
 );
 ```
@@ -408,47 +408,47 @@ await client.send(
 ### Commands
 
 ```bash
-make logs-minio   # View logs
-make shell-minio  # Open shell
+make logs-seaweedfs   # View logs
+make shell-seaweedfs  # Open shell
 ```
 
 ### Backup Commands
 
 ```bash
-make backup-minio         # Create encrypted MinIO backup
-make backup-minio-list    # List all backups
-make backup-minio-restore # Restore from backup
+make backup-seaweedfs         # Create encrypted SeaweedFS backup
+make backup-seaweedfs-list    # List all backups
+make backup-seaweedfs-restore # Restore from backup
 ```
 
-MinIO backups use `mc mirror` to export all buckets and objects to
-`backups/minio/`. Backups are encrypted with the backup encryption key.
+SeaweedFS backups use `weed shell` to export all buckets and objects to
+`backups/seaweedfs/`. Backups are encrypted with the backup encryption key.
 
 ### SSL/TLS
 
-MinIO is configured with TLS by default using the certificates in
+SeaweedFS is configured with TLS by default using the certificates in
 `./docker/certs/`. The API and Console are accessible via HTTPS:
 
-- **API:** `https://minio:9000` (internal) or `https://localhost:9000` (host)
-- **Console:** `https://localhost:9001`
+- **API:** `https://seaweedfs:8333` (internal) or `https://localhost:8333` (host)
+- **Console:** `https://localhost:8888`
 
 ### Production Notes
 
-**Version Pinning:** MinIO uses date-based releases instead of semantic
-versioning. For production, pin to a specific release in the Dockerfile:
+**Version Pinning:** SeaweedFS uses semantic versioning. For production, pin to
+a specific release in the Dockerfile:
 
 ```dockerfile
-ARG MINIO_VERSION=RELEASE.2025-01-01T00-00-00Z
+ARG SEAWEEDFS_VERSION=3.75
 ```
 
-**Storage Options:** The internal MinIO service can be used in production with
+**Storage Options:** The internal SeaweedFS service can be used in production with
 proper configuration (TLS, backups, monitoring). Alternatively, use real AWS S3
-or an external MinIO instance - same SDK code works with all options, just
+or an external SeaweedFS instance - same SDK code works with all options, just
 change the endpoint and credentials.
 
 ### Resources
 
-- [MinIO Documentation](https://min.io/docs/minio/linux/index.html)
-- [MinIO Console Guide](https://min.io/docs/minio/linux/administration/minio-console.html)
+- [SeaweedFS Documentation](https://github.com/seaweedfs/seaweedfs/wiki)
+- [SeaweedFS S3 Gateway](https://github.com/seaweedfs/seaweedfs/wiki/Amazon-S3-API)
 - [AWS SDK for PHP](https://aws.amazon.com/sdk-for-php/)
 - [AWS SDK for JavaScript](https://aws.amazon.com/sdk-for-javascript/)
 
@@ -640,9 +640,9 @@ routing, guaranteed delivery, or enterprise requirements.
 - **Do not use in production** - disabled by default (`replicas: 0`)
 - Configure a real email provider (SendGrid, Mailgun, AWS SES)
 
-### MinIO
+### SeaweedFS
 
-- Use real AWS S3 or external MinIO for production
+- Use real AWS S3 or external SeaweedFS for production
 - Same SDK code works with both - just change endpoint/credentials
 - Ensure proper backup strategy for stored objects
 

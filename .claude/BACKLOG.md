@@ -149,7 +149,7 @@ Future tasks and improvements to be implemented.
 | PostgreSQL | Repository pattern example | Repository pattern example |
 | Meilisearch | Search indexing example | Search indexing example |
 | Elasticsearch | Search/Analytics example | Search/Analytics example |
-| MinIO/S3 | File upload example | File upload example |
+| SeaweedFS/S3 | File upload example | File upload example |
 
 **Implementation per service:**
 1. Service class with dependency injection
@@ -338,26 +338,6 @@ Future tasks and improvements to be implemented.
 
 ---
 
-#### Container Analytics Audit
-
-**Status:** Planned
-**Created:** 2026-01-19
-**Context:** We disabled Meilisearch analytics with `MEILI_NO_ANALYTICS=true`
-
-**Task:** Check all containers for telemetry/analytics that should be disabled.
-
-**Containers to audit:**
-- Elasticsearch (telemetry settings?)
-- MinIO (analytics?)
-- RabbitMQ (telemetry?)
-- Redis (no analytics expected)
-- PostgreSQL/MariaDB (no analytics expected)
-- Mercure (analytics?)
-
-**Goal:** Privacy-respecting defaults, no phone-home behavior.
-
----
-
 ### Code Quality
 
 #### PHP Code Quality: SuppressWarnings Cleanup
@@ -502,51 +482,6 @@ Future tasks and improvements to be implemented.
 ---
 
 ### Infrastructure
-
-#### MinIO Custom Build from Source
-
-**Status:** Planned
-**Created:** 2026-01-19
-**Context:** MinIO stopped publishing Docker images to Docker Hub in October 2025
-
-**Problem:** MinIO no longer publishes official Docker images. The last available version on Docker Hub is `RELEASE.2025-09-07T16-13-09Z`, which is missing a critical security patch from October 2025.
-
-**Current workaround:** Using older official version (already applied)
-
-**Goal:** Build MinIO from source in our own Dockerfile for:
-- Full control over versions and security patches
-- Consistency with project philosophy (custom Dockerfiles for all services)
-- Independence from third-party Docker Hub publishers
-
-**Implementation:**
-1. Create `docker/minio/Dockerfile` with multi-stage build
-2. Clone MinIO source, checkout specific release tag
-3. Build binary with Go
-4. Create minimal runtime image (Alpine-based)
-5. Update compose.yaml to use custom image
-
-**Reference:**
-```dockerfile
-FROM golang:1.21-alpine AS builder
-RUN git clone https://github.com/minio/minio.git && \
-    cd minio && \
-    git checkout RELEASE.2025-10-15T17-29-55Z && \
-    go build -o /minio ./cmd/minio
-
-FROM alpine:3.19
-COPY --from=builder /minio /usr/bin/minio
-# ... health check, entrypoint
-```
-
-**Files to modify:**
-- `docker/minio/Dockerfile` (rewrite for source build)
-- `compose.yaml` (if image name changes)
-
-**Notes:**
-- Renovate can monitor MinIO GitHub releases for updates
-- Consider adding to CI/CD for automated rebuilds
-
----
 
 #### TLS Certificate Architecture
 
@@ -703,7 +638,32 @@ COPY --from=builder /minio /usr/bin/minio
 
 ## Low Priority
 
-(No items yet)
+### Service List Sorting Consistency
+
+**Status:** Planned
+**Created:** 2026-01-19
+**Context:** During SeaweedFS migration, inconsistent sorting of service lists was identified
+
+**Goal:** Ensure all service lists follow consistent sorting: Core → Data → Optional, alphabetically within each category.
+
+**Sorting Order:**
+```
+Core:     nginx, node, node-backend, php
+Data:     mariadb, postgres, redis
+Optional: elasticsearch, mailpit, meilisearch, mercure, rabbitmq, seaweedfs
+```
+
+**Files to check:**
+- [ ] PHP health check arrays and methods
+- [ ] compose.yaml service order
+- [ ] Makefile target groupings
+- [ ] Documentation service tables
+- [ ] VSCode/JetBrains task ordering
+- [ ] Kubernetes templates
+
+**Notes:**
+- Low priority cosmetic improvement
+- Can be done incrementally
 
 ---
 

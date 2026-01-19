@@ -58,8 +58,9 @@ data:
   ELASTICSEARCH_PORT: {{ .Values.elasticsearch.service.port | quote }}
   {{- end }}
 
-  {{- if .Values.minio.enabled }}
-  MINIO_ENDPOINT: {{ printf "%s-minio:%d" (include "zappzarapp.fullname" .) (.Values.minio.service.port | int) | quote }}
+  {{- if .Values.seaweedfs.enabled }}
+  SEAWEEDFS_S3_ENDPOINT: {{ printf "%s-seaweedfs:%d" (include "zappzarapp.fullname" .) (.Values.seaweedfs.service.s3Port | int) | quote }}
+  SEAWEEDFS_FILER_ENDPOINT: {{ printf "%s-seaweedfs:%d" (include "zappzarapp.fullname" .) (.Values.seaweedfs.service.filerPort | int) | quote }}
   {{- end }}
 
   {{- if .Values.rabbitmq.enabled }}

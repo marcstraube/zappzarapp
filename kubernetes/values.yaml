@@ -297,12 +297,12 @@ elasticsearch:
     type: ClusterIP
     port: 9200
 
-minio:
+seaweedfs:
   enabled: false
   replicaCount: 1
   image:
-    repository: minio/minio
-    tag: "latest"
+    repository: chrislusf/seaweedfs
+    tag: "4.07"
   resources:
     limits:
       cpu: "1"
@@ -316,8 +316,10 @@ minio:
     storageClass: ""
   service:
     type: ClusterIP
-    port: 9000
-    consolePort: 9001
+    s3Port: 8333
+    masterPort: 9333
+    volumePort: 8080
+    filerPort: 8888
 
 rabbitmq:
   enabled: false
@@ -394,8 +396,8 @@ secrets:
     sslKey: ""
     mercureJwtSecret: ""
     meilisearchMasterKey: ""
-    minioRootUser: ""
-    minioRootPassword: ""
+    seaweedfsAccessKey: ""
+    seaweedfsSecretKey: ""
     rabbitmqUser: ""
     rabbitmqPassword: ""
 

@@ -1,0 +1,32 @@
+{{- if .Values.seaweedfs.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "zappzarapp.fullname" . }}-seaweedfs
+  namespace: {{ include "zappzarapp.namespace" . }}
+  labels:
+    {{- include "zappzarapp.labels" . | nindent 4 }}
+    app.kubernetes.io/component: seaweedfs
+spec:
+  type: {{ .Values.seaweedfs.service.type }}
+  ports:
+    - name: s3
+      port: {{ .Values.seaweedfs.service.s3Port }}
+      targetPort: s3
+      protocol: TCP
+    - name: master
+      port: {{ .Values.seaweedfs.service.masterPort }}
+      targetPort: master
+      protocol: TCP
+    - name: volume
+      port: {{ .Values.seaweedfs.service.volumePort }}
+      targetPort: volume
+      protocol: TCP
+    - name: filer
+      port: {{ .Values.seaweedfs.service.filerPort }}
+      targetPort: filer
+      protocol: TCP
+  selector:
+    {{- include "zappzarapp.selectorLabels" . | nindent 4 }}
+    app.kubernetes.io/component: seaweedfs
+{{- end }}

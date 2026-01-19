@@ -17,7 +17,7 @@ use Exception;
  * - Node.js Backend (if ENABLE_NODE=true)
  * - Redis (if ENABLE_REDIS=true)
  * - Database (if DB_TYPE is set)
- * - Optional services (Mercure, Meilisearch, Elasticsearch, Mailpit, MinIO, RabbitMQ)
+ * - Optional services (Mercure, Meilisearch, Elasticsearch, Mailpit, SeaweedFS, RabbitMQ)
  *
  * @SuppressWarnings("PHPMD.ExcessiveClassComplexity")
  * @SuppressWarnings("PHPMD.ExcessiveClassLength")
@@ -48,8 +48,8 @@ class HealthCheck
             'ENABLE_MEILISEARCH'   => $this->parseBool($_ENV['ENABLE_MEILISEARCH'] ?? getenv('ENABLE_MEILISEARCH') ?: 'false'),
             'ENABLE_ELASTICSEARCH' => $this->parseBool($_ENV['ENABLE_ELASTICSEARCH'] ?? getenv('ENABLE_ELASTICSEARCH') ?: 'false'),
             'ENABLE_MAILPIT'       => $this->parseBool($_ENV['ENABLE_MAILPIT'] ?? getenv('ENABLE_MAILPIT') ?: 'false'),
-            'ENABLE_MINIO'         => $this->parseBool($_ENV['ENABLE_MINIO'] ?? getenv('ENABLE_MINIO') ?: 'false'),
             'ENABLE_RABBITMQ'      => $this->parseBool($_ENV['ENABLE_RABBITMQ'] ?? getenv('ENABLE_RABBITMQ') ?: 'false'),
+            'ENABLE_SEAWEEDFS'     => $this->parseBool($_ENV['ENABLE_SEAWEEDFS'] ?? getenv('ENABLE_SEAWEEDFS') ?: 'false'),
             'DB_TYPE'              => $_ENV['DB_TYPE'] ?? getenv('DB_TYPE') ?: null,
             'NODE_MODE'            => $_ENV['NODE_MODE'] ?? getenv('NODE_MODE') ?: 'none',
         ];
@@ -121,8 +121,8 @@ class HealthCheck
             'ENABLE_MEILISEARCH'   => 'checkMeilisearch',
             'ENABLE_ELASTICSEARCH' => 'checkElasticsearch',
             'ENABLE_MAILPIT'       => 'checkMailpit',
-            'ENABLE_MINIO'         => 'checkMinio',
             'ENABLE_RABBITMQ'      => 'checkRabbitmq',
+            'ENABLE_SEAWEEDFS'     => 'checkSeaweedfs',
         ];
 
         foreach ($optionalServices as $envKey => $method) {
@@ -761,41 +761,6 @@ class HealthCheck
     }
 
     /**
-     * Check MinIO connection
-     */
-    private function checkMinio(): void
-    {
-        try {
-            $url     = 'http://minio:9000/minio/health/live';
-            $context = stream_context_create([
-                'http' => [
-                    'timeout'       => 2,
-                    'ignore_errors' => true,
-                ],
-            ]);
-
-            $response = $this->fetchUrl($url, $context);
-
-            // MinIO returns empty body with 200 OK on success
-            if ($response !== false) {
-                $this->status['services']['minio'] = [
-                    'status'  => 'ok',
-                    'enabled' => true,
-                ];
-                return;
-            }
-        } catch (Exception) {
-            // Fall through to error
-        }
-
-        $this->status['services']['minio'] = [
-            'status'  => 'error',
-            'message' => 'MinIO not reachable',
-            'enabled' => true,
-        ];
-    }
-
-    /**
      * Check RabbitMQ connection
      */
     private function checkRabbitmq(): void
@@ -806,6 +771,42 @@ class HealthCheck
             'status'  => $result['connected'] ? 'ok' : 'error',
             'enabled' => true,
         ] + ($result['connected'] ? [] : ['message' => $result['error'] ?? 'Connection failed']);
+    }
+
+    /**
+     * Check SeaweedFS connection (master cluster status)
+     */
+    private function checkSeaweedfs(): void
+    {
+        try {
+            // Use master cluster status endpoint (returns 200)
+            $url     = 'http://seaweedfs:9333/cluster/status';
+            $context = stream_context_create([
+                'http' => [
+                    'timeout'       => 2,
+                    'ignore_errors' => true,
+                ],
+            ]);
+
+            $response = $this->fetchUrl($url, $context);
+
+            if ($response !== false) {
+                $data = json_decode($response, true);
+                $this->status['services']['seaweedfs'] = [
+                    'status'  => isset($data['IsLeader']) ? 'ok' : 'error',
+                    'enabled' => true,
+                ];
+                return;
+            }
+        } catch (Exception) {
+            // Fall through to error
+        }
+
+        $this->status['services']['seaweedfs'] = [
+            'status'  => 'error',
+            'message' => 'SeaweedFS not reachable',
+            'enabled' => true,
+        ];
     }
 
     /**

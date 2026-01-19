@@ -7,7 +7,7 @@ GDPR-compliant backup strategy with encryption for all data services.
 | Service                       | Command                | Directory                | Format        |
 | ----------------------------- | ---------------------- | ------------------------ | ------------- |
 | Database (PostgreSQL/MariaDB) | `backup-db`            | `backups/db/`            | `.sql.gz.enc` |
-| MinIO (Object Storage)        | `backup-minio`         | `backups/minio/`         | `.tar.gz.enc` |
+| SeaweedFS (Object Storage)    | `backup-seaweedfs`     | `backups/seaweedfs/`     | `.tar.gz.enc` |
 | RabbitMQ (Message Broker)     | `backup-rabbitmq`      | `backups/rabbitmq/`      | `.json.enc`   |
 | Elasticsearch (Search)        | `backup-elasticsearch` | `backups/elasticsearch/` | `.tar.gz.enc` |
 
@@ -19,19 +19,19 @@ make backup-all
 
 # Individual service backups
 make backup-db              # Database
-make backup-minio           # MinIO
+make backup-seaweedfs       # SeaweedFS
 make backup-rabbitmq        # RabbitMQ
 make backup-elasticsearch   # Elasticsearch
 
 # List backups
 make backup-db-list
-make backup-minio-list
+make backup-seaweedfs-list
 make backup-rabbitmq-list
 make backup-elasticsearch-list
 
 # Restore (interactive)
 make backup-db-restore
-make backup-minio-restore
+make backup-seaweedfs-restore
 make backup-rabbitmq-restore
 make backup-elasticsearch-restore
 ```
@@ -99,36 +99,36 @@ openssl enc -aes-256-cbc -d -salt -pbkdf2 \
 
 ---
 
-## MinIO Backup (Object Storage)
+## SeaweedFS Backup (Object Storage)
 
 ### Create Backup
 
 ```bash
-# Default: encrypted backup to ./backups/minio/
-make backup-minio
+# Default: encrypted backup to ./backups/seaweedfs/
+make backup-seaweedfs
 
 # Direct script usage
-./docker/scripts/backup-minio.sh --help
-./docker/scripts/backup-minio.sh --no-encrypt
+./docker/scripts/backup-seaweedfs.sh --help
+./docker/scripts/backup-seaweedfs.sh --no-encrypt
 ```
 
 ### Backup Contents
 
-MinIO backups use `mc mirror` to export all buckets and objects:
+SeaweedFS backups use `weed shell` to export all buckets and objects:
 
-- **Format:** `minio_{TIMESTAMP}.tar.gz.enc`
+- **Format:** `seaweedfs_{TIMESTAMP}.tar.gz.enc`
 - **Contents:** All buckets, objects, and metadata
 
-Example: `minio_20260114_143022.tar.gz.enc`
+Example: `seaweedfs_20260114_143022.tar.gz.enc`
 
 ### Restore
 
 ```bash
 # Interactive restore
-make backup-minio-restore
+make backup-seaweedfs-restore
 
 # Direct restore
-./docker/scripts/restore-minio.sh backups/minio/minio_20260114_143022.tar.gz.enc
+./docker/scripts/restore-seaweedfs.sh backups/seaweedfs/seaweedfs_20260114_143022.tar.gz.enc
 ```
 
 **Note:** Restore recreates buckets and objects. Existing objects with same keys
@@ -232,7 +232,7 @@ BACKUP_RETENTION_DAYS=0
 
 ```bash
 ./docker/scripts/backup-databases.sh --retention 7
-./docker/scripts/backup-minio.sh --retention 7
+./docker/scripts/backup-seaweedfs.sh --retention 7
 ```
 
 ---
@@ -255,8 +255,8 @@ crontab -e
 # Database: Daily at 2:00 AM
 0 2 * * * cd /path/to/project && make backup-db >> /var/log/backup.log 2>&1
 
-# MinIO: Weekly on Sunday at 3:00 AM
-0 3 * * 0 cd /path/to/project && make backup-minio >> /var/log/backup.log 2>&1
+# SeaweedFS: Weekly on Sunday at 3:00 AM
+0 3 * * 0 cd /path/to/project && make backup-seaweedfs >> /var/log/backup.log 2>&1
 
 # RabbitMQ: Daily at 2:30 AM
 30 2 * * * cd /path/to/project && make backup-rabbitmq >> /var/log/backup.log 2>&1
@@ -358,13 +358,13 @@ make setup
 
 Try restoring from a different backup or check key history.
 
-### MinIO: "mc: command not found"
+### SeaweedFS: "weed: command not found"
 
-The MinIO client (`mc`) runs inside the MinIO container. Ensure the container is
+The SeaweedFS client (`weed`) runs inside the SeaweedFS container. Ensure the container is
 running:
 
 ```bash
-docker compose ps minio
+docker compose ps seaweedfs
 make up  # If not running
 ```
 
@@ -403,6 +403,6 @@ Backup and restore operations are logged to `storage/logs/backup.log`:
 
 ```json
 {"timestamp":"2026-01-14T14:30:22+01:00","action":"backup_created","service":"postgres","file":"postgres_app_20260114_143022.sql.gz.enc","size":"2.3M","encrypted":true}
-{"timestamp":"2026-01-14T14:31:00+01:00","action":"backup_created","service":"minio","file":"minio_20260114_143100.tar.gz.enc","size":"156M","encrypted":true}
+{"timestamp":"2026-01-14T14:31:00+01:00","action":"backup_created","service":"seaweedfs","file":"seaweedfs_20260114_143100.tar.gz.enc","size":"156M","encrypted":true}
 {"timestamp":"2026-01-14T14:32:00+01:00","action":"backup_created","service":"rabbitmq","file":"rabbitmq_20260114_143200.json.enc","size":"4.2K","encrypted":true}
 ```

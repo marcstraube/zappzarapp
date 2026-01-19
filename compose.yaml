@@ -82,7 +82,7 @@ services:
       - ENABLE_MEILISEARCH=${ENABLE_MEILISEARCH:-false}
       - ENABLE_ELASTICSEARCH=${ENABLE_ELASTICSEARCH:-false}
       - ENABLE_MAILPIT=${ENABLE_MAILPIT:-false}
-      - ENABLE_MINIO=${ENABLE_MINIO:-false}
+      - ENABLE_SEAWEEDFS=${ENABLE_SEAWEEDFS:-false}
       - ENABLE_RABBITMQ=${ENABLE_RABBITMQ:-false}
       # Database (12-Factor: DATABASE_URL takes precedence)
       # Priority: DATABASE_URL > DB_PASSWORD_FILE (secrets) > DB_PASSWORD (env var)
@@ -457,6 +457,8 @@ services:
       ES_JAVA_OPTS: '-Xms${ELASTICSEARCH_HEAP_SIZE:-512m} -Xmx${ELASTICSEARCH_HEAP_SIZE:-512m}'
       # Disable machine learning (reduces memory footprint)
       xpack.ml.enabled: 'false'
+      # Disable telemetry/monitoring data collection
+      xpack.monitoring.collection.enabled: 'false'
       # Snapshot repository path (required for backups)
       path.repo: /usr/share/elasticsearch/backup
     expose:
@@ -499,38 +501,37 @@ services:
       - backend
     # Health check defined in Dockerfile
 
-  # MinIO - S3-compatible object storage
+  # SeaweedFS - S3-compatible distributed object storage
   # Use same SDKs as AWS S3. Switch to real S3 in production without code changes.
-  # Usage: ENABLE_MINIO=true in .env, then 'make up'
-  # Docs: https://min.io/docs/minio/container/index.html
-  minio:
+  # Fast storage for billions of files with O(1) disk seek performance.
+  # Usage: ENABLE_SEAWEEDFS=true in .env, then 'make up'
+  # Docs: https://github.com/seaweedfs/seaweedfs/wiki
+  seaweedfs:
     build:
       context: .
-      dockerfile: docker/minio/Dockerfile
-    container_name: ${COMPOSE_PROJECT_NAME:-zappzarapp}-minio
+      dockerfile: docker/seaweedfs/Dockerfile
+    container_name: ${COMPOSE_PROJECT_NAME:-zappzarapp}-seaweedfs
     restart: unless-stopped
-    profiles: ["minio"]
+    profiles: ["seaweedfs"]
     environment:
       TZ: ${TZ:-UTC}
-      # Root credentials (change in production!)
-      MINIO_ROOT_USER_FILE: /run/secrets/minio_root_user.txt
-      MINIO_ROOT_PASSWORD_FILE: /run/secrets/minio_root_password.txt
-    command: server /data --console-address ":9001"
+      # S3 credentials (loaded from secrets via entrypoint.sh)
+      SEAWEEDFS_S3_ACCESS_KEY_FILE: /run/secrets/seaweedfs_access_key.txt
+      SEAWEEDFS_S3_SECRET_KEY_FILE: /run/secrets/seaweedfs_secret_key.txt
     expose:
-      - "9000"
-      - "9001"
+      # S3 API endpoint (main interface for applications)
+      - "8333"
+      # Internal ports (master: 9333, volume: 8080, filer: 8888)
     volumes:
-      - minio-data:/data
+      - seaweedfs-data:/data
       # Secrets (bind mount)
       - ./secrets:/run/secrets:ro
+      # TLS certificates for internal HTTPS (zero-trust architecture)
+      - ./docker/certs/cert.crt:/etc/ssl/certs/cert.crt:ro
+      - ./docker/certs/cert.key:/etc/ssl/private/cert.key:ro
     networks:
       - backend
-    healthcheck:
-      test: ["CMD", "mc", "ready", "local"]
-      interval: 10s
-      timeout: 5s
-      start_period: 10s
-      retries: 3
+    # Health check defined in Dockerfile
 
   # RabbitMQ - Enterprise message broker
   # Reliable messaging with routing, priorities, acknowledgments, and dead letter queues.
@@ -602,9 +603,9 @@ volumes:
   mailpit-data:
     driver: local
     name: ${COMPOSE_PROJECT_NAME:-zappzarapp}-mailpit-data
-  minio-data:
+  seaweedfs-data:
     driver: local
-    name: ${COMPOSE_PROJECT_NAME:-zappzarapp}-minio-data
+    name: ${COMPOSE_PROJECT_NAME:-zappzarapp}-seaweedfs-data
   rabbitmq-data:
     driver: local
     name: ${COMPOSE_PROJECT_NAME:-zappzarapp}-rabbitmq-data

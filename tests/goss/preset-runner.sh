@@ -154,8 +154,8 @@ calculate_profiles() {
     if [ "${ENABLE_MAILPIT:-false}" = "true" ]; then
         PROFILES="$PROFILES --profile mailpit"
     fi
-    if [ "${ENABLE_MINIO:-false}" = "true" ]; then
-        PROFILES="$PROFILES --profile minio"
+    if [ "${ENABLE_SEAWEEDFS:-false}" = "true" ]; then
+        PROFILES="$PROFILES --profile seaweedfs"
     fi
     if [ "${ENABLE_RABBITMQ:-false}" = "true" ]; then
         PROFILES="$PROFILES --profile rabbitmq"

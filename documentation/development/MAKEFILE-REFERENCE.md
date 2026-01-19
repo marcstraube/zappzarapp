@@ -234,9 +234,9 @@ Data backup and database migration commands.
 | `make backup-db`                    | Create encrypted database backup (GDPR-compliant)        |
 | `make backup-db-list`               | List all database backups                                |
 | `make backup-db-restore`            | Restore database from backup (interactive)               |
-| `make backup-minio`                 | Create encrypted MinIO backup                            |
-| `make backup-minio-list`            | List all MinIO backups                                   |
-| `make backup-minio-restore`         | Restore MinIO from backup                                |
+| `make backup-seaweedfs`             | Create encrypted SeaweedFS backup                        |
+| `make backup-seaweedfs-list`        | List all SeaweedFS backups                               |
+| `make backup-seaweedfs-restore`     | Restore SeaweedFS from backup                            |
 | `make backup-rabbitmq`              | Export RabbitMQ definitions                              |
 | `make backup-rabbitmq-list`         | List all RabbitMQ backups                                |
 | `make backup-rabbitmq-restore`      | Import RabbitMQ definitions                              |

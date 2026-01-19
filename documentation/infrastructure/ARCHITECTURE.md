@@ -262,7 +262,7 @@ zappzarapp/
 ├── storage/                  # Runtime storage
 ├── backups/                  # Encrypted backups
 │   ├── db/                   # Database backups
-│   ├── minio/                # MinIO backups
+│   ├── seaweedfs/            # SeaweedFS backups
 │   ├── rabbitmq/             # RabbitMQ backups
 │   └── elasticsearch/        # Elasticsearch backups
 ├── secrets/                  # Docker secrets

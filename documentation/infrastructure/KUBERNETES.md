@@ -97,7 +97,7 @@ kubernetes/
     ├── mercure/            # Mercure deployment, service
     ├── meilisearch/        # Meilisearch statefulset, service
     ├── elasticsearch/      # Elasticsearch statefulset, service
-    ├── minio/              # MinIO statefulset, service
+    ├── seaweedfs/          # SeaweedFS statefulset, service
     ├── rabbitmq/           # RabbitMQ statefulset, service
     ├── mailpit/            # Mailpit deployment, service (dev only)
     └── security/           # NetworkPolicies, ServiceAccounts

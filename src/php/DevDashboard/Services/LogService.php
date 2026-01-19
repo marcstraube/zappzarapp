@@ -98,19 +98,19 @@ class LogService
                 'available'   => getenv('ENABLE_MAILPIT') === 'true',
                 'command'     => 'docker compose logs mailpit --tail=100',
             ],
-            'minio' => [
-                'name'        => 'MinIO Logs',
-                'description' => 'S3-compatible object storage logs',
-                'type'        => 'docker',
-                'available'   => getenv('ENABLE_MINIO') === 'true',
-                'command'     => 'docker compose logs minio --tail=100',
-            ],
             'rabbitmq' => [
                 'name'        => 'RabbitMQ Logs',
                 'description' => 'Message broker logs',
                 'type'        => 'docker',
                 'available'   => getenv('ENABLE_RABBITMQ') === 'true',
                 'command'     => 'docker compose logs rabbitmq --tail=100',
+            ],
+            'seaweedfs' => [
+                'name'        => 'SeaweedFS Logs',
+                'description' => 'S3-compatible object storage logs',
+                'type'        => 'docker',
+                'available'   => getenv('ENABLE_SEAWEEDFS') === 'true',
+                'command'     => 'docker compose logs seaweedfs --tail=100',
             ],
         ];
 
@@ -302,8 +302,8 @@ class LogService
             'meilisearch'   => 'ENABLE_MEILISEARCH',
             'elasticsearch' => 'ENABLE_ELASTICSEARCH',
             'mailpit'       => 'ENABLE_MAILPIT',
-            'minio'         => 'ENABLE_MINIO',
             'rabbitmq'      => 'ENABLE_RABBITMQ',
+            'seaweedfs'     => 'ENABLE_SEAWEEDFS',
         ];
 
         foreach ($optionalServices as $service => $envVar) {

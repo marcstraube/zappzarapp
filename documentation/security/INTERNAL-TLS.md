@@ -74,7 +74,7 @@ The certificate includes all internal service hostnames:
 - `nginx`, `php`, `node`, `node-backend`
 - `redis`, `postgres`, `mariadb`
 - `meilisearch`, `elasticsearch`, `mercure`
-- `rabbitmq`, `minio`, `mailpit`
+- `rabbitmq`, `seaweedfs`, `mailpit`
 - Domain name from `.env` (e.g., `zappzarapp.localhost`)
 
 ### Production Certificates
