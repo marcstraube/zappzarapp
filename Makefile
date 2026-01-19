@@ -806,14 +806,14 @@ node-frontend-start: ## Start Node frontend framework production server
 
 pnpm-install: ## Install Node.js dependencies (Docker - guaranteed consistency)
 	@echo -e "\033[0;33mInstalling Node.js dependencies (Docker)...\033[0m"
-	@$(DC_RUN) run --rm --no-TTY node pnpm install --frozen-lockfile
+	@$(DC_RUN) run --rm --no-TTY -e CI=true node pnpm install --frozen-lockfile
 	@echo -e "\033[0;32mDependencies installed!\033[0m"
 
 pnpm-update: ## Update Node.js dependencies (updates pnpm-lock.yaml on host)
 	@echo -e "\033[0;33mUpdating Node.js dependencies...\033[0m"
 	@# Docker bind mounts don't support atomic rename (EBUSY error)
 	@# Solution: Run pnpm with lock file in temp location, then copy back
-	@$(DC_RUN) run --rm --no-TTY node sh -c ' \
+	@$(DC_RUN) run --rm --no-TTY -e CI=true node sh -c ' \
 		cp /app/package.json /tmp/package.json && \
 		cp /app/pnpm-lock.yaml /tmp/pnpm-lock.yaml 2>/dev/null || true && \
 		cd /tmp && pnpm update && \
@@ -834,7 +834,7 @@ pnpm-install-local: ## Install Node.js dependencies (Local - IDE code completion
 
 pnpm-sync: ## Sync Node.js dependencies (after package.json changes, e.g., frontend scaffold)
 	@echo -e "\033[0;33mSyncing Node.js dependencies...\033[0m"
-	@$(DC_RUN) run --rm --no-TTY node pnpm install
+	@$(DC_RUN) run --rm --no-TTY -e CI=true node pnpm install
 	@echo -e "\033[0;32mDependencies synced!\033[0m"
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -905,9 +905,9 @@ frontend-sveltekit: frontend-clean ## Scaffold SvelteKit frontend (interactive)
 		sh /app/docker/node/frontend-patches/sveltekit.post-install.sh .'
 	@echo -e "\033[0;32mSvelteKit scaffolded! Run 'make pnpm-sync' to install dependencies.\033[0m"
 
-node-build: ## Executes the frontend build inside the Node container (uses 'build' stage)
+node-build: ## Executes the frontend build inside the Node container
 	@echo -e "\033[0;33mExecuting frontend build...\033[0m"
-	@$(DC_RUN) run --rm --build --target build node pnpm run build
+	@$(DC_RUN) run --rm node pnpm run build
 
 node-up: ## Starts the Node service alongside the standard stack (Uses the default 'assets' target)
 	@echo -e "\033[0;33mStarting Node service (assets target)...\033[0m"
