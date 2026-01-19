@@ -77,7 +77,7 @@ services:
       POSTGRES_PASSWORD_FILE: /run/secrets/db_password
       #
       # Option 2: Environment Variable (for external DB or legacy setups)
-      #POSTGRES_PASSWORD: ${DB_PASSWORD:-secret}
+      #POSTGRES_PASSWORD: ${DB_PASSWORD}
       # ─────────────────────────────────────────────────────────────────
     secrets:
       - db_password
@@ -190,7 +190,7 @@ environment:
   #POSTGRES_PASSWORD_FILE: /run/secrets/db_password
 
   # Uncomment the direct variable:
-  POSTGRES_PASSWORD: ${DB_PASSWORD:-secret}
+  POSTGRES_PASSWORD: ${DB_PASSWORD}
 ```
 
 For MariaDB, do the same for both `MARIADB_PASSWORD` and

@@ -5,7 +5,9 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 
 // Helper to create fresh module import with custom env
-async function loadDatabaseConfig(env: Record<string, string | undefined>) {
+async function loadDatabaseConfig(
+  env: Record<string, string | undefined>
+): Promise<typeof import('@backend/config/database')> {
   // Clear all DB-related env vars
   delete process.env.DATABASE_URL;
   delete process.env.DB_TYPE;
@@ -164,8 +166,14 @@ describe('Database Configuration', () => {
         expect(config.port).toBe(3307);
       });
 
-      it('should use default values when no env vars are set', async () => {
-        const { getDatabaseConfig } = await loadDatabaseConfig({});
+      it('should throw error when no password is configured', async () => {
+        await expect(loadDatabaseConfig({})).rejects.toThrow('Database password not configured');
+      });
+
+      it('should use default values when password is set', async () => {
+        const { getDatabaseConfig } = await loadDatabaseConfig({
+          DB_PASSWORD: 'testpass',
+        });
 
         const config = getDatabaseConfig();
 
@@ -174,12 +182,13 @@ describe('Database Configuration', () => {
         expect(config.port).toBe(5432);
         expect(config.name).toBe('app');
         expect(config.user).toBe('app');
-        expect(config.password).toBe('secret');
+        expect(config.password).toBe('testpass');
       });
 
       it('should use mariadb as default host when DB_TYPE is mysql', async () => {
         const { getDatabaseConfig } = await loadDatabaseConfig({
           DB_TYPE: 'mysql',
+          DB_PASSWORD: 'testpass',
         });
 
         const config = getDatabaseConfig();
@@ -277,7 +286,9 @@ describe('Database Configuration', () => {
     });
 
     it('should accept custom config parameter', async () => {
-      const { getDatabaseUrl } = await loadDatabaseConfig({});
+      const { getDatabaseUrl } = await loadDatabaseConfig({
+        DB_PASSWORD: 'testpass',
+      });
 
       const url = getDatabaseUrl({
         type: 'mysql',
@@ -296,6 +307,7 @@ describe('Database Configuration', () => {
     it('should return true for postgres type', async () => {
       const { isPostgres } = await loadDatabaseConfig({
         DB_TYPE: 'postgres',
+        DB_PASSWORD: 'testpass',
       });
 
       expect(isPostgres()).toBe(true);
@@ -304,13 +316,16 @@ describe('Database Configuration', () => {
     it('should return false for mysql type', async () => {
       const { isPostgres } = await loadDatabaseConfig({
         DB_TYPE: 'mysql',
+        DB_PASSWORD: 'testpass',
       });
 
       expect(isPostgres()).toBe(false);
     });
 
     it('should accept custom config parameter', async () => {
-      const { isPostgres } = await loadDatabaseConfig({});
+      const { isPostgres } = await loadDatabaseConfig({
+        DB_PASSWORD: 'testpass',
+      });
 
       expect(
         isPostgres({
@@ -320,7 +335,7 @@ describe('Database Configuration', () => {
           name: '',
           user: '',
           password: '',
-        }),
+        })
       ).toBe(true);
       expect(
         isPostgres({
@@ -330,7 +345,7 @@ describe('Database Configuration', () => {
           name: '',
           user: '',
           password: '',
-        }),
+        })
       ).toBe(false);
     });
   });
@@ -339,6 +354,7 @@ describe('Database Configuration', () => {
     it('should return true for mysql type', async () => {
       const { isMySQL } = await loadDatabaseConfig({
         DB_TYPE: 'mysql',
+        DB_PASSWORD: 'testpass',
       });
 
       expect(isMySQL()).toBe(true);
@@ -347,13 +363,16 @@ describe('Database Configuration', () => {
     it('should return false for postgres type', async () => {
       const { isMySQL } = await loadDatabaseConfig({
         DB_TYPE: 'postgres',
+        DB_PASSWORD: 'testpass',
       });
 
       expect(isMySQL()).toBe(false);
     });
 
     it('should accept custom config parameter', async () => {
-      const { isMySQL } = await loadDatabaseConfig({});
+      const { isMySQL } = await loadDatabaseConfig({
+        DB_PASSWORD: 'testpass',
+      });
 
       expect(
         isMySQL({
@@ -363,7 +382,7 @@ describe('Database Configuration', () => {
           name: '',
           user: '',
           password: '',
-        }),
+        })
       ).toBe(true);
       expect(
         isMySQL({
@@ -373,7 +392,7 @@ describe('Database Configuration', () => {
           name: '',
           user: '',
           password: '',
-        }),
+        })
       ).toBe(false);
     });
   });
@@ -383,6 +402,7 @@ describe('Database Configuration', () => {
       const { databaseConfig, getDatabaseConfig } = await loadDatabaseConfig({
         DB_TYPE: 'postgres',
         DB_HOST: 'singletonhost',
+        DB_PASSWORD: 'testpass',
       });
 
       expect(databaseConfig).toBeDefined();
@@ -396,6 +416,7 @@ describe('Database Configuration', () => {
     it('should return SSL config from environment variables', async () => {
       const { getSslConfig } = await loadDatabaseConfig({
         DB_TYPE: 'mysql',
+        DB_PASSWORD: 'testpass',
         DB_SSL_CA: '/custom/path/to/ca.crt',
         DB_SSL_VERIFY: 'true',
       });
@@ -409,6 +430,7 @@ describe('Database Configuration', () => {
     it('should default SSL verify to false', async () => {
       const { getSslConfig } = await loadDatabaseConfig({
         DB_TYPE: 'postgres',
+        DB_PASSWORD: 'testpass',
       });
 
       const ssl = getSslConfig();
@@ -419,6 +441,7 @@ describe('Database Configuration', () => {
     it('should return empty CA for postgres without explicit config', async () => {
       const { getSslConfig } = await loadDatabaseConfig({
         DB_TYPE: 'postgres',
+        DB_PASSWORD: 'testpass',
       });
 
       const ssl = getSslConfig();
@@ -432,6 +455,7 @@ describe('Database Configuration', () => {
     it('should return false when CA is not set', async () => {
       const { hasSsl } = await loadDatabaseConfig({
         DB_TYPE: 'postgres',
+        DB_PASSWORD: 'testpass',
       });
 
       expect(hasSsl()).toBe(false);
@@ -440,6 +464,7 @@ describe('Database Configuration', () => {
     it('should return false when CA file does not exist', async () => {
       const { hasSsl } = await loadDatabaseConfig({
         DB_TYPE: 'mysql',
+        DB_PASSWORD: 'testpass',
         DB_SSL_CA: '/nonexistent/path/to/ca.crt',
       });
 
@@ -451,6 +476,7 @@ describe('Database Configuration', () => {
     it('should resolve "system" to system CA bundle path', async () => {
       const { getSslConfig } = await loadDatabaseConfig({
         DB_TYPE: 'mysql',
+        DB_PASSWORD: 'testpass',
         DB_SSL_CA: 'system',
       });
 
@@ -468,6 +494,7 @@ describe('Database Configuration', () => {
     it('should handle "system" case-insensitively', async () => {
       const { getSslConfig } = await loadDatabaseConfig({
         DB_TYPE: 'postgres',
+        DB_PASSWORD: 'testpass',
         DB_SSL_CA: 'SYSTEM',
       });
 
@@ -482,6 +509,7 @@ describe('Database Configuration', () => {
     it('should work with postgres when "system" is set', async () => {
       const { getSslConfig } = await loadDatabaseConfig({
         DB_TYPE: 'postgres',
+        DB_PASSWORD: 'testpass',
         DB_SSL_CA: 'system',
       });
 
@@ -498,6 +526,7 @@ describe('Database Configuration', () => {
     it('should return empty sslmode by default', async () => {
       const { getPostgresSslMode } = await loadDatabaseConfig({
         DB_TYPE: 'postgres',
+        DB_PASSWORD: 'testpass',
       });
 
       expect(getPostgresSslMode()).toBe('');
@@ -506,6 +535,7 @@ describe('Database Configuration', () => {
     it('should return verify-full when SSL_VERIFY is true', async () => {
       const { getPostgresSslMode } = await loadDatabaseConfig({
         DB_TYPE: 'postgres',
+        DB_PASSWORD: 'testpass',
         DB_SSL_CA: 'system',
         DB_SSL_VERIFY: 'true',
       });
@@ -520,6 +550,7 @@ describe('Database Configuration', () => {
     it('should return require when SSL_VERIFY is false', async () => {
       const { getPostgresSslMode } = await loadDatabaseConfig({
         DB_TYPE: 'postgres',
+        DB_PASSWORD: 'testpass',
         DB_SSL_CA: 'system',
         DB_SSL_VERIFY: 'false',
       });
@@ -554,6 +585,7 @@ describe('Database Configuration', () => {
     it('should not include sslmode in MySQL URL', async () => {
       const { getDatabaseUrl } = await loadDatabaseConfig({
         DB_TYPE: 'mysql',
+        DB_PASSWORD: 'testpass',
         DB_SSL_CA: 'system',
         DB_SSL_VERIFY: 'true',
       });
@@ -613,7 +645,10 @@ describe('Database Configuration', () => {
       const os = await import('os');
       const path = await import('path');
       const tempDir = os.tmpdir();
-      const tempFile = path.join(tempDir, `db_password_test_${Date.now()}_${Math.random().toString(36).slice(2)}.txt`);
+      const tempFile = path.join(
+        tempDir,
+        `db_password_test_${Date.now()}_${Math.random().toString(36).slice(2)}.txt`
+      );
       fs.writeFileSync(tempFile, content);
       return tempFile;
     }
@@ -680,13 +715,12 @@ describe('Database Configuration', () => {
       expect(config.password).toBe('fallback_password');
     });
 
-    it('should fall back to default when file does not exist and no env var', async () => {
-      const { getDatabaseConfig } = await loadDatabaseConfig({
-        DB_PASSWORD_FILE: '/nonexistent/path/to/password.txt',
-      });
-
-      const config = getDatabaseConfig();
-      expect(config.password).toBe('secret');
+    it('should throw error when file does not exist and no env var', async () => {
+      await expect(
+        loadDatabaseConfig({
+          DB_PASSWORD_FILE: '/nonexistent/path/to/password.txt',
+        })
+      ).rejects.toThrow('Database password not configured');
     });
 
     it('should fall back to env var when _FILE path is empty', async () => {

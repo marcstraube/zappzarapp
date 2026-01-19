@@ -11,6 +11,7 @@ use PHPUnit\Framework\Attributes\RunInSeparateProcess;
 use PHPUnit\Framework\TestCase;
 use InvalidArgumentException;
 use PDO;
+use RuntimeException;
 
 /**
  * Tests for DatabaseConfig (12-Factor App compliant configuration)
@@ -162,9 +163,21 @@ final class DatabaseConfigTest extends TestCase
     }
 
     #[RunInSeparateProcess]
+    public function testThrowsExceptionWhenNoPasswordConfigured(): void
+    {
+        // No env vars set - should throw RuntimeException
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessage('Database password not configured');
+
+        new DatabaseConfig();
+    }
+
+    #[RunInSeparateProcess]
     public function testDefaultValuesPostgres(): void
     {
-        // No env vars set - should use defaults
+        // Set password to test other defaults
+        putenv('DB_PASSWORD=testpass');
+
         $config = new DatabaseConfig();
 
         $this->assertEquals('postgres', $config->getType());
@@ -172,13 +185,14 @@ final class DatabaseConfigTest extends TestCase
         $this->assertEquals(5432, $config->getPort());
         $this->assertEquals('app', $config->getName());
         $this->assertEquals('app', $config->getUser());
-        $this->assertEquals('secret', $config->getPassword());
+        $this->assertEquals('testpass', $config->getPassword());
     }
 
     #[RunInSeparateProcess]
     public function testDefaultHostForMariadb(): void
     {
         putenv('DB_TYPE=mariadb');
+        putenv('DB_PASSWORD=testpass');
 
         $config = new DatabaseConfig();
 
@@ -215,6 +229,7 @@ final class DatabaseConfigTest extends TestCase
         putenv('DB_HOST=myhost');
         putenv('DB_PORT=5432');
         putenv('DB_NAME=mydb');
+        putenv('DB_PASSWORD=testpass');
 
         $config = new DatabaseConfig();
 
@@ -228,6 +243,7 @@ final class DatabaseConfigTest extends TestCase
         putenv('DB_HOST=myhost');
         putenv('DB_PORT=3306');
         putenv('DB_NAME=mydb');
+        putenv('DB_PASSWORD=testpass');
 
         $config = new DatabaseConfig();
 
@@ -296,6 +312,7 @@ final class DatabaseConfigTest extends TestCase
     public function testIsPostgresWithVariousTypes(string $type, bool $expectedPostgres): void
     {
         putenv('DB_TYPE=' . $type);
+        putenv('DB_PASSWORD=testpass');
 
         $config = new DatabaseConfig();
 
@@ -320,6 +337,7 @@ final class DatabaseConfigTest extends TestCase
     public function testIsMariaDbWithVariousTypes(string $type, bool $expectedMariaDb): void
     {
         putenv('DB_TYPE=' . $type);
+        putenv('DB_PASSWORD=testpass');
 
         $config = new DatabaseConfig();
 
@@ -343,6 +361,7 @@ final class DatabaseConfigTest extends TestCase
     public function testSslConfigFromEnvVar(): void
     {
         putenv('DB_TYPE=mariadb');
+        putenv('DB_PASSWORD=testpass');
         putenv('DB_SSL_CA=/custom/path/to/ca.crt');
         putenv('DB_SSL_VERIFY=true');
 
@@ -356,6 +375,7 @@ final class DatabaseConfigTest extends TestCase
     public function testSslVerifyDefaultsToFalse(): void
     {
         putenv('DB_TYPE=postgres');
+        putenv('DB_PASSWORD=testpass');
 
         $config = new DatabaseConfig();
 
@@ -366,6 +386,7 @@ final class DatabaseConfigTest extends TestCase
     public function testHasSslReturnsFalseWhenCaNotSet(): void
     {
         putenv('DB_TYPE=postgres');
+        putenv('DB_PASSWORD=testpass');
 
         $config = new DatabaseConfig();
 
@@ -376,6 +397,7 @@ final class DatabaseConfigTest extends TestCase
     public function testGetPdoSslOptionsReturnsEmptyForPostgres(): void
     {
         putenv('DB_TYPE=postgres');
+        putenv('DB_PASSWORD=testpass');
         putenv('DB_SSL_CA=/some/path');
 
         $config = new DatabaseConfig();
@@ -387,6 +409,7 @@ final class DatabaseConfigTest extends TestCase
     public function testGetPdoSslOptionsReturnsOptionsForMariadb(): void
     {
         putenv('DB_TYPE=mariadb');
+        putenv('DB_PASSWORD=testpass');
         putenv('DB_SSL_CA=' . __FILE__); // Use this file as it exists
 
         $config = new DatabaseConfig();
@@ -403,6 +426,7 @@ final class DatabaseConfigTest extends TestCase
     public function testMariadbAutoDetectsInternalCert(): void
     {
         putenv('DB_TYPE=mariadb');
+        putenv('DB_PASSWORD=testpass');
         // No DB_SSL_CA set - should auto-detect internal cert if it exists
 
         $config = new DatabaseConfig();
@@ -423,6 +447,7 @@ final class DatabaseConfigTest extends TestCase
     public function testPostgresDoesNotAutoDetectInternalCert(): void
     {
         putenv('DB_TYPE=postgres');
+        putenv('DB_PASSWORD=testpass');
         // No DB_SSL_CA set - PostgreSQL should NOT auto-detect
 
         $config = new DatabaseConfig();
@@ -435,6 +460,7 @@ final class DatabaseConfigTest extends TestCase
     public function testSystemCaBundleOption(): void
     {
         putenv('DB_TYPE=mysql');
+        putenv('DB_PASSWORD=testpass');
         putenv('DB_SSL_CA=system');
 
         $config = new DatabaseConfig();
@@ -453,6 +479,7 @@ final class DatabaseConfigTest extends TestCase
     public function testSystemCaBundleOptionCaseInsensitive(): void
     {
         putenv('DB_TYPE=postgres');
+        putenv('DB_PASSWORD=testpass');
         putenv('DB_SSL_CA=SYSTEM');
 
         $config = new DatabaseConfig();
@@ -467,6 +494,7 @@ final class DatabaseConfigTest extends TestCase
     public function testSystemCaBundleWorksWithPostgres(): void
     {
         putenv('DB_TYPE=postgres');
+        putenv('DB_PASSWORD=testpass');
         putenv('DB_SSL_CA=system');
 
         $config = new DatabaseConfig();
@@ -483,6 +511,7 @@ final class DatabaseConfigTest extends TestCase
     public function testPostgresSslModeEmptyByDefault(): void
     {
         putenv('DB_TYPE=postgres');
+        putenv('DB_PASSWORD=testpass');
         // No SSL CA set
 
         $config = new DatabaseConfig();
@@ -495,6 +524,7 @@ final class DatabaseConfigTest extends TestCase
     public function testPostgresSslModeVerifyFullWhenSslVerifyTrue(): void
     {
         putenv('DB_TYPE=postgres');
+        putenv('DB_PASSWORD=testpass');
         putenv('DB_SSL_CA=system');
         putenv('DB_SSL_VERIFY=true');
 
@@ -511,6 +541,7 @@ final class DatabaseConfigTest extends TestCase
     public function testPostgresSslModeRequireWhenSslVerifyFalse(): void
     {
         putenv('DB_TYPE=postgres');
+        putenv('DB_PASSWORD=testpass');
         putenv('DB_SSL_CA=system');
         putenv('DB_SSL_VERIFY=false');
 
@@ -527,6 +558,7 @@ final class DatabaseConfigTest extends TestCase
     public function testMariadbDsnNotAffectedBySslMode(): void
     {
         putenv('DB_TYPE=mariadb');
+        putenv('DB_PASSWORD=testpass');
         putenv('DB_SSL_CA=system');
         putenv('DB_SSL_VERIFY=true');
 
@@ -605,13 +637,14 @@ final class DatabaseConfigTest extends TestCase
     }
 
     #[RunInSeparateProcess]
-    public function testFallbackToDefaultWhenFileNotExistsAndNoEnvVar(): void
+    public function testThrowsExceptionWhenFileNotExistsAndNoEnvVar(): void
     {
         putenv('DB_PASSWORD_FILE=/nonexistent/path/to/password.txt');
 
-        $config = new DatabaseConfig();
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessage('Database password not configured');
 
-        $this->assertEquals('secret', $config->getPassword());
+        new DatabaseConfig();
     }
 
     #[RunInSeparateProcess]

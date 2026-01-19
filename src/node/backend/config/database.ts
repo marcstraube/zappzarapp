@@ -5,7 +5,13 @@
  * DATABASE_URL takes precedence over individual variables for PaaS compatibility.
  *
  * Supports Docker Secrets via _FILE environment variables:
- * - DB_PASSWORD_FILE: Path to file containing database password
+ * - DB_PASSWORD_FILE: Path to file containing database password (preferred)
+ * - DB_PASSWORD: Fallback for external databases or CI environments
+ *
+ * Security: When not using DATABASE_URL, a password must be explicitly configured.
+ * No hardcoded defaults are used to prevent accidental security misconfigurations.
+ *
+ * @throws Error If password is not configured when using individual variables
  */
 
 import { existsSync, readFileSync } from 'fs';
@@ -80,10 +86,20 @@ function parseUrl(url: string): DatabaseConfig {
 /**
  * Load config from individual environment variables.
  * Uses _FILE variant for password to support Docker Secrets.
+ *
+ * @throws Error If no database password is configured
  */
 function loadFromIndividualVars(): DatabaseConfig {
   const type = getEnv('DB_TYPE', 'postgres') as 'postgres' | 'mysql';
   const defaultHost = type === 'postgres' ? 'postgres' : 'mariadb';
+  const password = getEnvOrFile('DB_PASSWORD', '');
+
+  if (password === '') {
+    throw new Error(
+      'Database password not configured. Set DB_PASSWORD_FILE (recommended) or DB_PASSWORD environment variable. ' +
+        'Run "make setup" to generate secrets, or set DB_PASSWORD in .env for external databases.'
+    );
+  }
 
   return {
     type,
@@ -91,7 +107,7 @@ function loadFromIndividualVars(): DatabaseConfig {
     port: parseInt(getEnv('DB_PORT', String(getDefaultPort(type))), 10),
     name: getEnv('DB_NAME', 'app'),
     user: getEnv('DB_USER', 'app'),
-    password: getEnvOrFile('DB_PASSWORD', 'secret'),
+    password,
   };
 }
 

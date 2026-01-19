@@ -973,11 +973,13 @@ redis-monitor: ## Monitor Redis commands in real-time
 	@docker compose exec redis redis-cli MONITOR
 
 postgres-cli: ## Open PostgreSQL CLI (psql)
-	@. ./.env && docker compose exec postgres psql -U $${DB_USER:-app} -d $${DB_NAME:-app}
+	@. ./.env && . ./docker/scripts/parse-db-url.sh && \
+		docker compose exec postgres psql -U "$$DB_USER" -d "$$DB_NAME"
 
 postgres-dump: ## Create database backup (dump.sql)
 	@echo -e "\033[0;33mCreating database backup...\033[0m"
-	@. ./.env && docker compose exec postgres pg_dump -U $${DB_USER:-app} -d $${DB_NAME:-app} > dump.sql
+	@. ./.env && . ./docker/scripts/parse-db-url.sh && \
+		docker compose exec postgres pg_dump -U "$$DB_USER" -d "$$DB_NAME" > dump.sql
 	@echo -e "\033[0;32mBackup saved to dump.sql\033[0m"
 
 postgres-restore: ## Restore database from dump.sql
@@ -986,15 +988,18 @@ postgres-restore: ## Restore database from dump.sql
 		exit 1; \
 	fi
 	@echo -e "\033[0;33mRestoring database from dump.sql...\033[0m"
-	@. ./.env && docker compose exec -T postgres psql -U $${DB_USER:-app} -d $${DB_NAME:-app} < dump.sql
+	@. ./.env && . ./docker/scripts/parse-db-url.sh && \
+		docker compose exec -T postgres psql -U "$$DB_USER" -d "$$DB_NAME" < dump.sql
 	@echo -e "\033[0;32mDatabase restored!\033[0m"
 
 mariadb-cli: ## Open MariaDB CLI
-	@. ./.env && docker compose exec mariadb mariadb -u $${DB_USER:-app} -p$${DB_PASSWORD:-secret} $${DB_NAME:-app}
+	@. ./.env && . ./docker/scripts/parse-db-url.sh && \
+		docker compose exec mariadb mariadb -u "$$DB_USER" -p"$$DB_PASSWORD" "$$DB_NAME"
 
 mariadb-dump: ## Create MariaDB database backup (dump.sql)
 	@echo -e "\033[0;33mCreating MariaDB database backup...\033[0m"
-	@. ./.env && docker compose exec mariadb mariadb-dump -u $${DB_USER:-app} -p$${DB_PASSWORD:-secret} $${DB_NAME:-app} > dump.sql
+	@. ./.env && . ./docker/scripts/parse-db-url.sh && \
+		docker compose exec mariadb mariadb-dump -u "$$DB_USER" -p"$$DB_PASSWORD" "$$DB_NAME" > dump.sql
 	@echo -e "\033[0;32mBackup saved to dump.sql\033[0m"
 
 mariadb-restore: ## Restore MariaDB database from dump.sql
@@ -1003,7 +1008,8 @@ mariadb-restore: ## Restore MariaDB database from dump.sql
 		exit 1; \
 	fi
 	@echo -e "\033[0;33mRestoring MariaDB database from dump.sql...\033[0m"
-	@. ./.env && docker compose exec -T mariadb mariadb -u $${DB_USER:-app} -p$${DB_PASSWORD:-secret} $${DB_NAME:-app} < dump.sql
+	@. ./.env && . ./docker/scripts/parse-db-url.sh && \
+		docker compose exec -T mariadb mariadb -u "$$DB_USER" -p"$$DB_PASSWORD" "$$DB_NAME" < dump.sql
 	@echo -e "\033[0;32mMariaDB database restored!\033[0m"
 
 ##@ Backup & Migrations
@@ -1161,25 +1167,25 @@ db-migrations: ## Run database migrations (encryption helpers, audit logs)
 		echo -e "\033[0;31mError: .env not found. Run 'make init' first.\033[0m"; \
 		exit 1; \
 	fi
-	@. ./.env && \
-	if [ "$${DB_TYPE:-postgres}" = "postgres" ]; then \
+	@. ./.env && . ./docker/scripts/parse-db-url.sh && \
+	if [ "$$DB_TYPE" = "postgres" ]; then \
 		echo -e "\033[0;34mRunning PostgreSQL migrations...\033[0m"; \
 		for migration in migrations/postgresql/*.sql; do \
 			if [ -f "$$migration" ]; then \
 				echo -e "  Applying: $$(basename $$migration)"; \
-				docker compose exec -T postgres psql -U $${DB_USER:-app} -d $${DB_NAME:-app} -f /dev/stdin < "$$migration" 2>&1 | grep -v "^$$" || true; \
+				docker compose exec -T postgres psql -U "$$DB_USER" -d "$$DB_NAME" -f /dev/stdin < "$$migration" 2>&1 | grep -v "^$$" || true; \
 			fi; \
 		done; \
-	elif [ "$${DB_TYPE:-postgres}" = "mariadb" ]; then \
+	elif [ "$$DB_TYPE" = "mariadb" ]; then \
 		echo -e "\033[0;34mRunning MariaDB migrations...\033[0m"; \
 		for migration in migrations/mariadb/*.sql; do \
 			if [ -f "$$migration" ]; then \
 				echo -e "  Applying: $$(basename $$migration)"; \
-				docker compose exec -T mariadb mariadb -u $${DB_USER:-app} -p$${DB_PASSWORD:-secret} $${DB_NAME:-app} < "$$migration" 2>&1 | grep -v "^$$" || true; \
+				docker compose exec -T mariadb mariadb -u "$$DB_USER" -p"$$DB_PASSWORD" "$$DB_NAME" < "$$migration" 2>&1 | grep -v "^$$" || true; \
 			fi; \
 		done; \
 	else \
-		echo -e "\033[0;31mError: Unknown DB_TYPE '$${DB_TYPE}'\033[0m"; \
+		echo -e "\033[0;31mError: Unknown DB_TYPE '$$DB_TYPE'\033[0m"; \
 		exit 1; \
 	fi
 	@echo -e "\033[0;32mMigrations completed!\033[0m"
@@ -1190,16 +1196,16 @@ db-cleanup: ## Run retention policy cleanup (delete old logs)
 		echo -e "\033[0;31mError: .env not found. Run 'make init' first.\033[0m"; \
 		exit 1; \
 	fi
-	@. ./.env && \
+	@. ./.env && . ./docker/scripts/parse-db-url.sh && \
 	RETENTION_DAYS=$${RETENTION_DAYS:-730}; \
-	if [ "$${DB_TYPE:-postgres}" = "postgres" ]; then \
+	if [ "$$DB_TYPE" = "postgres" ]; then \
 		echo -e "\033[0;34mPostgreSQL: Deleting audit_logs older than $$RETENTION_DAYS days...\033[0m"; \
-		docker compose exec -T postgres psql -U $${DB_USER:-app} -d $${DB_NAME:-app} \
+		docker compose exec -T postgres psql -U "$$DB_USER" -d "$$DB_NAME" \
 			-c "SELECT delete_old_logs('audit_logs', $$RETENTION_DAYS);" 2>/dev/null || \
 			echo -e "\033[0;31mError: Run 'make db-migrations' first to create retention functions.\033[0m"; \
-	elif [ "$${DB_TYPE:-postgres}" = "mariadb" ]; then \
+	elif [ "$$DB_TYPE" = "mariadb" ]; then \
 		echo -e "\033[0;34mMariaDB: Deleting audit_logs older than $$RETENTION_DAYS days...\033[0m"; \
-		docker compose exec -T mariadb mariadb -u $${DB_USER:-app} -p$${DB_PASSWORD:-secret} $${DB_NAME:-app} \
+		docker compose exec -T mariadb mariadb -u "$$DB_USER" -p"$$DB_PASSWORD" "$$DB_NAME" \
 			-e "CALL delete_old_logs('audit_logs', $$RETENTION_DAYS, @deleted); SELECT @deleted AS deleted_rows;" 2>/dev/null || \
 			echo -e "\033[0;31mError: Run 'make db-migrations' first to create retention procedures.\033[0m"; \
 	fi

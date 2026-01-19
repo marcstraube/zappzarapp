@@ -16,11 +16,18 @@
 #   -h, --help             Show this help message
 #
 # Environment Variables (from .env):
+#   DATABASE_URL           Full connection URL (takes precedence over individual vars)
+#                          postgresql://user:pass@host:port/dbname
+#                          mysql://user:pass@host:port/dbname
 #   DB_TYPE                Database type (postgres/mariadb) - fallback if not in filename
 #   DB_NAME                Database name
 #   DB_USER                Database user
-#   DB_PASSWORD            Database password
+#   DB_PASSWORD            Database password (fallback if secrets file not found)
 #   BACKUP_ENCRYPTION_KEY  Encryption key for encrypted backups
+#
+# Secrets (preferred over environment variables when DATABASE_URL is not set):
+#   ./secrets/db_password.txt     Database password (host path)
+#   /run/secrets/db_password.txt  Database password (container path)
 #
 # Supported Formats:
 #   - {DB_TYPE}_{DB_NAME}_{TIMESTAMP}.sql.gz.enc (encrypted)
@@ -54,11 +61,10 @@ if [[ -f "$PROJECT_ROOT/.env" ]]; then
     source "$PROJECT_ROOT/.env"
 fi
 
-# Database config from environment
-DB_TYPE="${DB_TYPE:-postgres}"
-DB_NAME="${DB_NAME:-app}"
-DB_USER="${DB_USER:-app}"
-DB_PASSWORD="${DB_PASSWORD:-}"
+# Load database configuration (supports DATABASE_URL and secrets files)
+# shellcheck disable=SC1091
+source "$SCRIPT_DIR/parse-db-url.sh"
+
 BACKUP_ENCRYPTION_KEY="${BACKUP_ENCRYPTION_KEY:-}"
 
 # Help message

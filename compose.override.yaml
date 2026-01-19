@@ -129,13 +129,14 @@ services:
       - ENABLE_RABBITMQ=${ENABLE_RABBITMQ:-false}
       - NODE_MODE=${NODE_MODE:-assets-api}
       # Database (12-Factor: DATABASE_URL takes precedence)
+      # Priority: DATABASE_URL > DB_PASSWORD_FILE (from compose.yaml) > DB_PASSWORD
       - DATABASE_URL=${DATABASE_URL:-}
       - DB_TYPE=${DB_TYPE:-postgres}
       - DB_HOST=${DB_HOST:-postgres}
       - DB_PORT=${DB_PORT:-5432}
       - DB_NAME=${DB_NAME:-app}
       - DB_USER=${DB_USER:-app}
-      - DB_PASSWORD=${DB_PASSWORD:-secret}
+      - DB_PASSWORD=${DB_PASSWORD:-}
       - DB_SSL_CA=${DB_SSL_CA:-}
       - DB_SSL_VERIFY=${DB_SSL_VERIFY:-false}
       - REDIS_URL=${REDIS_URL:-rediss://redis:6379}
@@ -225,13 +226,14 @@ services:
       - LOG_FORMAT=${LOG_FORMAT:-pretty}
       - CORS_ORIGINS=${CORS_ORIGINS:-*}
       # Database (12-Factor: DATABASE_URL takes precedence)
+      # Priority: DATABASE_URL > DB_PASSWORD_FILE (from compose.yaml) > DB_PASSWORD
       - DATABASE_URL=${DATABASE_URL:-}
       - DB_TYPE=${DB_TYPE:-postgres}
       - DB_HOST=${DB_HOST:-postgres}
       - DB_PORT=${DB_PORT:-5432}
       - DB_NAME=${DB_NAME:-app}
       - DB_USER=${DB_USER:-app}
-      - DB_PASSWORD=${DB_PASSWORD:-secret}
+      - DB_PASSWORD=${DB_PASSWORD:-}
       - DB_SSL_CA=${DB_SSL_CA:-}
       - DB_SSL_VERIFY=${DB_SSL_VERIFY:-false}
       - REDIS_URL=${REDIS_URL:-rediss://redis:6379}
@@ -286,13 +288,14 @@ services:
       - LOG_FORMAT=${LOG_FORMAT:-pretty}
       - CORS_ORIGINS=${CORS_ORIGINS:-*}
       # Database (12-Factor: DATABASE_URL takes precedence)
+      # Priority: DATABASE_URL > DB_PASSWORD_FILE (from compose.yaml) > DB_PASSWORD
       - DATABASE_URL=${DATABASE_URL:-}
       - DB_TYPE=${DB_TYPE:-postgres}
       - DB_HOST=${DB_HOST:-postgres}
       - DB_PORT=${DB_PORT:-5432}
       - DB_NAME=${DB_NAME:-app}
       - DB_USER=${DB_USER:-app}
-      - DB_PASSWORD=${DB_PASSWORD:-secret}
+      - DB_PASSWORD=${DB_PASSWORD:-}
       - DB_SSL_CA=${DB_SSL_CA:-}
       - DB_SSL_VERIFY=${DB_SSL_VERIFY:-false}
       - REDIS_URL=${REDIS_URL:-rediss://redis:6379}

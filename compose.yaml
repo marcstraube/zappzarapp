@@ -85,12 +85,14 @@ services:
       - ENABLE_MINIO=${ENABLE_MINIO:-false}
       - ENABLE_RABBITMQ=${ENABLE_RABBITMQ:-false}
       # Database (12-Factor: DATABASE_URL takes precedence)
+      # Priority: DATABASE_URL > DB_PASSWORD_FILE (secrets) > DB_PASSWORD (env var)
       - DATABASE_URL=${DATABASE_URL:-}
       - DB_TYPE=${DB_TYPE:-postgres}
       - DB_HOST=${DB_HOST:-postgres}
       - DB_PORT=${DB_PORT:-5432}
       - DB_NAME=${DB_NAME:-app}
       - DB_USER=${DB_USER:-app}
+      - DB_PASSWORD=${DB_PASSWORD:-}
       - DB_SSL_CA=${DB_SSL_CA:-}
       - DB_SSL_VERIFY=${DB_SSL_VERIFY:-false}
       - REDIS_URL=${REDIS_URL:-rediss://redis:6379}
@@ -153,12 +155,14 @@ services:
       - NITRO_SSL_CERT=/etc/ssl/certs/cert.crt
       - NITRO_SSL_KEY=/etc/ssl/private/cert.key
       # Database (12-Factor: DATABASE_URL takes precedence)
+      # Priority: DATABASE_URL > DB_PASSWORD_FILE (secrets) > DB_PASSWORD (env var)
       - DATABASE_URL=${DATABASE_URL:-}
       - DB_TYPE=${DB_TYPE:-postgres}
       - DB_HOST=${DB_HOST:-postgres}
       - DB_PORT=${DB_PORT:-5432}
       - DB_NAME=${DB_NAME:-app}
       - DB_USER=${DB_USER:-app}
+      - DB_PASSWORD=${DB_PASSWORD:-}
       - DB_SSL_CA=${DB_SSL_CA:-}
       - DB_SSL_VERIFY=${DB_SSL_VERIFY:-false}
       - REDIS_URL=${REDIS_URL:-rediss://redis:6379}
@@ -203,12 +207,14 @@ services:
       - LOG_FORMAT=${LOG_FORMAT:-json}
       - CORS_ORIGINS=${CORS_ORIGINS:-}
       # Database (12-Factor: DATABASE_URL takes precedence)
+      # Priority: DATABASE_URL > DB_PASSWORD_FILE (secrets) > DB_PASSWORD (env var)
       - DATABASE_URL=${DATABASE_URL:-}
       - DB_TYPE=${DB_TYPE:-postgres}
       - DB_HOST=${DB_HOST:-postgres}
       - DB_PORT=${DB_PORT:-5432}
       - DB_NAME=${DB_NAME:-app}
       - DB_USER=${DB_USER:-app}
+      - DB_PASSWORD=${DB_PASSWORD:-}
       - DB_SSL_CA=${DB_SSL_CA:-}
       - DB_SSL_VERIFY=${DB_SSL_VERIFY:-false}
       - REDIS_URL=${REDIS_URL:-rediss://redis:6379}
