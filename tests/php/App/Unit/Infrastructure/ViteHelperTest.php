@@ -84,7 +84,8 @@ final class ViteHelperTest extends TestCase
     {
         putenv('ENV=production');
 
-        $vite   = new ViteHelper();
+        // Use non-existent path to test missing manifest behavior
+        $vite   = new ViteHelper('/nonexistent/manifest.json');
         $output = $vite->renderScriptTags('js/app.js');
 
         $this->assertStringContainsString('manifest not found', $output);
@@ -95,7 +96,8 @@ final class ViteHelperTest extends TestCase
     {
         putenv('ENV=production');
 
-        $vite   = new ViteHelper();
+        // Use non-existent path to test missing manifest behavior
+        $vite   = new ViteHelper('/nonexistent/manifest.json');
         $output = $vite->renderCssTags('js/app.js');
 
         $this->assertStringContainsString('No CSS found', $output);
@@ -116,7 +118,8 @@ final class ViteHelperTest extends TestCase
     {
         putenv('ENV=production');
 
-        $vite = new ViteHelper();
+        // Use non-existent path to test missing manifest behavior
+        $vite = new ViteHelper('/nonexistent/manifest.json');
 
         // Without a manifest file, assets are not available
         $this->assertFalse($vite->areAssetsAvailable());
