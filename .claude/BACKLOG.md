@@ -2,6 +2,16 @@
 
 Future tasks and improvements to be implemented.
 
+## Task Scope Guide
+
+Each task has a **Scope** indicator to help with session planning:
+
+| Scope | Time | Files | Session |
+|-------|------|-------|---------|
+| Small | <30 min | 1-3 files | Same session OK |
+| Medium | 30 min - 2h | 3-10 files | Flexible |
+| Large | >2h | Many files, exploration | New session recommended |
+
 ---
 
 ## High Priority
@@ -9,6 +19,7 @@ Future tasks and improvements to be implemented.
 ### v1.0 Release Preparation
 
 **Status:** Planned
+**Scope:** Large
 **Created:** 2026-01-19
 **Context:** Project approaching first public release, git history needs cleanup
 
@@ -69,6 +80,7 @@ Future tasks and improvements to be implemented.
 ### Makefile Target Testing with BATS + Goss Integration
 
 **Status:** Planned
+**Scope:** Large
 **Created:** 2026-01-19
 **Planning:** Required
 **Context:** Feature request for environment-specific testing of Make targets
@@ -129,6 +141,7 @@ Future tasks and improvements to be implemented.
 ### Service Integration Examples
 
 **Status:** Planned (v1.1)
+**Scope:** Large
 **Created:** 2026-01-19
 **Context:** Boilerplate should demonstrate best-practice integration patterns
 
@@ -179,6 +192,7 @@ Future tasks and improvements to be implemented.
 #### .env.local Override Support
 
 **Status:** Planned
+**Scope:** Medium
 **Created:** 2026-01-19
 **Context:** Feature request for flexible local configuration overrides
 
@@ -225,6 +239,7 @@ Future tasks and improvements to be implemented.
 #### pnpm Update
 
 **Status:** Planned
+**Scope:** Small
 **Created:** 2026-01-19
 
 **Task:** Update Node.js dependencies to latest versions.
@@ -241,6 +256,7 @@ Future tasks and improvements to be implemented.
 #### ESLint Errors in PHPStorm (Node Tests)
 
 **Status:** Planned
+**Scope:** Small
 **Created:** 2026-01-19
 **Context:** PHPStorm shows ESLint errors in Node backend unit tests that our CI linters don't catch
 
@@ -273,6 +289,7 @@ Future tasks and improvements to be implemented.
 #### Claude Settings Consolidation
 
 **Status:** Planned
+**Scope:** Small
 **Created:** 2026-01-19
 **Context:** Simplify Claude Code permissions by leveraging Makefile targets
 
@@ -299,6 +316,7 @@ Future tasks and improvements to be implemented.
 #### DevDashboard Update Check
 
 **Status:** Planned
+**Scope:** Small
 **Created:** 2026-01-19
 **Context:** Recent changes to health endpoints and services
 
@@ -321,6 +339,7 @@ Future tasks and improvements to be implemented.
 #### PHP Code Quality: SuppressWarnings Cleanup
 
 **Status:** Planned
+**Scope:** Medium
 **Created:** 2026-01-19
 **Context:** Continuation of code quality improvements from 2026-01-18
 
@@ -347,6 +366,7 @@ Future tasks and improvements to be implemented.
 #### Shell Compatibility (Brace Expansion)
 
 **Status:** Planned
+**Scope:** Small
 **Created:** 2026-01-19
 **Context:** Brace expansion `{a,b}` is Bash-specific, not POSIX sh compatible
 
@@ -367,6 +387,7 @@ Future tasks and improvements to be implemented.
 #### Makefile Clean Targets Analysis
 
 **Status:** Planned
+**Scope:** Small
 **Created:** 2026-01-19
 
 **Task:** Analyze whether additional clean sub-commands are useful.
@@ -392,6 +413,7 @@ Future tasks and improvements to be implemented.
 #### Mutation Testing Integration
 
 **Status:** Planned
+**Scope:** Medium
 **Created:** 2026-01-19
 **Context:** Current tests pass, but do they actually catch bugs?
 
@@ -427,6 +449,7 @@ Future tasks and improvements to be implemented.
 #### Security Static Analysis (SAST)
 
 **Status:** Planned
+**Scope:** Medium
 **Created:** 2026-01-19
 **Context:** PHPStan finds type errors but not security vulnerabilities
 
@@ -464,6 +487,7 @@ Future tasks and improvements to be implemented.
 #### TLS Certificate Architecture
 
 **Status:** Planned
+**Scope:** Medium
 **Created:** 2026-01-19
 **Context:** User question about separate certs for frontend/backend services
 
@@ -485,6 +509,7 @@ Future tasks and improvements to be implemented.
 #### Page Design Customization
 
 **Status:** Planned
+**Scope:** Medium
 **Created:** 2026-01-19
 
 **Task:** Adapt error pages and static pages to zappzarapp design.
@@ -505,6 +530,7 @@ Future tasks and improvements to be implemented.
 #### Frontend Testing Framework (Storybook)
 
 **Status:** Planned
+**Scope:** Large
 **Created:** 2026-01-19
 
 **Task:** Evaluate Storybook or similar for component testing and accessibility.
@@ -527,6 +553,7 @@ Future tasks and improvements to be implemented.
 #### PHPStorm Database Configuration
 
 **Status:** Planned
+**Scope:** Small
 **Created:** 2026-01-19
 **Assignee:** User (manual) / Claude (investigation)
 
@@ -587,6 +614,7 @@ Future tasks and improvements to be implemented.
 #### LiveLogs via WebSocket
 
 **Status:** Planned
+**Scope:** Large
 **Created:** 2026-01-19
 **Context:** Feature request for DevDashboard
 
@@ -619,6 +647,7 @@ Future tasks and improvements to be implemented.
 ### Service List Sorting Consistency
 
 **Status:** Planned
+**Scope:** Small
 **Created:** 2026-01-19
 **Context:** During SeaweedFS migration, inconsistent sorting of service lists was identified
 

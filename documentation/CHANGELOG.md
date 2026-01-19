@@ -1,11 +1,34 @@
 # zappzarapp - Changelog
 
-**Erstellt:** 2025-12-19 **Letzte Aktualisierung:** 2026-01-19 (Security Scan
-Improvements) **Version:** 3.50
+**Erstellt:** 2025-12-19 **Letzte Aktualisierung:** 2026-01-19 (Backlog Scope)
+**Version:** 3.51
 
 ---
 
 ## Changelog
+
+### Version 3.51 (2026-01-19) - Backlog Scope for Session Planning
+
+Added **Scope** field to backlog tasks to help with session planning.
+
+#### Changes
+
+- **New Scope field**: Every task now has a Scope indicator (Small/Medium/Large)
+  - Small: <30 min, 1-3 files → Same session OK
+  - Medium: 30 min - 2h, 3-10 files → Flexible
+  - Large: >2h, many files, exploration → New session recommended
+- **Backlog format updated**: All existing tasks classified with appropriate
+  Scope
+- **`/backlog` command enhanced**: Shows Scope in listings and `--choose`
+  selection
+- **New filter**: `--list --scope <small|medium|large>` to filter by scope
+
+#### Updated Files
+
+- `.claude/BACKLOG.md` - Added Scope Guide section, all tasks annotated
+- `.claude/commands/backlog.md` - Updated documentation with Scope support
+
+---
 
 ### Version 3.50 (2026-01-19) - Security Scan Improvements
 

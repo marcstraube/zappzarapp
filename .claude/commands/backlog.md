@@ -16,6 +16,7 @@ Parse `$ARGUMENTS`:
 - `--add`: Add a new task (interactive workflow)
 - `--list`: Show all tasks (default if no argument)
 - `--list --priority <high|medium|low>`: Filter by priority
+- `--list --scope <small|medium|large>`: Filter by scope
 - `--choose`: Interactive task selection to start working on
 - `--remove <task-name>`: Remove a task (with reason prompt)
 - `--promote <task-name>`: Move task to higher priority
@@ -28,9 +29,18 @@ The backlog follows this structure:
 ```markdown
 # Project Backlog
 
+## Task Scope Guide
+
+| Scope | Time | Files | Session |
+|-------|------|-------|---------|
+| Small | <30 min | 1-3 files | Same session OK |
+| Medium | 30 min - 2h | 3-10 files | Flexible |
+| Large | >2h | Many files, exploration | New session recommended |
+
 ## High Priority
 ### Task Name
 **Status:** Open | In Progress | Blocked
+**Scope:** Small | Medium | Large
 **Created:** YYYY-MM-DD
 **Context:** Why this task exists
 
@@ -69,8 +79,14 @@ Collect task details interactively or from context:
 **Required:**
 - **Title**: Short, descriptive name
 - **Priority**: High / Medium / Low
+- **Scope**: Small / Medium / Large (for session planning)
 - **Context**: Why does this task exist? (discovered during X, user requested, etc.)
 - **Problem/Goal**: What needs to be done?
+
+**Scope Guidelines:**
+- **Small**: <30 min, 1-3 files → Same session OK
+- **Medium**: 30 min - 2h, 3-10 files → Flexible
+- **Large**: >2h, many files, exploration → New session recommended
 
 **Optional:**
 - **Category**: For Medium priority (Quick Wins, Code Quality, Testing, etc.)
@@ -119,6 +135,7 @@ If no category fits, create a new one or place directly under Medium Priority.
 ### Task Title
 
 **Status:** Open
+**Scope:** Large
 **Created:** YYYY-MM-DD
 **Planning:** Required ← (only if planning needed)
 **Context:** [How/why this was discovered]
@@ -147,6 +164,7 @@ If no category fits, create a new one or place directly under Medium Priority.
 #### Task Title
 
 **Status:** Open
+**Scope:** Medium
 **Created:** YYYY-MM-DD
 **Planning:** Required ← (only if planning needed)
 **Context:** [Brief context]
@@ -168,6 +186,7 @@ If no category fits, create a new one or place directly under Medium Priority.
 #### Task Title
 
 **Status:** Planned
+**Scope:** Small
 **Created:** YYYY-MM-DD
 
 **Task:** [Brief description]
@@ -195,6 +214,7 @@ Task Added to Backlog
 ════════════════════════════════════════════════
 Title:    [Task Title]
 Priority: [High/Medium/Low]
+Scope:    [Small/Medium/Large]
 Category: [Category if Medium]
 Planning: [Required/Not required]
 Created:  [Date]
@@ -214,29 +234,31 @@ Project Backlog Summary
 ════════════════════════════════════════════════
 
 High Priority (3 tasks)
-  1. [Open]     Database Password Configuration Issue
-  2. [Open]     Pre-Commit Hook Container Dependency
-  3. [Planned]  v1.0 Release Preparation
+  1. [Large]  v1.0 Release Preparation
+  2. [Large]  Makefile Target Testing (BATS + Goss)
+  3. [Large]  Service Integration Examples
 
 Medium Priority (12 tasks)
   Quick Wins (4)
-    • Container Security Scanning: Add Node Images
-    • pnpm Update
-    • ESLint Errors in PHPStorm
-    • Claude Settings Consolidation
+    • [Small] pnpm Update
+    • [Small] ESLint Errors in PHPStorm
+    • [Small] Claude Settings Consolidation
+    • [Small] DevDashboard Update Check
   Code Quality (2)
-    • PHP Code Quality: SuppressWarnings Cleanup
-    • Shell Compatibility (Brace Expansion)
+    • [Medium] PHP SuppressWarnings Cleanup
+    • [Small]  Shell Compatibility
   Testing (2)
-    • Mutation Testing Integration
-    • Security Static Analysis (SAST)
+    • [Medium] Mutation Testing Integration
+    • [Medium] Security Static Analysis (SAST)
   ...
 
-Low Priority (0 tasks)
-  (none)
+Low Priority (1 task)
+  • [Small] Service List Sorting Consistency
 
 ════════════════════════════════════════════════
-Total: 15 tasks
+Total: 16 tasks
+
+Scope: Small=same session OK | Medium=flexible | Large=new session
 ```
 
 ### With Priority Filter (`--priority <level>`)
@@ -256,12 +278,12 @@ Use `AskUserQuestion` to present available tasks grouped by priority:
 ```text
 Which task would you like to work on?
 
-○ Database Password Configuration Issue (High)
-○ Pre-Commit Hook Container Dependency (High)
-○ v1.0 Release Preparation (High)
-○ Container Security Scanning: Add Node Images (Medium/Quick Wins)
-○ pnpm Update (Medium/Quick Wins)
-○ PHP Code Quality: SuppressWarnings Cleanup (Medium/Code Quality)
+○ v1.0 Release Preparation (High, Large)
+○ Makefile Target Testing (High, Large)
+○ pnpm Update (Medium, Small) ← same session OK
+○ ESLint Errors in PHPStorm (Medium, Small) ← same session OK
+○ PHP SuppressWarnings Cleanup (Medium, Medium)
+○ Mutation Testing Integration (Medium, Medium)
 ```
 
 **Selection logic:**
