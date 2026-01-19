@@ -13,7 +13,7 @@ DC_RUN := COMPOSE_PROFILES=php,node,node-backend,dev-tools $(DC)
 help: ## Show this help
 	@awk 'BEGIN { \
 		FS = ":.*?## "; \
-		printf "\033[0;34m\nAvailable commands:\n\033[0m"; \
+		printf "\n\033[0;34mAvailable commands:\033[0m\n"; \
 	} \
 	/^##@/ { \
 		if (length(cmds) > 0) { \
@@ -21,7 +21,7 @@ help: ## Show this help
 			close("sort"); \
 			cmds = ""; \
 		} \
-		print "\n\033[0;34m" substr($$0, 5) "\033[0m"; \
+		printf "\n\033[0;34m%s\033[0m\n", substr($$0, 5); \
 		next; \
 	} \
 	/^[a-zA-Z_-]+:.*?## / { \
@@ -32,7 +32,7 @@ help: ## Show this help
 			print cmds | "sort"; \
 			close("sort"); \
 		} \
-	}' $(MAKEFILE_LIST) | awk 'BEGIN {FS="\t"} {printf "  \033[0;32m%-26s\033[0m %s\n", $$1, $$2}'
+	}' $(MAKEFILE_LIST) | awk 'BEGIN {FS="\t"} NF==2 {printf "  \033[0;32m%-35s\033[0m %s\n", $$1, $$2} NF!=2 {print}'
 
 ##@ Setup
 

@@ -234,22 +234,6 @@ Each task has a **Scope** indicator to help with session planning:
 
 ### Quick Wins
 
----
-
-#### Make Help Spacing Fix
-
-**Status:** Planned
-**Scope:** Small
-**Created:** 2026-01-19
-**Context:** Inconsistent spacing in `make help` output between command names and descriptions
-
-**Task:** Fix alignment/spacing in Makefile help output.
-
-**Files to modify:**
-- `Makefile`
-
----
-
 #### ESLint Errors in PHPStorm (Node Tests)
 
 **Status:** Planned
@@ -598,6 +582,42 @@ Each task has a **Scope** indicator to help with session planning:
 ---
 
 ## Low Priority
+
+### Database Schema Diff / Advanced Migrations
+
+**Status:** Planned
+**Scope:** Large
+**Planning:** Required
+**Created:** 2026-01-19
+**Context:** Feature request for automated schema diff generation
+
+**Goal:** Extend `make db-migrations` with schema-diff capabilities:
+
+1. `make db-migrate` - Apply migrations (current functionality)
+2. `make db-diff` - Generate migration SQL from schema changes
+
+**Before starting:** Use Plan Mode to evaluate:
+- Best tooling for this project (Atlas, Flyway, Skeema, migra, etc.)
+- Multi-DB support requirements (PostgreSQL + MariaDB)
+- "Source of Truth" approach (code-first vs. DB-first)
+- Docker integration and CI/CD considerations
+- Complexity vs. benefit trade-off
+
+**Candidate tools:**
+
+| Tool | PostgreSQL | MariaDB | Notes |
+|------|------------|---------|-------|
+| Atlas | ✅ | ✅ | Go, declarative, modern |
+| Flyway | ✅ | ✅ | Java, widely adopted |
+| Skeema | ❌ | ✅ | MySQL/MariaDB only |
+| migra | ✅ | ❌ | Python, PostgreSQL only |
+
+**Notes:**
+- Current simple SQL-file approach may be sufficient for most users
+- This is an enhancement for larger projects
+- Keep backwards compatibility with existing `migrations/` structure
+
+---
 
 ### Service List Sorting Consistency
 
