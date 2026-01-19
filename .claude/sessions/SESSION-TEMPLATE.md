@@ -12,6 +12,16 @@
 
 ---
 
+## Commands Used
+
+Track slash commands used during this session (for `/optimize --commands` analysis):
+
+| Time | Command | Purpose |
+|------|---------|---------|
+| HH:MM | /session-start | Initialize session |
+
+---
+
 ## Changes
 
 | Time | Action | File | Purpose |

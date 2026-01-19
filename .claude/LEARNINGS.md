@@ -181,6 +181,73 @@ make up
 
 ---
 
+## Claude Code Configuration
+
+### Permission Pattern Matching
+
+- **Pattern `Bash(X:*)` matches `X <any args>`**: Subcommands ARE treated as arguments
+- **Tested:** `Bash(docker compose:*)` covers `docker compose logs`, `docker compose exec`, etc.
+- **Tested:** `Bash(make:*)` covers `make build`, `make help`, etc.
+- **Redundant patterns**: Specific subcommand patterns (e.g., `docker compose logs:*`) are redundant with base patterns - remove for cleaner config
+- **Dangerous patterns to avoid**:
+  - `Bash(sudo rm:*)` - allows `sudo rm -rf /`
+  - `Bash(bash:*)` - allows arbitrary script execution
+  - `Bash(rm:*)` - allows `rm -rf` (use with extreme caution)
+
+### Permission File Organization
+
+- **settings.json** (committed): Project-specific scripts only (`./docker/hooks/*`, `./tests/goss/*`, env var combos)
+- **settings.local.json** (gitignored): General tools, system utilities, personal preferences
+- **Organize by category**: Core tools, Docker, Git, File ops, Text processing, etc.
+- **Sort alphabetically** within each category for maintainability
+
+### Hooks Format (CRITICAL)
+
+**Old format (BROKEN - silently breaks ALL settings loading!):**
+```json
+{
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Task",
+        "command": "echo test"
+      }
+    ]
+  }
+}
+```
+
+**New format (CORRECT):**
+```json
+{
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Task",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo test"
+          }
+        ]
+      }
+    ]
+  }
+}
+```
+
+**Key differences:**
+- `command` is now nested inside `hooks` array
+- Each hook needs `"type": "command"` (or `"type": "prompt"`)
+- The old format silently breaks ALL settings loading without error!
+
+**Debug tips:**
+- `/permissions` shows loaded permissions
+- Debug logs in `~/.claude/debug/` show settings loading
+- `Found 0 hook matchers` in logs = hooks broken
+
+---
+
 ## Last Updated
 
-2026-01-19 (aggregated from sessions 2026-01-15 to 2026-01-19)
+2026-01-19 (aggregated from sessions 2026-01-15 to 2026-01-19, added hooks format documentation)

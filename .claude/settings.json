@@ -1,19 +1,48 @@
 {
+  "permissions": {
+    "allow": [
+      "Bash(./docker/hooks/hook-runner.sh:*)",
+      "Bash(./docker/hooks/php-cs-fixer-batch.sh:*)",
+      "Bash(./docker/hooks/php-hooks.sh:*)",
+      "Bash(./docker/hooks/php-lint-batch.sh:*)",
+      "Bash(./tests/goss/preset-runner.sh:*)",
+      "Bash(./tests/goss/runtime-tests.sh:*)",
+      "Bash(COMPOSE_PROFILES=* docker compose:*)",
+      "Bash(ENABLE_SEAWEEDFS=true docker compose:*)",
+      "Bash(HOOK_RUNNER_VERBOSE=1 ./docker/hooks/hook-runner.sh:*)",
+      "Bash(VERBOSE=1 ./tests/goss/preset-runner.sh:*)"
+    ]
+  },
   "hooks": {
     "PreToolUse": [
       {
         "matcher": "Bash",
-        "command": "if echo \"$TOOL_INPUT\" | grep -qE '^make (goss-test|test)'; then docker compose ps -q 2>/dev/null | head -1 >/dev/null || echo '[Hook] Warning: No containers running. Run make up first.'; fi"
+        "hooks": [
+          {
+            "type": "command",
+            "command": "if echo \"$TOOL_INPUT\" | grep -qE '^make (goss-test|test)'; then docker compose ps -q 2>/dev/null | head -1 >/dev/null || echo '[Hook] Warning: No containers running. Run make up first.'; fi"
+          }
+        ]
       }
     ],
     "PostToolUse": [
       {
         "matcher": "Edit",
-        "command": "if echo \"$TOOL_INPUT\" | grep -qE '(Dockerfile|compose\\.yaml|compose\\.override|compose\\.production|\\.env\\.example|entrypoint)'; then echo '[Hook] Config file changed. Remember: make build && make down && make up'; fi"
+        "hooks": [
+          {
+            "type": "command",
+            "command": "if echo \"$TOOL_INPUT\" | grep -qE '(Dockerfile|compose\\.yaml|compose\\.override|compose\\.production|\\.env\\.example|entrypoint)'; then echo '[Hook] Config file changed. Remember: make build && make down && make up'; fi"
+          }
+        ]
       },
       {
         "matcher": "Bash",
-        "command": "if echo \"$TOOL_INPUT\" | grep -qE 'git commit'; then echo '[Hook] Commit done. Update session log if not already done.'; fi"
+        "hooks": [
+          {
+            "type": "command",
+            "command": "if echo \"$TOOL_INPUT\" | grep -qE 'git commit'; then echo '[Hook] Commit done. Update session log if not already done.'; fi"
+          }
+        ]
       }
     ]
   }

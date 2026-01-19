@@ -124,6 +124,7 @@ Use `/session-start` to:
 
 Maintain a session log in `.claude/sessions/session-YYYY-MM-DD-HHMM.md`:
 
+- **For slash commands**: log each command used in `## Commands Used` table
 - **For every file change**: timestamp, action (add/modify/delete/move), file, purpose
 - **For learnings**: document insights in `## Learnings` section
 - **For decisions**: record trade-offs and reasoning

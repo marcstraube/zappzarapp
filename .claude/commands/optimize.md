@@ -333,15 +333,39 @@ Analyze and improve Claude Code settings files.
 | `settings.json` | Shared team settings (hooks) | Yes |
 | `settings.local.json` | Personal settings (permissions, hooks) | No |
 
-### 5.2 Permissions Analysis (settings.local.json)
+### 5.2 Permissions Analysis
 
-Check the `permissions.allow` array for:
+**File Responsibilities:**
 
-**Redundancy:**
+| File | Purpose | Contains |
+|------|---------|----------|
+| `settings.json` | Shared (committed) | Project-specific scripts only |
+| `settings.local.json` | Personal (gitignored) | General tools, system utils |
 
-- Duplicate entries (exact matches)
-- Overlapping patterns (e.g., `Bash(git:*)` covers `Bash(git add:*)`)
-- Patterns that are subsets of others
+**Project-specific permissions (→ settings.json):**
+- `Bash(./docker/hooks/*:*)`
+- `Bash(./tests/goss/*:*)`
+- `Bash(COMPOSE_PROFILES=* docker compose:*)`
+- `Bash(ENABLE_SEAWEEDFS=true docker compose:*)`
+- Other project-specific env var + command combos
+
+**Personal permissions (→ settings.local.json):**
+- General tools: `make`, `docker`, `git`, `composer`, `pnpm`
+- System utilities: `ls`, `cat`, `grep`, `find`, etc.
+- Personal preferences
+
+**Pattern Matching Behavior:**
+
+- `Bash(command:*)` matches `command <any args>` including subcommands
+- Example: `Bash(docker compose:*)` covers `logs`, `exec`, `run`, etc.
+- Example: `Bash(make:*)` covers all make targets
+- Specific subcommand patterns are redundant but harmless
+
+**Dangerous patterns to flag:**
+
+- `Bash(sudo rm:*)` - allows `sudo rm -rf /`
+- `Bash(bash:*)` - allows arbitrary script execution
+- `Bash(rm:*)` - allows `rm -rf` (very dangerous)
 
 **Unused permissions:**
 
@@ -425,8 +449,8 @@ settings.json (shared):
 
 settings.local.json (personal):
   Permissions: 78 entries
-    [WARN] 5 redundant (covered by broader patterns)
-    [INFO] 12 unused in last 30 days
+    [OK] No exact duplicates found
+    [INFO] 12 unused in last 30 days (review if needed)
     [OK] No security concerns
   Hooks: 1 defined
     PostToolUse: 1 (ntfy notification)
@@ -438,7 +462,7 @@ Cross-file:
   [SUGGEST] Move container check to settings.json for team
 
 Actions:
-  [1] Remove redundant permissions
+  [1] Remove exact duplicates (if any)
   [2] Review unused permissions
   [3] Apply hook improvements
   [4] Skip settings optimization
@@ -448,7 +472,7 @@ Actions:
 
 **Safe auto-fixes (with confirmation):**
 
-- Remove exact duplicate permissions
+- Remove exact duplicate permissions (same pattern twice)
 - Sort permissions alphabetically within groups
 - Fix obvious typos in patterns
 
@@ -457,6 +481,11 @@ Actions:
 - Removing "unused" permissions (might be needed occasionally)
 - Modifying hooks (could affect workflow)
 - Moving hooks between files
+
+**Note on subcommand patterns**
+
+Specific patterns like `Bash(docker compose logs:*)` ARE redundant with `Bash(docker compose:*)`,
+but keeping them is harmless and can serve as documentation of commonly used commands.
 
 ---
 
@@ -535,7 +564,7 @@ $ /optimize --all
 ║   Unsynced learnings: 0                                    ║
 ╠════════════════════════════════════════════════════════════╣
 ║ Phase 5: Settings Analysis                                 ║
-║   Permissions: 78 entries (5 redundant)                    ║
+║   Permissions: 78 entries (0 duplicates)                   ║
 ║   Hooks: 4 total (all functional)                          ║
 ║   Cross-file conflicts: 0                                  ║
 ╠════════════════════════════════════════════════════════════╣
