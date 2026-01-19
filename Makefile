@@ -1943,30 +1943,38 @@ security-sbom: ## Generate a Software Bill of Materials (SBOM) using Trivy
 	fi
 	@echo -e "\033[0;32mSBOM generated in build/sbom-php.json!\033[0m"
 
-security-scan: ## Scan Docker images for vulnerabilities
+security-scan: ## Scan Docker images for vulnerabilities (respects ENABLE_PHP/ENABLE_NODE)
 	@echo -e "\033[0;33mScanning images for vulnerabilities...\033[0m"
 	@if [ -f .env ]; then \
 		. ./.env && \
-		echo "Scanning PHP image..." && \
-		docker run --rm -v /var/run/docker.sock:/var/run/docker.sock \
-			aquasec/trivy:latest image --severity HIGH,CRITICAL \
-			$${COMPOSE_PROJECT_NAME:-zappzarapp}-php:latest 2>/dev/null || \
-			echo "⚠️  Image not found. Run 'make build' first." && \
-		echo "\nScanning Nginx image..." && \
-		docker run --rm -v /var/run/docker.sock:/var/run/docker.sock \
-			aquasec/trivy:latest image --severity HIGH,CRITICAL \
-			$${COMPOSE_PROJECT_NAME:-zappzarapp}-nginx:latest 2>/dev/null || \
-			echo "⚠️  Image not found. Run 'make build' first." && \
-		echo "\nScanning Node image..." && \
-		docker run --rm -v /var/run/docker.sock:/var/run/docker.sock \
-			aquasec/trivy:latest image --severity HIGH,CRITICAL \
-			$${COMPOSE_PROJECT_NAME:-zappzarapp}-node:latest 2>/dev/null || \
-			echo "⚠️  Image not found. Run 'make build' first." && \
-		echo "\nScanning Node-Backend image..." && \
-		docker run --rm -v /var/run/docker.sock:/var/run/docker.sock \
-			aquasec/trivy:latest image --severity HIGH,CRITICAL \
-			$${COMPOSE_PROJECT_NAME:-zappzarapp}-node-backend:latest 2>/dev/null || \
-			echo "⚠️  Image not found. Run 'make build' first."; \
+		if [ "$${ENABLE_PHP:-true}" = "true" ]; then \
+			echo "Scanning PHP image..." && \
+			docker run --rm -v /var/run/docker.sock:/var/run/docker.sock \
+				aquasec/trivy:latest image --severity HIGH,CRITICAL \
+				$${COMPOSE_PROJECT_NAME:-zappzarapp}-php:latest 2>/dev/null || \
+				echo "⚠️  PHP image not found. Run 'make build-php' first." && \
+			echo "" && echo "Scanning Nginx image..." && \
+			docker run --rm -v /var/run/docker.sock:/var/run/docker.sock \
+				aquasec/trivy:latest image --severity HIGH,CRITICAL \
+				$${COMPOSE_PROJECT_NAME:-zappzarapp}-nginx:latest 2>/dev/null || \
+				echo "⚠️  Nginx image not found. Run 'make build-nginx' first."; \
+		else \
+			echo "ℹ️  Skipping PHP/Nginx (ENABLE_PHP=false)"; \
+		fi && \
+		if [ "$${ENABLE_NODE:-true}" = "true" ]; then \
+			echo "" && echo "Scanning Node image..." && \
+			docker run --rm -v /var/run/docker.sock:/var/run/docker.sock \
+				aquasec/trivy:latest image --severity HIGH,CRITICAL \
+				$${COMPOSE_PROJECT_NAME:-zappzarapp}-node:latest 2>/dev/null || \
+				echo "⚠️  Node image not found. Run 'make build-node' first." && \
+			echo "" && echo "Scanning Node-Backend image..." && \
+			docker run --rm -v /var/run/docker.sock:/var/run/docker.sock \
+				aquasec/trivy:latest image --severity HIGH,CRITICAL \
+				$${COMPOSE_PROJECT_NAME:-zappzarapp}-node-backend:latest 2>/dev/null || \
+				echo "⚠️  Node-Backend image not found. Run 'make build-node' first."; \
+		else \
+			echo "ℹ️  Skipping Node (ENABLE_NODE=false)"; \
+		fi; \
 	fi
 	@echo -e "\033[0;32mSecurity scan completed!\033[0m"
 
