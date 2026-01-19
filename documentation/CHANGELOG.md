@@ -1,11 +1,33 @@
 # zappzarapp - Changelog
 
-**Erstellt:** 2025-12-19 **Letzte Aktualisierung:** 2026-01-19 (Backlog Scope)
-**Version:** 3.51
+**Erstellt:** 2025-12-19 **Letzte Aktualisierung:** 2026-01-19 (pnpm Upgrade)
+**Version:** 3.52
 
 ---
 
 ## Changelog
+
+### Version 3.52 (2026-01-19) - pnpm Upgrade Target
+
+Added `make pnpm-upgrade` to update pnpm package manager to latest version.
+
+#### Changes
+
+- **New Makefile target**: `make pnpm-upgrade`
+  - Fetches latest pnpm version via `npm view pnpm version`
+  - Updates `packageManager` field in `package.json`
+  - Shows before/after version in output
+  - Runs in container (never edit locally!)
+- **Updated pnpm**: 10.26.2 → 10.28.1
+- **Documentation**: Added pnpm/Composer update workflows to LEARNINGS.md
+
+#### Updated Files
+
+- `Makefile` - New `pnpm-upgrade` target
+- `package.json` - Updated `packageManager` to pnpm@10.28.1
+- `.claude/LEARNINGS.md` - Documented pnpm and Composer update strategies
+
+---
 
 ### Version 3.51 (2026-01-19) - Backlog Scope for Session Planning
 

@@ -37,6 +37,20 @@ Aggregated knowledge from all development sessions. Use this as reference to avo
 - **`pnpm prune --prod` breaks workspace symlinks** - use `rm -rf node_modules && pnpm install --prod` instead.
 - **EBUSY on pnpm-lock.yaml**: Docker bind-mounts don't support atomic rename. Use `--no-install` flags, run `make pnpm-sync` separately.
 
+### pnpm Updates
+
+- **pnpm version is pinned in `package.json`** via `"packageManager": "pnpm@x.x.x"`. Corepack enforces this version.
+- **To update pnpm**: Use `make pnpm-upgrade` (fetches latest version via container).
+- **Why container?**: Local Node/pnpm versions may differ. Container is the source of truth.
+- **Container rebuild doesn't help**: Even with `--no-cache --pull`, the `packageManager` field takes precedence.
+
+### Composer Updates
+
+- **Composer is baked into PHP image** at build time via `FROM composer:2`.
+- **To update Composer**: Run `make build-php` - pulls latest `composer:2` image.
+- **No runtime pinning**: Unlike pnpm/corepack, Composer version is fixed at build time.
+- **No `composer-upgrade` target needed**: Container rebuild handles it automatically.
+
 ### Sync vs Install Targets
 
 - **`*-install` targets**: Use `--frozen-lockfile` for CI/Production reproducibility. Fails if lockfile doesn't match package.json.

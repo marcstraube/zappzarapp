@@ -236,20 +236,17 @@ Each task has a **Scope** indicator to help with session planning:
 
 ---
 
-#### pnpm Update
+#### Make Help Spacing Fix
 
 **Status:** Planned
 **Scope:** Small
 **Created:** 2026-01-19
+**Context:** Inconsistent spacing in `make help` output between command names and descriptions
 
-**Task:** Update Node.js dependencies to latest versions.
+**Task:** Fix alignment/spacing in Makefile help output.
 
-**Steps:**
-1. Run `make pnpm -- update` (executes pnpm in container)
-2. Run `make test` to verify nothing breaks
-3. Fix any breaking changes if needed
-
-**Note:** Lockfiles (`pnpm-lock.yaml`) are never committed - this is a boilerplate. Users generate their own lockfiles.
+**Files to modify:**
+- `Makefile`
 
 ---
 

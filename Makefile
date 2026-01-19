@@ -839,6 +839,17 @@ pnpm-sync: ## Sync Node.js dependencies (after package.json changes, e.g., front
 	@$(DC_RUN) run --rm --no-TTY --user root --entrypoint "" -e CI=true node pnpm install
 	@echo -e "\033[0;32mDependencies synced!\033[0m"
 
+pnpm-upgrade: ## Upgrade pnpm package manager to latest version
+	@echo -e "\033[0;33mUpgrading pnpm to latest version...\033[0m"
+	@CURRENT=$$(grep -o '"pnpm@[^"]*"' package.json | tr -d '"') && \
+	$(DC_RUN) run --rm --no-TTY node sh -c ' \
+		LATEST=$$(npm view pnpm version) && \
+		npm pkg set packageManager=pnpm@$$LATEST \
+	' && \
+	NEW=$$(grep -o '"pnpm@[^"]*"' package.json | tr -d '"') && \
+	echo -e "\033[0;32mpnpm upgraded: $$CURRENT → $$NEW\033[0m"
+	@$(MAKE) pnpm-sync
+
 # ─────────────────────────────────────────────────────────────────────────────
 # FRONTEND SCAFFOLDING
 # ─────────────────────────────────────────────────────────────────────────────
