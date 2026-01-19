@@ -47,6 +47,11 @@ if [ -n "$ENV_FILE" ]; then
     source "$ENV_FILE"
 else
     DOCKER_COMPOSE="docker compose"
+    # Source local .env if it exists (for health routing detection)
+    if [ -f ".env" ]; then
+        # shellcheck disable=SC1091
+        source ".env"
+    fi
 fi
 
 # Configuration
@@ -81,8 +86,21 @@ log_skip() {
     SKIPPED=$((SKIPPED + 1))
 }
 
+log_warn() {
+    echo -e "${YELLOW}[WARN]${NC} $1"
+}
+
+log_info() {
+    echo -e "${BLUE}[INFO]${NC} $1"
+}
+
 is_container_running() {
     $DOCKER_COMPOSE ps -q "$1" 2>/dev/null | grep -q .
+}
+
+# Check if a string contains a pattern (case-insensitive)
+contains_pattern() {
+    echo "$1" | grep -qi "$2"
 }
 
 # ============================================================================
@@ -150,16 +168,19 @@ test_node_backend() {
         return
     fi
 
-    # Test health endpoint via nginx (external HTTPS)
-    if curl -sf -k --max-time $TIMEOUT "https://localhost:${NGINX_SSL_PORT}/api/node/health" 2>/dev/null | grep -q "status"; then
-        log_pass "node-backend: /api/node/health responds via nginx"
+    # Test direct internal health endpoint on node-backend
+    if $DOCKER_COMPOSE exec -T node-backend curl -sfk --max-time $TIMEOUT "https://localhost:3000/health" 2>/dev/null | grep -q "status"; then
+        log_pass "node-backend: internal /health endpoint responds"
     else
-        # Try direct internal HTTPS test
-        if $DOCKER_COMPOSE exec -T node-backend curl -sfk --max-time $TIMEOUT "https://localhost:3000/health" 2>/dev/null | grep -q "status"; then
-            log_pass "node-backend: internal HTTPS health endpoint responds"
-        else
-            log_fail "node-backend: health endpoint not responding"
-        fi
+        log_fail "node-backend: /health endpoint not responding"
+        return
+    fi
+
+    # Test readiness endpoint
+    if $DOCKER_COMPOSE exec -T node-backend curl -sfk --max-time $TIMEOUT "https://localhost:3000/ready" 2>/dev/null | grep -q "status"; then
+        log_pass "node-backend: internal /ready endpoint responds"
+    else
+        log_warn "node-backend: /ready endpoint not responding (dependencies may be unavailable)"
     fi
 }
 
@@ -352,6 +373,268 @@ test_rabbitmq() {
 }
 
 # ============================================================================
+# Health Routing Tests
+# ============================================================================
+# Tests the unified health endpoints based on configuration:
+# - Mode 1: PHP (ENABLE_PHP=true)
+# - Mode 2: Node Backend (ENABLE_PHP=false, ENABLE_NODE=true, NODE_MODE has backend)
+# - Mode 3: Static/Node Frontend-only (ENABLE_PHP=false, ENABLE_NODE=true, NODE_MODE=framework|assets|idle)
+# - Mode 4: Static (ENABLE_PHP=false, ENABLE_NODE=false)
+
+# Determine expected health routing mode based on environment
+get_health_routing_mode() {
+    local enable_php="${ENABLE_PHP:-true}"
+    local enable_node="${ENABLE_NODE:-false}"
+    local node_mode="${NODE_MODE:-assets-api}"
+
+    if [ "$enable_php" = "true" ]; then
+        echo "php"
+    elif [ "$enable_node" = "true" ]; then
+        # Check if NODE_MODE includes backend (api or backend keyword)
+        case "$node_mode" in
+            *api*|backend)
+                echo "node-backend"
+                ;;
+            *)
+                echo "static"
+                ;;
+        esac
+    else
+        echo "static"
+    fi
+}
+
+# Get expected service name for /health response
+get_expected_service_name() {
+    local mode="$1"
+    case "$mode" in
+        php) echo "php-fpm" ;;
+        node-backend) echo "node-backend" ;;
+        static) echo "nginx" ;;
+        *) echo "unknown" ;;
+    esac
+}
+
+test_health_routing() {
+    echo -e "\n${BLUE}━━━ Health Routing Tests ━━━${NC}"
+
+    if ! is_container_running nginx; then
+        log_skip "nginx container not running - skipping health routing tests"
+        return
+    fi
+
+    local mode
+    mode=$(get_health_routing_mode)
+    local expected_service
+    expected_service=$(get_expected_service_name "$mode")
+
+    log_info "Expected health routing mode: $mode (service: $expected_service)"
+    log_info "Config: ENABLE_PHP=${ENABLE_PHP:-true}, ENABLE_NODE=${ENABLE_NODE:-false}, NODE_MODE=${NODE_MODE:-assets-api}"
+
+    # -------------------------------------------------------------------------
+    # Test /health endpoint (Liveness)
+    # -------------------------------------------------------------------------
+    log_test "health-routing: /health endpoint responds"
+
+    local health_response
+    health_response=$(curl -sfk --max-time $TIMEOUT "https://localhost:${NGINX_SSL_PORT}/health" 2>/dev/null)
+
+    if [ -z "$health_response" ]; then
+        log_fail "health-routing: /health endpoint returned empty response"
+        return
+    fi
+
+    # Verify JSON format
+    if ! echo "$health_response" | jq . >/dev/null 2>&1; then
+        log_fail "health-routing: /health response is not valid JSON"
+        return
+    fi
+    log_pass "health-routing: /health returns valid JSON"
+
+    # Verify status field
+    local health_status
+    health_status=$(echo "$health_response" | jq -r '.status' 2>/dev/null)
+    if [ "$health_status" = "ok" ]; then
+        log_pass "health-routing: /health status is 'ok'"
+    else
+        log_fail "health-routing: /health status is '$health_status' (expected 'ok')"
+    fi
+
+    # Verify service field matches expected routing
+    local health_service
+    health_service=$(echo "$health_response" | jq -r '.service' 2>/dev/null)
+    if [ "$health_service" = "$expected_service" ]; then
+        log_pass "health-routing: /health service is '$health_service' (mode: $mode)"
+    else
+        log_fail "health-routing: /health service is '$health_service' (expected '$expected_service' for mode: $mode)"
+    fi
+
+    # Verify timestamp field exists
+    local health_timestamp
+    health_timestamp=$(echo "$health_response" | jq -r '.timestamp' 2>/dev/null)
+    if [ -n "$health_timestamp" ] && [ "$health_timestamp" != "null" ]; then
+        log_pass "health-routing: /health has timestamp field"
+    else
+        log_fail "health-routing: /health missing timestamp field"
+    fi
+
+    # -------------------------------------------------------------------------
+    # Test /ready endpoint (Readiness)
+    # -------------------------------------------------------------------------
+    log_test "health-routing: /ready endpoint responds"
+
+    local ready_response
+    ready_response=$(curl -k --max-time 10 "https://localhost:${NGINX_SSL_PORT}/ready" 2>/dev/null)
+
+    if [ -z "$ready_response" ]; then
+        log_fail "health-routing: /ready endpoint returned empty response"
+        return
+    fi
+
+    # Verify JSON format
+    if ! echo "$ready_response" | jq . >/dev/null 2>&1; then
+        log_fail "health-routing: /ready response is not valid JSON"
+        return
+    fi
+    log_pass "health-routing: /ready returns valid JSON"
+
+    # Verify status field (ok, degraded, or unhealthy are all valid)
+    local ready_status
+    ready_status=$(echo "$ready_response" | jq -r '.status' 2>/dev/null)
+    case "$ready_status" in
+        ok|degraded|unhealthy)
+            log_pass "health-routing: /ready status is '$ready_status'"
+            ;;
+        *)
+            log_fail "health-routing: /ready status is '$ready_status' (expected ok|degraded|unhealthy)"
+            ;;
+    esac
+
+    # Verify checks field exists (for non-static modes)
+    if [ "$mode" != "static" ]; then
+        local has_checks
+        has_checks=$(echo "$ready_response" | jq 'has("checks")' 2>/dev/null)
+        if [ "$has_checks" = "true" ]; then
+            log_pass "health-routing: /ready has 'checks' object"
+
+            # Verify checks structure based on mode
+            if [ "$mode" = "php" ]; then
+                # PHP mode should have database, redis, node-backend, node-frontend checks
+                local db_check
+                db_check=$(echo "$ready_response" | jq -r '.checks.database.status' 2>/dev/null)
+                if [ -n "$db_check" ] && [ "$db_check" != "null" ]; then
+                    log_pass "health-routing: /ready has database check (status: $db_check)"
+                else
+                    log_warn "health-routing: /ready missing database check"
+                fi
+            elif [ "$mode" = "node-backend" ]; then
+                # Node backend mode should have database, redis checks
+                local node_db_check
+                node_db_check=$(echo "$ready_response" | jq -r '.checks.database.status' 2>/dev/null)
+                if [ -n "$node_db_check" ] && [ "$node_db_check" != "null" ]; then
+                    log_pass "health-routing: /ready has database check (status: $node_db_check)"
+                else
+                    log_pass "health-routing: /ready database check disabled (ENABLE_DATABASE may be false)"
+                fi
+            fi
+        else
+            log_fail "health-routing: /ready missing 'checks' object"
+        fi
+    else
+        # Static mode has empty checks
+        log_pass "health-routing: /ready in static mode (no backend checks)"
+    fi
+
+    # Verify timestamp field exists
+    local ready_timestamp
+    ready_timestamp=$(echo "$ready_response" | jq -r '.timestamp' 2>/dev/null)
+    if [ -n "$ready_timestamp" ] && [ "$ready_timestamp" != "null" ]; then
+        log_pass "health-routing: /ready has timestamp field"
+    else
+        log_fail "health-routing: /ready missing timestamp field"
+    fi
+
+    # -------------------------------------------------------------------------
+    # Test /status endpoint (if not static mode)
+    # -------------------------------------------------------------------------
+    if [ "$mode" != "static" ]; then
+        log_test "health-routing: /status endpoint responds"
+
+        local status_response
+        status_response=$(curl -k --max-time 10 "https://localhost:${NGINX_SSL_PORT}/status" 2>/dev/null)
+
+        if [ -z "$status_response" ]; then
+            log_fail "health-routing: /status endpoint returned empty response"
+        elif ! echo "$status_response" | jq . >/dev/null 2>&1; then
+            log_fail "health-routing: /status response is not valid JSON"
+        else
+            log_pass "health-routing: /status returns valid JSON"
+
+            # Verify services or checks field exists
+            local has_services
+            has_services=$(echo "$status_response" | jq 'has("services")' 2>/dev/null)
+            if [ "$has_services" = "true" ]; then
+                log_pass "health-routing: /status has 'services' object"
+            else
+                log_warn "health-routing: /status missing 'services' object"
+            fi
+        fi
+    fi
+
+    # -------------------------------------------------------------------------
+    # Test /api/health endpoint (aggregated - only in PHP mode)
+    # -------------------------------------------------------------------------
+    if [ "$mode" = "php" ]; then
+        log_test "health-routing: /api/health endpoint (aggregated)"
+
+        local api_health_response
+        api_health_response=$(curl -sfk --max-time $TIMEOUT "https://localhost:${NGINX_SSL_PORT}/api/health" 2>/dev/null)
+
+        if [ -z "$api_health_response" ]; then
+            log_fail "health-routing: /api/health endpoint returned empty response"
+        elif ! echo "$api_health_response" | jq . >/dev/null 2>&1; then
+            log_fail "health-routing: /api/health response is not valid JSON"
+        else
+            log_pass "health-routing: /api/health returns valid JSON"
+
+            # Verify backends field exists
+            local has_backends
+            has_backends=$(echo "$api_health_response" | jq 'has("backends")' 2>/dev/null)
+            if [ "$has_backends" = "true" ]; then
+                log_pass "health-routing: /api/health has 'backends' object"
+
+                # Verify PHP backend status
+                local php_status
+                php_status=$(echo "$api_health_response" | jq -r '.backends.php.status' 2>/dev/null)
+                if [ "$php_status" = "ok" ]; then
+                    log_pass "health-routing: /api/health PHP backend is 'ok'"
+                else
+                    log_fail "health-routing: /api/health PHP backend status is '$php_status'"
+                fi
+
+                # Verify Node backend status (if enabled)
+                if [ "${ENABLE_NODE:-false}" = "true" ]; then
+                    local node_status
+                    node_status=$(echo "$api_health_response" | jq -r '.backends.node.status' 2>/dev/null)
+                    case "$node_status" in
+                        ok|disabled)
+                            log_pass "health-routing: /api/health Node backend is '$node_status'"
+                            ;;
+                        *)
+                            log_warn "health-routing: /api/health Node backend status is '$node_status'"
+                            ;;
+                    esac
+                fi
+            else
+                log_fail "health-routing: /api/health missing 'backends' object"
+            fi
+        fi
+    fi
+
+    echo ""
+}
+
+# ============================================================================
 # Main
 # ============================================================================
 
@@ -361,6 +644,7 @@ run_all_tests() {
     echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}\n"
 
     test_nginx
+    test_health_routing
     test_php
     test_node_backend
     test_node_frontend
@@ -386,6 +670,7 @@ run_all_tests() {
 # Run specific service test or all
 case "${1:-all}" in
     nginx) test_nginx ;;
+    health-routing|health) test_health_routing ;;
     php) test_php ;;
     node-backend) test_node_backend ;;
     node-frontend|node) test_node_frontend ;;
@@ -401,8 +686,8 @@ case "${1:-all}" in
     all) run_all_tests ;;
     *)
         echo "Usage: $0 [service|all]"
-        echo "Services: nginx, php, node-backend, node-frontend, postgres, mariadb, redis,"
-        echo "          mercure, meilisearch, elasticsearch, mailpit, minio, rabbitmq"
+        echo "Services: nginx, health-routing, php, node-backend, node-frontend, postgres, mariadb,"
+        echo "          redis, mercure, meilisearch, elasticsearch, mailpit, minio, rabbitmq"
         exit 1
         ;;
 esac

@@ -8,12 +8,13 @@ export NGINX_SSL_PORT=${NGINX_SSL_PORT:-8443}
 
 # Configure index directive and try_files fallback based on ENABLE_PHP
 # When PHP is disabled, serve static index.html instead of routing to PHP
+mkdir -p /run/nginx/snippets
+
 if [ "${ENABLE_PHP:-true}" = "true" ]; then
     export INDEX_DIRECTIVE="index.php index.html"
     export TRY_FILES_FALLBACK='/index.php?$query_string'
 
     # Generate health check snippet for PHP mode
-    mkdir -p /run/nginx/snippets
     cat > /run/nginx/snippets/health-check.conf << 'HEALTH_PHP'
 # Health Check Endpoint (PHP mode)
 # Full health check via PHP, falls back to static JSON if PHP unavailable
@@ -33,20 +34,124 @@ location @nginx_health {
     default_type application/json;
     return 200 '{"status":"ok","service":"nginx","timestamp":"$time_iso8601"}';
 }
-HEALTH_PHP
-else
-    export INDEX_DIRECTIVE="index.html"
-    export TRY_FILES_FALLBACK="/index.html"
-    echo "PHP disabled - using static index.html fallback"
 
-    # Generate health check snippet for static mode (no PHP)
-    mkdir -p /run/nginx/snippets
-    cat > /run/nginx/snippets/health-check.conf << 'HEALTH_STATIC'
-# Health Check Endpoint (Static mode - no PHP)
+# Readiness Probe (K8s) - Full dependency check via PHP
+location = /ready {
+    access_log off;
+    fastcgi_pass unix:/var/run/php-fpm/php-fpm.sock;
+    fastcgi_index index.php;
+    include fastcgi_params;
+    fastcgi_param SCRIPT_FILENAME $document_root/index.php;
+    fastcgi_param SCRIPT_NAME /index.php;
+    fastcgi_param REQUEST_URI /ready;
+    fastcgi_param HTTPS on;
+}
+HEALTH_PHP
+
+elif [ "${ENABLE_NODE:-false}" = "true" ]; then
+    # PHP disabled but Node enabled - check if node-backend is available based on NODE_MODE
+    # NODE_MODE values with backend: backend, api, assets-api, framework-api
+    # NODE_MODE values without backend: framework, assets, idle
+    NODE_MODE="${NODE_MODE:-assets-api}"
+
+    case "$NODE_MODE" in
+        *api*|backend)
+            # Node backend is available - route health to it
+            export INDEX_DIRECTIVE="index.html"
+            export TRY_FILES_FALLBACK="/index.html"
+            echo "PHP disabled, Node backend enabled (NODE_MODE=$NODE_MODE) - routing health to Node backend"
+
+            # Generate health check snippet for Node backend mode
+            cat > /run/nginx/snippets/health-check.conf << 'HEALTH_NODE'
+# Health Check Endpoint (Node mode - no PHP)
+# Routes health checks to Node.js backend
+location = /health {
+    access_log off;
+    set $upstream_backend node-backend:3000;
+    proxy_pass https://$upstream_backend/health;
+    proxy_ssl_verify off;
+    proxy_ssl_server_name on;
+    proxy_http_version 1.1;
+    proxy_set_header Host $host;
+    proxy_connect_timeout 5s;
+    proxy_read_timeout 5s;
+    error_page 502 503 504 = @nginx_health;
+}
+
+# Fallback health check when Node backend is unreachable
+location @nginx_health {
+    default_type application/json;
+    return 200 '{"status":"ok","service":"nginx","timestamp":"$time_iso8601"}';
+}
+
+# Readiness Probe (K8s) - Full dependency check via Node backend
+location = /ready {
+    access_log off;
+    set $upstream_backend node-backend:3000;
+    proxy_pass https://$upstream_backend/ready;
+    proxy_ssl_verify off;
+    proxy_ssl_server_name on;
+    proxy_http_version 1.1;
+    proxy_set_header Host $host;
+    proxy_connect_timeout 5s;
+    proxy_read_timeout 10s;
+}
+
+# Status endpoint via Node backend
+location = /status {
+    set $upstream_backend node-backend:3000;
+    proxy_pass https://$upstream_backend/status;
+    proxy_ssl_verify off;
+    proxy_ssl_server_name on;
+    proxy_http_version 1.1;
+    proxy_set_header Host $host;
+}
+HEALTH_NODE
+            ;;
+        *)
+            # Node enabled but no backend (framework, assets, idle modes)
+            export INDEX_DIRECTIVE="index.html"
+            export TRY_FILES_FALLBACK="/index.html"
+            echo "PHP disabled, Node frontend only (NODE_MODE=$NODE_MODE) - using static health"
+
+            # Generate health check snippet for Node frontend-only mode
+            cat > /run/nginx/snippets/health-check.conf << 'HEALTH_NODE_FRONTEND'
+# Health Check Endpoint (Node frontend-only mode - no PHP, no Node backend)
 location = /health {
     access_log off;
     default_type application/json;
     return 200 '{"status":"ok","service":"nginx","timestamp":"$time_iso8601"}';
+}
+
+# Readiness Probe (Node frontend-only mode)
+location = /ready {
+    access_log off;
+    default_type application/json;
+    return 200 '{"status":"ok","service":"nginx","timestamp":"$time_iso8601","checks":{}}';
+}
+HEALTH_NODE_FRONTEND
+            ;;
+    esac
+
+else
+    export INDEX_DIRECTIVE="index.html"
+    export TRY_FILES_FALLBACK="/index.html"
+    echo "PHP and Node disabled - using static fallback"
+
+    # Generate health check snippet for static mode (no PHP, no Node)
+    cat > /run/nginx/snippets/health-check.conf << 'HEALTH_STATIC'
+# Health Check Endpoint (Static mode - no PHP, no Node)
+location = /health {
+    access_log off;
+    default_type application/json;
+    return 200 '{"status":"ok","service":"nginx","timestamp":"$time_iso8601"}';
+}
+
+# Readiness Probe (Static mode - no backends)
+location = /ready {
+    access_log off;
+    default_type application/json;
+    return 200 '{"status":"ok","service":"nginx","timestamp":"$time_iso8601","checks":{}}';
 }
 HEALTH_STATIC
 fi

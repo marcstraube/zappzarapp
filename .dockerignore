@@ -81,8 +81,8 @@ typedoc.frontend.json
 vitest.config.ts
 phpunit.xml.dist
 
-# TypeScript configs (not needed at runtime)
-tsconfig.build.json
+# TypeScript configs (not needed at runtime, except build config)
+# Note: tsconfig.build.json is required for production builds
 tsconfig.typedoc.json
 tsconfig.vitest.json
 

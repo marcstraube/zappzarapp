@@ -132,8 +132,11 @@ $statusController  = $container->get(StatusController::class);
 // Routes
 $router->get('/', [$welcomeController, 'index']);          // Main landing page
 $router->get('/welcome', [$welcomeController, 'index']);   // Alias for /
-$router->get('/status', [$statusController, 'index']);     // JSON health check
-$router->get('/api/health', [$exampleController, 'health']); // Legacy health endpoint
+
+// Health Check Routes
+$router->get('/ready', [$statusController, 'ready']);      // Readiness probe (K8s)
+$router->get('/status', [$statusController, 'index']);     // Full status overview
+$router->get('/api/health', [$exampleController, 'health']); // Aggregated PHP + Node health
 
 // Dispatch
 $router->dispatch();

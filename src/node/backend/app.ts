@@ -8,6 +8,8 @@
 import express, { Express, Request, Response, NextFunction } from 'express';
 import pino from 'pino';
 import pinoHttp from 'pino-http';
+import { Pool } from 'pg';
+import { HealthCheckService } from './services/HealthCheckService.js';
 
 const NODE_ENV = process.env.NODE_ENV ?? 'production';
 const LOG_LEVEL = process.env.LOG_LEVEL ?? 'info';
@@ -36,8 +38,16 @@ export const logger = pino({
   timestamp: pino.stdTimeFunctions.isoTime,
 });
 
-export function createApp(): Express {
+/**
+ * Application options for dependency injection
+ */
+export interface AppOptions {
+  pool?: Pool | null;
+}
+
+export function createApp(options: AppOptions = {}): Express {
   const app: Express = express();
+  const healthCheckService = new HealthCheckService(options.pool ?? null);
 
   // HTTP request logging middleware
   app.use(
@@ -97,16 +107,24 @@ export function createApp(): Express {
     next();
   });
 
-  // Routes
+  // Health Check Routes
+
+  // Liveness probe - simple, fast check that the process is running
   app.get('/health', (_req: Request, res: Response): void => {
-    res.json({
-      status: 'ok',
-      service: 'node-backend',
-      timestamp: new Date().toISOString(),
-      uptime: process.uptime(),
-      node_version: process.version,
-      environment: NODE_ENV,
-    });
+    res.json(healthCheckService.checkLiveness());
+  });
+
+  // Readiness probe - full check of all dependencies
+  app.get('/ready', async (_req: Request, res: Response): Promise<void> => {
+    const result = await healthCheckService.checkReadiness();
+    const statusCode = result.status === 'ok' ? 200 : 503;
+    res.status(statusCode).json(result);
+  });
+
+  // Status overview - all services including disabled ones
+  app.get('/status', async (_req: Request, res: Response): Promise<void> => {
+    const result = await healthCheckService.checkStatus();
+    res.json(result);
   });
 
   app.get('/api/hello', (req: Request, res: Response): void => {

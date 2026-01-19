@@ -7,9 +7,9 @@
 # - MinIO uses date-based releases (RELEASE.YYYY-MM-DDTHH-MM-SSZ)
 # - To update: check https://hub.docker.com/r/minio/minio/tags
 # - For SHA digest pinning in production, use:
-#   FROM minio/minio:RELEASE.2025-10-15T17-29-55Z@sha256:<digest>
+#   FROM minio/minio:RELEASE.2025-09-07T16-13-09Z@sha256:<digest>
 
-ARG MINIO_VERSION=RELEASE.2025-10-15T17-29-55Z
+ARG MINIO_VERSION=RELEASE.2025-09-07T16-13-09Z
 
 FROM minio/minio:${MINIO_VERSION}
 

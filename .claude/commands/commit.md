@@ -1,7 +1,7 @@
 ---
 description: Guided commit workflow with quality checks and conventional commit format
 context: fork
-allowed-tools: Read, Grep, Glob, Bash(make:*), Bash(git:*), AskUserQuestion
+allowed-tools: Read, Write, Edit, Grep, Glob, Bash(make:*), Bash(git:*), Bash(date:*), AskUserQuestion
 argument-hint: [--skip-checks] [--amend]
 ---
 
@@ -138,16 +138,84 @@ Rules:
 
 Present the draft commit message and ask:
 
-1. "Use this message?" → Proceed to commit
+1. "Use this message?" → Proceed
 2. "Edit message?" → Let user provide custom message
 3. "Abort?" → Cancel commit
 
-### Step 8: Execute Commit
+### Step 8: Changelog Update
+
+**Always** add an entry to `documentation/CHANGELOG.md` before committing:
+
+1. Read current changelog to find the active version section
+2. Determine category from commit type:
+
+| Commit Type | Changelog Category |
+|-------------|-------------------|
+| `feat`      | Features / Added  |
+| `fix`       | Fixed / Bugfixes  |
+| `docs`      | Documentation     |
+| `style`     | Style             |
+| `refactor`  | Changed / Refactoring |
+| `perf`      | Performance       |
+| `test`      | Testing           |
+| `build`     | Build System      |
+| `ci`        | CI/CD             |
+| `chore`     | Maintenance       |
+
+3. Add entry under appropriate category:
+
+Without backlog task:
+```markdown
+- <Description from commit message>
+```
+
+With backlog task:
+```markdown
+- <Description from commit message> (Backlog: <Task Name>)
+```
+
+### Step 9: Backlog Cleanup (if applicable)
+
+Check if a backlog task was completed:
+
+**Detection:**
+1. Conversation context: Did user say "Bearbeite Task X aus dem Backlog"?
+2. Match changed files against tasks' "Files to modify" sections
+3. Match commit message against task titles
+
+**If task detected:**
+- If certain: Remove task from `.claude/BACKLOG.md`
+- If uncertain: Ask "Schließt dieser Commit den Task **'{task name}'** ab?"
+
+**Removal process:**
+1. Find the task section by title (### Task Name)
+2. Remove entire block (from `### Task Name` to next `---`)
+3. Keep surrounding structure intact
+
+**Important:** Remove completely, don't move to "Completed". Changelog = single source of truth.
+
+**If no backlog task:** Skip this step.
+
+### Step 10: Stage All Changes
+
+Stage code changes AND documentation updates:
 
 ```bash
-# Stage any additional files if needed (ask user first)
-git add <files>
+# Stage original code changes (if not already staged)
+git add <code-files>
 
+# Stage changelog
+git add documentation/CHANGELOG.md
+
+# Stage backlog (only if modified)
+git add .claude/BACKLOG.md
+```
+
+### Step 11: Execute Commit
+
+Now create ONE commit containing everything:
+
+```bash
 # Commit with the message
 git commit -m "<message>"
 
@@ -155,16 +223,35 @@ git commit -m "<message>"
 git commit --amend -m "<message>"
 ```
 
-### Step 9: Post-Commit
+### Step 12: Post-Commit Summary
 
 Show the result:
 
 ```bash
-# Show the new commit
 git log -1 --oneline
-
-# Show current status
 git status
+```
+
+Display summary:
+
+```text
+╔════════════════════════════════════════════════════════════╗
+║ Commit Complete                                            ║
+╠════════════════════════════════════════════════════════════╣
+║ Commit:    abc1234 fix(docker): resolve hook issue         ║
+║ Changelog: Entry added under "Fixed"                       ║
+║ Backlog:   "Pre-Commit Hook Container Dependency" removed  ║
+╚════════════════════════════════════════════════════════════╝
+```
+
+Without backlog task:
+```text
+╔════════════════════════════════════════════════════════════╗
+║ Commit Complete                                            ║
+╠════════════════════════════════════════════════════════════╣
+║ Commit:    c434359 feat(claude): add /optimize command     ║
+║ Changelog: Entry added under "Features"                    ║
+╚════════════════════════════════════════════════════════════╝
 ```
 
 ## Files to Exclude

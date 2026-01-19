@@ -49,7 +49,8 @@ tests/goss/
 │   ├── minimal.env
 │   ├── fullstack-mariadb.env
 │   ├── fullstack-optional.env
-│   └── framework.env
+│   ├── framework.env
+│   └── framework-only.env  # Node frontend only (no backend)
 ├── runtime-tests.sh    # Runtime integration test script
 └── README.md
 ```
@@ -131,16 +132,17 @@ make goss-test-redis
 
 ### Preset Tests (Full Stack Testing)
 
-| Target                                     | Description                   |
-| ------------------------------------------ | ----------------------------- |
-| `make goss-test-preset-fullstack`          | PHP + Node + Postgres + Redis |
-| `make goss-test-preset-php-only`           | PHP + Postgres + Redis        |
-| `make goss-test-preset-node-only`          | Node + Postgres + Redis       |
-| `make goss-test-preset-minimal`            | Nginx only                    |
-| `make goss-test-preset-fullstack-mariadb`  | Full-Stack with MariaDB       |
-| `make goss-test-preset-fullstack-optional` | All services enabled          |
-| `make goss-test-preset-framework`          | Nuxt/Next + Express           |
-| `make goss-test-matrix`                    | Run ALL presets (CI/CD)       |
+| Target                                     | Description                         |
+| ------------------------------------------ | ----------------------------------- |
+| `make goss-test-preset-fullstack`          | PHP + Node + Postgres + Redis       |
+| `make goss-test-preset-php-only`           | PHP + Postgres + Redis              |
+| `make goss-test-preset-node-only`          | Node + Postgres + Redis             |
+| `make goss-test-preset-minimal`            | Nginx only (static mode)            |
+| `make goss-test-preset-fullstack-mariadb`  | Full-Stack with MariaDB             |
+| `make goss-test-preset-fullstack-optional` | All services enabled                |
+| `make goss-test-preset-framework`          | Nuxt/Next + Express (framework-api) |
+| `make goss-test-preset-framework-only`     | Nuxt/Next only (no backend)         |
+| `make goss-test-matrix`                    | Run ALL presets (CI/CD)             |
 
 ## What Gets Tested
 
@@ -154,12 +156,32 @@ make goss-test-redis
 
 ### Runtime (Shell Script)
 
-| Category     | Examples                            |
-| ------------ | ----------------------------------- |
-| HTTPS        | Endpoints respond, TLS handshake    |
-| Health       | `/health`, `/ping`, `pg_isready`    |
-| TLS          | Certificate valid, non-TLS rejected |
-| Connectivity | Service-to-service communication    |
+| Category       | Examples                            |
+| -------------- | ----------------------------------- |
+| HTTPS          | Endpoints respond, TLS handshake    |
+| Health         | `/health`, `/ping`, `pg_isready`    |
+| Health Routing | Mode detection, response validation |
+| TLS            | Certificate valid, non-TLS rejected |
+| Connectivity   | Service-to-service communication    |
+
+### Health Routing Tests
+
+The runtime tests include comprehensive health endpoint routing verification:
+
+| Mode         | Condition                                                                   | Expected Service |
+| ------------ | --------------------------------------------------------------------------- | ---------------- |
+| PHP          | `ENABLE_PHP=true`                                                           | `php-fpm`        |
+| Node Backend | `ENABLE_PHP=false && ENABLE_NODE=true && NODE_MODE=*api*\|backend`          | `node-backend`   |
+| Static       | `ENABLE_PHP=false && ENABLE_NODE=true && NODE_MODE=framework\|assets\|idle` | `nginx`          |
+| Static       | `ENABLE_PHP=false && ENABLE_NODE=false`                                     | `nginx`          |
+
+Tests verify:
+
+- `/health` endpoint returns correct service name
+- `/ready` endpoint returns valid JSON with checks
+- `/status` endpoint returns services overview
+- `/api/health` aggregated endpoint (PHP mode only)
+- Response format validation (JSON, required fields)
 
 ## CI/CD Integration
 

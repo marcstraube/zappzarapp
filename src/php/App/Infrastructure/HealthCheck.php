@@ -349,6 +349,320 @@ class HealthCheck
     }
 
     /**
+     * Liveness check - simple check that PHP-FPM is running
+     *
+     * @return array<string, mixed>
+     */
+    public function checkLiveness(): array
+    {
+        return [
+            'status'    => 'ok',
+            'service'   => 'php-backend',
+            'timestamp' => date('c'),
+        ];
+    }
+
+    /**
+     * Readiness check - checks enabled services with latency measurement
+     *
+     * @return array<string, mixed>
+     */
+    public function checkReadiness(): array
+    {
+        $checks        = [];
+        $overallStatus = 'ok';
+
+        // Check Database with latency
+        if ($this->env['ENABLE_DATABASE']) {
+            $checks['database'] = $this->checkDatabaseWithLatency();
+            if ($checks['database']['status'] !== 'ok') {
+                $overallStatus = 'degraded';
+            }
+        } else {
+            $checks['database'] = ['status' => 'disabled'];
+        }
+
+        // Check Redis with latency
+        if ($this->env['ENABLE_REDIS']) {
+            $checks['redis'] = $this->checkRedisWithLatency();
+            if ($checks['redis']['status'] !== 'ok') {
+                $overallStatus = 'degraded';
+            }
+        } else {
+            $checks['redis'] = ['status' => 'disabled'];
+        }
+
+        // Check Node Backend with latency
+        if ($this->isNodeBackendEnabled()) {
+            $checks['node-backend'] = $this->checkNodeBackendWithLatency();
+            if ($checks['node-backend']['status'] !== 'ok') {
+                $overallStatus = 'degraded';
+            }
+        } else {
+            $checks['node-backend'] = ['status' => 'disabled'];
+        }
+
+        // Check Node Frontend with latency (if framework mode)
+        if ($this->isNodeFrontendEnabled()) {
+            $checks['node-frontend'] = $this->checkNodeFrontendWithLatency();
+            if ($checks['node-frontend']['status'] !== 'ok') {
+                $overallStatus = 'degraded';
+            }
+        } else {
+            $checks['node-frontend'] = ['status' => 'disabled'];
+        }
+
+        return [
+            'status'      => $overallStatus,
+            'timestamp'   => date('c'),
+            'service'     => 'php-backend',
+            'environment' => $this->env['ENV'],
+            'uptime'      => $this->getUptime(),
+            'checks'      => $checks,
+        ];
+    }
+
+    /**
+     * Check if Node backend is enabled based on NODE_MODE
+     */
+    private function isNodeBackendEnabled(): bool
+    {
+        if (!$this->env['ENABLE_NODE']) {
+            return false;
+        }
+
+        $mode = $this->env['NODE_MODE'];
+
+        return in_array($mode, ['api', 'backend', 'assets-api', 'framework-api'], true);
+    }
+
+    /**
+     * Check if Node frontend is enabled based on NODE_MODE
+     */
+    private function isNodeFrontendEnabled(): bool
+    {
+        if (!$this->env['ENABLE_NODE']) {
+            return false;
+        }
+
+        $mode = $this->env['NODE_MODE'];
+
+        return str_contains((string) $mode, 'framework');
+    }
+
+    /**
+     * Get system uptime in seconds
+     */
+    private function getUptime(): int
+    {
+        $uptime = (int) (file_get_contents('/proc/uptime') ?: '0');
+
+        return $uptime > 0 ? $uptime : (int) (time() - $_SERVER['REQUEST_TIME']);
+    }
+
+    /**
+     * Check database connection with latency measurement
+     *
+     * @return array<string, mixed>
+     */
+    private function checkDatabaseWithLatency(): array
+    {
+        $config = new DatabaseConfig();
+        $dbType = $config->getType();
+
+        $requiredExt = $config->isPostgres() ? 'pdo_pgsql' : 'pdo_mysql';
+        if (!extension_loaded($requiredExt)) {
+            return [
+                'status'  => 'unhealthy',
+                'type'    => $dbType,
+                'message' => sprintf('PDO %s extension not installed', $dbType),
+            ];
+        }
+
+        $start = hrtime(true);
+
+        try {
+            $options = [
+                PDO::ATTR_TIMEOUT => 2,
+                PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+            ] + $config->getPdoSslOptions();
+
+            $pdo = new PDO($config->getDsn(), $config->getUser(), $config->getPassword(), $options);
+
+            $query = $config->isPostgres() ? 'SELECT 1' : 'SELECT 1';
+            $pdo->query($query);
+
+            $latencyMs = (int) ((hrtime(true) - $start) / 1_000_000);
+
+            return [
+                'status'     => 'ok',
+                'type'       => $dbType,
+                'latency_ms' => $latencyMs,
+            ];
+        } catch (Exception $exception) {
+            return [
+                'status'  => 'unhealthy',
+                'type'    => $dbType,
+                'message' => $exception->getMessage(),
+            ];
+        }
+    }
+
+    /**
+     * Check Redis connection with latency measurement
+     *
+     * @return array<string, mixed>
+     */
+    private function checkRedisWithLatency(): array
+    {
+        if (!extension_loaded('redis')) {
+            return [
+                'status'  => 'unhealthy',
+                'message' => 'Redis PHP extension not installed',
+            ];
+        }
+
+        $start = hrtime(true);
+
+        try {
+            $redis    = new Redis();
+            $redisUrl = $_ENV['REDIS_URL'] ?? getenv('REDIS_URL') ?: 'rediss://redis:6379';
+            $useTls   = str_starts_with((string) $redisUrl, 'rediss://');
+
+            $parsedUrl = parse_url((string) $redisUrl);
+            $host      = $parsedUrl['host'] ?? 'redis';
+            $port      = $parsedUrl['port'] ?? 6379;
+
+            if ($useTls) {
+                $connected = $redis->connect($host, $port, 2, '', 0, 0, [
+                    'stream' => [
+                        'verify_peer'       => false,
+                        'verify_peer_name'  => false,
+                        'allow_self_signed' => true,
+                    ],
+                ]);
+            } else {
+                $connected = $redis->connect($host, $port, 2);
+            }
+
+            if (!$connected) {
+                return [
+                    'status'  => 'unhealthy',
+                    'message' => 'Could not connect to Redis',
+                ];
+            }
+
+            $redis->ping();
+            $redis->close();
+
+            $latencyMs = (int) ((hrtime(true) - $start) / 1_000_000);
+
+            return [
+                'status'     => 'ok',
+                'latency_ms' => $latencyMs,
+            ];
+        } catch (Exception $exception) {
+            return [
+                'status'  => 'unhealthy',
+                'message' => $exception->getMessage(),
+            ];
+        }
+    }
+
+    /**
+     * Check Node.js Backend with latency measurement
+     *
+     * @return array<string, mixed>
+     */
+    private function checkNodeBackendWithLatency(): array
+    {
+        $start = hrtime(true);
+
+        try {
+            $url     = 'https://node-backend:3000/health';
+            $context = stream_context_create([
+                'http' => [
+                    'timeout'       => 2,
+                    'ignore_errors' => true,
+                ],
+                'ssl' => [
+                    'verify_peer'       => false,
+                    'verify_peer_name'  => false,
+                    'allow_self_signed' => true,
+                ],
+            ]);
+
+            $response = $this->fetchUrl($url, $context);
+
+            $latencyMs = (int) ((hrtime(true) - $start) / 1_000_000);
+
+            if ($response === false) {
+                return [
+                    'status'  => 'unhealthy',
+                    'message' => 'Node backend not reachable',
+                ];
+            }
+
+            return [
+                'status'     => 'ok',
+                'latency_ms' => $latencyMs,
+            ];
+        } catch (Exception $exception) {
+            return [
+                'status'  => 'unhealthy',
+                'message' => $exception->getMessage(),
+            ];
+        }
+    }
+
+    /**
+     * Check Node.js Frontend with latency measurement
+     *
+     * @return array<string, mixed>
+     */
+    private function checkNodeFrontendWithLatency(): array
+    {
+        $start = hrtime(true);
+
+        try {
+            $url     = 'https://node:3001/';
+            $context = stream_context_create([
+                'http' => [
+                    'timeout'       => 2,
+                    'ignore_errors' => true,
+                    'method'        => 'HEAD',
+                ],
+                'ssl' => [
+                    'verify_peer'       => false,
+                    'verify_peer_name'  => false,
+                    'allow_self_signed' => true,
+                ],
+            ]);
+
+            $response = $this->fetchUrl($url, $context);
+
+            $latencyMs = (int) ((hrtime(true) - $start) / 1_000_000);
+
+            if ($response === false) {
+                return [
+                    'status'  => 'unhealthy',
+                    'message' => 'Node frontend not reachable',
+                ];
+            }
+
+            return [
+                'status'     => 'ok',
+                'latency_ms' => $latencyMs,
+            ];
+        } catch (Exception $exception) {
+            return [
+                'status'  => 'unhealthy',
+                'message' => $exception->getMessage(),
+            ];
+        }
+    }
+
+    /**
      * Check Mercure connection
      */
     private function checkMercure(): void

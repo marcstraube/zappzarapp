@@ -22,6 +22,8 @@ services:
       - TZ=${TZ:-UTC}
       - NGINX_SSL_PORT=${NGINX_SSL_PORT:-8443}
       - ENABLE_PHP=${ENABLE_PHP:-true}
+      - ENABLE_NODE=${ENABLE_NODE:-false}
+      - NODE_MODE=${NODE_MODE:-assets-api}
     ports:
       - "${NGINX_PORT:-8080}:8080"
       - "${NGINX_SSL_PORT:-8443}:${NGINX_SSL_PORT:-8443}"
