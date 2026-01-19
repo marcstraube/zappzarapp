@@ -72,6 +72,16 @@ Documentation comments added to explain this pattern in affected Dockerfiles.
 - `docker/php/Dockerfile`
 - `docker/postgres/Dockerfile`
 
+#### Claude Code: /backlog Command
+
+New slash command for consistent backlog task management:
+
+- `--add` - Add new task with guided workflow (priority, context, files)
+- `--list [--priority <level>]` - Show/filter tasks
+- `--choose` - Interactive task selection via AskUserQuestion
+- `--remove <task>` - Remove task with reason prompt (archived)
+- `--promote/--demote <task>` - Change task priority
+
 ### Version 3.46 (2026-01-18) - Dev-Tools Container & GOSS Centralization
 
 Dedicated dev-tools container for Git hooks and Makefile commands. Centralized

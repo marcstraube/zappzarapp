@@ -83,6 +83,7 @@ Available commands in `.claude/commands/`:
 | `/commit` | Guided commit workflow with quality checks |
 | `/changelog` | Generate changelog from session logs |
 | `/learnings` | View, search, and aggregate project learnings |
+| `/backlog` | Manage backlog tasks (add, list, prioritize) |
 | `/sync-check` | Check configuration files for sync |
 | `/quality-audit` | Comprehensive quality audit with progress tracking |
 | `/security-audit` | Security audit of all components |
