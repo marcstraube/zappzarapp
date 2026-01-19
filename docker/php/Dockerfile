@@ -216,6 +216,8 @@ FROM production-base AS production
 # Copy built frontend assets from Node backend build stage
 # This allows serving production-built Vite assets via NGINX
 # Note: node-backend image must be built first (see Makefile build order)
+# Note: :latest tag is an alias created by Makefile during production build
+#       for cross-image COPY compatibility (BuildKit doesn't support variables in --from)
 COPY --from=zappzarapp-node-backend:latest --chown=www-data:www-data /app/public/build/ ./public/build/
 
 # Optimize Autoloader, Cleanup & Permission Hardening

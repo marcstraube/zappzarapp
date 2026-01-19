@@ -3,6 +3,9 @@
 # Centralized GOSS version pinning for all container tests.
 # Other Dockerfiles use: COPY --from=zappzarapp-goss:latest /usr/bin/goss /usr/local/bin/goss
 #
+# Note: :latest is appropriate here because goss is a single-stage utility image
+# used only in CI test stages. The Makefile builds this image once with :latest tag.
+#
 # Version Pinning:
 # - Check https://github.com/goss-org/goss/releases for updates
 # - For SHA digest pinning in production, use:

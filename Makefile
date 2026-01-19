@@ -231,6 +231,7 @@ build: ## Build Docker images (optionally specify service names: make build php 
 				export PHP_TARGET="$${PHP_TARGET:-$$PHP_TARGET_AUTO}"; \
 				echo -e "\033[0;34mBuilding Node images first (NODE_TARGET=$$NODE_TARGET, NGINX_TARGET=$$NGINX_TARGET, PHP_TARGET=$$PHP_TARGET)...\033[0m" && \
 				$(DC) -f compose.yaml -f compose.production.yaml $$PROFILES build node node-backend 2>/dev/null || true && \
+				docker tag zappzarapp-node-backend:$$NODE_BACKEND_TARGET zappzarapp-node-backend:latest 2>/dev/null || true && \
 				echo -e "\033[0;34mBuilding remaining images...\033[0m" && \
 				$(DC) -f compose.yaml -f compose.production.yaml $$PROFILES build; \
 			else \
@@ -312,6 +313,7 @@ build-no-cache: ## Build Docker images without cache (optionally specify service
 				export PHP_TARGET="$${PHP_TARGET:-$$PHP_TARGET_AUTO}"; \
 				echo -e "\033[0;34mBuilding Node images first (NODE_TARGET=$$NODE_TARGET, NGINX_TARGET=$$NGINX_TARGET, PHP_TARGET=$$PHP_TARGET)...\033[0m" && \
 				$(DC) -f compose.yaml -f compose.production.yaml $$PROFILES build --no-cache node node-backend 2>/dev/null || true && \
+				docker tag zappzarapp-node-backend:$$NODE_BACKEND_TARGET zappzarapp-node-backend:latest 2>/dev/null || true && \
 				echo -e "\033[0;34mBuilding remaining images...\033[0m" && \
 				$(DC) -f compose.yaml -f compose.production.yaml $$PROFILES build --no-cache; \
 			else \

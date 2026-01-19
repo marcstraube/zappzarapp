@@ -49,11 +49,26 @@ DC_RUN := COMPOSE_PROFILES=php,node,node-backend,dev-tools $(DC)
 - **Postgres:** Added `ARG PG_CRON_VERSION` after FROM (scope fix)
 - **compose.yaml:** Added `target: base` for redis, `target: final` for postgres
 
+#### Cross-Image `:latest` Alias
+
+Production nginx/php stages use `COPY --from=zappzarapp-node-backend:latest` to
+copy Vite assets. Since BuildKit doesn't support variables in `--from`, the
+Makefile now creates a `:latest` alias after building node-backend in
+production:
+
+```makefile
+docker tag zappzarapp-node-backend:$NODE_BACKEND_TARGET zappzarapp-node-backend:latest
+```
+
+Documentation comments added to explain this pattern in affected Dockerfiles.
+
 **Affected files:**
 
 - `compose.yaml`
 - `compose.override.yaml`
 - `Makefile`
+- `docker/goss/Dockerfile`
+- `docker/nginx/Dockerfile`
 - `docker/php/Dockerfile`
 - `docker/postgres/Dockerfile`
 

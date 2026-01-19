@@ -87,6 +87,8 @@ COPY --chown=nginx:nginx public/ /var/www/html/public/
 # Copy built frontend assets from Node backend build stage
 # This allows NGINX to serve production-built Vite assets directly
 # Note: node-backend image must be built first (see Makefile build order)
+# Note: :latest tag is an alias created by Makefile during production build
+#       for cross-image COPY compatibility (BuildKit doesn't support variables in --from)
 COPY --from=zappzarapp-node-backend:latest --chown=nginx:nginx /app/public/build/ /var/www/html/public/build/
 
 # Harden permissions (read-only for content, nginx user owns it)
