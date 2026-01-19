@@ -254,7 +254,8 @@ docker compose exec php php -r "echo file_get_contents('/run/secrets/db_password
    periodically
 3. **Preserve encryption keys** - Only rotate with `make secrets-rotate` if keys
    are compromised
-4. **Use external secrets in production** - Kubernetes, HashiCorp Vault, or cloud providers
+4. **Use external secrets in production** - Kubernetes, HashiCorp Vault, or
+   cloud providers
 5. **Audit access** - Monitor who has access to secret files on the host
 6. **Backup securely** - If backing up secrets, encrypt the backup separately
 

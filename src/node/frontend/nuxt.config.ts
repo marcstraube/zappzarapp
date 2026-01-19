@@ -8,7 +8,7 @@ export default defineNuxtConfig({
   // Zappzarapp Infrastructure Settings
   devServer: {
     host: '0.0.0.0', // Required for Docker
-    port: 3001,      // Frontend port (backend uses 3000)
+    port: 3001, // Frontend port (backend uses 3000)
   },
 
   // API Proxy: Route /api/backend/* to Express backend

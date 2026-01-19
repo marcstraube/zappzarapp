@@ -1,6 +1,7 @@
 # Frontend Scaffolding
 
-The `src/node/frontend/` directory is the workspace for Node.js frontend frameworks.
+The `src/node/frontend/` directory is the workspace for Node.js frontend
+frameworks.
 
 ## Scaffolding
 
