@@ -100,8 +100,6 @@ Thumbs.db
 # Claude Code (keep commands, docs and templates, ignore runtime state)
 .claude/*
 !.claude/commands/
-!.claude/sessions/
-.claude/sessions/*
 !.claude/sessions/SESSION-TEMPLATE.md
 !.claude/CLAUDE.md
 !.claude/LEARNINGS.md

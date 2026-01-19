@@ -88,6 +88,7 @@ Available commands in `.claude/commands/`:
 | `/security-audit` | Security audit of all components |
 | `/docs-audit` | Documentation validation |
 | `/docs-review` | Interactive documentation review |
+| `/optimize` | Self-optimization of config, learnings, commands |
 
 ## Git & Commits
 
