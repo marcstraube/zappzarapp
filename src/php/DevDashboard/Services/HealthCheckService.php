@@ -207,7 +207,9 @@ class HealthCheckService
         $host = 'postgres';
         $port = 5432;
 
-        $socket = $this->safeSocketOpen($host, $port, $_errno, $errstr, 1);
+        $errno  = null;
+        $errstr = null;
+        $socket = $this->safeSocketOpen($host, $port, $errno, $errstr, 1);
         if ($socket) {
             fclose($socket);
             return ['connected' => true, 'host' => $host, 'port' => $port];
@@ -227,7 +229,9 @@ class HealthCheckService
         $host = 'mariadb';
         $port = 3306;
 
-        $socket = $this->safeSocketOpen($host, $port, $_errno, $errstr, 1);
+        $errno  = null;
+        $errstr = null;
+        $socket = $this->safeSocketOpen($host, $port, $errno, $errstr, 1);
         if ($socket) {
             fclose($socket);
             return ['connected' => true, 'host' => $host, 'port' => $port];
@@ -247,7 +251,9 @@ class HealthCheckService
         $host = 'redis';
         $port = 6379;
 
-        $socket = $this->safeSocketOpen($host, $port, $_errno, $errstr, 1);
+        $errno  = null;
+        $errstr = null;
+        $socket = $this->safeSocketOpen($host, $port, $errno, $errstr, 1);
         if ($socket) {
             fclose($socket);
             return ['connected' => true, 'host' => $host, 'port' => $port];
@@ -267,7 +273,9 @@ class HealthCheckService
         $host = 'mercure';
         $port = 443;
 
-        $socket = $this->safeSocketOpen($host, $port, $_errno, $errstr, 1);
+        $errno  = null;
+        $errstr = null;
+        $socket = $this->safeSocketOpen($host, $port, $errno, $errstr, 1);
         if ($socket) {
             fclose($socket);
             return ['connected' => true, 'host' => $host, 'port' => $port, 'tls' => true];
@@ -287,7 +295,9 @@ class HealthCheckService
         $host = 'meilisearch';
         $port = 7700;
 
-        $socket = $this->safeSocketOpen($host, $port, $_errno, $errstr, 1);
+        $errno  = null;
+        $errstr = null;
+        $socket = $this->safeSocketOpen($host, $port, $errno, $errstr, 1);
         if ($socket) {
             fclose($socket);
             return ['connected' => true, 'host' => $host, 'port' => $port, 'tls' => true];
@@ -307,7 +317,9 @@ class HealthCheckService
         $host = 'elasticsearch';
         $port = 9200;
 
-        $socket = $this->safeSocketOpen($host, $port, $_errno, $errstr, 1);
+        $errno  = null;
+        $errstr = null;
+        $socket = $this->safeSocketOpen($host, $port, $errno, $errstr, 1);
         if ($socket) {
             fclose($socket);
             return ['connected' => true, 'host' => $host, 'port' => $port, 'tls' => true];
@@ -327,7 +339,9 @@ class HealthCheckService
         $host = 'mailpit';
         $port = 8025;
 
-        $socket = $this->safeSocketOpen($host, $port, $_errno, $errstr, 1);
+        $errno  = null;
+        $errstr = null;
+        $socket = $this->safeSocketOpen($host, $port, $errno, $errstr, 1);
         if ($socket) {
             fclose($socket);
             return ['connected' => true, 'host' => $host, 'port' => $port];
@@ -347,7 +361,9 @@ class HealthCheckService
         $host = 'minio';
         $port = 9000;
 
-        $socket = $this->safeSocketOpen($host, $port, $_errno, $errstr, 1);
+        $errno  = null;
+        $errstr = null;
+        $socket = $this->safeSocketOpen($host, $port, $errno, $errstr, 1);
         if ($socket) {
             fclose($socket);
             return ['connected' => true, 'host' => $host, 'port' => $port];
@@ -367,7 +383,9 @@ class HealthCheckService
         $host = 'rabbitmq';
         $port = 5672;
 
-        $socket = $this->safeSocketOpen($host, $port, $_errno, $errstr, 1);
+        $errno  = null;
+        $errstr = null;
+        $socket = $this->safeSocketOpen($host, $port, $errno, $errstr, 1);
         if ($socket) {
             fclose($socket);
             return ['connected' => true, 'host' => $host, 'port' => $port];
@@ -595,7 +613,9 @@ class HealthCheckService
         $host = 'node-backend';
         $port = 3000;
 
-        $socket = $this->safeSocketOpen($host, $port, $_errno, $errstr, 1);
+        $errno  = null;
+        $errstr = null;
+        $socket = $this->safeSocketOpen($host, $port, $errno, $errstr, 1);
         if ($socket) {
             fclose($socket);
             return [
@@ -620,7 +640,9 @@ class HealthCheckService
     private function checkNginx(): array
     {
         // Check if we can connect to nginx
-        $socket = $this->safeSocketOpen('nginx', 8080, $_errno, $errstr, 1);
+        $errno  = null;
+        $errstr = null;
+        $socket = $this->safeSocketOpen('nginx', 8080, $errno, $errstr, 1);
         if ($socket) {
             fclose($socket);
             return [

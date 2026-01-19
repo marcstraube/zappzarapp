@@ -197,7 +197,9 @@ class ViteHelper
         }
 
         // Try to connect to Vite dev server via Node container
-        $socket = $this->safeSocketOpen('node', 5173, $_errno, $errstr, 1);
+        $errno  = null;
+        $errstr = null;
+        $socket = $this->safeSocketOpen('node', 5173, $errno, $errstr, 1);
         if ($socket !== false) {
             fclose($socket);
 

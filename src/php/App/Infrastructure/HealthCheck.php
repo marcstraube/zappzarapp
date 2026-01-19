@@ -502,7 +502,9 @@ class HealthCheck
      */
     private function checkTcpConnection(string $host, int $port): array
     {
-        $socket = $this->safeSocketOpen($host, $port, $_errno, $errstr, 2);
+        $errno  = null;
+        $errstr = null;
+        $socket = $this->safeSocketOpen($host, $port, $errno, $errstr, 2);
 
         if ($socket) {
             fclose($socket);
