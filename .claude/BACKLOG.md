@@ -220,28 +220,6 @@ Future tasks and improvements to be implemented.
 
 ### Quick Wins
 
-#### Container Security Scanning: Add Node Images
-
-**Status:** Planned
-**Created:** 2026-01-19
-**Context:** Trivy fully integrated but `security-scan` only covers PHP + Nginx
-
-**Current state (already working):**
-- `make security-scan` - scans PHP + Nginx images ✅
-- `make security-sbom` - generates SBOM ✅
-- `make security-config` - scans Dockerfiles ✅
-- CI/CD integration (GitHub + GitLab) ✅
-- Documentation complete ✅
-
-**Missing:** Node and Node-Backend images not included in `security-scan`
-
-**Task:** Extend `make security-scan` to also scan:
-- `zappzarapp-node:latest`
-- `zappzarapp-node-backend:latest`
-
-**Files to modify:**
-- `Makefile` (extend `security-scan` target)
-
 ---
 
 #### pnpm Update

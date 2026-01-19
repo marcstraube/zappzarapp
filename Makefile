@@ -1956,6 +1956,16 @@ security-scan: ## Scan Docker images for vulnerabilities
 		docker run --rm -v /var/run/docker.sock:/var/run/docker.sock \
 			aquasec/trivy:latest image --severity HIGH,CRITICAL \
 			$${COMPOSE_PROJECT_NAME:-zappzarapp}-nginx:latest 2>/dev/null || \
+			echo "⚠️  Image not found. Run 'make build' first." && \
+		echo "\nScanning Node image..." && \
+		docker run --rm -v /var/run/docker.sock:/var/run/docker.sock \
+			aquasec/trivy:latest image --severity HIGH,CRITICAL \
+			$${COMPOSE_PROJECT_NAME:-zappzarapp}-node:latest 2>/dev/null || \
+			echo "⚠️  Image not found. Run 'make build' first." && \
+		echo "\nScanning Node-Backend image..." && \
+		docker run --rm -v /var/run/docker.sock:/var/run/docker.sock \
+			aquasec/trivy:latest image --severity HIGH,CRITICAL \
+			$${COMPOSE_PROJECT_NAME:-zappzarapp}-node-backend:latest 2>/dev/null || \
 			echo "⚠️  Image not found. Run 'make build' first."; \
 	fi
 	@echo -e "\033[0;32mSecurity scan completed!\033[0m"
