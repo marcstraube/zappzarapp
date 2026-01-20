@@ -11,6 +11,20 @@
       "Bash(ENABLE_SEAWEEDFS=true docker compose:*)",
       "Bash(HOOK_RUNNER_VERBOSE=1 ./docker/hooks/hook-runner.sh:*)",
       "Bash(VERBOSE=1 ./tests/goss/preset-runner.sh:*)"
+    ],
+    "deny": [
+      "Bash(composer install:*)",
+      "Bash(composer update:*)",
+      "Bash(composer require:*)",
+      "Bash(composer remove:*)",
+      "Bash(pnpm install:*)",
+      "Bash(pnpm add:*)",
+      "Bash(pnpm remove:*)",
+      "Bash(pnpm update:*)",
+      "Bash(npm install:*)",
+      "Bash(npm add:*)",
+      "Bash(npm remove:*)",
+      "Bash(npm update:*)"
     ]
   },
   "hooks": {

@@ -17,8 +17,10 @@
 
 When ending a session (user confirms):
 1. Update session log with Summary, Open Items, Next Steps
-2. Run `/clear` to start fresh context
+2. Tell user: "Bitte `/clear` eingeben für neuen Kontext."
 3. New conversation will auto-start new session
+
+**Note:** `/clear` is a built-in CLI command - only the user can execute it.
 
 ---
 
@@ -131,6 +133,30 @@ Available commands in `.claude/commands/`:
 - **Never commit lockfiles** (`composer.lock`, `pnpm-lock.yaml`) - this is a boilerplate, users generate their own
 - After changes to Dockerfiles, compose.*, entrypoints, php.ini or other Docker configurations: rebuild containers (`make build-*`) and restart (`make down && make up`) for changes to take effect
 - For problems with Make commands or Docker: analyze and fix the root cause! Never manually edit files to work around tooling issues
+
+## Forbidden Commands
+
+**NEVER use local package managers for dependency changes.** Always use make targets:
+
+| ❌ Forbidden | ✅ Use instead |
+|--------------|----------------|
+| `composer install` | `make composer-install` |
+| `composer update` | `make composer-update` |
+| `composer require X` | `make composer CMD="require X"` |
+| `composer remove X` | `make composer CMD="remove X"` |
+| `pnpm install` | `make pnpm-install` |
+| `pnpm update` | `make pnpm-update` |
+| `pnpm add X` | `make pnpm CMD="add X"` |
+| `pnpm remove X` | `make pnpm CMD="remove X"` |
+| `npm install/add/update/remove` | Use pnpm equivalents above |
+
+**Allowed** (info only, no changes): `composer --version`, `composer show`, `pnpm list`, etc.
+
+**Why blocked?**
+- Ensures correct PHP/Node version (container vs local mismatch)
+- Guarantees consistent environment across team
+- Proper volume mounts and permissions
+- Lockfiles generated with correct platform
 
 ## Session Workflow
 
