@@ -96,11 +96,6 @@ Thumbs.db
 /.phpdoc/
 /tools/
 
-# Claude Code (keep commands, docs and templates, ignore runtime state)
+# Claude Code (only commit settings.json with permissions/deny rules)
 .claude/*
-!.claude/commands/
-!.claude/sessions/SESSION-TEMPLATE.md
-!.claude/CLAUDE.md
-!.claude/LEARNINGS.md
-!.claude/BACKLOG.md
 !.claude/settings.json

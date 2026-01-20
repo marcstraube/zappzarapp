@@ -41,6 +41,20 @@ development and Goss test containers, plus new factory reset capability.
 - `compose.override.yaml` — Service ordering standardized
 - `compose.production.yaml` — Service ordering standardized
 
+#### .claude/ Directory Policy
+
+- **Only `settings.json` is now committed** — Contains shared permissions and
+  denied commands
+- Removed from repo: CLAUDE.md, LEARNINGS.md, BACKLOG.md, commands/, sessions/
+- These files remain locally but are gitignored for user customization
+- Updated `documentation/CONTRIBUTING.md` with clarified policy
+
+#### Default Claude Hooks (settings.json)
+
+- **PostToolUse (Edit)** — Reminds to rebuild containers when Docker config
+  files are changed (Dockerfile, compose.yaml, entrypoint, php.ini, nginx.conf,
+  etc.)
+
 ---
 
 ### Version 3.59 (2026-01-20) - Security & Teamwork Hooks

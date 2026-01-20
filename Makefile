@@ -1897,15 +1897,27 @@ test-coverage: ## Generate coverage reports for PHP and Node.js - continues even
 
 test-php: ## Run PHPUnit tests
 	@echo -e "\033[0;33mRunning PHPUnit tests...\033[0m"
-	@docker compose exec php composer test
+	@if docker compose ps -q php 2>/dev/null | grep -q .; then \
+		docker compose exec php composer test; \
+	else \
+		docker compose run --rm php composer test; \
+	fi
 
 test-php-debug: ## Run PHPUnit tests with Xdebug enabled
 	@echo -e "\033[0;33mRunning PHPUnit with Xdebug (Step Debugging)...\033[0m"
-	@docker compose exec php sh -c 'XDEBUG_MODE=develop,debug composer test'
+	@if docker compose ps -q php 2>/dev/null | grep -q .; then \
+		docker compose exec php sh -c 'XDEBUG_MODE=develop,debug composer test'; \
+	else \
+		docker compose run --rm php sh -c 'XDEBUG_MODE=develop,debug composer test'; \
+	fi
 
 test-coverage-php: ## Generate PHPUnit coverage report (HTML in build/coverage/php)
 	@echo -e "\033[0;33mRunning PHPUnit with coverage report...\033[0m"
-	@docker compose exec php sh -c 'XDEBUG_MODE=coverage vendor/bin/phpunit --coverage-html build/coverage/php --coverage-clover build/coverage/php/clover.xml'
+	@if docker compose ps -q php 2>/dev/null | grep -q .; then \
+		docker compose exec php sh -c 'XDEBUG_MODE=coverage vendor/bin/phpunit --coverage-html build/coverage/php --coverage-clover build/coverage/php/clover.xml'; \
+	else \
+		docker compose run --rm php sh -c 'XDEBUG_MODE=coverage vendor/bin/phpunit --coverage-html build/coverage/php --coverage-clover build/coverage/php/clover.xml'; \
+	fi
 	@echo -e "\033[0;32mPHP coverage report generated in build/coverage/php/index.html!\033[0m"
 
 test-node: ## Run Vitest tests

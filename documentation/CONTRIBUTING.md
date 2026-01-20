@@ -20,10 +20,21 @@ project using this boilerplate will have its own lock files.
 
 Do not commit personal tool configurations:
 
-- `.claude/` - Claude Code settings
+- `.claude/*` - Claude Code (except `settings.json` which contains shared
+  permissions)
 - `.cursor/` - Cursor IDE settings
 - `.aider/` - Aider settings
 - Any other AI assistant or personal IDE configurations
+
+**Note:** `.claude/settings.json` is committed intentionally. It contains:
+
+- Allowed tool permissions for project-specific scripts
+- Denied commands (e.g., direct composer/pnpm usage to enforce make targets)
+- Default hooks (e.g., reminder to rebuild after Docker config changes)
+
+**Important:** If you create `.claude/settings.local.json` for personal
+settings, hooks are completely overwritten (not merged). Copy any desired hooks
+from `settings.json` to your local file.
 
 ## Development Workflow
 
