@@ -7,6 +7,36 @@
 A professional web development stack that gets you coding in minutes, not hours.
 No setup hassle, no reinventing the wheel - just clone, configure, and go.
 
+## Why zappzarapp?
+
+- **Dual-Language Stack** — PHP and Node.js as equal citizens, not an
+  afterthought
+- **Zero Configuration** — `make setup` handles everything: SSL certs, secrets,
+  dependencies, containers
+- **GDPR-Ready** — 3-tier network segmentation, encryption helpers, audit
+  logging infrastructure
+- **Production-Ready** — Same stack from development to deployment, no rebuild
+  required
+- **Full IDE Support** — Pre-configured for PHPStorm and VS Code (run configs,
+  debugging, database)
+- **Modular Architecture** — 7 stack presets from static sites to full-stack,
+  enable only what you need
+- **Optional Services** — Redis, Mercure, Meilisearch, Elasticsearch, Mailpit,
+  SeaweedFS, RabbitMQ — all pre-configured, one toggle away
+
+### Built for
+
+- Teams building PHP and/or Node.js applications
+- Projects requiring GDPR/compliance features
+- Developers who want to understand their stack, not just use it
+- Production deployments from day one
+
+### Consider alternatives if
+
+- Single-framework projects (Laravel, Symfony, Nest.js have dedicated tools)
+- CMS-focused work (Drupal, WordPress, TYPO3 have specialized environments)
+- Quick prototypes where Docker knowledge isn't desired
+
 ## Features
 
 - **PHP 8.4** with PHP-FPM and comprehensive extension support

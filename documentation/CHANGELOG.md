@@ -1,11 +1,31 @@
 # zappzarapp - Changelog
 
-**Erstellt:** 2025-12-19 **Letzte Aktualisierung:** 2026-01-20 (Bug Fixes & Goss
-Tests) **Version:** 3.57
+**Erstellt:** 2025-12-19 **Letzte Aktualisierung:** 2026-01-20 (README
+Positioning) **Version:** 3.58
 
 ---
 
 ## Changelog
+
+### Version 3.58 (2026-01-20) - README Positioning
+
+Added "Why zappzarapp?" section to README for clearer project positioning.
+
+#### New README Sections
+
+- **Why zappzarapp?** — 7 key benefits (Dual-Language Stack, Zero Configuration,
+  GDPR-Ready, Production-Ready, Full IDE Support, Modular Architecture, Optional
+  Services)
+- **Built for** — Target audience (PHP/Node teams, GDPR projects, developers who
+  want to understand their stack)
+- **Consider alternatives if** — Honest guidance for single-framework, CMS, or
+  quick prototype use cases
+
+#### Updated Files
+
+- `README.md` — Added positioning sections before Features
+
+---
 
 ### Version 3.57 (2026-01-20) - Bug Fixes & Goss Test Improvements
 
