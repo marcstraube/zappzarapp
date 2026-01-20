@@ -13,5 +13,9 @@
     <inspection_tool class="MarkdownIncorrectTableFormatting" enabled="false" level="WEAK WARNING" enabled_by_default="false" />
     <inspection_tool class="MarkdownIncorrectlyNumberedListItem" enabled="false" level="WEAK WARNING" enabled_by_default="false" />
     <inspection_tool class="MarkdownOutdatedTableOfContents" enabled="false" level="WEAK WARNING" enabled_by_default="false" />
+    <!-- PHP Tests: Disable inspections that conflict with test patterns -->
+    <inspection_tool class="PhpVariableUsedOnlyInClosureInspection" enabled="true" level="WEAK WARNING" enabled_by_default="true">
+      <scope name="Tests" level="INFORMATION" enabled="false" />
+    </inspection_tool>
   </profile>
 </component>

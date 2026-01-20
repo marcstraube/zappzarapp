@@ -75,12 +75,29 @@ export default [
       '@typescript-eslint/no-misused-promises': 'error',
       '@typescript-eslint/strict-boolean-expressions': 'warn',
 
+      // Redundant code detection (catches issues PHPStorm would flag)
+      '@typescript-eslint/no-unnecessary-condition': 'warn',
+      '@typescript-eslint/no-unnecessary-type-assertion': 'warn',
+      '@typescript-eslint/no-redundant-type-constituents': 'warn',
+      '@typescript-eslint/no-useless-empty-export': 'warn',
+
       // Code quality rules
       'no-console': ['warn', { allow: ['warn', 'error'] }],
       'prefer-const': 'error',
       'no-var': 'error',
       eqeqeq: ['error', 'always'],
       curly: ['error', 'all'],
+    },
+  },
+
+  // Test files - relax some rules that don't work well with mocks
+  {
+    files: ['tests/**/*.ts', '**/*.test.ts', '**/*.spec.ts'],
+    rules: {
+      // vi.mocked() returns unbound methods by design
+      '@typescript-eslint/unbound-method': 'off',
+      // Test functions often don't need explicit return types
+      '@typescript-eslint/explicit-function-return-type': 'off',
     },
   },
 

@@ -309,6 +309,7 @@ export class HealthCheckService {
         message: error instanceof Error ? error.message : 'Unknown error',
       };
     } finally {
+      // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- client is assigned in measureLatency callback
       if (client !== null) {
         try {
           await (client as RedisClientType).quit();

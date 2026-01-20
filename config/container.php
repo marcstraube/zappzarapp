@@ -14,11 +14,19 @@ declare(strict_types=1);
  * @see https://php-di.org/doc/php-definitions.html
  */
 
+use App\Infrastructure\Cache\CacheInterface;
+use App\Infrastructure\Cache\RedisCache;
+use App\Infrastructure\Session\RedisSession;
+use App\Infrastructure\Session\SessionInterface;
+
 use function DI\autowire;
 
 return [
-    // Example: Interface binding (uncomment when needed)
-    // \App\Infrastructure\Audit\AuditLoggerInterface::class => autowire(\App\Infrastructure\Audit\AuditLogger::class),
+    // Cache: Interface to Redis implementation
+    CacheInterface::class => autowire(RedisCache::class),
+
+    // Session: Interface to Redis implementation (uses CacheInterface internally)
+    SessionInterface::class => autowire(RedisSession::class),
 
     // Example: Factory definition (uncomment when needed)
     // PDO::class => function () {

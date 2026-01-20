@@ -8,6 +8,19 @@ and this project adheres to
 
 ## [Unreleased]
 
+### Added
+
+- Redis Cache and Session services for PHP (`CacheInterface`, `RedisCache`,
+  `SessionInterface`, `RedisSession`)
+- Redis Cache and Session services for Node.js (`CacheService`,
+  `SessionService`)
+- Full unit test coverage for all new services (46 tests)
+- TLS support for Redis connections (auto-detect `rediss://` URLs)
+- ESLint rules for redundant code detection (`no-unnecessary-condition`,
+  `no-unnecessary-type-assertion`)
+- PHPStorm inspection profile: disabled "variable only used in closure" for test
+  files
+
 ---
 
 [Unreleased]: https://github.com/marcstraube/zappzarapp/compare/v1.0.0...HEAD
