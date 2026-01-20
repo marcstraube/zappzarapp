@@ -5,6 +5,21 @@ boilerplate.
 
 Run `make help` to see all available commands with descriptions.
 
+## Filtering Help Output
+
+Use `FILTER=` to filter help output by category:
+
+```bash
+make help FILTER=?          # List all available categories
+make help FILTER=docker     # Docker-related commands
+make help FILTER=test       # Testing commands (Goss, PHPUnit, etc.)
+make help FILTER=setup      # Setup and installation commands
+make help FILTER=security   # Security-related commands
+```
+
+The filter is case-insensitive and matches category names. When filtering,
+available categories are shown at the end of the output for reference.
+
 ## Quick Reference
 
 | Task             | Command      |

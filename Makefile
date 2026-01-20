@@ -20,29 +20,55 @@ endef
 
 .PHONY: $(shell awk '/^[a-zA-Z_-]+:.*?## / { print $$1 }' $(MAKEFILE_LIST) | sed 's/://')
 
-help: ## Show this help
-	@awk 'BEGIN { \
-		FS = ":.*?## "; \
-		printf "\n\033[0;34mAvailable commands:\033[0m\n"; \
-	} \
-	/^##@/ { \
-		if (length(cmds) > 0) { \
-			print cmds | "sort"; \
-			close("sort"); \
-			cmds = ""; \
+help: ## Show this help (FILTER=? for categories, FILTER=<name> to filter)
+	@if [ "$(FILTER)" = "?" ] || [ "$(FILTER)" = "list" ]; then \
+		printf "\n\033[0;34mAvailable categories:\033[0m\n"; \
+		grep -oP '(?<=^##@ ).*' $(MAKEFILE_LIST) | while read -r cat; do \
+			printf "  \033[0;32m%s\033[0m\n" "$$cat"; \
+		done; \
+		printf "\n\033[0;90mUsage: make help FILTER=<category>\033[0m\n"; \
+	else \
+		awk -v filter="$(FILTER)" 'BEGIN { \
+			FS = ":.*?## "; \
+			if (filter == "") { \
+				printf "\n\033[0;34mAvailable commands:\033[0m\n"; \
+			} else { \
+				printf "\n\033[0;34mCommands matching \"%s\":\033[0m\n", filter; \
+			} \
+			show = (filter == "") ? 1 : 0; \
 		} \
-		printf "\n\033[0;34m%s\033[0m\n", substr($$0, 5); \
-		next; \
-	} \
-	/^[a-zA-Z_-]+:.*?## / { \
-		cmds = cmds $$1 "\t" $$2 "\n"; \
-	} \
-	END { \
-		if (length(cmds) > 0) { \
-			print cmds | "sort"; \
-			close("sort"); \
+		/^##@/ { \
+			if (show && length(cmds) > 0) { \
+				print cmds | "sort"; \
+				close("sort"); \
+				cmds = ""; \
+			} \
+			category = substr($$0, 5); \
+			if (filter == "" || tolower(category) ~ tolower(filter)) { \
+				show = 1; \
+				printf "\n\033[0;34m%s\033[0m\n", category; \
+			} else { \
+				show = 0; \
+			} \
+			next; \
 		} \
-	}' $(MAKEFILE_LIST) | awk 'BEGIN {FS="\t"} NF==2 {printf "  \033[0;32m%-35s\033[0m %s\n", $$1, $$2} NF!=2 {print}'
+		show && /^[a-zA-Z_-]+:.*?## / { \
+			cmds = cmds $$1 "\t" $$2 "\n"; \
+		} \
+		END { \
+			if (show && length(cmds) > 0) { \
+				print cmds | "sort"; \
+				close("sort"); \
+			} \
+			if (filter != "") { \
+				printf "\n\033[0;90mCategories: "; \
+				system("grep -oP \"(?<=^##@ ).*\" " ARGV[1] " | tr \"\\n\" \",\" | sed \"s/,$$//; s/,/, /g\""); \
+				printf "\033[0m\n"; \
+			} else { \
+				printf "\n\033[0;90mTip: Use FILTER=? to list categories, FILTER=<name> to filter\033[0m\n"; \
+			} \
+		}' $(MAKEFILE_LIST) | awk 'BEGIN {FS="\t"} NF==2 {printf "  \033[0;32m%-35s\033[0m %s\n", $$1, $$2} NF!=2 {print}'; \
+	fi
 
 ##@ Setup
 

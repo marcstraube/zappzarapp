@@ -1,11 +1,27 @@
 # zappzarapp - Changelog
 
-**Erstellt:** 2025-12-19 **Letzte Aktualisierung:** 2026-01-20 (Factory Reset)
-**Version:** 3.64
+**Erstellt:** 2025-12-19 **Letzte Aktualisierung:** 2026-01-20 (Help Filter)
+**Version:** 3.65
 
 ---
 
 ## Changelog
+
+### Version 3.65 (2026-01-20) - Help Filter
+
+Added category filter to `make help` for easier navigation.
+
+#### New Features
+
+- **`make help FILTER=<category>`** — Filter help output by category
+  - `FILTER=?` or `FILTER=list` shows all available categories
+  - Case-insensitive matching (e.g., `FILTER=docker`, `FILTER=Docker`)
+  - Shows matching category with all its commands
+  - Displays available categories at the end for reference
+  - Examples: `make help FILTER=?`, `make help FILTER=docker`,
+    `make help FILTER=test`
+
+---
 
 ### Version 3.64 (2026-01-20) - Factory Reset Improvements
 
