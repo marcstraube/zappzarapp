@@ -164,6 +164,50 @@ make logs php nginx        # Show combined logs of PHP and Nginx
 
 Without arguments, commands operate on all enabled services (based on `.env`).
 
+### Image Freshness Validation
+
+When running `make up`, the system automatically checks if Docker images are
+older than configuration files. This prevents issues where code changes aren't
+reflected because cached images are being used.
+
+**Checked files:**
+
+- `docker/*/Dockerfile` - Container build definitions
+- `docker/*/entrypoint*.sh` - Startup scripts
+- `compose.yaml`, `compose.override.yaml` - Service configuration
+- `.env` - Environment variables (NODE_MODE, ENV, etc.)
+
+**Behavior:**
+
+| Scenario             | What happens                                  |
+| -------------------- | --------------------------------------------- |
+| Images up-to-date    | Containers start normally                     |
+| Images outdated      | Warning + interactive prompt "Rebuild? [y/N]" |
+| Non-interactive (CI) | Warning + hint to run `make rebuild`          |
+
+**Flags:**
+
+```bash
+make up                    # Default: interactive prompt if outdated
+make up FORCE=1            # Auto-rebuild if outdated (no prompt)
+make up SKIP_VALIDATION=1  # Skip freshness check entirely (CI/CD)
+```
+
+**When to use each:**
+
+- **Default (interactive):** Daily development workflow
+- **FORCE=1:** Automated scripts, when you always want fresh images
+- **SKIP_VALIDATION=1:** CI/CD pipelines where images are built separately
+
+**Troubleshooting "Vite Dev Server Not Running":**
+
+If the welcome page shows "Vite Dev Server Not Running" after `make up`:
+
+1. Check if `make up` showed a freshness warning (images may be outdated)
+2. Run `make rebuild` to ensure fresh images
+3. Verify `NODE_MODE=assets-api` or `NODE_MODE=assets` in `.env`
+4. Check node container logs: `make logs-node`
+
 ### Container Information
 
 | Command              | Description                                         |

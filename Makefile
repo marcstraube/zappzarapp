@@ -408,7 +408,7 @@ build: ## Build Docker images (optionally specify service names: make build php 
 				case "$${NODE_MODE:-assets-api}" in \
 					assets|idle) PROFILES="$$PROFILES --profile node" ;; \
 					api) PROFILES="$$PROFILES --profile node-backend" ;; \
-					assets-api) PROFILES="$$PROFILES --profile node-backend" ;; \
+					assets-api) PROFILES="$$PROFILES --profile node --profile node-backend" ;; \
 					framework) PROFILES="$$PROFILES --profile node" ;; \
 					framework-api) PROFILES="$$PROFILES --profile node --profile node-backend" ;; \
 					*) PROFILES="$$PROFILES --profile node" ;; \
@@ -490,7 +490,7 @@ build-no-cache: ## Build Docker images without cache (optionally specify service
 				case "$${NODE_MODE:-assets-api}" in \
 					assets|idle) PROFILES="$$PROFILES --profile node" ;; \
 					api) PROFILES="$$PROFILES --profile node-backend" ;; \
-					assets-api) PROFILES="$$PROFILES --profile node-backend" ;; \
+					assets-api) PROFILES="$$PROFILES --profile node --profile node-backend" ;; \
 					framework) PROFILES="$$PROFILES --profile node" ;; \
 					framework-api) PROFILES="$$PROFILES --profile node --profile node-backend" ;; \
 					*) PROFILES="$$PROFILES --profile node" ;; \
@@ -847,6 +847,58 @@ up: ## Start containers (optionally specify service names: make up php nginx)
 		echo -e "\033[0;33m   For multi-node deployments, use 'make k8s-deploy' (Kubernetes).\033[0m"; \
 		echo ""; \
 	fi
+	@# ═══════════════════════════════════════════════════════════════════════════
+	@# IMAGE FRESHNESS VALIDATION
+	@# Checks if Docker images are older than configuration files.
+	@# Use SKIP_VALIDATION=1 to skip (CI), FORCE=1 to auto-rebuild.
+	@# ═══════════════════════════════════════════════════════════════════════════
+	@if [ "$(SKIP_VALIDATION)" != "1" ]; then \
+		$(LOAD_ENV); \
+		TAG="$$([ "$${ENV:-development}" = "production" ] && echo "" || echo ":development")"; \
+		STALE_FILES=""; \
+		CHECKED_IMAGES=0; \
+		for SERVICE in php node nginx; do \
+			IMAGE="zappzarapp-$${SERVICE}$${TAG}"; \
+			IMAGE_TIME=$$(docker inspect -f '{{.Created}}' "$$IMAGE" 2>/dev/null); \
+			if [ -n "$$IMAGE_TIME" ]; then \
+				CHECKED_IMAGES=$$((CHECKED_IMAGES + 1)); \
+				IMAGE_EPOCH=$$(date -d "$$IMAGE_TIME" +%s 2>/dev/null || echo "0"); \
+				for f in docker/$$SERVICE/Dockerfile \
+				         docker/$$SERVICE/entrypoint*.sh \
+				         compose.yaml compose.override.yaml .env; do \
+					if [ -f "$$f" ]; then \
+						FILE_EPOCH=$$(stat -c %Y "$$f" 2>/dev/null || echo "0"); \
+						if [ "$$FILE_EPOCH" -gt "$$IMAGE_EPOCH" ]; then \
+							case "$$STALE_FILES" in \
+								*"$$f"*) ;; \
+								*) STALE_FILES="$$STALE_FILES $$f" ;; \
+							esac; \
+						fi; \
+					fi; \
+				done; \
+			fi; \
+		done; \
+		if [ -n "$$STALE_FILES" ] && [ "$$CHECKED_IMAGES" -gt 0 ]; then \
+			echo -e "\033[0;33m⚠️  Docker images may be outdated!\033[0m"; \
+			echo -e "\033[0;33m   Changed since last build:$$STALE_FILES\033[0m"; \
+			echo ""; \
+			if [ "$(FORCE)" = "1" ]; then \
+				echo -e "\033[0;34m→ Auto-rebuilding (FORCE=1)...\033[0m"; \
+				$(MAKE) build; \
+			elif [ -t 0 ]; then \
+				echo -n "   Rebuild now? [y/N] "; \
+				read -r answer; \
+				if [ "$$answer" = "y" ] || [ "$$answer" = "Y" ]; then \
+					$(MAKE) build; \
+				else \
+					echo -e "\033[0;90m   Skipped. Run 'make rebuild' to update images.\033[0m"; \
+				fi; \
+			else \
+				echo -e "\033[0;90m   Run 'make rebuild' or 'make up FORCE=1' to update.\033[0m"; \
+			fi; \
+			echo ""; \
+		fi; \
+	fi
 	@SERVICES="$(filter-out $@,$(MAKECMDGOALS))"; \
 	if [ -n "$$SERVICES" ]; then \
 		echo -e "\033[0;33mStarting services: $$SERVICES...\033[0m"; \
@@ -892,7 +944,7 @@ up: ## Start containers (optionally specify service names: make up php nginx)
 			case "$${NODE_MODE:-assets-api}" in \
 				assets|idle) PROFILES="$$PROFILES --profile node" ;; \
 				api) PROFILES="$$PROFILES --profile node-backend" ;; \
-				assets-api) PROFILES="$$PROFILES --profile node-backend" ;; \
+				assets-api) PROFILES="$$PROFILES --profile node --profile node-backend" ;; \
 				framework) PROFILES="$$PROFILES --profile node" ;; \
 				framework-api) PROFILES="$$PROFILES --profile node --profile node-backend" ;; \
 				*) PROFILES="$$PROFILES --profile node" ;; \
