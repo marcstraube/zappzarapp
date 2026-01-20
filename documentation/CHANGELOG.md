@@ -1,11 +1,23 @@
 # zappzarapp - Changelog
 
-**Erstellt:** 2025-12-19 **Letzte Aktualisierung:** 2026-01-20 (Unknown Target
-Error) **Version:** 3.66
+**Erstellt:** 2025-12-19 **Letzte Aktualisierung:** 2026-01-20 (Welcome Page
+Quickstart) **Version:** 3.67
 
 ---
 
 ## Changelog
+
+### Version 3.67 (2026-01-20) - Welcome Page Quickstart
+
+Updated welcome page quickstart to reflect current setup workflow.
+
+#### Documentation
+
+- **Simplified quickstart** — Now just `make setup` + `make check-health`
+- **Fixed NODE_MODE values** — `static-api` → `assets-api`, `static` → `assets`
+- **Updated .env references** — Changed to `.env.local (overrides .env)`
+
+---
 
 ### Version 3.66 (2026-01-20) - Unknown Target Error
 

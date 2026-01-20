@@ -119,7 +119,7 @@ use App\Infrastructure\ViteHelper;
             <li><a href="/status" style="color: #007bff; text-decoration: none;"><strong>GET /status</strong></a> - Full status overview (all services)</li>
             <li><a href="/health.php" style="color: #007bff; text-decoration: none;"><strong>GET /health.php</strong></a> - Docker HEALTHCHECK (minimal overhead)</li>
             <!-- Node.js API -->
-            <?php if ($env['ENABLE_NODE'] && in_array($env['NODE_MODE'], ['static-api', 'api'], true)): ?>
+            <?php if ($env['ENABLE_NODE'] && in_array($env['NODE_MODE'], ['assets-api', 'api'], true)): ?>
             <li><a href="/api/node/hello" style="color: #007bff; text-decoration: none;"><strong>GET /api/node/hello</strong></a> - Node.js Hello endpoint (?name=)</li>
             <li>
                 <strong>POST /api/node/echo</strong> - Echo request body (JSON)
@@ -178,13 +178,11 @@ use App\Infrastructure\ViteHelper;
         <h2>📚 Quick Start</h2>
 
         <h3 style="margin-top: 1rem;">🚀 Initial Setup (First Time)</h3>
-        <pre style="background: #f5f5f5; padding: 0.5rem; border-radius: 4px; overflow-x: auto;"># 1. Initialize project (copy .env.example to .env)
-make init
+        <pre style="background: #f5f5f5; padding: 0.5rem; border-radius: 4px; overflow-x: auto;"># Full setup - creates directories, auto-detects user IDs, installs dependencies
+make setup
 
-# 2. Edit .env: Adjust USER_ID, GROUP_ID to match your host user (id -u, id -g)
-
-# 3. Full setup (build, install dependencies, start containers)
-make setup</pre>
+# Verify installation
+make check-health</pre>
 
         <h3 style="margin-top: 1rem;">💻 Daily Development</h3>
         <pre style="background: #f5f5f5; padding: 0.5rem; border-radius: 4px; overflow-x: auto;"># Start services (uses existing images)
@@ -202,7 +200,7 @@ make logs php             # View logs of specific services
 make build php            # Build specific images</pre>
 
         <h3 style="margin-top: 1rem;">⚙️ Service Configuration</h3>
-        <pre style="background: #f5f5f5; padding: 0.5rem; border-radius: 4px; overflow-x: auto;"># Enable/disable services in .env:
+        <pre style="background: #f5f5f5; padding: 0.5rem; border-radius: 4px; overflow-x: auto;"># Enable/disable services in .env.local (overrides .env):
 ENABLE_PHP=true       # PHP-FPM
 ENABLE_NODE=true      # Node.js (Vite + Backend)
 ENABLE_DATABASE=true  # Database container
@@ -211,8 +209,8 @@ ENABLE_REDIS=true     # Redis Cache
 # Database type (postgres or mariadb)
 DB_TYPE=postgres
 
-# Node.js mode (static-api|static|api|framework|framework-api|idle)
-NODE_MODE=static-api</pre>
+# Node.js mode (assets-api|assets|api|framework|framework-api|idle)
+NODE_MODE=assets-api</pre>
     </div>
 
     <?php if ($vite->isDevelopment()): ?>
