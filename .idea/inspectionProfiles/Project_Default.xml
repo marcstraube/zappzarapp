@@ -17,5 +17,16 @@
     <inspection_tool class="PhpVariableUsedOnlyInClosureInspection" enabled="true" level="WEAK WARNING" enabled_by_default="true">
       <scope name="Tests" level="INFORMATION" enabled="false" />
     </inspection_tool>
+    <!-- Grazie Grammar: Disable in source code (telegraphic style is standard in PHPDoc/JSDoc) -->
+    <inspection_tool class="GrazieInspection" enabled="true" level="GRAMMAR_ERROR" enabled_by_default="true">
+      <scope name="Source and Tests" level="GRAMMAR_ERROR" enabled="false" />
+    </inspection_tool>
+    <inspection_tool class="LanguageDetectionInspection" enabled="true" level="WARNING" enabled_by_default="true">
+      <scope name="Source and Tests" level="WARNING" enabled="false" />
+    </inspection_tool>
+    <!-- Spellchecker: Keep enabled but lower severity in code -->
+    <inspection_tool class="SpellCheckingInspection" enabled="true" level="TYPO" enabled_by_default="true">
+      <scope name="Source and Tests" level="INFORMATION" enabled="true" />
+    </inspection_tool>
   </profile>
 </component>

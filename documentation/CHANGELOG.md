@@ -1,11 +1,43 @@
 # zappzarapp - Changelog
 
-**Erstellt:** 2025-12-19 **Letzte Aktualisierung:** 2026-01-20 (Welcome Page
-Quickstart) **Version:** 3.67
+**Erstellt:** 2025-12-19 **Letzte Aktualisierung:** 2026-01-20 (RabbitMQ Queue
+Service) **Version:** 3.68
 
 ---
 
 ## Changelog
+
+### Version 3.68 (2026-01-20) - RabbitMQ Queue Service
+
+Added production-ready RabbitMQ queue services for PHP and Node.js.
+
+#### New Features
+
+- **PHP QueueInterface + RabbitMQQueue** — Generic queue interface with RabbitMQ
+  implementation
+  - Lazy connection, TLS support (amqps://), Docker secrets integration
+  - Methods: publish, consume, get, ack, nack, declareQueue, getMessageCount,
+    purgeQueue, isAvailable
+  - Extracted RabbitMQConfig class for clean separation of concerns
+  - Full unit tests (26 tests)
+
+- **Node.js QueueService** — TypeScript RabbitMQ service following same patterns
+  - Interface + implementation pattern matching CacheService/SessionService
+  - Full unit tests (15 tests)
+
+#### IDE Configuration
+
+- **PhpStorm Grazie disabled** for src/tests/ — Grammar checks only in
+  documentation/
+- **VS Code LTeX configured** — Same scope exclusions for parity
+- **Project dictionaries expanded** — 82 technical terms for both IDEs
+
+#### Dependencies
+
+- `php-amqplib/php-amqplib ^3.7` (PHP)
+- `amqplib ^0.10.9` + `@types/amqplib ^0.10.8` (Node.js)
+
+---
 
 ### Version 3.67 (2026-01-20) - Welcome Page Quickstart
 

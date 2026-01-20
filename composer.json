@@ -25,6 +25,7 @@
         "ext-pdo": "*",
         "ext-redis": "*",
         "monolog/monolog": "^3.9",
+        "php-amqplib/php-amqplib": "^3.7",
         "php-di/php-di": "^7.1"
     },
     "require-dev": {

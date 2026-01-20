@@ -6,7 +6,7 @@ allowed-tools:
   AskUserQuestion
 argument-hint:
   --add | --list | --choose | --remove <task> | --promote <task> | --demote
-  <task>
+  <task> | --reprioritize
 ---
 
 # Backlog Management
@@ -25,6 +25,7 @@ Parse `$ARGUMENTS`:
 - `--remove <task-name>`: Remove a task (with reason prompt)
 - `--promote <task-name>`: Move task to higher priority
 - `--demote <task-name>`: Move task to lower priority
+- `--reprioritize`: Analyze all tasks and suggest priority changes
 
 **Target Parameter (for --list and --add):**
 
@@ -571,6 +572,121 @@ Move a task to lower priority:
 
 ---
 
+## Workflow: Reprioritize (`--reprioritize`)
+
+Analyze all tasks and suggest priority changes based on multiple criteria.
+
+### Step 1: Read All Backlogs
+
+Read both project and user backlogs (if they exist) to get a complete picture.
+
+### Step 2: Filter and Analyze Tasks
+
+**Exclude from analysis:**
+
+- Tasks with `**Status:** In Progress` (actively being worked on)
+- Tasks with `**Status:** Blocked` (waiting on external dependency)
+
+**Evaluate remaining tasks** against these criteria:
+
+| Criterion             | Impact                                      |
+| --------------------- | ------------------------------------------- |
+| **Blocker Analysis**  | Task X blocks Task Y → X should be higher   |
+| **Prerequisites**     | Dependencies must be completed first        |
+| **Quick Wins**        | Small scope + high value → promote          |
+| **Release Relevance** | v1.0 blockers → High Priority               |
+| **Age**               | Tasks open >30 days → review relevance      |
+| **Technical Debt**    | Accumulated debt → address medium-term      |
+| **Duplicates**        | Similar tasks → suggest consolidation       |
+| **Stale Tasks**       | No progress, unclear goal → suggest removal |
+
+### Step 3: Generate Recommendations
+
+Present findings grouped by action type:
+
+```text
+Backlog Reprioritization Analysis
+════════════════════════════════════════════════
+
+📊 Summary: 15 tasks analyzed, 5 recommendations
+
+⬆️  PROMOTE (2 tasks)
+────────────────────────────────────────────────
+1. Shell Script Linting
+   Current:  Medium Priority (Infrastructure)
+   Suggest:  High Priority
+   Reason:   Prerequisite for "Markdown Code Linting" task
+
+2. Docker Compose Validation
+   Current:  Medium Priority (Infrastructure)
+   Suggest:  High Priority
+   Reason:   Quick win (Small scope), blocks other infra tasks
+
+⬇️  DEMOTE (1 task)
+────────────────────────────────────────────────
+1. WAF Integration
+   Current:  Low Priority
+   Suggest:  Future/v2.0 (or remove from backlog)
+   Reason:   Large scope, not v1.0 relevant, no dependencies
+
+🔀 CONSOLIDATE (1 suggestion)
+────────────────────────────────────────────────
+1. Merge "Markdown Code Linting" subtasks
+   Tasks:    SQL Linting, Shell Linting in Markdown
+   Reason:   Both are part of the same feature
+
+🗑️  REVIEW/REMOVE (1 task)
+────────────────────────────────────────────────
+1. [Task Name]
+   Created:  2026-01-01 (20 days ago)
+   Reason:   No clear goal, may be obsolete
+   Action:   Confirm still needed or remove
+
+════════════════════════════════════════════════
+```
+
+### Step 4: User Approval
+
+Use `AskUserQuestion` to let user select which changes to apply:
+
+```text
+Which changes would you like to apply?
+
+☐ Promote: Shell Script Linting → High
+☐ Promote: Docker Compose Validation → High
+☐ Demote: WAF Integration → Future/v2.0
+☐ Review: [Task Name] (will ask for removal reason)
+○ Apply all recommendations
+○ Apply selected only
+○ Cancel (no changes)
+```
+
+### Step 5: Apply Changes
+
+For each approved change:
+
+1. **Promote/Demote**: Use existing promote/demote logic
+2. **Consolidate**: Merge task descriptions, keep most recent metadata
+3. **Remove**: Use existing remove workflow (with archiving)
+
+### Step 6: Summary
+
+Show final summary of applied changes:
+
+```text
+Reprioritization Complete
+════════════════════════════════════════════════
+Applied: 3 changes
+- Promoted: Shell Script Linting → High
+- Promoted: Docker Compose Validation → High
+- Removed: [Task Name] (archived)
+
+Skipped: 2 changes (user declined)
+════════════════════════════════════════════════
+```
+
+---
+
 ## Moving Tasks Between Targets
 
 When moving a task from one backlog to another:
@@ -861,6 +977,57 @@ Created:  2026-01-20
 ════════════════════════════════════════════════
 ```
 
+### Reprioritizing the Backlog
+
+```text
+$ /backlog --reprioritize
+
+Backlog Reprioritization Analysis
+════════════════════════════════════════════════
+
+📊 Summary: 18 tasks analyzed, 4 recommendations
+
+⬆️  PROMOTE (2 tasks)
+────────────────────────────────────────────────
+1. Shell Script Linting
+   Current:  Medium Priority (Infrastructure)
+   Suggest:  High Priority
+   Reason:   Prerequisite for "Markdown Code Linting"
+
+2. Docker Compose Validation
+   Current:  Medium Priority (Infrastructure)
+   Suggest:  High Priority
+   Reason:   Quick win (Small), improves DX
+
+⬇️  DEMOTE (1 task)
+────────────────────────────────────────────────
+1. GitHub Pages Documentation
+   Current:  Low Priority
+   Suggest:  Future/v2.0
+   Reason:   Not v1.0 relevant, can wait
+
+🗑️  REVIEW (1 task)
+────────────────────────────────────────────────
+1. Frontend Testing Research
+   Created:  2026-01-20 (today)
+   Reason:   Very broad scope, consider splitting
+
+════════════════════════════════════════════════
+
+Which changes would you like to apply?
+● Apply all recommendations
+
+Reprioritization Complete
+════════════════════════════════════════════════
+Applied: 3 changes
+- Promoted: Shell Script Linting → High
+- Promoted: Docker Compose Validation → High
+- Demoted: GitHub Pages Documentation → Future/v2.0
+
+Skipped: 1 (user will review later)
+════════════════════════════════════════════════
+```
+
 ---
 
 ## Integration with Other Commands
@@ -877,4 +1044,4 @@ Created:  2026-01-20
 - Always include creation date for tracking
 - Context is crucial - future you needs to understand why
 - Keep tasks atomic - split large tasks into subtasks
-- Review backlog periodically with `/optimize --all`
+- Review backlog periodically with `/backlog --reprioritize`

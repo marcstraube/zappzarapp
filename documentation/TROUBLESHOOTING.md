@@ -349,6 +349,38 @@ Changes not reflecting in browser without manual refresh.
    }
    ```
 
+### "Ignored build scripts" Warning
+
+#### Symptom
+
+When running `pnpm install` locally, you see:
+
+```text
+Ignored build scripts: @parcel/watcher@2.5.4, esbuild@0.27.2
+```
+
+#### Explanation
+
+This is **not an error** - it's pnpm's security feature blocking native binary
+compilation by default. Packages like `@parcel/watcher` and `esbuild` use native
+code for performance but have JavaScript/WASM fallbacks.
+
+#### Impact
+
+- **IDE integration**: Works normally - TypeScript types are pure JavaScript
+- **Build/dev**: Use `make` targets (run in container with pre-approved builds)
+- **Performance**: Slight slowdown for file watching if using local pnpm
+
+#### Solutions
+
+1. **Recommended**: Use container-based commands (`make pnpm-install`, etc.)
+
+2. **If you need local pnpm**: Approve builds explicitly:
+
+   ```bash
+   pnpm approve-builds
+   ```
+
 ## Database Issues
 
 ### Cannot Connect to Database
