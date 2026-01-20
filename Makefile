@@ -1664,18 +1664,18 @@ check-health: ## Check application health by container status for all services
 	fi
 	@echo ""
 
-	@echo -e "\033[0;34m🌐 Nginx HTTP:\033[0m"
+	@echo -e "\033[0;34m🌐 Nginx HTTPS:\033[0m"
 	@if [ -f .env ]; then . ./.env; fi; \
-	NGINX_PORT=$${NGINX_PORT:-8080}; \
+	NGINX_SSL_PORT=$${NGINX_SSL_PORT:-8443}; \
 	if command -v curl >/dev/null 2>&1; then \
-		HTTP_CODE=$$(curl -s -o /dev/null -w "%{http_code}" http://localhost:$$NGINX_PORT 2>/dev/null); \
+		HTTP_CODE=$$(curl -sk -o /dev/null -w "%{http_code}" https://localhost:$$NGINX_SSL_PORT 2>/dev/null); \
 		if [ "$$HTTP_CODE" = "200" ]; then \
-			echo -e "\033[0;32m  ✅ HTTP 200 OK (port $$NGINX_PORT)\033[0m"; \
+			echo -e "\033[0;32m  ✅ HTTPS 200 OK (port $$NGINX_SSL_PORT)\033[0m"; \
 		else \
-			echo -e "\033[0;31m  ❌ HTTP $$HTTP_CODE (port $$NGINX_PORT)\033[0m"; \
+			echo -e "\033[0;31m  ❌ HTTPS $$HTTP_CODE (port $$NGINX_SSL_PORT)\033[0m"; \
 		fi; \
 	else \
-		echo -e "\033[0;33m  ⚠️  curl not found, skipping HTTP check\033[0m"; \
+		echo -e "\033[0;33m  ⚠️  curl not found, skipping HTTPS check\033[0m"; \
 	fi
 	@echo ""
 
