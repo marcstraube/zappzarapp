@@ -16,6 +16,29 @@ Each task has a **Scope** indicator to help with session planning:
 
 ## High Priority
 
+### lint-staged: .vscode nicht im Container gemountet
+
+**Status:** Bug
+**Scope:** Small
+**Created:** 2026-01-20
+**Context:** Bei Commit von `.vscode/settings.json` schlägt lint-staged fehl
+
+**Problem:**
+```
+[error] No files matching the pattern were found: "/app/.vscode/settings.json"
+```
+
+Der dev-tools Container mountet `.vscode/` nicht, daher kann prettier die Datei nicht finden.
+
+**Lösungsoptionen:**
+1. `.vscode/` in compose.yaml für dev-tools mounten
+2. `.vscode/` aus lint-staged config ausschließen
+3. JSON-Dateien in `.vscode/` von prettier excluden
+
+**Workaround:** `git commit --no-verify` für .vscode Änderungen
+
+---
+
 ### v1.0 Release Preparation
 
 **Status:** Planned
