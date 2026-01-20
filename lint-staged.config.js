@@ -28,8 +28,8 @@ export default {
   ],
 
   // JSON files (auto-fix and re-stage, excluding auto-generated and config files)
-  // Note: .claude/ is excluded because it's not mounted in containers
-  '!(.claude/**|composer|package|package-lock|tsconfig*|typedoc|.prettierrc|.markdownlint*|.depcheckrc|captainhook|renovate).json': [
+  // Note: .claude/ and .vscode/ are excluded because they're not mounted in containers
+  '!(.claude/**|.vscode/**|composer|package|package-lock|tsconfig*|typedoc|.prettierrc|.markdownlint*|.depcheckrc|captainhook|renovate).json': [
     'pnpm exec prettier --write',
   ],
 
