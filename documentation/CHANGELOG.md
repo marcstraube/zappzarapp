@@ -1,11 +1,30 @@
 # zappzarapp - Changelog
 
-**Erstellt:** 2025-12-19 **Letzte Aktualisierung:** 2026-01-20 (Frontend
-Scaffolding) **Version:** 3.62
+**Erstellt:** 2025-12-19 **Letzte Aktualisierung:** 2026-01-20 (Log Export)
+**Version:** 3.63
 
 ---
 
 ## Changelog
+
+### Version 3.63 (2026-01-20) - Container Log Export
+
+Added `make logs-save` for exporting container logs with debugging metadata.
+
+#### New Features
+
+- **`make logs-save`** — Export container logs to timestamped directory
+  (`logs/YYYY-MM-DD-HHMM/`)
+- **Service filtering** — `SERVICES=php,nginx` to export specific containers
+- **Time filtering** — `SINCE=2h` to limit log timeframe (Docker --since syntax)
+- **metadata.txt** — Auto-generated file with git info, environment settings,
+  and container status
+
+#### Bug Fixes
+
+- **`logs-seaweedfs`** — Fixed target (was incorrectly referencing `rabbitmq`)
+
+---
 
 ### Version 3.62 (2026-01-20) - Frontend Scaffolding Improvements
 

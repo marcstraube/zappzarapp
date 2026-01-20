@@ -210,16 +210,56 @@ If the welcome page shows "Vite Dev Server Not Running" after `make up`:
 
 ### Container Information
 
-| Command              | Description                                         |
-| -------------------- | --------------------------------------------------- |
-| `make status`        | Show running containers status and image disk usage |
-| `make logs`          | Show logs of all containers (or specific services)  |
-| `make logs-nginx`    | Show Nginx logs only                                |
-| `make logs-php`      | Show PHP logs only                                  |
-| `make logs-node`     | Show Node.js logs only                              |
-| `make logs-redis`    | Show Redis logs only                                |
-| `make logs-postgres` | Show PostgreSQL logs only                           |
-| `make logs-mariadb`  | Show MariaDB logs only                              |
+| Command              | Description                                           |
+| -------------------- | ----------------------------------------------------- |
+| `make status`        | Show running containers status and image disk usage   |
+| `make logs`          | Show logs of all containers (or specific services)    |
+| `make logs-save`     | Export logs to timestamped directory for team sharing |
+| `make logs-nginx`    | Show Nginx logs only                                  |
+| `make logs-php`      | Show PHP logs only                                    |
+| `make logs-node`     | Show Node.js logs only                                |
+| `make logs-redis`    | Show Redis logs only                                  |
+| `make logs-postgres` | Show PostgreSQL logs only                             |
+| `make logs-mariadb`  | Show MariaDB logs only                                |
+
+### Log Export for Team Debugging
+
+Export container logs with debugging metadata for sharing with team members:
+
+```bash
+# Export all running containers (all logs)
+make logs-save
+
+# Export specific services only
+make logs-save SERVICES=php,node,nginx
+
+# Filter by time range (Docker --since syntax)
+make logs-save SINCE=2h              # Last 2 hours
+make logs-save SINCE=30m             # Last 30 minutes
+make logs-save SINCE="2026-01-20T10:00:00"  # Since specific time
+
+# Combined: specific services with time filter
+make logs-save SERVICES=php,nginx SINCE=1h
+```
+
+**Output structure:**
+
+```text
+logs/2026-01-20-1430/
+├── php.log
+├── node.log
+├── nginx.log
+├── postgres.log
+└── metadata.txt
+```
+
+**metadata.txt includes:**
+
+- Export timestamp and time filter
+- Git branch and last commit hash
+- Environment settings (ENV, DB_TYPE, NODE_MODE)
+- Active COMPOSE_PROFILES
+- Current container status (`docker compose ps`)
 
 ### Container Shells
 

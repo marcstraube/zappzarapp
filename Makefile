@@ -765,13 +765,77 @@ logs-rabbitmq: ## Show RabbitMQ logs only
 logs-seaweedfs: ## Show SeaweedFS logs only
 	@if [ -f .env ]; then \
 		. ./.env && if [ "$$ENV" = "production" ]; then \
-			docker compose -f compose.yaml -f compose.production.yaml logs -f rabbitmq; \
+			docker compose -f compose.yaml -f compose.production.yaml logs -f seaweedfs; \
 		else \
-			docker compose logs -f rabbitmq; \
+			docker compose logs -f seaweedfs; \
 		fi; \
 	else \
-		docker compose logs -f rabbitmq; \
+		docker compose logs -f seaweedfs; \
 	fi
+
+logs-save: ## Export container logs to timestamped directory (SERVICES=php,node SINCE=2h)
+	@# Create timestamped output directory
+	@OUTPUT_DIR="logs/$$(date +%Y-%m-%d-%H%M)"; \
+	mkdir -p "$$OUTPUT_DIR"; \
+	echo -e "\033[0;33mExporting logs to $$OUTPUT_DIR...\033[0m"; \
+	\
+	# Load environment (respects .env → .env.production → .env.local) \
+	$(LOAD_ENV); \
+	if [ "$${ENV:-development}" = "production" ]; then \
+		DC_CMD="docker compose -f compose.yaml -f compose.production.yaml"; \
+	else \
+		DC_CMD="docker compose"; \
+	fi; \
+	\
+	# Parse SINCE parameter (default: no time filter = all logs) \
+	SINCE_ARG=""; \
+	if [ -n "$(SINCE)" ]; then \
+		SINCE_ARG="--since $(SINCE)"; \
+	fi; \
+	\
+	# Get list of services to export \
+	if [ -n "$(SERVICES)" ]; then \
+		SERVICE_LIST="$$(echo "$(SERVICES)" | tr ',' ' ')"; \
+	else \
+		SERVICE_LIST="$$($$DC_CMD ps --format '{{.Service}}' 2>/dev/null | sort -u | tr '\n' ' ')"; \
+	fi; \
+	\
+	# Export logs for each service \
+	for SERVICE in $$SERVICE_LIST; do \
+		echo "  Exporting $$SERVICE..."; \
+		$$DC_CMD logs $$SINCE_ARG "$$SERVICE" > "$$OUTPUT_DIR/$$SERVICE.log" 2>&1 || true; \
+	done; \
+	\
+	# Generate metadata file \
+	echo "# Log Export Metadata" > "$$OUTPUT_DIR/metadata.txt"; \
+	echo "" >> "$$OUTPUT_DIR/metadata.txt"; \
+	echo "## Export Info" >> "$$OUTPUT_DIR/metadata.txt"; \
+	echo "Timestamp: $$(date '+%Y-%m-%d %H:%M:%S %Z')" >> "$$OUTPUT_DIR/metadata.txt"; \
+	echo "Time Filter: $${SINCE_ARG:-none (all logs)}" >> "$$OUTPUT_DIR/metadata.txt"; \
+	echo "Services: $$SERVICE_LIST" >> "$$OUTPUT_DIR/metadata.txt"; \
+	echo "" >> "$$OUTPUT_DIR/metadata.txt"; \
+	\
+	echo "## Git Info" >> "$$OUTPUT_DIR/metadata.txt"; \
+	echo "Branch: $$(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo 'unknown')" >> "$$OUTPUT_DIR/metadata.txt"; \
+	echo "Commit: $$(git log -1 --format='%h %s' 2>/dev/null || echo 'unknown')" >> "$$OUTPUT_DIR/metadata.txt"; \
+	echo "" >> "$$OUTPUT_DIR/metadata.txt"; \
+	\
+	echo "## Environment" >> "$$OUTPUT_DIR/metadata.txt"; \
+	echo "ENV: $${ENV:-development}" >> "$$OUTPUT_DIR/metadata.txt"; \
+	echo "DB_TYPE: $${DB_TYPE:-postgres}" >> "$$OUTPUT_DIR/metadata.txt"; \
+	echo "NODE_MODE: $${NODE_MODE:-backend}" >> "$$OUTPUT_DIR/metadata.txt"; \
+	echo "" >> "$$OUTPUT_DIR/metadata.txt"; \
+	\
+	echo "## Active Profiles (from COMPOSE_PROFILES)" >> "$$OUTPUT_DIR/metadata.txt"; \
+	echo "$${COMPOSE_PROFILES:-none}" >> "$$OUTPUT_DIR/metadata.txt"; \
+	echo "" >> "$$OUTPUT_DIR/metadata.txt"; \
+	\
+	echo "## Container Status" >> "$$OUTPUT_DIR/metadata.txt"; \
+	$$DC_CMD ps >> "$$OUTPUT_DIR/metadata.txt" 2>&1; \
+	\
+	echo -e "\033[0;32m✓ Logs exported to $$OUTPUT_DIR\033[0m"; \
+	echo "  Files:"; \
+	ls -la "$$OUTPUT_DIR"
 
 pnpm: ## Execute pnpm command (e.g. make pnpm CMD="add -D vue")
 	@# Docker bind mounts don't support atomic rename (EBUSY error)
