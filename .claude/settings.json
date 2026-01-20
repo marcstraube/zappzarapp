@@ -26,7 +26,7 @@
       "Bash(make secrets-rotate:*)",
       "Bash(make secrets-rotate-passwords:*)",
       "Bash(make ssl-clean:*)",
-      "Bash(make frontend-clean:*)",
+      "Bash(make node-frontend-clean:*)",
       "Bash(composer install:*)",
       "Bash(composer update:*)",
       "Bash(composer require:*)",

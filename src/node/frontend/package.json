@@ -5,7 +5,7 @@
   "type": "module",
   "private": true,
   "scripts": {
-    "dev": "echo 'No frontend framework installed. Run: make frontend-next|nuxt|remix|svelte'",
+    "dev": "echo 'No frontend framework installed. Run: make node-frontend-next|nuxt|remix|sveltekit'",
     "build": "echo 'No frontend framework installed'",
     "start": "echo 'No frontend framework installed'"
   }

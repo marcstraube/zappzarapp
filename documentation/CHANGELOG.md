@@ -1,11 +1,37 @@
 # zappzarapp - Changelog
 
-**Erstellt:** 2025-12-19 **Letzte Aktualisierung:** 2026-01-20 (AI Tool Sync)
-**Version:** 3.61
+**Erstellt:** 2025-12-19 **Letzte Aktualisierung:** 2026-01-20 (Frontend
+Scaffolding) **Version:** 3.62
 
 ---
 
 ## Changelog
+
+### Version 3.62 (2026-01-20) - Frontend Scaffolding Improvements
+
+Renamed frontend scaffolding targets for consistency and fixed root-owned file
+cleanup issues.
+
+#### Breaking Changes
+
+- **Renamed targets** — All `frontend-*` targets renamed to `node-frontend-*`:
+  - `frontend-clean` → `node-frontend-clean`
+  - `frontend-nuxt` → `node-frontend-nuxt`
+  - `frontend-next` → `node-frontend-next`
+  - `frontend-remix` → `node-frontend-remix`
+  - `frontend-sveltekit` → `node-frontend-sveltekit`
+
+#### Improvements
+
+- **Root-owned file cleanup** — `node-frontend-clean` now runs inside container
+  as root, can delete `.nuxt/`, `.next/` and other root-owned directories
+- **Container warning** — Warns if node container is running before cleanup
+  (file watchers may cause issues)
+- **Dynamic next-steps** — Shows `make restart` if container was running,
+  `make up` otherwise
+- **Fallback host cleanup** — Also attempts host-side deletion for edge cases
+
+---
 
 ### Version 3.61 (2026-01-20) - AI Tool Synchronization
 

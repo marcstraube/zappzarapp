@@ -1146,7 +1146,15 @@ pnpm-upgrade: ## Upgrade pnpm package manager to latest version
 FRONTEND_DIR := src/node/frontend
 FRONTEND_PATCHES := docker/node/frontend-patches
 
-frontend-clean: ## Remove existing frontend (keeps package.json placeholder)
+node-frontend-clean: ## Remove existing frontend (keeps package.json placeholder)
+	@# Check if node container is running (for later restart hint)
+	$(eval NODE_WAS_RUNNING := $(shell docker compose ps --status running 2>/dev/null | grep -q "node" && echo "yes" || echo "no"))
+	@# Warn if node container is running (dev server file watchers might get confused)
+	@if [ "$(NODE_WAS_RUNNING)" = "yes" ]; then \
+		echo -e "\033[0;33m⚠️  Node container is running. Dev server file watchers may cause issues.\033[0m"; \
+		read -p "Continue anyway? [y/N]: " CONTINUE; \
+		[ "$$CONTINUE" = "y" ] || [ "$$CONTINUE" = "Y" ] || exit 1; \
+	fi
 	@# Check if frontend has scaffolded content (more than just package.json)
 	@FILE_COUNT=$$(find $(FRONTEND_DIR) -mindepth 1 ! -name 'package.json' | wc -l); \
 	if [ "$$FILE_COUNT" -gt 0 ]; then \
@@ -1159,10 +1167,29 @@ frontend-clean: ## Remove existing frontend (keeps package.json placeholder)
 		fi; \
 	fi
 	@echo -e "\033[0;33mCleaning frontend directory...\033[0m"
+	@# Run inside container to handle root-owned files (.nuxt/, .next/, etc.)
+	@$(DC_RUN) run --rm --no-TTY --user root --entrypoint "" node sh -c ' \
+		cd /app/src/node/frontend && \
+		find . -mindepth 1 ! -name "package.json" -exec rm -rf {} + 2>/dev/null || true'
+	@# Also clean host-side files not visible to container (e.g., node_modules shadowed by volume)
 	@find $(FRONTEND_DIR) -mindepth 1 ! -name 'package.json' -exec rm -rf {} + 2>/dev/null || true
+	@# Warn if host node_modules still exists (root-owned, needs manual cleanup)
+	@if [ -d "$(FRONTEND_DIR)/node_modules" ]; then \
+		echo -e "\033[0;33m⚠️  Warning: $(FRONTEND_DIR)/node_modules could not be deleted (likely root-owned).\033[0m"; \
+		echo -e "\033[0;33m   To fix: sudo rm -rf $(FRONTEND_DIR)/node_modules\033[0m"; \
+	fi
+	@# Restore placeholder package.json if deleted
+	@if [ ! -f "$(FRONTEND_DIR)/package.json" ]; then \
+		echo '{"name": "@zappzarapp/frontend","version": "0.0.0","private": true,"scripts": {"info": "echo Run make node-frontend-nuxt, node-frontend-next, node-frontend-remix, or node-frontend-sveltekit to scaffold a frontend"}}' > $(FRONTEND_DIR)/package.json; \
+	fi
 	@echo -e "\033[0;32mFrontend directory cleaned!\033[0m"
+	@if [ "$(NODE_WAS_RUNNING)" = "yes" ]; then \
+		echo -e "\033[0;36mNext: make node-frontend-{nuxt|next|remix|sveltekit}, then make pnpm-sync, then make restart\033[0m"; \
+	else \
+		echo -e "\033[0;36mNext: make node-frontend-{nuxt|next|remix|sveltekit}, then make pnpm-sync, then make up\033[0m"; \
+	fi
 
-frontend-nuxt: frontend-clean ## Scaffold Nuxt 3 frontend (interactive)
+node-frontend-nuxt: node-frontend-clean ## Scaffold Nuxt 3 frontend (interactive)
 	@echo -e "\033[0;33mScaffolding Nuxt 3 frontend...\033[0m"
 	@$(DC_RUN) run --rm -it node sh -c '\
 		cd /app/src/node/frontend && \
@@ -1170,7 +1197,7 @@ frontend-nuxt: frontend-clean ## Scaffold Nuxt 3 frontend (interactive)
 		sh /app/docker/node/frontend-patches/nuxt.post-install.sh .'
 	@echo -e "\033[0;32mNuxt 3 scaffolded! Run 'make pnpm-sync' to install dependencies.\033[0m"
 
-frontend-next: frontend-clean ## Scaffold Next.js frontend (interactive)
+node-frontend-next: node-frontend-clean ## Scaffold Next.js frontend (interactive)
 	@echo -e "\033[0;33mScaffolding Next.js frontend...\033[0m"
 	@$(DC_RUN) run --rm -it node sh -c '\
 		cd /app/src/node/frontend && \
@@ -1178,7 +1205,7 @@ frontend-next: frontend-clean ## Scaffold Next.js frontend (interactive)
 		sh /app/docker/node/frontend-patches/next.post-install.sh .'
 	@echo -e "\033[0;32mNext.js scaffolded! Run 'make pnpm-sync' to install dependencies.\033[0m"
 
-frontend-remix: frontend-clean ## Scaffold React Router frontend (formerly Remix v2)
+node-frontend-remix: node-frontend-clean ## Scaffold React Router frontend (formerly Remix v2)
 	@echo -e "\033[0;33mScaffolding React Router frontend...\033[0m"
 	@$(DC_RUN) run --rm -it node sh -c '\
 		TEMP_DIR=$$(mktemp -d) && \
@@ -1190,7 +1217,7 @@ frontend-remix: frontend-clean ## Scaffold React Router frontend (formerly Remix
 		sh /app/docker/node/frontend-patches/remix.post-install.sh .'
 	@echo -e "\033[0;32mReact Router scaffolded! Run 'make pnpm-sync' to install dependencies.\033[0m"
 
-frontend-sveltekit: frontend-clean ## Scaffold SvelteKit frontend (interactive)
+node-frontend-sveltekit: node-frontend-clean ## Scaffold SvelteKit frontend (interactive)
 	@echo -e "\033[0;33mScaffolding SvelteKit frontend...\033[0m"
 	@$(DC_RUN) run --rm -it node sh -c '\
 		TEMP_DIR=$$(mktemp -d) && \

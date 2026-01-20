@@ -37,7 +37,36 @@ Team-shared backlog for features, bugs, and improvements.
 
 ### Quick Wins
 
-(No tasks yet)
+#### Verify File Permissions Match CaptainHook Rules
+
+**Status:** Open **Scope:** chore **Size:** Small **Created:** 2026-01-20
+**Created by:** Marc Straube <email@marcstraube.de>
+
+**Task:** Audit all files and directories for correct permissions that match
+CaptainHook's commit/checkout hooks. Ensures clean first checkout without
+permission warnings.
+
+**CaptainHook enforces:**
+
+- Shell scripts (`*.sh`): 755
+- Config files (root): 644 (`*.json`, `*.js`, `*.cjs`, `*.ts`, `*.yaml`,
+  `*.yml`, `*.neon`, `*.md`, `.prettier*`, `.npmrc`, `.markdown*`, `.depcheck*`,
+  `.gitmessage`, `LICENSE`)
+- Documentation (`documentation/*.md`): 644
+- Docker scripts (`docker/*.sh`): 755
+
+**Steps:**
+
+1. Run permission check across entire repo
+2. Fix any mismatches
+3. Verify with `make check` (CaptainHook pre-commit)
+
+**Files to check:**
+
+- All files matching patterns above
+- `captainhook.json` (reference for rules)
+
+---
 
 ### Code Quality
 

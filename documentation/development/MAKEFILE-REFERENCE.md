@@ -307,13 +307,13 @@ Commands for frontend and Node.js backend development.
 
 ### Frontend Scaffolding
 
-| Command                   | Description                                      |
-| ------------------------- | ------------------------------------------------ |
-| `make frontend-clean`     | Remove existing frontend (confirms if not empty) |
-| `make frontend-nuxt`      | Scaffold Nuxt 3 frontend                         |
-| `make frontend-next`      | Scaffold Next.js frontend                        |
-| `make frontend-remix`     | Scaffold React Router (formerly Remix v2)        |
-| `make frontend-sveltekit` | Scaffold SvelteKit frontend                      |
+| Command                        | Description                                      |
+| ------------------------------ | ------------------------------------------------ |
+| `make node-frontend-clean`     | Remove existing frontend (confirms if not empty) |
+| `make node-frontend-nuxt`      | Scaffold Nuxt 3 frontend                         |
+| `make node-frontend-next`      | Scaffold Next.js frontend                        |
+| `make node-frontend-remix`     | Scaffold React Router (formerly Remix v2)        |
+| `make node-frontend-sveltekit` | Scaffold SvelteKit frontend                      |
 
 See [Frontend Scaffolding](FRONTEND-SCAFFOLDING.md) for details.
 

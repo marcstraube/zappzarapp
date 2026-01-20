@@ -8,10 +8,10 @@ frameworks.
 Choose your preferred framework using one of the following commands:
 
 ```bash
-make frontend-nuxt      # Nuxt 3
-make frontend-next      # Next.js
-make frontend-remix     # React Router (formerly Remix v2)
-make frontend-sveltekit # SvelteKit
+make node-frontend-nuxt      # Nuxt 3
+make node-frontend-next      # Next.js
+make node-frontend-remix     # React Router (formerly Remix v2)
+make node-frontend-sveltekit # SvelteKit
 ```
 
 After scaffolding, install dependencies:
@@ -25,9 +25,9 @@ make pnpm-install
 To remove an existing frontend and scaffold a different one:
 
 ```bash
-make frontend-clean     # Removes current frontend (asks for confirmation)
-make frontend-next      # Scaffold new framework
-make pnpm-install       # Install dependencies
+make node-frontend-clean # Removes current frontend (asks for confirmation)
+make node-frontend-next  # Scaffold new framework
+make pnpm-install        # Install dependencies
 ```
 
 ## Development
