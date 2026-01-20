@@ -645,17 +645,6 @@ logs-nginx: ## Show Nginx logs only
 		docker compose logs -f nginx; \
 	fi
 
-logs-php: ## Show PHP logs only
-	@if [ -f .env ]; then \
-		. ./.env && if [ "$$ENV" = "production" ]; then \
-			docker compose -f compose.yaml -f compose.production.yaml logs -f php; \
-		else \
-			docker compose logs -f php; \
-		fi; \
-	else \
-		docker compose logs -f php; \
-	fi
-
 logs-node: ## Show Node.js logs only
 	@if [ -f .env ]; then \
 		. ./.env && if [ "$$ENV" = "production" ]; then \
@@ -667,26 +656,15 @@ logs-node: ## Show Node.js logs only
 		docker compose logs -f node; \
 	fi
 
-logs-redis: ## Show Redis logs only
+logs-php: ## Show PHP logs only
 	@if [ -f .env ]; then \
 		. ./.env && if [ "$$ENV" = "production" ]; then \
-			docker compose -f compose.yaml -f compose.production.yaml logs -f redis; \
+			docker compose -f compose.yaml -f compose.production.yaml logs -f php; \
 		else \
-			docker compose logs -f redis; \
+			docker compose logs -f php; \
 		fi; \
 	else \
-		docker compose logs -f redis; \
-	fi
-
-logs-postgres: ## Show PostgreSQL logs only
-	@if [ -f .env ]; then \
-		. ./.env && if [ "$$ENV" = "production" ]; then \
-			docker compose -f compose.yaml -f compose.production.yaml logs -f postgres; \
-		else \
-			docker compose logs -f postgres; \
-		fi; \
-	else \
-		docker compose logs -f postgres; \
+		docker compose logs -f php; \
 	fi
 
 logs-mariadb: ## Show MariaDB logs only
@@ -700,26 +678,26 @@ logs-mariadb: ## Show MariaDB logs only
 		docker compose logs -f mariadb; \
 	fi
 
-logs-mercure: ## Show Mercure logs only
+logs-postgres: ## Show PostgreSQL logs only
 	@if [ -f .env ]; then \
 		. ./.env && if [ "$$ENV" = "production" ]; then \
-			docker compose -f compose.yaml -f compose.production.yaml logs -f mercure; \
+			docker compose -f compose.yaml -f compose.production.yaml logs -f postgres; \
 		else \
-			docker compose logs -f mercure; \
+			docker compose logs -f postgres; \
 		fi; \
 	else \
-		docker compose logs -f mercure; \
+		docker compose logs -f postgres; \
 	fi
 
-logs-meilisearch: ## Show Meilisearch logs only
+logs-redis: ## Show Redis logs only
 	@if [ -f .env ]; then \
 		. ./.env && if [ "$$ENV" = "production" ]; then \
-			docker compose -f compose.yaml -f compose.production.yaml logs -f meilisearch; \
+			docker compose -f compose.yaml -f compose.production.yaml logs -f redis; \
 		else \
-			docker compose logs -f meilisearch; \
+			docker compose logs -f redis; \
 		fi; \
 	else \
-		docker compose logs -f meilisearch; \
+		docker compose logs -f redis; \
 	fi
 
 logs-elasticsearch: ## Show Elasticsearch logs only
@@ -744,18 +722,40 @@ logs-mailpit: ## Show Mailpit logs only
 		docker compose logs -f mailpit; \
 	fi
 
-logs-seaweedfs: ## Show SeaweedFS logs only
+logs-meilisearch: ## Show Meilisearch logs only
 	@if [ -f .env ]; then \
 		. ./.env && if [ "$$ENV" = "production" ]; then \
-			docker compose -f compose.yaml -f compose.production.yaml logs -f seaweedfs; \
+			docker compose -f compose.yaml -f compose.production.yaml logs -f meilisearch; \
 		else \
-			docker compose logs -f seaweedfs; \
+			docker compose logs -f meilisearch; \
 		fi; \
 	else \
-		docker compose logs -f seaweedfs; \
+		docker compose logs -f meilisearch; \
+	fi
+
+logs-mercure: ## Show Mercure logs only
+	@if [ -f .env ]; then \
+		. ./.env && if [ "$$ENV" = "production" ]; then \
+			docker compose -f compose.yaml -f compose.production.yaml logs -f mercure; \
+		else \
+			docker compose logs -f mercure; \
+		fi; \
+	else \
+		docker compose logs -f mercure; \
 	fi
 
 logs-rabbitmq: ## Show RabbitMQ logs only
+	@if [ -f .env ]; then \
+		. ./.env && if [ "$$ENV" = "production" ]; then \
+			docker compose -f compose.yaml -f compose.production.yaml logs -f rabbitmq; \
+		else \
+			docker compose logs -f rabbitmq; \
+		fi; \
+	else \
+		docker compose logs -f rabbitmq; \
+	fi
+
+logs-seaweedfs: ## Show SeaweedFS logs only
 	@if [ -f .env ]; then \
 		. ./.env && if [ "$$ENV" = "production" ]; then \
 			docker compose -f compose.yaml -f compose.production.yaml logs -f rabbitmq; \
@@ -802,26 +802,20 @@ restart: ## Restart containers (optionally specify service names: make restart p
 shell-nginx: ## Open shell in Nginx container
 	@docker compose exec nginx sh
 
-shell-php: ## Open shell in PHP container
-	@docker compose exec php sh
-
 shell-node: ## Open shell in Node container
 	@docker compose exec node sh
 
-shell-redis: ## Open shell in Redis container
-	@docker compose exec redis sh
-
-shell-postgres: ## Open shell in PostgreSQL container
-	@docker compose exec postgres sh
+shell-php: ## Open shell in PHP container
+	@docker compose exec php sh
 
 shell-mariadb: ## Open shell in MariaDB container
 	@docker compose exec mariadb sh
 
-shell-mercure: ## Open shell in Mercure container
-	@docker compose exec mercure sh
+shell-postgres: ## Open shell in PostgreSQL container
+	@docker compose exec postgres sh
 
-shell-meilisearch: ## Open shell in Meilisearch container
-	@docker compose exec meilisearch sh
+shell-redis: ## Open shell in Redis container
+	@docker compose exec redis sh
 
 shell-elasticsearch: ## Open shell in Elasticsearch container
 	@docker compose exec elasticsearch bash
@@ -829,11 +823,17 @@ shell-elasticsearch: ## Open shell in Elasticsearch container
 shell-mailpit: ## Open shell in Mailpit container
 	@docker compose exec mailpit sh
 
-shell-seaweedfs: ## Open shell in SeaweedFS container
-	@docker compose exec seaweedfs sh
+shell-meilisearch: ## Open shell in Meilisearch container
+	@docker compose exec meilisearch sh
+
+shell-mercure: ## Open shell in Mercure container
+	@docker compose exec mercure sh
 
 shell-rabbitmq: ## Open shell in RabbitMQ container
 	@docker compose exec rabbitmq bash
+
+shell-seaweedfs: ## Open shell in SeaweedFS container
+	@docker compose exec seaweedfs sh
 
 status: ## Show running containers status and image disk usage
 	@echo -e "\033[0;33mContainer Status:\033[0m"

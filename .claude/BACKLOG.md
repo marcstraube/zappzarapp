@@ -466,36 +466,6 @@ Each task has a **Scope** indicator to help with session planning:
 
 ---
 
-### Service List Sorting Consistency
-
-**Status:** Planned
-**Scope:** Small
-**Created:** 2026-01-19
-**Context:** During SeaweedFS migration, inconsistent sorting of service lists was identified
-
-**Goal:** Ensure all service lists follow consistent sorting: Core → Data → Optional, alphabetically within each category.
-
-**Sorting Order:**
-```
-Core:     nginx, node, node-backend, php
-Data:     mariadb, postgres, redis
-Optional: elasticsearch, mailpit, meilisearch, mercure, rabbitmq, seaweedfs
-```
-
-**Files to check:**
-- [ ] PHP health check arrays and methods
-- [ ] compose.yaml service order
-- [ ] Makefile target groupings
-- [ ] Documentation service tables
-- [ ] VSCode/JetBrains task ordering
-- [ ] Kubernetes templates
-
-**Notes:**
-- Low priority cosmetic improvement
-- Can be done incrementally
-
----
-
 ## Completed
 
 (Completed items are moved to CHANGELOG.md)

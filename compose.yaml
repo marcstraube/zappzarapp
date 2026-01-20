@@ -11,8 +11,17 @@
 #   Docker Compose (standalone) does NOT support uid/gid/mode for secrets.
 #   Secret files are created with mode 0644 by 'make setup'.
 #   For stricter security, use Kubernetes with native K8s Secrets + securityContext.fsGroup.
+#
+# SERVICE ORDER: Core → Data → Optional (alphabetically within each category)
+#   Core:     nginx, node, node-backend, php
+#   Data:     mariadb, postgres, redis
+#   Optional: elasticsearch, mailpit, meilisearch, mercure, rabbitmq, seaweedfs
 
 services:
+  # ═══════════════════════════════════════════════════════════════════════════
+  # CORE SERVICES
+  # ═══════════════════════════════════════════════════════════════════════════
+
   nginx:
     build:
       context: .
@@ -51,69 +60,6 @@ services:
     networks:
       - frontend
       - backend
-
-  php:
-    build:
-      context: .
-      dockerfile: docker/php/Dockerfile
-      target: ${PHP_TARGET:-production}
-    image: ${COMPOSE_PROJECT_NAME:-zappzarapp}-php:${PHP_TARGET:-production}
-    container_name: ${COMPOSE_PROJECT_NAME:-zappzarapp}-php
-    restart: unless-stopped
-    profiles: ["php"]
-    volumes:
-      # Shared socket directory for PHP-FPM Unix socket communication
-      - php-fpm-socket:/var/run/php-fpm
-      # SSL certificates for external database connections
-      - ./docker/certs:/etc/ssl/db-certs:ro
-      # Secrets (bind mount)
-      - ./secrets:/run/secrets:ro
-    depends_on:
-      node:
-        condition: service_started
-        required: false
-    environment:
-      - TZ=${TZ:-UTC}
-      - ENV=${ENV:-production}
-      - LOG_LEVEL=${LOG_LEVEL:-info}
-      - LOG_FORMAT=${LOG_FORMAT:-json}
-      - CORS_ORIGINS=${CORS_ORIGINS:-}
-      # Service activation flags (for DevDashboard)
-      - ENABLE_PHP=${ENABLE_PHP:-true}
-      - ENABLE_NODE=${ENABLE_NODE:-true}
-      - ENABLE_DATABASE=${ENABLE_DATABASE:-true}
-      - ENABLE_REDIS=${ENABLE_REDIS:-true}
-      - ENABLE_MERCURE=${ENABLE_MERCURE:-false}
-      - ENABLE_MEILISEARCH=${ENABLE_MEILISEARCH:-false}
-      - ENABLE_ELASTICSEARCH=${ENABLE_ELASTICSEARCH:-false}
-      - ENABLE_MAILPIT=${ENABLE_MAILPIT:-false}
-      - ENABLE_SEAWEEDFS=${ENABLE_SEAWEEDFS:-false}
-      - ENABLE_RABBITMQ=${ENABLE_RABBITMQ:-false}
-      # Database (12-Factor: DATABASE_URL takes precedence)
-      # Priority: DATABASE_URL > DB_PASSWORD_FILE (secrets) > DB_PASSWORD (env var)
-      - DATABASE_URL=${DATABASE_URL:-}
-      - DB_TYPE=${DB_TYPE:-postgres}
-      - DB_HOST=${DB_HOST:-postgres}
-      - DB_PORT=${DB_PORT:-5432}
-      - DB_NAME=${DB_NAME:-app}
-      - DB_USER=${DB_USER:-app}
-      - DB_PASSWORD=${DB_PASSWORD:-}
-      - DB_SSL_CA=${DB_SSL_CA:-}
-      - DB_SSL_VERIFY=${DB_SSL_VERIFY:-false}
-      - REDIS_URL=${REDIS_URL:-rediss://redis:6379}
-      # Secrets (mounted as files at /run/secrets/)
-      - DB_PASSWORD_FILE=/run/secrets/db_password.txt
-      - ENCRYPTION_KEY_FILE=/run/secrets/encryption_key.txt
-      - BACKUP_ENCRYPTION_KEY_FILE=/run/secrets/backup_encryption_key.txt
-    networks:
-      - backend
-      - database
-    healthcheck:
-      test: ["CMD-SHELL", "SCRIPT_NAME=/ping SCRIPT_FILENAME=/ping REQUEST_METHOD=GET cgi-fcgi -bind -connect /var/run/php-fpm/php-fpm.sock || exit 1"]
-      interval: 30s
-      timeout: 3s
-      retries: 3
-      start_period: 40s
 
   # ─────────────────────────────────────────────────────────────────────────────
   # NODE.JS SERVICES
@@ -238,37 +184,114 @@ services:
         condition: service_healthy
         required: false
 
-  redis:
+  php:
     build:
       context: .
-      dockerfile: docker/redis/Dockerfile
-      target: base
-    container_name: ${COMPOSE_PROJECT_NAME:-zappzarapp}-redis
+      dockerfile: docker/php/Dockerfile
+      target: ${PHP_TARGET:-production}
+    image: ${COMPOSE_PROJECT_NAME:-zappzarapp}-php:${PHP_TARGET:-production}
+    container_name: ${COMPOSE_PROJECT_NAME:-zappzarapp}-php
     restart: unless-stopped
-    profiles: ["redis"]
+    profiles: ["php"]
+    volumes:
+      # Shared socket directory for PHP-FPM Unix socket communication
+      - php-fpm-socket:/var/run/php-fpm
+      # SSL certificates for external database connections
+      - ./docker/certs:/etc/ssl/db-certs:ro
+      # Secrets (bind mount)
+      - ./secrets:/run/secrets:ro
+    depends_on:
+      node:
+        condition: service_started
+        required: false
     environment:
       - TZ=${TZ:-UTC}
+      - ENV=${ENV:-production}
+      - LOG_LEVEL=${LOG_LEVEL:-info}
+      - LOG_FORMAT=${LOG_FORMAT:-json}
+      - CORS_ORIGINS=${CORS_ORIGINS:-}
+      # Service activation flags (for DevDashboard)
+      - ENABLE_PHP=${ENABLE_PHP:-true}
+      - ENABLE_NODE=${ENABLE_NODE:-true}
+      - ENABLE_DATABASE=${ENABLE_DATABASE:-true}
+      - ENABLE_REDIS=${ENABLE_REDIS:-true}
+      - ENABLE_MERCURE=${ENABLE_MERCURE:-false}
+      - ENABLE_MEILISEARCH=${ENABLE_MEILISEARCH:-false}
+      - ENABLE_ELASTICSEARCH=${ENABLE_ELASTICSEARCH:-false}
+      - ENABLE_MAILPIT=${ENABLE_MAILPIT:-false}
+      - ENABLE_SEAWEEDFS=${ENABLE_SEAWEEDFS:-false}
+      - ENABLE_RABBITMQ=${ENABLE_RABBITMQ:-false}
+      # Database (12-Factor: DATABASE_URL takes precedence)
+      # Priority: DATABASE_URL > DB_PASSWORD_FILE (secrets) > DB_PASSWORD (env var)
+      - DATABASE_URL=${DATABASE_URL:-}
+      - DB_TYPE=${DB_TYPE:-postgres}
+      - DB_HOST=${DB_HOST:-postgres}
+      - DB_PORT=${DB_PORT:-5432}
+      - DB_NAME=${DB_NAME:-app}
+      - DB_USER=${DB_USER:-app}
+      - DB_PASSWORD=${DB_PASSWORD:-}
+      - DB_SSL_CA=${DB_SSL_CA:-}
+      - DB_SSL_VERIFY=${DB_SSL_VERIFY:-false}
+      - REDIS_URL=${REDIS_URL:-rediss://redis:6379}
+      # Secrets (mounted as files at /run/secrets/)
+      - DB_PASSWORD_FILE=/run/secrets/db_password.txt
+      - ENCRYPTION_KEY_FILE=/run/secrets/encryption_key.txt
+      - BACKUP_ENCRYPTION_KEY_FILE=/run/secrets/backup_encryption_key.txt
+    networks:
+      - backend
+      - database
+    healthcheck:
+      test: ["CMD-SHELL", "SCRIPT_NAME=/ping SCRIPT_FILENAME=/ping REQUEST_METHOD=GET cgi-fcgi -bind -connect /var/run/php-fpm/php-fpm.sock || exit 1"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 40s
+
+  # ═══════════════════════════════════════════════════════════════════════════
+  # DATA SERVICES
+  # ═══════════════════════════════════════════════════════════════════════════
+
+  mariadb:
+    build:
+      context: .
+      dockerfile: docker/mariadb/Dockerfile
+    container_name: ${COMPOSE_PROJECT_NAME:-zappzarapp}-mariadb
+    restart: unless-stopped
+    profiles: ["mariadb"]
     expose:
-      - "6379"
-    command: >
-      redis-server
-      --appendonly yes
-      --appendfsync everysec
-      --maxmemory 256mb
-      --maxmemory-policy allkeys-lru
-      --tls-port 6379
-      --port 0
-      --tls-cert-file /etc/redis/certs/cert.crt
-      --tls-key-file /etc/redis/certs/cert.key
-      --tls-auth-clients no
+      - "3306"
+    environment:
+      TZ: ${TZ:-UTC}
+      MARIADB_DATABASE: ${DB_NAME:-app}
+      MARIADB_USER: ${DB_USER:-app}
+      # ─────────────────────────────────────────────────────────────────
+      # PASSWORD CONFIGURATION - Choose ONE option (mutually exclusive!)
+      # ─────────────────────────────────────────────────────────────────
+      # Option 1: Secrets via bind mount (recommended, default)
+      #   Reads passwords from /run/secrets/ files.
+      #   Secrets are generated by 'make setup' or 'make secrets'.
+      MARIADB_PASSWORD_FILE: /run/secrets/db_password.txt
+      MARIADB_ROOT_PASSWORD_FILE: /run/secrets/db_root_password.txt
+      #
+      # Option 2: Environment Variables (for external DB or legacy setups)
+      #   Uncomment below AND comment out the _FILE options above.
+      #   Set DB_PASSWORD and DB_ROOT_PASSWORD in .env or use defaults.
+      #MARIADB_PASSWORD: ${DB_PASSWORD:-secret}
+      #MARIADB_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-rootsecret}
+      # ─────────────────────────────────────────────────────────────────
     volumes:
-      - redis-data:/data
-      # SSL certificates (bind mount)
-      - ./docker/certs/cert.crt:/etc/redis/certs/cert.crt:ro
-      - ./docker/certs/cert.key:/etc/redis/certs/cert.key:ro
+      - mariadb-data:/var/lib/mysql
+      # Secrets (bind mount)
+      - ./secrets:/run/secrets:ro
     networks:
       - database
-    # Health check defined in Dockerfile (with TLS support)
+    healthcheck:
+      # Uses gosu to run as mysql user (avoids DAC_OVERRIDE for reading .my-healthcheck.cnf)
+      test: ["CMD", "/custom-healthcheck.sh"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+      start_period: 10s
 
   # PostgreSQL with pg_cron extension pre-installed for scheduled database jobs
   # pg_cron config (shared_preload_libraries) is set via command in override files
@@ -316,120 +339,41 @@ services:
       retries: 3
       start_period: 10s
 
-  mariadb:
+  redis:
     build:
       context: .
-      dockerfile: docker/mariadb/Dockerfile
-    container_name: ${COMPOSE_PROJECT_NAME:-zappzarapp}-mariadb
+      dockerfile: docker/redis/Dockerfile
+      target: base
+    container_name: ${COMPOSE_PROJECT_NAME:-zappzarapp}-redis
     restart: unless-stopped
-    profiles: ["mariadb"]
-    expose:
-      - "3306"
+    profiles: ["redis"]
     environment:
-      TZ: ${TZ:-UTC}
-      MARIADB_DATABASE: ${DB_NAME:-app}
-      MARIADB_USER: ${DB_USER:-app}
-      # ─────────────────────────────────────────────────────────────────
-      # PASSWORD CONFIGURATION - Choose ONE option (mutually exclusive!)
-      # ─────────────────────────────────────────────────────────────────
-      # Option 1: Secrets via bind mount (recommended, default)
-      #   Reads passwords from /run/secrets/ files.
-      #   Secrets are generated by 'make setup' or 'make secrets'.
-      MARIADB_PASSWORD_FILE: /run/secrets/db_password.txt
-      MARIADB_ROOT_PASSWORD_FILE: /run/secrets/db_root_password.txt
-      #
-      # Option 2: Environment Variables (for external DB or legacy setups)
-      #   Uncomment below AND comment out the _FILE options above.
-      #   Set DB_PASSWORD and DB_ROOT_PASSWORD in .env or use defaults.
-      #MARIADB_PASSWORD: ${DB_PASSWORD:-secret}
-      #MARIADB_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-rootsecret}
-      # ─────────────────────────────────────────────────────────────────
+      - TZ=${TZ:-UTC}
+    expose:
+      - "6379"
+    command: >
+      redis-server
+      --appendonly yes
+      --appendfsync everysec
+      --maxmemory 256mb
+      --maxmemory-policy allkeys-lru
+      --tls-port 6379
+      --port 0
+      --tls-cert-file /etc/redis/certs/cert.crt
+      --tls-key-file /etc/redis/certs/cert.key
+      --tls-auth-clients no
     volumes:
-      - mariadb-data:/var/lib/mysql
-      # Secrets (bind mount)
-      - ./secrets:/run/secrets:ro
+      - redis-data:/data
+      # SSL certificates (bind mount)
+      - ./docker/certs/cert.crt:/etc/redis/certs/cert.crt:ro
+      - ./docker/certs/cert.key:/etc/redis/certs/cert.key:ro
     networks:
       - database
-    healthcheck:
-      # Uses gosu to run as mysql user (avoids DAC_OVERRIDE for reading .my-healthcheck.cnf)
-      test: ["CMD", "/custom-healthcheck.sh"]
-      interval: 10s
-      timeout: 3s
-      retries: 3
-      start_period: 10s
+    # Health check defined in Dockerfile (with TLS support)
 
   # ═══════════════════════════════════════════════════════════════════════════
-  # OPTIONAL SERVICES
+  # OPTIONAL SERVICES (alphabetically sorted)
   # ═══════════════════════════════════════════════════════════════════════════
-
-  # Mercure Hub - Real-time messaging server using Server-Sent Events (SSE)
-  # Native integration with Symfony/API Platform. Lightweight alternative to WebSockets.
-  # Usage: ENABLE_MERCURE=true in .env, then 'make up'
-  # Docs: https://mercure.rocks/
-  mercure:
-    build:
-      context: .
-      dockerfile: docker/mercure/Dockerfile
-    container_name: ${COMPOSE_PROJECT_NAME:-zappzarapp}-mercure
-    restart: unless-stopped
-    profiles: ["mercure"]
-    environment:
-      TZ: ${TZ:-UTC}
-      # Server configuration (HTTPS for zero-trust internal TLS)
-      SERVER_NAME: ':443'
-      # JWT keys loaded from secret file via entrypoint.sh
-      # Allow anonymous subscribers (set to 0 in production for auth-only)
-      # Mercure configuration - anonymous subscribers and CORS
-      MERCURE_EXTRA_DIRECTIVES: anonymous
-      # Caddy TLS configuration - use custom certificates
-      CADDY_SERVER_EXTRA_DIRECTIVES: "tls /etc/mercure/certs/cert.crt /etc/mercure/certs/cert.key"
-    expose:
-      - "443"
-    volumes:
-      - mercure-data:/data
-      # Secrets (bind mount)
-      - ./secrets:/run/secrets:ro
-      # TLS certificates for internal HTTPS
-      - ./docker/certs/cert.crt:/etc/mercure/certs/cert.crt:ro
-      - ./docker/certs/cert.key:/etc/mercure/certs/cert.key:ro
-    networks:
-      - backend
-    # Health check defined in Dockerfile
-
-  # Meilisearch - Lightning fast, typo-tolerant search engine
-  # Lightweight alternative to Elasticsearch. Great for product search, autocomplete.
-  # Usage: ENABLE_MEILISEARCH=true in .env, then 'make up'
-  # Docs: https://www.meilisearch.com/docs
-  meilisearch:
-    build:
-      context: .
-      dockerfile: docker/meilisearch/Dockerfile
-    container_name: ${COMPOSE_PROJECT_NAME:-zappzarapp}-meilisearch
-    restart: unless-stopped
-    profiles: ["meilisearch"]
-    environment:
-      TZ: ${TZ:-UTC}
-      # Master key for API authentication (required in production)
-      MEILI_MASTER_KEY_FILE: /run/secrets/meilisearch_master_key.txt
-      # Environment: development or production
-      MEILI_ENV: ${ENV:-development}
-      # Disable analytics
-      MEILI_NO_ANALYTICS: "true"
-      # TLS configuration for zero-trust internal HTTPS
-      MEILI_SSL_CERT_PATH: /etc/ssl/certs/cert.crt
-      MEILI_SSL_KEY_PATH: /etc/ssl/private/cert.key
-    expose:
-      - "7700"
-    volumes:
-      - meilisearch-data:/meili_data
-      # Secrets (bind mount)
-      - ./secrets:/run/secrets:ro
-      # TLS certificates for internal HTTPS
-      - ./docker/certs/cert.crt:/etc/ssl/certs/cert.crt:ro
-      - ./docker/certs/cert.key:/etc/ssl/private/cert.key:ro
-    networks:
-      - database
-    # Health check defined in Dockerfile
 
   # Elasticsearch - Distributed search and analytics engine
   # Full-featured search with aggregations, analytics, geo-queries.
@@ -506,6 +450,102 @@ services:
       - backend
     # Health check defined in Dockerfile
 
+  # Meilisearch - Lightning fast, typo-tolerant search engine
+  # Lightweight alternative to Elasticsearch. Great for product search, autocomplete.
+  # Usage: ENABLE_MEILISEARCH=true in .env, then 'make up'
+  # Docs: https://www.meilisearch.com/docs
+  meilisearch:
+    build:
+      context: .
+      dockerfile: docker/meilisearch/Dockerfile
+    container_name: ${COMPOSE_PROJECT_NAME:-zappzarapp}-meilisearch
+    restart: unless-stopped
+    profiles: ["meilisearch"]
+    environment:
+      TZ: ${TZ:-UTC}
+      # Master key for API authentication (required in production)
+      MEILI_MASTER_KEY_FILE: /run/secrets/meilisearch_master_key.txt
+      # Environment: development or production
+      MEILI_ENV: ${ENV:-development}
+      # Disable analytics
+      MEILI_NO_ANALYTICS: "true"
+      # TLS configuration for zero-trust internal HTTPS
+      MEILI_SSL_CERT_PATH: /etc/ssl/certs/cert.crt
+      MEILI_SSL_KEY_PATH: /etc/ssl/private/cert.key
+    expose:
+      - "7700"
+    volumes:
+      - meilisearch-data:/meili_data
+      # Secrets (bind mount)
+      - ./secrets:/run/secrets:ro
+      # TLS certificates for internal HTTPS
+      - ./docker/certs/cert.crt:/etc/ssl/certs/cert.crt:ro
+      - ./docker/certs/cert.key:/etc/ssl/private/cert.key:ro
+    networks:
+      - database
+    # Health check defined in Dockerfile
+
+  # Mercure Hub - Real-time messaging server using Server-Sent Events (SSE)
+  # Native integration with Symfony/API Platform. Lightweight alternative to WebSockets.
+  # Usage: ENABLE_MERCURE=true in .env, then 'make up'
+  # Docs: https://mercure.rocks/
+  mercure:
+    build:
+      context: .
+      dockerfile: docker/mercure/Dockerfile
+    container_name: ${COMPOSE_PROJECT_NAME:-zappzarapp}-mercure
+    restart: unless-stopped
+    profiles: ["mercure"]
+    environment:
+      TZ: ${TZ:-UTC}
+      # Server configuration (HTTPS for zero-trust internal TLS)
+      SERVER_NAME: ':443'
+      # JWT keys loaded from secret file via entrypoint.sh
+      # Allow anonymous subscribers (set to 0 in production for auth-only)
+      # Mercure configuration - anonymous subscribers and CORS
+      MERCURE_EXTRA_DIRECTIVES: anonymous
+      # Caddy TLS configuration - use custom certificates
+      CADDY_SERVER_EXTRA_DIRECTIVES: "tls /etc/mercure/certs/cert.crt /etc/mercure/certs/cert.key"
+    expose:
+      - "443"
+    volumes:
+      - mercure-data:/data
+      # Secrets (bind mount)
+      - ./secrets:/run/secrets:ro
+      # TLS certificates for internal HTTPS
+      - ./docker/certs/cert.crt:/etc/mercure/certs/cert.crt:ro
+      - ./docker/certs/cert.key:/etc/mercure/certs/cert.key:ro
+    networks:
+      - backend
+    # Health check defined in Dockerfile
+
+  # RabbitMQ - Enterprise message broker
+  # Reliable messaging with routing, priorities, acknowledgments, and dead letter queues.
+  # Includes management UI for monitoring queues and connections.
+  # Usage: ENABLE_RABBITMQ=true in .env, then 'make up'
+  # Docs: https://www.rabbitmq.com/docs
+  rabbitmq:
+    build:
+      context: .
+      dockerfile: docker/rabbitmq/Dockerfile
+    container_name: ${COMPOSE_PROJECT_NAME:-zappzarapp}-rabbitmq
+    restart: unless-stopped
+    profiles: ["rabbitmq"]
+    environment:
+      TZ: ${TZ:-UTC}
+      # Default vhost (user/pass loaded from secrets via entrypoint.sh)
+      RABBITMQ_DEFAULT_VHOST: ${RABBITMQ_VHOST:-/}
+    expose:
+      - "5672"
+      - "15672"
+    volumes:
+      - rabbitmq-data:/var/lib/rabbitmq
+      # Secrets (bind mount)
+      - ./secrets:/run/secrets:ro
+    networks:
+      - backend
+    # Health check defined in Dockerfile
+
   # SeaweedFS - S3-compatible distributed object storage
   # Use same SDKs as AWS S3. Switch to real S3 in production without code changes.
   # Fast storage for billions of files with O(1) disk seek performance.
@@ -538,33 +578,6 @@ services:
       - backend
     # Health check defined in Dockerfile
 
-  # RabbitMQ - Enterprise message broker
-  # Reliable messaging with routing, priorities, acknowledgments, and dead letter queues.
-  # Includes management UI for monitoring queues and connections.
-  # Usage: ENABLE_RABBITMQ=true in .env, then 'make up'
-  # Docs: https://www.rabbitmq.com/docs
-  rabbitmq:
-    build:
-      context: .
-      dockerfile: docker/rabbitmq/Dockerfile
-    container_name: ${COMPOSE_PROJECT_NAME:-zappzarapp}-rabbitmq
-    restart: unless-stopped
-    profiles: ["rabbitmq"]
-    environment:
-      TZ: ${TZ:-UTC}
-      # Default vhost (user/pass loaded from secrets via entrypoint.sh)
-      RABBITMQ_DEFAULT_VHOST: ${RABBITMQ_VHOST:-/}
-    expose:
-      - "5672"
-      - "15672"
-    volumes:
-      - rabbitmq-data:/var/lib/rabbitmq
-      # Secrets (bind mount)
-      - ./secrets:/run/secrets:ro
-    networks:
-      - backend
-    # Health check defined in Dockerfile
-
 networks:
   # 3-Network Security Architecture for GDPR Compliance
   # - frontend: Public-facing nginx only
@@ -581,37 +594,39 @@ networks:
     name: ${COMPOSE_PROJECT_NAME:-zappzarapp}-database
 
 volumes:
+  # Core service volumes
   php-fpm-socket:
     driver: local
     name: ${COMPOSE_PROJECT_NAME:-zappzarapp}-php-fpm-socket
-  redis-data:
-    driver: local
-    name: ${COMPOSE_PROJECT_NAME:-zappzarapp}-redis-data
-  postgres-data:
-    driver: local
-    name: ${COMPOSE_PROJECT_NAME:-zappzarapp}-postgres-data
+  # Data service volumes (alphabetically)
   mariadb-data:
     driver: local
     name: ${COMPOSE_PROJECT_NAME:-zappzarapp}-mariadb-data
-  mercure-data:
+  postgres-data:
     driver: local
-    name: ${COMPOSE_PROJECT_NAME:-zappzarapp}-mercure-data
-  meilisearch-data:
+    name: ${COMPOSE_PROJECT_NAME:-zappzarapp}-postgres-data
+  redis-data:
     driver: local
-    name: ${COMPOSE_PROJECT_NAME:-zappzarapp}-meilisearch-data
-  elasticsearch-data:
-    driver: local
-    name: ${COMPOSE_PROJECT_NAME:-zappzarapp}-elasticsearch-data
+    name: ${COMPOSE_PROJECT_NAME:-zappzarapp}-redis-data
+  # Optional service volumes (alphabetically)
   elasticsearch-backup:
     driver: local
     name: ${COMPOSE_PROJECT_NAME:-zappzarapp}-elasticsearch-backup
+  elasticsearch-data:
+    driver: local
+    name: ${COMPOSE_PROJECT_NAME:-zappzarapp}-elasticsearch-data
   mailpit-data:
     driver: local
     name: ${COMPOSE_PROJECT_NAME:-zappzarapp}-mailpit-data
-  seaweedfs-data:
+  meilisearch-data:
     driver: local
-    name: ${COMPOSE_PROJECT_NAME:-zappzarapp}-seaweedfs-data
+    name: ${COMPOSE_PROJECT_NAME:-zappzarapp}-meilisearch-data
+  mercure-data:
+    driver: local
+    name: ${COMPOSE_PROJECT_NAME:-zappzarapp}-mercure-data
   rabbitmq-data:
     driver: local
     name: ${COMPOSE_PROJECT_NAME:-zappzarapp}-rabbitmq-data
-
+  seaweedfs-data:
+    driver: local
+    name: ${COMPOSE_PROJECT_NAME:-zappzarapp}-seaweedfs-data

@@ -115,12 +115,12 @@ class HealthCheck
             ];
         }
 
-        // Check optional services
+        // Check optional services (alphabetically sorted)
         $optionalServices = [
-            'ENABLE_MERCURE'       => 'checkMercure',
-            'ENABLE_MEILISEARCH'   => 'checkMeilisearch',
             'ENABLE_ELASTICSEARCH' => 'checkElasticsearch',
             'ENABLE_MAILPIT'       => 'checkMailpit',
+            'ENABLE_MEILISEARCH'   => 'checkMeilisearch',
+            'ENABLE_MERCURE'       => 'checkMercure',
             'ENABLE_RABBITMQ'      => 'checkRabbitmq',
             'ENABLE_SEAWEEDFS'     => 'checkSeaweedfs',
         ];
@@ -791,7 +791,7 @@ class HealthCheck
             $response = $this->fetchUrl($url, $context);
 
             if ($response !== false) {
-                $data = json_decode($response, true);
+                $data                                  = json_decode($response, true);
                 $this->status['services']['seaweedfs'] = [
                     'status'  => isset($data['IsLeader']) ? 'ok' : 'error',
                     'enabled' => true,

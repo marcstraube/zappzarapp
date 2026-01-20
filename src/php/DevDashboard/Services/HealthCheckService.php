@@ -85,12 +85,12 @@ class HealthCheckService
         // Nginx is always enabled
         $services['nginx'] = $this->buildServiceStatus('nginx', 'Nginx', 'Web Server / Reverse Proxy');
 
-        if (getenv('ENABLE_PHP') !== 'false') {
-            $services['php'] = $this->buildServiceStatus('php', 'PHP-FPM', 'PHP FastCGI Process Manager');
-        }
-
         if (getenv('ENABLE_NODE') !== 'false') {
             $services['node'] = $this->buildServiceStatus('node', 'Node.js', 'JavaScript Runtime');
+        }
+
+        if (getenv('ENABLE_PHP') !== 'false') {
+            $services['php'] = $this->buildServiceStatus('php', 'PHP-FPM', 'PHP FastCGI Process Manager');
         }
 
         return $services;
@@ -131,10 +131,10 @@ class HealthCheckService
         $services = [];
 
         $optionalConfig = [
-            'mercure'       => ['env' => 'ENABLE_MERCURE', 'name' => 'Mercure', 'desc' => 'Real-time Messaging (SSE)'],
-            'meilisearch'   => ['env' => 'ENABLE_MEILISEARCH', 'name' => 'Meilisearch', 'desc' => 'Search Engine'],
             'elasticsearch' => ['env' => 'ENABLE_ELASTICSEARCH', 'name' => 'Elasticsearch', 'desc' => 'Search & Analytics'],
             'mailpit'       => ['env' => 'ENABLE_MAILPIT', 'name' => 'Mailpit', 'desc' => 'Email Testing'],
+            'meilisearch'   => ['env' => 'ENABLE_MEILISEARCH', 'name' => 'Meilisearch', 'desc' => 'Search Engine'],
+            'mercure'       => ['env' => 'ENABLE_MERCURE', 'name' => 'Mercure', 'desc' => 'Real-time Messaging (SSE)'],
             'rabbitmq'      => ['env' => 'ENABLE_RABBITMQ', 'name' => 'RabbitMQ', 'desc' => 'Message Broker'],
             'seaweedfs'     => ['env' => 'ENABLE_SEAWEEDFS', 'name' => 'SeaweedFS', 'desc' => 'S3-Compatible Storage'],
         ];
