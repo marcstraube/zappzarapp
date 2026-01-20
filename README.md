@@ -13,8 +13,8 @@ No setup hassle, no reinventing the wheel - just clone, configure, and go.
   afterthought
 - **Zero Configuration** — `make setup` handles everything: SSL certs, secrets,
   dependencies, containers
-- **GDPR-Ready** — 3-tier network segmentation, encryption helpers, audit
-  logging infrastructure
+- **Security & GDPR-Ready** — Docker Secrets, internal TLS, network
+  segmentation, encryption helpers
 - **Production-Ready** — Same stack from development to deployment, no rebuild
   required
 - **Full IDE Support** — Pre-configured for PHPStorm and VS Code (run configs,
