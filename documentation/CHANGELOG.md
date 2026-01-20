@@ -1,11 +1,26 @@
 # zappzarapp - Changelog
 
-**Erstellt:** 2025-12-19 **Letzte Aktualisierung:** 2026-01-20 (Help Filter)
-**Version:** 3.65
+**Erstellt:** 2025-12-19 **Letzte Aktualisierung:** 2026-01-20 (Unknown Target
+Error) **Version:** 3.66
 
 ---
 
 ## Changelog
+
+### Version 3.66 (2026-01-20) - Unknown Target Error
+
+Added error handling for non-existent Make targets.
+
+#### New Features
+
+- **Unknown target detection** — `make typo` now shows a clear error message
+  instead of silently succeeding
+  - Red error message: "Error: Unknown target 'typo'"
+  - Hint to run `make help` for available targets
+  - Proper exit code 2 for CI/script integration
+  - Service arguments still work: `make up php nginx` (no false positives)
+
+---
 
 ### Version 3.65 (2026-01-20) - Help Filter
 

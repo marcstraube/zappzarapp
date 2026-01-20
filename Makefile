@@ -2849,8 +2849,18 @@ ssl-clean: ## Remove all SSL certificates (WARNING: Destructive!)
 		echo -e "\033[0;34mOperation cancelled.\033[0m"; \
 	fi
 
-# Catch-all target for service names passed to up/down/restart
+# Catch-all target for service names passed to up/down/restart/logs/build
 # This prevents Make from trying to build service names as targets
 # Example: 'make up php nginx' - php and nginx are caught here
+# If called directly without a valid parent target, throw an error
+TARGETS_WITH_ARGS := build build-no-cache down down-all k8s-logs logs logs-save prune restart up
+EMPTY :=
+SPACE := $(EMPTY) $(EMPTY)
+TARGETS_PATTERN := $(subst $(SPACE),|,$(TARGETS_WITH_ARGS))
+
 %:
-	@:
+	@if ! echo " $(MAKECMDGOALS) " | grep -qE " ($(TARGETS_PATTERN)) "; then \
+		echo -e "\033[0;31mError: Unknown target '$@'\033[0m"; \
+		echo -e "\033[0;90mRun 'make help' for available targets.\033[0m"; \
+		exit 1; \
+	fi
