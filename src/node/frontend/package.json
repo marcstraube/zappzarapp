@@ -1,19 +1,12 @@
 {
   "name": "@zappzarapp/frontend",
+  "version": "1.0.0",
+  "description": "Placeholder for frontend framework (Next.js, Nuxt, Remix, SvelteKit)",
   "type": "module",
   "private": true,
   "scripts": {
-    "build": "nuxt build",
-    "dev": "nuxt dev",
-    "generate": "nuxt generate",
-    "preview": "nuxt preview",
-    "postinstall": "nuxt prepare",
-    "start": "node .output/server/index.mjs"
-  },
-  "dependencies": {
-    "nuxt": "^4.2.2",
-    "vue": "^3.5.26",
-    "vue-router": "^4.6.4"
-  },
-  "version": "1.0.0"
+    "dev": "echo 'No frontend framework installed. Run: make frontend-next|nuxt|remix|svelte'",
+    "build": "echo 'No frontend framework installed'",
+    "start": "echo 'No frontend framework installed'"
+  }
 }
