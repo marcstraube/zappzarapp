@@ -7,41 +7,126 @@ Run `make help` to see all available commands with descriptions.
 
 ## Quick Reference
 
-| Task             | Command                   |
-| ---------------- | ------------------------- |
-| First-time setup | `make init && make setup` |
-| Start containers | `make up`                 |
-| Stop containers  | `make down`               |
-| Run all tests    | `make test`               |
-| Run all checks   | `make check`              |
-| View logs        | `make logs`               |
+| Task             | Command      |
+| ---------------- | ------------ |
+| First-time setup | `make setup` |
+| Start containers | `make up`    |
+| Stop containers  | `make down`  |
+| Run all tests    | `make test`  |
+| Run all checks   | `make check` |
+| View logs        | `make logs`  |
 
 ## Setup Commands
 
 Commands for initial project setup and configuration.
 
-| Command                       | Description                                                              |
-| ----------------------------- | ------------------------------------------------------------------------ |
-| `make init`                   | Initialize project (copy `.env.example` to `.env`) - Run this first!     |
-| `make setup`                  | Create directories, generate secrets, build images, install dependencies |
-| `make composer-install`       | Install/update Composer dependencies via Docker (guaranteed consistency) |
-| `make composer-install-local` | Install Composer dependencies locally (for IDE code completion)          |
-| `make pnpm-install`           | Install Node.js dependencies via Docker (requires ENV=development)       |
-| `make pnpm-install-local`     | Install Node.js dependencies locally (for IDE code completion)           |
-| `make hooks-install`          | Install Git hooks using CaptainHook                                      |
+| Command                         | Description                                                               |
+| ------------------------------- | ------------------------------------------------------------------------- |
+| `make setup`                    | Full setup (directories, secrets, build, install) - entry point           |
+| `make init`                     | Create `.env.local` with USER_ID/GROUP_ID (called interactively by setup) |
+| `make composer-install`         | Install/update Composer dependencies via Docker (guaranteed consistency)  |
+| `make composer-install-local`   | Install Composer dependencies locally (for IDE code completion)           |
+| `make pnpm-install`             | Install Node.js dependencies via Docker (requires ENV=development)        |
+| `make pnpm-install-local`       | Install Node.js dependencies locally (for IDE code completion)            |
+| `make hooks-install`            | Install Git hooks using CaptainHook                                       |
+| `make ide-config`               | Configure all IDE database connections (PHPStorm + VS Code)               |
+| `make ide-config-full`          | Update all IDE configs with custom ports from `.env.local`                |
+| `make ide-config-phpstorm`      | Configure PHPStorm only (`.idea/dataSources.local.xml`)                   |
+| `make ide-config-vscode`        | Configure VS Code only (`.vscode/settings.json`)                          |
+| `make ide-config-phpstorm-full` | Update PHPStorm shared config with custom ports                           |
+| `make ide-config-vscode-full`   | Update VS Code config with custom ports                                   |
 
 ### Setup Workflow
 
 ```bash
-# New project
-make init           # 1. Create .env from template
-# Edit .env         # 2. Configure USER_ID, GROUP_ID, etc.
-make setup          # 3. Complete setup (build, install, start)
+# New project - single command
+make setup          # Prompts for init if needed, then builds everything
 
 # IDE setup (optional)
 make composer-install-local  # PHP code completion
 make pnpm-install-local      # Node.js code completion
 ```
+
+On first run, `make setup` will ask whether to run `make init` (auto-detect
+USER_ID/GROUP_ID) or continue with defaults from `.env`.
+
+### IDE Database Setup
+
+`make setup` automatically runs `make ide-config`, which configures database
+connections for both PHPStorm and VS Code.
+
+**Configured connections:**
+
+- PostgreSQL (Docker) - local development
+- MariaDB (Docker) - local development
+- PostgreSQL (Remote) - production access
+- MariaDB (Remote) - production access
+
+#### PHPStorm
+
+**First connection:**
+
+1. Open **Database** tool window (`View → Tool Windows → Database`)
+2. Click the data source → **Test Connection**
+3. Get password: `cat secrets/db_password.txt`
+4. Paste password, enable **Save password** → stored in system keyring
+
+**Custom ports:** Run `make ide-config-phpstorm-full` if you changed ports in
+`.env.local`
+
+**Remote DB (SSH tunnel):** PHPStorm handles SSH tunnels automatically when
+configured in `.env.local` (see below).
+
+#### VS Code (SQLTools)
+
+**First connection:**
+
+1. Open **SQLTools** sidebar (database icon)
+2. Click a connection → prompted for password
+3. Get password: `cat secrets/db_password.txt`
+
+**Custom ports:** Run `make ide-config-vscode-full` if you changed ports in
+`.env.local`
+
+**Remote DB (SSH tunnel):** SQLTools doesn't support integrated SSH tunnels.
+Start tunnel manually before connecting:
+
+```bash
+ssh -N -L 5432:internal-db:5432 user@bastion.example.com
+# Then connect to localhost:5432 in VS Code
+```
+
+#### Custom Ports (Both IDEs)
+
+If you changed `POSTGRES_PORT` or `MARIADB_PORT` in `.env.local`:
+
+```bash
+make ide-config-full    # Updates both PHPStorm and VS Code
+
+# Hide local changes from git:
+git update-index --assume-unchanged .idea/dataSources.xml
+git update-index --assume-unchanged .vscode/settings.json
+```
+
+#### Remote Database Configuration
+
+Configure in `.env.local` (gitignored, your personal credentials):
+
+```bash
+# Remote DB connection (coordinate with team for these values)
+DB_REMOTE_HOST=internal-db.k8s.cluster
+DB_REMOTE_PORT=5432
+DB_REMOTE_NAME=production
+DB_REMOTE_USER=app_readonly
+
+# SSH tunnel (your personal credentials - PHPStorm only)
+DB_REMOTE_SSH_HOST=bastion.example.com
+DB_REMOTE_SSH_PORT=22
+DB_REMOTE_SSH_USER=your-username
+DB_REMOTE_SSH_KEY=~/.ssh/id_ed25519
+```
+
+Run `make ide-config` to apply configuration.
 
 ## Docker Commands
 

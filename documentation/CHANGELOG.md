@@ -1,11 +1,78 @@
 # zappzarapp - Changelog
 
-**Erstellt:** 2025-12-19 **Letzte Aktualisierung:** 2026-01-19 (ESLint & IDE
-Config) **Version:** 3.55
+**Erstellt:** 2025-12-19 **Letzte Aktualisierung:** 2026-01-20 (Environment &
+IDE Config) **Version:** 3.56
 
 ---
 
 ## Changelog
+
+### Version 3.56 (2026-01-20) - Environment Hierarchy & IDE Parity
+
+New 3-tier environment file system and VS Code database integration for IDE
+parity.
+
+#### Environment File Hierarchy
+
+New model replaces `.env.example` copy workflow:
+
+| File              | Purpose              | Git Status |
+| ----------------- | -------------------- | ---------- |
+| `.env`            | Team defaults        | Committed  |
+| `.env.production` | Production overrides | Committed  |
+| `.env.local`      | Personal overrides   | Gitignored |
+
+- **Load order**: `.env` → `.env.production` (if ENV=production) → `.env.local`
+- **`make setup`**: Now interactive - asks to run `make init` or continue with
+  defaults
+- **`make init`**: Auto-detects USER_ID/GROUP_ID, remains available separately
+- **Removed**: `.env.example` (YAGNI - `.env` is now committed)
+
+#### IDE Database Configuration
+
+Split into IDE-specific commands with VS Code support:
+
+| Command                         | Description                             |
+| ------------------------------- | --------------------------------------- |
+| `make ide-config`               | Configure all IDEs (PHPStorm + VS Code) |
+| `make ide-config-full`          | With custom ports from `.env.local`     |
+| `make ide-config-phpstorm`      | PHPStorm only                           |
+| `make ide-config-vscode`        | VS Code SQLTools only                   |
+| `make ide-config-phpstorm-full` | PHPStorm with custom ports              |
+| `make ide-config-vscode-full`   | VS Code with custom ports               |
+
+**Connections configured (both IDEs):**
+
+- PostgreSQL (Docker) - local development
+- MariaDB (Docker) - local development
+- PostgreSQL (Remote) - production access
+- MariaDB (Remote) - production access
+
+**Note**: PHPStorm supports integrated SSH tunnels; VS Code requires manual
+tunnel.
+
+#### Other Changes
+
+- **Remote DB support**: New `DB_REMOTE_*` variables in `.env` for production
+  access
+- **PHPStorm**: Added `sshConfigs.xml` to `.gitignore` (user-specific SSH
+  credentials)
+- **Documentation**: Updated QUICKSTART.md, MAKEFILE-REFERENCE.md,
+  CUSTOMIZATION.md
+
+#### Updated Files
+
+- `.env` - Added DB*REMOTE*\* variables section
+- `.env.production` - New file for production-specific values
+- `.gitignore` - Updated for new env model + sshConfigs.xml
+- `Makefile` - LOAD_ENV macro, interactive setup, split ide-config commands
+- `.idea/dataSources.xml` - Added Remote DB sources
+- `.vscode/settings.json` - SQLTools connections with askForPassword
+- `documentation/QUICKSTART.md` - Simplified to single `make setup` command
+- `documentation/development/MAKEFILE-REFERENCE.md` - IDE setup for both IDEs
+- `documentation/getting-started/CUSTOMIZATION.md` - New env file hierarchy
+
+---
 
 ### Version 3.55 (2026-01-19) - ESLint Test Coverage & IDE Config
 
@@ -3563,7 +3630,7 @@ Complete feature parity between VS Code and PhpStorm:
         - `load_module modules/ngx_http_brotli_static_module.so;`
       - **Brotli Compression (Primary - Modern browsers):**
         - `brotli on;` mit Level 6 (balanced compression/speed)
-        - Identische MIME-Types wie Gzip (text/_, application/_, fonts)
+        - Identische MIME-Types wie Gzip (text/*, application/*, fonts)
       - **Gzip Compression (Fallback - Legacy browsers):**
         - `gzip on;` bleibt aktiv (100% Backward Compatibility)
         - Gleiche Konfiguration wie vorher
@@ -4028,7 +4095,7 @@ Complete feature parity between VS Code and PhpStorm:
   - **Problem:** Asymmetrische Test-Beispiele und Path-Alias-Fehler
     - Node.js hatte Beispiel-Tests (math.test.ts, api.test.ts), PHP nicht
     - Node.js hatte Beispiel-Utilities (src/node/utils/math.ts), PHP nicht
-    - TypeScript Path-Aliases (@node/_, @tests/_) funktionierten nicht in Tests
+    - TypeScript Path-Aliases (@node/*, @tests/*) funktionierten nicht in Tests
     - IDE konnte Importe nicht auflösen → Entwickler-Erfahrung schlecht
     - `make test-php` und `make test` funktionierten nicht (mehrere Fehler)
   - **Lösung: Symmetrische Beispiele und korrekte TypeScript-Konfiguration**
@@ -4234,7 +4301,7 @@ Complete feature parity between VS Code and PhpStorm:
       - .pnpm-store, build, dist, node_modules, public/build, storage, vendor
   - **Resultat: Vollständige IDE-Integration**
     - PhpStorm erkennt beide Sprach-Stacks korrekt
-    - TypeScript Autocomplete funktioniert für src/node/\*_/_
+    - TypeScript Autocomplete funktioniert für src/node/\**/*
     - Test-Runner erkennt beide Test-Stacks
     - Navigation und Refactoring für PHP und Node.js
     - Symmetrie zwischen PHP- und Node.js-Entwicklung
@@ -4379,7 +4446,7 @@ Complete feature parity between VS Code and PhpStorm:
       Code-Cleanup (Zeilen 108, 125, 142, 148)
     - `templates/welcome.php`: PHPDoc-Header mit @var Annotations (Zeilen 1-12)
   - **Ergebnis:**
-    - ✅ Alle IDE-Warnungen in src/php/_und templates/_ behoben
+    - ✅ Alle IDE-Warnungen in src/php/*und templates/* behoben
     - ✅ Composer Dependencies vollständig deklariert
     - ✅ Code Quality verbessert (keine redundanten Checks)
     - ✅ Template-Variablen dokumentiert mit Type-Hints
@@ -5100,9 +5167,9 @@ Complete feature parity between VS Code and PhpStorm:
       - `make shell-postgres`: Öffnet PostgreSQL-Shell ✅
       - `make check-health`: Database-Emoji 💾 konsistente Breite ✅
     - **Vorteile:**
-      - **Vollständigkeit:** Alle Services haben logs-_und shell-_ Commands
+      - **Vollständigkeit:** Alle Services haben logs-*und shell-* Commands
       - **Konsistenz:**
-        - Einheitliches Naming-Schema (shell-_, logs-_, \*-install)
+        - Einheitliches Naming-Schema (shell-*, logs-*, \*-install)
         - Composer und Node.js nutzen gleiches Pattern: `<tool>-install` /
           `<tool>-install-local`
       - **Lesbarkeit:** Perfekt formatierte Help-Ausgabe

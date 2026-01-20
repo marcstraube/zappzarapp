@@ -1,6 +1,11 @@
 # ./compose.yaml
 # Docker Compose Base Configuration
 #
+# ENVIRONMENT FILES (loaded in order, later files override earlier):
+#   .env              - Team defaults (committed)
+#   .env.production   - Production overrides (committed, loaded if ENV=production)
+#   .env.local        - Local overrides (gitignored, loaded via Makefile)
+#
 # SECRETS HANDLING:
 #   Uses bind mounts (./secrets:/run/secrets:ro) instead of Docker secrets.
 #   Docker Compose (standalone) does NOT support uid/gid/mode for secrets.

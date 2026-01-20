@@ -8,6 +8,16 @@ DC := docker compose --progress=plain
 # This ensures make pnpm/composer/etc. work regardless of .env settings
 DC_RUN := COMPOSE_PROFILES=php,node,node-backend,dev-tools $(DC)
 
+# Load environment files in correct order:
+# 1. .env (team defaults)
+# 2. .env.production (if ENV=production)
+# 3. .env.local (local overrides)
+define LOAD_ENV
+. ./.env; \
+[ "$${ENV:-development}" = "production" ] && [ -f .env.production ] && . ./.env.production || true; \
+[ -f .env.local ] && . ./.env.local || true
+endef
+
 .PHONY: $(shell awk '/^[a-zA-Z_-]+:.*?## / { print $$1 }' $(MAKEFILE_LIST) | sed 's/://')
 
 help: ## Show this help
@@ -76,20 +86,47 @@ hooks-install: ## Install Git hooks using CaptainHook
 	@vendor/bin/captainhook install
 	@echo -e "\033[0;32mGit hooks installed successfully in .git/hooks/!\033[0m"
 
-init: ## Initialize project (copy .env) - Run this first!
-	@echo -e "\033[0;33mInitializing configuration...\033[0m"
-	@if [ ! -f .env ]; then \
-		cp .env.example .env; \
-		echo -e "\033[0;32m.env file created from example.\033[0m"; \
-		echo -e "\033[0;31mIMPORTANT: Please edit .env before running 'make setup'!\033[0m"; \
+init: ## Initialize project (create .env.local for local overrides) - Run this first!
+	@echo -e "\033[0;33mInitializing local configuration...\033[0m"
+	@if [ ! -f .env.local ]; then \
+		echo "# Local Environment Overrides" > .env.local; \
+		echo "# This file is gitignored - safe for personal settings and secrets" >> .env.local; \
+		echo "#" >> .env.local; \
+		echo "# Adjust USER_ID/GROUP_ID to match your host user (run: id -u && id -g)" >> .env.local; \
+		echo "USER_ID=$$(id -u)" >> .env.local; \
+		echo "GROUP_ID=$$(id -g)" >> .env.local; \
+		echo "" >> .env.local; \
+		echo "# Uncomment to override ports if conflicts exist:" >> .env.local; \
+		echo "#POSTGRES_PORT=5433" >> .env.local; \
+		echo "#MARIADB_PORT=3307" >> .env.local; \
+		echo "#NGINX_PORT=8081" >> .env.local; \
+		echo "" >> .env.local; \
+		echo "# Remote DB SSH tunnel (for IDE access to production):" >> .env.local; \
+		echo "#DB_REMOTE_SSH_HOST=bastion.example.com" >> .env.local; \
+		echo "#DB_REMOTE_SSH_PORT=22" >> .env.local; \
+		echo "#DB_REMOTE_SSH_USER=your-username" >> .env.local; \
+		echo "#DB_REMOTE_SSH_KEY=~/.ssh/id_ed25519" >> .env.local; \
+		echo -e "\033[0;32m.env.local created with your USER_ID=$$(id -u) and GROUP_ID=$$(id -g)\033[0m"; \
 	else \
-		echo -e "\033[0;34m.env file already exists. Skipped.\033[0m"; \
+		echo -e "\033[0;34m.env.local already exists. Skipped.\033[0m"; \
 	fi
+	@echo -e "\033[0;32mInitialization complete!\033[0m"
+	@echo -e "\033[0;34mNext: Run 'make setup' to build containers and install dependencies.\033[0m"
 
 setup: ## Create directories, install dev dependencies and ensure structure
-	@if [ ! -f .env ]; then \
-		echo -e "\033[0;31mError: .env file not found. Please run 'make init' first.\033[0m"; \
-		exit 1; \
+	@if [ ! -f .env.local ]; then \
+		echo -e "\033[0;33m.env.local not found. This file stores your local USER_ID/GROUP_ID.\033[0m"; \
+		echo -e "\033[0;33mWithout it, defaults from .env are used (USER_ID=1000, GROUP_ID=1000).\033[0m"; \
+		echo ""; \
+		echo "  [i] Run 'make init' to auto-detect your IDs (recommended)"; \
+		echo "  [c] Continue with defaults"; \
+		echo ""; \
+		read -p "Choice [i/c]: " choice; \
+		case "$$choice" in \
+			i|I) $(MAKE) init;; \
+			c|C) echo "Continuing with defaults...";; \
+			*) echo "Invalid choice. Running 'make init'..."; $(MAKE) init;; \
+		esac; \
 	fi
 	@echo -e "\033[0;33mCreating project structure...\033[0m"
 
@@ -162,36 +199,172 @@ setup: ## Create directories, install dev dependencies and ensure structure
 	@echo -e "\033[0;32mSetup completed!\033[0m"
 	@echo -e "\033[0;34mNote: For IDE code completion, run 'make composer-install-local' and 'make pnpm-install-local'\033[0m"
 
-ide-config: ## Configure IDE (PHPStorm) database connections from secrets
+ide-config: ## Configure all IDE database connections (PHPStorm + VS Code)
+	@$(MAKE) --silent ide-config-phpstorm
+	@$(MAKE) --silent ide-config-vscode
+
+ide-config-full: ## Update all IDE configs with custom ports from .env
+	@$(MAKE) --silent ide-config-phpstorm-full
+	@$(MAKE) --silent ide-config-vscode-full
+
+ide-config-phpstorm: ## Configure PHPStorm database connections (.idea/dataSources.local.xml)
 	@if [ ! -d .idea ]; then \
-		echo -e "\033[0;33mSkipping IDE config (.idea directory not found)\033[0m"; \
+		echo -e "\033[0;33mSkipping PHPStorm config (.idea directory not found)\033[0m"; \
 		exit 0; \
 	fi
 	@if [ ! -f secrets/db_password.txt ]; then \
-		echo -e "\033[0;33mSkipping IDE config (secrets not generated yet)\033[0m"; \
+		echo -e "\033[0;33mSkipping PHPStorm config (secrets not generated yet)\033[0m"; \
 		exit 0; \
 	fi
-	@echo -e "\033[0;33mConfiguring IDE database connections...\033[0m"
-	@. ./.env && { \
+	@echo -e "\033[0;33mConfiguring PHPStorm database connections...\033[0m"
+	@$(LOAD_ENV) && { \
+		DB_NAME_VAL="$${DB_NAME:-app}"; \
+		REMOTE_DB_NAME="$${DB_REMOTE_NAME:-production}"; \
 		echo '<?xml version="1.0" encoding="UTF-8"?>'; \
 		echo '<project version="4">'; \
 		echo '  <component name="dataSourceStorageLocal" created-in="IntelliJ IDEA">'; \
+		echo '    <!-- Local Development Databases -->'; \
 		echo '    <data-source name="PostgreSQL (Docker)" uuid="postgres-zappzarapp">'; \
 		echo '      <database-info product="" version="" jdbc-version="" driver-name="" driver-version="" dbms="POSTGRES" />'; \
 		echo "      <user-name>$${DB_USER:-app}</user-name>"; \
-		echo '      <schema-mapping />'; \
+		echo "      <schema-pattern>$${DB_NAME_VAL}.public</schema-pattern>"; \
+		echo "      <default-schemas>$${DB_NAME_VAL}.public</default-schemas>"; \
 		echo '    </data-source>'; \
 		echo '    <data-source name="MariaDB (Docker)" uuid="mariadb-zappzarapp">'; \
 		echo '      <database-info product="" version="" jdbc-version="" driver-name="" driver-version="" dbms="MARIADB" />'; \
 		echo "      <user-name>$${DB_USER:-app}</user-name>"; \
-		echo '      <schema-mapping />'; \
+		echo "      <schema-pattern>$${DB_NAME_VAL}.*</schema-pattern>"; \
+		echo "      <default-schemas>$${DB_NAME_VAL}.*</default-schemas>"; \
+		echo '    </data-source>'; \
+		echo '    <!-- Remote Databases -->'; \
+		echo '    <data-source name="PostgreSQL (Remote)" uuid="postgres-remote-zappzarapp">'; \
+		echo '      <database-info product="" version="" jdbc-version="" driver-name="" driver-version="" dbms="POSTGRES" />'; \
+		echo "      <user-name>$${DB_REMOTE_USER:-$${DB_USER:-app}}</user-name>"; \
+		echo "      <schema-pattern>$${REMOTE_DB_NAME}.public</schema-pattern>"; \
+		echo "      <default-schemas>$${REMOTE_DB_NAME}.public</default-schemas>"; \
+		if [ -n "$${DB_REMOTE_SSH_HOST}" ]; then \
+			echo '      <ssh-properties>'; \
+			echo '        <enabled>true</enabled>'; \
+			echo "        <proxy-host>$${DB_REMOTE_SSH_HOST}</proxy-host>"; \
+			echo "        <proxy-port>$${DB_REMOTE_SSH_PORT:-22}</proxy-port>"; \
+			echo "        <user>$${DB_REMOTE_SSH_USER}</user>"; \
+			echo '        <use-password>false</use-password>'; \
+			echo "        <private-key-path>$${DB_REMOTE_SSH_KEY:-~/.ssh/id_ed25519}</private-key-path>"; \
+			echo '      </ssh-properties>'; \
+		fi; \
+		echo '    </data-source>'; \
+		echo '    <data-source name="MariaDB (Remote)" uuid="mariadb-remote-zappzarapp">'; \
+		echo '      <database-info product="" version="" jdbc-version="" driver-name="" driver-version="" dbms="MARIADB" />'; \
+		echo "      <user-name>$${DB_REMOTE_USER:-$${DB_USER:-app}}</user-name>"; \
+		echo "      <schema-pattern>$${REMOTE_DB_NAME}.*</schema-pattern>"; \
+		echo "      <default-schemas>$${REMOTE_DB_NAME}.*</default-schemas>"; \
+		if [ -n "$${DB_REMOTE_SSH_HOST}" ]; then \
+			echo '      <ssh-properties>'; \
+			echo '        <enabled>true</enabled>'; \
+			echo "        <proxy-host>$${DB_REMOTE_SSH_HOST}</proxy-host>"; \
+			echo "        <proxy-port>$${DB_REMOTE_SSH_PORT:-22}</proxy-port>"; \
+			echo "        <user>$${DB_REMOTE_SSH_USER}</user>"; \
+			echo '        <use-password>false</use-password>'; \
+			echo "        <private-key-path>$${DB_REMOTE_SSH_KEY:-~/.ssh/id_ed25519}</private-key-path>"; \
+			echo '      </ssh-properties>'; \
+		fi; \
 		echo '    </data-source>'; \
 		echo '  </component>'; \
 		echo '</project>'; \
 	} > .idea/dataSources.local.xml
-	@echo -e "\033[0;32mIDE database config updated (.idea/dataSources.local.xml)\033[0m"
-	@echo -e "\033[0;34mNote: Password must be entered manually in PHPStorm on first connection.\033[0m"
-	@echo -e "\033[0;34mPassword is in: secrets/db_password.txt\033[0m"
+	@echo -e "\033[0;32mPHPStorm: .idea/dataSources.local.xml updated\033[0m"
+	@$(LOAD_ENV) && if [ -n "$${DB_REMOTE_SSH_HOST}" ]; then \
+		echo -e "\033[0;32m  Remote DB SSH tunnel configured: $${DB_REMOTE_SSH_HOST}\033[0m"; \
+	else \
+		echo -e "\033[0;34m  Tip: Configure DB_REMOTE_SSH_* in .env.local for remote DB access\033[0m"; \
+	fi
+	@echo -e "\033[0;34m  On first connection: cat secrets/db_password.txt → paste when prompted\033[0m"
+
+ide-config-phpstorm-full: ## Update PHPStorm dataSources.xml (shared) with custom ports from .env
+	@if [ ! -d .idea ]; then \
+		echo -e "\033[0;33mSkipping PHPStorm config (.idea directory not found)\033[0m"; \
+		exit 0; \
+	fi
+	@echo -e "\033[0;33m╔════════════════════════════════════════════════════════════════╗\033[0m"
+	@echo -e "\033[0;33m║  Updating .idea/dataSources.xml (shared team file)             ║\033[0m"
+	@echo -e "\033[0;33m║  To hide local changes from git:                               ║\033[0m"
+	@echo -e "\033[0;33m║  git update-index --assume-unchanged .idea/dataSources.xml     ║\033[0m"
+	@echo -e "\033[0;33m╚════════════════════════════════════════════════════════════════╝\033[0m"
+	@$(LOAD_ENV) && { \
+		echo '<?xml version="1.0" encoding="UTF-8"?>'; \
+		echo '<project version="4">'; \
+		echo '  <component name="DataSourceManagerImpl" format="xml" multifile-model="true">'; \
+		echo '    <!-- Local Development Databases -->'; \
+		echo '    <data-source source="LOCAL" name="PostgreSQL (Docker)" uuid="postgres-zappzarapp">'; \
+		echo '      <driver-ref>postgresql</driver-ref>'; \
+		echo '      <synchronize>true</synchronize>'; \
+		echo '      <jdbc-driver>org.postgresql.Driver</jdbc-driver>'; \
+		echo "      <jdbc-url>jdbc:postgresql://localhost:$${POSTGRES_PORT:-5432}/$${DB_NAME:-app}</jdbc-url>"; \
+		echo '      <working-dir>$$ProjectFileDir$$</working-dir>'; \
+		echo '      <driver-properties>'; \
+		echo '        <property name="ApplicationName" value="PhpStorm" />'; \
+		echo '      </driver-properties>'; \
+		echo '    </data-source>'; \
+		echo '    <data-source source="LOCAL" name="MariaDB (Docker)" uuid="mariadb-zappzarapp">'; \
+		echo '      <driver-ref>mariadb</driver-ref>'; \
+		echo '      <synchronize>true</synchronize>'; \
+		echo '      <jdbc-driver>org.mariadb.jdbc.Driver</jdbc-driver>'; \
+		echo "      <jdbc-url>jdbc:mariadb://localhost:$${MARIADB_PORT:-3306}/$${DB_NAME:-app}</jdbc-url>"; \
+		echo '      <working-dir>$$ProjectFileDir$$</working-dir>'; \
+		echo '    </data-source>'; \
+		echo '    <!-- Remote Databases (via SSH tunnel) -->'; \
+		echo '    <data-source source="LOCAL" name="PostgreSQL (Remote)" uuid="postgres-remote-zappzarapp">'; \
+		echo '      <driver-ref>postgresql</driver-ref>'; \
+		echo '      <synchronize>true</synchronize>'; \
+		echo '      <jdbc-driver>org.postgresql.Driver</jdbc-driver>'; \
+		echo "      <jdbc-url>jdbc:postgresql://$${DB_REMOTE_HOST:-localhost}:$${DB_REMOTE_PORT:-5432}/$${DB_REMOTE_NAME:-production}</jdbc-url>"; \
+		echo '      <working-dir>$$ProjectFileDir$$</working-dir>'; \
+		echo '      <driver-properties>'; \
+		echo '        <property name="ApplicationName" value="PhpStorm" />'; \
+		echo '      </driver-properties>'; \
+		echo '    </data-source>'; \
+		echo '    <data-source source="LOCAL" name="MariaDB (Remote)" uuid="mariadb-remote-zappzarapp">'; \
+		echo '      <driver-ref>mariadb</driver-ref>'; \
+		echo '      <synchronize>true</synchronize>'; \
+		echo '      <jdbc-driver>org.mariadb.jdbc.Driver</jdbc-driver>'; \
+		echo "      <jdbc-url>jdbc:mariadb://$${DB_REMOTE_HOST:-localhost}:$${DB_REMOTE_PORT:-3306}/$${DB_REMOTE_NAME:-production}</jdbc-url>"; \
+		echo '      <working-dir>$$ProjectFileDir$$</working-dir>'; \
+		echo '    </data-source>'; \
+		echo '  </component>'; \
+		echo '</project>'; \
+	} > .idea/dataSources.xml
+	@echo -e "\033[0;32mPHPStorm: .idea/dataSources.xml updated with custom ports\033[0m"
+	@$(MAKE) --silent ide-config-phpstorm
+
+ide-config-vscode: ## Configure VS Code SQLTools connections (.vscode/settings.json)
+	@if [ ! -d .vscode ]; then \
+		echo -e "\033[0;33mSkipping VS Code config (.vscode directory not found)\033[0m"; \
+		exit 0; \
+	fi
+	@if ! command -v jq &> /dev/null; then \
+		echo -e "\033[0;31mError: jq is required for VS Code config. Install with: apt install jq\033[0m"; \
+		exit 1; \
+	fi
+	@echo -e "\033[0;33mConfiguring VS Code SQLTools connections...\033[0m"
+	@$(LOAD_ENV) && \
+	CONNECTIONS='[{"name":"PostgreSQL (Docker)","driver":"PostgreSQL","server":"localhost","port":'"$${POSTGRES_PORT:-5432}"',"database":"'"$${DB_NAME:-app}"'","username":"'"$${DB_USER:-app}"'","askForPassword":true},{"name":"MariaDB (Docker)","driver":"MariaDB","server":"localhost","port":'"$${MARIADB_PORT:-3306}"',"database":"'"$${DB_NAME:-app}"'","username":"'"$${DB_USER:-app}"'","askForPassword":true},{"name":"PostgreSQL (Remote)","driver":"PostgreSQL","server":"localhost","port":'"$${DB_REMOTE_PORT:-5432}"',"database":"'"$${DB_REMOTE_NAME:-production}"'","username":"'"$${DB_REMOTE_USER:-$${DB_USER:-app}}"'","askForPassword":true},{"name":"MariaDB (Remote)","driver":"MariaDB","server":"localhost","port":'"$${DB_REMOTE_PORT:-3306}"',"database":"'"$${DB_REMOTE_NAME:-production}"'","username":"'"$${DB_REMOTE_USER:-$${DB_USER:-app}}"'","askForPassword":true}]' && \
+	jq --argjson conns "$$CONNECTIONS" '.["sqltools.connections"] = $$conns' .vscode/settings.json > .vscode/settings.json.tmp && \
+	mv .vscode/settings.json.tmp .vscode/settings.json
+	@echo -e "\033[0;32mVS Code: .vscode/settings.json updated\033[0m"
+	@echo -e "\033[0;34m  On first connection: cat secrets/db_password.txt → paste when prompted\033[0m"
+	@echo -e "\033[0;34m  Remote DB: Start SSH tunnel first (ssh -N -L 5432:db-host:5432 bastion)\033[0m"
+
+ide-config-vscode-full: ## Update VS Code settings.json with custom ports (shows assume-unchanged hint)
+	@if [ ! -d .vscode ]; then \
+		echo -e "\033[0;33mSkipping VS Code config (.vscode directory not found)\033[0m"; \
+		exit 0; \
+	fi
+	@echo -e "\033[0;33m╔════════════════════════════════════════════════════════════════╗\033[0m"
+	@echo -e "\033[0;33m║  Updating .vscode/settings.json (shared team file)             ║\033[0m"
+	@echo -e "\033[0;33m║  To hide local changes from git:                               ║\033[0m"
+	@echo -e "\033[0;33m║  git update-index --assume-unchanged .vscode/settings.json     ║\033[0m"
+	@echo -e "\033[0;33m╚════════════════════════════════════════════════════════════════╝\033[0m"
+	@$(MAKE) --silent ide-config-vscode
 
 ##@ Docker
 
@@ -669,8 +842,7 @@ status: ## Show running containers status and image disk usage
 	@docker images | grep "$(COMPOSE_PROJECT_NAME:-zappzarapp)"
 
 up: ## Start containers (optionally specify service names: make up php nginx)
-	@if [ ! -f .env ]; then echo -e "\033[0;31mError: .env not found. Run 'make init' first.\033[0m"; exit 1; fi
-	@. ./.env && if [ "$${ENV:-development}" = "production" ]; then \
+	@$(LOAD_ENV); if [ "$${ENV:-development}" = "production" ]; then \
 		echo -e "\033[0;33m⚠️  WARNING: Running Compose in production mode.\033[0m"; \
 		echo -e "\033[0;33m   For multi-node deployments, use 'make k8s-deploy' (Kubernetes).\033[0m"; \
 		echo ""; \

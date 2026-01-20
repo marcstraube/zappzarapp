@@ -18,35 +18,16 @@ make --version      # GNU Make
 
 ## Quick Setup
 
-### 1. Clone and Initialize
+### 1. Clone and Run Setup
 
 ```bash
 git clone <repository-url> my-project
 cd my-project
-make init
-```
-
-This creates `.env` from `.env.example`.
-
-### 2. Configure Environment
-
-Edit `.env` and set your user/group IDs (prevents permission issues):
-
-```bash
-# Find your IDs
-id -u  # User ID
-id -g  # Group ID
-
-# Edit .env
-USER_ID=1000    # Your user ID
-GROUP_ID=1000   # Your group ID
-```
-
-### 3. Run Setup
-
-```bash
 make setup
 ```
+
+On first run, `make setup` will ask whether to auto-detect your USER_ID/GROUP_ID
+(recommended) or continue with defaults.
 
 This command:
 
@@ -57,7 +38,7 @@ This command:
 - Installs dependencies (Composer + pnpm)
 - Starts containers
 
-### 4. Verify Installation
+### 2. Verify Installation
 
 ```bash
 make check-health
@@ -254,7 +235,7 @@ make fresh
 
 ### Port Already in Use
 
-Edit `.env` to change ports:
+Edit `.env.local` to override ports:
 
 ```bash
 NGINX_PORT=8081        # Default: 8080

@@ -1,7 +1,5 @@
-# Environment
-.env
+# Environment (local overrides only - .env and .env.production are committed)
 .env.local
-.env.*.local
 
 # Logs
 *.log
@@ -56,6 +54,7 @@ Thumbs.db
 # Ignore caches and generated files
 .idea/**/contentModel.xml
 .idea/**/dataSources.local.xml
+.idea/**/sshConfigs.xml
 .idea/**/sqlDataSources.xml
 .idea/**/dynamic.xml
 .idea/**/uiDesigner.xml

@@ -7,7 +7,8 @@ After cloning zappzarapp, customize these files to make it your own project.
 - [ ] `composer.json` - PHP package metadata
 - [ ] `package.json` - Node.js package metadata
 - [ ] `LICENSE` - Copyright holder
-- [ ] `.env` - Environment configuration
+- [ ] `.env` - Team environment defaults (committed)
+- [ ] `.env.local` - Your local overrides (created by `make setup`)
 - [ ] `public/favicon.svg` - App icon
 
 ## Package Files
@@ -89,21 +90,32 @@ Update the `license` field in `composer.json` and `package.json` accordingly.
 
 ## Environment Configuration
 
-Copy and edit `.env`:
+The project uses a 3-tier environment file structure:
 
-```bash
-cp .env.example .env
-```
+| File              | Purpose                    | Git Status |
+| ----------------- | -------------------------- | ---------- |
+| `.env`            | Team defaults              | Committed  |
+| `.env.production` | Production-specific values | Committed  |
+| `.env.local`      | Your local overrides       | Gitignored |
 
-Key settings to customize:
+`make setup` will interactively offer to create `.env.local` with your
+USER_ID/GROUP_ID. You can also run `make init` separately at any time.
 
-| Variable                              | Description             | Example                 |
-| ------------------------------------- | ----------------------- | ----------------------- |
-| `COMPOSE_PROJECT_NAME`                | Docker container prefix | `myapp`                 |
-| `USER_ID` / `GROUP_ID`                | Match your host user    | `1000`                  |
-| `NGINX_PORT` / `NGINX_SSL_PORT`       | Web server ports        | `8080` / `8443`         |
-| `DB_TYPE`                             | Database type           | `postgres` or `mariadb` |
-| `DB_NAME` / `DB_USER` / `DB_PASSWORD` | Database credentials    | -                       |
+**Team-level customization** - Edit `.env` (committed):
+
+| Variable               | Description             | Example                 |
+| ---------------------- | ----------------------- | ----------------------- |
+| `COMPOSE_PROJECT_NAME` | Docker container prefix | `myapp`                 |
+| `DB_TYPE`              | Database type           | `postgres` or `mariadb` |
+| `TZ`                   | Timezone                | `Europe/Berlin`         |
+
+**Local overrides** - Edit `.env.local` (gitignored):
+
+| Variable               | Description             | Example |
+| ---------------------- | ----------------------- | ------- |
+| `USER_ID` / `GROUP_ID` | Match your host user    | `1000`  |
+| `NGINX_PORT`           | Override port conflicts | `8081`  |
+| `POSTGRES_PORT`        | Override port conflicts | `5433`  |
 
 ## Git Remote
 

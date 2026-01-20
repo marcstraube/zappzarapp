@@ -189,46 +189,196 @@ Each task has a **Scope** indicator to help with session planning:
 
 ### Environment Configuration
 
-#### .env.local Override Support
+#### Environment & IDE Database Integration
 
 **Status:** Planned
-**Scope:** Medium
+**Scope:** Large
 **Created:** 2026-01-19
-**Context:** Feature request for flexible local configuration overrides
+**Updated:** 2026-01-20
+**Context:** Comprehensive environment configuration with IDE database integration
 
-**Goal:** Allow `.env.local` to override/extend `.env` for temporary or developer-specific changes.
+**Goal:** Implement `.env.local` override support and enhanced PHPStorm database integration with SSH tunnel support for remote/production database access.
+
+---
+
+**Part 1: .env.local Override Support**
+
+Allow `.env.local` to override `.env` for developer-specific settings.
 
 **Benefits:**
-- `.env.local` stays out of Git (in `.gitignore`)
-- Main `.env` remains clean and versioned
-- Quick temporary changes without commit risk
-- Individual developer settings possible
+- `.env.local` stays out of Git (gitignored)
+- Main `.env` remains clean and versioned (no secrets)
+- Individual developer settings (custom ports, SSH details)
+- Separation: Team config vs. personal config
 
-**Typical hierarchy:**
+**Hierarchy:**
 ```
-.env              → Base config (committed, defaults)
-.env.local        → Local overrides (not committed)
-.env.development  → Environment-specific (optional)
+.env              → Base config + Dev-Defaults (committed, no secrets)
+.env.production   → Prod-specific values (committed, no secrets)
+.env.local        → Local overrides + secrets (gitignored)
 ```
 
-**Before starting:** Use Plan Mode to analyze:
-- How Docker Compose currently loads `.env`
-- How PHP/Node applications load environment variables
-- Which dotenv libraries are in use
-- Impact on existing workflows
+**Load order (ENV=production):**
+```
+1. .env              (Base)
+2. .env.production   (Environment-specific)
+3. .env.local        (Local overrides, highest priority)
+```
 
-**Implementation areas to investigate:**
-1. Docker Compose `env_file` configuration
-2. PHP dotenv loading (vlucas/phpdotenv or similar)
-3. Node.js dotenv configuration
-4. Documentation updates
+**Implementation:**
+1. Docker Compose `env_file` configuration (order matters)
+2. PHP dotenv loading (check vlucas/phpdotenv multi-file support)
+3. Node.js dotenv configuration (dotenv-expand or similar)
+4. Makefile: Source files in correct order based on ENV
+5. `.gitignore`: Add `.env.local`
+6. Create `.env.production` template with documented variables
 
-**Files to modify (after analysis):**
-- `.gitignore` (add `.env.local`)
-- `compose.yaml` (env_file order)
-- PHP bootstrap/config files
-- Node.js config files
-- `documentation/` (usage docs)
+---
+
+**Part 2: PHPStorm Remote Database with SSH Tunnel**
+
+Enable IDE access to remote/production databases via SSH tunnel.
+
+**Architecture:**
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│ PHPStorm Data Sources                                           │
+├─────────────────────────────────────────────────────────────────┤
+│ PostgreSQL (Docker)  → localhost:5432      (Local Dev)          │
+│ MariaDB (Docker)     → localhost:3306      (Local Dev)          │
+│ PostgreSQL (Remote)  → SSH Tunnel → Prod   (Optional)           │
+│ MariaDB (Remote)     → SSH Tunnel → Prod   (Optional)           │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+**New .env Variables (documented in .env, values in .env.local):**
+
+```bash
+# === Remote Database Access (IDE only) ===
+# For secure access to staging/production databases via SSH tunnel.
+# Configure actual values in .env.local (gitignored).
+#
+# Remote DB connection (target behind SSH)
+#DB_REMOTE_HOST=internal-db.cluster.local
+#DB_REMOTE_PORT=5432
+#DB_REMOTE_NAME=production
+#DB_REMOTE_USER=readonly_user
+#
+# SSH Tunnel (required for remote access - Security by Design)
+#DB_REMOTE_SSH_HOST=bastion.example.com
+#DB_REMOTE_SSH_PORT=22
+#DB_REMOTE_SSH_USER=developer
+#DB_REMOTE_SSH_KEY=~/.ssh/id_ed25519
+```
+
+**Security Principles:**
+- SSH tunnel is **required** for remote DB access (no direct connections)
+- SSH keys in `~/.ssh/` (never in project directory)
+- Remote credentials only in `.env.local` (gitignored)
+- Read-only user recommended for production access
+
+**`make ide-config` Logic:**
+
+```
+1. Always create local Dev DB sources (PostgreSQL/MariaDB Docker)
+
+2. If DB_REMOTE_SSH_HOST is set (in .env or .env.local):
+   → Create Remote DB source with SSH tunnel
+   → Use DB_REMOTE_* values (fallback to DB_* if not set)
+
+3. SSH tunnel config in dataSources.local.xml:
+   <ssh-properties>
+     <enabled>true</enabled>
+     <proxy-host>${DB_REMOTE_SSH_HOST}</proxy-host>
+     <proxy-port>${DB_REMOTE_SSH_PORT:-22}</proxy-port>
+     <user>${DB_REMOTE_SSH_USER}</user>
+     <use-password>false</use-password>
+     <private-key-path>${DB_REMOTE_SSH_KEY}</private-key-path>
+   </ssh-properties>
+```
+
+---
+
+**Part 3: Documentation**
+
+- Update MAKEFILE-REFERENCE.md with remote DB setup
+- Add section for SSH tunnel configuration
+- Security best practices for production access
+- Troubleshooting (SSH key permissions, tunnel issues)
+
+---
+
+**Implementation Order:**
+
+| Step | Task | Dependencies |
+|------|------|--------------|
+| 1 | `.env.local` support in Docker Compose | None |
+| 2 | `.env.local` support in Makefile | Step 1 |
+| 3 | `.env.local` support in PHP/Node | Step 1 |
+| 4 | Add `DB_REMOTE_*` variables to .env (documented) | None |
+| 5 | Update `ide-config` to read .env.local | Step 2 |
+| 6 | Add Remote DB sources to dataSources.xml | Step 4 |
+| 7 | Generate SSH tunnel config in dataSources.local.xml | Steps 5+6 |
+| 8 | Documentation | All |
+
+**Files to modify:**
+- `.gitignore` - Add `.env.local`
+- `.env` - Document `DB_REMOTE_*` variables
+- `.env.production` - Create with Prod-specific values (DB_REMOTE_HOST, etc.)
+- `compose.yaml` - `env_file` with conditional loading based on ENV
+- `Makefile` - Source .env + .env.{ENV} + .env.local in correct order
+- `.idea/dataSources.xml` - Add Remote data sources
+- `src/php/*/config/` - PHP dotenv multi-file support
+- `src/node/*/` - Node dotenv configuration
+- `documentation/development/MAKEFILE-REFERENCE.md` - Full documentation
+
+**Testing:**
+- [ ] .env.local overrides .env values correctly
+- [ ] Docker Compose reads both files
+- [ ] PHP app reads merged config
+- [ ] Node app reads merged config
+- [ ] `make ide-config` generates correct local.xml
+- [ ] SSH tunnel works in PHPStorm
+- [ ] Remote DB connection succeeds
+
+---
+
+### Security Validation
+
+#### MariaDB SSL Warning for Production
+
+**Status:** Planned
+**Scope:** Small
+**Created:** 2026-01-20
+**Context:** Research session identified missing validation for MariaDB SSL in production
+
+**Goal:** Add Makefile warning when `ENV=production` + `DB_TYPE=mariadb` + `DB_SSL_CA` is empty.
+
+**Rationale:**
+- PostgreSQL auto-negotiates SSL → `empty` is safe for dev and prod
+- MariaDB with `empty` uses self-signed internal cert → risky in production
+- Currently no feedback to user about this security gap
+
+**Implementation:**
+- Add check in Makefile `up` target (or shared include)
+- Warning only, no hard failure (legitimate use cases exist)
+- Message: Explain risk and point to `DB_SSL_CA=system` for cloud DBs
+
+**Example:**
+```makefile
+ifeq ($(ENV),production)
+  ifeq ($(DB_TYPE),mariadb)
+    ifndef DB_SSL_CA
+      $(warning ⚠️  MariaDB in production: DB_SSL_CA is empty (self-signed cert))
+      $(warning    Set DB_SSL_CA=system for cloud DBs or provide custom cert path)
+    endif
+  endif
+endif
+```
+
+**Files to modify:**
+- `Makefile` (add validation in `up` target or shared section)
 
 ---
 
