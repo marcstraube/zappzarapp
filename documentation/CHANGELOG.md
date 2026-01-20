@@ -1,11 +1,47 @@
 # zappzarapp - Changelog
 
-**Erstellt:** 2025-12-19 **Letzte Aktualisierung:** 2026-01-20 (Security &
-Teamwork Hooks) **Version:** 3.59
+**Erstellt:** 2025-12-19 **Letzte Aktualisierung:** 2026-01-20 (Container
+Management) **Version:** 3.60
 
 ---
 
 ## Changelog
+
+### Version 3.60 (2026-01-20) - Container Management & Factory Reset
+
+Improved container lifecycle management with clear separation between
+development and Goss test containers, plus new factory reset capability.
+
+#### New Makefile Targets
+
+- **`make goss-cleanup`** — Remove all Goss test containers, networks, and
+  volumes
+- **`make down-all`** — Stop all containers (dev/prod + Goss tests)
+- **`make reset`** — Factory reset to git-clone state (removes all generated
+  files, secrets, certificates, dependencies, lockfiles)
+
+#### Improved Targets
+
+- **`make down`** — No longer kills Goss test containers; shows info if Goss
+  tests are running
+- **`make up`** — Warns when Goss test containers are running in parallel
+- **`make fresh`** — Now includes `goss-cleanup` before rebuild (ensures clean
+  test images)
+
+#### Service Ordering
+
+- Standardized service list ordering across all compose files and Makefile
+- Pattern: Core (nginx, node, node-backend, php) → Data (mariadb, postgres,
+  redis) → Optional (alphabetically)
+
+#### Updated Files
+
+- `Makefile` — New targets, improved container handling
+- `compose.yaml` — Service ordering standardized
+- `compose.override.yaml` — Service ordering standardized
+- `compose.production.yaml` — Service ordering standardized
+
+---
 
 ### Version 3.59 (2026-01-20) - Security & Teamwork Hooks
 

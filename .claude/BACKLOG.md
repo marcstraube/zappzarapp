@@ -16,6 +16,81 @@ Each task has a **Scope** indicator to help with session planning:
 
 ## High Priority
 
+### Resolve .claude/ Directory Commit Policy
+
+**Status:** Open
+**Scope:** Small
+**Created:** 2026-01-20
+**Context:** Documentation says AI agent files should not be committed, but .claude/ is committed
+
+**Problem:**
+
+`documentation/CONTRIBUTING.md` states:
+> Do not commit personal tool configurations:
+> - `.claude/` - Claude Code settings
+
+But the project has 18 `.claude/` files committed (commands, settings, learnings, backlog).
+
+**Options to evaluate:**
+
+1. **Keep .claude/ committed (update docs)**
+   - Pro: Slash commands, learnings, backlog are project-specific and valuable
+   - Pro: New contributors get working Claude Code setup immediately
+   - Con: Contradicts "personal configuration" philosophy
+   - Action: Update CONTRIBUTING.md to explain which .claude/ files ARE committed
+
+2. **Move to different location**
+   - Pro: Avoids .claude/ which is typically personal
+   - Con: Breaks Claude Code conventions, more complex setup
+   - Action: Move commands to `.project/commands/`, settings elsewhere
+
+3. **Split: commit some, gitignore others**
+   - Pro: Best of both worlds
+   - Con: More complex to maintain
+   - Action: Commit commands/settings.json, gitignore sessions/learnings/backlog
+
+**Decision needed:** Which approach fits this boilerplate best?
+
+**Files to modify (depending on decision):**
+- `documentation/CONTRIBUTING.md`
+- `.gitignore`
+- Possibly move files
+
+---
+
+### Fix frontend-clean and Rename to node-frontend-*
+
+**Status:** Open
+**Scope:** Small
+**Created:** 2026-01-20
+**Context:** Bug discovered during cleanup of accidentally committed frontend files
+
+**Problems:**
+
+1. **frontend-clean doesn't delete everything**: `.nuxt`, `.next`, etc. directories contain root-owned files (created by container). Host-side `rm -rf` fails silently due to permissions.
+
+2. **Naming inconsistency**: All Node-related targets use `node-*` prefix, but frontend scaffolding uses `frontend-*`.
+
+**Solution:**
+
+1. Run cleanup inside container (has root permissions)
+2. Restore placeholder `package.json` after cleanup
+3. Rename targets:
+   - `frontend-clean` → `node-frontend-clean`
+   - `frontend-nuxt` → `node-frontend-nuxt`
+   - `frontend-next` → `node-frontend-next`
+   - `frontend-remix` → `node-frontend-remix`
+   - `frontend-sveltekit` → `node-frontend-sveltekit`
+
+**Files to modify:**
+- `Makefile` (target implementations and dependencies)
+- `src/node/frontend/package.json` (update help message in scripts)
+- `documentation/development/MAKEFILE-REFERENCE.md`
+- `documentation/development/FRONTEND-SCAFFOLDING.md`
+- `.claude/LEARNINGS.md` (if referenced)
+
+---
+
 ### v1.0 Release Preparation
 
 **Status:** Planned
@@ -187,6 +262,50 @@ Each task has a **Scope** indicator to help with session planning:
 
 ## Medium Priority
 
+### Boilerplate Update Mechanism
+
+**Status:** Planned
+**Scope:** Medium
+**Created:** 2026-01-20
+**Context:** Users need a way to pull boilerplate updates into their projects
+
+**Goal:** Add `make update` target to simplify pulling upstream boilerplate changes.
+
+**Challenge:** Boilerplate updates are complex:
+
+| File Type | Update Behavior |
+|-----------|-----------------|
+| `Makefile`, `docker/*`, `compose.*` | Should be updated |
+| `.env`, `secrets/`, user code | Never overwrite |
+| `composer.json`, `package.json` | Merge needed (user has own deps) |
+
+**Recommended Approach:** Git-based (requires user to have upstream remote)
+
+```makefile
+update: ## Update boilerplate from upstream
+    @git remote get-url upstream 2>/dev/null || \
+        (echo "Adding upstream remote..." && git remote add upstream https://github.com/xxx/zappzarapp)
+    @git fetch upstream
+    @echo "Changes from upstream:"
+    @git diff --stat HEAD upstream/main
+    @echo ""
+    @echo "To update, run: git merge upstream/main"
+    @echo "Or for rebase: git rebase upstream/main"
+```
+
+**Additional Features to Consider:**
+- `make update-check` — Show what would change (dry-run)
+- `make update-docker` — Update only docker-related files
+- Documentation for conflict resolution
+- Warning about uncommitted changes before update
+
+**Files to modify:**
+- `Makefile` (new `update` target)
+- `documentation/development/UPDATING.md` (new guide)
+- `README.md` (mention update workflow)
+
+---
+
 ### Code Quality
 
 #### PHP Code Quality: SuppressWarnings Cleanup
@@ -256,37 +375,134 @@ Each task has a **Scope** indicator to help with session planning:
 
 #### Security Static Analysis (SAST)
 
+Security vulnerability scanning split into independent subtasks for systematic implementation.
+
+##### 1. ESLint Security Plugin (Node.js)
+
+**Status:** Planned
+**Scope:** Small
+**Created:** 2026-01-20
+**Context:** Quick win - minimal setup, immediate value
+
+**Goal:** Add security-focused linting rules for Node.js code.
+
+**What it finds:**
+- `eval()` and `Function()` usage
+- `child_process` with dynamic input
+- Non-literal `require()` calls
+- Regular Expression DoS (ReDoS)
+- Unsafe object property access
+
+**Implementation:**
+1. `make pnpm CMD="add -D eslint-plugin-security"`
+2. Add plugin to `eslint.config.js`
+3. Run initial scan, fix or suppress findings
+4. Add to `make check` pipeline
+
+**Files to modify:**
+- `package.json` (new dev dependency)
+- `eslint.config.js` (add security plugin config)
+
+**Resources:**
+- https://www.npmjs.com/package/eslint-plugin-security
+
+---
+
+##### 2. Semgrep Integration (Multi-Language)
+
 **Status:** Planned
 **Scope:** Medium
-**Created:** 2026-01-19
-**Context:** PHPStan finds type errors but not security vulnerabilities
+**Created:** 2026-01-20
+**Context:** Industry-standard SAST tool, covers both PHP and Node.js
 
-**Goal:** Add security-focused static analysis to catch vulnerabilities.
-
-**Tools:**
-- **Semgrep:** Language-agnostic, great security rules
-- **Psalm Taint Analysis:** PHP-specific, finds SQL injection, XSS
-- **ESLint Security Plugin:** Node.js security patterns
+**Goal:** Add Semgrep for comprehensive security scanning across all code.
 
 **What it finds:**
 - SQL Injection (string concatenation in queries)
 - XSS (unescaped output)
 - Command Injection
 - Path Traversal
-- Insecure Deserialization
 - Hardcoded Secrets
+- Insecure Deserialization
+- OWASP Top 10 patterns
 
 **Implementation:**
-1. Add Semgrep config (`.semgrep.yml`)
-2. Enable Psalm taint analysis mode
-3. Add `eslint-plugin-security` to Node
-4. Create Makefile targets: `security-scan`, `security-scan-php`, `security-scan-node`
+1. Add `.semgrep.yml` with rule configuration
+2. Create `make security-scan` target (runs via Docker or pip)
+3. Configure rulesets: `p/security-audit`, `p/owasp-top-ten`
+4. Add to CI pipeline (optional, can be slow)
+5. Document suppression syntax for false positives
 
 **Files to create/modify:**
-- `.semgrep.yml` or `.semgrep/`
-- `psalm.xml` (add taint analysis)
-- `eslint.config.js` (add security plugin)
-- `Makefile` (new targets)
+- `.semgrep.yml` (rule configuration)
+- `Makefile` (new `security-scan` target)
+- `.gitlab-ci.yml` / `.github/workflows/` (optional CI integration)
+
+**Resources:**
+- https://semgrep.dev/docs/
+- https://semgrep.dev/r (rule registry)
+
+---
+
+##### 3. Psalm Taint Analysis (PHP)
+
+**Status:** Planned
+**Scope:** Medium
+**Created:** 2026-01-20
+**Context:** Deep PHP-specific dataflow analysis, complements Semgrep
+
+**Goal:** Enable Psalm's taint analysis for tracking untrusted data through PHP code.
+
+**What it finds:**
+- SQL Injection via tainted variables
+- XSS via unescaped user input
+- Command Injection via shell_exec/exec
+- File inclusion vulnerabilities
+- LDAP Injection
+- Custom taint sources/sinks
+
+**How it works:**
+Tracks data flow from "sources" (user input) to "sinks" (dangerous functions).
+More precise than pattern matching, fewer false positives.
+
+**Implementation:**
+1. `make composer CMD="require --dev vimeo/psalm"`
+2. Create `psalm.xml` with taint analysis enabled
+3. Add taint annotations to existing code (`@psalm-taint-source`, `@psalm-taint-sink`)
+4. Create `make security-scan-php` target
+5. Integrate with existing `make check` or separate `make security-check`
+
+**Files to create/modify:**
+- `composer.json` (new dev dependency)
+- `psalm.xml` (Psalm configuration with taint analysis)
+- `Makefile` (new `security-scan-php` target)
+
+**Resources:**
+- https://psalm.dev/docs/security_analysis/
+- https://psalm.dev/docs/security_analysis/custom_taint_sources/
+
+---
+
+##### 4. Unified Security Scan Target
+
+**Status:** Planned
+**Scope:** Small
+**Created:** 2026-01-20
+**Context:** After subtasks 1-3 are complete
+
+**Goal:** Create unified `make security-check` that runs all security tools.
+
+**Implementation:**
+```makefile
+security-check: security-scan-node security-scan-php security-scan  ## Run all security scans
+security-scan-node:    ## ESLint security plugin
+security-scan-php:     ## Psalm taint analysis
+security-scan:         ## Semgrep (all languages)
+```
+
+**Recommended workflow:**
+- `make security-check` — Full scan (CI, pre-release)
+- Individual targets for focused scanning during development
 
 ---
 
@@ -463,6 +679,200 @@ Each task has a **Scope** indicator to help with session planning:
 - Current simple SQL-file approach may be sufficient for most users
 - This is an enhancement for larger projects
 - Keep backwards compatibility with existing `migrations/` structure
+
+---
+
+### Web Application Firewall (WAF) - Optional
+
+**Status:** Planned
+**Scope:** Large
+**Created:** 2026-01-20
+**Context:** Advanced security feature for production deployments with external traffic
+
+**Goal:** Add optional WAF (ModSecurity + OWASP CRS) with consistent rules across Docker Compose and Kubernetes.
+
+**Architecture:**
+
+```
+Development/Small Production (Docker Compose):
+┌─────────────────────────────────────────────────────┐
+│ ENABLE_WAF=false (default)                          │
+│   Internet → Nginx:8080 → PHP/Node                  │
+├─────────────────────────────────────────────────────┤
+│ ENABLE_WAF=true                                     │
+│   Internet → WAF:8080 → Nginx:80 (internal) → App   │
+└─────────────────────────────────────────────────────┘
+
+Production (Kubernetes):
+┌─────────────────────────────────────────────────────┐
+│ ModSecurity disabled (default)                      │
+│   Internet → Ingress-NGINX → Service → Pod          │
+├─────────────────────────────────────────────────────┤
+│ ModSecurity enabled (annotation/ConfigMap)          │
+│   Internet → Ingress-NGINX+WAF → Service → Pod      │
+└─────────────────────────────────────────────────────┘
+```
+
+**Benefits:**
+- Same OWASP CRS rules in both environments
+- Resource-conscious: disable for small setups, enable for exposed production
+- No extra container in Kubernetes (built into Ingress-NGINX)
+- Protection against OWASP Top 10 (SQLi, XSS, LFI, RCE, etc.)
+
+**Implementation:**
+
+##### Part 1: Docker Compose Integration
+
+1. Add WAF service with profile:
+   ```yaml
+   waf:
+     image: owasp/modsecurity-crs:nginx-alpine
+     profiles: ["waf"]
+     environment:
+       BACKEND: http://nginx:80
+     ports:
+       - "${NGINX_PORT:-8080}:8080"
+       - "${NGINX_SSL_PORT:-8443}:8443"
+     volumes:
+       - ./docker/waf/modsecurity.conf:/etc/modsecurity.d/modsecurity-override.conf:ro
+   ```
+
+2. Conditional Nginx port binding (Makefile or entrypoint logic)
+3. Add `ENABLE_WAF` to `.env` with documentation
+4. Create `make up-waf` or use `COMPOSE_PROFILES=waf make up`
+
+##### Part 2: Kubernetes Integration
+
+1. Add Helm values for ModSecurity:
+   ```yaml
+   # values.yaml
+   waf:
+     enabled: false
+     modsecurity:
+       enabled: true
+       owasp: true
+   ```
+
+2. Update Ingress template with conditional annotations:
+   ```yaml
+   {{- if .Values.waf.enabled }}
+   nginx.ingress.kubernetes.io/enable-modsecurity: "true"
+   nginx.ingress.kubernetes.io/enable-owasp-core-rules: "true"
+   {{- end }}
+   ```
+
+3. Document ConfigMap option for cluster-wide enablement
+
+##### Part 3: Shared Configuration
+
+1. Create `docker/waf/` directory with:
+   - `modsecurity.conf` (base config)
+   - `crs-setup.conf` (OWASP CRS tuning)
+   - `rules-exclusions.conf` (false positive suppressions)
+
+2. Same rules usable in both environments
+
+**Files to create/modify:**
+- `compose.yaml` (new waf service with profile)
+- `docker/waf/` (ModSecurity configuration)
+- `.env` (ENABLE_WAF documentation)
+- `Makefile` (conditional port logic, waf targets)
+- `kubernetes/values.yaml` (waf.enabled)
+- `kubernetes/templates/ingress.yaml` (ModSecurity annotations)
+- `documentation/security/WAF.md` (setup guide)
+
+**Resources:**
+- https://github.com/coreruleset/modsecurity-crs-docker
+- https://kubernetes.github.io/ingress-nginx/user-guide/third-party-addons/modsecurity/
+- https://coreruleset.org/docs/
+
+**Notes:**
+- Not a v1.0 requirement — advanced feature for security-conscious deployments
+- Requires tuning for false positives (application-specific)
+- Consider "detection only" mode as safe default
+
+---
+
+### License Compliance Check
+
+**Status:** Planned
+**Scope:** Small
+**Created:** 2026-01-20
+**Context:** Important for commercial projects using open-source dependencies
+
+**Goal:** Add automated license compliance checking for PHP and Node.js dependencies.
+
+**Why it matters:**
+- Detect GPL/AGPL licenses that may conflict with commercial use
+- Identify unknown or problematic licenses
+- Generate SBOM (Software Bill of Materials) for compliance audits
+
+**Tools:**
+
+| Tool | Language | Purpose |
+|------|----------|---------|
+| `license-checker` | Node.js | Scan pnpm dependencies |
+| `composer licenses` | PHP | Built-in Composer command |
+| `cyclonedx-php-composer` | PHP | SBOM generation (optional) |
+
+**Implementation:**
+1. `make pnpm CMD="add -D license-checker"`
+2. Create `make license-check` target
+3. Configure allowed/denied license list
+4. Add to CI pipeline (optional, informational)
+
+**Example Makefile target:**
+```makefile
+license-check: license-check-php license-check-node  ## Check dependency licenses
+license-check-php:
+	docker compose exec php composer licenses --format=json
+license-check-node:
+	docker compose exec node pnpm exec license-checker --summary
+```
+
+**Files to modify:**
+- `package.json` (new dev dependency)
+- `Makefile` (new targets)
+- `.license-checker.json` (optional: allowed/denied lists)
+
+**Resources:**
+- https://www.npmjs.com/package/license-checker
+- https://getcomposer.org/doc/03-cli.md#licenses
+
+---
+
+### GitHub Pages Documentation Site
+
+**Status:** Planned
+**Scope:** Medium
+**Created:** 2026-01-20
+**Context:** Professional documentation site for better discoverability and UX
+
+**Goal:** Host documentation on GitHub Pages using Docsify.
+
+**Why Docsify:**
+- No build step (loads Markdown directly)
+- `documentation/_sidebar.md` already exists
+- Minimal setup, maximum benefit
+
+**Directory structure:**
+- `documentation/` = Boilerplate docs (manual, for GitHub Pages)
+- `docs/` = Autogenerated code docs (for devs using the boilerplate)
+
+**Implementation:**
+1. Create `documentation/index.html` with Docsify setup
+2. Configure GitHub Pages to serve from `documentation/`
+3. Add search plugin, theme customization
+4. **Important:** Remove "API Documentation" section from `_sidebar.md` (lines 46-49) — these are external links to `/docs/api/*` which is dev-autogenerated code docs, not part of the boilerplate documentation
+
+**Files to modify/create:**
+- `documentation/index.html` (Docsify entry point)
+- `documentation/_sidebar.md` (remove API Documentation links)
+- GitHub repository settings (enable Pages from `documentation/`)
+
+**Notes:**
+- Not a v1.0 blocker — good post-release enhancement
+- Consider custom domain later (e.g., zappzarapp.dev)
 
 ---
 

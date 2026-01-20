@@ -569,7 +569,7 @@ composer-update: ## Update Composer dependencies (updates composer.lock on host,
 	@echo -e "\033[0;32mDependencies updated!\033[0m"
 
 down: ## Stop containers (optionally specify service names: make down php nginx)
-	@SERVICES="$(filter-out $@,$(MAKECMDGOALS))"; \
+	@SERVICES="$(filter-out $@ down-all goss-cleanup,$(MAKECMDGOALS))"; \
 	if [ -n "$$SERVICES" ]; then \
 		echo -e "\033[0;33mStopping services: $$SERVICES...\033[0m"; \
 		if [ -f .env ]; then \
@@ -593,8 +593,15 @@ down: ## Stop containers (optionally specify service names: make down php nginx)
 		else \
 			$(DC) $$ALL_PROFILES down --remove-orphans; \
 		fi; \
+		GOSS_COUNT=$$(docker ps -q --filter "name=zappzarapp-goss-" 2>/dev/null | wc -l | tr -d ' '); \
+		if [ "$$GOSS_COUNT" -gt 0 ]; then \
+			echo -e "\033[0;36mℹ $$GOSS_COUNT Goss-Test-Container laufen noch (make goss-cleanup zum Aufräumen)\033[0m"; \
+		fi; \
 	fi
 	@echo -e "\033[0;32mContainers stopped!\033[0m"
+
+down-all: down goss-cleanup ## Stop ALL containers (dev/prod + all goss tests)
+	@echo -e "\033[0;32m✓ All zappzarapp containers stopped\033[0m"
 
 logs: ## Show logs (optionally specify service names: make logs php nginx)
 	@SERVICES="$(filter-out $@,$(MAKECMDGOALS))"; \
@@ -891,13 +898,13 @@ up: ## Start containers (optionally specify service names: make up php nginx)
 			echo -e "\033[0;33m   Changed since last build:$$STALE_FILES\033[0m"; \
 			echo ""; \
 			if [ "$(FORCE)" = "1" ]; then \
-				echo -e "\033[0;34m→ Auto-rebuilding (FORCE=1)...\033[0m"; \
-				$(MAKE) build; \
+				echo -e "\033[0;34m→ Stopping containers and rebuilding (FORCE=1)...\033[0m"; \
+				$(MAKE) down && $(MAKE) build; \
 			elif [ -t 0 ]; then \
 				echo -n "   Rebuild now? [y/N] "; \
 				read -r answer; \
 				if [ "$$answer" = "y" ] || [ "$$answer" = "Y" ]; then \
-					$(MAKE) build; \
+					$(MAKE) down && $(MAKE) build; \
 				else \
 					echo -e "\033[0;90m   Skipped. Run 'make rebuild' to update images.\033[0m"; \
 				fi; \
@@ -922,6 +929,12 @@ up: ## Start containers (optionally specify service names: make up php nginx)
 			echo -e "\033[0;33m⚠️  WARNING: Mailpit is enabled but ENV=production.\033[0m"; \
 			echo -e "\033[0;33m   Mailpit won't start (compose.production.yaml sets replicas: 0).\033[0m"; \
 			echo -e "\033[0;33m   Set ENABLE_MAILPIT=false to suppress this warning.\033[0m"; \
+			echo ""; \
+		fi; \
+		GOSS_RUNNING=$$(docker ps -q --filter "name=zappzarapp-goss-" 2>/dev/null | wc -l | tr -d ' '); \
+		if [ "$$GOSS_RUNNING" -gt 0 ]; then \
+			echo -e "\033[0;33m⚠ $$GOSS_RUNNING Goss-Test-Container laufen parallel\033[0m"; \
+			echo -e "  \033[0;36mBei Problemen: make goss-cleanup\033[0m"; \
 			echo ""; \
 		fi; \
 		MISSING=""; \
@@ -1635,6 +1648,8 @@ fresh: ## Complete clean slate rebuild, removing all data volumes (DANGEROUS!)
 		exit 1; \
 	fi
 	@echo -e "\033[0;33mProceeding with fresh rebuild (no cache)...\033[0m"
+	@# Clean up Goss test containers first (must be rebuilt with new images)
+	@$(MAKE) --silent goss-cleanup
 	@# Stop ALL containers and rebuild ALL images regardless of profile settings (fresh = complete reset)
 	@if [ -f .env ]; then \
 		. ./.env && if [ "$$ENV" = "production" ]; then \
@@ -1655,6 +1670,53 @@ fresh: ## Complete clean slate rebuild, removing all data volumes (DANGEROUS!)
 	@$(MAKE) --silent composer-install
 	@$(MAKE) --silent pnpm-install
 	@$(MAKE) --silent up
+
+reset: ## Factory reset - remove ALL generated files and Docker resources (VERY DANGEROUS!)
+	@echo -e "\033[0;31m╔══════════════════════════════════════════════════════════════════╗\033[0m"
+	@echo -e "\033[0;31m║  !!! FACTORY RESET - THIS WILL DELETE EVERYTHING !!!             ║\033[0m"
+	@echo -e "\033[0;31m╠══════════════════════════════════════════════════════════════════╣\033[0m"
+	@echo -e "\033[0;31m║  This will remove:                                               ║\033[0m"
+	@echo -e "\033[0;31m║  • All Docker containers, images, volumes, networks              ║\033[0m"
+	@echo -e "\033[0;31m║  • All Goss test resources                                       ║\033[0m"
+	@echo -e "\033[0;31m║  • secrets/ (all generated secrets)                              ║\033[0m"
+	@echo -e "\033[0;31m║  • docker/certs/*.crt, *.key, *.pem (generated certificates)     ║\033[0m"
+	@echo -e "\033[0;31m║  • storage/ contents (uploads, cache)                            ║\033[0m"
+	@echo -e "\033[0;31m║  • vendor/, node_modules/ (dependencies)                         ║\033[0m"
+	@echo -e "\033[0;31m║  • composer.lock, pnpm-lock.yaml (lockfiles)                     ║\033[0m"
+	@echo -e "\033[0;31m║  • .env.local (local overrides)                                  ║\033[0m"
+	@echo -e "\033[0;31m║  • build/, public/build/ (compiled assets)                       ║\033[0m"
+	@echo -e "\033[0;31m║  • src/node/frontend/* (scaffolded frontend, keeps package.json) ║\033[0m"
+	@echo -e "\033[0;31m╚══════════════════════════════════════════════════════════════════╝\033[0m"
+	@echo ""
+	@read -p "Type 'RESET' to confirm factory reset: " CONFIRM_RESET; \
+	if [ "$$CONFIRM_RESET" != "RESET" ]; then \
+		echo -e "\033[0;34mOperation cancelled.\033[0m"; \
+		exit 1; \
+	fi
+	@echo ""
+	@echo -e "\033[0;33m[1/6] Cleaning up Goss test resources...\033[0m"
+	@$(MAKE) --silent goss-cleanup
+	@echo -e "\033[0;33m[2/6] Stopping and removing all Docker resources...\033[0m"
+	@$(DC) --profile php --profile node --profile node-backend --profile redis --profile postgres --profile mariadb --profile mercure --profile meilisearch --profile elasticsearch --profile mailpit --profile seaweedfs --profile rabbitmq down -v --rmi all 2>/dev/null || true
+	@docker system prune -af --volumes 2>/dev/null || true
+	@echo -e "\033[0;33m[3/6] Removing secrets...\033[0m"
+	@rm -rf secrets/* 2>/dev/null || true
+	@echo -e "\033[0;33m[4/6] Removing generated certificates...\033[0m"
+	@rm -f docker/certs/*.crt docker/certs/*.key docker/certs/*.pem docker/certs/*.srl 2>/dev/null || true
+	@echo -e "\033[0;33m[5/6] Removing dependencies and lockfiles...\033[0m"
+	@rm -rf vendor node_modules 2>/dev/null || true
+	@rm -f composer.lock pnpm-lock.yaml 2>/dev/null || true
+	@echo -e "\033[0;33m[6/7] Removing storage contents and build artifacts...\033[0m"
+	@find storage -type f ! -name '.gitkeep' -delete 2>/dev/null || true
+	@rm -rf build public/build .env.local 2>/dev/null || true
+	@echo -e "\033[0;33m[7/7] Cleaning frontend directory (container for root-owned files)...\033[0m"
+	@# Run in container to handle root-owned files (.nuxt, .next, etc.)
+	@docker run --rm -v "$$(pwd)/src/node/frontend:/frontend" alpine sh -c \
+		'find /frontend -mindepth 1 ! -name "package.json" -exec rm -rf {} + 2>/dev/null || true' 2>/dev/null || \
+		find src/node/frontend -mindepth 1 ! -name 'package.json' -exec rm -rf {} + 2>/dev/null || true
+	@echo ""
+	@echo -e "\033[0;32m✓ Factory reset complete!\033[0m"
+	@echo -e "\033[0;36mTo start fresh, run: make setup && make up\033[0m"
 
 rebuild: clean build up ## Complete rebuild
 
@@ -2045,6 +2107,27 @@ goss-test-matrix-prod: ## Run production preset tests only (CI/CD, VERBOSE=1 for
 		exit 1; \
 	fi
 	@echo -e "\033[0;32m✓ All production preset tests passed!\033[0m"
+
+goss-cleanup: ## Remove all Goss test containers, networks, and volumes
+	@echo -e "\033[0;33mCleaning up Goss test resources...\033[0m"
+	@GOSS_CONTAINERS=$$(docker ps -aq --filter "name=zappzarapp-goss-" 2>/dev/null); \
+	if [ -n "$$GOSS_CONTAINERS" ]; then \
+		echo "  Stopping and removing containers..."; \
+		docker rm -f $$GOSS_CONTAINERS 2>/dev/null || true; \
+	else \
+		echo "  No Goss containers found"; \
+	fi; \
+	GOSS_NETWORKS=$$(docker network ls -q --filter "name=zappzarapp-goss-" 2>/dev/null); \
+	if [ -n "$$GOSS_NETWORKS" ]; then \
+		echo "  Removing networks..."; \
+		docker network rm $$GOSS_NETWORKS 2>/dev/null || true; \
+	fi; \
+	GOSS_VOLUMES=$$(docker volume ls -q --filter "name=zappzarapp-goss-" 2>/dev/null); \
+	if [ -n "$$GOSS_VOLUMES" ]; then \
+		echo "  Removing volumes..."; \
+		docker volume rm $$GOSS_VOLUMES 2>/dev/null || true; \
+	fi
+	@echo -e "\033[0;32m✓ Goss cleanup complete\033[0m"
 
 validate: ## Validate composer.json/lock and package.json/lock files
 	@echo -e "\033[0;33mValidating Composer configuration...\033[0m"

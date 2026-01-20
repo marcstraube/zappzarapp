@@ -18,8 +18,17 @@
 #   redis:    999 (redis user)
 #   postgres: 70  (postgres user in Alpine)
 #   mariadb:  999 (mysql user)
+#
+# SERVICE ORDER: Core → Data → Optional (alphabetically within each category)
+#   Core:     nginx, node, node-backend, php
+#   Data:     mariadb, postgres, redis
+#   Optional: elasticsearch, mailpit, meilisearch, mercure, rabbitmq, seaweedfs
 
 services:
+  # ═══════════════════════════════════════════════════════════════════════════
+  # CORE SERVICES
+  # ═══════════════════════════════════════════════════════════════════════════
+
   nginx:
     build:
       target: production
@@ -60,45 +69,6 @@ services:
           cpus: '2.0'
           memory: 2G
           pids: 64
-        reservations:
-          cpus: '1.0'
-          memory: 1G
-
-  php:
-    build:
-      target: production
-    # Run as www-data user (uid 82) - completely unprivileged
-    user: "82:82"
-    volumes:
-      # Shared socket directory for PHP-FPM Unix socket communication
-      # Socket mode 0666 (set in php-fpm.conf) allows nginx to connect
-      - php-fpm-socket:/var/run/php-fpm
-      # Persistent Storage for Uploads and generated files
-      - ${STORAGE_DIR:-./storage}:/var/www/html/storage:rw
-      # Secrets (bind mount, readable by all container users - mode 0644)
-      - ./secrets:/run/secrets:ro
-    read_only: true
-    tmpfs:
-      # Owned by www-data (uid 82) - no root needed
-      - /tmp:mode=0770,uid=82,gid=82,size=1G
-    security_opt:
-      - no-new-privileges:true
-    cap_drop:
-      - ALL
-    # NO cap_add needed - runs entirely as unprivileged www-data user
-    environment:
-      - ENV=production
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "50m"
-        max-file: "5"
-    deploy:
-      resources:
-        limits:
-          cpus: '2.0'
-          memory: 2G
-          pids: 256
         reservations:
           cpus: '1.0'
           memory: 1G
@@ -161,62 +131,99 @@ services:
           cpus: '0.25'
           memory: 256M
 
-  redis:
-    # Run directly as redis user (no privilege dropping needed with no-new-privileges)
-    user: "999:1000"
+  php:
+    build:
+      target: production
+    # Run as www-data user (uid 82) - completely unprivileged
+    user: "82:82"
+    volumes:
+      # Shared socket directory for PHP-FPM Unix socket communication
+      # Socket mode 0666 (set in php-fpm.conf) allows nginx to connect
+      - php-fpm-socket:/var/run/php-fpm
+      # Persistent Storage for Uploads and generated files
+      - ${STORAGE_DIR:-./storage}:/var/www/html/storage:rw
+      # Secrets (bind mount, readable by all container users - mode 0644)
+      - ./secrets:/run/secrets:ro
     read_only: true
     tmpfs:
-      - /tmp:mode=0770,uid=999,gid=1000,size=64M
-    volumes:
-      - redis-data:/data
-      # SSL certificates (bind mount)
-      - ./docker/certs/cert.crt:/etc/redis/certs/cert.crt:ro
-      - ./docker/certs/cert.key:/etc/redis/certs/cert.key:ro
+      # Owned by www-data (uid 82) - no root needed
+      - /tmp:mode=0770,uid=82,gid=82,size=1G
     security_opt:
       - no-new-privileges:true
     cap_drop:
       - ALL
-    # Skip redis entrypoint and run redis-server directly
-    entrypoint: ["redis-server"]
-    command:
-      - --appendonly
-      - "yes"
-      - --appendfsync
-      - everysec
-      - --maxmemory
-      - 512mb
-      - --maxmemory-policy
-      - allkeys-lru
-      - --save
-      - "900 1"
-      - --save
-      - "300 10"
-      - --save
-      - "60 10000"
-      - --tls-port
-      - "6379"
-      - --port
-      - "0"
-      - --tls-cert-file
-      - /etc/redis/certs/cert.crt
-      - --tls-key-file
-      - /etc/redis/certs/cert.key
-      - --tls-auth-clients
-      - "no"
+    # NO cap_add needed - runs entirely as unprivileged www-data user
+    environment:
+      - ENV=production
     logging:
       driver: "json-file"
       options:
-        max-size: "10m"
-        max-file: "3"
+        max-size: "50m"
+        max-file: "5"
     deploy:
       resources:
         limits:
+          cpus: '2.0'
+          memory: 2G
+          pids: 256
+        reservations:
+          cpus: '1.0'
+          memory: 1G
+
+  # ═══════════════════════════════════════════════════════════════════════════
+  # DATA SERVICES
+  # ═══════════════════════════════════════════════════════════════════════════
+
+  mariadb:
+    read_only: false
+    tmpfs:
+      - /var/run/mysqld:mode=0770,uid=999,gid=999,size=64M
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    cap_add:
+      # REQUIRED: user switch to mysql and cert ownership
+      - CHOWN
+      - SETUID
+      - SETGID
+      # FOWNER: allows chmod on files not owned by root (for cert permissions)
+      - FOWNER
+      # Note: DAC_OVERRIDE not needed - secrets/certs are 0644 (world-readable)
+    shm_size: 256mb
+    volumes:
+      - mariadb-data:/var/lib/mysql
+      # Secrets (bind mount)
+      - ./secrets:/run/secrets:ro
+      # SSL certificates (mounted to /tmp/certs, entrypoint copies with correct ownership)
+      - ./docker/certs:/tmp/certs:ro
+    command: >
+      --innodb-buffer-pool-size=256M
+      --max-connections=100
+      --innodb-log-file-size=64M
+      --innodb-flush-log-at-trx-commit=2
+      --innodb-flush-method=O_DIRECT
+      --slow-query-log=1
+      --slow-query-log-file=/var/log/mysql/slow.log
+      --long-query-time=1
+      --ssl-ca=/etc/mysql/certs/server.crt
+      --ssl-cert=/etc/mysql/certs/server.crt
+      --ssl-key=/etc/mysql/certs/server.key
+      --require-secure-transport=ON
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "5"
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 1G
+          pids: 128
+        reservations:
           cpus: '0.5'
           memory: 512M
-          pids: 32
-        reservations:
-          cpus: '0.25'
-          memory: 256M
 
   postgres:
     read_only: false
@@ -278,75 +285,48 @@ services:
           cpus: '0.5'
           memory: 512M
 
-  mariadb:
-    read_only: false
-    tmpfs:
-      - /var/run/mysqld:mode=0770,uid=999,gid=999,size=64M
-    security_opt:
-      - no-new-privileges:true
-    cap_drop:
-      - ALL
-    cap_add:
-      # REQUIRED: user switch to mysql and cert ownership
-      - CHOWN
-      - SETUID
-      - SETGID
-      # FOWNER: allows chmod on files not owned by root (for cert permissions)
-      - FOWNER
-      # Note: DAC_OVERRIDE not needed - secrets/certs are 0644 (world-readable)
-    shm_size: 256mb
-    volumes:
-      - mariadb-data:/var/lib/mysql
-      # Secrets (bind mount)
-      - ./secrets:/run/secrets:ro
-      # SSL certificates (mounted to /tmp/certs, entrypoint copies with correct ownership)
-      - ./docker/certs:/tmp/certs:ro
-    command: >
-      --innodb-buffer-pool-size=256M
-      --max-connections=100
-      --innodb-log-file-size=64M
-      --innodb-flush-log-at-trx-commit=2
-      --innodb-flush-method=O_DIRECT
-      --slow-query-log=1
-      --slow-query-log-file=/var/log/mysql/slow.log
-      --long-query-time=1
-      --ssl-ca=/etc/mysql/certs/server.crt
-      --ssl-cert=/etc/mysql/certs/server.crt
-      --ssl-key=/etc/mysql/certs/server.key
-      --require-secure-transport=ON
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "50m"
-        max-file: "5"
-    deploy:
-      resources:
-        limits:
-          cpus: '1.0'
-          memory: 1G
-          pids: 128
-        reservations:
-          cpus: '0.5'
-          memory: 512M
-
-  # ═══════════════════════════════════════════════════════════════════════════
-  # OPTIONAL SERVICES - Production Hardening
-  # ═══════════════════════════════════════════════════════════════════════════
-
-  mercure:
+  redis:
+    # Run directly as redis user (no privilege dropping needed with no-new-privileges)
+    user: "999:1000"
     read_only: true
     tmpfs:
-      - /tmp:mode=0770,size=64M
+      - /tmp:mode=0770,uid=999,gid=1000,size=64M
     volumes:
-      # Secrets (bind mount)
-      - ./secrets:/run/secrets:ro
+      - redis-data:/data
+      # SSL certificates (bind mount)
+      - ./docker/certs/cert.crt:/etc/redis/certs/cert.crt:ro
+      - ./docker/certs/cert.key:/etc/redis/certs/cert.key:ro
     security_opt:
       - no-new-privileges:true
     cap_drop:
       - ALL
-    environment:
-      # Production: Restrict CORS to specific origins (default: allow all)
-      MERCURE_EXTRA_DIRECTIVES: 'cors_origins "${CORS_ORIGINS:-*}"'
+    # Skip redis entrypoint and run redis-server directly
+    entrypoint: ["redis-server"]
+    command:
+      - --appendonly
+      - "yes"
+      - --appendfsync
+      - everysec
+      - --maxmemory
+      - 512mb
+      - --maxmemory-policy
+      - allkeys-lru
+      - --save
+      - "900 1"
+      - --save
+      - "300 10"
+      - --save
+      - "60 10000"
+      - --tls-port
+      - "6379"
+      - --port
+      - "0"
+      - --tls-cert-file
+      - /etc/redis/certs/cert.crt
+      - --tls-key-file
+      - /etc/redis/certs/cert.key
+      - --tls-auth-clients
+      - "no"
     logging:
       driver: "json-file"
       options:
@@ -356,40 +336,15 @@ services:
       resources:
         limits:
           cpus: '0.5'
-          memory: 256M
+          memory: 512M
           pids: 32
-        reservations:
-          cpus: '0.1'
-          memory: 64M
-
-  meilisearch:
-    read_only: false
-    volumes:
-      # Secrets (bind mount)
-      - ./secrets:/run/secrets:ro
-    security_opt:
-      - no-new-privileges:true
-    cap_drop:
-      - ALL
-    environment:
-      # Production environment
-      MEILI_ENV: production
-      # Minimal logging
-      MEILI_LOG_LEVEL: WARN
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "50m"
-        max-file: "5"
-    deploy:
-      resources:
-        limits:
-          cpus: '1.0'
-          memory: 1G
-          pids: 64
         reservations:
           cpus: '0.25'
           memory: 256M
+
+  # ═══════════════════════════════════════════════════════════════════════════
+  # OPTIONAL SERVICES - Production Hardening (alphabetically sorted)
+  # ═══════════════════════════════════════════════════════════════════════════
 
   elasticsearch:
     read_only: false
@@ -423,20 +378,20 @@ services:
     deploy:
       replicas: 0
 
-  seaweedfs:
+  meilisearch:
     read_only: false
+    volumes:
+      # Secrets (bind mount)
+      - ./secrets:/run/secrets:ro
     security_opt:
       - no-new-privileges:true
     cap_drop:
       - ALL
-    volumes:
-      - seaweedfs-data:/data
-      # Secrets (bind mount)
-      - ./secrets:/run/secrets:ro
-      # SSL certificates (TLS is configured via entrypoint)
-      - ./docker/certs/cert.crt:/etc/ssl/certs/cert.crt:ro
-      - ./docker/certs/cert.key:/etc/ssl/private/cert.key:ro
-    # Healthcheck defined in Dockerfile
+    environment:
+      # Production environment
+      MEILI_ENV: production
+      # Minimal logging
+      MEILI_LOG_LEVEL: WARN
     logging:
       driver: "json-file"
       options:
@@ -451,6 +406,35 @@ services:
         reservations:
           cpus: '0.25'
           memory: 256M
+
+  mercure:
+    read_only: true
+    tmpfs:
+      - /tmp:mode=0770,size=64M
+    volumes:
+      # Secrets (bind mount)
+      - ./secrets:/run/secrets:ro
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    environment:
+      # Production: Restrict CORS to specific origins (default: allow all)
+      MERCURE_EXTRA_DIRECTIVES: 'cors_origins "${CORS_ORIGINS:-*}"'
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 256M
+          pids: 32
+        reservations:
+          cpus: '0.1'
+          memory: 64M
 
   rabbitmq:
     read_only: false
@@ -487,3 +471,32 @@ services:
         reservations:
           cpus: '0.25'
           memory: 128M
+
+  seaweedfs:
+    read_only: false
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    volumes:
+      - seaweedfs-data:/data
+      # Secrets (bind mount)
+      - ./secrets:/run/secrets:ro
+      # SSL certificates (TLS is configured via entrypoint)
+      - ./docker/certs/cert.crt:/etc/ssl/certs/cert.crt:ro
+      - ./docker/certs/cert.key:/etc/ssl/private/cert.key:ro
+    # Healthcheck defined in Dockerfile
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "5"
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 1G
+          pids: 64
+        reservations:
+          cpus: '0.25'
+          memory: 256M
