@@ -130,36 +130,32 @@ setup: ## Create directories, install dev dependencies and ensure structure
 	fi
 	@echo -e "\033[0;33mCreating project structure...\033[0m"
 
-	# Source directories
-	@mkdir -p src/php/App/{Http/{Controller,Middleware},Domain,Infrastructure/{Database,Cache}}
-	@mkdir -p src/node/backend/{routes,controllers,services,middleware}
-	@mkdir -p src/node/frontend
-	@mkdir -p src/php/DevDashboard/{Controllers,Services,Views}
+	# Source directories (top-level only - subdirs have existing code)
+	# These must exist for server configs (nginx, php-fpm) even if user deletes code
+	@mkdir -p src/php/App src/php/DevDashboard
+	@mkdir -p src/node/backend src/node/frontend
 
-	# Resources directories (Frontend source)
-	@mkdir -p resources/{js/components,css/components,images,fonts}
+	# Resources directories (Vite config references these)
+	@mkdir -p resources/{js,css,images,fonts}
 
-	# Public directory (Web root)
+	# Public directory (Web root - nginx serves this)
 	@mkdir -p public/build
 
-	# Tests (separated by language like src/)
-	@mkdir -p tests/php/App/{Unit,Feature}
-	@mkdir -p tests/node/backend/{unit,integration}
-	@mkdir -p tests/node/frontend/{unit,integration}
-	@mkdir -p tests/php/DevDashboard/{Services,Controllers}
+	# Tests (paths referenced in vitest.config.ts, tsconfig.json, composer.json)
+	@mkdir -p tests/php/App tests/php/DevDashboard
+	@mkdir -p tests/node/backend
 
 	# Build & Coverage directories (excluded from IDE indexing)
-	@mkdir -p build/{coverage/php,coverage/node,vitest-report}
+	@mkdir -p build/coverage/{php,node} build/vitest-report
 
-	# Config & Templates
+	# Config & Templates (app bootstrap references these)
 	@mkdir -p config templates
 
 	# SSL/TLS Certificates
 	@mkdir -p docker/certs
 
-	# Documentation Output
-	@mkdir -p docs/api/{php,node}
-	@mkdir -p tools
+	# Documentation Output & Tools
+	@mkdir -p docs/api/{php,node} tools
 
 	# Storage (Runtime data) - Set permissions
 	@. ./.env && mkdir -p $${STORAGE_DIR:-./storage}/{app/{uploads,generated},cache,sessions,logs}
@@ -1776,12 +1772,14 @@ reset: ## Factory reset - remove ALL generated files and Docker resources (VERY 
 	@echo -e "\033[0;31m║  • All Goss test resources                                       ║\033[0m"
 	@echo -e "\033[0;31m║  • secrets/ (all generated secrets)                              ║\033[0m"
 	@echo -e "\033[0;31m║  • docker/certs/*.crt, *.key, *.pem (generated certificates)     ║\033[0m"
-	@echo -e "\033[0;31m║  • storage/ contents (uploads, cache)                            ║\033[0m"
+	@echo -e "\033[0;31m║  • storage/ contents (uploads, cache) - if not a mountpoint      ║\033[0m"
 	@echo -e "\033[0;31m║  • vendor/, node_modules/ (dependencies)                         ║\033[0m"
 	@echo -e "\033[0;31m║  • composer.lock, pnpm-lock.yaml (lockfiles)                     ║\033[0m"
 	@echo -e "\033[0;31m║  • .env.local (local overrides)                                  ║\033[0m"
-	@echo -e "\033[0;31m║  • build/, public/build/ (compiled assets)                       ║\033[0m"
-	@echo -e "\033[0;31m║  • src/node/frontend/* (scaffolded frontend, keeps package.json) ║\033[0m"
+	@echo -e "\033[0;31m║  • build/, public/build/, docs/api/, tools/ (generated files)    ║\033[0m"
+	@echo -e "\033[0;31m╠══════════════════════════════════════════════════════════════════╣\033[0m"
+	@echo -e "\033[0;31m║  Source code (src/, tests/, resources/) is NOT touched.          ║\033[0m"
+	@echo -e "\033[0;31m║  Use 'make reset-full' to also reset code to boilerplate state.  ║\033[0m"
 	@echo -e "\033[0;31m╚══════════════════════════════════════════════════════════════════╝\033[0m"
 	@echo ""
 	@read -p "Type 'RESET' to confirm factory reset: " CONFIRM_RESET; \
@@ -1790,29 +1788,61 @@ reset: ## Factory reset - remove ALL generated files and Docker resources (VERY 
 		exit 1; \
 	fi
 	@echo ""
-	@echo -e "\033[0;33m[1/6] Cleaning up Goss test resources...\033[0m"
+	@# Check for mountpoints in directories we're about to clean
+	@echo -e "\033[0;33m[1/7] Checking for mountpoints...\033[0m"
+	@MOUNTPOINT_FOUND=0; \
+	for dir in storage build public/build docs/api tools; do \
+		if [ -d "$$dir" ]; then \
+			while IFS= read -r mnt; do \
+				if [ -n "$$mnt" ]; then \
+					echo -e "\033[0;33m  ⚠ Mountpoint detected: $$mnt - will skip cleanup\033[0m"; \
+					MOUNTPOINT_FOUND=1; \
+				fi; \
+			done < <(find "$$dir" -type d -exec sh -c 'mountpoint -q "$$1" 2>/dev/null && echo "$$1"' _ {} \;); \
+		fi; \
+	done; \
+	if [ "$$MOUNTPOINT_FOUND" = "1" ]; then \
+		echo -e "\033[0;33m  Directories with mountpoints will be skipped.\033[0m"; \
+	else \
+		echo -e "\033[0;32m  ✓ No mountpoints detected\033[0m"; \
+	fi
+	@echo -e "\033[0;33m[2/7] Cleaning up Goss test resources...\033[0m"
 	@$(MAKE) --silent goss-cleanup
-	@echo -e "\033[0;33m[2/6] Stopping and removing all Docker resources...\033[0m"
+	@echo -e "\033[0;33m[3/7] Stopping and removing all Docker resources...\033[0m"
 	@$(DC) --profile php --profile node --profile node-backend --profile redis --profile postgres --profile mariadb --profile mercure --profile meilisearch --profile elasticsearch --profile mailpit --profile seaweedfs --profile rabbitmq down -v --rmi all 2>/dev/null || true
 	@docker system prune -af --volumes 2>/dev/null || true
-	@echo -e "\033[0;33m[3/6] Removing secrets...\033[0m"
+	@echo -e "\033[0;33m[4/7] Removing secrets...\033[0m"
 	@rm -rf secrets/* 2>/dev/null || true
-	@echo -e "\033[0;33m[4/6] Removing generated certificates...\033[0m"
+	@echo -e "\033[0;33m[5/7] Removing generated certificates...\033[0m"
 	@rm -f docker/certs/*.crt docker/certs/*.key docker/certs/*.pem docker/certs/*.srl 2>/dev/null || true
-	@echo -e "\033[0;33m[5/6] Removing dependencies and lockfiles...\033[0m"
+	@echo -e "\033[0;33m[6/7] Removing dependencies and lockfiles...\033[0m"
 	@rm -rf vendor node_modules 2>/dev/null || true
 	@rm -f composer.lock pnpm-lock.yaml 2>/dev/null || true
-	@echo -e "\033[0;33m[6/7] Removing storage contents and build artifacts...\033[0m"
-	@find storage -type f ! -name '.gitkeep' -delete 2>/dev/null || true
-	@rm -rf build public/build .env.local 2>/dev/null || true
-	@echo -e "\033[0;33m[7/7] Cleaning frontend directory (container for root-owned files)...\033[0m"
-	@# Run in container to handle root-owned files (.nuxt, .next, etc.)
-	@docker run --rm -v "$$(pwd)/src/node/frontend:/frontend" alpine sh -c \
-		'find /frontend -mindepth 1 ! -name "package.json" -exec rm -rf {} + 2>/dev/null || true' 2>/dev/null || \
-		find src/node/frontend -mindepth 1 ! -name 'package.json' -exec rm -rf {} + 2>/dev/null || true
+	@echo -e "\033[0;33m[7/7] Removing generated files and build artifacts...\033[0m"
+	@# Skip directories that are mountpoints
+	@if ! mountpoint -q storage 2>/dev/null; then \
+		find storage -type f ! -name '.gitkeep' -delete 2>/dev/null || true; \
+	else \
+		echo -e "\033[0;33m  Skipping storage/ (mountpoint)\033[0m"; \
+	fi
+	@for dir in build public/build docs/api tools; do \
+		if [ -d "$$dir" ] && ! mountpoint -q "$$dir" 2>/dev/null; then \
+			rm -rf "$$dir" 2>/dev/null || true; \
+		elif [ -d "$$dir" ]; then \
+			echo -e "\033[0;33m  Skipping $$dir (mountpoint)\033[0m"; \
+		fi; \
+	done
+	@rm -f .env.local 2>/dev/null || true
 	@echo ""
 	@echo -e "\033[0;32m✓ Factory reset complete!\033[0m"
 	@echo -e "\033[0;36mTo start fresh, run: make setup && make up\033[0m"
+
+reset-full: reset ## Factory reset INCLUDING source code (resets to boilerplate state)
+	@echo ""
+	@echo -e "\033[0;33mResetting source code to boilerplate defaults...\033[0m"
+	@git checkout -- src/ tests/ resources/ config/ templates/ public/index.php 2>/dev/null || \
+		echo -e "\033[0;31m  ⚠ git checkout failed - source code not reset\033[0m"
+	@echo -e "\033[0;32m✓ Source code reset to boilerplate state!\033[0m"
 
 claude-commands-install: ## Install shared Claude commands to ~/.claude/commands/
 	@echo -e "\033[0;33mInstalling Claude commands...\033[0m"

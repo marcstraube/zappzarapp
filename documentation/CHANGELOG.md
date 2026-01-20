@@ -1,11 +1,39 @@
 # zappzarapp - Changelog
 
-**Erstellt:** 2025-12-19 **Letzte Aktualisierung:** 2026-01-20 (Log Export)
-**Version:** 3.63
+**Erstellt:** 2025-12-19 **Letzte Aktualisierung:** 2026-01-20 (Factory Reset)
+**Version:** 3.64
 
 ---
 
 ## Changelog
+
+### Version 3.64 (2026-01-20) - Factory Reset Improvements
+
+Improved `make setup` and `make reset` with safety features and cleaner
+structure.
+
+#### New Features
+
+- **`make reset-full`** — Factory reset INCLUDING source code reset via
+  `git checkout` (resets to boilerplate state)
+- **Mountpoint detection** — `make reset` now detects and skips mountpoints
+  (e.g., NFS storage) to prevent data loss
+
+#### Improvements
+
+- **`make setup`** — Simplified directory creation, only creates paths that are
+  actually referenced in configs (vitest, tsconfig, composer.json)
+- **`make reset`** — Now also cleans `docs/api/` and `tools/` (generated files)
+- **`make reset`** — No longer deletes `src/node/frontend/*` (user code after
+  scaffolding)
+- **`make reset`** — Added info box about `reset-full` for complete reset
+
+#### Documentation
+
+- Added "Factory Reset" section to MAKEFILE-REFERENCE.md explaining both
+  commands
+
+---
 
 ### Version 3.63 (2026-01-20) - Container Log Export
 

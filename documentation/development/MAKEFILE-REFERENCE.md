@@ -143,6 +143,8 @@ Container lifecycle management.
 | `make fresh`          | Complete clean slate rebuild, removing ALL data volumes (DANGEROUS!) |
 | `make rebuild`        | Complete rebuild (clean + build + up)                                |
 | `make prune`          | Remove untagged/dangling images related to this project              |
+| `make reset`          | Factory reset - remove generated files, keep source code (DANGEROUS) |
+| `make reset-full`     | Factory reset INCLUDING source code reset via git (VERY DANGEROUS)   |
 
 ### Service-Specific Commands
 
@@ -207,6 +209,41 @@ If the welcome page shows "Vite Dev Server Not Running" after `make up`:
 2. Run `make rebuild` to ensure fresh images
 3. Verify `NODE_MODE=assets-api` or `NODE_MODE=assets` in `.env`
 4. Check node container logs: `make logs-node`
+
+### Factory Reset
+
+Two levels of reset are available for returning to a clean state:
+
+**`make reset`** - Removes generated files but keeps your source code:
+
+- Docker containers, images, volumes, networks
+- Goss test resources
+- `secrets/` (generated secrets)
+- `docker/certs/*.crt, *.key, *.pem` (generated certificates)
+- `storage/` contents (if not a mountpoint)
+- `vendor/`, `node_modules/` (dependencies)
+- `composer.lock`, `pnpm-lock.yaml` (lockfiles)
+- `.env.local` (local overrides)
+- `build/`, `public/build/`, `docs/api/`, `tools/` (generated files)
+
+**`make reset-full`** - Same as above, PLUS resets source code to boilerplate:
+
+- Runs `make reset` first
+- Then `git checkout -- src/ tests/ resources/ config/ templates/`
+
+**Safety features:**
+
+- Mountpoint detection: Directories that are mountpoints (e.g., NFS) are skipped
+- Confirmation required: Must type `RESET` to proceed
+- Source code preserved: `make reset` never touches `src/`, `tests/`, etc.
+
+**When to use:**
+
+| Scenario                          | Command           |
+| --------------------------------- | ----------------- |
+| Fresh start, keep my code changes | `make reset`      |
+| Complete boilerplate reset        | `make reset-full` |
+| Just rebuild containers           | `make fresh`      |
 
 ### Container Information
 
