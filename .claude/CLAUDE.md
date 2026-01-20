@@ -6,10 +6,14 @@
 
 1. Find and read last session: `ls -1t .claude/sessions/session-*.md | grep -v TEMPLATE | head -1`
 2. Extract: Goal, Open Items, Session Summary, Next Steps
-3. Read `.claude/BACKLOG.md` for high-priority items
-4. Create new session log from `SESSION-TEMPLATE.md` with timestamp
-5. Brief user on context (previous session, open items, backlog)
-6. Ask: "What would you like to work on?"
+3. **Validate Open Items:** For each open item, check if it was resolved since the session:
+   - Check `git log --since="<session-date>"` for related commits
+   - Check if mentioned files were modified
+   - Mark items as "likely resolved" (with commit ref) or "still open"
+4. Read `.claude/BACKLOG.md` for high-priority items
+5. Create new session log from `.claude/sessions/SESSION-TEMPLATE.md` with timestamp
+6. Brief user on context (previous session, validated open items status, backlog)
+7. Ask: "What would you like to work on?"
 
 **Skip if:** User's first message is a direct task (then create session silently and start working).
 
@@ -175,7 +179,7 @@ Maintain a session log in `.claude/sessions/session-YYYY-MM-DD-HHMM.md`:
 - **For decisions**: record trade-offs and reasoning
 - **Don't log**: unimportant intermediate communication, read-only access
 
-Use `SESSION-TEMPLATE.md` as the base for new session logs.
+Use `.claude/sessions/SESSION-TEMPLATE.md` as the base for new session logs.
 
 ### Ending a Session
 
