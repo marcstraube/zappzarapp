@@ -847,6 +847,14 @@ up: ## Start containers (optionally specify service names: make up php nginx)
 		echo -e "\033[0;33m   For multi-node deployments, use 'make k8s-deploy' (Kubernetes).\033[0m"; \
 		echo ""; \
 	fi
+	@$(LOAD_ENV); if [ "$${ENV:-development}" = "production" ] && \
+		[ "$${DB_TYPE:-postgres}" = "mariadb" ] && \
+		[ -z "$${DB_SSL_CA}" ]; then \
+		echo -e "\033[0;33m⚠️  WARNING: MariaDB in production without explicit SSL CA.\033[0m"; \
+		echo -e "\033[0;33m   DB_SSL_CA is empty - connection uses self-signed internal cert.\033[0m"; \
+		echo -e "\033[0;33m   Set DB_SSL_CA=system for cloud DBs or provide custom cert path.\033[0m"; \
+		echo ""; \
+	fi
 	@# ═══════════════════════════════════════════════════════════════════════════
 	@# IMAGE FRESHNESS VALIDATION
 	@# Checks if Docker images are older than configuration files.

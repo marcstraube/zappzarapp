@@ -120,6 +120,7 @@ Available commands in `.claude/commands/`:
 - One todo = one focused commit (prevents mixed changes that need splitting later)
 - Use `/commit` for the guided commit workflow
 - Run `/sync-check` before commits that touch configuration files
+- **Before committing**: Update `BACKLOG.md` (remove completed tasks) and `CHANGELOG.md` (add new version entry)
 
 ## Bash Commands
 

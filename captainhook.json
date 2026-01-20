@@ -14,6 +14,29 @@
     "enabled": true,
     "actions": [
       {
+        "action": "\\CaptainHook\\App\\Hook\\Diff\\Action\\BlockSecrets",
+        "options": {
+          "suppliers": [
+            "CaptainHook\\Secrets\\Regex\\Supplier\\Aws",
+            "CaptainHook\\Secrets\\Regex\\Supplier\\GitHub",
+            "CaptainHook\\Secrets\\Regex\\Supplier\\Google",
+            "CaptainHook\\Secrets\\Regex\\Supplier\\Stripe",
+            "CaptainHook\\Secrets\\Regex\\Supplier\\Gitlab"
+          ],
+          "entropyThreshold": 0,
+          "allowed": [
+            "#example\\.com#",
+            "#localhost#",
+            "#127\\.0\\.0\\.1#",
+            "#DB_PASSWORD=secret#",
+            "#your-secret-key#"
+          ]
+        },
+        "config": {
+          "label": "Block secrets in staged files (API keys, tokens, passwords)"
+        }
+      },
+      {
         "action": "git diff --name-only --cached --diff-filter=d | xargs -r -I {} sh -c 'case \"{}\" in *.sh) [ \"$(stat -c %a \"{}\")\" != \"755\" ] && chmod 755 \"{}\" && git add \"{}\" && echo \"Fixed: {} -> 755\" ;; *.md|*.json|*.js|*.cjs|*.ts|*.yaml|*.yml|*.php|*.neon|*.xml|.prettier*|.npm*|.markdown*) [ \"$(stat -c %a \"{}\")\" = \"600\" ] || [ \"$(stat -c %a \"{}\")\" = \"660\" ] && chmod 644 \"{}\" && git add \"{}\" && echo \"Fixed: {} -> 644\" ;; esac' || true",
         "options": [],
         "type": "cli",
@@ -111,6 +134,12 @@
         "options": [],
         "type": "cli",
         "description": "Fix shell script permissions (755)"
+      },
+      {
+        "action": "CHANGED=$(git diff-tree -r --name-only --no-commit-id ORIG_HEAD HEAD 2>/dev/null | grep -E '^(composer\\.json|package\\.json)$'); if [ -n \"$CHANGED\" ]; then echo ''; echo -e '\\033[0;33m⚠️  Dependencies changed! Run:\\033[0m'; echo ''; for f in $CHANGED; do case $f in composer.json) echo -e '   \\033[0;36mmake composer-install\\033[0m  (or -install-local for IDE code completion)';; package.json) echo -e '   \\033[0;36mmake pnpm-install\\033[0m      (or -install-local for IDE code completion)';; esac; done; echo ''; fi",
+        "options": [],
+        "type": "cli",
+        "description": "Warn if dependency files changed after merge/pull"
       }
     ]
   },

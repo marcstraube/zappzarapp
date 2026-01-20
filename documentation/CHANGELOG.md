@@ -1,11 +1,36 @@
 # zappzarapp - Changelog
 
-**Erstellt:** 2025-12-19 **Letzte Aktualisierung:** 2026-01-20 (README
-Positioning) **Version:** 3.58
+**Erstellt:** 2025-12-19 **Letzte Aktualisierung:** 2026-01-20 (Security &
+Teamwork Hooks) **Version:** 3.59
 
 ---
 
 ## Changelog
+
+### Version 3.59 (2026-01-20) - Security & Teamwork Hooks
+
+Security improvements and better team collaboration through CaptainHook
+enhancements.
+
+#### Security
+
+- **MariaDB SSL Warning**: `make up` now warns when running MariaDB in
+  production without explicit SSL CA configuration (self-signed cert risk)
+- **Secrets Detection**: New pre-commit hook blocks API keys, tokens, and
+  high-entropy secrets (AWS, GitHub, Google, Stripe, GitLab patterns)
+
+#### Teamwork
+
+- **Dependency Change Warning**: Post-merge hook notifies when `composer.json`
+  or `package.json` changed, prompting to run install commands
+
+#### Updated Files
+
+- `Makefile` — Added MariaDB SSL warning in `up` target
+- `captainhook.json` — Added BlockSecrets action (pre-commit), dependency
+  warning (post-merge)
+
+---
 
 ### Version 3.58 (2026-01-20) - README Positioning
 
