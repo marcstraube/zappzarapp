@@ -28,13 +28,16 @@ export default {
   ],
 
   // JSON files (auto-fix and re-stage, excluding auto-generated and config files)
-  // Note: .claude/ and .vscode/ are excluded because they're not mounted in containers
-  '!(.claude/**|.vscode/**|composer|package|package-lock|tsconfig*|typedoc|.prettierrc|.markdownlint*|.depcheckrc|captainhook|renovate).json': [
+  // Note: .vscode/ is excluded because it's not mounted in containers
+  // AI tool dirs (.claude/, .gemini/) are mounted in dev-tools (compose.override.yaml)
+  '!(.vscode/**|composer|package|package-lock|tsconfig*|typedoc|.prettierrc|.markdownlint*|.depcheckrc|captainhook|renovate).json': [
     'pnpm exec prettier --write',
   ],
 
   // Markdown files (auto-fix and re-stage)
   // Prettier first (formats tables), then markdownlint (checks remaining issues)
-  // Note: .claude/ is excluded because it's not mounted in containers
-  '!(.claude/**)*.md': ['pnpm exec prettier --write', 'pnpm exec markdownlint-cli2 --fix'],
+  '**/*.md': ['pnpm exec prettier --write', 'pnpm exec markdownlint-cli2 --fix'],
+
+  // TOML files (auto-fix and re-stage)
+  '**/*.toml': ['pnpm exec prettier --write'],
 };

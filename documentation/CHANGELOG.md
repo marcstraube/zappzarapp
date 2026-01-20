@@ -1,11 +1,68 @@
 # zappzarapp - Changelog
 
-**Erstellt:** 2025-12-19 **Letzte Aktualisierung:** 2026-01-20 (Container
-Management) **Version:** 3.60
+**Erstellt:** 2025-12-19 **Letzte Aktualisierung:** 2026-01-20 (AI Tool Sync)
+**Version:** 3.61
 
 ---
 
 ## Changelog
+
+### Version 3.61 (2026-01-20) - AI Tool Synchronization
+
+Multi-AI-tool support with command synchronization between Claude and Gemini,
+plus TOML linting and improved pnpm workspace handling.
+
+#### AI Tool Support
+
+- **Gemini CLI support** — `.gemini/commands/` directory with `backlog.toml`
+  committed
+- **`make ai-commands-sync`** — Sync commands between Claude and Gemini
+  (bidirectional)
+- **`make ai-commands-install`** — Install shared commands to user home
+  directories
+- **`make claude-commands-install`** — Install Claude commands to
+  `~/.claude/commands/`
+- **`make gemini-commands-install`** — Install Gemini commands to
+  `~/.gemini/commands/`
+- **AI_SYNC_FROM/TO** — Configurable in `.env`, supports multiple targets
+  (comma-separated)
+- **Non-default source warning** — Warns when syncing from tool other than
+  Claude (project default)
+
+#### TOML Linting
+
+- **prettier-plugin-toml** — Added for formatting `.toml` files
+- **lint-staged** — TOML files now auto-formatted on commit
+- **package.json scripts** — `format` and `format:check` include `**/*.toml`
+
+#### Hooks
+
+- **CaptainHook** — Post-checkout/post-merge hooks for both Claude and Gemini
+  backlog sync notifications
+- **Claude hooks** — Updated to use `claude-commands-install` target name
+
+#### Bug Fixes
+
+- **`make pnpm-update`** — Fixed workspace resolution (was missing
+  `pnpm-workspace.yaml` and workspace `package.json` files)
+
+#### Configuration
+
+- **`.gitignore`** — Added `.gemini/` rules (only `backlog.toml` committed)
+- **`.env`** — Added `AI_SYNC_FROM=claude` default with documentation
+- **`.prettierrc.json`** — Added `prettier-plugin-toml` plugin
+- **`compose.override.yaml`** — Added `.gemini/` mount for dev-tools
+
+#### Documentation
+
+- **CONTRIBUTING.md** — Renamed section to "AI Tool Slash Commands", added AI
+  Tool Synchronization documentation, removed emojis from tables
+- **BACKLOG.md** — Added "AI Context" column (replacing "Session"), added
+  release blocker task for changelog cleanup
+- **`.claude/settings.json`** — Extended deny list with `make reset`,
+  `make k8s-remove`, `make secrets-rotate-passwords`
+
+---
 
 ### Version 3.60 (2026-01-20) - Container Management & Factory Reset
 

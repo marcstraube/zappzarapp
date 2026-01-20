@@ -49,8 +49,8 @@ Services are organized by category:
 
 - **Core Services**: Nginx, PHP-FPM, Node.js (if enabled)
 - **Data Services**: PostgreSQL/MariaDB, Redis (if enabled)
-- **Optional Services**: Mercure, Meilisearch, Elasticsearch, Mailpit, SeaweedFS,
-  RabbitMQ (when enabled)
+- **Optional Services**: Mercure, Meilisearch, Elasticsearch, Mailpit,
+  SeaweedFS, RabbitMQ (when enabled)
 
 Additional health information:
 

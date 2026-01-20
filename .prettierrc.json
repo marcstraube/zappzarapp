@@ -8,6 +8,7 @@
   "arrowParens": "always",
   "endOfLine": "lf",
   "bracketSpacing": true,
+  "plugins": ["prettier-plugin-toml"],
   "overrides": [
     {
       "files": "*.json",

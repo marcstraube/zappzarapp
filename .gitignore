@@ -96,6 +96,15 @@ Thumbs.db
 /.phpdoc/
 /tools/
 
-# Claude Code (only commit settings.json with permissions/deny rules)
+# Claude Code (only commit shared configurations)
 .claude/*
 !.claude/settings.json
+!.claude/commands/
+.claude/commands/*
+!.claude/commands/backlog.md
+
+# Gemini CLI (only commit shared configurations)
+.gemini/*
+!.gemini/commands/
+.gemini/commands/*
+!.gemini/commands/backlog.toml

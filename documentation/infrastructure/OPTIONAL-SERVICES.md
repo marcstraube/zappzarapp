@@ -388,7 +388,10 @@ const client = new S3Client({
   endpoint: 'https://seaweedfs:8333',
   forcePathStyle: true, // Required for SeaweedFS
   credentials: {
-    accessKeyId: readFileSync('/run/secrets/seaweedfs_admin_user', 'utf8').trim(),
+    accessKeyId: readFileSync(
+      '/run/secrets/seaweedfs_admin_user',
+      'utf8'
+    ).trim(),
     secretAccessKey: readFileSync(
       '/run/secrets/seaweedfs_admin_password',
       'utf8'
@@ -428,7 +431,8 @@ SeaweedFS backups use `weed shell` to export all buckets and objects to
 SeaweedFS is configured with TLS by default using the certificates in
 `./docker/certs/`. The API and Console are accessible via HTTPS:
 
-- **API:** `https://seaweedfs:8333` (internal) or `https://localhost:8333` (host)
+- **API:** `https://seaweedfs:8333` (internal) or `https://localhost:8333`
+  (host)
 - **Console:** `https://localhost:8888`
 
 ### Production Notes
@@ -440,10 +444,10 @@ a specific release in the Dockerfile:
 ARG SEAWEEDFS_VERSION=3.75
 ```
 
-**Storage Options:** The internal SeaweedFS service can be used in production with
-proper configuration (TLS, backups, monitoring). Alternatively, use real AWS S3
-or an external SeaweedFS instance - same SDK code works with all options, just
-change the endpoint and credentials.
+**Storage Options:** The internal SeaweedFS service can be used in production
+with proper configuration (TLS, backups, monitoring). Alternatively, use real
+AWS S3 or an external SeaweedFS instance - same SDK code works with all options,
+just change the endpoint and credentials.
 
 ### Resources
 

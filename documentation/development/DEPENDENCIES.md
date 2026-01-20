@@ -105,7 +105,7 @@ make composer CMD="require vendor/package"
 make pnpm CMD="add package-name"
 
 # Sync lock files after adding
-make sync-lockfiles
+make lockfiles-sync
 ```
 
 ### Updating All Dependencies
@@ -140,7 +140,7 @@ Lock files are automatically synced after:
 If you run commands directly in the container:
 
 ```bash
-make sync-lockfiles
+make lockfiles-sync
 ```
 
 This copies:
@@ -163,7 +163,7 @@ make composer CMD="require new/package"
 make pnpm CMD="add new-package"
 
 # 3. Sync lock files
-make sync-lockfiles
+make lockfiles-sync
 
 # 4. Commit changes
 git add composer.json composer.lock package.json pnpm-lock.yaml
@@ -209,7 +209,7 @@ make setup      # Includes automatic lock file sync
 **Solution**:
 
 ```bash
-make sync-lockfiles
+make lockfiles-sync
 ```
 
 ### Container Has Old Dependencies
@@ -256,7 +256,7 @@ npm test            # Incorrect (uses local node)
 | `make pnpm-install`       | Install Node deps (Docker) + sync lock file |
 | `make composer-update`    | Update PHP deps + sync lock file            |
 | `make pnpm-update`        | Update Node deps + sync lock file           |
-| `make sync-lockfiles`     | Manually sync lock files from containers    |
+| `make lockfiles-sync`     | Manually sync lock files from containers    |
 | `make composer CMD="..."` | Run arbitrary Composer command              |
 | `make pnpm CMD="..."`     | Run arbitrary pnpm command                  |
 | `make validate`           | Validate composer.json and package.json     |

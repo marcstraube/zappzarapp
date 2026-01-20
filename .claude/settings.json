@@ -1,6 +1,9 @@
 {
   "permissions": {
     "allow": [
+      "Bash(make:*)",
+      "Bash(timeout 3 make:*)",
+      "Bash(VERBOSE=1 make:*)",
       "Bash(./docker/hooks/hook-runner.sh:*)",
       "Bash(./docker/hooks/php-cs-fixer-batch.sh:*)",
       "Bash(./docker/hooks/php-hooks.sh:*)",
@@ -13,18 +16,34 @@
       "Bash(VERBOSE=1 ./tests/goss/preset-runner.sh:*)"
     ],
     "deny": [
+      "Bash(make fresh:*)",
+      "Bash(make reset:*)",
+      "Bash(make clean:*)",
+      "Bash(make prune:*)",
+      "Bash(make down-all:*)",
+      "Bash(make goss-cleanup:*)",
+      "Bash(make k8s-remove:*)",
+      "Bash(make secrets-rotate:*)",
+      "Bash(make secrets-rotate-passwords:*)",
+      "Bash(make ssl-clean:*)",
+      "Bash(make frontend-clean:*)",
       "Bash(composer install:*)",
       "Bash(composer update:*)",
       "Bash(composer require:*)",
       "Bash(composer remove:*)",
+      "Bash(composer exec:*)",
       "Bash(pnpm install:*)",
       "Bash(pnpm add:*)",
       "Bash(pnpm remove:*)",
       "Bash(pnpm update:*)",
+      "Bash(pnpm exec:*)",
+      "Bash(pnpm dlx:*)",
       "Bash(npm install:*)",
       "Bash(npm add:*)",
       "Bash(npm remove:*)",
-      "Bash(npm update:*)"
+      "Bash(npm update:*)",
+      "Bash(npm exec:*)",
+      "Bash(npx:*)"
     ]
   },
   "hooks": {
@@ -35,6 +54,18 @@
           {
             "type": "command",
             "command": "TOOL_INPUT=$(cat); if echo \"$TOOL_INPUT\" | grep -qE '(Dockerfile|compose\\.yaml|compose\\.override|compose\\.production|\\.env\\.example|entrypoint|php\\.ini|nginx\\.conf)'; then echo '[Hook] Config file changed. Remember: make build && make down && make up'; fi"
+          },
+          {
+            "type": "command",
+            "command": "TOOL_INPUT=$(cat); if echo \"$TOOL_INPUT\" | grep -qE '\\.claude/commands/backlog\\.md'; then if [ -f ~/.claude/commands/backlog.md ]; then echo '[Hook] Backlog command updated. Sync to ~/.claude/commands/ with: make claude-commands-install'; else echo '[Hook] Backlog command updated. Install to ~/.claude/commands/ with: make claude-commands-install'; fi; fi"
+          },
+          {
+            "type": "command",
+            "command": "TOOL_INPUT=$(cat); if echo \"$TOOL_INPUT\" | grep -qE '\\.claude/commands/.*\\.md'; then echo '[Hook] Claude command updated. Sync to other AI tools with: make ai-commands-sync FROM=claude'; fi"
+          },
+          {
+            "type": "command",
+            "command": "TOOL_INPUT=$(cat); if echo \"$TOOL_INPUT\" | grep -qE '(\\.rulesync/.*\\.md|CLAUDE\\.md)'; then echo '[Hook] AI rules updated. Sync to all tools with: make ai-rules-sync'; fi"
           }
         ]
       }

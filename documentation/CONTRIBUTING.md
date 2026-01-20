@@ -92,6 +92,108 @@ vendor/bin/captainhook install
 3. Use UPPERCASE filenames (e.g., `NEW-FEATURE.md`)
 4. Include cross-references to related documentation
 
+## AI Tool Slash Commands
+
+This project includes slash commands for AI coding assistants. Claude commands
+are in `.claude/commands/`, Gemini commands in `.gemini/commands/`. These
+commands are project-specific and work within this repository.
+
+### Using /backlog Across Projects
+
+The `/backlog` command is particularly useful for any project. To use it
+globally:
+
+1. Copy the command to your user commands directory:
+
+   ```bash
+   cp .claude/commands/backlog.md ~/.claude/commands/
+   ```
+
+2. The command supports three backlog locations:
+
+   | Target    | Path                         | Purpose                  |
+   | --------- | ---------------------------- | ------------------------ |
+   | `project` | `./documentation/BACKLOG.md` | Team backlog (committed) |
+   | `user`    | `./.claude/BACKLOG.md`       | Personal project tasks   |
+   | `global`  | `~/.claude/BACKLOG.md`       | Cross-project tasks      |
+
+3. Usage examples:
+
+   ```bash
+   /backlog                        # List project + user backlogs
+   /backlog --add                  # Add task (defaults to project)
+   /backlog --add --target user    # Add personal task
+   /backlog --add --target global  # Add cross-project task
+   /backlog --choose               # Select task to work on
+   ```
+
+**Note:** After copying, updates to the project's `/backlog` command won't
+automatically sync to your global copy. Use `make claude-commands-install` to
+sync updates.
+
+## AI Tool Synchronization
+
+This project supports multiple AI coding assistants through automated sync
+tools:
+
+### Supported Tools
+
+| Tool           | Commands (`ai-commands-sync`) | Rules (`ai-rules-sync`) |
+| -------------- | ----------------------------- | ----------------------- |
+| Claude Code    | Yes                           | Yes                     |
+| Gemini CLI     | Yes                           | Yes                     |
+| Cursor         | No                            | Yes                     |
+| GitHub Copilot | No                            | Yes                     |
+| Cline          | No                            | Yes                     |
+| Roo Code       | No                            | Yes                     |
+
+**Note:** Command sync (slash commands) is limited to Claude ↔ Gemini due to
+[ai-command-converter](https://github.com/Commands-com/ai-command-converter)
+limitations. Rules sync supports all tools via
+[rulesync](https://github.com/dyoshikawa/rulesync).
+
+### Sync Commands
+
+```bash
+# Sync Claude commands to user's home directory
+make claude-commands-install
+
+# Sync commands between AI tools (Claude ↔ Gemini)
+make ai-commands-sync FROM=claude TO=gemini
+make ai-commands-sync FROM=claude              # Sync to all other tools
+
+# Sync rules to all AI tools
+make ai-rules-sync
+
+# Sync both commands and rules
+make ai-sync FROM=claude
+```
+
+### Configuration
+
+Set defaults in `.env.local` to simplify sync commands:
+
+```bash
+AI_SYNC_FROM=claude
+# AI_SYNC_TO=gemini  # Optional: leave empty to sync to all
+```
+
+Then simply run `make ai-commands-sync` without arguments.
+
+### How It Works
+
+- **Commands** (`.claude/commands/*.md`): Converted using
+  [ai-command-converter](https://github.com/Commands-com/ai-command-converter)
+- **Rules** (`.rulesync/*.md`, `CLAUDE.md`): Generated using
+  [rulesync](https://github.com/dyoshikawa/rulesync)
+
+### Team Workflow
+
+1. Claude Code is the source of truth for commands
+2. Team members using other tools run `make ai-commands-sync FROM=claude` after
+   pulling
+3. CaptainHook notifies when synced commands change
+
 ## Questions?
 
 Check the [Troubleshooting Guide](TROUBLESHOOTING.md) or open an issue.

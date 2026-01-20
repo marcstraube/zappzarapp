@@ -350,6 +350,8 @@ services:
 
       # Documentation (read-write for Prettier/markdownlint)
       - ./documentation:/app/documentation
+      - ./.claude:/app/.claude
+      - ./.gemini:/app/.gemini
       - ./README.md:/app/README.md
       - ./CHANGELOG.md:/app/CHANGELOG.md
 

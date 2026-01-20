@@ -71,7 +71,7 @@ composer-sync: ## Sync Composer dependencies (after composer.json changes)
 	@XDEBUG_MODE=off $(DC_RUN) run --rm --no-TTY php composer install --prefer-dist --no-interaction
 	@echo -e "\033[0;32mDependencies synced!\033[0m"
 
-sync-lockfiles: ## Sync both Composer and pnpm lockfiles (after branch switch, fresh clone)
+lockfiles-sync: ## Sync both Composer and pnpm lockfiles (after branch switch, fresh clone)
 	@echo -e "\033[0;33mSyncing all lockfiles...\033[0m"
 	@$(MAKE) --silent composer-sync
 	@$(MAKE) --silent pnpm-sync
@@ -1094,12 +1094,17 @@ pnpm-update: ## Update Node.js dependencies (updates pnpm-lock.yaml on host)
 	@echo -e "\033[0;33mUpdating Node.js dependencies...\033[0m"
 	@# Docker bind mounts don't support atomic rename (EBUSY error)
 	@# Solution: Run pnpm with lock file in temp location, then copy back
+	@# Must include workspace files for pnpm to resolve all packages
 	@$(DC_RUN) run --rm --no-TTY --user root --entrypoint "" -e CI=true node sh -c ' \
-		cp /app/package.json /tmp/package.json && \
-		cp /app/pnpm-lock.yaml /tmp/pnpm-lock.yaml 2>/dev/null || true && \
-		cd /tmp && pnpm update && \
-		cat /tmp/package.json > /app/package.json && \
-		cat /tmp/pnpm-lock.yaml > /app/pnpm-lock.yaml \
+		mkdir -p /tmp/pnpm-update/src/node/backend /tmp/pnpm-update/src/node/frontend && \
+		cp /app/package.json /tmp/pnpm-update/package.json && \
+		cp /app/pnpm-workspace.yaml /tmp/pnpm-update/pnpm-workspace.yaml && \
+		cp /app/pnpm-lock.yaml /tmp/pnpm-update/pnpm-lock.yaml 2>/dev/null || true && \
+		cp /app/src/node/backend/package.json /tmp/pnpm-update/src/node/backend/package.json && \
+		cp /app/src/node/frontend/package.json /tmp/pnpm-update/src/node/frontend/package.json && \
+		cd /tmp/pnpm-update && pnpm update && \
+		cat /tmp/pnpm-update/package.json > /app/package.json && \
+		cat /tmp/pnpm-update/pnpm-lock.yaml > /app/pnpm-lock.yaml \
 	'
 	@echo -e "\033[0;32mDependencies updated!\033[0m"
 
@@ -1717,6 +1722,107 @@ reset: ## Factory reset - remove ALL generated files and Docker resources (VERY 
 	@echo ""
 	@echo -e "\033[0;32m✓ Factory reset complete!\033[0m"
 	@echo -e "\033[0;36mTo start fresh, run: make setup && make up\033[0m"
+
+claude-commands-install: ## Install shared Claude commands to ~/.claude/commands/
+	@echo -e "\033[0;33mInstalling Claude commands...\033[0m"
+	@mkdir -p ~/.claude/commands
+	@if [ -f .claude/commands/backlog.md ]; then \
+		cp .claude/commands/backlog.md ~/.claude/commands/backlog.md; \
+		echo -e "\033[0;32m  ✓ backlog.md installed\033[0m"; \
+	else \
+		echo -e "\033[0;31m  ✗ backlog.md not found in project\033[0m"; \
+	fi
+	@echo -e "\033[0;32m✓ Installation complete!\033[0m"
+
+gemini-commands-install: ## Install shared Gemini commands to ~/.gemini/commands/
+	@echo -e "\033[0;33mInstalling Gemini commands...\033[0m"
+	@mkdir -p ~/.gemini/commands
+	@if [ -f .gemini/commands/backlog.toml ]; then \
+		cp .gemini/commands/backlog.toml ~/.gemini/commands/backlog.toml; \
+		echo -e "\033[0;32m  ✓ backlog.toml installed\033[0m"; \
+	else \
+		echo -e "\033[0;31m  ✗ backlog.toml not found in project\033[0m"; \
+		echo -e "\033[0;36m    Generate with: make ai-commands-sync FROM=claude\033[0m"; \
+	fi
+	@echo -e "\033[0;32m✓ Installation complete!\033[0m"
+
+ai-commands-install: claude-commands-install gemini-commands-install ## Install shared commands to all AI tool directories
+
+# AI Sync configuration (can be overridden via .env or command line)
+# Command line: make ai-commands-sync FROM=claude TO=gemini
+# Or via .env.local: AI_SYNC_FROM=claude, AI_SYNC_TO=gemini
+AI_SYNC_FROM ?= $(or $(FROM),$(shell grep -E '^AI_SYNC_FROM=' .env.local .env 2>/dev/null | head -1 | cut -d= -f2))
+AI_SYNC_TO ?= $(or $(TO),$(shell grep -E '^AI_SYNC_TO=' .env.local .env 2>/dev/null | head -1 | cut -d= -f2))
+# ai-command-converter only supports Claude ↔ Gemini
+AI_COMMAND_TOOLS := claude gemini
+# rulesync supports more tools
+AI_RULES_TOOLS := claude gemini cursor copilot cline roo
+
+ai-commands-sync: ## Sync AI commands between tools (FROM=claude TO=gemini, or configure in .env)
+	@if [ -z "$(AI_SYNC_FROM)" ]; then \
+		echo -e "\033[0;33mUsage:\033[0m make ai-commands-sync FROM=claude TO=gemini"; \
+		echo -e "       Or set AI_SYNC_FROM (and optionally AI_SYNC_TO) in .env.local"; \
+		echo -e "\033[0;34mSupported tools (commands):\033[0m $(AI_COMMAND_TOOLS)"; \
+		echo -e "\033[0;36mNote: For rules, use 'make ai-rules-sync' (supports more tools)\033[0m"; \
+		exit 1; \
+	fi
+	@if ! echo "$(AI_COMMAND_TOOLS)" | grep -qw "$(AI_SYNC_FROM)"; then \
+		echo -e "\033[0;31mError: Invalid FROM='$(AI_SYNC_FROM)'\033[0m"; \
+		echo -e "\033[0;34mSupported tools (commands):\033[0m $(AI_COMMAND_TOOLS)"; \
+		exit 1; \
+	fi
+	@# Validate TO tools (supports comma or space separated list)
+	@if [ -n "$(AI_SYNC_TO)" ]; then \
+		for tool in $$(echo "$(AI_SYNC_TO)" | tr ',' ' '); do \
+			if ! echo "$(AI_COMMAND_TOOLS)" | grep -qw "$$tool"; then \
+				echo -e "\033[0;31mError: Invalid TO tool '$$tool'\033[0m"; \
+				echo -e "\033[0;34mSupported tools (commands):\033[0m $(AI_COMMAND_TOOLS)"; \
+				exit 1; \
+			fi; \
+		done; \
+	fi
+	@if [ "$(AI_SYNC_FROM)" != "claude" ]; then \
+		echo -e "\033[0;33m⚠️  Warning: Syncing from '$(AI_SYNC_FROM)' instead of 'claude' (project default)\033[0m"; \
+		echo -e "\033[0;36m   This project uses Claude as the source of truth for commands.\033[0m"; \
+	fi
+	@echo -e "\033[0;33mSyncing AI commands...\033[0m"
+	@if [ -z "$(AI_SYNC_TO)" ]; then \
+		echo -e "\033[0;34m  Source: $(AI_SYNC_FROM) → Target: all other tools\033[0m"; \
+		for tool in $(AI_COMMAND_TOOLS); do \
+			if [ "$$tool" != "$(AI_SYNC_FROM)" ]; then \
+				echo -e "\033[0;36m  Syncing $(AI_SYNC_FROM) → $$tool...\033[0m"; \
+				mkdir -p .$$tool/commands; \
+				$(DC_RUN) run --rm --no-TTY dev-tools npx ai-command-converter batch \
+					.$(AI_SYNC_FROM)/commands .$$tool/commands --format $$tool --force || \
+					echo -e "\033[0;31m  ✗ Failed to sync to $$tool\033[0m"; \
+			fi; \
+		done; \
+	else \
+		echo -e "\033[0;34m  Source: $(AI_SYNC_FROM) → Target: $(AI_SYNC_TO)\033[0m"; \
+		for tool in $$(echo "$(AI_SYNC_TO)" | tr ',' ' '); do \
+			if [ "$$tool" != "$(AI_SYNC_FROM)" ]; then \
+				echo -e "\033[0;36m  Syncing $(AI_SYNC_FROM) → $$tool...\033[0m"; \
+				mkdir -p .$$tool/commands; \
+				$(DC_RUN) run --rm --no-TTY dev-tools npx ai-command-converter batch \
+					.$(AI_SYNC_FROM)/commands .$$tool/commands --format $$tool --force || \
+					echo -e "\033[0;31m  ✗ Failed to sync to $$tool\033[0m"; \
+			fi; \
+		done; \
+	fi
+	@echo -e "\033[0;32m✓ AI commands sync complete!\033[0m"
+
+ai-rules-sync: ## Sync AI rules to all configured tools (Claude, Gemini, Cursor, Copilot, etc.)
+	@echo -e "\033[0;33mSyncing AI rules...\033[0m"
+	@echo -e "\033[0;34mSupported tools (rules):\033[0m $(AI_RULES_TOOLS)"
+	@if [ ! -d .rulesync ]; then \
+		echo -e "\033[0;33m  Initializing rulesync...\033[0m"; \
+		$(DC_RUN) run --rm --no-TTY dev-tools pnpm exec rulesync init; \
+	fi
+	@echo -e "\033[0;36m  Reading from .rulesync/*.md, generating for all configured targets...\033[0m"
+	@$(DC_RUN) run --rm --no-TTY dev-tools pnpm exec rulesync generate
+	@echo -e "\033[0;32m✓ AI rules sync complete!\033[0m"
+
+ai-sync: ai-commands-sync ai-rules-sync ## Sync both AI commands and rules
 
 rebuild: clean build up ## Complete rebuild
 

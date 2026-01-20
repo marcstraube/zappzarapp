@@ -360,8 +360,8 @@ Try restoring from a different backup or check key history.
 
 ### SeaweedFS: "weed: command not found"
 
-The SeaweedFS client (`weed`) runs inside the SeaweedFS container. Ensure the container is
-running:
+The SeaweedFS client (`weed`) runs inside the SeaweedFS container. Ensure the
+container is running:
 
 ```bash
 docker compose ps seaweedfs
