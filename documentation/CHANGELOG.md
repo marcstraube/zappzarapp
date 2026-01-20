@@ -1,11 +1,46 @@
 # zappzarapp - Changelog
 
-**Erstellt:** 2025-12-19 **Letzte Aktualisierung:** 2026-01-20 (Environment &
-IDE Config) **Version:** 3.56
+**Erstellt:** 2025-12-19 **Letzte Aktualisierung:** 2026-01-20 (Bug Fixes & Goss
+Tests) **Version:** 3.57
 
 ---
 
 ## Changelog
+
+### Version 3.57 (2026-01-20) - Bug Fixes & Goss Test Improvements
+
+Bug fixes for lint-staged, Makefile profiles, and new NODE_MODE container
+validation in Goss tests.
+
+#### Bug Fixes
+
+- **lint-staged**: Excluded `.vscode/` from JSON formatting (prettier can't
+  access files not mounted in dev-tools container)
+- **Makefile assets-api**: Fixed missing `--profile node` for
+  `NODE_MODE=assets-api` (Vite container wasn't starting, only Express)
+- **Image freshness validation**: `make up` now warns when Docker images are
+  older than config files (Dockerfiles, entrypoints, compose.yaml, .env)
+
+#### Goss Test Improvements
+
+- **NODE_MODE container validation**: New `test_node_mode_containers()` function
+  that **fails** (not skips) when expected containers aren't running
+- Catches profile configuration bugs like the assets-api issue above
+- Runs early in test suite for fail-fast behavior
+- Unknown NODE_MODE values trigger warning and assume `assets-api` (both
+  containers)
+
+#### Updated Files
+
+- `.prettierignore` - Added `.vscode/` and `.idea/`
+- `lint-staged.config.js` - Excluded `.vscode/**` from JSON formatting
+- `Makefile` - Fixed assets-api profile (3 locations), added image freshness
+  check
+- `tests/goss/runtime-tests.sh` - Added NODE_MODE container validation
+- `documentation/development/MAKEFILE-REFERENCE.md` - Documented freshness
+  validation
+
+---
 
 ### Version 3.56 (2026-01-20) - Environment Hierarchy & IDE Parity
 

@@ -103,6 +103,48 @@ contains_pattern() {
     echo "$1" | grep -qi "$2"
 }
 
+# Get required node containers for current NODE_MODE
+get_required_node_containers() {
+    local mode="${NODE_MODE:-assets-api}"
+    case "$mode" in
+        assets-api)     echo "node node-backend" ;;
+        assets|idle)    echo "node" ;;
+        api)            echo "node-backend" ;;
+        framework)      echo "node" ;;
+        framework-api)  echo "node node-backend" ;;
+        *)
+            log_warn "Unknown NODE_MODE='$mode', assuming assets-api (node + node-backend)"
+            echo "node node-backend"
+            ;;
+    esac
+}
+
+# ============================================================================
+# Configuration Validation Tests
+# ============================================================================
+
+test_node_mode_containers() {
+    # Only relevant when Node is enabled
+    if [ "${ENABLE_NODE:-false}" != "true" ]; then
+        return  # Silent return, not a skip
+    fi
+
+    local mode="${NODE_MODE:-assets-api}"
+    local required_containers
+    required_containers=$(get_required_node_containers)
+
+    log_test "node-mode" "NODE_MODE=$mode container validation"
+    log_info "Required containers: $required_containers"
+
+    for container in $required_containers; do
+        if is_container_running "$container"; then
+            log_pass "node-mode: '$container' is running"
+        else
+            log_fail "node-mode: '$container' MUST run for NODE_MODE=$mode"
+        fi
+    done
+}
+
 # ============================================================================
 # Test Functions
 # ============================================================================
@@ -658,6 +700,9 @@ run_all_tests() {
     echo -e "${BLUE}Runtime Integration Tests${NC}"
     echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}\n"
 
+    # Configuration validation (catches profile bugs early)
+    test_node_mode_containers
+
     test_nginx
     test_health_routing
     test_php
@@ -684,6 +729,7 @@ run_all_tests() {
 
 # Run specific service test or all
 case "${1:-all}" in
+    node-mode) test_node_mode_containers ;;
     nginx) test_nginx ;;
     health-routing|health) test_health_routing ;;
     php) test_php ;;
@@ -701,8 +747,9 @@ case "${1:-all}" in
     all) run_all_tests ;;
     *)
         echo "Usage: $0 [service|all]"
-        echo "Services: nginx, health-routing, php, node-backend, node-frontend, postgres, mariadb,"
-        echo "          redis, mercure, meilisearch, elasticsearch, mailpit, seaweedfs, rabbitmq"
+        echo "Services: node-mode, nginx, health-routing, php, node-backend, node-frontend,"
+        echo "          postgres, mariadb, redis, mercure, meilisearch, elasticsearch,"
+        echo "          mailpit, seaweedfs, rabbitmq"
         exit 1
         ;;
 esac
