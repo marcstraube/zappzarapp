@@ -23,13 +23,15 @@
             "CaptainHook\\Secrets\\Regex\\Supplier\\Stripe",
             "CaptainHook\\Secrets\\Regex\\Supplier\\Gitlab"
           ],
-          "entropyThreshold": 0,
+          "entropyThreshold": 4.5,
           "allowed": [
             "#example\\.com#",
             "#localhost#",
             "#127\\.0\\.0\\.1#",
             "#DB_PASSWORD=secret#",
-            "#your-secret-key#"
+            "#your-secret-key#",
+            "#CaptainHook\\\\\\\\Secrets#",
+            "#Regex\\\\\\\\Supplier#"
           ]
         },
         "config": {

@@ -35,6 +35,10 @@
           {
             "type": "command",
             "command": "if echo \"$TOOL_INPUT\" | grep -qE '^make (goss-test|test)'; then docker compose ps -q 2>/dev/null | head -1 >/dev/null || echo '[Hook] Warning: No containers running. Run make up first.'; fi"
+          },
+          {
+            "type": "command",
+            "command": "if echo \"$TOOL_INPUT\" | grep -qE 'git commit'; then echo '[Hook] Before committing: Did you update BACKLOG.md and CHANGELOG.md?'; fi"
           }
         ]
       }
