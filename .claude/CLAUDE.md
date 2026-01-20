@@ -26,6 +26,27 @@ When ending a session (user confirms):
 
 **Note:** `/clear` is a built-in CLI command - only the user can execute it.
 
+## Context Overflow / Continued Sessions
+
+**When a session is "continued from previous conversation" after context overflow:**
+
+1. **IMMEDIATELY create a new session file** — even though context was summarized
+2. Note in Context field: "Continued from: Context overflow"
+3. Continue with normal session logging
+
+**This is NOT optional** — the summarized context loses session file updates!
+
+## Session Log Updates
+
+**Update the session log DURING work, not just at the end:**
+
+- After each significant change: add to Changes table
+- After each decision: add to Decisions section
+- After each commit: note commit hash in Changes or Summary
+- After discovering something: add to Learnings
+
+**Rule of thumb:** If you completed a todo item, update the session log.
+
 ---
 
 ## Solution Principles
