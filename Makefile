@@ -1637,6 +1637,19 @@ check-health: ## Check application health by container status for all services
 	fi
 	@echo ""
 
+	@echo -e "\033[0;34m🟢 Node.js:\033[0m"
+	@if [ -f .env ]; then . ./.env; fi; \
+	if [ "$${ENABLE_NODE:-true}" = "true" ]; then \
+		if [ "$$(docker inspect --format='{{.State.Health.Status}}' $$(docker compose ps -q node) 2>/dev/null)" = "healthy" ]; then \
+			echo -e "\033[0;32m  ✅ Healthy (mode: $${NODE_MODE:-assets-api})\033[0m"; \
+		else \
+			echo -e "\033[0;31m  ❌ Unhealthy or not running\033[0m"; \
+		fi; \
+	else \
+		echo -e "\033[0;37m  ⚪ Disabled (ENABLE_NODE=false)\033[0m"; \
+	fi
+	@echo ""
+
 	@echo -e "\033[0;34m💾 Database:\033[0m"
 	@if [ -f .env ]; then . ./.env; fi; \
 	if [ "$${ENABLE_DATABASE:-true}" = "true" ]; then \
