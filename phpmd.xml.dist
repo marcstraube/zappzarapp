@@ -9,6 +9,11 @@
         Detects code smells, complexity issues, and design problems.
     </description>
 
+    <!-- Exclude PHP 8.4 property hooks files (PDepend parser doesn't support them yet) -->
+    <exclude-pattern>*/DatabaseConfig.php</exclude-pattern>
+    <exclude-pattern>*/DatabaseConfigInterface.php</exclude-pattern>
+    <exclude-pattern>*/DatabaseConfigStub.php</exclude-pattern>
+
     <!-- Clean Code Rules -->
     <rule ref="rulesets/cleancode.xml">
         <!-- Allow else expressions for readability -->

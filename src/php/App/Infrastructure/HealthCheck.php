@@ -4,10 +4,9 @@ declare(strict_types=1);
 
 namespace App\Infrastructure;
 
-use PDO;
-use PDOException;
-use Redis;
 use Exception;
+use PDO;
+use Redis;
 
 /**
  * HealthCheck - Centralized service health status checker
@@ -209,51 +208,29 @@ class HealthCheck
         }
 
         try {
-            $redis = new Redis();
+            $conn = $this->createRedisConnection();
 
-            // Parse REDIS_URL to determine TLS mode
-            $redisUrl = $_ENV['REDIS_URL'] ?? getenv('REDIS_URL') ?: 'rediss://redis:6379';
-            $useTls   = str_starts_with((string) $redisUrl, 'rediss://');
-
-            // Parse host and port from URL
-            $parsedUrl = parse_url((string) $redisUrl);
-            $host      = $parsedUrl['host'] ?? 'redis';
-            $port      = $parsedUrl['port'] ?? 6379;
-
-            if ($useTls) {
-                // TLS connection with self-signed certificate support
-                $connected = $redis->connect($host, $port, 2, '', 0, 0, [
-                    'stream' => [
-                        'verify_peer'       => false,
-                        'verify_peer_name'  => false,
-                        'allow_self_signed' => true,
-                    ],
-                ]);
-            } else {
-                $connected = $redis->connect($host, $port, 2);
-            }
-
-            if (!$connected) {
+            if ($conn['redis'] === null) {
                 $this->status['services']['redis'] = [
                     'status'  => 'error',
-                    'message' => 'Could not connect to Redis',
+                    'message' => $conn['error'],
                     'enabled' => true,
-                    'tls'     => $useTls,
+                    'tls'     => $conn['useTls'],
                 ];
                 return;
             }
 
-            $pong = $redis->ping();
-            $info = $redis->info('SERVER');
+            $redis = $conn['redis'];
+            $pong  = $redis->ping();
+            $info  = $redis->info('SERVER');
+            $redis->close();
 
             $this->status['services']['redis'] = [
                 'status'  => ($pong === '+PONG' || $pong === true) ? 'ok' : 'error',
                 'version' => $info['redis_version'] ?? 'unknown',
                 'enabled' => true,
-                'tls'     => $useTls,
+                'tls'     => $conn['useTls'],
             ];
-
-            $redis->close();
         } catch (Exception $exception) {
             $this->status['services']['redis'] = [
                 'status'  => 'error',
@@ -269,7 +246,7 @@ class HealthCheck
     private function checkDatabase(): void
     {
         $config = new DatabaseConfig();
-        $dbType = $config->getType();
+        $dbType = $config->type;
 
         // Check if required extension is loaded
         $requiredExt = $config->isPostgres() ? 'pdo_pgsql' : 'pdo_mysql';
@@ -290,7 +267,7 @@ class HealthCheck
                 PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
             ] + $config->getPdoSslOptions();
 
-            $pdo = new PDO($config->getDsn(), $config->getUser(), $config->getPassword(), $options);
+            $pdo = new PDO($config->getDsn(), $config->user, $config->password, $options);
 
             $query   = $config->isPostgres() ? 'SELECT version()' : 'SELECT VERSION()';
             $stmt    = $pdo->query($query);
@@ -313,32 +290,6 @@ class HealthCheck
     }
 
     /**
-     * Get overall status (ok, degraded, error)
-     */
-    public function getOverallStatus(): string
-    {
-        if ($this->status === []) {
-            $this->checkAll();
-        }
-
-        return $this->status['overall_status'];
-    }
-
-    /**
-     * Get all services status
-     *
-     * @return array<string, mixed>
-     */
-    public function getServices(): array
-    {
-        if ($this->status === []) {
-            $this->checkAll();
-        }
-
-        return $this->status['services'];
-    }
-
-    /**
      * Get environment info
      *
      * @return array<string, mixed>
@@ -346,20 +297,6 @@ class HealthCheck
     public function getEnvironment(): array
     {
         return $this->env;
-    }
-
-    /**
-     * Liveness check - simple check that PHP-FPM is running
-     *
-     * @return array<string, mixed>
-     */
-    public function checkLiveness(): array
-    {
-        return [
-            'status'    => 'ok',
-            'service'   => 'php-backend',
-            'timestamp' => date('c'),
-        ];
     }
 
     /**
@@ -468,7 +405,7 @@ class HealthCheck
     private function checkDatabaseWithLatency(): array
     {
         $config = new DatabaseConfig();
-        $dbType = $config->getType();
+        $dbType = $config->type;
 
         $requiredExt = $config->isPostgres() ? 'pdo_pgsql' : 'pdo_mysql';
         if (!extension_loaded($requiredExt)) {
@@ -487,9 +424,9 @@ class HealthCheck
                 PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
             ] + $config->getPdoSslOptions();
 
-            $pdo = new PDO($config->getDsn(), $config->getUser(), $config->getPassword(), $options);
+            $pdo = new PDO($config->getDsn(), $config->user, $config->password, $options);
 
-            $query = $config->isPostgres() ? 'SELECT 1' : 'SELECT 1';
+            $query = 'SELECT 1';
             $pdo->query($query);
 
             $latencyMs = (int) ((hrtime(true) - $start) / 1_000_000);
@@ -525,35 +462,17 @@ class HealthCheck
         $start = hrtime(true);
 
         try {
-            $redis    = new Redis();
-            $redisUrl = $_ENV['REDIS_URL'] ?? getenv('REDIS_URL') ?: 'rediss://redis:6379';
-            $useTls   = str_starts_with((string) $redisUrl, 'rediss://');
+            $conn = $this->createRedisConnection();
 
-            $parsedUrl = parse_url((string) $redisUrl);
-            $host      = $parsedUrl['host'] ?? 'redis';
-            $port      = $parsedUrl['port'] ?? 6379;
-
-            if ($useTls) {
-                $connected = $redis->connect($host, $port, 2, '', 0, 0, [
-                    'stream' => [
-                        'verify_peer'       => false,
-                        'verify_peer_name'  => false,
-                        'allow_self_signed' => true,
-                    ],
-                ]);
-            } else {
-                $connected = $redis->connect($host, $port, 2);
-            }
-
-            if (!$connected) {
+            if ($conn['redis'] === null) {
                 return [
                     'status'  => 'unhealthy',
-                    'message' => 'Could not connect to Redis',
+                    'message' => $conn['error'],
                 ];
             }
 
-            $redis->ping();
-            $redis->close();
+            $conn['redis']->ping();
+            $conn['redis']->close();
 
             $latencyMs = (int) ((hrtime(true) - $start) / 1_000_000);
 
@@ -810,6 +729,52 @@ class HealthCheck
     }
 
     /**
+     * Create Redis connection with TLS support
+     *
+     * @return array{redis: Redis|null, host: string, port: int, useTls: bool, error: string|null}
+     */
+    private function createRedisConnection(): array
+    {
+        $redisUrl  = $_ENV['REDIS_URL'] ?? getenv('REDIS_URL') ?: 'rediss://redis:6379';
+        $useTls    = str_starts_with((string) $redisUrl, 'rediss://');
+        $parsedUrl = parse_url((string) $redisUrl);
+        $host      = $parsedUrl['host'] ?? 'redis';
+        $port      = $parsedUrl['port'] ?? 6379;
+
+        $redis = new Redis();
+
+        if ($useTls) {
+            $connected = $redis->connect($host, $port, 2, '', 0, 0, [
+                'stream' => [
+                    'verify_peer'       => false,
+                    'verify_peer_name'  => false,
+                    'allow_self_signed' => true,
+                ],
+            ]);
+        } else {
+            $connected = $redis->connect($host, $port, 2);
+        }
+
+        if (!$connected) {
+            return [
+                'redis'  => null,
+                'host'   => $host,
+                'port'   => $port,
+                'useTls' => $useTls,
+                'error'  => 'Could not connect to Redis',
+            ];
+        }
+
+        return [
+            'redis'  => $redis,
+            'host'   => $host,
+            'port'   => $port,
+            'useTls' => $useTls,
+            'error'  => null,
+        ];
+    }
+
+    /**
      * Check TCP connection to a service
      *
      * @return array<string, mixed>
@@ -834,6 +799,7 @@ class HealthCheck
      *
      * @param int<0, max> $timeout Connection timeout in seconds
      * @return resource|false Socket resource on success, false on failure
+     * @noinspection PhpMixedReturnTypeCanBeReducedInspection - 'resource' is not a native PHP type
      */
     private function safeSocketOpen(string $host, int $port, ?int &$errno, ?string &$errstr, int $timeout = 1): mixed
     {

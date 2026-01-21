@@ -1,0 +1,56 @@
+<component name="ProjectCodeStyleConfiguration">
+  <code_scheme name="Project" version="173">
+    <!-- SQL Code Style - synchronized with .sqlfluff -->
+    <SqlCodeStyleSettings version="7">
+      <option name="KEYWORD_CASE" value="1" /> <!-- 1 = UPPER -->
+      <option name="TYPE_CASE" value="1" /> <!-- 1 = UPPER -->
+      <option name="IDENTIFIER_CASE" value="2" /> <!-- 2 = lower -->
+      <option name="QUOTED_IDENTIFIER_CASE" value="0" /> <!-- 0 = Do not change -->
+      <option name="ALIAS_CASE" value="2" /> <!-- 2 = lower -->
+      <option name="BUILT_IN_FUNCTION_CASE" value="1" /> <!-- 1 = UPPER -->
+      <option name="CUSTOM_FUNCTION_CASE" value="2" /> <!-- 2 = lower -->
+      <option name="QUERY_EL_LINE" value="1" /> <!-- Each clause on new line -->
+      <option name="QUERY_EL_COMMA" value="2" /> <!-- Trailing commas -->
+      <option name="QUERY_IN_ONE_STRING" value="0" /> <!-- Don't keep on one line -->
+      <option name="QUERY_TRUE_INDENT" value="true" />
+      <option name="QUERY_ALIGN_COLUMNS" value="false" />
+      <option name="QUERY_ALIGN_FIRST_WORD" value="false" />
+      <option name="INSERT_EL_LINE" value="1" />
+      <option name="INSERT_EL_COMMA" value="2" />
+      <option name="INSERT_INTO_NL" value="1" />
+      <option name="INSERT_SPACE_WITHIN_PARENTHESES" value="false" />
+      <option name="INSERT_COLLAPSE" value="1" />
+      <option name="SET_EL_LINE" value="1" />
+      <option name="SET_EL_COMMA" value="2" />
+      <option name="SET_ALIGN_EQUAL_SIGN" value="false" />
+      <option name="SUBQUERY_OPENING" value="0" />
+      <option name="SUBQUERY_CONTENT" value="1" />
+      <option name="SUBQUERY_CLOSING" value="0" />
+      <option name="SUBQUERY_PAR_SPACE_INSIDE" value="false" />
+      <option name="EXPR_CASE_WHEN" value="1" />
+      <option name="EXPR_CASE_THEN" value="0" />
+      <option name="EXPR_CASE_ELSE" value="1" />
+      <option name="EXPR_CASE_END" value="1" />
+      <option name="EXPR_BOOL_AND" value="0" />
+      <option name="EXPR_BOOL_OR" value="0" />
+      <option name="EXPR_BOOL_PAREN" value="false" />
+      <option name="CREATE_SCHEMA_CONTENT" value="1" />
+      <option name="CREATE_TABLE_OPENING" value="0" />
+      <option name="CREATE_TABLE_CONTENT" value="1" />
+      <option name="CREATE_TABLE_CLOSING" value="0" />
+      <option name="CREATE_TABLE_PAR_SPACE_INSIDE" value="false" />
+      <option name="ALTER_TABLE_CONTENT" value="1" />
+      <option name="CREATE_INDEX_CONTENT" value="1" />
+      <option name="INDEX_COLUMN_LIST" value="0" />
+      <option name="TAB_WIDTH" value="4" />
+      <option name="INDENT" value="4" />
+      <option name="CONTINUATION_INDENT" value="4" />
+      <option name="KEEP_BLANK_LINES" value="1" />
+      <option name="POST_OPT_WRAP" value="2" />
+      <option name="CORTEGE_COMMA_1ST" value="false" /> <!-- Trailing commas -->
+      <option name="CORTEGE_SPACE_BEFORE_COMMA" value="false" />
+      <option name="CORTEGE_CLOSING" value="0" />
+      <option name="CORTEGE_SPACE_WITHIN_PARENTHESES" value="false" />
+    </SqlCodeStyleSettings>
+  </code_scheme>
+</component>

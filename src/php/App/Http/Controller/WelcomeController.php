@@ -4,19 +4,19 @@ declare(strict_types=1);
 
 namespace App\Http\Controller;
 
-use App\Infrastructure\ViteHelper;
 use App\Infrastructure\HealthCheck;
+use App\Infrastructure\ViteHelper;
 
 /**
  * Welcome Controller
  *
  * Displays the main landing page with service status dashboard
  */
-class WelcomeController
+readonly class WelcomeController
 {
     public function __construct(
-        private readonly ViteHelper $vite,
-        private readonly HealthCheck $health,
+        private ViteHelper $vite,
+        private HealthCheck $health,
     ) {}
 
     /**

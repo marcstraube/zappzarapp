@@ -1,32 +1,31 @@
 <component name="InspectionProjectProfileManager">
   <profile version="1.0">
     <option name="myName" value="Project Default" />
-    <!-- PHP Quality Tools -->
-    <inspection_tool class="MessDetectorValidationInspection" enabled="true" level="WEAK WARNING" enabled_by_default="true" />
-    <inspection_tool class="PhpCSFixerValidationInspection" enabled="true" level="WEAK WARNING" enabled_by_default="true" />
-    <inspection_tool class="PhpStanGlobal" enabled="true" level="WEAK WARNING" enabled_by_default="true" />
-    <!-- JavaScript/TypeScript Quality Tools -->
     <inspection_tool class="Eslint" enabled="true" level="WARNING" enabled_by_default="true" />
-    <inspection_tool class="TypeScriptUnresolvedReference" enabled="true" level="ERROR" enabled_by_default="true" />
-    <inspection_tool class="TypeScriptValidateTypes" enabled="true" level="ERROR" enabled_by_default="true" />
-    <!-- Markdown: Disable PhpStorm inspections, use Prettier instead -->
-    <inspection_tool class="MarkdownIncorrectTableFormatting" enabled="false" level="WEAK WARNING" enabled_by_default="false" />
-    <inspection_tool class="MarkdownIncorrectlyNumberedListItem" enabled="false" level="WEAK WARNING" enabled_by_default="false" />
-    <inspection_tool class="MarkdownOutdatedTableOfContents" enabled="false" level="WEAK WARNING" enabled_by_default="false" />
-    <!-- PHP Tests: Disable inspections that conflict with test patterns -->
-    <inspection_tool class="PhpVariableUsedOnlyInClosureInspection" enabled="true" level="WEAK WARNING" enabled_by_default="true">
-      <scope name="Tests" level="INFORMATION" enabled="false" />
-    </inspection_tool>
-    <!-- Grazie Grammar: Disable in source code (telegraphic style is standard in PHPDoc/JSDoc) -->
     <inspection_tool class="GrazieInspection" enabled="true" level="GRAMMAR_ERROR" enabled_by_default="true">
       <scope name="Source and Tests" level="GRAMMAR_ERROR" enabled="false" />
     </inspection_tool>
-    <inspection_tool class="LanguageDetectionInspection" enabled="true" level="WARNING" enabled_by_default="true">
+        <inspection_tool class="LanguageDetectionInspection" enabled="true" level="WARNING" enabled_by_default="true">
       <scope name="Source and Tests" level="WARNING" enabled="false" />
     </inspection_tool>
-    <!-- Spellchecker: Keep enabled but lower severity in code -->
+    <inspection_tool class="MarkdownIncorrectTableFormatting" enabled="false" level="WEAK WARNING" enabled_by_default="false" />
+    <inspection_tool class="MarkdownIncorrectlyNumberedListItem" enabled="false" level="WEAK WARNING" enabled_by_default="false" />
+    <inspection_tool class="MarkdownOutdatedTableOfContents" enabled="false" level="WEAK WARNING" enabled_by_default="false" />
+    <inspection_tool class="MessDetectorValidationInspection" enabled="true" level="WEAK WARNING" enabled_by_default="true" />
+    <inspection_tool class="PhpCSFixerValidationInspection" enabled="true" level="WEAK WARNING" enabled_by_default="true" />
+    <inspection_tool class="PhpStanGlobal" enabled="true" level="WEAK WARNING" enabled_by_default="true" />
+    <inspection_tool class="PhpVariableUsedOnlyInClosureInspection" enabled="true" level="WEAK WARNING" enabled_by_default="true">
+      <scope name="Tests" level="INFORMATION" enabled="false" />
+    </inspection_tool>
     <inspection_tool class="SpellCheckingInspection" enabled="true" level="TYPO" enabled_by_default="true">
-      <scope name="Source and Tests" level="INFORMATION" enabled="true" />
+      <scope name="Source and Tests" level="INFORMATION" enabled="true">
+        <option name="processCode" value="true" />
+        <option name="processLiterals" value="true" />
+        <option name="processComments" value="true" />
+      </scope>
+      <option name="processCode" value="true" />
+      <option name="processLiterals" value="true" />
+      <option name="processComments" value="true" />
     </inspection_tool>
   </profile>
 </component>

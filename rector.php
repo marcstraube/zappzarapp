@@ -27,10 +27,13 @@ return static function (RectorConfig $rectorConfig): void {
         SetList::CODING_STYLE,
     ]);
 
-    // Skip some specific files or rules if needed
+    // Skip files using PHP 8.4 property hooks with asymmetric visibility
+    // Rector's constructor promotion doesn't work with `public private(set)`
+    // We skip the entire file rather than specific rules, as multiple rules conflict
     $rectorConfig->skip([
-        // Example: Skip specific rule in specific file
-        // SomeRule::class => [__DIR__ . '/app/src/LegacyFile.php'],
+        __DIR__ . '/tests/php/App/Unit/Infrastructure/Database/DatabaseConfigStub.php',
+        // If the above doesn't work, try fnmatch pattern
+        '*/DatabaseConfigStub.php',
     ]);
 
     // Use the configured PHPStan cache

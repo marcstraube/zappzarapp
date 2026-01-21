@@ -142,28 +142,26 @@ BEGIN
     SET v_anonymized_name = CONCAT('Deleted User ', p_user_id);
 
     -- ========================================================================
-    -- CUSTOMIZE THIS SECTION FOR YOUR APPLICATION
+    -- ANONYMIZE USERS TABLE
     -- ========================================================================
-    -- Example: Anonymize a "users" table
-    -- Uncomment and modify for your actual table structure:
-    --
-    -- UPDATE users SET
-    --     email = v_anonymized_email,
-    --     first_name = 'DELETED',
-    --     last_name = 'USER',
-    --     phone = NULL,
-    --     address = NULL,
-    --     date_of_birth = NULL,
-    --     profile_image = NULL,
-    --     updated_at = NOW(),
-    --     deleted_at = NOW()
-    -- WHERE id = p_user_id;
-    --
-    -- IF ROW_COUNT() = 0 THEN
-    --     SET p_success = 0;
-    --     -- Optionally: SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'User not found';
-    -- END IF;
-    --
+    -- Anonymize the user record (GDPR Art. 17 - Right to erasure)
+    -- This preserves the record structure while removing PII
+
+    UPDATE users SET
+        email = v_anonymized_email,
+        password_hash = 'DELETED',  -- Prevents login
+        name = v_anonymized_name,
+        totp_secret = NULL,         -- Clear 2FA data
+        totp_enabled = 0
+    WHERE id = p_user_id;
+
+    IF ROW_COUNT() = 0 THEN
+        SET p_success = 0;
+    END IF;
+
+    -- ========================================================================
+    -- CUSTOMIZE: Add more tables as needed for your application
+    -- ========================================================================
     -- Example: Anonymize user's orders
     -- UPDATE orders SET
     --     shipping_name = 'DELETED USER',
@@ -183,7 +181,7 @@ BEGIN
     SET v_data_json = JSON_OBJECT(
         'action', 'user_anonymized',
         'reference', v_reference,
-        'anonymized_fields', JSON_ARRAY('email', 'name', 'phone', 'address'),
+        'anonymized_fields', JSON_ARRAY('email', 'name', 'password_hash', 'totp_secret'),
         'performed_by', 'system'
     );
 

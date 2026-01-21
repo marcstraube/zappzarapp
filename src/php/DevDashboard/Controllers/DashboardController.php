@@ -15,14 +15,14 @@ use DevDashboard\Services\SystemInfoService;
  *
  * Handles all dashboard routes and renders views
  */
-class DashboardController
+readonly class DashboardController
 {
     public function __construct(
-        private readonly HealthCheckService $healthCheckService,
-        private readonly SystemInfoService $systemInfoService,
-        private readonly QualityService $qualityService,
-        private readonly LogService $logService,
-        private readonly DatabaseService $databaseService,
+        private HealthCheckService $healthCheckService,
+        private SystemInfoService $systemInfoService,
+        private QualityService $qualityService,
+        private LogService $logService,
+        private DatabaseService $databaseService,
     ) {}
 
     /**
@@ -35,6 +35,7 @@ class DashboardController
             'healthStatus' => $this->healthCheckService->getOverallStatus(),
             'systemInfo'   => $this->systemInfoService->getBasicInfo(),
             'gitStatus'    => $this->systemInfoService->getGitStatus(),
+            'dbStats'      => $this->databaseService->getQuickStats(),
         ];
 
         $this->render('dashboard', $data);

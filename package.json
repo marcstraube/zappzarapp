@@ -97,6 +97,7 @@
   "packageManager": "pnpm@10.28.1",
   "dependencies": {
     "amqplib": "^0.10.9",
+    "mysql2": "^3.16.1",
     "redis": "^5.10.0"
   }
 }

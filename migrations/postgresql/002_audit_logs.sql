@@ -49,7 +49,7 @@ CREATE TABLE IF NOT EXISTS audit_logs (
     checksum VARCHAR(64) NOT NULL,
 
     -- Prevent updates and deletes (append-only table)
-    CONSTRAINT audit_logs_immutable CHECK (false)
+    CONSTRAINT audit_logs_immutable CHECK (FALSE)
 );
 
 -- Remove the immutable constraint (workaround - constraint above prevents all writes)

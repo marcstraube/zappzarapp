@@ -15,9 +15,9 @@ use PDOException;
  *
  * @SuppressWarnings("PHPMD.ExcessiveClassComplexity")
  */
-class DatabaseService
+readonly class DatabaseService
 {
-    private readonly DatabaseConfig $config;
+    private DatabaseConfig $config;
 
     public function __construct()
     {
@@ -35,7 +35,7 @@ class DatabaseService
                 PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
             ] + $this->config->getPdoSslOptions();
 
-            return new PDO($this->config->getDsn(), $this->config->getUser(), $this->config->getPassword(), $options);
+            return new PDO($this->config->getDsn(), $this->config->user, $this->config->password, $options);
         } catch (PDOException) {
             return null;
         }
@@ -59,10 +59,10 @@ class DatabaseService
 
         return [
             'connected'   => true,
-            'type'        => $this->config->getType(),
-            'host'        => $this->config->getHost(),
-            'port'        => $this->config->getPort(),
-            'database'    => $this->config->getName(),
+            'type'        => $this->config->type,
+            'host'        => $this->config->host,
+            'port'        => $this->config->port,
+            'database'    => $this->config->name,
             'version'     => $this->getDatabaseVersion($pdo),
             'table_count' => $this->getTableCount($pdo),
             'total_size'  => $this->getDatabaseSize($pdo),
@@ -117,7 +117,7 @@ class DatabaseService
             } else {
                 $stmt = $pdo->query(
                     "SELECT COUNT(*) FROM information_schema.tables
-                    WHERE table_schema = '{$this->config->getName()}'"
+                    WHERE table_schema = '{$this->config->name}'"
                 );
             }
 
@@ -139,7 +139,7 @@ class DatabaseService
         try {
             if ($this->config->isPostgres()) {
                 $stmt = $pdo->query(
-                    sprintf("SELECT pg_size_pretty(pg_database_size('%s'))", $this->config->getName())
+                    sprintf("SELECT pg_size_pretty(pg_database_size('%s'))", $this->config->name)
                 );
                 if ($stmt === false) {
                     return 'Unknown';
@@ -151,7 +151,7 @@ class DatabaseService
                 $stmt = $pdo->query(
                     "SELECT ROUND(SUM(data_length + index_length) / 1024 / 1024, 2) AS size_mb
                     FROM information_schema.tables
-                    WHERE table_schema = '{$this->config->getName()}'"
+                    WHERE table_schema = '{$this->config->name}'"
                 );
                 if ($stmt === false) {
                     return 'Unknown';
@@ -195,7 +195,7 @@ class DatabaseService
                         table_name,
                         ROUND((data_length + index_length) / 1024 / 1024, 2) as total_size_mb
                     FROM information_schema.tables
-                    WHERE table_schema = '{$this->config->getName()}'
+                    WHERE table_schema = '{$this->config->name}'
                     ORDER BY table_name"
                 );
             }
@@ -269,7 +269,7 @@ class DatabaseService
                         count(*) FILTER (WHERE state = 'active') as active_connections,
                         count(*) FILTER (WHERE state = 'idle') as idle_connections
                     FROM pg_stat_activity
-                    WHERE datname = '{$this->config->getName()}'"
+                    WHERE datname = '{$this->config->name}'"
                 );
                 if ($stmt === false) {
                     return ['available' => false, 'message' => 'Query failed'];
@@ -319,9 +319,9 @@ class DatabaseService
      */
     public function getDatabaseCommands(): array
     {
-        $user = $this->config->getUser();
-        $name = $this->config->getName();
-        $pass = $this->config->getPassword();
+        $user = $this->config->user;
+        $name = $this->config->name;
+        $pass = $this->config->password;
 
         return [
             [

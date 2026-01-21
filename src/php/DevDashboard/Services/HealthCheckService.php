@@ -198,200 +198,92 @@ class HealthCheckService
 
     /**
      * Check PostgreSQL connection
-          *
+     *
      * @return array<string, mixed>
-     * @SuppressWarnings("PHPMD.UnusedLocalVariable")
      */
     private function checkPostgresConnection(): array
     {
-        $host = 'postgres';
-        $port = 5432;
-
-        $errno  = null;
-        $errstr = null;
-        $socket = $this->safeSocketOpen($host, $port, $errno, $errstr, 1);
-        if ($socket) {
-            fclose($socket);
-            return ['connected' => true, 'host' => $host, 'port' => $port];
-        }
-
-        return ['connected' => false, 'error' => $errstr];
+        return $this->checkSocketConnection('postgres', 5432);
     }
 
     /**
      * Check MariaDB connection
-          *
+     *
      * @return array<string, mixed>
-     * @SuppressWarnings("PHPMD.UnusedLocalVariable")
      */
     private function checkMariadbConnection(): array
     {
-        $host = 'mariadb';
-        $port = 3306;
-
-        $errno  = null;
-        $errstr = null;
-        $socket = $this->safeSocketOpen($host, $port, $errno, $errstr, 1);
-        if ($socket) {
-            fclose($socket);
-            return ['connected' => true, 'host' => $host, 'port' => $port];
-        }
-
-        return ['connected' => false, 'error' => $errstr];
+        return $this->checkSocketConnection('mariadb', 3306);
     }
 
     /**
      * Check Redis connection
-          *
+     *
      * @return array<string, mixed>
-     * @SuppressWarnings("PHPMD.UnusedLocalVariable")
      */
     private function checkRedisConnection(): array
     {
-        $host = 'redis';
-        $port = 6379;
-
-        $errno  = null;
-        $errstr = null;
-        $socket = $this->safeSocketOpen($host, $port, $errno, $errstr, 1);
-        if ($socket) {
-            fclose($socket);
-            return ['connected' => true, 'host' => $host, 'port' => $port];
-        }
-
-        return ['connected' => false, 'error' => $errstr];
+        return $this->checkSocketConnection('redis', 6379);
     }
 
     /**
      * Check Mercure connection (HTTPS on port 443)
      *
      * @return array<string, mixed>
-     * @SuppressWarnings("PHPMD.UnusedLocalVariable")
      */
     private function checkMercure(): array
     {
-        $host = 'mercure';
-        $port = 443;
-
-        $errno  = null;
-        $errstr = null;
-        $socket = $this->safeSocketOpen($host, $port, $errno, $errstr, 1);
-        if ($socket) {
-            fclose($socket);
-            return ['connected' => true, 'host' => $host, 'port' => $port, 'tls' => true];
-        }
-
-        return ['connected' => false, 'error' => $errstr];
+        return $this->checkSocketConnection('mercure', 443, useTls: true);
     }
 
     /**
      * Check Meilisearch connection (HTTPS on port 7700)
      *
      * @return array<string, mixed>
-     * @SuppressWarnings("PHPMD.UnusedLocalVariable")
      */
     private function checkMeilisearch(): array
     {
-        $host = 'meilisearch';
-        $port = 7700;
-
-        $errno  = null;
-        $errstr = null;
-        $socket = $this->safeSocketOpen($host, $port, $errno, $errstr, 1);
-        if ($socket) {
-            fclose($socket);
-            return ['connected' => true, 'host' => $host, 'port' => $port, 'tls' => true];
-        }
-
-        return ['connected' => false, 'error' => $errstr];
+        return $this->checkSocketConnection('meilisearch', 7700, useTls: true);
     }
 
     /**
      * Check Elasticsearch connection (HTTPS on port 9200)
      *
      * @return array<string, mixed>
-     * @SuppressWarnings("PHPMD.UnusedLocalVariable")
      */
     private function checkElasticsearch(): array
     {
-        $host = 'elasticsearch';
-        $port = 9200;
-
-        $errno  = null;
-        $errstr = null;
-        $socket = $this->safeSocketOpen($host, $port, $errno, $errstr, 1);
-        if ($socket) {
-            fclose($socket);
-            return ['connected' => true, 'host' => $host, 'port' => $port, 'tls' => true];
-        }
-
-        return ['connected' => false, 'error' => $errstr];
+        return $this->checkSocketConnection('elasticsearch', 9200, useTls: true);
     }
 
     /**
      * Check Mailpit connection
      *
      * @return array<string, mixed>
-     * @SuppressWarnings("PHPMD.UnusedLocalVariable")
      */
     private function checkMailpit(): array
     {
-        $host = 'mailpit';
-        $port = 8025;
-
-        $errno  = null;
-        $errstr = null;
-        $socket = $this->safeSocketOpen($host, $port, $errno, $errstr, 1);
-        if ($socket) {
-            fclose($socket);
-            return ['connected' => true, 'host' => $host, 'port' => $port];
-        }
-
-        return ['connected' => false, 'error' => $errstr];
+        return $this->checkSocketConnection('mailpit', 8025);
     }
 
     /**
      * Check RabbitMQ connection
      *
      * @return array<string, mixed>
-     * @SuppressWarnings("PHPMD.UnusedLocalVariable")
      */
     private function checkRabbitmq(): array
     {
-        $host = 'rabbitmq';
-        $port = 5672;
-
-        $errno  = null;
-        $errstr = null;
-        $socket = $this->safeSocketOpen($host, $port, $errno, $errstr, 1);
-        if ($socket) {
-            fclose($socket);
-            return ['connected' => true, 'host' => $host, 'port' => $port];
-        }
-
-        return ['connected' => false, 'error' => $errstr];
+        return $this->checkSocketConnection('rabbitmq', 5672);
     }
 
     /**
      * Check SeaweedFS connection (S3 API port)
      *
      * @return array<string, mixed>
-     * @SuppressWarnings("PHPMD.UnusedLocalVariable")
      */
     private function checkSeaweedfs(): array
     {
-        $host = 'seaweedfs';
-        $port = 8333;
-
-        $errno  = null;
-        $errstr = null;
-        $socket = $this->safeSocketOpen($host, $port, $errno, $errstr, 1);
-        if ($socket) {
-            fclose($socket);
-            return ['connected' => true, 'host' => $host, 'port' => $port, 'tls' => true];
-        }
-
-        return ['connected' => false, 'error' => $errstr];
+        return $this->checkSocketConnection('seaweedfs', 8333, useTls: true);
     }
 
     /**
@@ -494,45 +386,7 @@ class HealthCheckService
      */
     private function checkPostgresql(): array
     {
-        $config = new DatabaseConfig();
-
-        try {
-            $pdo = new PDO($config->getDsn(), $config->getUser(), $config->getPassword(), [
-                PDO::ATTR_TIMEOUT => 3,
-                PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
-            ]);
-
-            $stmt = $pdo->query('SELECT version()');
-            if ($stmt === false) {
-                return [
-                    'connected' => true,
-                    'host'      => $config->getHost(),
-                    'port'      => $config->getPort(),
-                    'database'  => $config->getName(),
-                    'version'   => 'Unknown',
-                ];
-            }
-
-            $version = $stmt->fetchColumn();
-            if ($version === false) {
-                $version = 'Unknown';
-            }
-
-            return [
-                'connected' => true,
-                'host'      => $config->getHost(),
-                'port'      => $config->getPort(),
-                'database'  => $config->getName(),
-                'version'   => $version,
-            ];
-        } catch (PDOException $pdoException) {
-            return [
-                'connected' => false,
-                'host'      => $config->getHost(),
-                'port'      => $config->getPort(),
-                'error'     => $pdoException->getMessage(),
-            ];
-        }
+        return $this->checkDatabaseVersion();
     }
 
     /**
@@ -542,23 +396,38 @@ class HealthCheckService
      */
     private function checkMariadb(): array
     {
+        return $this->checkDatabaseVersion(includeSslOptions: true);
+    }
+
+    /**
+     * Check database connection and retrieve version
+     *
+     * @return array<string, mixed>
+     * @SuppressWarnings("PHPMD.BooleanArgumentFlag")
+     */
+    private function checkDatabaseVersion(bool $includeSslOptions = false): array
+    {
         $config = new DatabaseConfig();
 
+        $options = [
+            PDO::ATTR_TIMEOUT => 3,
+            PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+        ];
+
+        if ($includeSslOptions) {
+            $options += $config->getPdoSslOptions();
+        }
+
         try {
-            $options = [
-                PDO::ATTR_TIMEOUT => 3,
-                PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
-            ] + $config->getPdoSslOptions();
+            $pdo = new PDO($config->getDsn(), $config->user, $config->password, $options);
 
-            $pdo = new PDO($config->getDsn(), $config->getUser(), $config->getPassword(), $options);
-
-            $stmt = $pdo->query('SELECT VERSION()');
+            $stmt = $pdo->query('SELECT version()');
             if ($stmt === false) {
                 return [
                     'connected' => true,
-                    'host'      => $config->getHost(),
-                    'port'      => $config->getPort(),
-                    'database'  => $config->getName(),
+                    'host'      => $config->host,
+                    'port'      => $config->port,
+                    'database'  => $config->name,
                     'version'   => 'Unknown',
                 ];
             }
@@ -570,16 +439,16 @@ class HealthCheckService
 
             return [
                 'connected' => true,
-                'host'      => $config->getHost(),
-                'port'      => $config->getPort(),
-                'database'  => $config->getName(),
+                'host'      => $config->host,
+                'port'      => $config->port,
+                'database'  => $config->name,
                 'version'   => $version,
             ];
         } catch (PDOException $pdoException) {
             return [
                 'connected' => false,
-                'host'      => $config->getHost(),
-                'port'      => $config->getPort(),
+                'host'      => $config->host,
+                'port'      => $config->port,
                 'error'     => $pdoException->getMessage(),
             ];
         }
@@ -604,58 +473,22 @@ class HealthCheckService
 
     /**
      * Check Node.js service
-          *
+     *
      * @return array<string, mixed>
-     * @SuppressWarnings("PHPMD.UnusedLocalVariable")
      */
     private function checkNode(): array
     {
-        $host = 'node-backend';
-        $port = 3000;
-
-        $errno  = null;
-        $errstr = null;
-        $socket = $this->safeSocketOpen($host, $port, $errno, $errstr, 1);
-        if ($socket) {
-            fclose($socket);
-            return [
-                'running' => true,
-                'host'    => $host,
-                'port'    => $port,
-            ];
-        }
-
-        return [
-            'running' => false,
-            'error'   => $errstr ?: 'Service not reachable',
-        ];
+        return $this->checkSocketConnection('node-backend', 3000, useRunningKey: true);
     }
 
     /**
      * Check Nginx status
-          *
+     *
      * @return array<string, mixed>
-     * @SuppressWarnings("PHPMD.UnusedLocalVariable")
      */
     private function checkNginx(): array
     {
-        // Check if we can connect to nginx
-        $errno  = null;
-        $errstr = null;
-        $socket = $this->safeSocketOpen('nginx', 8080, $errno, $errstr, 1);
-        if ($socket) {
-            fclose($socket);
-            return [
-                'running' => true,
-                'host'    => 'nginx',
-                'port'    => 8080,
-            ];
-        }
-
-        return [
-            'running' => false,
-            'error'   => $errstr ?: 'Service not reachable',
-        ];
+        return $this->checkSocketConnection('nginx', 8080, useRunningKey: true);
     }
 
     /**
@@ -711,20 +544,50 @@ class HealthCheckService
     }
 
     /**
+     * Check if a service is reachable via socket connection
+     *
+     * @return array<string, mixed>
+     * @SuppressWarnings("PHPMD.BooleanArgumentFlag")
+     */
+    private function checkSocketConnection(
+        string $host,
+        int $port,
+        bool $useTls = false,
+        bool $useRunningKey = false
+    ): array {
+        $errno     = null;
+        $errstr    = null;
+        $socket    = $this->safeSocketOpen($host, $port, $errno, $errstr);
+        $statusKey = $useRunningKey ? 'running' : 'connected';
+
+        if ($socket) {
+            fclose($socket);
+            $result = [$statusKey => true, 'host' => $host, 'port' => $port];
+            if ($useTls) {
+                $result['tls'] = true;
+            }
+
+            return $result;
+        }
+
+        return [$statusKey => false, 'error' => $errstr ?: 'Service not reachable'];
+    }
+
+    /**
      * Safe wrapper for fsockopen that suppresses warnings without @ operator
      *
      * Uses set_error_handler to suppress DNS resolution and connection warnings
      * that occur when services are unavailable (expected in health checks).
      *
-     * @param int<0, max> $timeout Connection timeout in seconds
      * @return resource|false Socket resource on success, false on failure
      */
-    private function safeSocketOpen(string $host, int $port, ?int &$errno, ?string &$errstr, int $timeout = 1): mixed
+    /** @noinspection PhpMixedReturnTypeCanBeReducedInspection */
+    private function safeSocketOpen(string $host, int $port, ?int &$errno, ?string &$errstr): mixed
     {
         set_error_handler(static fn (): bool => true);
 
         try {
-            return fsockopen($host, $port, $errno, $errstr, $timeout);
+            return fsockopen($host, $port, $errno, $errstr, 1);
         } finally {
             restore_error_handler();
         }

@@ -145,27 +145,26 @@ BEGIN
     v_anonymized_name := 'Deleted User ' || p_user_id;
 
     -- ========================================================================
-    -- CUSTOMIZE THIS SECTION FOR YOUR APPLICATION
+    -- ANONYMIZE USERS TABLE
     -- ========================================================================
-    -- Example: Anonymize a "users" table
-    -- Uncomment and modify for your actual table structure:
-    --
-    -- UPDATE users SET
-    --     email = v_anonymized_email,
-    --     first_name = 'DELETED',
-    --     last_name = 'USER',
-    --     phone = NULL,
-    --     address = NULL,
-    --     date_of_birth = NULL,
-    --     profile_image = NULL,
-    --     updated_at = NOW(),
-    --     deleted_at = NOW()
-    -- WHERE id = p_user_id;
-    --
-    -- IF NOT FOUND THEN
-    --     RETURN FALSE;
-    -- END IF;
-    --
+    -- Anonymize the user record (GDPR Art. 17 - Right to erasure)
+    -- This preserves the record structure while removing PII
+
+    UPDATE users SET
+        email = v_anonymized_email,
+        password_hash = 'DELETED',  -- Prevents login
+        name = v_anonymized_name,
+        totp_secret = NULL,         -- Clear 2FA data
+        totp_enabled = FALSE
+    WHERE id = p_user_id;
+
+    IF NOT FOUND THEN
+        RETURN FALSE;
+    END IF;
+
+    -- ========================================================================
+    -- CUSTOMIZE: Add more tables as needed for your application
+    -- ========================================================================
     -- Example: Anonymize user's orders (keep order history, remove PII)
     -- UPDATE orders SET
     --     shipping_name = 'DELETED USER',
@@ -185,7 +184,7 @@ BEGIN
     v_data_json := json_build_object(
         'action', 'user_anonymized',
         'reference', COALESCE(p_reference, 'N/A'),
-        'anonymized_fields', ARRAY['email', 'name', 'phone', 'address'],
+        'anonymized_fields', ARRAY['email', 'name', 'password_hash', 'totp_secret'],
         'performed_by', 'system'
     )::TEXT;
 

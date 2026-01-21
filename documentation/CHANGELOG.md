@@ -1,11 +1,46 @@
 # zappzarapp - Changelog
 
-**Erstellt:** 2025-12-19 **Letzte Aktualisierung:** 2026-01-20 (RabbitMQ Queue
-Service) **Version:** 3.68
+**Erstellt:** 2025-12-19 **Letzte Aktualisierung:** 2026-01-21 (PHP 8.4 Readonly
+Classes) **Version:** 3.69
 
 ---
 
 ## Changelog
+
+### Version 3.69 (2026-01-21) - PHP 8.4 Readonly Classes & IDE Cleanup
+
+Refactored PHP classes to use PHP 8.4 features and fixed IDE warnings.
+
+#### PHP 8.4 Features
+
+- **Readonly classes** — `QualityService`, `DatabaseService`,
+  `DashboardController`, `WelcomeController` now use `readonly class` modifier
+- **Asymmetric visibility** — `DatabaseConfig` uses PHP 8.4
+  `public private(set)` property hooks with proper `@noinspection` annotation
+
+#### Code Quality
+
+- **HealthCheck refactoring** — Extracted `createRedisConnection()` helper to
+  reduce code duplication, removed unused methods (`getOverallStatus`,
+  `getServices`, `checkLiveness`), fixed redundant ternary operator
+- **HealthCheckService refactoring** — Extracted `checkSocketConnection()` and
+  `checkDatabaseVersion()` helpers, reduced ~150 lines of duplicated code
+- **FilesystemIterator constant** — Fixed to use `FilesystemIterator::SKIP_DOTS`
+  directly instead of through child class
+
+#### IDE Configuration
+
+- **PhpStorm/VSCode dictionaries** — Added 41 new technical terms (mercure,
+  meilisearch, mailpit, sveltekit, hadolint, commitlint, etc.)
+- **@noinspection annotations** — Added for PHP 8.4 asymmetric visibility and
+  mixed return types where type narrowing isn't possible
+
+#### DevDashboard
+
+- **Database Status Card** — Added quick stats widget to dashboard showing
+  database type, version, table count, and size
+
+---
 
 ### Version 3.68 (2026-01-20) - RabbitMQ Queue Service
 
@@ -3965,7 +4000,7 @@ Complete feature parity between VS Code and PhpStorm:
         - `load_module modules/ngx_http_brotli_static_module.so;`
       - **Brotli Compression (Primary - Modern browsers):**
         - `brotli on;` mit Level 6 (balanced compression/speed)
-        - Identische MIME-Types wie Gzip (text/*, application/*, fonts)
+        - Identische MIME-Types wie Gzip (`text/*`, `application/*`, fonts)
       - **Gzip Compression (Fallback - Legacy browsers):**
         - `gzip on;` bleibt aktiv (100% Backward Compatibility)
         - Gleiche Konfiguration wie vorher
@@ -4430,7 +4465,8 @@ Complete feature parity between VS Code and PhpStorm:
   - **Problem:** Asymmetrische Test-Beispiele und Path-Alias-Fehler
     - Node.js hatte Beispiel-Tests (math.test.ts, api.test.ts), PHP nicht
     - Node.js hatte Beispiel-Utilities (src/node/utils/math.ts), PHP nicht
-    - TypeScript Path-Aliases (@node/*, @tests/*) funktionierten nicht in Tests
+    - TypeScript Path-Aliases (`@node/*`, `@tests/*`) funktionierten nicht in
+      Tests
     - IDE konnte Importe nicht auflösen → Entwickler-Erfahrung schlecht
     - `make test-php` und `make test` funktionierten nicht (mehrere Fehler)
   - **Lösung: Symmetrische Beispiele und korrekte TypeScript-Konfiguration**
@@ -4636,7 +4672,7 @@ Complete feature parity between VS Code and PhpStorm:
       - .pnpm-store, build, dist, node_modules, public/build, storage, vendor
   - **Resultat: Vollständige IDE-Integration**
     - PhpStorm erkennt beide Sprach-Stacks korrekt
-    - TypeScript Autocomplete funktioniert für src/node/\**/*
+    - TypeScript Autocomplete funktioniert für `src/node/**/*`
     - Test-Runner erkennt beide Test-Stacks
     - Navigation und Refactoring für PHP und Node.js
     - Symmetrie zwischen PHP- und Node.js-Entwicklung
@@ -4781,7 +4817,7 @@ Complete feature parity between VS Code and PhpStorm:
       Code-Cleanup (Zeilen 108, 125, 142, 148)
     - `templates/welcome.php`: PHPDoc-Header mit @var Annotations (Zeilen 1-12)
   - **Ergebnis:**
-    - ✅ Alle IDE-Warnungen in src/php/*und templates/* behoben
+    - ✅ Alle IDE-Warnungen in `src/php/*` und `templates/*` behoben
     - ✅ Composer Dependencies vollständig deklariert
     - ✅ Code Quality verbessert (keine redundanten Checks)
     - ✅ Template-Variablen dokumentiert mit Type-Hints
@@ -5502,9 +5538,9 @@ Complete feature parity between VS Code and PhpStorm:
       - `make shell-postgres`: Öffnet PostgreSQL-Shell ✅
       - `make check-health`: Database-Emoji 💾 konsistente Breite ✅
     - **Vorteile:**
-      - **Vollständigkeit:** Alle Services haben logs-*und shell-* Commands
+      - **Vollständigkeit:** Alle Services haben `logs-*` und `shell-*` Commands
       - **Konsistenz:**
-        - Einheitliches Naming-Schema (shell-*, logs-*, \*-install)
+        - Einheitliches Naming-Schema (`shell-*`, `logs-*`, `*-install`)
         - Composer und Node.js nutzen gleiches Pattern: `<tool>-install` /
           `<tool>-install-local`
       - **Lesbarkeit:** Perfekt formatierte Help-Ausgabe

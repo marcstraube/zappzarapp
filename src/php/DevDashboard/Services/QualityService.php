@@ -4,9 +4,10 @@ declare(strict_types=1);
 
 namespace DevDashboard\Services;
 
-use RecursiveIteratorIterator;
-use RecursiveDirectoryIterator;
 use Exception;
+use FilesystemIterator;
+use RecursiveDirectoryIterator;
+use RecursiveIteratorIterator;
 
 /**
  * Quality Service
@@ -15,9 +16,9 @@ use Exception;
       *
      * @return array<string, mixed>
      */
-class QualityService
+readonly class QualityService
 {
-    private readonly string $projectRoot;
+    private string $projectRoot;
 
     public function __construct()
     {
@@ -260,7 +261,7 @@ class QualityService
 
         try {
             $iterator = new RecursiveIteratorIterator(
-                new RecursiveDirectoryIterator($path, RecursiveDirectoryIterator::SKIP_DOTS),
+                new RecursiveDirectoryIterator($path, FilesystemIterator::SKIP_DOTS),
                 RecursiveIteratorIterator::SELF_FIRST
             );
 

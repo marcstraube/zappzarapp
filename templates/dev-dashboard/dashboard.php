@@ -3,6 +3,7 @@
  * @var array<string, mixed> $healthStatus
  * @var array<string, mixed> $systemInfo
  * @var array<string, mixed> $gitStatus
+ * @var array<string, mixed> $dbStats
  */
 ?>
 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -88,6 +89,36 @@
         </dl>
         <?php else: ?>
         <p class="text-sm text-gray-500"><?= $gitStatus['message'] ?? 'Not available' ?></p>
+        <?php endif; ?>
+    </div>
+
+    <!-- Database Status Card -->
+    <div class="bg-white rounded-lg shadow p-6">
+        <h3 class="text-lg font-semibold text-gray-900 mb-4">🗄️ Database</h3>
+        <?php if ($dbStats['available'] ?? false): ?>
+        <dl class="space-y-2">
+            <div class="flex justify-between">
+                <dt class="text-sm text-gray-500">Type</dt>
+                <dd class="text-sm font-medium text-gray-900"><?= htmlspecialchars($dbStats['type'] ?? 'Unknown') ?></dd>
+            </div>
+            <div class="flex justify-between">
+                <dt class="text-sm text-gray-500">Version</dt>
+                <dd class="text-sm font-medium text-gray-900"><?= htmlspecialchars($dbStats['version'] ?? 'Unknown') ?></dd>
+            </div>
+            <div class="flex justify-between">
+                <dt class="text-sm text-gray-500">Tables</dt>
+                <dd class="text-sm font-medium text-gray-900"><?= $dbStats['tables'] ?? 0 ?></dd>
+            </div>
+            <div class="flex justify-between">
+                <dt class="text-sm text-gray-500">Size</dt>
+                <dd class="text-sm font-medium text-gray-900"><?= htmlspecialchars($dbStats['size'] ?? 'Unknown') ?></dd>
+            </div>
+        </dl>
+        <div class="mt-4">
+            <a href="/_dev/database" class="text-sm text-blue-600 hover:text-blue-800 font-medium">View Details →</a>
+        </div>
+        <?php else: ?>
+        <p class="text-sm text-gray-500"><?= $dbStats['message'] ?? 'Database not available' ?></p>
         <?php endif; ?>
     </div>
 

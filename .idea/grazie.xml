@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="GraziConfig">
+    <option name="domainDisabledRules">
+      <map>
+        <entry key="CodeComment">
+          <value>
+            <set>
+              <option value="Grazie.RuleEngine.En.Style.SIMPLICITY" />
+              <option value="Grazie.RuleEngine.En.Style.SPELL_OUT_AND_SYMBOLS" />
+            </set>
+          </value>
+        </entry>
+        <entry key="CodeDocumentation">
+          <value>
+            <set>
+              <option value="Grazie.RuleEngine.En.Style.SIMPLICITY" />
+              <option value="Grazie.RuleEngine.En.Style.SPELL_OUT_AND_SYMBOLS" />
+            </set>
+          </value>
+        </entry>
+      </map>
+    </option>
+  </component>
+</project>

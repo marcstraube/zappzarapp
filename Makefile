@@ -2016,7 +2016,7 @@ analyse: ## Run PHPStan static analysis
 
 phpmd: ## Run PHPMD (PHP Mess Detector) for code quality analysis
 	@echo -e "\033[0;33mRunning PHPMD (Mess Detector)...\033[0m"
-	@docker compose exec php php -d error_reporting=24575 vendor/bin/phpmd src/php,tests/php text phpmd.xml.dist
+	@docker compose exec php php -d error_reporting=24575 vendor/bin/phpmd src/php,tests/php text phpmd.xml.dist --exclude '*DatabaseConfig*'
 
 rector-check: ## Run Rector for automated refactoring analysis (dry-run)
 	@echo -e "\033[0;33mRunning Rector analysis (dry-run)...\033[0m"
@@ -2026,7 +2026,7 @@ rector-fix: ## Apply Rector refactorings automatically
 	@echo -e "\033[0;33mApplying Rector refactorings...\033[0m"
 	@docker compose exec php composer rector-fix
 
-check: cs-check analyse phpmd rector-check prettier-check type-check lint-node test validate lint-md lint-docker ## Run all checks (CI simulation)
+check: cs-check analyse phpmd rector-check prettier-check type-check lint-node test validate lint-md lint-sql lint-docker ## Run all checks (CI simulation)
 	@echo -e "\033[0;32mAll checks passed!\033[0m"
 
 cs-check: ## Check coding style (dry-run)
@@ -2071,6 +2071,93 @@ lint-md-fix: ## Fix Markdown style issues automatically
 	@echo -e "\033[0;33mFixing Markdown files...\033[0m"
 	@$(DC) run --rm -T dev-tools pnpm run lint:md:fix
 	@echo -e "\033[0;32mMarkdown files fixed!\033[0m"
+
+lint-sql: ## Check SQL files for style issues (PostgreSQL + MariaDB)
+	@echo -e "\033[0;33mChecking SQL files...\033[0m"
+	@if [ -d "migrations/postgresql" ] && [ -n "$$(ls -A migrations/postgresql/*.sql 2>/dev/null)" ]; then \
+		echo -e "\033[0;90m  Checking PostgreSQL migrations...\033[0m"; \
+		docker run --rm -u $$(id -u):$$(id -g) -v "$$(pwd):/sql" sqlfluff/sqlfluff:latest lint \
+			--dialect postgres \
+			--config /sql/.sqlfluff \
+			/sql/migrations/postgresql/ || exit 1; \
+	fi
+	@if [ -d "migrations/mariadb" ] && [ -n "$$(ls -A migrations/mariadb/*.sql 2>/dev/null)" ]; then \
+		echo -e "\033[0;90m  Checking MariaDB migrations...\033[0m"; \
+		docker run --rm -u $$(id -u):$$(id -g) -v "$$(pwd):/sql" sqlfluff/sqlfluff:latest lint \
+			--dialect mysql \
+			--config /sql/.sqlfluff \
+			--ignore parsing,lexing \
+			/sql/migrations/mariadb/ || exit 1; \
+	fi
+	@echo -e "\033[0;32mSQL check completed!\033[0m"
+
+lint-sql-fix: ## Fix SQL style issues automatically
+	@echo -e "\033[0;33mFixing SQL files...\033[0m"
+	@if [ -d "migrations/postgresql" ] && [ -n "$$(ls -A migrations/postgresql/*.sql 2>/dev/null)" ]; then \
+		echo -e "\033[0;90m  Fixing PostgreSQL migrations...\033[0m"; \
+		docker run --rm -u $$(id -u):$$(id -g) -v "$$(pwd):/sql" sqlfluff/sqlfluff:latest fix \
+			--dialect postgres \
+			--config /sql/.sqlfluff \
+			--force \
+			/sql/migrations/postgresql/; \
+	fi
+	@if [ -d "migrations/mariadb" ] && [ -n "$$(ls -A migrations/mariadb/*.sql 2>/dev/null)" ]; then \
+		echo -e "\033[0;90m  Fixing MariaDB migrations...\033[0m"; \
+		docker run --rm -u $$(id -u):$$(id -g) -v "$$(pwd):/sql" sqlfluff/sqlfluff:latest fix \
+			--dialect mysql \
+			--config /sql/.sqlfluff \
+			--ignore parsing,lexing \
+			--force \
+			/sql/migrations/mariadb/; \
+	fi
+	@echo -e "\033[0;32mSQL files fixed!\033[0m"
+
+test-sql: ## Validate SQL syntax by executing against real database (requires running containers)
+	@echo -e "\033[0;33mValidating SQL syntax...\033[0m"
+	@failed=0; \
+	DB_USER="$${DB_USER:-app}"; \
+	DB_PASSWORD="$${DB_PASSWORD:-secret}"; \
+	if [ -d "migrations/postgresql" ] && [ -n "$$(ls -A migrations/postgresql/*.sql 2>/dev/null)" ]; then \
+		if docker compose ps postgres 2>/dev/null | grep -q "Up"; then \
+			echo -e "\033[0;90m  Validating PostgreSQL migrations...\033[0m"; \
+			docker compose exec -T postgres psql -U "$$DB_USER" -c "DROP DATABASE IF EXISTS sql_test;" >/dev/null 2>&1 || true; \
+			docker compose exec -T postgres psql -U "$$DB_USER" -c "CREATE DATABASE sql_test;" >/dev/null 2>&1; \
+			for migration in $$(ls -1 migrations/postgresql/*.sql | sort); do \
+				echo -e "\033[0;90m    Testing $$(basename $$migration)...\033[0m"; \
+				if ! docker compose exec -T postgres psql -U "$$DB_USER" -d sql_test -v ON_ERROR_STOP=1 -f /dev/stdin < "$$migration" >/dev/null 2>&1; then \
+					echo -e "\033[0;31m    FAILED: $$(basename $$migration)\033[0m"; \
+					docker compose exec -T postgres psql -U "$$DB_USER" -d sql_test -v ON_ERROR_STOP=1 -f /dev/stdin < "$$migration" 2>&1 | tail -5; \
+					failed=1; \
+				fi; \
+			done; \
+			docker compose exec -T postgres psql -U "$$DB_USER" -c "DROP DATABASE IF EXISTS sql_test;" >/dev/null 2>&1; \
+		else \
+			echo -e "\033[0;90m  Skipping PostgreSQL (container not running)\033[0m"; \
+		fi; \
+	fi; \
+	if [ -d "migrations/mariadb" ] && [ -n "$$(ls -A migrations/mariadb/*.sql 2>/dev/null)" ]; then \
+		if docker compose ps mariadb 2>/dev/null | grep -q "Up"; then \
+			echo -e "\033[0;90m  Validating MariaDB migrations...\033[0m"; \
+			docker compose exec -T mariadb mariadb -u "$$DB_USER" -p"$$DB_PASSWORD" -e "DROP DATABASE IF EXISTS sql_test;" 2>/dev/null || true; \
+			docker compose exec -T mariadb mariadb -u "$$DB_USER" -p"$$DB_PASSWORD" -e "CREATE DATABASE sql_test;" 2>/dev/null; \
+			for migration in $$(ls -1 migrations/mariadb/*.sql | sort); do \
+				echo -e "\033[0;90m    Testing $$(basename $$migration)...\033[0m"; \
+				if ! docker compose exec -T mariadb mariadb -u "$$DB_USER" -p"$$DB_PASSWORD" sql_test < "$$migration" >/dev/null 2>&1; then \
+					echo -e "\033[0;31m    FAILED: $$(basename $$migration)\033[0m"; \
+					docker compose exec -T mariadb mariadb -u "$$DB_USER" -p"$$DB_PASSWORD" sql_test < "$$migration" 2>&1 | tail -5; \
+					failed=1; \
+				fi; \
+			done; \
+			docker compose exec -T mariadb mariadb -u "$$DB_USER" -p"$$DB_PASSWORD" -e "DROP DATABASE IF EXISTS sql_test;" 2>/dev/null; \
+		else \
+			echo -e "\033[0;90m  Skipping MariaDB (container not running)\033[0m"; \
+		fi; \
+	fi; \
+	if [ $$failed -eq 1 ]; then \
+		echo -e "\033[0;31mSQL validation failed!\033[0m"; \
+		exit 1; \
+	fi
+	@echo -e "\033[0;32mSQL validation completed!\033[0m"
 
 lint-node: ## Run ESLint on TypeScript/JavaScript files
 	@echo -e "\033[0;33mRunning ESLint...\033[0m"
@@ -2127,10 +2214,11 @@ dive: ## Analyze Docker image layers and sizes
 	esac; \
 	docker run --rm -it -v /var/run/docker.sock:/var/run/docker.sock wagoodman/dive:latest $$IMAGE
 
-test: ## Run all tests (PHP + Node.js) - continues even if some fail
+test: ## Run all tests (PHP + Node.js + SQL) - continues even if some fail
 	@failed=0; \
 	$(MAKE) test-php || failed=1; \
 	$(MAKE) test-node || failed=1; \
+	$(MAKE) test-sql || failed=1; \
 	echo ""; \
 	echo "════════════════════════════════════════════════════════════"; \
 	echo "                      TEST SUMMARY                          "; \

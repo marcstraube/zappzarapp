@@ -1,0 +1,86 @@
+[sqlfluff]
+# Verbose is useful for debugging during development
+verbose = 0
+# Supported dialects: ansi, postgres, mysql, mariadb, etc.
+# Default dialect (overridden per directory below)
+dialect = postgres
+# Comma separated list of rules to exclude
+# LT01: Spacing (conflicts with MySQL @var:=value assignment)
+# LT02: Indentation (conflicts with procedural blocks)
+# LT05: Line too long (handled by max_line_length)
+# LT12: Files must end with a single trailing newline
+# CV06: Semi-colon terminator (conflicts with $$ procedural blocks)
+# RF04: Keywords as identifiers (common column names like 'name', 'data', 'action')
+# CP03: Function capitalisation (PostgreSQL convention is lowercase for built-ins)
+# Note: MariaDB DELIMITER $$ syntax requires --ignore parsing flag (in Makefile)
+exclude_rules = LT01, LT02, LT05, LT12, CV06, RF04, CP03
+# Max line length
+max_line_length = 120
+# CPU processes to use while linting (0 = auto)
+processes = 0
+
+[sqlfluff:indentation]
+# Indentation style
+indent_unit = space
+tab_space_size = 4
+indented_joins = false
+indented_ctes = false
+indented_using_on = true
+indented_on_contents = true
+
+[sqlfluff:layout:type:comma]
+# Trailing commas
+line_position = trailing
+
+[sqlfluff:rules:capitalisation.keywords]
+# Keyword capitalisation
+capitalisation_policy = upper
+
+[sqlfluff:rules:capitalisation.identifiers]
+# Identifier capitalisation
+extended_capitalisation_policy = lower
+
+[sqlfluff:rules:capitalisation.functions]
+# Function name capitalisation
+extended_capitalisation_policy = upper
+
+[sqlfluff:rules:capitalisation.literals]
+# Literal capitalisation (NULL, TRUE, FALSE)
+capitalisation_policy = upper
+
+[sqlfluff:rules:capitalisation.types]
+# Type capitalisation
+extended_capitalisation_policy = upper
+
+[sqlfluff:rules:aliasing.table]
+# Table aliasing style
+aliasing = explicit
+
+[sqlfluff:rules:aliasing.column]
+# Column aliasing style
+aliasing = explicit
+
+[sqlfluff:rules:aliasing.expression]
+# Expression aliasing style
+allow_scalar = false
+
+[sqlfluff:rules:convention.terminator]
+# Statement terminator
+multiline_newline = true
+require_final_semicolon = true
+
+[sqlfluff:rules:convention.blocked_words]
+# Blocked words (anti-patterns)
+blocked_words = None
+
+[sqlfluff:rules:references.consistent]
+# Consistent column references
+single_table_references = consistent
+
+# PostgreSQL migrations
+[sqlfluff:templater:raw:migrations/postgresql]
+# No templating needed for raw SQL
+
+# MariaDB migrations - override dialect
+[sqlfluff:rules:migrations/mariadb]
+# MariaDB-specific rules can be added here

@@ -21,35 +21,38 @@ use RuntimeException;
  * Security: When not using DATABASE_URL, a password must be explicitly configured.
  * No hardcoded defaults are used to prevent accidental security misconfigurations.
  *
+ * Uses PHP 8.4 property hooks with asymmetric visibility for clean API.
+ *
  * @throws RuntimeException If password is not configured when using individual variables
  *
  * @SuppressWarnings("PHPMD.ExcessiveClassComplexity")
+ * @noinspection PhpPublicPropertyModifierCanBeOmittedInspection - PHP 8.4 asymmetric visibility
  */
-final class DatabaseConfig
+final class DatabaseConfig implements DatabaseConfigInterface
 {
-    private const int DEFAULT_POSTGRES_PORT      = 5432;
+    private const int DEFAULT_POSTGRES_PORT = 5432;
 
-    private const int DEFAULT_MYSQL_PORT         = 3306;
+    private const int DEFAULT_MYSQL_PORT = 3306;
 
     private const string DEFAULT_INTERNAL_CERT_PATH = '/etc/ssl/db-certs/cert.crt';
 
-    private const string SYSTEM_CA_BUNDLE_PATH      = '/etc/ssl/certs/ca-certificates.crt';
+    private const string SYSTEM_CA_BUNDLE_PATH = '/etc/ssl/certs/ca-certificates.crt';
 
-    private string $type;
+    public private(set) string $type;
 
-    private string $host;
+    public private(set) string $host;
 
-    private int $port;
+    public private(set) int $port;
 
-    private string $name;
+    public private(set) string $name;
 
-    private string $user;
+    public private(set) string $user;
 
-    private string $password;
+    public private(set) string $password;
 
-    private string $sslCa;
+    public private(set) string $sslCa;
 
-    private bool $sslVerify;
+    public private(set) bool $sslVerify;
 
     public function __construct()
     {
@@ -119,36 +122,6 @@ final class DatabaseConfig
         );
     }
 
-    public function getType(): string
-    {
-        return $this->type;
-    }
-
-    public function getHost(): string
-    {
-        return $this->host;
-    }
-
-    public function getPort(): int
-    {
-        return $this->port;
-    }
-
-    public function getName(): string
-    {
-        return $this->name;
-    }
-
-    public function getUser(): string
-    {
-        return $this->user;
-    }
-
-    public function getPassword(): string
-    {
-        return $this->password;
-    }
-
     public function isPostgres(): bool
     {
         return $this->type === 'postgres' || $this->type === 'postgresql';
@@ -157,16 +130,6 @@ final class DatabaseConfig
     public function isMariaDb(): bool
     {
         return $this->type === 'mariadb' || $this->type === 'mysql';
-    }
-
-    public function getSslCa(): string
-    {
-        return $this->sslCa;
-    }
-
-    public function getSslVerify(): bool
-    {
-        return $this->sslVerify;
     }
 
     /**
@@ -227,7 +190,7 @@ final class DatabaseConfig
         $this->port     = (int) $this->getEnv('DB_PORT', (string) $this->getDefaultPort($this->type));
         $this->name     = $this->getEnv('DB_NAME', 'app');
         $this->user     = $this->getEnv('DB_USER', 'app');
-        $this->password = $this->getEnvOrFile('DB_PASSWORD', '');
+        $this->password = $this->getEnvOrFile('DB_PASSWORD');
 
         if ($this->password === '') {
             throw new RuntimeException(
@@ -256,6 +219,7 @@ final class DatabaseConfig
      * Checks for {NAME}_FILE first, reads file content if exists,
      * otherwise falls back to regular environment variable.
      */
+    /** @noinspection PhpSameParameterValueInspection */
     private function getEnvOrFile(string $name, string $default = ''): string
     {
         // Check for _FILE variant first (Docker Secrets pattern)

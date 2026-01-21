@@ -38,8 +38,8 @@ Parse `$ARGUMENTS`:
 
 If `--target` is not specified:
 
-- **--add**: Default to `project` (team backlog); use `--target user/global` for
-  personal tasks
+- **--add**: Default to `user` (personal backlog); use `--target project` for
+  team-shared tasks
 - **--list**: Show project + user backlogs (project-relevant only; use
   `--target global` for global)
 
@@ -145,11 +145,11 @@ Description of change **Context:** Why this task exists
 
 If `--target` is specified, use that backlog. Otherwise:
 
-1. Default to `project` (`./documentation/BACKLOG.md`)
+1. Default to `user` (`./.claude/BACKLOG.md`)
 2. Create the file if it doesn't exist (use template from File Structure
    section)
-3. User can override with `--target user` or `--target global` for personal
-   tasks
+3. User can override with `--target project` for team-shared tasks or
+   `--target global` for cross-project tasks
 4. For `project` target: Read author from `git config user.name` and
    `git config user.email`
 

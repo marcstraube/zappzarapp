@@ -5,12 +5,12 @@ declare(strict_types=1);
 namespace App\Tests\Unit\Infrastructure;
 
 use App\Infrastructure\DatabaseConfig;
+use InvalidArgumentException;
+use PDO;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\RunInSeparateProcess;
 use PHPUnit\Framework\TestCase;
-use InvalidArgumentException;
-use PDO;
 use RuntimeException;
 
 /**
@@ -53,12 +53,12 @@ final class DatabaseConfigTest extends TestCase
 
         $config = new DatabaseConfig();
 
-        $this->assertEquals('postgres', $config->getType());
-        $this->assertEquals('dbhost', $config->getHost());
-        $this->assertEquals(5432, $config->getPort());
-        $this->assertEquals('mydb', $config->getName());
-        $this->assertEquals('myuser', $config->getUser());
-        $this->assertEquals('mypass', $config->getPassword());
+        $this->assertEquals('postgres', $config->type);
+        $this->assertEquals('dbhost', $config->host);
+        $this->assertEquals(5432, $config->port);
+        $this->assertEquals('mydb', $config->name);
+        $this->assertEquals('myuser', $config->user);
+        $this->assertEquals('mypass', $config->password);
         $this->assertTrue($config->isPostgres());
         $this->assertFalse($config->isMariaDb());
     }
@@ -70,7 +70,7 @@ final class DatabaseConfigTest extends TestCase
 
         $config = new DatabaseConfig();
 
-        $this->assertEquals('postgres', $config->getType());
+        $this->assertEquals('postgres', $config->type);
         $this->assertTrue($config->isPostgres());
     }
 
@@ -81,12 +81,12 @@ final class DatabaseConfigTest extends TestCase
 
         $config = new DatabaseConfig();
 
-        $this->assertEquals('mysql', $config->getType());
-        $this->assertEquals('dbhost', $config->getHost());
-        $this->assertEquals(3306, $config->getPort());
-        $this->assertEquals('mydb', $config->getName());
-        $this->assertEquals('myuser', $config->getUser());
-        $this->assertEquals('mypass', $config->getPassword());
+        $this->assertEquals('mysql', $config->type);
+        $this->assertEquals('dbhost', $config->host);
+        $this->assertEquals(3306, $config->port);
+        $this->assertEquals('mydb', $config->name);
+        $this->assertEquals('myuser', $config->user);
+        $this->assertEquals('mypass', $config->password);
         $this->assertFalse($config->isPostgres());
         $this->assertTrue($config->isMariaDb());
     }
@@ -99,7 +99,7 @@ final class DatabaseConfigTest extends TestCase
 
         $config = new DatabaseConfig();
 
-        $this->assertEquals('p@ss:word/123', $config->getPassword());
+        $this->assertEquals('p@ss:word/123', $config->password);
     }
 
     #[RunInSeparateProcess]
@@ -109,7 +109,7 @@ final class DatabaseConfigTest extends TestCase
 
         $config = new DatabaseConfig();
 
-        $this->assertEquals(5432, $config->getPort());
+        $this->assertEquals(5432, $config->port);
     }
 
     #[RunInSeparateProcess]
@@ -119,7 +119,7 @@ final class DatabaseConfigTest extends TestCase
 
         $config = new DatabaseConfig();
 
-        $this->assertEquals('app', $config->getUser());
+        $this->assertEquals('app', $config->user);
     }
 
     #[RunInSeparateProcess]
@@ -134,12 +134,12 @@ final class DatabaseConfigTest extends TestCase
 
         $config = new DatabaseConfig();
 
-        $this->assertEquals('postgres', $config->getType());
-        $this->assertEquals('myhost', $config->getHost());
-        $this->assertEquals(5433, $config->getPort());
-        $this->assertEquals('mydb', $config->getName());
-        $this->assertEquals('myuser', $config->getUser());
-        $this->assertEquals('mypass', $config->getPassword());
+        $this->assertEquals('postgres', $config->type);
+        $this->assertEquals('myhost', $config->host);
+        $this->assertEquals(5433, $config->port);
+        $this->assertEquals('mydb', $config->name);
+        $this->assertEquals('myuser', $config->user);
+        $this->assertEquals('mypass', $config->password);
         $this->assertTrue($config->isPostgres());
     }
 
@@ -155,9 +155,9 @@ final class DatabaseConfigTest extends TestCase
 
         $config = new DatabaseConfig();
 
-        $this->assertEquals('mariadb', $config->getType());
-        $this->assertEquals('myhost', $config->getHost());
-        $this->assertEquals(3307, $config->getPort());
+        $this->assertEquals('mariadb', $config->type);
+        $this->assertEquals('myhost', $config->host);
+        $this->assertEquals(3307, $config->port);
         $this->assertTrue($config->isMariaDb());
         $this->assertFalse($config->isPostgres());
     }
@@ -180,12 +180,12 @@ final class DatabaseConfigTest extends TestCase
 
         $config = new DatabaseConfig();
 
-        $this->assertEquals('postgres', $config->getType());
-        $this->assertEquals('postgres', $config->getHost());
-        $this->assertEquals(5432, $config->getPort());
-        $this->assertEquals('app', $config->getName());
-        $this->assertEquals('app', $config->getUser());
-        $this->assertEquals('testpass', $config->getPassword());
+        $this->assertEquals('postgres', $config->type);
+        $this->assertEquals('postgres', $config->host);
+        $this->assertEquals(5432, $config->port);
+        $this->assertEquals('app', $config->name);
+        $this->assertEquals('app', $config->user);
+        $this->assertEquals('testpass', $config->password);
     }
 
     #[RunInSeparateProcess]
@@ -196,8 +196,8 @@ final class DatabaseConfigTest extends TestCase
 
         $config = new DatabaseConfig();
 
-        $this->assertEquals('mariadb', $config->getHost());
-        $this->assertEquals(3306, $config->getPort());
+        $this->assertEquals('mariadb', $config->host);
+        $this->assertEquals(3306, $config->port);
     }
 
     #[RunInSeparateProcess]
@@ -214,12 +214,12 @@ final class DatabaseConfigTest extends TestCase
 
         $config = new DatabaseConfig();
 
-        $this->assertEquals('postgres', $config->getType());
-        $this->assertEquals('urlhost', $config->getHost());
-        $this->assertEquals(5555, $config->getPort());
-        $this->assertEquals('urldb', $config->getName());
-        $this->assertEquals('urluser', $config->getUser());
-        $this->assertEquals('urlpass', $config->getPassword());
+        $this->assertEquals('postgres', $config->type);
+        $this->assertEquals('urlhost', $config->host);
+        $this->assertEquals(5555, $config->port);
+        $this->assertEquals('urldb', $config->name);
+        $this->assertEquals('urluser', $config->user);
+        $this->assertEquals('urlpass', $config->password);
     }
 
     #[RunInSeparateProcess]
@@ -367,8 +367,8 @@ final class DatabaseConfigTest extends TestCase
 
         $config = new DatabaseConfig();
 
-        $this->assertEquals('/custom/path/to/ca.crt', $config->getSslCa());
-        $this->assertTrue($config->getSslVerify());
+        $this->assertEquals('/custom/path/to/ca.crt', $config->sslCa);
+        $this->assertTrue($config->sslVerify);
     }
 
     #[RunInSeparateProcess]
@@ -379,7 +379,7 @@ final class DatabaseConfigTest extends TestCase
 
         $config = new DatabaseConfig();
 
-        $this->assertFalse($config->getSslVerify());
+        $this->assertFalse($config->sslVerify);
     }
 
     #[RunInSeparateProcess]
@@ -435,11 +435,11 @@ final class DatabaseConfigTest extends TestCase
         // In test environment, it may or may not exist
         $internalCertPath = '/etc/ssl/db-certs/cert.crt';
         if (file_exists($internalCertPath)) {
-            $this->assertEquals($internalCertPath, $config->getSslCa());
+            $this->assertEquals($internalCertPath, $config->sslCa);
             $this->assertTrue($config->hasSsl());
         } else {
             // If internal cert doesn't exist, SSL CA should be empty
-            $this->assertEquals('', $config->getSslCa());
+            $this->assertEquals('', $config->sslCa);
         }
     }
 
@@ -452,7 +452,7 @@ final class DatabaseConfigTest extends TestCase
 
         $config = new DatabaseConfig();
 
-        $this->assertEquals('', $config->getSslCa());
+        $this->assertEquals('', $config->sslCa);
         $this->assertFalse($config->hasSsl());
     }
 
@@ -468,10 +468,10 @@ final class DatabaseConfigTest extends TestCase
         // Should resolve to system CA bundle path if it exists
         $systemCaPath = '/etc/ssl/certs/ca-certificates.crt';
         if (file_exists($systemCaPath)) {
-            $this->assertEquals($systemCaPath, $config->getSslCa());
+            $this->assertEquals($systemCaPath, $config->sslCa);
             $this->assertTrue($config->hasSsl());
         } else {
-            $this->assertEquals('', $config->getSslCa());
+            $this->assertEquals('', $config->sslCa);
         }
     }
 
@@ -486,7 +486,7 @@ final class DatabaseConfigTest extends TestCase
 
         $systemCaPath = '/etc/ssl/certs/ca-certificates.crt';
         if (file_exists($systemCaPath)) {
-            $this->assertEquals($systemCaPath, $config->getSslCa());
+            $this->assertEquals($systemCaPath, $config->sslCa);
         }
     }
 
@@ -503,7 +503,7 @@ final class DatabaseConfigTest extends TestCase
         // (even though PostgreSQL doesn't need it in PDO options)
         $systemCaPath = '/etc/ssl/certs/ca-certificates.crt';
         if (file_exists($systemCaPath)) {
-            $this->assertEquals($systemCaPath, $config->getSslCa());
+            $this->assertEquals($systemCaPath, $config->sslCa);
         }
     }
 
@@ -584,7 +584,7 @@ final class DatabaseConfigTest extends TestCase
 
             $config = new DatabaseConfig();
 
-            $this->assertEquals('secret_from_file', $config->getPassword());
+            $this->assertEquals('secret_from_file', $config->password);
         } finally {
             unlink($tempFile);
         }
@@ -601,7 +601,7 @@ final class DatabaseConfigTest extends TestCase
 
             $config = new DatabaseConfig();
 
-            $this->assertEquals('password_with_spaces', $config->getPassword());
+            $this->assertEquals('password_with_spaces', $config->password);
         } finally {
             unlink($tempFile);
         }
@@ -619,7 +619,7 @@ final class DatabaseConfigTest extends TestCase
 
             $config = new DatabaseConfig();
 
-            $this->assertEquals('from_file', $config->getPassword());
+            $this->assertEquals('from_file', $config->password);
         } finally {
             unlink($tempFile);
         }
@@ -633,7 +633,7 @@ final class DatabaseConfigTest extends TestCase
 
         $config = new DatabaseConfig();
 
-        $this->assertEquals('fallback_password', $config->getPassword());
+        $this->assertEquals('fallback_password', $config->password);
     }
 
     #[RunInSeparateProcess]
@@ -655,6 +655,6 @@ final class DatabaseConfigTest extends TestCase
 
         $config = new DatabaseConfig();
 
-        $this->assertEquals('env_password', $config->getPassword());
+        $this->assertEquals('env_password', $config->password);
     }
 }
