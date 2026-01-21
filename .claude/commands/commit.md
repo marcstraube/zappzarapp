@@ -178,7 +178,10 @@ Present the draft commit message and ask:
 
 ### Step 8: Changelog Update
 
-**Always** add an entry to `.zappzarapp/CHANGELOG.md` before committing:
+**Always** add an entry to the project CHANGELOG before committing:
+
+- Project: `documentation/CHANGELOG.md` (if exists after `make setup`)
+- Boilerplate: `.zappzarapp/CHANGELOG.md` (fallback)
 
 1. Read current changelog to find the active version section
 2. Determine category from commit type:
@@ -233,7 +236,8 @@ main, NOT on intermediate commits on the feature branch.
 
 **If task detected:**
 
-- If certain: Remove task from `.zappzarapp/ai/BACKLOG.md`
+- If certain: Remove task from backlog (use 3-layer path resolution: personal →
+  project → boilerplate, same as `/backlog --target`)
 - If uncertain: Ask "Schließt dieser Merge den Task **'{task name}'** ab?"
 
 **Removal process:**
@@ -255,11 +259,11 @@ Stage code changes AND documentation updates:
 # Stage original code changes (if not already staged)
 git add <code-files>
 
-# Stage changelog
-git add .zappzarapp/CHANGELOG.md
+# Stage changelog (project or boilerplate)
+git add documentation/CHANGELOG.md 2>/dev/null || git add .zappzarapp/CHANGELOG.md
 
 # Stage backlog (only if modified)
-git add .zappzarapp/ai/BACKLOG.md
+git add .ai/BACKLOG.md 2>/dev/null || git add .zappzarapp/ai/BACKLOG.md
 ```
 
 ### Step 11: Execute Commit

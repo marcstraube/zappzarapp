@@ -35,9 +35,11 @@ When ending a session (user confirms):
 overflow:**
 
 1. **Find previous session by task-slug from Summary:**
+
    ```bash
    find .claude/sessions -name "session-*<slug>*.md" -type f | xargs ls -1t | head -1
    ```
+
 2. **Fallback if unclear:**
    - Filter by current branch:
      `grep -rl "Branch.*$(git branch --show-current)" .claude/sessions/`
@@ -91,26 +93,26 @@ In practice this means:
 
 For complex tasks, use specialized agents. See `.claude/agents/` for details:
 
-| File            | Content                                      |
-| --------------- | -------------------------------------------- |
-| `workflow.md`   | Scope decision, Main Agent responsibilities  |
-| `architect.md`  | Agent A: Analysis, plan creation             |
-| `coder.md`      | Agent B: Implementation                      |
-| `reviewer.md`   | Agent C: Code review, feedback loop          |
-| `documenter.md` | Agent D: Documentation check & update        |
+| File            | Content                                     |
+| --------------- | ------------------------------------------- |
+| `workflow.md`   | Scope decision, Main Agent responsibilities |
+| `architect.md`  | Agent A: Analysis, plan creation            |
+| `coder.md`      | Agent B: Implementation                     |
+| `reviewer.md`   | Agent C: Code review, feedback loop         |
+| `documenter.md` | Agent D: Documentation check & update       |
 
 ## Code Standards
 
 See `.zappzarapp/standards/` for language-specific rules:
 
-| File              | Content                      |
-| ----------------- | ---------------------------- |
-| `php.md`          | PHP coding standards         |
-| `node.md`         | TypeScript/ESLint standards  |
-| `sql.md`          | SQL dialect standards        |
-| `markdown.md`     | Markdown linting             |
-| `docker.md`       | Dockerfile standards         |
-| `make-targets.md` | Available make targets       |
+| File              | Content                     |
+| ----------------- | --------------------------- |
+| `php.md`          | PHP coding standards        |
+| `node.md`         | TypeScript/ESLint standards |
+| `sql.md`          | SQL dialect standards       |
+| `markdown.md`     | Markdown linting            |
+| `docker.md`       | Dockerfile standards        |
+| `make-targets.md` | Available make targets      |
 
 ---
 
@@ -142,12 +144,12 @@ make test              → Run all tests
 
 Available commands in `.claude/commands/`:
 
-| Command       | Purpose                                      |
-| ------------- | -------------------------------------------- |
-| `/status`     | Project overview (Git, Docker, backlog)      |
-| `/backlog`    | Manage backlog tasks (add, list, prioritize) |
-| `/commit`     | Guided commit workflow with quality checks   |
-| `/learnings`  | View and manage project learnings            |
+| Command      | Purpose                                      |
+| ------------ | -------------------------------------------- |
+| `/status`    | Project overview (Git, Docker, backlog)      |
+| `/backlog`   | Manage backlog tasks (add, list, prioritize) |
+| `/commit`    | Guided commit workflow with quality checks   |
+| `/learnings` | View and manage project learnings            |
 
 ---
 
@@ -179,11 +181,11 @@ Merge → Remove BACKLOG task
 
 ### 3-Layer Architecture
 
-| Layer      | Location                          | Purpose               |
-| ---------- | --------------------------------- | --------------------- |
-| Personal   | `~/.local/share/zappzarapp/`      | Private notes         |
-| Boilerplate| `.zappzarapp/ai/`                 | Boilerplate knowledge |
-| Project    | `.ai/`                            | Team-shared knowledge |
+| Layer       | Location                     | Purpose               |
+| ----------- | ---------------------------- | --------------------- |
+| Personal    | `~/.local/share/zappzarapp/` | Private notes         |
+| Boilerplate | `.zappzarapp/ai/`            | Boilerplate knowledge |
+| Project     | `.ai/`                       | Team-shared knowledge |
 
 Files: BACKLOG.md, LEARNINGS.md, DECISIONS.md, REFERENCES.md
 
@@ -195,13 +197,13 @@ Files: BACKLOG.md, LEARNINGS.md, DECISIONS.md, REFERENCES.md
 
 ### Folder Structure
 
-| Folder              | Purpose                            | Git Status  |
-| ------------------- | ---------------------------------- | ----------- |
-| `.claude/agents/`   | Agent workflow documentation       | Committed   |
-| `.claude/commands/` | Slash command definitions          | Committed   |
-| `.claude/sessions/` | Session logs (YYYY/MM/)            | Ignored     |
-| `.zappzarapp/ai/`   | Boilerplate knowledge              | Committed   |
-| `.ai/`              | Project knowledge (created by setup) | Committed |
+| Folder              | Purpose                              | Git Status |
+| ------------------- | ------------------------------------ | ---------- |
+| `.claude/agents/`   | Agent workflow documentation         | Committed  |
+| `.claude/commands/` | Slash command definitions            | Committed  |
+| `.claude/sessions/` | Session logs (YYYY/MM/)              | Ignored    |
+| `.zappzarapp/ai/`   | Boilerplate knowledge                | Committed  |
+| `.ai/`              | Project knowledge (created by setup) | Committed  |
 
 ---
 

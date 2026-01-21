@@ -9,6 +9,17 @@ argument-hint: [--search <term> | --add | --sync | --category <name>]
 
 Manage the central knowledge base of project-specific learnings.
 
+## Path Resolution
+
+**Target path (in priority order):**
+
+1. `.ai/LEARNINGS.md` — project-specific (if file exists)
+2. `.zappzarapp/ai/LEARNINGS.md` — fallback (boilerplate)
+
+All operations below use this resolved path.
+
+**Note:** Unlike BACKLOG, LEARNINGS has no personal layer.
+
 ## Arguments
 
 Parse `$ARGUMENTS`:

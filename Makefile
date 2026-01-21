@@ -192,7 +192,11 @@ setup: ## Create directories, install dev dependencies and ensure structure
 	@chmod 700 backups backups/*
 
 	# Project AI knowledge directory (team backlog, decisions, learnings)
-	@mkdir -p .ai
+	@mkdir -p .ai .ai/backlog
+	@if [ ! -f .ai/BACKLOG.md ]; then cp .zappzarapp/ai/templates/BACKLOG.md .ai/; fi
+	@if [ ! -f .ai/LEARNINGS.md ]; then cp .zappzarapp/ai/templates/LEARNINGS.md .ai/; fi
+	@if [ ! -f .ai/DECISIONS.md ]; then cp .zappzarapp/ai/templates/DECISIONS.md .ai/; fi
+	@if [ ! -f .ai/REFERENCES.md ]; then cp .zappzarapp/ai/templates/REFERENCES.md .ai/; fi
 
 	@echo -e "\033[0;32mProject structure created!\033[0m"
 
@@ -1831,33 +1835,32 @@ fresh: ## Complete clean slate rebuild, removing all data volumes (DANGEROUS!)
 	@$(MAKE) --silent pnpm-install
 	@$(MAKE) --silent up
 
-reset: ## Factory reset - remove ALL generated files and Docker resources (VERY DANGEROUS!)
-	@echo -e "\033[0;31m╔══════════════════════════════════════════════════════════════════╗\033[0m"
-	@echo -e "\033[0;31m║  !!! FACTORY RESET - THIS WILL DELETE EVERYTHING !!!             ║\033[0m"
-	@echo -e "\033[0;31m╠══════════════════════════════════════════════════════════════════╣\033[0m"
-	@echo -e "\033[0;31m║  This will remove:                                               ║\033[0m"
-	@echo -e "\033[0;31m║  • All Docker containers, images, volumes, networks              ║\033[0m"
-	@echo -e "\033[0;31m║  • All Goss test resources                                       ║\033[0m"
-	@echo -e "\033[0;31m║  • secrets/ (all generated secrets)                              ║\033[0m"
-	@echo -e "\033[0;31m║  • docker/certs/*.crt, *.key, *.pem (generated certificates)     ║\033[0m"
-	@echo -e "\033[0;31m║  • storage/ contents (uploads, cache) - if not a mountpoint      ║\033[0m"
-	@echo -e "\033[0;31m║  • vendor/, node_modules/ (dependencies)                         ║\033[0m"
-	@echo -e "\033[0;31m║  • composer.lock, pnpm-lock.yaml (lockfiles)                     ║\033[0m"
-	@echo -e "\033[0;31m║  • .env.local (local overrides)                                  ║\033[0m"
-	@echo -e "\033[0;31m║  • build/, public/build/, docs/api/, tools/ (generated files)    ║\033[0m"
-	@echo -e "\033[0;31m╠══════════════════════════════════════════════════════════════════╣\033[0m"
-	@echo -e "\033[0;31m║  Source code (src/, tests/, resources/) is NOT touched.          ║\033[0m"
-	@echo -e "\033[0;31m║  Use 'make reset-full' to also reset code to boilerplate state.  ║\033[0m"
-	@echo -e "\033[0;31m╚══════════════════════════════════════════════════════════════════╝\033[0m"
+reset: ## Reset Docker and generated files (keeps secrets/certs)
+	@echo -e "\033[0;33m╔══════════════════════════════════════════════════════════════════╗\033[0m"
+	@echo -e "\033[0;33m║  RESET - Remove Docker resources and generated files             ║\033[0m"
+	@echo -e "\033[0;33m╠══════════════════════════════════════════════════════════════════╣\033[0m"
+	@echo -e "\033[0;33m║  This will remove:                                               ║\033[0m"
+	@echo -e "\033[0;33m║  • All Docker containers, images, volumes, networks              ║\033[0m"
+	@echo -e "\033[0;33m║  • All Goss test resources                                       ║\033[0m"
+	@echo -e "\033[0;33m║  • storage/ contents (uploads, cache) - if not a mountpoint      ║\033[0m"
+	@echo -e "\033[0;33m║  • vendor/, node_modules/ (dependencies)                         ║\033[0m"
+	@echo -e "\033[0;33m║  • composer.lock, pnpm-lock.yaml (lockfiles)                     ║\033[0m"
+	@echo -e "\033[0;33m║  • .env.local (local overrides)                                  ║\033[0m"
+	@echo -e "\033[0;33m║  • build/, public/build/, docs/api/, tools/ (generated files)    ║\033[0m"
+	@echo -e "\033[0;33m║  • .ai/ (project AI knowledge created by setup)                  ║\033[0m"
+	@echo -e "\033[0;33m╠══════════════════════════════════════════════════════════════════╣\033[0m"
+	@echo -e "\033[0;33m║  KEEPS: secrets/, docker/certs/, source code                     ║\033[0m"
+	@echo -e "\033[0;33m║  Use 'make reset-full' to also remove secrets and reset code.    ║\033[0m"
+	@echo -e "\033[0;33m╚══════════════════════════════════════════════════════════════════╝\033[0m"
 	@echo ""
-	@read -p "Type 'RESET' to confirm factory reset: " CONFIRM_RESET; \
+	@read -p "Type 'RESET' to confirm: " CONFIRM_RESET; \
 	if [ "$$CONFIRM_RESET" != "RESET" ]; then \
 		echo -e "\033[0;34mOperation cancelled.\033[0m"; \
 		exit 1; \
 	fi
 	@echo ""
 	@# Check for mountpoints in directories we're about to clean
-	@echo -e "\033[0;33m[1/7] Checking for mountpoints...\033[0m"
+	@echo -e "\033[0;33m[1/5] Checking for mountpoints...\033[0m"
 	@MOUNTPOINT_FOUND=0; \
 	for dir in storage build public/build docs/api tools; do \
 		if [ -d "$$dir" ]; then \
@@ -1874,19 +1877,15 @@ reset: ## Factory reset - remove ALL generated files and Docker resources (VERY 
 	else \
 		echo -e "\033[0;32m  ✓ No mountpoints detected\033[0m"; \
 	fi
-	@echo -e "\033[0;33m[2/7] Cleaning up Goss test resources...\033[0m"
+	@echo -e "\033[0;33m[2/5] Cleaning up Goss test resources...\033[0m"
 	@$(MAKE) --silent goss-cleanup
-	@echo -e "\033[0;33m[3/7] Stopping and removing all Docker resources...\033[0m"
+	@echo -e "\033[0;33m[3/5] Stopping and removing all Docker resources...\033[0m"
 	@$(DC) --profile php --profile node --profile node-backend --profile redis --profile postgres --profile mariadb --profile mercure --profile meilisearch --profile elasticsearch --profile mailpit --profile seaweedfs --profile rabbitmq down -v --rmi all 2>/dev/null || true
 	@docker system prune -af --volumes 2>/dev/null || true
-	@echo -e "\033[0;33m[4/7] Removing secrets...\033[0m"
-	@rm -rf secrets/* 2>/dev/null || true
-	@echo -e "\033[0;33m[5/7] Removing generated certificates...\033[0m"
-	@rm -f docker/certs/*.crt docker/certs/*.key docker/certs/*.pem docker/certs/*.srl 2>/dev/null || true
-	@echo -e "\033[0;33m[6/7] Removing dependencies and lockfiles...\033[0m"
+	@echo -e "\033[0;33m[4/5] Removing dependencies and lockfiles...\033[0m"
 	@rm -rf vendor node_modules 2>/dev/null || true
 	@rm -f composer.lock pnpm-lock.yaml 2>/dev/null || true
-	@echo -e "\033[0;33m[7/7] Removing generated files and build artifacts...\033[0m"
+	@echo -e "\033[0;33m[5/5] Removing generated files and build artifacts...\033[0m"
 	@# Skip directories that are mountpoints
 	@if ! mountpoint -q storage 2>/dev/null; then \
 		find storage -type f ! -name '.gitkeep' -delete 2>/dev/null || true; \
@@ -1901,16 +1900,42 @@ reset: ## Factory reset - remove ALL generated files and Docker resources (VERY 
 		fi; \
 	done
 	@rm -f .env.local 2>/dev/null || true
+	@rm -rf .ai 2>/dev/null || true
 	@echo ""
 	@echo -e "\033[0;32m✓ Factory reset complete!\033[0m"
 	@echo -e "\033[0;36mTo start fresh, run: make setup && make up\033[0m"
 
-reset-full: reset ## Factory reset INCLUDING source code (resets to boilerplate state)
+reset-full: ## Full factory reset - removes EVERYTHING including secrets (DANGEROUS!)
+	@echo -e "\033[0;31m╔══════════════════════════════════════════════════════════════════╗\033[0m"
+	@echo -e "\033[0;31m║  !!! FULL FACTORY RESET - THIS WILL DELETE EVERYTHING !!!        ║\033[0m"
+	@echo -e "\033[0;31m╠══════════════════════════════════════════════════════════════════╣\033[0m"
+	@echo -e "\033[0;31m║  This will remove everything from 'make reset' PLUS:             ║\033[0m"
+	@echo -e "\033[0;31m║  • secrets/ (all generated secrets)                              ║\033[0m"
+	@echo -e "\033[0;31m║  • docker/certs/*.crt, *.key, *.pem (generated certificates)     ║\033[0m"
+	@echo -e "\033[0;31m║  • Source code reset via git checkout                            ║\033[0m"
+	@echo -e "\033[0;31m║  • README.md, .claude/CLAUDE.md reset to boilerplate             ║\033[0m"
+	@echo -e "\033[0;31m╚══════════════════════════════════════════════════════════════════╝\033[0m"
 	@echo ""
+	@read -p "Type 'RESET-FULL' to confirm full factory reset: " CONFIRM_RESET; \
+	if [ "$$CONFIRM_RESET" != "RESET-FULL" ]; then \
+		echo -e "\033[0;34mOperation cancelled.\033[0m"; \
+		exit 1; \
+	fi
+	@$(MAKE) reset
+	@echo ""
+	@echo -e "\033[0;33mRemoving secrets...\033[0m"
+	@rm -rf secrets/* 2>/dev/null || true
+	@echo -e "\033[0;33mRemoving generated certificates...\033[0m"
+	@rm -f docker/certs/*.crt docker/certs/*.key docker/certs/*.pem docker/certs/*.srl 2>/dev/null || true
 	@echo -e "\033[0;33mResetting source code to boilerplate defaults...\033[0m"
 	@git checkout -- src/ tests/ resources/ config/ templates/ public/index.php 2>/dev/null || \
 		echo -e "\033[0;31m  ⚠ git checkout failed - source code not reset\033[0m"
-	@echo -e "\033[0;32m✓ Source code reset to boilerplate state!\033[0m"
+	@echo -e "\033[0;33mResetting README.md and CLAUDE.md to boilerplate state...\033[0m"
+	@git checkout -- README.md 2>/dev/null || \
+		echo -e "\033[0;31m  ⚠ README.md not reset (not tracked or modified)\033[0m"
+	@git checkout -- .claude/CLAUDE.md 2>/dev/null || \
+		echo -e "\033[0;31m  ⚠ CLAUDE.md not reset (not tracked or modified)\033[0m"
+	@echo -e "\033[0;32m✓ Full factory reset complete! Project is now in boilerplate state.\033[0m"
 
 # AI Sync configuration (can be overridden via .env or command line)
 # Command line: make ai-commands-sync FROM=claude TO=gemini

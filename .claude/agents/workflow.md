@@ -155,12 +155,12 @@ DO NOT: Update session files, BACKLOG, or CHANGELOG (Main Agent handles this)
 
 Main Agent checks before spawning:
 
-| Check | Fail Action |
-| ----- | ----------- |
-| Tasks share files | Split into sequential batches |
-| Task has dependencies | Move to end or exclude |
+| Check                      | Fail Action                   |
+| -------------------------- | ----------------------------- |
+| Tasks share files          | Split into sequential batches |
+| Task has dependencies      | Move to end or exclude        |
 | Task is Medium/Large scope | Exclude from batch, warn user |
-| >6 Quick Wins | Batch in groups of 6 |
+| >6 Quick Wins              | Batch in groups of 6          |
 
 ### Result Collection
 
@@ -206,11 +206,11 @@ chore: batch quick wins
 
 ### Error Handling
 
-| Scenario | Action |
-| -------- | ------ |
-| Agent fails | Mark task as incomplete, continue others |
-| Lint fails | Show errors, ask user to fix or skip |
-| Conflict detected | Abort batch, run tasks sequentially |
+| Scenario          | Action                                   |
+| ----------------- | ---------------------------------------- |
+| Agent fails       | Mark task as incomplete, continue others |
+| Lint fails        | Show errors, ask user to fix or skip     |
+| Conflict detected | Abort batch, run tasks sequentially      |
 
 ---
 
@@ -277,6 +277,27 @@ When new insights are discovered:
 | New suppression      | `.zappzarapp/standards/<language>.md`   |
 | New make target      | `.zappzarapp/standards/make-targets.md` |
 | Workflow improvement | `.claude/agents/*.md`                   |
+
+### Update Knowledge Files
+
+After task completion, Main Agent updates knowledge files based on Completion
+Report:
+
+| Completion Report Section | Target File     | Action                |
+| ------------------------- | --------------- | --------------------- |
+| Learnings                 | `LEARNINGS.md`  | Append new entries    |
+| Decisions (if any)        | `DECISIONS.md`  | Add ADR if applicable |
+| References (if any)       | `REFERENCES.md` | Add new links         |
+
+**Path:** Use 2-layer resolution (`.ai/` if exists, otherwise
+`.zappzarapp/ai/`). Note: LEARNINGS, DECISIONS, REFERENCES have no personal
+layer (unlike BACKLOG).
+
+**Timing:** After Completion Report, before "Branch ready for review" message.
+
+**Format:** Follow existing format in each file (check headers, categories).
+
+**Skip if:** No new learnings/decisions/references in Completion Report.
 
 ### Retry Limits & Escalation
 

@@ -1,11 +1,50 @@
 # zappzarapp - Changelog
 
-**Erstellt:** 2025-12-19 **Letzte Aktualisierung:** 2026-01-21 (AI Configuration
-Refactoring) **Version:** 3.70
+**Erstellt:** 2025-12-19 **Letzte Aktualisierung:** 2026-01-22 (Knowledge Files
+Refactoring) **Version:** 3.71
 
 ---
 
 ## Changelog
+
+### Version 3.71 (2026-01-22) - Knowledge Files & Backlog Refactoring
+
+Major refactoring of knowledge file management and backlog structure.
+
+#### Changed: Backlog Index + Detail Format
+
+- **BACKLOG.md** now contains only compact index tables (~100 lines)
+- **backlog/\*.md** individual detail files for each task
+- Benefits: Context efficiency, parallel editing, granular git history
+- `/backlog` command updated for new format
+
+#### Changed: Knowledge File Path Resolution
+
+Consistent 3-layer architecture with different layer support per file type:
+
+| File                             | Layers | Paths                                                     |
+| -------------------------------- | ------ | --------------------------------------------------------- |
+| BACKLOG                          | 3      | `~/.local/share/zappzarapp/` → `.ai/` → `.zappzarapp/ai/` |
+| LEARNINGS, DECISIONS, REFERENCES | 2      | `.ai/` → `.zappzarapp/ai/`                                |
+| CHANGELOG                        | 2      | `documentation/` → `.zappzarapp/`                         |
+
+#### New: Knowledge File Templates
+
+- `.zappzarapp/ai/templates/` directory with templates for all knowledge files
+- `make setup` now copies templates to `.ai/` for new projects
+- SESSION-TEMPLATE.md moved from `.claude/sessions/` to templates
+
+#### Changed: Immediate Knowledge Updates
+
+- Learnings, decisions, references written **immediately** when discovered
+- No longer deferred to session end (prevents loss on context overflow)
+- Session files only note "Added learning: <title>" as reference
+
+#### Changed: Reset Targets
+
+- `make reset` — Keeps secrets/certs, removes Docker + generated files + .ai/
+- `make reset-full` — Full factory reset including secrets, certs, git checkout
+- `.claude/config.local.md` never touched by reset (personal config)
 
 ### Version 3.70 (2026-01-21) - Claude Multi-Agent Workflow & AI Architecture
 
@@ -55,7 +94,8 @@ Language-specific rules in `.zappzarapp/standards/`:
 - **Boilerplate** (`.zappzarapp/ai/`) — zappzarapp development knowledge
 - **Project** (`.ai/`) — Team-shared knowledge (created by `make setup`)
 
-Each layer contains: `BACKLOG.md`, `LEARNINGS.md`, `DECISIONS.md`, `REFERENCES.md`
+Each layer contains: `BACKLOG.md`, `LEARNINGS.md`, `DECISIONS.md`,
+`REFERENCES.md`
 
 #### Documentation Restructuring
 
@@ -70,7 +110,8 @@ Each layer contains: `BACKLOG.md`, `LEARNINGS.md`, `DECISIONS.md`, `REFERENCES.m
 
 - **Lowercase** — Standardized to "zappzarapp" (not "Zappzarapp") throughout
 - **Dev Dashboard** → "zappzarapp Development Dashboard" (title, header, footer)
-- **Backlog targets** — Renamed `boilerplate` → `zappzarapp`, default → `personal`
+- **Backlog targets** — Renamed `boilerplate` → `zappzarapp`, default →
+  `personal`
 
 #### Make Setup Improvements
 
@@ -82,6 +123,7 @@ Each layer contains: `BACKLOG.md`, `LEARNINGS.md`, `DECISIONS.md`, `REFERENCES.m
 #### .gitignore Simplification
 
 - **Claude** — Changed from selective ignore to `ignore all, allow specific`:
+
   ```gitignore
   .claude/*
   !.claude/CLAUDE.md
@@ -89,6 +131,7 @@ Each layer contains: `BACKLOG.md`, `LEARNINGS.md`, `DECISIONS.md`, `REFERENCES.m
   !.claude/commands/
   !.claude/settings.json
   ```
+
 - **Gemini** — `.gemini/` fully ignored (generated via `make ai-sync`)
 
 #### Documentation Fixes

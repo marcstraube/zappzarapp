@@ -80,62 +80,100 @@ Three backlog files are supported:
 - `project`: Team tasks, features, bugs that affect everyone (user creates)
 - `personal`: Private reminders, learning topics, cross-project utilities
 
-## File Structure
+## File Structure (Index + Detail)
 
-Both backlogs follow this structure:
+Backlogs use a **compact index + detail files** format for context efficiency:
+
+```text
+~/.local/share/zappzarapp/         # Personal backlog (outside repo)
+├── BACKLOG.md                     # Compact Index
+└── backlog/
+    └── ...
+
+.ai/                               # Project backlog (created by make setup)
+├── BACKLOG.md                     # Compact Index
+└── backlog/
+    └── ...
+
+.zappzarapp/ai/                    # Boilerplate backlog
+├── BACKLOG.md                     # Compact Index (~100 lines)
+└── backlog/
+    ├── task-slug.md               # Task details
+    └── ...
+```
+
+**Note:** Only BACKLOG supports all 3 layers. Other knowledge files (LEARNINGS,
+DECISIONS, REFERENCES) only exist at project (`.ai/`) and boilerplate
+(`.zappzarapp/ai/`) level — no personal layer.
+
+### Index Format (BACKLOG.md)
+
+The index contains only parseable tables for quick scanning:
 
 ```markdown
-# Project Backlog
-
-## Task Size Guide
-
-| Size   | Time        | Files                   | AI Context                |
-| ------ | ----------- | ----------------------- | ------------------------- |
-| Small  | <30 min     | 1-3 files               | Same context OK           |
-| Medium | 30 min - 2h | 3-10 files              | Flexible                  |
-| Large  | >2h         | Many files, exploration | Fresh context recommended |
+# Project Backlog Index
 
 ## High Priority
 
-### Task Name
-
-**Status:** Open | In Progress | Blocked **Scope:** feature | fix | critical |
-breaking | refactor | docs | chore **Size:** Small | Medium | Large **Created:**
-YYYY-MM-DD **Created by:** Name <user@example.com> ← (only for project target,
-from git config) **Updated:** YYYY-MM-DD by Name <user@example.com> -
-Description of change **Context:** Why this task exists
-
-**Problem/Goal:** What needs to be done
-
-**Implementation:** (optional)
-
-- Step 1
-- Step 2
-
-**Files to modify/create:**
-
-- `path/to/file.ext`
-
----
+| Slug         | Title             | Size  | Status  |
+| ------------ | ----------------- | ----- | ------- |
+| v1.0-release | v1.0 Release Prep | Large | Planned |
+| critical-fix | Fix Auth Bypass   | Small | Open    |
 
 ## Medium Priority
 
 ### Quick Wins
 
-#### Small Task Name
+| Slug            | Title               | Size  | Status |
+| --------------- | ------------------- | ----- | ------ |
+| add-retry-logic | Add Retry to Health | Small | Open   |
 
-...
+## Completed
 
-### Category Name
-
-#### Task Name
-
-...
-
-## Low Priority
-
-...
+| Slug             | Title               | Completed  |
+| ---------------- | ------------------- | ---------- |
+| service-examples | Service Integration | 2026-01-21 |
 ```
+
+### Detail File Format (backlog/<slug>.md)
+
+Each task has its own detail file:
+
+```markdown
+# Task Title
+
+**Status:** Open | In Progress | Blocked | Complete **Size:** Small | Medium |
+Large **Scope:** feature | fix | critical | refactor | docs | chore **Created:**
+YYYY-MM-DD **Planning:** Required | Not required
+
+## Context
+
+Why this task exists.
+
+## Goal
+
+What success looks like.
+
+## Implementation
+
+1. Step one
+2. Step two
+
+## Files
+
+- `path/to/file.ext`
+
+## Notes
+
+Additional context, references, decisions.
+```
+
+### Benefits of Index + Detail Format
+
+1. **Context efficiency**: `--list` reads only ~100 lines instead of 1500+
+2. **Parallel editing**: Multiple agents can work on different task files
+3. **Version control**: Easier diffs, granular commit history
+4. **Search**: `grep -l "keyword" backlog/*.md` finds relevant tasks
 
 ---
 
@@ -234,98 +272,64 @@ Based on priority and category:
 
 If no category fits, create a new one or place directly under Medium Priority.
 
-### Step 3: Format Task Entry
+### Step 3: Generate Task Slug
 
-**High Priority format (project target):**
+Create a URL-safe slug from the title:
+
+- Lowercase
+- Replace spaces with hyphens
+- Remove special characters
+- Max 40 characters
+
+Examples:
+
+- "Fix Auth Bypass" → `fix-auth-bypass`
+- "Make Setup: API Docs" → `make-setup-api-docs`
+- "v1.0 Release Preparation" → `v1.0-release-preparation`
+
+### Step 4: Create Detail File
+
+Create `backlog/<slug>.md` with full task details:
 
 ```markdown
-### Task Title
+# Task Title
 
-**Status:** Open **Scope:** feature **Size:** Large **Created:** YYYY-MM-DD
-**Created by:** Name <user@example.com> **Updated:** YYYY-MM-DD by Name
-<user@example.com> - Added subtasks ← (only if modified) **Planning:** Required
-← (only if planning needed) **Context:** [How/why this was discovered]
+**Status:** Open **Size:** Large **Scope:** feature **Created:** YYYY-MM-DD
+**Planning:** Required
 
-**Problem:** [What's wrong or missing]
+## Context
 
-**Goal:** [What success looks like]
+[Why this task exists]
 
-**Before starting:** Use Plan Mode to analyze: ← (only if Planning: Required)
+## Goal
 
-- [What to investigate]
-- [Architecture considerations]
+[What success looks like]
 
-**Implementation:**
+## Implementation
 
 1. Step one
 2. Step two
 
-**Files to modify:**
+## Files
 
 - `path/to/file.ext`
-
----
 ```
 
-**Medium Priority format (project target, under category):**
+### Step 5: Update Index
+
+Add a row to the appropriate table in BACKLOG.md:
 
 ```markdown
-#### Task Title
-
-**Status:** Open **Scope:** fix **Size:** Medium **Created:** YYYY-MM-DD
-**Created by:** Name <user@example.com> **Planning:** Required ← (only if
-planning needed) **Context:** [Brief context]
-
-**Task:** [What needs to be done]
-
-**Before starting:** Use Plan Mode to analyze: ← (only if Planning: Required)
-
-- [What to investigate]
-
-**Files to check/modify:**
-
-- `path/to/file.ext`
-
----
+| slug-name | Task Title | Size | Status |
 ```
 
-**Quick Win format (minimal):**
+**Placement:**
 
-```markdown
-#### Task Title
+- High Priority: Under `## High Priority` table
+- Medium Priority: Under appropriate category table (Quick Wins, Security, etc.)
+- Low Priority: Under `## Low Priority` table
 
-**Status:** Planned **Scope:** chore **Size:** Small **Created:** YYYY-MM-DD
-**Created by:** Name <user@example.com>
-
-**Task:** [Brief description]
-
-**Steps:**
-
-1. Do X
-2. Verify with Y
-
----
-```
-
-**Note:** For `--target zappzarapp` and `--target personal`, omit
-`**Created by:**` and `**Updated:**` (not team-shared backlogs).
-
-**When to add `**Updated:**` (project target only):**
-
-- Status change (Open → In Progress)
-- Adding/completing subtasks
-- Modifying scope, size, or priority
-- Adding implementation details
-- Any significant change by someone other than the creator
-
-### Step 4: Insert Task
-
-1. Read current BACKLOG.md
-2. Find correct insertion point based on priority/category
-3. Insert formatted task entry
-4. Ensure proper spacing (blank lines, separators)
-
-### Step 5: Confirmation
+### Step 6: Confirmation
 
 Show the user:
 
@@ -333,17 +337,24 @@ Show the user:
 Task Added to Backlog
 ════════════════════════════════════════════════
 Title:    [Task Title]
+Slug:     [task-slug]
 Priority: [High/Medium/Low]
-Scope:    [Small/Medium/Large]
+Size:     [Small/Medium/Large]
 Category: [Category if Medium]
 Planning: [Required/Not required]
 Created:  [Date]
+Files:
+  - BACKLOG.md (index updated)
+  - backlog/[slug].md (detail created)
 ════════════════════════════════════════════════
 ```
 
 ---
 
 ## Workflow: List Tasks (`--list`)
+
+**Context efficient**: Reads only BACKLOG.md index (~100 lines), not detail
+files.
 
 ### Target Handling
 
@@ -357,7 +368,7 @@ Created:  [Date]
 
 ### Without Filter
 
-Display summary of all tasks:
+Parse index tables and display summary:
 
 ```text
 Boilerplate Backlog (./.zappzarapp/ai/BACKLOG.md)
@@ -399,12 +410,15 @@ Show only tasks of specified priority with full details.
 
 Interactive selection of a task to work on.
 
+**Two-phase read**: Index first (for selection), then detail file (for
+execution).
+
 ### Step 1: Check for Quick Wins Batch Option
 
 Before presenting individual tasks, check if Quick Wins batch is available:
 
-1. Parse BACKLOG.md for `### Quick Wins` section
-2. Count tasks under Quick Wins (#### headings)
+1. Parse BACKLOG.md index for `### Quick Wins` table
+2. Count rows in Quick Wins table
 3. If ≥2 Quick Wins exist, show batch option first
 
 ### Step 2: Present Task Selection
@@ -444,6 +458,7 @@ If user selects "🚀 Quick Wins" batch option:
    - If overlap found: warn and offer to exclude conflicting task
 
 2. **Confirm batch processing:**
+
    ```text
    Quick Wins Batch Processing
    ════════════════════════════════════════════════
@@ -471,46 +486,52 @@ If user selects "🚀 Quick Wins" batch option:
    ○ No, let me choose individual tasks
    ```
 
-3. **Hand off to Main Agent** for Quick Wins batch workflow
-   (see `.claude/agents/workflow.md` → "Quick Wins Batch Processing")
+3. **Hand off to Main Agent** for Quick Wins batch workflow (see
+   `.claude/agents/workflow.md` → "Quick Wins Batch Processing")
 
 ### Step 2b: Individual Task Selected
 
 Continue with normal single-task workflow (Step 3 onwards).
 
-### Step 2: Display Task Details
+### Step 3: Load Task Details
 
-After selection, show full task details:
+After selection, read the detail file `backlog/<slug>.md`:
+
+1. Extract slug from user selection (from index table)
+2. Read `backlog/<slug>.md` for full task details
+3. Display task details to user:
 
 ```text
 Selected Task
 ════════════════════════════════════════════════
 Title:    Pre-Commit Hook Container Dependency
+Slug:     pre-commit-hook-dependency
 Priority: High
 Status:   Open
+Size:     Small
 Created:  2026-01-19
 
 Context:
 Pre-commit hook fails when containers aren't running
 
-Problem:
-The CaptainHook pre-commit hook uses `docker compose exec`
-which requires the PHP container to be running.
+Goal:
+Change CaptainHook config to use `docker compose run`
+instead of `docker compose exec`.
 
 Files to modify:
 - captainhook.json
 ════════════════════════════════════════════════
 ```
 
-### Step 3: Update Status
+### Step 4: Update Status
 
 Set task status to "In Progress":
 
-1. Find task in BACKLOG.md
-2. Update `**Status:** Open` → `**Status:** In Progress`
+1. Update `**Status:** Open` → `**Status:** In Progress` in detail file
+2. Update status in index table (BACKLOG.md)
 3. Confirm status change
 
-### Step 4: Begin Work
+### Step 5: Begin Work
 
 After displaying details:
 
@@ -526,9 +547,25 @@ What would you like to do?
 
 If "Start implementation" selected, hand off to Main Agent for agent workflow.
 
-### Step 5: Plan Review Mode (Agent Workflow)
+### Step 6: Trigger Agent Workflow
 
-When agent workflow starts, determine plan review behavior:
+Hand off to Main Agent with task context. Main Agent responsibilities:
+
+1. **Create feature branch:** `git checkout -b feature/<slug>`
+2. **Update status:** Set task to "In Progress" (if not already)
+3. **Select workflow** based on task size (from detail file):
+
+| Task Size | Workflow                                                  |
+| --------- | --------------------------------------------------------- |
+| Small     | Direct implementation → Lint → Test                       |
+| Medium    | Plan-Agent → Implementation → Lint → Test                 |
+| Large     | 4-Agent-Model (Architect → Coder → Reviewer → Documenter) |
+
+See `.claude/agents/workflow.md` for full workflow details.
+
+### Step 7: Plan Review Mode (for Medium/Large Tasks)
+
+When Architect creates a plan, determine review behavior:
 
 **Size-based defaults:**
 
@@ -549,6 +586,16 @@ curl -s -H "Priority: high" -H "Tags: hourglass" \
   -d "[zappzarapp] ⏳ Plan ready for review" ntfy.sh/<NTFY_TOPIC>
 ```
 
+### Workflow Reference
+
+For full agent workflow documentation, see:
+
+- `.claude/agents/workflow.md` — Scope decision, Main Agent responsibilities
+- `.claude/agents/architect.md` — Agent A: Analysis, plan creation
+- `.claude/agents/coder.md` — Agent B: Implementation
+- `.claude/agents/reviewer.md` — Agent C: Code review
+- `.claude/agents/documenter.md` — Agent D: Documentation
+
 ---
 
 ## Workflow: Remove Task (`--remove <task>`)
@@ -557,11 +604,15 @@ Remove a task from the backlog with documentation.
 
 ### Step 1: Find Task
 
-1. Search BACKLOG.md for task by name (fuzzy match)
+1. Search BACKLOG.md index for task by name or slug (fuzzy match)
 2. If multiple matches, use AskUserQuestion to clarify
 3. If no match, inform user and list similar tasks
 
-### Step 2: Confirm and Ask Reason
+### Step 2: Load Task Details
+
+Read the detail file `backlog/<slug>.md` to display full context.
+
+### Step 3: Confirm and Ask Reason
 
 Display task details and ask for removal reason:
 
@@ -569,8 +620,11 @@ Display task details and ask for removal reason:
 Task to Remove
 ════════════════════════════════════════════════
 Title:    ESLint Errors in PHPStorm
+Slug:     eslint-errors-phpstorm
 Priority: Medium (Quick Wins)
 Created:  2026-01-19
+
+Context:  [from detail file]
 ════════════════════════════════════════════════
 
 Why is this task being removed?
@@ -582,37 +636,37 @@ Why is this task being removed?
 ○ Other (provide reason)
 ```
 
-### Step 3: Archive Task
+### Step 4: Archive Task
 
-Move task to `.claude/archive/backlog-removed.md`:
+1. Move detail file to archive: `backlog/<slug>.md` →
+   `backlog/archive/<slug>.md`
+2. Add removal metadata to the archived file:
 
 ```markdown
-# Removed Backlog Tasks
+<!-- Archived: 2026-01-21 -->
+<!-- Reason: No longer relevant - PHPStorm was misconfigured -->
+<!-- Original Priority: Medium (Quick Wins) -->
 
-## ESLint Errors in PHPStorm
+# ESLint Errors in PHPStorm
 
-**Removed:** 2026-01-19 **Reason:** No longer relevant - PHPStorm was
-misconfigured, not an ESLint issue **Original Priority:** Medium (Quick Wins)
-**Original Created:** 2026-01-19
-
-<original task content>
-
----
+[original content preserved]
 ```
 
-### Step 4: Remove from Backlog
+### Step 5: Remove from Index
 
-1. Delete task section from BACKLOG.md
-2. Maintain proper spacing and separators
+1. Delete the row from appropriate table in BACKLOG.md
+2. Maintain proper table alignment
 
-### Step 5: Confirmation
+### Step 6: Confirmation
 
 ```text
 Task Removed
 ════════════════════════════════════════════════
 Title:    ESLint Errors in PHPStorm
+Slug:     eslint-errors-phpstorm
 Reason:   No longer relevant
-Archived: .claude/archive/backlog-removed.md
+Archived: backlog/archive/eslint-errors-phpstorm.md
+Index:    Row removed from BACKLOG.md
 ════════════════════════════════════════════════
 ```
 
@@ -620,31 +674,93 @@ Archived: .claude/archive/backlog-removed.md
 
 ## Workflow: Promote Task (`--promote <task>`)
 
-Move a task to higher priority:
+Move a task to higher priority.
 
-1. Find task by name (fuzzy match)
-2. Determine current priority
-3. Move to next higher level:
-   - Low → Medium (ask for category)
-   - Medium → High
-   - High → Already highest (inform user)
-4. Update task format if needed (#### → ###)
-5. Show confirmation
+### Step 1: Find Task
+
+1. Search BACKLOG.md index for task by name or slug (fuzzy match)
+2. Identify current priority from table location
+
+### Step 2: Determine New Priority
+
+- Low → Medium (ask for category)
+- Medium → High
+- High → Already highest (inform user and exit)
+
+### Step 3: Update Index
+
+1. Remove row from current priority table
+2. Add row to new priority table
+3. Maintain table alignment
+
+### Step 4: Update Detail File (if priority tracked)
+
+If the detail file contains priority metadata, update it:
+
+```markdown
+<!-- Priority: High (promoted from Medium on 2026-01-21) -->
+```
+
+### Step 5: Confirmation
+
+```text
+Task Promoted
+════════════════════════════════════════════════
+Task:     Shell Script Linting
+Slug:     shell-script-linting
+Previous: Medium Priority (Infrastructure)
+New:      High Priority
+Files:
+  - BACKLOG.md (index moved)
+  - backlog/shell-script-linting.md (metadata updated)
+════════════════════════════════════════════════
+```
 
 ---
 
 ## Workflow: Demote Task (`--demote <task>`)
 
-Move a task to lower priority:
+Move a task to lower priority.
 
-1. Find task by name (fuzzy match)
-2. Determine current priority
-3. Move to next lower level:
-   - High → Medium (ask for category)
-   - Medium → Low
-   - Low → Already lowest (inform user)
-4. Update task format if needed (### → ####)
-5. Show confirmation
+### Step 1: Find Task
+
+1. Search BACKLOG.md index for task by name or slug (fuzzy match)
+2. Identify current priority from table location
+
+### Step 2: Determine New Priority
+
+- High → Medium (ask for category)
+- Medium → Low
+- Low → Already lowest (inform user and exit)
+
+### Step 3: Update Index
+
+1. Remove row from current priority table
+2. Add row to new priority table (ask for category if moving to Medium)
+3. Maintain table alignment
+
+### Step 4: Update Detail File (if priority tracked)
+
+If the detail file contains priority metadata, update it:
+
+```markdown
+<!-- Priority: Low (demoted from Medium on 2026-01-21) -->
+```
+
+### Step 5: Confirmation
+
+```text
+Task Demoted
+════════════════════════════════════════════════
+Task:     WAF Integration
+Slug:     waf-integration
+Previous: Low Priority
+New:      Future/v2.0 (or removed from active backlog)
+Files:
+  - BACKLOG.md (index moved)
+  - backlog/waf-integration.md (metadata updated)
+════════════════════════════════════════════════
+```
 
 ---
 
@@ -652,17 +768,24 @@ Move a task to lower priority:
 
 Analyze all tasks and suggest priority changes based on multiple criteria.
 
-### Step 1: Read All Backlogs
+### Step 1: Read Index Files
 
-Read both zappzarapp and project backlogs (if they exist) to get a complete
-picture.
+Read BACKLOG.md index files from zappzarapp and project targets (if they exist).
 
-### Step 2: Filter and Analyze Tasks
+**Context efficient**: Only reads index files (~100 lines each), not detail
+files.
+
+### Step 2: Load Details for Analysis
+
+For tasks that need deeper analysis (blockers, prerequisites), load specific
+detail files as needed.
+
+### Step 3: Filter and Analyze Tasks
 
 **Exclude from analysis:**
 
-- Tasks with `**Status:** In Progress` (actively being worked on)
-- Tasks with `**Status:** Blocked` (waiting on external dependency)
+- Tasks with `In Progress` status (actively being worked on)
+- Tasks with `Blocked` status (waiting on external dependency)
 
 **Evaluate remaining tasks** against these criteria:
 
@@ -677,7 +800,7 @@ picture.
 | **Duplicates**        | Similar tasks → suggest consolidation       |
 | **Stale Tasks**       | No progress, unclear goal → suggest removal |
 
-### Step 3: Generate Recommendations
+### Step 4: Generate Recommendations
 
 Present findings grouped by action type:
 
@@ -722,7 +845,7 @@ Backlog Reprioritization Analysis
 ════════════════════════════════════════════════
 ```
 
-### Step 4: User Approval
+### Step 5: User Approval
 
 Use `AskUserQuestion` to let user select which changes to apply:
 
@@ -738,15 +861,15 @@ Which changes would you like to apply?
 ○ Cancel (no changes)
 ```
 
-### Step 5: Apply Changes
+### Step 6: Apply Changes
 
 For each approved change:
 
-1. **Promote/Demote**: Use existing promote/demote logic
-2. **Consolidate**: Merge task descriptions, keep most recent metadata
-3. **Remove**: Use existing remove workflow (with archiving)
+1. **Promote/Demote**: Update both index (move row) and detail file (metadata)
+2. **Consolidate**: Merge detail files, update index
+3. **Remove**: Archive detail file, remove from index
 
-### Step 6: Summary
+### Step 7: Summary
 
 Show final summary of applied changes:
 
@@ -1000,6 +1123,7 @@ $ /backlog --remove "eslint phpstorm"
 Task to Remove
 ════════════════════════════════════════════════
 Title:    ESLint Errors in PHPStorm
+Slug:     eslint-errors-phpstorm
 Priority: Medium (Quick Wins)
 ════════════════════════════════════════════════
 
@@ -1012,8 +1136,10 @@ fixed in IDE settings - not a project issue.
 Task Removed
 ════════════════════════════════════════════════
 Title:    ESLint Errors in PHPStorm
+Slug:     eslint-errors-phpstorm
 Reason:   No longer relevant
-Archived: .claude/archive/backlog-removed.md
+Archived: backlog/archive/eslint-errors-phpstorm.md
+Index:    Row removed from BACKLOG.md
 ════════════════════════════════════════════════
 ```
 
@@ -1025,8 +1151,12 @@ $ /backlog --promote "pnpm update"
 Task Promoted
 ════════════════════════════════════════════════
 Task:     pnpm Update
+Slug:     pnpm-update
 Previous: Medium Priority (Quick Wins)
 New:      High Priority
+Files:
+  - BACKLOG.md (index moved)
+  - backlog/pnpm-update.md (metadata updated)
 ════════════════════════════════════════════════
 ```
 

@@ -9,9 +9,10 @@
 1. Find and read last session:
    `find .claude/sessions -name "session-*.md" -type f | xargs ls -1t | head -1`
 2. Extract: Goal, Summary, References
-3. Read `.zappzarapp/ai/BACKLOG.md` for open items
+3. Read backlog for open items (see "Knowledge File Paths" for resolution)
 4. Create new session in year/month folder:
    `.claude/sessions/YYYY/MM/session-YYYY-MM-DD-HHMM-<task-slug>.md`
+   - Use template from `.zappzarapp/ai/templates/SESSION-TEMPLATE.md`
 5. Brief user on context (previous session, backlog)
 6. Ask: "What would you like to work on?"
 
@@ -91,6 +92,36 @@ In practice this means:
 - Use established patterns (Repository, Service Layer, DTOs)
 - Avoid quick fixes that create technical debt
 - For trade-offs: explain options with pros/cons
+
+---
+
+## Knowledge File Paths
+
+Different files have different layer support:
+
+**BACKLOG — 3 Layer:**
+
+| Priority | Path                         | Condition                        |
+| -------- | ---------------------------- | -------------------------------- |
+| 1        | `~/.local/share/zappzarapp/` | `.claude/config.local.md` exists |
+| 2        | `.ai/`                       | `.ai/BACKLOG.md` exists          |
+| 3        | `.zappzarapp/ai/`            | fallback                         |
+
+**LEARNINGS, DECISIONS, REFERENCES — 2 Layer:**
+
+| Priority | Path              | Condition                 |
+| -------- | ----------------- | ------------------------- |
+| 1        | `.ai/`            | `.ai/LEARNINGS.md` exists |
+| 2        | `.zappzarapp/ai/` | fallback                  |
+
+**CHANGELOG — 2 Layer (different paths):**
+
+| Priority | Path             | Condition                           |
+| -------- | ---------------- | ----------------------------------- |
+| 1        | `documentation/` | `documentation/CHANGELOG.md` exists |
+| 2        | `.zappzarapp/`   | fallback                            |
+
+**Note:** Personal layer only exists for BACKLOG (cross-project task tracking).
 
 ---
 
@@ -281,37 +312,50 @@ Maintain a session log in `.claude/sessions/session-YYYY-MM-DD-HHMM.md`:
 
 Session log contains only: Goal, Branch, Changes, References, Summary.
 
-Other data goes directly to boilerplate knowledge files (`.zappzarapp/ai/`):
+Use `.zappzarapp/ai/templates/SESSION-TEMPLATE.md` as the base.
 
-- Learnings → `.zappzarapp/ai/LEARNINGS.md`
-- Open Items → `.zappzarapp/ai/BACKLOG.md`
-- Decisions → `.zappzarapp/ai/DECISIONS.md`
-- References → `.zappzarapp/ai/REFERENCES.md`
+### Knowledge File Updates
 
-Use `.claude/sessions/SESSION-TEMPLATE.md` as the base.
+**Write learnings, decisions, and references IMMEDIATELY when discovered — not
+at session end.**
+
+| Discovery                       | Action                    |
+| ------------------------------- | ------------------------- |
+| New insight / gotcha / pattern  | Append to `LEARNINGS.md`  |
+| Architecture decision made      | Add ADR to `DECISIONS.md` |
+| Useful documentation link found | Add to `REFERENCES.md`    |
+
+**Why immediately?**
+
+- Session files are not committed (lost on context overflow)
+- Knowledge files are committed (persistent across sessions)
+- Prevents knowledge loss
+
+**Session file:** Only note "Added learning: <title>" as reference, not the full
+content.
+
+**Path:** Use resolved path from "Knowledge File Paths" section above.
 
 ### Ending a Session
 
-#### Step 1: Complete session log
+1. Complete session log: Fill in `## Summary`
+2. Verify all learnings/decisions were written to knowledge files (should
+   already be done during session)
+3. Tell user: "Bitte `/clear` eingeben für neuen Kontext."
 
-- Fill in `## Summary`
+### Knowledge Management
 
-#### Step 2: Update knowledge files
+| Layer       | Location                     | Purpose               | Git Status | Files                                     |
+| ----------- | ---------------------------- | --------------------- | ---------- | ----------------------------------------- |
+| Personal    | `~/.local/share/zappzarapp/` | Private notes         | Outside    | BACKLOG only                              |
+| Project     | `.ai/`                       | Team-shared knowledge | Committed  | BACKLOG, LEARNINGS, DECISIONS, REFERENCES |
+| Boilerplate | `.zappzarapp/ai/`            | Boilerplate knowledge | Committed  | BACKLOG, LEARNINGS, DECISIONS, REFERENCES |
 
-Add new learnings, decisions, or references to `.zappzarapp/ai/` files.
+**Note:** Personal layer only supports BACKLOG (cross-project task tracking).
+Other knowledge files (LEARNINGS, DECISIONS, REFERENCES) are always project or
+boilerplate level.
 
-### Knowledge Management (3-Layer Architecture)
-
-| Layer       | Location                     | Purpose               | Git Status |
-| ----------- | ---------------------------- | --------------------- | ---------- |
-| Personal    | `~/.local/share/zappzarapp/` | Private notes         | Outside    |
-| Boilerplate | `.zappzarapp/ai/`            | Boilerplate knowledge | Committed  |
-| Project     | `.ai/`                       | Team-shared knowledge | Committed  |
-
-Files: BACKLOG.md, LEARNINGS.md, DECISIONS.md, REFERENCES.md
-
-**Personal path override:** Create `.zappzarapp/ai/config.local.md` to
-customize.
+See "Knowledge File Paths" section for full resolution logic.
 
 Session logs are minimal (Goal, Changes, References, Summary).
 
@@ -348,6 +392,17 @@ Session logs are minimal (Goal, Changes, References, Summary).
 | `DECISIONS.md`  | Architecture decisions (ADRs) |
 | `LEARNINGS.md`  | Project learnings             |
 | `REFERENCES.md` | Documentation links           |
+
+**`documentation/` (project docs, created by make setup):**
+
+| File           | Purpose                 |
+| -------------- | ----------------------- |
+| `CHANGELOG.md` | Project version history |
+
+**CHANGELOG path resolution:**
+
+- Project: `documentation/CHANGELOG.md` (if exists)
+- Boilerplate: `.zappzarapp/CHANGELOG.md` (fallback)
 
 ## Hooks
 

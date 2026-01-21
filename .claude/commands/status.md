@@ -110,7 +110,8 @@ Changes:  12 files modified
 
 ### 4. Pending Tasks
 
-Read from `.zappzarapp/ai/BACKLOG.md`:
+Read from backlog (3-layer: personal → project → boilerplate, same as
+`/backlog`):
 
 ```text
 Backlog
@@ -200,5 +201,5 @@ Environment Health
 
 - Run at session start for quick orientation
 - Use `--all` for verbose output before commits
-- Backlog is read from `.zappzarapp/ai/BACKLOG.md`
+- Backlog path: 3-layer resolution (personal → project → boilerplate)
 - Session logs are in `.claude/sessions/`
