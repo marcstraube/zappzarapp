@@ -1,11 +1,30 @@
 # zappzarapp - Changelog
 
-**Erstellt:** 2025-12-19 **Letzte Aktualisierung:** 2026-01-22 (Knowledge Files
-Refactoring) **Version:** 3.71
+**Erstellt:** 2025-12-19 **Letzte Aktualisierung:** 2026-01-22 (Parallel Fixer
+Agent) **Version:** 3.72
 
 ---
 
 ## Changelog
+
+### Version 3.72 (2026-01-22) - Parallel Fixer Agent
+
+New agent for parallel processing of ad-hoc fix requests across multiple
+languages.
+
+#### New: Parallel Fixer Agent
+
+- **`.claude/agents/parallel-fixer.md`** — Coordinates parallel fixes for
+  PHP/Node/SQL
+- Automatically detects languages from file patterns
+- Spawns language-specific sub-agents in parallel
+- Independence check prevents conflicts (cross-language dependencies)
+- CHANGELOG updates deferred to `/commit` (not sub-agents)
+
+#### Changed: Workflow Scope Decision
+
+- Added "Ad-hoc Fix" scope type to workflow.md
+- Triggers parallel processing when ≥2 languages detected in fix request
 
 ### Version 3.71 (2026-01-22) - Knowledge Files & Backlog Refactoring
 

@@ -4,12 +4,13 @@
 
 Based on Task Scope Guide (BACKLOG.md):
 
-| Scope      | Files | Workflow                                                  |
-| ---------- | ----- | --------------------------------------------------------- |
-| Small      | 1-3   | Direct implementation → Lint → Test                       |
-| Medium     | 3-10  | Plan-Agent → Implementation → Lint → Test                 |
-| Large      | >10   | 4-Agent-Model (Architect → Coder → Reviewer → Documenter) |
-| Quick Wins | 1-2   | Parallel Coder agents → Single commit (batch mode)        |
+| Scope      | Files   | Workflow                                                  |
+| ---------- | ------- | --------------------------------------------------------- |
+| Small      | 1-3     | Direct implementation → Lint → Test                       |
+| Medium     | 3-10    | Plan-Agent → Implementation → Lint → Test                 |
+| Large      | >10     | 4-Agent-Model (Architect → Coder → Reviewer → Documenter) |
+| Quick Wins | 1-2     | Parallel Coder agents → Single commit (batch mode)        |
+| Ad-hoc Fix | ≥2 lang | Parallel Fixer → Language-specific agents                 |
 
 ## Pre-Flight Checks
 
