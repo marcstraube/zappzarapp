@@ -30,7 +30,7 @@ export default {
   // JSON files (auto-fix and re-stage, excluding auto-generated and config files)
   // Note: .vscode/ is excluded because it's not mounted in containers
   // AI tool dirs (.claude/, .gemini/) are mounted in dev-tools (compose.override.yaml)
-  '!(.vscode/**|composer|package|package-lock|tsconfig*|typedoc|.prettierrc|.markdownlint*|.depcheckrc|captainhook|renovate).json': [
+  '!(.vscode/**|composer|package|package-lock|tsconfig*|typedoc*|.prettierrc|.markdownlint*|.depcheckrc|captainhook|renovate).json': [
     'pnpm exec prettier --write',
   ],
 

@@ -11,7 +11,7 @@
 -- IMPORTANT: These are EXAMPLE functions. Customize for your application!
 --
 -- Scheduling (pg_cron, cron, systemd timer) is a Dev/Admin task, not boilerplate.
--- See documentation/gdpr/RETENTION-POLICY.md for scheduling options.
+-- See .zappzarapp/docs/security/RETENTION-POLICY.md for scheduling options.
 -- ============================================================================
 
 -- ============================================================================

@@ -232,41 +232,42 @@ Production mode (`ENV=production`) enables:
 
 ```text
 zappzarapp/
-├── src/                      # Application source code
-│   ├── php/                  # PHP application
-│   │   ├── App/              # Main application
-│   │   └── DevDashboard/     # Development dashboard
-│   └── node/                 # Node.js application
-│       └── App/              # Express API
-├── resources/                # Frontend resources
-│   ├── js/                   # JavaScript/TypeScript
-│   ├── css/                  # Stylesheets
-│   └── images/               # Images
-├── public/                   # Web root
-│   └── build/                # Compiled assets
-├── tests/                    # Test suites
-│   ├── php/                  # PHPUnit tests
-│   └── node/                 # Vitest tests
-├── docker/                   # Docker configuration
-│   ├── nginx/                # Nginx config
-│   ├── php/                  # PHP config
-│   ├── node/                 # Node config
-│   ├── postgres/             # PostgreSQL config
-│   ├── mariadb/              # MariaDB config
-│   ├── redis/                # Redis config
-│   ├── certs/                # SSL certificates
-│   └── scripts/              # Utility scripts
-├── documentation/            # Project documentation
-├── migrations/               # Database migrations
-├── config/                   # Application config
-├── storage/                  # Runtime storage
+├── .zappzarapp/              # Boilerplate config & docs
 ├── backups/                  # Encrypted backups
 │   ├── db/                   # Database backups
-│   ├── seaweedfs/            # SeaweedFS backups
+│   ├── elasticsearch/        # Elasticsearch backups
 │   ├── rabbitmq/             # RabbitMQ backups
-│   └── elasticsearch/        # Elasticsearch backups
+│   └── seaweedfs/            # SeaweedFS backups
+├── build/                    # Build output
+├── config/                   # Application config
+├── docker/                   # Docker configuration
+│   ├── certs/                # SSL certificates
+│   ├── mariadb/              # MariaDB config
+│   ├── nginx/                # Nginx config
+│   ├── node/                 # Node config
+│   ├── php/                  # PHP config
+│   ├── postgres/             # PostgreSQL config
+│   ├── redis/                # Redis config
+│   └── scripts/              # Utility scripts
+├── migrations/               # Database migrations
+├── public/                   # Web root
+│   └── build/                # Compiled assets
+├── resources/                # Frontend resources
+│   ├── css/                  # Stylesheets
+│   ├── images/               # Images
+│   └── js/                   # JavaScript/TypeScript
 ├── secrets/                  # Docker secrets
-└── build/                    # Build output
+├── src/                      # Application source code
+│   ├── node/                 # Node.js application
+│   │   ├── backend/          # Express API
+│   │   └── frontend/         # SSR Frontend (optional)
+│   └── php/                  # PHP application
+│       ├── App/              # Main application
+│       └── DevDashboard/     # Development dashboard
+├── storage/                  # Runtime storage
+└── tests/                    # Test suites
+    ├── node/                 # Vitest tests
+    └── php/                  # PHPUnit tests
 ```
 
 ## 12-Factor App Compliance

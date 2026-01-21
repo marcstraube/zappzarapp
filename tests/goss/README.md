@@ -276,4 +276,4 @@ docker compose logs <service>
 
 - [GOSS Documentation](https://github.com/goss-org/goss)
 - [Docker Multi-Stage Builds](https://docs.docker.com/build/building/multi-stage/)
-- [Project Deployment Guide](../../documentation/infrastructure/DEPLOYMENT.md)
+- [Project Deployment Guide](../../.zappzarapp/docs/infrastructure/DEPLOYMENT.md)

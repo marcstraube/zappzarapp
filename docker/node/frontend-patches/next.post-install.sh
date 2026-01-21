@@ -1,5 +1,5 @@
 #!/bin/sh
-# Next.js Post-Install Script for Zappzarapp
+# Next.js Post-Install Script for zappzarapp
 # Configures Next.js to work with the zappzarapp infrastructure
 
 set -e
@@ -65,7 +65,7 @@ cat > app/layout.tsx << 'EOF'
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'Zappzarapp Frontend',
+  title: 'zappzarapp Frontend',
   description: 'Next.js SSR Frontend running on Node.js',
 };
 
@@ -105,7 +105,7 @@ export default async function Home() {
     <main style={{ maxWidth: '800px', margin: '0 auto', padding: '2rem' }}>
       <header style={{ textAlign: 'center', marginBottom: '3rem' }}>
         <h1 style={{ color: '#0070f3', fontSize: '2.5rem', marginBottom: '0.5rem' }}>
-          Zappzarapp Frontend
+          zappzarapp Frontend
         </h1>
         <p style={{ color: '#666', fontSize: '1.1rem' }}>
           Next.js SSR Frontend running on Node.js

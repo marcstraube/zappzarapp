@@ -191,7 +191,27 @@ setup: ## Create directories, install dev dependencies and ensure structure
 	@mkdir -p backups/{db,seaweedfs,rabbitmq,elasticsearch}
 	@chmod 700 backups backups/*
 
+	# Project AI knowledge directory (team backlog, decisions, learnings)
+	@mkdir -p .ai
+
 	@echo -e "\033[0;32mProject structure created!\033[0m"
+
+	# README Setup (replace boilerplate README with user template)
+	@if grep -q "zappzarapp-boilerplate-readme" README.md 2>/dev/null; then \
+		echo -e "\033[0;33mSetting up project README...\033[0m"; \
+		cp .zappzarapp/README.template.md README.md; \
+		echo -e "\033[0;32mREADME.md replaced with project template.\033[0m"; \
+		echo -e "\033[0;34mBoilerplate docs remain in .zappzarapp/docs/\033[0m"; \
+	fi
+
+	# CLAUDE.md Setup (swap boilerplate Claude instructions with generic template)
+	@if grep -q "zappzarapp-boilerplate-claude" .claude/CLAUDE.md 2>/dev/null; then \
+		echo -e "\033[0;33mSetting up Claude configuration...\033[0m"; \
+		mv .claude/CLAUDE.md .zappzarapp/CLAUDE.md; \
+		cp .zappzarapp/CLAUDE.template.md .claude/CLAUDE.md; \
+		echo -e "\033[0;32mCLAUDE.md replaced with generic template.\033[0m"; \
+		echo -e "\033[0;34mOriginal boilerplate CLAUDE.md moved to .zappzarapp/CLAUDE.md\033[0m"; \
+	fi
 
 	# SSL/TLS Certificate Check
 	@echo -e "\033[0;33mChecking SSL/TLS certificates...\033[0m"
@@ -218,8 +238,17 @@ setup: ## Create directories, install dev dependencies and ensure structure
 	# Configure IDE database connections
 	@$(MAKE) --silent ide-config
 
-	@echo -e "\033[0;32mSetup completed!\033[0m"
-	@echo -e "\033[0;34mNote: For IDE code completion, run 'make composer-install-local' and 'make pnpm-install-local'\033[0m"
+	@echo ""
+	@echo -e "\033[0;32m╔════════════════════════════════════════════════════════════╗\033[0m"
+	@echo -e "\033[0;32m║ Setup complete!                                            ║\033[0m"
+	@echo -e "\033[0;32m╠════════════════════════════════════════════════════════════╣\033[0m"
+	@echo -e "\033[0;32m║\033[0m IDE code completion:                                       \033[0;32m║\033[0m"
+	@echo -e "\033[0;32m║\033[0m   make composer-install-local                              \033[0;32m║\033[0m"
+	@echo -e "\033[0;32m║\033[0m   make pnpm-install-local                                  \033[0;32m║\033[0m"
+	@echo -e "\033[0;32m║\033[0m                                                            \033[0;32m║\033[0m"
+	@echo -e "\033[0;32m║\033[0m Using Gemini, Cursor, Copilot, or other AI tools?          \033[0;32m║\033[0m"
+	@echo -e "\033[0;32m║\033[0m   make ai-sync   \033[0;34mSync config to all AI tools\033[0m              \033[0;32m║\033[0m"
+	@echo -e "\033[0;32m╚════════════════════════════════════════════════════════════╝\033[0m"
 
 ide-config: ## Configure all IDE database connections (PHPStorm + VS Code)
 	@$(MAKE) --silent ide-config-phpstorm
@@ -1883,31 +1912,6 @@ reset-full: reset ## Factory reset INCLUDING source code (resets to boilerplate 
 		echo -e "\033[0;31m  ⚠ git checkout failed - source code not reset\033[0m"
 	@echo -e "\033[0;32m✓ Source code reset to boilerplate state!\033[0m"
 
-claude-commands-install: ## Install shared Claude commands to ~/.claude/commands/
-	@echo -e "\033[0;33mInstalling Claude commands...\033[0m"
-	@mkdir -p ~/.claude/commands
-	@if [ -f .claude/commands/backlog.md ]; then \
-		cp .claude/commands/backlog.md ~/.claude/commands/backlog.md; \
-		echo -e "\033[0;32m  ✓ backlog.md installed\033[0m"; \
-	else \
-		echo -e "\033[0;31m  ✗ backlog.md not found in project\033[0m"; \
-	fi
-	@echo -e "\033[0;32m✓ Installation complete!\033[0m"
-
-gemini-commands-install: ## Install shared Gemini commands to ~/.gemini/commands/
-	@echo -e "\033[0;33mInstalling Gemini commands...\033[0m"
-	@mkdir -p ~/.gemini/commands
-	@if [ -f .gemini/commands/backlog.toml ]; then \
-		cp .gemini/commands/backlog.toml ~/.gemini/commands/backlog.toml; \
-		echo -e "\033[0;32m  ✓ backlog.toml installed\033[0m"; \
-	else \
-		echo -e "\033[0;31m  ✗ backlog.toml not found in project\033[0m"; \
-		echo -e "\033[0;36m    Generate with: make ai-commands-sync FROM=claude\033[0m"; \
-	fi
-	@echo -e "\033[0;32m✓ Installation complete!\033[0m"
-
-ai-commands-install: claude-commands-install gemini-commands-install ## Install shared commands to all AI tool directories
-
 # AI Sync configuration (can be overridden via .env or command line)
 # Command line: make ai-commands-sync FROM=claude TO=gemini
 # Or via .env.local: AI_SYNC_FROM=claude, AI_SYNC_TO=gemini
@@ -2719,7 +2723,7 @@ docs-php: $(PHPDOC_PHAR) ## Generate PHP API documentation using phpDocumentor
 	@docker compose exec php composer docs
 	@echo -e "\033[0;33mApplying custom theme...\033[0m"
 	@docker compose exec php sh -c '\
-		CSS_CONTENT=$$(cat /var/www/html/documentation/assets/custom-phpdoc.css | tr "\n" " " | sed "s/  */ /g"); \
+		CSS_CONTENT=$$(cat /var/www/html/.zappzarapp/docs/assets/custom-phpdoc.css | tr "\n" " " | sed "s/  */ /g"); \
 		find /var/www/html/docs/api/php -name "*.html" -exec sed -i "s|</head>|<style>$$CSS_CONTENT</style></head>|" {} \;'
 	@echo -e "\033[0;33mSetting favicon...\033[0m"
 	@docker compose exec php sh -c '\

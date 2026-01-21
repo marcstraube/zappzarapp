@@ -4,10 +4,11 @@
   - [Customization](getting-started/CUSTOMIZATION.md)
   - [Troubleshooting](TROUBLESHOOTING.md)
   - [Contributing](CONTRIBUTING.md)
-  - [Changelog](CHANGELOG.md)
+  - [Changelog](../CHANGELOG.md)
 
 - **Development**
   - [Makefile Reference](development/MAKEFILE-REFERENCE.md)
+  - [AI Integration](development/AI-INTEGRATION.md)
   - [Dependencies](development/DEPENDENCIES.md)
   - [Frontend Scaffolding](development/FRONTEND-SCAFFOLDING.md)
   - [Dev Dashboard](development/DEV-DASHBOARD.md)

@@ -22,7 +22,7 @@ services:
       # Application
       - ./public:/var/www/html/public:ro
       - ./docs:/var/www/html/docs:ro
-      - ./documentation:/var/www/html/documentation:ro
+      - ./.zappzarapp:/var/www/html/.zappzarapp:ro
 
       # Nginx Configuration (Read-Only)
       - ./docker/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
@@ -98,9 +98,8 @@ services:
       - ./knip.config.js:/app/knip.config.js:ro
 
       # Markdown files (read-write for Prettier/markdownlint)
-      - ./documentation:/app/documentation
+      - ./.zappzarapp:/app/.zappzarapp
       - ./README.md:/app/README.md
-      - ./CHANGELOG.md:/app/CHANGELOG.md
 
       # PHP templates (for lint-staged git restore operations)
       - ./templates:/app/templates
@@ -244,9 +243,9 @@ services:
       # Git repository (for git status in Dashboard)
       - ./.git:/var/www/html/.git:ro
 
-      # Documentation Config
+      # Documentation and boilerplate config
       - ./phpdoc.xml:/var/www/html/phpdoc.xml:ro
-      - ./documentation:/var/www/html/documentation:ro
+      - ./.zappzarapp:/var/www/html/.zappzarapp:ro
 
       # SSL Certificates (for Health Check Dashboard)
       - ./docker/certs:/var/www/html/docker/certs:ro
@@ -348,12 +347,11 @@ services:
       - backend_node_modules:/app/src/node/backend/node_modules
       - frontend_node_modules:/app/src/node/frontend/node_modules
 
-      # Documentation (read-write for Prettier/markdownlint)
-      - ./documentation:/app/documentation
+      # Documentation and boilerplate config (read-write for Prettier/markdownlint)
+      - ./.zappzarapp:/app/.zappzarapp
       - ./.claude:/app/.claude
       - ./.gemini:/app/.gemini
       - ./README.md:/app/README.md
-      - ./CHANGELOG.md:/app/CHANGELOG.md
 
       # Linting/Formatting config files
       - ./eslint.config.js:/app/eslint.config.js:ro

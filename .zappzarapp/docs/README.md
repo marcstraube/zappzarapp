@@ -91,58 +91,65 @@ directories):
 ## Directory Structure
 
 ```text
-documentation/
-├── README.md                 # This file (index)
-├── QUICKSTART.md             # Getting started guide
-├── TROUBLESHOOTING.md        # Common problems & solutions
+.zappzarapp/
+├── ai/                       # AI knowledge files
+│   ├── BACKLOG.md
+│   ├── DECISIONS.md
+│   ├── LEARNINGS.md
+│   └── REFERENCES.md
 ├── CHANGELOG.md              # Boilerplate version history
-├── CONTRIBUTING.md           # Contribution guidelines
-├── getting-started/          # Getting Started Guides
-│   └── CUSTOMIZATION.md
-├── security/                 # GDPR & Security
-│   ├── ACCESS-LOG-MONITORING.md
-│   ├── AUDIT-LOGGING.md
-│   ├── BACKUP.md
-│   ├── ENCRYPTION.md
-│   ├── INTERNAL-TLS.md
-│   ├── RETENTION-POLICY.md
-│   ├── SECRETS.md
-│   ├── SECURITY-SCANNING.md
-│   └── SSL-CERTIFICATES.md
-├── development/              # Development Tools
-│   ├── DEPENDENCIES.md
-│   ├── DEV-DASHBOARD.md
-│   ├── FRONTEND-SCAFFOLDING.md
-│   ├── MAKEFILE-REFERENCE.md
-│   ├── RENOVATE.md
-│   └── XDEBUG.md
-├── testing/                  # Testing Guides
-│   ├── TESTING-NODE.md
-│   └── TESTING-PHP.md
-├── infrastructure/           # Architecture & Deployment
-│   ├── ARCHITECTURE.md
-│   ├── DEPLOYMENT.md
-│   ├── ERROR-PAGES.md
-│   ├── KUBERNETES.md
-│   ├── MONITORING.md
-│   ├── NETWORK.md
-│   ├── NGINX.md
-│   ├── OPTIONAL-SERVICES.md
-│   └── PERFORMANCE.md
-└── setup/                    # Platform Setup
-    └── WINDOWS.md
+├── docs/                     # This documentation
+│   ├── README.md             # This file (index)
+│   ├── CONTRIBUTING.md
+│   ├── QUICKSTART.md
+│   ├── TROUBLESHOOTING.md
+│   ├── development/
+│   │   ├── AI-INTEGRATION.md
+│   │   ├── DEPENDENCIES.md
+│   │   ├── DEV-DASHBOARD.md
+│   │   ├── FRONTEND-SCAFFOLDING.md
+│   │   ├── MAKEFILE-REFERENCE.md
+│   │   ├── RENOVATE.md
+│   │   └── XDEBUG.md
+│   ├── getting-started/
+│   │   └── CUSTOMIZATION.md
+│   ├── infrastructure/
+│   │   ├── ARCHITECTURE.md
+│   │   ├── DEPLOYMENT.md
+│   │   ├── ERROR-PAGES.md
+│   │   ├── KUBERNETES.md
+│   │   ├── MONITORING.md
+│   │   ├── NETWORK.md
+│   │   ├── NGINX.md
+│   │   ├── OPTIONAL-SERVICES.md
+│   │   └── PERFORMANCE.md
+│   ├── security/
+│   │   ├── ACCESS-LOG-MONITORING.md
+│   │   ├── AUDIT-LOGGING.md
+│   │   ├── BACKUP.md
+│   │   ├── ENCRYPTION.md
+│   │   ├── INTERNAL-TLS.md
+│   │   ├── RETENTION-POLICY.md
+│   │   ├── SECRETS.md
+│   │   ├── SECURITY-SCANNING.md
+│   │   └── SSL-CERTIFICATES.md
+│   ├── setup/
+│   │   └── WINDOWS.md
+│   └── testing/
+│       ├── TESTING-NODE.md
+│       └── TESTING-PHP.md
+└── standards/                # Coding standards (all AI agents)
 ```
 
 ---
 
 ## Related Files
 
-| File                               | Description                      |
-| ---------------------------------- | -------------------------------- |
-| [CHANGELOG.md](CHANGELOG.md)       | Boilerplate version history      |
-| [CONTRIBUTING.md](CONTRIBUTING.md) | Contribution guidelines          |
-| [../README.md](../README.md)       | Main project README              |
-| [../CHANGELOG.md](../CHANGELOG.md) | Application changelog (your app) |
+| File                               | Description                 |
+| ---------------------------------- | --------------------------- |
+| [CHANGELOG.md](../CHANGELOG.md)    | Boilerplate version history |
+| [CONTRIBUTING.md](CONTRIBUTING.md) | Contribution guidelines     |
+| [README.md](../../README.md)       | Main project README         |
 
 ---
 

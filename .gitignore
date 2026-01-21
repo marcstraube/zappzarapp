@@ -96,15 +96,29 @@ Thumbs.db
 /.phpdoc/
 /tools/
 
-# Claude Code (only commit shared configurations)
+# Claude Code - Ignore all, selectively allow
 .claude/*
-!.claude/settings.json
+!.claude/CLAUDE.md
+!.claude/agents/
 !.claude/commands/
-.claude/commands/*
-!.claude/commands/backlog.md
+!.claude/settings.json
+#
+# Committed in .zappzarapp/:
+# - ai/ (knowledge files: BACKLOG, LEARNINGS, DECISIONS, REFERENCES)
+# - standards/ (coding standards, shared across all AI agents)
+# - docs/ (boilerplate documentation)
+# - CHANGELOG.md (boilerplate version history)
+# - README.template.md, CLAUDE.template.md (templates for user projects)
+# - README.md, CLAUDE.md (moved here by make setup)
+# - ai/config.local.md.example (example for personal config)
+.zappzarapp/ai/config.local.md
 
-# Gemini CLI (only commit shared configurations)
-.gemini/*
-!.gemini/commands/
-.gemini/commands/*
-!.gemini/commands/backlog.toml
+# Project AI knowledge (created by make setup):
+# - .ai/BACKLOG.md (team backlog)
+# - .ai/DECISIONS.md (ADRs)
+# - .ai/LEARNINGS.md (project learnings)
+# - .ai/REFERENCES.md (documentation links)
+
+# Gemini CLI - Generated from Claude via: make ai-commands-sync FROM=claude TO=gemini
+# Not committed - generate with: make ai-sync
+.gemini/

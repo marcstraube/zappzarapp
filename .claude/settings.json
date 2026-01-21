@@ -57,10 +57,6 @@
           },
           {
             "type": "command",
-            "command": "TOOL_INPUT=$(cat); if echo \"$TOOL_INPUT\" | grep -qE '\\.claude/commands/backlog\\.md'; then if [ -f ~/.claude/commands/backlog.md ]; then echo '[Hook] Backlog command updated. Sync to ~/.claude/commands/ with: make claude-commands-install'; else echo '[Hook] Backlog command updated. Install to ~/.claude/commands/ with: make claude-commands-install'; fi; fi"
-          },
-          {
-            "type": "command",
             "command": "TOOL_INPUT=$(cat); if echo \"$TOOL_INPUT\" | grep -qE '\\.claude/commands/.*\\.md'; then echo '[Hook] Claude command updated. Sync to other AI tools with: make ai-commands-sync FROM=claude'; fi"
           },
           {

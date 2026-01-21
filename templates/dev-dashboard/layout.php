@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?= htmlspecialchars($title ?? 'Dev Dashboard') ?> | zappzarapp</title>
+    <title><?= htmlspecialchars($title ?? 'Development Dashboard') ?> | zappzarapp</title>
     <link rel="icon" type="image/svg+xml" href="/assets/dev-dashboard/favicon.svg">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -272,7 +272,7 @@
             <div class="flex items-center justify-between gap-4">
                 <div class="flex items-center gap-2">
                     <h1>⚡ zappzarapp</h1>
-                    <span class="env-badge">Dev Dashboard</span>
+                    <span class="env-badge">Development Dashboard</span>
                 </div>
                 <div class="text-sm text-gray-500">
                     <?= date('Y-m-d H:i:s') ?>
@@ -316,7 +316,7 @@
     <footer>
         <div class="container">
             <p>
-                ⚡ zappzarapp Dev Dashboard • PHP <?= PHP_VERSION ?> •
+                ⚡ zappzarapp Development Dashboard • PHP <?= PHP_VERSION ?> •
                 <a href="/docs/">Documentation</a> •
                 <a href="/">Home</a>
             </p>

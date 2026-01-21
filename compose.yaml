@@ -295,7 +295,7 @@ services:
 
   # PostgreSQL with pg_cron extension pre-installed for scheduled database jobs
   # pg_cron config (shared_preload_libraries) is set via command in override files
-  # Usage: CREATE EXTENSION pg_cron; See: documentation/security/RETENTION-POLICY.md
+  # Usage: CREATE EXTENSION pg_cron; See: .zappzarapp/docs/security/RETENTION-POLICY.md
   postgres:
     build:
       context: .

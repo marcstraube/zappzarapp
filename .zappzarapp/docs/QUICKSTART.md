@@ -204,14 +204,15 @@ Pre-configured run configurations are available:
 
 ```text
 my-project/
-├── src/php/           # PHP application code
-├── src/node/          # Node.js application code
-├── resources/         # Frontend assets (JS, CSS, images)
-├── public/            # Web root
-├── tests/             # Test suites
+├── .zappzarapp/       # Boilerplate config & docs
 ├── docker/            # Docker configuration
-├── documentation/     # Documentation
-└── storage/           # Runtime data (uploads, cache, logs)
+├── public/            # Web root
+├── resources/         # Frontend assets (JS, CSS, images)
+├── src/
+│   ├── node/          # Node.js backend/frontend
+│   └── php/           # PHP application code
+├── storage/           # Runtime data (uploads, cache, logs)
+└── tests/             # Test suites
 ```
 
 ## Troubleshooting

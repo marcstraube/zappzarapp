@@ -1,5 +1,5 @@
 #!/bin/sh
-# React Router Post-Install Script for Zappzarapp
+# React Router Post-Install Script for zappzarapp
 # Configures React Router (formerly Remix v2) to work with the zappzarapp infrastructure
 
 set -e
@@ -52,7 +52,7 @@ import type { Route } from "./+types/home";
 
 export function meta({}: Route.MetaArgs) {
   return [
-    { title: "Zappzarapp Frontend" },
+    { title: "zappzarapp Frontend" },
     { name: "description", content: "React Router SSR Frontend running on Node.js" },
   ];
 }
@@ -75,7 +75,7 @@ export default function Home({ loaderData }: Route.ComponentProps) {
     <main className="max-w-4xl mx-auto p-8">
       <header className="text-center mb-12">
         <h1 className="text-4xl font-bold text-[#e8625e] mb-2">
-          Zappzarapp Frontend
+          zappzarapp Frontend
         </h1>
         <p className="text-gray-600 text-lg">
           React Router SSR Frontend running on Node.js

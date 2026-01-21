@@ -1,5 +1,5 @@
 #!/bin/sh
-# Nuxt 3 Post-Install Script for Zappzarapp
+# Nuxt 3 Post-Install Script for zappzarapp
 # Configures Nuxt to work with the zappzarapp infrastructure
 
 set -e
@@ -30,14 +30,14 @@ fs.writeFileSync('package.json', JSON.stringify(pkg, null, 2) + '\n');
 # 2. Create nuxt.config.ts with zappzarapp settings
 echo "[nuxt] Creating nuxt.config.ts..."
 cat > nuxt.config.ts << 'EOF'
-// Nuxt 3 Configuration for Zappzarapp
+// Nuxt 3 Configuration for zappzarapp
 // https://nuxt.com/docs/api/configuration/nuxt-config
 
 export default defineNuxtConfig({
   compatibilityDate: '2024-11-01',
   devtools: { enabled: true },
 
-  // Zappzarapp Infrastructure Settings
+  // zappzarapp Infrastructure Settings
   devServer: {
     host: '0.0.0.0', // Required for Docker
     port: 3001,      // Frontend port (backend uses 3000)
@@ -90,7 +90,7 @@ const { data: health, error } = await useFetch<{
 <template>
   <main class="container">
     <header>
-      <h1>Zappzarapp Frontend</h1>
+      <h1>zappzarapp Frontend</h1>
       <p class="subtitle">Nuxt 3 SSR Frontend running on Node.js</p>
     </header>
 

@@ -27,7 +27,7 @@ Team-shared backlog for features, bugs, and improvements.
   1. Create backup branch with full development history
   2. Squash all commits on main/master to single "Initial commit"
   3. CHANGELOG.md will contain only one entry: "1.0.0 - Initial Release"
-- **Files**: `documentation/CHANGELOG.md`, git history
+- **Files**: `.zappzarapp/CHANGELOG.md`, git history
 - **Note**: Must be completed before 1.0 release. Prettier issue resolves itself
   since problematic entries will be removed.
 
@@ -52,7 +52,7 @@ permission warnings.
 - Config files (root): 644 (`*.json`, `*.js`, `*.cjs`, `*.ts`, `*.yaml`,
   `*.yml`, `*.neon`, `*.md`, `.prettier*`, `.npmrc`, `.markdown*`, `.depcheck*`,
   `.gitmessage`, `LICENSE`)
-- Documentation (`documentation/*.md`): 644
+- Documentation (`.zappzarapp/docs/*.md`): 644
 - Docker scripts (`docker/*.sh`): 755
 
 **Steps:**

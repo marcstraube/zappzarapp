@@ -62,4 +62,4 @@
   kubectl get secrets -n {{ include "zappzarapp.namespace" . }}
 
 ** Documentation: **
-  See documentation/infrastructure/KUBERNETES.md for full documentation.
+  See .zappzarapp/docs/infrastructure/KUBERNETES.md for full documentation.

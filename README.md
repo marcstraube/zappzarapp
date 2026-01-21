@@ -1,3 +1,5 @@
+<!-- zappzarapp-boilerplate-readme -->
+
 # ⚡ zappzarapp
 
 **zappzarapp** · /ˈt͡sapt͡saˈʁap/
@@ -83,66 +85,66 @@ The application is available at:
 
 ```text
 .
-├── src/
-│   ├── php/           # PHP backend code
-│   └── node/          # Node.js backend code
-├── resources/         # Frontend source (JS, CSS)
-├── public/            # Web root (Nginx)
+├── .zappzarapp/       # Boilerplate config & docs
 ├── docker/            # Docker configuration
-├── tests/             # PHPUnit and Vitest tests
-├── documentation/     # Technical documentation
-└── storage/           # Runtime data
+├── public/            # Web root (Nginx)
+├── resources/         # Frontend source (JS, CSS)
+├── src/
+│   ├── node/          # Node.js backend/frontend
+│   └── php/           # PHP backend code
+├── storage/           # Runtime data
+└── tests/             # PHPUnit and Vitest tests
 ```
 
 ## Documentation
 
-Detailed documentation is available in [`documentation/`](documentation/):
+Detailed documentation is available in [`.zappzarapp/docs/`](.zappzarapp/docs/):
 
 ### Getting Started
 
-- [Quickstart Guide](documentation/QUICKSTART.md)
-- [Customization](documentation/getting-started/CUSTOMIZATION.md)
-- [Troubleshooting](documentation/TROUBLESHOOTING.md)
-- [Windows Setup](documentation/setup/WINDOWS.md)
+- [Quickstart Guide](.zappzarapp/docs/QUICKSTART.md)
+- [Customization](.zappzarapp/docs/getting-started/CUSTOMIZATION.md)
+- [Troubleshooting](.zappzarapp/docs/TROUBLESHOOTING.md)
+- [Windows Setup](.zappzarapp/docs/setup/WINDOWS.md)
 
 ### Development
 
-- [Dev Dashboard](documentation/development/DEV-DASHBOARD.md)
-- [Makefile Reference](documentation/development/MAKEFILE-REFERENCE.md)
-- [Frontend Scaffolding](documentation/development/FRONTEND-SCAFFOLDING.md)
-- [Xdebug Configuration](documentation/development/XDEBUG.md)
-- [Dependencies](documentation/development/DEPENDENCIES.md)
-- [Renovate (Auto-Updates)](documentation/development/RENOVATE.md)
+- [Dev Dashboard](.zappzarapp/docs/development/DEV-DASHBOARD.md)
+- [Makefile Reference](.zappzarapp/docs/development/MAKEFILE-REFERENCE.md)
+- [Frontend Scaffolding](.zappzarapp/docs/development/FRONTEND-SCAFFOLDING.md)
+- [Xdebug Configuration](.zappzarapp/docs/development/XDEBUG.md)
+- [Dependencies](.zappzarapp/docs/development/DEPENDENCIES.md)
+- [Renovate (Auto-Updates)](.zappzarapp/docs/development/RENOVATE.md)
 
 ### Testing
 
-- [PHP Testing](documentation/testing/TESTING-PHP.md)
-- [Node.js Testing](documentation/testing/TESTING-NODE.md)
+- [PHP Testing](.zappzarapp/docs/testing/TESTING-PHP.md)
+- [Node.js Testing](.zappzarapp/docs/testing/TESTING-NODE.md)
 - [GOSS Container Tests](tests/goss/README.md)
 
 ### Infrastructure
 
-- [Architecture Overview](documentation/infrastructure/ARCHITECTURE.md)
-- [Network Configuration](documentation/infrastructure/NETWORK.md)
-- [Nginx Configuration](documentation/infrastructure/NGINX.md)
-- [Deployment Guide](documentation/infrastructure/DEPLOYMENT.md)
-- [Kubernetes](documentation/infrastructure/KUBERNETES.md)
-- [Optional Services](documentation/infrastructure/OPTIONAL-SERVICES.md)
-- [Performance Tuning](documentation/infrastructure/PERFORMANCE.md)
-- [Error Pages](documentation/infrastructure/ERROR-PAGES.md)
-- [Monitoring](documentation/infrastructure/MONITORING.md)
+- [Architecture Overview](.zappzarapp/docs/infrastructure/ARCHITECTURE.md)
+- [Network Configuration](.zappzarapp/docs/infrastructure/NETWORK.md)
+- [Nginx Configuration](.zappzarapp/docs/infrastructure/NGINX.md)
+- [Deployment Guide](.zappzarapp/docs/infrastructure/DEPLOYMENT.md)
+- [Kubernetes](.zappzarapp/docs/infrastructure/KUBERNETES.md)
+- [Optional Services](.zappzarapp/docs/infrastructure/OPTIONAL-SERVICES.md)
+- [Performance Tuning](.zappzarapp/docs/infrastructure/PERFORMANCE.md)
+- [Error Pages](.zappzarapp/docs/infrastructure/ERROR-PAGES.md)
+- [Monitoring](.zappzarapp/docs/infrastructure/MONITORING.md)
 
 ### Security
 
-- [SSL Certificates](documentation/security/SSL-CERTIFICATES.md)
-- [Internal TLS](documentation/security/INTERNAL-TLS.md)
-- [Secrets Management](documentation/security/SECRETS.md)
-- [Database Encryption](documentation/security/ENCRYPTION.md)
-- [Audit Logging](documentation/security/AUDIT-LOGGING.md)
-- [Access Log Monitoring](documentation/security/ACCESS-LOG-MONITORING.md)
-- [Security Scanning](documentation/security/SECURITY-SCANNING.md)
-- [Backup & Recovery](documentation/security/BACKUP.md)
-- [Data Retention Policy](documentation/security/RETENTION-POLICY.md)
+- [SSL Certificates](.zappzarapp/docs/security/SSL-CERTIFICATES.md)
+- [Internal TLS](.zappzarapp/docs/security/INTERNAL-TLS.md)
+- [Secrets Management](.zappzarapp/docs/security/SECRETS.md)
+- [Database Encryption](.zappzarapp/docs/security/ENCRYPTION.md)
+- [Audit Logging](.zappzarapp/docs/security/AUDIT-LOGGING.md)
+- [Access Log Monitoring](.zappzarapp/docs/security/ACCESS-LOG-MONITORING.md)
+- [Security Scanning](.zappzarapp/docs/security/SECURITY-SCANNING.md)
+- [Backup & Recovery](.zappzarapp/docs/security/BACKUP.md)
+- [Data Retention Policy](.zappzarapp/docs/security/RETENTION-POLICY.md)
 
 ### IDE Setup
 
@@ -155,8 +157,8 @@ Detailed documentation is available in [`documentation/`](documentation/):
 
 ### Other
 
-- [Contributing](documentation/CONTRIBUTING.md)
-- [Changelog](documentation/CHANGELOG.md)
+- [Contributing](.zappzarapp/docs/CONTRIBUTING.md)
+- [Changelog](.zappzarapp/CHANGELOG.md)
 
 ## Make Commands
 

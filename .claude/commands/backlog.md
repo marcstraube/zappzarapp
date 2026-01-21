@@ -5,13 +5,13 @@ allowed-tools:
   Read, Write, Edit, Grep, Glob, Bash(date:*), Bash(ls:*), Bash(test:*),
   AskUserQuestion
 argument-hint:
-  --add | --list | --choose | --remove <task> | --promote <task> | --demote
-  <task> | --reprioritize
+  --add | --list | --choose [--fast|--review] | --remove <task> | --promote
+  <task> | --demote <task> | --reprioritize
 ---
 
 # Backlog Management
 
-Consistent management of project backlog tasks in `.claude/BACKLOG.md`.
+Consistent management of project backlog tasks using the 3-layer architecture.
 
 ## Arguments
 
@@ -22,6 +22,8 @@ Parse `$ARGUMENTS`:
 - `--list --priority <high|medium|low>`: Filter by priority
 - `--list --size <small|medium|large>`: Filter by task size
 - `--choose`: Interactive task selection to start working on
+- `--choose --fast`: Skip plan review (override size-based default)
+- `--choose --review`: Force plan review (override size-based default)
 - `--remove <task-name>`: Remove a task (with reason prompt)
 - `--promote <task-name>`: Move task to higher priority
 - `--demote <task-name>`: Move task to lower priority
@@ -29,19 +31,19 @@ Parse `$ARGUMENTS`:
 
 **Target Parameter (for --list and --add):**
 
-- `--target project`: Team backlog (`./documentation/BACKLOG.md`) - committed,
-  shared
-- `--target user`: Personal project backlog (`./.claude/BACKLOG.md`) - not
-  committed
-- `--target global`: Personal global backlog (`~/.claude/BACKLOG.md`) -
-  cross-project
+- `--target zappzarapp`: Boilerplate backlog (`./.zappzarapp/ai/BACKLOG.md`) -
+  committed, for zappzarapp development tasks
+- `--target project`: Team backlog (`./.ai/BACKLOG.md`) - committed, shared team
+  tasks (user creates this)
+- `--target personal`: Personal backlog
+  (`~/.local/share/zappzarapp/BACKLOG.md`) - private cross-project tasks
 
 If `--target` is not specified:
 
-- **--add**: Default to `user` (personal backlog); use `--target project` for
-  team-shared tasks
-- **--list**: Show project + user backlogs (project-relevant only; use
-  `--target global` for global)
+- **--add**: Default to `personal`; use `--target project` for team-shared
+  tasks, `--target zappzarapp` for boilerplate development
+- **--list**: Show personal backlog (use `--target project` for team,
+  `--target zappzarapp` for boilerplate)
 
 **Scope Parameter (task change type, for --add):**
 
@@ -56,27 +58,26 @@ If `--target` is not specified:
 If `--scope` is not specified during `--add`, determine from task context or ask
 user.
 
-## Backlog Locations
+## Backlog Locations (3-Layer Architecture)
 
 Three backlog files are supported:
 
-| Target    | Path                         | Committed | Purpose                         |
-| --------- | ---------------------------- | --------- | ------------------------------- |
-| `project` | `./documentation/BACKLOG.md` | Yes       | Team backlog, shared, reviewed  |
-| `user`    | `./.claude/BACKLOG.md`       | No        | Personal tasks for this project |
-| `global`  | `~/.claude/BACKLOG.md`       | N/A       | Personal cross-project tasks    |
+| Target       | Path                                   | Committed | Purpose                        |
+| ------------ | -------------------------------------- | --------- | ------------------------------ |
+| `zappzarapp` | `./.zappzarapp/ai/BACKLOG.md`          | Yes       | Boilerplate development tasks  |
+| `project`    | `./.ai/BACKLOG.md`                     | Yes       | Team backlog, shared, reviewed |
+| `personal`   | `~/.local/share/zappzarapp/BACKLOG.md` | N/A       | Personal cross-project tasks   |
 
 **Auto-detection:**
 
 - If only one backlog exists, use that one
-- If multiple exist and no `--target` specified, behavior depends on operation
-  (see Arguments)
+- If multiple exist and no `--target` specified, defaults to `personal`
 
 **Use case guidance:**
 
-- `project`: Team tasks, features, bugs that affect everyone
-- `user`: Personal reminders, ideas to explore later in this project
-- `global`: Learning topics, tool improvements, cross-project utilities
+- `zappzarapp`: Tasks for zappzarapp boilerplate development
+- `project`: Team tasks, features, bugs that affect everyone (user creates)
+- `personal`: Private reminders, learning topics, cross-project utilities
 
 ## File Structure
 
@@ -145,11 +146,11 @@ Description of change **Context:** Why this task exists
 
 If `--target` is specified, use that backlog. Otherwise:
 
-1. Default to `user` (`./.claude/BACKLOG.md`)
+1. Default to `personal` (`~/.local/share/zappzarapp/BACKLOG.md`)
 2. Create the file if it doesn't exist (use template from File Structure
    section)
 3. User can override with `--target project` for team-shared tasks or
-   `--target global` for cross-project tasks
+   `--target zappzarapp` for boilerplate development
 4. For `project` target: Read author from `git config user.name` and
    `git config user.email`
 
@@ -305,8 +306,8 @@ planning needed) **Context:** [Brief context]
 ---
 ```
 
-**Note:** For `--target user` and `--target global`, omit `**Created by:**` and
-`**Updated:**` (personal backlogs).
+**Note:** For `--target zappzarapp` and `--target personal`, omit
+`**Created by:**` and `**Updated:**` (not team-shared backlogs).
 
 **When to add `**Updated:**` (project target only):**
 
@@ -345,17 +346,17 @@ Created:  [Date]
 
 ### Target Handling
 
-1. If `--target project`: Show only `./documentation/BACKLOG.md`
-2. If `--target user`: Show only `./.claude/BACKLOG.md`
-3. If `--target global`: Show only `~/.claude/BACKLOG.md`
-4. If no `--target`: Show project + user (project-relevant backlogs only)
+1. If `--target zappzarapp`: Show only `./.zappzarapp/ai/BACKLOG.md`
+2. If `--target project`: Show only `./.ai/BACKLOG.md`
+3. If `--target personal`: Show only `~/.local/share/zappzarapp/BACKLOG.md`
+4. If no `--target`: Show zappzarapp backlog (default)
 
 ### Without Filter
 
 Display summary of all tasks:
 
 ```text
-Project Backlog (./documentation/BACKLOG.md)
+Boilerplate Backlog (./.zappzarapp/ai/BACKLOG.md)
 ════════════════════════════════════════════════
 
 High Priority (3 tasks)
@@ -378,17 +379,8 @@ Low Priority (1 task)
 ════════════════════════════════════════════════
 Total: 12 tasks
 
-User Backlog (./.claude/BACKLOG.md)
-════════════════════════════════════════════════
-
-Medium Priority (2 tasks)
-  • [feature/Small] Claude Settings Consolidation
-  • [chore/Small]   DevDashboard Update Check
-
-════════════════════════════════════════════════
-Total: 2 tasks
-
-(Use --target global to see ~/.claude/BACKLOG.md)
+(Use --target project for ./.ai/BACKLOG.md)
+(Use --target personal for ~/.local/share/zappzarapp/BACKLOG.md)
 
 Size: Small=same context OK | Medium=flexible | Large=fresh context
 ```
@@ -471,7 +463,30 @@ What would you like to do?
 ○ Cancel
 ```
 
-If "Start implementation" selected, acknowledge and wait for user direction.
+If "Start implementation" selected, hand off to Main Agent for agent workflow.
+
+### Step 5: Plan Review Mode (Agent Workflow)
+
+When agent workflow starts, determine plan review behavior:
+
+**Size-based defaults:**
+
+| Task Size | Default Behavior | With `--fast` | With `--review` |
+| --------- | ---------------- | ------------- | --------------- |
+| Small     | Skip review      | (same)        | Force review    |
+| Medium    | Ask user         | Skip review   | Force review    |
+| Large     | Always review    | Skip review   | (same)          |
+
+**After Architect creates plan:**
+
+- If review required: Send ntfy notification, wait for user approval
+- If skip: Continue directly to Coder agents
+
+```bash
+# ntfy notification for plan review (read topic from .claude/config.local.md)
+curl -s -H "Priority: high" -H "Tags: hourglass" \
+  -d "[zappzarapp] ⏳ Plan ready for review" ntfy.sh/<NTFY_TOPIC>
+```
 
 ---
 
@@ -578,7 +593,8 @@ Analyze all tasks and suggest priority changes based on multiple criteria.
 
 ### Step 1: Read All Backlogs
 
-Read both project and user backlogs (if they exist) to get a complete picture.
+Read both zappzarapp and project backlogs (if they exist) to get a complete
+picture.
 
 ### Step 2: Filter and Analyze Tasks
 
@@ -691,13 +707,13 @@ Skipped: 2 changes (user declined)
 
 When moving a task from one backlog to another:
 
-**user/global → project (making task public):**
+**zappzarapp/personal → project (making task team-shared):**
 
 - Add `**Created by:**` field from `git config user.name` and
   `git config user.email`
 - Keep all other data intact
 
-**project → user/global (making task personal):**
+**project → zappzarapp/personal (making task non-team-shared):**
 
 - Keep `**Created by:**` field (historical record of original author)
 - Keep all other data intact
@@ -898,9 +914,9 @@ New:      High Priority
 ### Listing with Target Filter
 
 ```text
-$ /backlog --list --target global
+$ /backlog --list --target personal
 
-Global Backlog (~/.claude/BACKLOG.md)
+Personal Backlog (~/.local/share/zappzarapp/BACKLOG.md)
 ════════════════════════════════════════════════
 
 High Priority (1 task)
@@ -914,23 +930,23 @@ Medium Priority (2 tasks)
 Total: 3 tasks
 ```
 
-### Adding to Global Backlog
+### Adding to Personal Backlog
 
 ```text
-$ /backlog --add --target global --scope feature
+$ /backlog --add --target personal --scope feature
 
 Title: Create shared ESLint config package
 Priority: Medium
 Size: Medium
 Context: Same ESLint rules needed across multiple projects
 
-Task Added to Global Backlog
+Task Added to Personal Backlog
 ════════════════════════════════════════════════
 Title:    Create shared ESLint config package
 Priority: Medium
 Size:     Medium
 Scope:    feature
-Target:   Global (~/.claude/BACKLOG.md)
+Target:   Personal (~/.local/share/zappzarapp/BACKLOG.md)
 Created:  2026-01-20
 ════════════════════════════════════════════════
 ```
@@ -951,28 +967,28 @@ Title:    Fix SQL injection in search endpoint
 Priority: High
 Size:     Small
 Scope:    critical
-Target:   Project (./documentation/BACKLOG.md)
+Target:   Project (./.ai/BACKLOG.md)
 Created:  2026-01-20
 ════════════════════════════════════════════════
 ```
 
-### Adding Personal Task for Current Project
+### Adding Task to Boilerplate Backlog
 
 ```text
-$ /backlog --add --target user --scope chore
+$ /backlog --add --target zappzarapp --scope chore
 
 Title: Clean up test fixtures
 Priority: Low
 Size: Small
 Context: Personal reminder to tidy up test data
 
-Task Added to User Backlog
+Task Added to Boilerplate Backlog
 ════════════════════════════════════════════════
 Title:    Clean up test fixtures
 Priority: Low
 Size:     Small
 Scope:    chore
-Target:   User (./.claude/BACKLOG.md)
+Target:   Boilerplate (./.zappzarapp/ai/BACKLOG.md)
 Created:  2026-01-20
 ════════════════════════════════════════════════
 ```

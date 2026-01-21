@@ -1,0 +1,17 @@
+# AI Configuration Overrides
+
+This file configures AI agent behavior for this project.
+Copy to `config.local.md` and customize as needed.
+
+## Personal Knowledge Path
+
+Override the default personal knowledge storage location:
+
+```
+personal_knowledge_path: ~/.local/share/zappzarapp/
+```
+
+Default: `~/.local/share/zappzarapp/`
+
+The personal layer stores private notes (BACKLOG.md, LEARNINGS.md, etc.)
+that are not shared with the team.

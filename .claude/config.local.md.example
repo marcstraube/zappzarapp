@@ -1,0 +1,16 @@
+# Local Configuration (Example)
+
+Copy this file to `config.local.md` and customize.
+
+**This file is gitignored and contains personal/sensitive settings.**
+
+## ntfy Notifications
+
+```
+NTFY_TOPIC=your-secret-topic
+```
+
+## Usage
+
+The agent reads this file for personal configuration values.
+Do not commit `config.local.md` - only this example file.

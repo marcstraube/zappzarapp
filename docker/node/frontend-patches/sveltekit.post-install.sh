@@ -1,5 +1,5 @@
 #!/bin/sh
-# SvelteKit Post-Install Script for Zappzarapp
+# SvelteKit Post-Install Script for zappzarapp
 # Configures SvelteKit to work with the zappzarapp infrastructure
 
 set -e
@@ -135,13 +135,13 @@ cat > src/routes/+page.svelte << 'EOF'
 </script>
 
 <svelte:head>
-  <title>Zappzarapp Frontend</title>
+  <title>zappzarapp Frontend</title>
   <meta name="description" content="SvelteKit SSR Frontend running on Node.js" />
 </svelte:head>
 
 <main class="container">
   <header>
-    <h1>Zappzarapp Frontend</h1>
+    <h1>zappzarapp Frontend</h1>
     <p class="subtitle">SvelteKit SSR Frontend running on Node.js</p>
   </header>
 

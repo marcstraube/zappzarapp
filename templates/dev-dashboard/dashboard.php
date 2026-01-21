@@ -141,7 +141,7 @@
 
 <!-- Recent Activity / Info -->
 <div class="mt-8 bg-blue-50 border border-blue-200 rounded-lg p-6">
-    <h3 class="text-lg font-semibold text-blue-900 mb-2">ℹ️ Welcome to the Development Dashboard</h3>
+    <h3 class="text-lg font-semibold text-blue-900 mb-2">ℹ️ Welcome to the zappzarapp Development Dashboard</h3>
     <p class="text-sm text-blue-700">
         This dashboard provides real-time insights into your development environment.
         Monitor system health, check container status, view logs, and more.

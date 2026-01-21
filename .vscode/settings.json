@@ -377,7 +377,7 @@
   "ltex.language": "en-US",
   "ltex.additionalRules.enablePickyRules": false,
   "ltex.files.include": [
-    "documentation/**/*.md",
+    ".zappzarapp/docs/**/*.md",
     "*.md"
   ],
   "ltex.files.exclude": [

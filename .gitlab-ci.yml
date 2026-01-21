@@ -282,7 +282,7 @@ build:production:
 #   KUBECONFIG_DATA:    Base64-encoded kubeconfig file
 #   KUBE_NAMESPACE:     Target namespace (default: zappzarapp)
 #
-# See: documentation/infrastructure/KUBERNETES.md
+# See: .zappzarapp/docs/infrastructure/KUBERNETES.md
 #
 # deploy:kubernetes:
 #   <<: *docker-setup

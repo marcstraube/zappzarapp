@@ -6,7 +6,7 @@
 #
 # IMPORTANT: This template includes all stack options (PHP, Node.js backend,
 # Node.js frontend). Customize based on your production stack by removing or
-# adjusting sections you don't need. See documentation/infrastructure/NGINX.md
+# adjusting sections you don't need. See .zappzarapp/docs/infrastructure/NGINX.md
 # for detailed guidance on production customization.
 #
 # Required environment variable:

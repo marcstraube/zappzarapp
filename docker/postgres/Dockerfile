@@ -2,7 +2,7 @@
 # pg_cron enables scheduled jobs directly in PostgreSQL
 #
 # Usage: CREATE EXTENSION pg_cron;
-# See: documentation/security/RETENTION-POLICY.md
+# See: .zappzarapp/docs/security/RETENTION-POLICY.md
 #
 # Security Note: No USER directive is set because PostgreSQL requires root
 # privileges during container startup for:

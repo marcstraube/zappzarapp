@@ -37,7 +37,8 @@
             "#git diff-tree.*ORIG_HEAD#",
             "#~/\\.claude/commands#",
             "#~/\\.gemini/commands#",
-            "#\\$PROJECT_DIR\\$/vendor/#"
+            "#\\$PROJECT_DIR\\$/vendor/#",
+            "#\\.zappzarapp/docs/#"
           ]
         },
         "config": {
@@ -119,18 +120,6 @@
         "options": [],
         "type": "cli",
         "description": "Fix shell script permissions (755)"
-      },
-      {
-        "action": "if [ -f ~/.claude/commands/backlog.md ] && [ -f .claude/commands/backlog.md ]; then if ! diff -q .claude/commands/backlog.md ~/.claude/commands/backlog.md >/dev/null 2>&1; then echo ''; echo -e '\\033[0;33m⚠️  Claude backlog command updated by team!\\033[0m'; echo -e '   Sync to your home directory with: \\033[0;36mmake claude-commands-install\\033[0m'; echo ''; fi; fi",
-        "options": [],
-        "type": "cli",
-        "description": "Notify if shared Claude backlog command differs from user's copy"
-      },
-      {
-        "action": "if [ -f ~/.gemini/commands/backlog.toml ] && [ -f .gemini/commands/backlog.toml ]; then if ! diff -q .gemini/commands/backlog.toml ~/.gemini/commands/backlog.toml >/dev/null 2>&1; then echo ''; echo -e '\\033[0;33m⚠️  Gemini backlog command updated by team!\\033[0m'; echo -e '   Sync to your home directory with: \\033[0;36mmake gemini-commands-install\\033[0m'; echo ''; fi; fi",
-        "options": [],
-        "type": "cli",
-        "description": "Notify if shared Gemini backlog command differs from user's copy"
       }
     ]
   },
@@ -160,18 +149,6 @@
         "options": [],
         "type": "cli",
         "description": "Warn if dependency files changed after merge/pull"
-      },
-      {
-        "action": "if [ -f ~/.claude/commands/backlog.md ] && [ -f .claude/commands/backlog.md ]; then if git diff-tree -r --name-only --no-commit-id ORIG_HEAD HEAD 2>/dev/null | grep -q '.claude/commands/backlog.md'; then echo ''; echo -e '\\033[0;33m⚠️  Claude backlog command updated by team!\\033[0m'; echo -e '   Sync to your home directory with: \\033[0;36mmake claude-commands-install\\033[0m'; echo ''; fi; fi",
-        "options": [],
-        "type": "cli",
-        "description": "Notify if Claude backlog command was updated in merge/pull"
-      },
-      {
-        "action": "if [ -f ~/.gemini/commands/backlog.toml ] && [ -f .gemini/commands/backlog.toml ]; then if git diff-tree -r --name-only --no-commit-id ORIG_HEAD HEAD 2>/dev/null | grep -q '.gemini/commands/backlog.toml'; then echo ''; echo -e '\\033[0;33m⚠️  Gemini backlog command updated by team!\\033[0m'; echo -e '   Sync to your home directory with: \\033[0;36mmake gemini-commands-install\\033[0m'; echo ''; fi; fi",
-        "options": [],
-        "type": "cli",
-        "description": "Notify if Gemini backlog command was updated in merge/pull"
       }
     ]
   },
