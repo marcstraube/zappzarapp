@@ -42,7 +42,7 @@
  */
 
 import * as amqp from 'amqplib';
-import { readFileSync, existsSync } from 'fs';
+import { loadCredential } from '../utils/credentials';
 
 /**
  * Queue Service Interface
@@ -462,8 +462,8 @@ export class QueueService implements QueueServiceInterface {
     const port = process.env.RABBITMQ_PORT ?? '5672';
     const vhost = process.env.RABBITMQ_VHOST ?? '/';
 
-    const user = this.loadCredential('rabbitmq_user', 'RABBITMQ_USER', 'guest');
-    const password = this.loadCredential('rabbitmq_password', 'RABBITMQ_PASSWORD', 'guest');
+    const user = loadCredential('rabbitmq_user', 'RABBITMQ_USER', 'guest');
+    const password = loadCredential('rabbitmq_password', 'RABBITMQ_PASSWORD', 'guest');
 
     const encodedVhost = vhost === '/' ? '' : `/${encodeURIComponent(vhost)}`;
     return `amqp://${encodeURIComponent(user)}:${encodeURIComponent(password)}@${host}:${port}${encodedVhost}`;
@@ -482,8 +482,8 @@ export class QueueService implements QueueServiceInterface {
       }
 
       // Apply credentials from secrets/environment
-      const user = this.loadCredential('rabbitmq_user', 'RABBITMQ_USER', 'guest');
-      const password = this.loadCredential('rabbitmq_password', 'RABBITMQ_PASSWORD', 'guest');
+      const user = loadCredential('rabbitmq_user', 'RABBITMQ_USER', 'guest');
+      const password = loadCredential('rabbitmq_password', 'RABBITMQ_PASSWORD', 'guest');
 
       parsed.username = user;
       parsed.password = password;
@@ -493,38 +493,5 @@ export class QueueService implements QueueServiceInterface {
       // If URL parsing fails, return original
       return url;
     }
-  }
-
-  /**
-   * Load credential from Docker secret or environment variable
-   */
-  private loadCredential(secretName: string, envName: string, defaultValue: string): string {
-    // Try Docker secret first (with .txt extension)
-    const secretPathTxt = `/tmp/secrets/${secretName}.txt`;
-    if (existsSync(secretPathTxt)) {
-      try {
-        return readFileSync(secretPathTxt, 'utf-8').trim();
-      } catch {
-        // Fall through to next option
-      }
-    }
-
-    // Try Docker secret without extension
-    const secretPath = `/run/secrets/${secretName}`;
-    if (existsSync(secretPath)) {
-      try {
-        return readFileSync(secretPath, 'utf-8').trim();
-      } catch {
-        // Fall through to next option
-      }
-    }
-
-    // Try environment variable
-    const envValue = process.env[envName];
-    if (envValue !== undefined && envValue !== '') {
-      return envValue;
-    }
-
-    return defaultValue;
   }
 }

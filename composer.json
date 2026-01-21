@@ -24,6 +24,7 @@
         "ext-openssl": "*",
         "ext-pdo": "*",
         "ext-redis": "*",
+        "meilisearch/meilisearch-php": "^1.16",
         "monolog/monolog": "^3.9",
         "php-amqplib/php-amqplib": "^3.7",
         "php-di/php-di": "^7.1"

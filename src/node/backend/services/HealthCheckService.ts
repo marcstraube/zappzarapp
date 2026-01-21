@@ -69,11 +69,13 @@ export interface StatusResponse {
 interface HealthCheckConfig {
   enableDatabase: boolean;
   enableRedis: boolean;
+  enableMeilisearch: boolean;
   enableNodeFrontend: boolean;
   nodeMode: string;
   environment: string;
   redisUrl: string;
   databaseType: string;
+  meilisearchUrl: string;
 }
 
 // Timeouts
@@ -110,11 +112,13 @@ function loadConfig(): HealthCheckConfig {
   return {
     enableDatabase: parseBool(process.env.ENABLE_DATABASE, false),
     enableRedis: parseBool(process.env.ENABLE_REDIS, false),
+    enableMeilisearch: parseBool(process.env.ENABLE_MEILISEARCH, false),
     enableNodeFrontend,
     nodeMode,
     environment: getEnv('NODE_ENV', 'production'),
     redisUrl: getEnv('REDIS_URL', 'redis://redis:6379'),
     databaseType: getEnv('DB_TYPE', 'postgres'),
+    meilisearchUrl: getEnv('MEILISEARCH_URL', 'https://meilisearch:7700'),
   };
 }
 
@@ -181,6 +185,13 @@ export class HealthCheckService {
       overallStatus = 'degraded';
     }
 
+    // Check Meilisearch
+    const meilisearchCheck = await this.checkMeilisearch();
+    checks.meilisearch = meilisearchCheck;
+    if (meilisearchCheck.status === 'unhealthy') {
+      overallStatus = 'degraded';
+    }
+
     // Check Node Frontend (if applicable)
     if (this.config.enableNodeFrontend) {
       const frontendCheck = await this.checkNodeFrontend();
@@ -211,6 +222,9 @@ export class HealthCheckService {
 
     // Redis
     services.redis = await this.checkRedis();
+
+    // Meilisearch
+    services.meilisearch = await this.checkMeilisearch();
 
     // Node Frontend
     services['node-frontend'] = this.config.enableNodeFrontend
@@ -317,6 +331,70 @@ export class HealthCheckService {
           // Ignore cleanup errors
         }
       }
+    }
+  }
+
+  /**
+   * Check Meilisearch connection via health endpoint
+   */
+  private async checkMeilisearch(): Promise<ServiceCheckResult> {
+    if (!this.config.enableMeilisearch) {
+      return { status: 'disabled' };
+    }
+
+    try {
+      const { latency_ms } = await measureLatency(async () => {
+        return new Promise<void>((resolve, reject) => {
+          const url = new URL(this.config.meilisearchUrl);
+          const isHttps = url.protocol === 'https:';
+          const options = {
+            hostname: url.hostname,
+            port: url.port || (isHttps ? 443 : 80),
+            path: '/health',
+            method: 'GET',
+            timeout: HTTP_TIMEOUT_MS,
+            rejectUnauthorized: false, // Allow self-signed certs
+          };
+
+          const transport = isHttps ? https : http;
+          const req = transport.request(options, (res) => {
+            let data = '';
+            res.on('data', (chunk: Buffer) => {
+              data += chunk.toString();
+            });
+            res.on('end', () => {
+              try {
+                const json = JSON.parse(data) as { status?: string };
+                if (json.status === 'available') {
+                  resolve();
+                } else {
+                  reject(new Error(`Meilisearch status: ${json.status ?? 'unknown'}`));
+                }
+              } catch {
+                reject(new Error('Invalid JSON response'));
+              }
+            });
+          });
+
+          req.on('error', (err) => reject(err));
+          req.on('timeout', () => {
+            req.destroy();
+            reject(new Error('Request timeout'));
+          });
+
+          req.end();
+        });
+      });
+
+      return {
+        status: 'ok',
+        latency_ms,
+      };
+    } catch (error) {
+      return {
+        status: 'unhealthy',
+        message: error instanceof Error ? error.message : 'Unknown error',
+      };
     }
   }
 
