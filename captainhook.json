@@ -36,7 +36,8 @@
             "#/run/secrets/#",
             "#git diff-tree.*ORIG_HEAD#",
             "#~/\\.claude/commands#",
-            "#~/\\.gemini/commands#"
+            "#~/\\.gemini/commands#",
+            "#\\$PROJECT_DIR\\$/vendor/#"
           ]
         },
         "config": {
