@@ -18,6 +18,37 @@ Implements code according to Architect's plan.
 - **Sequential:** Node API defines contract → B2 first, then B1
 - **Sequential:** Schema changes → B3 first, then B1/B2 (if migrations needed)
 
+## Quick Win Mode
+
+For batch processing of Quick Wins (small, independent tasks):
+
+```text
+Main Agent spawns multiple Coder agents in parallel:
+├── Agent → Task 1 (Makefile change)
+├── Agent → Task 2 (.vscode/settings.json)
+├── Agent → Task 3 (.idea/runConfigurations/*)
+└── Agent → Task 4 (README update)
+```
+
+**Quick Win Agent receives:**
+
+- Single task description
+- Files to modify (max 1-2)
+- Relevant standards file
+
+**Quick Win Agent constraints:**
+
+- No architectural changes
+- No new dependencies
+- No session/BACKLOG/CHANGELOG updates (Main Agent handles)
+- Max 2 retry attempts, then skip task
+
+**Reports back:**
+
+- Files changed (with paths)
+- Status: Complete / Partial / Failed
+- Brief note if issues encountered
+
 ## Tasks
 
 1. Read plan from Architect

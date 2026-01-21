@@ -4,11 +4,12 @@
 
 Based on Task Scope Guide (BACKLOG.md):
 
-| Scope  | Files | Workflow                                                  |
-| ------ | ----- | --------------------------------------------------------- |
-| Small  | 1-3   | Direct implementation → Lint → Test                       |
-| Medium | 3-10  | Plan-Agent → Implementation → Lint → Test                 |
-| Large  | >10   | 4-Agent-Model (Architect → Coder → Reviewer → Documenter) |
+| Scope      | Files | Workflow                                                  |
+| ---------- | ----- | --------------------------------------------------------- |
+| Small      | 1-3   | Direct implementation → Lint → Test                       |
+| Medium     | 3-10  | Plan-Agent → Implementation → Lint → Test                 |
+| Large      | >10   | 4-Agent-Model (Architect → Coder → Reviewer → Documenter) |
+| Quick Wins | 1-2   | Parallel Coder agents → Single commit (batch mode)        |
 
 ## Pre-Flight Checks
 
@@ -79,6 +80,139 @@ Merge → Remove BACKLOG task
 - **History:** Clean main history (one merge per feature)
 - **Rollback:** Simply delete branch if needed
 - **Session-Log:** Branch field has clear meaning
+
+## Quick Wins Batch Processing
+
+For multiple small, independent tasks from the "Quick Wins" section.
+
+### When to Use
+
+- Quick Wins section has ≥2 tasks
+- Tasks are independent (no shared files, no dependencies)
+- Each task modifies max 1-2 files
+
+### Workflow
+
+```text
+/backlog --choose
+    ↓
+[1] 🚀 Quick Wins (4 tasks)  ← User selects batch option
+    ↓
+Main Agent validates:
+  • All tasks independent? (no shared files)
+  • All tasks Small scope?
+  • No blocking dependencies?
+    ↓
+Spawn N parallel Coder agents (one per task)
+    ↓
+   ┌────┬────┬────┬────┐
+   ↓    ↓    ↓    ↓    ↓
+Task1 Task2 Task3 Task4 ...
+   └────┴────┴────┴────┘
+    ↓
+Collect results from all agents
+    ↓
+Run lint checks (make check-quick)
+    ↓
+Single commit: "chore: batch quick wins"
+    ↓
+Update BACKLOG: Remove completed Quick Wins
+Update CHANGELOG: Add entries
+```
+
+### Agent Spawning
+
+Each Quick Win task gets its own Coder agent:
+
+```text
+Main Agent spawns (parallel):
+├── Task("Implement: Make Integrations in setup", subagent_type="general-purpose")
+├── Task("Implement: Make Setup API Docs", subagent_type="general-purpose")
+├── Task("Implement: IDE Tasks Reduction", subagent_type="general-purpose")
+└── Task("Implement: PhpStorm/VSCode Sync", subagent_type="general-purpose")
+```
+
+**Agent prompt template:**
+
+```text
+Implement this Quick Win task:
+
+Task: {task_title}
+Description: {task_description}
+Files: {files_to_modify}
+
+Standards: Read .zappzarapp/standards/{language}.md
+
+Requirements:
+- Make minimal changes (this is a quick win, not a refactor)
+- No architectural changes
+- Report back: files changed, any issues encountered
+
+DO NOT: Update session files, BACKLOG, or CHANGELOG (Main Agent handles this)
+```
+
+### Validation Before Batch
+
+Main Agent checks before spawning:
+
+| Check | Fail Action |
+| ----- | ----------- |
+| Tasks share files | Split into sequential batches |
+| Task has dependencies | Move to end or exclude |
+| Task is Medium/Large scope | Exclude from batch, warn user |
+| >6 Quick Wins | Batch in groups of 6 |
+
+### Result Collection
+
+After all agents complete:
+
+```text
+Quick Wins Batch Results
+════════════════════════════════════════════════
+✅ Task 1: Make Integrations in setup
+   Files: Makefile
+   Status: Complete
+
+✅ Task 2: Make Setup API Docs
+   Files: Makefile
+   Status: Complete
+
+⚠️ Task 3: IDE Tasks Reduction
+   Files: .vscode/tasks.json, .idea/runConfigurations/*
+   Status: Partial (removed 80 tasks, kept 32)
+   Note: Some tasks had dependencies, kept for safety
+
+✅ Task 4: PhpStorm/VSCode Sync
+   Files: .vscode/settings.json
+   Status: Complete
+════════════════════════════════════════════════
+Summary: 4/4 tasks completed
+```
+
+### Commit Strategy
+
+Single commit for all Quick Wins:
+
+```text
+chore: batch quick wins
+
+- Make Integrations in setup
+- Make Setup: API Docs generation
+- IDE Tasks Reduction (80 removed, 32 kept)
+- PhpStorm/VSCode Settings Sync
+
+🤖 Generated with [Claude Code](https://claude.com/claude-code)
+```
+
+### Error Handling
+
+| Scenario | Action |
+| -------- | ------ |
+| Agent fails | Mark task as incomplete, continue others |
+| Lint fails | Show errors, ask user to fix or skip |
+| Conflict detected | Abort batch, run tasks sequentially |
+
+---
 
 ## 4-Agent-Model Overview
 

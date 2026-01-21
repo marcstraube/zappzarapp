@@ -68,10 +68,11 @@ Three backlog files are supported:
 | `project`    | `./.ai/BACKLOG.md`                     | Yes       | Team backlog, shared, reviewed |
 | `personal`   | `~/.local/share/zappzarapp/BACKLOG.md` | N/A       | Personal cross-project tasks   |
 
-**Auto-detection:**
+**Auto-detection (if no `--target` specified):**
 
-- If only one backlog exists, use that one
-- If multiple exist and no `--target` specified, defaults to `personal`
+1. If `.claude/config.local.md` exists → personal (user has personal config)
+2. Else if `.ai/BACKLOG.md` exists → project (team backlog present)
+3. Else → zappzarapp (boilerplate development mode)
 
 **Use case guidance:**
 
@@ -349,7 +350,10 @@ Created:  [Date]
 1. If `--target zappzarapp`: Show only `./.zappzarapp/ai/BACKLOG.md`
 2. If `--target project`: Show only `./.ai/BACKLOG.md`
 3. If `--target personal`: Show only `~/.local/share/zappzarapp/BACKLOG.md`
-4. If no `--target`: Show zappzarapp backlog (default)
+4. If no `--target`:
+   - If `.claude/config.local.md` exists → personal (user has personal config)
+   - Else if `.ai/BACKLOG.md` exists → project (team backlog present)
+   - Else → zappzarapp (boilerplate development mode)
 
 ### Without Filter
 
@@ -395,27 +399,84 @@ Show only tasks of specified priority with full details.
 
 Interactive selection of a task to work on.
 
-### Step 1: Present Task Selection
+### Step 1: Check for Quick Wins Batch Option
 
-Use `AskUserQuestion` to present available tasks grouped by priority:
+Before presenting individual tasks, check if Quick Wins batch is available:
+
+1. Parse BACKLOG.md for `### Quick Wins` section
+2. Count tasks under Quick Wins (#### headings)
+3. If ≥2 Quick Wins exist, show batch option first
+
+### Step 2: Present Task Selection
+
+Use `AskUserQuestion` to present available tasks:
 
 ```text
 Which task would you like to work on?
 
+○ 🚀 Quick Wins (4 tasks) — parallel batch processing
+    • Make Integrations in setup
+    • Make Setup: API Docs
+    • IDE Tasks Reduction
+    • PhpStorm/VSCode Sync
+
 ○ v1.0 Release Preparation (High, Large)
 ○ Makefile Target Testing (High, Large)
-○ pnpm Update (Medium, Small) ← same context OK
-○ ESLint Errors in PHPStorm (Medium, Small) ← same context OK
 ○ PHP SuppressWarnings Cleanup (Medium, Medium)
 ○ Mutation Testing Integration (Medium, Medium)
 ```
 
 **Selection logic:**
 
-- Show High Priority tasks first
+- **First option**: Quick Wins batch (if ≥2 tasks available)
+- Show High Priority tasks next
 - Include category for Medium Priority tasks
 - Limit to ~10 most relevant tasks (High + top Medium)
 - User can select "Other" to specify by name
+
+### Step 2a: Quick Wins Batch Selected
+
+If user selects "🚀 Quick Wins" batch option:
+
+1. **Validate tasks are independent:**
+   - Extract file lists from each Quick Win task
+   - Check for overlapping files
+   - If overlap found: warn and offer to exclude conflicting task
+
+2. **Confirm batch processing:**
+   ```text
+   Quick Wins Batch Processing
+   ════════════════════════════════════════════════
+   Tasks to process in parallel:
+
+   1. Make Integrations in setup
+      Files: Makefile
+
+   2. Make Setup: API Docs
+      Files: Makefile
+
+   ⚠️  Conflict: Tasks 1 and 2 both modify Makefile
+      → Will process sequentially instead of parallel
+
+   3. IDE Tasks Reduction
+      Files: .vscode/tasks.json, .idea/runConfigurations/*
+
+   4. PhpStorm/VSCode Sync
+      Files: .vscode/settings.json
+   ════════════════════════════════════════════════
+
+   Proceed with batch processing?
+   ○ Yes, process all (2 parallel + 2 sequential)
+   ○ Yes, but exclude conflicting tasks
+   ○ No, let me choose individual tasks
+   ```
+
+3. **Hand off to Main Agent** for Quick Wins batch workflow
+   (see `.claude/agents/workflow.md` → "Quick Wins Batch Processing")
+
+### Step 2b: Individual Task Selected
+
+Continue with normal single-task workflow (Step 3 onwards).
 
 ### Step 2: Display Task Details
 
@@ -871,6 +932,64 @@ Fix: Change to docker compose run in captainhook.json
 ════════════════════════════════════════════════
 
 Ready to start implementation.
+```
+
+### Choosing Quick Wins Batch
+
+```text
+$ /backlog --choose
+
+Which task would you like to work on?
+● 🚀 Quick Wins (4 tasks)
+
+Quick Wins Batch Processing
+════════════════════════════════════════════════
+Tasks to process in parallel:
+
+1. Make Integrations in setup
+   Files: Makefile
+
+2. Make Setup: API Docs
+   Files: Makefile
+
+⚠️  Conflict: Tasks 1 and 2 both modify Makefile
+   → Will process sequentially instead of parallel
+
+3. IDE Tasks Reduction
+   Files: .vscode/tasks.json, .idea/runConfigurations/*
+
+4. PhpStorm/VSCode Sync
+   Files: .vscode/settings.json
+════════════════════════════════════════════════
+
+Proceed with batch processing?
+● Yes, process all (2 parallel + 2 sequential)
+
+Processing Quick Wins...
+════════════════════════════════════════════════
+[1/4] Make Integrations in setup... ✅
+[2/4] Make Setup: API Docs... ✅
+[3/4] IDE Tasks Reduction... ⏳ (parallel)
+[4/4] PhpStorm/VSCode Sync... ⏳ (parallel)
+[3/4] IDE Tasks Reduction... ✅
+[4/4] PhpStorm/VSCode Sync... ✅
+
+Running lint checks... ✅
+
+Quick Wins Batch Complete
+════════════════════════════════════════════════
+Completed: 4/4 tasks
+Commit: chore: batch quick wins
+
+Changes:
+- Makefile (2 changes)
+- .vscode/tasks.json (reduced from 140 to 28 tasks)
+- .vscode/settings.json (synced with PhpStorm)
+- .idea/runConfigurations/* (reduced from 130 to 28)
+
+BACKLOG: 4 Quick Wins removed
+CHANGELOG: 4 entries added
+════════════════════════════════════════════════
 ```
 
 ### Removing a Task
