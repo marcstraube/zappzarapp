@@ -20,6 +20,16 @@ services:
       target: development
     image: ${COMPOSE_PROJECT_NAME:-zappzarapp}-node:development
     volumes:
+      # === FROM compose.yaml (base config, must be included) ===
+      # SSL certificates for external database connections
+      - ./docker/certs:/etc/ssl/db-certs:ro
+      # SSL certificates for internal HTTPS server (Nuxt/Nitro)
+      - ./docker/certs/cert.crt:/etc/ssl/certs/cert.crt:ro
+      - ./docker/certs/cert.key:/etc/ssl/private/cert.key:ro
+      # Secrets (bind mount)
+      - ./secrets:/run/secrets:ro
+
+      # === CI-specific mounts ===
       # Entrypoint Script
       - ./docker/node/entrypoint.development.sh:/usr/local/bin/entrypoint.development.sh:ro
 
@@ -93,6 +103,15 @@ services:
     entrypoint: ["/entrypoint.development.sh"]
     command: ["php-fpm"]
     volumes:
+      # === FROM compose.yaml (base config, must be included) ===
+      # Shared socket directory for PHP-FPM Unix socket communication
+      - php-fpm-socket:/var/run/php-fpm
+      # SSL certificates for external database connections
+      - ./docker/certs:/etc/ssl/db-certs:ro
+      # Secrets (bind mount)
+      - ./secrets:/run/secrets:ro
+
+      # === CI-specific mounts ===
       # Entrypoint Script
       - ./docker/php/entrypoint.development.sh:/entrypoint.development.sh:ro
 
@@ -198,6 +217,10 @@ services:
       --tls-auth-clients no
 
 volumes:
+  # From compose.yaml (needed for PHP-FPM socket)
+  php-fpm-socket:
+    driver: local
+  # CI-specific volumes
   node_modules:
     driver: local
   backend_node_modules:
