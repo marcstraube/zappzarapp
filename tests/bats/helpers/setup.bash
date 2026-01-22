@@ -15,14 +15,35 @@ fi
 load "${BATS_LIB_PATH}/bats-support/load.bash"
 load "${BATS_LIB_PATH}/bats-assert/load.bash"
 
-# Project root (relative to tests/bats/)
-export PROJECT_ROOT="${BATS_TEST_DIRNAME}/../.."
+# Project root - find by looking for Makefile
+# Works for tests in any subdirectory (tests/bats/, tests/bats/integration/, etc.)
+_find_project_root() {
+    local dir="$BATS_TEST_DIRNAME"
+    while [[ "$dir" != "/" ]]; do
+        if [[ -f "$dir/Makefile" ]] && [[ -f "$dir/compose.yaml" ]]; then
+            echo "$dir"
+            return 0
+        fi
+        dir="$(dirname "$dir")"
+    done
+    # Fallback for Docker container
+    echo "/app"
+}
+export PROJECT_ROOT="$(_find_project_root)"
 
 # Change to project root for all tests
 cd "${PROJECT_ROOT}" || exit 1
 
-# Default environment
-export COMPOSE_PROJECT_NAME="${COMPOSE_PROJECT_NAME:-zappzarapp-bats}"
+# Default environment - use actual project name from .env or default
+# Don't override if already set by the project's .env
+if [[ -z "${COMPOSE_PROJECT_NAME:-}" ]]; then
+    if [[ -f "${PROJECT_ROOT}/.env" ]]; then
+        # Source project .env to get COMPOSE_PROJECT_NAME
+        # shellcheck source=/dev/null
+        COMPOSE_PROJECT_NAME=$(grep -E '^COMPOSE_PROJECT_NAME=' "${PROJECT_ROOT}/.env" | cut -d= -f2 || echo "zappzarapp")
+    fi
+    export COMPOSE_PROJECT_NAME="${COMPOSE_PROJECT_NAME:-zappzarapp}"
+fi
 
 # Timeout for long-running commands (seconds)
 export BATS_TEST_TIMEOUT="${BATS_TEST_TIMEOUT:-120}"

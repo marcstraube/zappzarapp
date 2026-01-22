@@ -32,7 +32,8 @@ setup() {
 @test "[Phase 1] make reset-full cleans everything" {
     echo "# ⚠️  Starting destructive tests - full reset..." >&3
 
-    run timeout 300 make reset-full
+    # Pipe confirmation string for non-interactive execution
+    run bash -c "echo 'RESET-FULL' | timeout 300 make reset-full"
     assert_success
 }
 
@@ -228,7 +229,8 @@ setup() {
 
 @test "[Phase 8] make reset-full final cleanup" {
     echo "# Performing final cleanup..." >&3
-    run timeout 300 make reset-full
+    # Pipe confirmation string for non-interactive execution
+    run bash -c "echo 'RESET-FULL' | timeout 300 make reset-full"
     assert_success
 }
 
