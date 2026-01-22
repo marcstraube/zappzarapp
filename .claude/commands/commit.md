@@ -330,8 +330,9 @@ git reset HEAD <file>
 
 If the commit includes breaking changes:
 
-1. Add `!` after type/scope: `feat(api)!: change response format`
-2. Add `BREAKING CHANGE:` footer explaining the impact
+1. Add exclamation mark after type/scope, e.g.: feat(api)!: change response
+   format
+2. Add BREAKING CHANGE: footer explaining the impact
 
 ## Examples
 
