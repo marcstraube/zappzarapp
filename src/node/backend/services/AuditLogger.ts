@@ -53,9 +53,9 @@
  */
 
 import { Pool, QueryResult } from 'pg';
-import { createHash } from 'crypto';
-import { appendFile, mkdir } from 'fs/promises';
-import { dirname } from 'path';
+import { createHash } from 'node:crypto';
+import { appendFile, mkdir } from 'node:fs/promises';
+import { dirname } from 'node:path';
 
 export interface AuditLogEntry {
   action: string;

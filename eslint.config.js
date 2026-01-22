@@ -3,6 +3,7 @@ import tsPlugin from '@typescript-eslint/eslint-plugin';
 import tsParser from '@typescript-eslint/parser';
 import prettierConfig from 'eslint-config-prettier';
 import prettierPlugin from 'eslint-plugin-prettier';
+import sonarjsPlugin from 'eslint-plugin-sonarjs';
 
 export default [
   // Ignore patterns (similar to .eslintignore)
@@ -54,6 +55,7 @@ export default [
     plugins: {
       '@typescript-eslint': tsPlugin,
       prettier: prettierPlugin,
+      sonarjs: sonarjsPlugin,
     },
     rules: {
       // TypeScript recommended rules
@@ -62,6 +64,9 @@ export default [
 
       // Prettier integration
       'prettier/prettier': 'error',
+
+      // SonarJS - IDE parity (catches "redundant variable" warnings)
+      'sonarjs/prefer-immediate-return': 'warn',
 
       // TypeScript specific rules (similar to PHPStan level 5)
       '@typescript-eslint/explicit-function-return-type': 'warn',

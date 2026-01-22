@@ -40,7 +40,7 @@
  * - OR use this TypeScript class for application-level encryption
  */
 
-import { createCipheriv, createDecipheriv, randomBytes, createHash, getCiphers } from 'crypto';
+import { createCipheriv, createDecipheriv, randomBytes, createHash, getCiphers } from 'node:crypto';
 
 export class EncryptionService {
   /**

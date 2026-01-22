@@ -19,11 +19,13 @@
     "require": {
         "php": "^8.4",
         "ext-ctype": "*",
+        "ext-curl": "*",
         "ext-iconv": "*",
         "ext-json": "*",
         "ext-openssl": "*",
         "ext-pdo": "*",
         "ext-redis": "*",
+        "ext-simplexml": "*",
         "meilisearch/meilisearch-php": "^1.16",
         "monolog/monolog": "^3.9",
         "php-amqplib/php-amqplib": "^3.7",

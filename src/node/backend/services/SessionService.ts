@@ -46,7 +46,7 @@
  * ```
  */
 
-import { randomBytes } from 'crypto';
+import { randomBytes } from 'node:crypto';
 import type { CacheServiceInterface } from './CacheService';
 
 /**

@@ -62,6 +62,42 @@ Options:
 | `any` Type                       | Strict mode — use `unknown` + type guard instead |
 | `eslint-disable` for entire file | Too broad, use per-line                          |
 
+## Imports
+
+**Use `node:` prefix for Node.js built-in modules:**
+
+```typescript
+// ✅ Correct - with node: prefix
+import { createHmac } from 'node:crypto';
+import { readFile } from 'node:fs/promises';
+import { join } from 'node:path';
+
+// ❌ Wrong - without node: prefix
+import { createHmac } from 'crypto';
+import { readFile } from 'fs/promises';
+import { join } from 'path';
+```
+
+**Why:** Modern Node.js convention. The `node:` prefix explicitly marks built-in
+modules, avoiding confusion with npm packages of the same name.
+
+**Use path aliases instead of relative paths:**
+
+```typescript
+// ✅ Correct - using path alias
+import { ElasticsearchService } from '@backend/services/ElasticsearchService';
+
+// ❌ Wrong - long relative path
+import { ElasticsearchService } from '../../../../../src/node/backend/services/ElasticsearchService';
+```
+
+**Available aliases** (configured in tsconfig.json):
+
+| Alias        | Path                 |
+| ------------ | -------------------- |
+| `@backend/`  | `src/node/backend/`  |
+| `@frontend/` | `src/node/frontend/` |
+
 ## Best Practices
 
 - **no-unnecessary-condition**: May have false positives with closures — disable

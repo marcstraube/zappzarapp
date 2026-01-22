@@ -72,6 +72,67 @@ Options:
 - Baseline: `phpstan-baseline.neon` for legacy issues
 - Never add new errors to baseline without justification
 
+### Exception Handling
+
+**Coding Standard (always apply):**
+
+Document exceptions with `@throws` tags on **private methods** that can throw:
+
+```php
+/**
+ * @throws JsonException When JSON encoding/decoding fails
+ */
+private function parseResponse(string $response): array
+{
+    return json_decode($response, true, 512, JSON_THROW_ON_ERROR);
+}
+```
+
+**Important: Do NOT add `@throws` to public methods that catch all exceptions:**
+
+```php
+// CORRECT - no @throws because method catches everything and returns null
+public function search(string $index, array $query): ?array
+{
+    try {
+        return $this->request('GET', "/$index/_search", $query);
+    } catch (Throwable) {
+        return null;  // Exception handled, not propagated
+    }
+}
+```
+
+Adding `@throws` to such methods would mislead API consumers into thinking
+exceptions can be thrown when they actually cannot.
+
+**Required `@throws` documentation (private methods only):**
+
+| Exception                  | When to document                                       |
+| -------------------------- | ------------------------------------------------------ |
+| `JsonException`            | Methods using `json_encode/decode` with THROW_ON_ERROR |
+| `RuntimeException`         | Methods that throw on initialization failures          |
+| `InvalidArgumentException` | Methods validating input parameters                    |
+
+**PHPStan Enforcement (optional, for stricter projects):**
+
+Enable in `phpstan.neon` (rules are pre-configured but commented out):
+
+```yaml
+exceptions:
+  check:
+    missingCheckedExceptionInThrows: true # Require @throws for checked exceptions
+    tooWideThrowType: true # Warn if @throws is broader than actual
+  checkedExceptionClasses:
+    - JsonException # Add other exceptions as needed
+  implicitThrows: false # Require explicit handling
+```
+
+**Benefits of enforcement:**
+
+- IDE parity: PhpStorm shows missing `@throws` warnings, PHPStan will too
+- Explicit contracts: API consumers know what exceptions to expect
+- Safer refactoring: Changing exception types triggers compile-time errors
+
 ## PHPMD
 
 - Config: `phpmd.xml.dist`

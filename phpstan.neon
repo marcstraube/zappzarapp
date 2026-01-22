@@ -12,6 +12,16 @@ parameters:
     # Type Coverage (false = don't warn about unused ignore patterns)
     reportUnmatchedIgnoredErrors: false
 
+    # Exception Handling (uncomment for stricter production checks)
+    # Requires @throws tags and explicit exception handling - IDE parity
+    # exceptions:
+    #     check:
+    #         missingCheckedExceptionInThrows: true
+    #         tooWideThrowType: true
+    #     checkedExceptionClasses:
+    #         - JsonException
+    #     implicitThrows: false
+
     # Test assertions that PHPStan considers redundant but serve as documentation
     ignoreErrors:
         # assertIsArray/assertIsString on typed returns (valid test documentation)

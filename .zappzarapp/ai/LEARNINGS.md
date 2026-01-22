@@ -99,6 +99,33 @@ avoid repeating mistakes.
 - **Test file exceptions**: Create separate ESLint config block for
   `tests/**/*.ts` with relaxed rules.
 
+### IDE vs. Linter Parity
+
+**Problem:** PHPStorm/WebStorm show warnings that ESLint doesn't catch.
+
+**Solution:** Use `eslint-plugin-sonarjs` for IDE parity:
+
+```javascript
+// eslint.config.js
+import sonarjsPlugin from 'eslint-plugin-sonarjs';
+
+// In plugins:
+sonarjs: sonarjsPlugin,
+
+// In rules:
+'sonarjs/prefer-immediate-return': 'warn',
+```
+
+**Mapping:**
+
+| IDE Warning                | ESLint Rule                          |
+| -------------------------- | ------------------------------------ |
+| "Redundant local variable" | `sonarjs/prefer-immediate-return`    |
+| "Can be simplified"        | Various `@typescript-eslint/*` rules |
+
+**Workflow:** Always check IDE diagnostics via `mcp__ide__getDiagnostics` after
+changes - linter checks alone may miss IDE-specific inspections.
+
 ### Composer Updates
 
 - **Composer is baked into PHP image** at build time via `FROM composer:2`.
@@ -439,8 +466,8 @@ TOOL_INPUT=$(cat); if echo "$TOOL_INPUT" | grep -q "pattern"; then echo "matched
 
 **PostToolUse hooks don't work reliably with Task tool.**
 
-The Task tool spawns a subprocess and doesn't pass stdin to PostToolUse hooks.
-A CLAUDE.md instruction is more reliable than a hook that only sends fallback
+The Task tool spawns a subprocess and doesn't pass stdin to PostToolUse hooks. A
+CLAUDE.md instruction is more reliable than a hook that only sends fallback
 values.
 
 **Workaround:** Use CLAUDE.md instructions instead of hooks for Task-related
@@ -456,5 +483,5 @@ notifications (e.g., ntfy notifications after agent completion).
 
 ## Last Updated
 
-2026-01-21 (added PHP 8.4 features: readonly class, asymmetric visibility,
-@noinspection annotations)
+2026-01-22 (added IDE vs. Linter parity: eslint-plugin-sonarjs for redundant
+variable detection)
