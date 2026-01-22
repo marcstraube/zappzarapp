@@ -1,9 +1,6 @@
 # Email Service Implementation
 
-**Status:** Open
-**Size:** Medium
-**Scope:** feature
-**Created:** 2026-01-22
+**Status:** Open **Size:** Medium **Scope:** feature **Created:** 2026-01-22
 **Planning:** Required
 
 ## Context
@@ -31,7 +28,8 @@ Use Plan Mode to analyze:
 
 ## Implementation
 
-1. PHP: Create `Infrastructure/Mail/` with MailService, MailConfig, MailInterface
+1. PHP: Create `Infrastructure/Mail/` with MailService, MailConfig,
+   MailInterface
 2. Node: Create `services/MailService.ts`
 3. Add SMTP configuration to .env.example
 4. Add health check endpoint for mail connectivity

@@ -123,14 +123,15 @@ Plan in `.claude/temp/plan-<task>.md`:
 
 ## Agent Selection Guide
 
-| Change Type | Agent | Standards |
-| ----------- | ----- | --------- |
-| PHP application code | B1 | `php.md` |
-| Node/TypeScript code | B2 | `node.md` |
-| Shell scripts, Dockerfiles, Compose, Makefile, BATS, Goss | B3 | `shell.md`, `docker.md` |
-| Database schema/migrations | B4 | `sql.md` |
+| Change Type                                               | Agent | Standards               |
+| --------------------------------------------------------- | ----- | ----------------------- |
+| PHP application code                                      | B1    | `php.md`                |
+| Node/TypeScript code                                      | B2    | `node.md`               |
+| Shell scripts, Dockerfiles, Compose, Makefile, BATS, Goss | B3    | `shell.md`, `docker.md` |
+| Database schema/migrations                                | B4    | `sql.md`                |
 
 **B3 Infrastructure triggers:**
+
 - Entrypoint/healthcheck scripts
 - Dockerfile changes
 - compose.yaml changes

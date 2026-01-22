@@ -9,7 +9,8 @@ setups.
 BATS tests validate the infrastructure layer:
 
 - **Makefile targets**: All documented targets exist and execute correctly
-- **Environment variables**: DB_TYPE, NODE_MODE, ENABLE\_\* flags work as expected
+- **Environment variables**: DB_TYPE, NODE_MODE, ENABLE\_\* flags work as
+  expected
 - **Docker Compose**: Configuration validates, services start correctly
 - **Goss integration**: BATS + Goss combined validation
 
@@ -202,36 +203,36 @@ Tests Goss integration:
 
 Common test helpers available in all test files:
 
-| Function | Description |
-|----------|-------------|
-| `is_container_running <name>` | Check if container is running |
-| `wait_for_healthy <service> <timeout>` | Wait for service health |
-| `clean_test_env` | Clear all test environment variables |
-| `load_env_file <file>` | Source an env file safely |
-| `target_exists <target>` | Check if Makefile target exists |
-| `get_target_help <target>` | Get help text for a target |
+| Function                               | Description                          |
+| -------------------------------------- | ------------------------------------ |
+| `is_container_running <name>`          | Check if container is running        |
+| `wait_for_healthy <service> <timeout>` | Wait for service health              |
+| `clean_test_env`                       | Clear all test environment variables |
+| `load_env_file <file>`                 | Source an env file safely            |
+| `target_exists <target>`               | Check if Makefile target exists      |
+| `get_target_help <target>`             | Get help text for a target           |
 
 ### goss-integration.bash
 
 Goss-specific helpers:
 
-| Function | Description |
-|----------|-------------|
-| `run_goss_test <service>` | Run Goss test for a service |
-| `run_goss_preset <preset>` | Run Goss preset |
+| Function                     | Description                    |
+| ---------------------------- | ------------------------------ |
+| `run_goss_test <service>`    | Run Goss test for a service    |
+| `run_goss_preset <preset>`   | Run Goss preset                |
 | `goss_test_passed <service>` | Check if last Goss test passed |
-| `get_goss_presets` | List available presets |
-| `preset_exists <preset>` | Check if preset exists |
+| `get_goss_presets`           | List available presets         |
+| `preset_exists <preset>`     | Check if preset exists         |
 
 ## Test Tiers
 
 BATS tests are organized in tiers for different use cases:
 
-| Tier | Tests | Duration | When to Run |
-|------|-------|----------|-------------|
-| **Quick (Dry-Run)** | ~332 | ~2 min | Every push |
-| **Integration** | ~88 | ~15 min | PRs, main branch |
-| **Destructive** | ~10 | ~5 min | Manual only |
+| Tier                | Tests | Duration | When to Run      |
+| ------------------- | ----- | -------- | ---------------- |
+| **Quick (Dry-Run)** | ~332  | ~2 min   | Every push       |
+| **Integration**     | ~88   | ~15 min  | PRs, main branch |
+| **Destructive**     | ~10   | ~5 min   | Manual only      |
 
 ## CI/CD Integration
 
@@ -320,15 +321,15 @@ load 'helpers/setup'
 
 Available from bats-assert:
 
-| Assertion | Description |
-|-----------|-------------|
-| `assert_success` | Exit code 0 |
-| `assert_failure` | Exit code non-zero |
-| `assert_output <expected>` | Exact output match |
-| `assert_output --partial <text>` | Output contains text |
-| `assert_output --regexp <pattern>` | Output matches regex |
-| `refute_output --partial <text>` | Output does NOT contain |
-| `assert_line <line>` | Line exists in output |
+| Assertion                          | Description             |
+| ---------------------------------- | ----------------------- |
+| `assert_success`                   | Exit code 0             |
+| `assert_failure`                   | Exit code non-zero      |
+| `assert_output <expected>`         | Exact output match      |
+| `assert_output --partial <text>`   | Output contains text    |
+| `assert_output --regexp <pattern>` | Output matches regex    |
+| `refute_output --partial <text>`   | Output does NOT contain |
+| `assert_line <line>`               | Line exists in output   |
 
 ### Test Categories
 

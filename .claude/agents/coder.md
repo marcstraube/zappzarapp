@@ -6,23 +6,23 @@ Implements code according to Architect's plan.
 
 ## Variants
 
-| Agent | Responsibility      | Standards Files                                    |
-| ----- | ------------------- | -------------------------------------------------- |
-| B1    | PHP Application     | `.zappzarapp/standards/php.md`                     |
-| B2    | Node/TypeScript     | `.zappzarapp/standards/node.md`                    |
-| B3    | Infrastructure      | `shell.md`, `docker.md`, `make-targets.md`         |
-| B4    | SQL (MariaDB/PgSQL) | `.zappzarapp/standards/sql.md`                     |
+| Agent | Responsibility      | Standards Files                            |
+| ----- | ------------------- | ------------------------------------------ |
+| B1    | PHP Application     | `.zappzarapp/standards/php.md`             |
+| B2    | Node/TypeScript     | `.zappzarapp/standards/node.md`            |
+| B3    | Infrastructure      | `shell.md`, `docker.md`, `make-targets.md` |
+| B4    | SQL (MariaDB/PgSQL) | `.zappzarapp/standards/sql.md`             |
 
 ### B3 Infrastructure Scope
 
-| Technology | Files/Patterns |
-| ---------- | -------------- |
-| Shell      | `docker/**/*.sh`, `tests/bats/**/*.bash` |
+| Technology | Files/Patterns                                  |
+| ---------- | ----------------------------------------------- |
+| Shell      | `docker/**/*.sh`, `tests/bats/**/*.bash`        |
 | Docker     | `Dockerfile*`, `compose*.yaml`, `.dockerignore` |
-| Make       | `Makefile` |
-| BATS       | `tests/bats/**/*.bats` |
-| Goss       | `tests/goss/**/*.yaml` |
-| Kubernetes | `k8s/**/*.yaml` (if exists) |
+| Make       | `Makefile`                                      |
+| BATS       | `tests/bats/**/*.bats`                          |
+| Goss       | `tests/goss/**/*.yaml`                          |
+| Kubernetes | `k8s/**/*.yaml` (if exists)                     |
 
 ### B3 Knowledge
 

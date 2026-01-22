@@ -1,11 +1,38 @@
 # zappzarapp - Changelog
 
-**Erstellt:** 2025-12-19 **Letzte Aktualisierung:** 2026-01-22 (BATS Testing
-Infrastructure) **Version:** 3.77
+**Erstellt:** 2025-12-19 **Letzte Aktualisierung:** 2026-01-22 (Lint Fixes)
+**Version:** 3.78
 
 ---
 
 ## Changelog
+
+### Version 3.78 (2026-01-22) - Lint Fixes
+
+Fixed all linting errors across the codebase and removed obsolete configuration.
+
+#### Fixed: Prettier Formatting
+
+- 14 Markdown files reformatted (agents, backlog, docs, standards)
+
+#### Fixed: Markdownlint Errors
+
+- MD032 (blanks-around-lists) in CHANGELOG.md, backlog files
+- MD040 (fenced-code-language) in config.local.md, backlog files
+
+#### Fixed: YAML Configuration
+
+- Added document start `---` to kubernetes/\*.yaml files
+- Fixed line length and comment indentation in values.yaml
+
+#### Removed: Obsolete TOML Pattern
+
+- Removed `**/*.toml` from Prettier scripts in package.json
+- Removed `**/*.toml` from lint-staged.config.js
+- Deleted resolved backlog item `ci-prettier-toml-fix.md`
+
+The TOML pattern was originally for Gemini CLI commands which are now generated
+via `make ai-sync` and gitignored.
 
 ### Version 3.77 (2026-01-22) - BATS Testing Infrastructure (Complete)
 
@@ -21,15 +48,16 @@ with full coverage: dry-run validation, integration tests, and CI matrix.
 
 #### New: Test Tiers
 
-| Tier | Tests | Duration | Purpose |
-|------|-------|----------|---------|
-| Quick (Dry-Run) | ~332 | ~2 min | Syntax validation, every push |
-| Integration | ~88 | ~15 min | Full execution, PRs/main |
-| Destructive | ~10 | ~5 min | Manual only, with warnings |
+| Tier            | Tests | Duration | Purpose                       |
+| --------------- | ----- | -------- | ----------------------------- |
+| Quick (Dry-Run) | ~332  | ~2 min   | Syntax validation, every push |
+| Integration     | ~88   | ~15 min  | Full execution, PRs/main      |
+| Destructive     | ~10   | ~5 min   | Manual only, with warnings    |
 
 #### New: Test Suites
 
 **Dry-Run Tests:**
+
 - **make-help.bats** — Help system, filtering (~27 tests)
 - **make-env.bats** — Environment loading (~27 tests)
 - **make-docker.bats** — Docker commands (~33 tests)
@@ -38,6 +66,7 @@ with full coverage: dry-run validation, integration tests, and CI matrix.
 - **make-targets-dryrun.bats** — All 200+ targets (~154 tests)
 
 **Integration Tests:**
+
 - **lint.bats** — cs-check, lint-node, PHPStan, etc. (~20 tests)
 - **test.bats** — PHPUnit, Vitest execution (~10 tests)
 - **docs.bats** — Documentation generation (~6 tests)
@@ -58,8 +87,10 @@ with full coverage: dry-run validation, integration tests, and CI matrix.
 
 #### New: CI/CD Matrix
 
-- **GitHub Actions** — Two jobs: `bats-quick` (always) + `bats-integration` (PR/main)
-- **GitLab CI** — Two stages: `bats:quick` + `bats:integration` with dependencies
+- **GitHub Actions** — Two jobs: `bats-quick` (always) + `bats-integration`
+  (PR/main)
+- **GitLab CI** — Two stages: `bats:quick` + `bats:integration` with
+  dependencies
 - Parallel execution for faster feedback
 
 #### Docs: TESTING-SHELL.md Updated

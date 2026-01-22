@@ -6,7 +6,7 @@ Fix shell quoting issue found by hadolint.
 
 ## Issue
 
-```
+```text
 -:143 SC2086 info: Double quote to prevent globbing and word splitting.
 ```
 

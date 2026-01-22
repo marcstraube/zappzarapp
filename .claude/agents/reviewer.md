@@ -6,13 +6,13 @@ Runs code quality checks and tests.
 
 ## Variants
 
-| Agent | Responsibility      | Fix Targets                     | Check Targets                  | Test Targets           |
-| ----- | ------------------- | ------------------------------- | ------------------------------ | ---------------------- |
-| C1    | PHP                 | `cs-fix`                        | `analyse`, `phpmd`, `cs-check` | `test-php`             |
-| C2    | Node/TS             | `prettier-fix`, `lint-node-fix` | `lint-node`, `type-check`      | `test-node`            |
-| C3    | SQL (MariaDB/PgSQL) | `lint-sql-fix`                  | `lint-sql`                     | `test-sql`             |
-| C4    | Markdown (Docs)     | `lint-markdown-fix`             | `lint-markdown`                | —                      |
-| C5    | Config Sync         | `/sync-check --fix`             | `/sync-check`                  | —                      |
+| Agent | Responsibility      | Fix Targets                     | Check Targets                  | Test Targets             |
+| ----- | ------------------- | ------------------------------- | ------------------------------ | ------------------------ |
+| C1    | PHP                 | `cs-fix`                        | `analyse`, `phpmd`, `cs-check` | `test-php`               |
+| C2    | Node/TS             | `prettier-fix`, `lint-node-fix` | `lint-node`, `type-check`      | `test-node`              |
+| C3    | SQL (MariaDB/PgSQL) | `lint-sql-fix`                  | `lint-sql`                     | `test-sql`               |
+| C4    | Markdown (Docs)     | `lint-markdown-fix`             | `lint-markdown`                | —                        |
+| C5    | Config Sync         | `/sync-check --fix`             | `/sync-check`                  | —                        |
 | C6    | Infrastructure      | —                               | `lint-shell`, `lint-docker`    | `test-bats`, `goss-test` |
 
 **C5 Trigger:** Only runs when changed files include:

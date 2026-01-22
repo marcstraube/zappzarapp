@@ -9,20 +9,20 @@
 
 ## Disabled Checks
 
-| Check | Reason |
-|-------|--------|
-| SC1091 | Can't follow non-constant source (external files) |
+| Check  | Reason                                                              |
+| ------ | ------------------------------------------------------------------- |
+| SC1091 | Can't follow non-constant source (external files)                   |
 | SC2002 | "Useless cat" — stylistic preference, `cat file \| cmd` is readable |
-| SC2250 | Prefer `${var}` over `$var` — too noisy, `$var` is fine |
-| SC2312 | Command substitution in pipes — too noisy, often intentional |
+| SC2250 | Prefer `${var}` over `$var` — too noisy, `$var` is fine             |
+| SC2312 | Command substitution in pipes — too noisy, often intentional        |
 
 ## Required Checks
 
-| Check | Description | Why |
-|-------|-------------|-----|
-| SC2292 | Prefer `[[ ]]` over `[ ]` | Safer in Bash (no word splitting, better quoting) |
-| SC2155 | Declare and assign separately | Prevents masking return values |
-| SC2046 | Quote command substitution | Prevents word splitting |
+| Check  | Description                   | Why                                               |
+| ------ | ----------------------------- | ------------------------------------------------- |
+| SC2292 | Prefer `[[ ]]` over `[ ]`     | Safer in Bash (no word splitting, better quoting) |
+| SC2155 | Declare and assign separately | Prevents masking return values                    |
+| SC2046 | Quote command substitution    | Prevents word splitting                           |
 
 ## Best Practices
 
@@ -31,7 +31,8 @@
 - `#!/bin/bash` — For scripts using Bash features (`[[ ]]`, `local`, arrays)
 - `#!/bin/sh` — For POSIX-compatible scripts (Alpine containers, portability)
 
-When using `#!/bin/sh`, add `# shellcheck shell=sh` to prevent Bash-specific warnings.
+When using `#!/bin/sh`, add `# shellcheck shell=sh` to prevent Bash-specific
+warnings.
 
 ### Variable Assignment with Export
 

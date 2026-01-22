@@ -37,7 +37,4 @@ export default {
   // Markdown files (auto-fix and re-stage)
   // Prettier first (formats tables), then markdownlint (checks remaining issues)
   '**/*.md': ['pnpm exec prettier --write', 'pnpm exec markdownlint-cli2 --fix'],
-
-  // TOML files (auto-fix and re-stage)
-  '**/*.toml': ['pnpm exec prettier --write'],
 };

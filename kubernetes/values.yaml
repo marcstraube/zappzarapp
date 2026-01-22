@@ -1,3 +1,4 @@
+---
 # Default values for zappzarapp.
 # This is a YAML-formatted file.
 # Declare variables to be passed into your templates.
@@ -17,7 +18,8 @@ global:
 
 # Namespace configuration
 namespace:
-  # Set to false - Helm --create-namespace handles this (avoids "already exists" errors)
+  # Set to false - Helm --create-namespace handles this
+  # (avoids "already exists" errors)
   create: false
   name: zappzarapp
 
@@ -370,7 +372,7 @@ ingress:
   enabled: false
   className: nginx
   annotations: {}
-    # kubernetes.io/tls-acme: "true"
+  # kubernetes.io/tls-acme: "true"
   hosts:
     - host: localhost
       paths:

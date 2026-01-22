@@ -1,15 +1,12 @@
 # Debug Command
 
-**Status:** Planned
-**Size:** Medium
-**Scope:** feature
-**Created:** 2026-01-22
+**Status:** Planned **Size:** Medium **Scope:** feature **Created:** 2026-01-22
 **Planning:** Required
 
 ## Context
 
-Need a meta-tool to analyze why instructions from CLAUDE.md, agents, or knowledge
-files were not correctly followed. Helps improve instruction quality.
+Need a meta-tool to analyze why instructions from CLAUDE.md, agents, or
+knowledge files were not correctly followed. Helps improve instruction quality.
 
 ## Goal
 

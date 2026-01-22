@@ -1,3 +1,4 @@
+---
 apiVersion: v2
 name: zappzarapp
 description: A Helm chart for deploying the zappzarapp application stack

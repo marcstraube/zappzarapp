@@ -1,20 +1,18 @@
 # README.md Documentation Links Fix
 
-**Status:** Open
-**Size:** Small
-**Scope:** docs
-**Created:** 2026-01-22
+**Status:** Open **Size:** Small **Scope:** docs **Created:** 2026-01-22
 **Planning:** Not required
 
 ## Context
 
-The README.md contains links to documentation files in `.zappzarapp/docs/`. These
-links don't work by default because the documentation folder only exists after
-running `make setup`, which moves files to the project root.
+The README.md contains links to documentation files in `.zappzarapp/docs/`.
+These links don't work by default because the documentation folder only exists
+after running `make setup`, which moves files to the project root.
 
 ## Goal
 
 Fix documentation links in README.md so they work both:
+
 1. In the boilerplate repo itself (before setup)
 2. After `make setup` in user projects
 

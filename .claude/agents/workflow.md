@@ -246,7 +246,8 @@ Main Agent
 └── After approval: Merge + BACKLOG cleanup
 ```
 
-**B3 Infrastructure includes:** Shell scripts, Dockerfiles, Compose files, Makefile, BATS/Goss tests
+**B3 Infrastructure includes:** Shell scripts, Dockerfiles, Compose files,
+Makefile, BATS/Goss tests
 
 ## Main Agent Responsibilities
 
@@ -262,7 +263,8 @@ Main Agent
 - Spawns agents in correct order
 - Decides on parallelization (B1/B2/B3/B4, C1/C2/C3/C4/C5/C6, D)
 - C5 (Config Sync) only runs if config files changed
-- C6 (Infrastructure) only runs if infra files changed (docker/, tests/bats/, Makefile)
+- C6 (Infrastructure) only runs if infra files changed (docker/, tests/bats/,
+  Makefile)
 - Collects results
 - **Important:** Subagents are coordinated subprocesses, not separate contexts
 
