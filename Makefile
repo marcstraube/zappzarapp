@@ -2617,6 +2617,7 @@ bats-test-integration: ## Run BATS integration tests (requires running container
 		-v "$(PWD):$(PWD)" \
 		-w "$(PWD)" \
 		--network host \
+		--user root \
 		-e INTEGRATION_PRESET=$(INTEGRATION_PRESET) \
 		$(BATS_IMAGE) tests/bats/integration/
 	@echo -e "\033[0;32m✓ BATS integration tests complete\033[0m"
@@ -2631,6 +2632,7 @@ bats-test-integration-file: ## Run specific BATS integration test file (FILE=lin
 		-v "$(PWD):$(PWD)" \
 		-w "$(PWD)" \
 		--network host \
+		--user root \
 		-e INTEGRATION_PRESET=$(INTEGRATION_PRESET) \
 		$(BATS_IMAGE) "tests/bats/integration/$(FILE)"
 
@@ -2657,6 +2659,7 @@ bats-test-destructive: ## Run BATS destructive tests (⚠️ WARNING: modifies d
 		-v "$(PWD):$(PWD)" \
 		-w "$(PWD)" \
 		--network host \
+		--user root \
 		-e BATS_ENABLE_DESTRUCTIVE=true \
 		$(BATS_IMAGE) tests/bats/integration/destructive.bats
 
