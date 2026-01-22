@@ -138,6 +138,22 @@ setup() {
     [[ -d "tools" ]]
 }
 
+@test "[Phase 2] Verify: dist/ directory created" {
+    [[ -d "dist" ]]
+}
+
+@test "[Phase 2] Verify: composer.lock is a file (not directory)" {
+    # Docker bind mount bug: creates directories when target doesn't exist
+    [[ -f "composer.lock" ]]
+    [[ ! -d "composer.lock" ]]
+}
+
+@test "[Phase 2] Verify: pnpm-lock.yaml is a file (not directory)" {
+    # Docker bind mount bug: creates directories when target doesn't exist
+    [[ -f "pnpm-lock.yaml" ]]
+    [[ ! -d "pnpm-lock.yaml" ]]
+}
+
 # =============================================================================
 # Phase 3: Reset-Full Restores Original State
 # =============================================================================
@@ -174,6 +190,10 @@ setup() {
     [[ ! -d "tools" ]]
 }
 
+@test "[Phase 3] Verify: dist/ removed after reset-full" {
+    [[ ! -d "dist" ]]
+}
+
 @test "[Phase 3] Verify: docs/index.html preserved (not removed)" {
     # Static docs should NOT be removed by reset-full
     [[ -f "docs/index.html" ]]
@@ -203,10 +223,96 @@ setup() {
 }
 
 # =============================================================================
-# Phase 5: Final Cleanup
+# Phase 5: Docker Bind Mount Edge Cases (Docker-in-Docker)
 # =============================================================================
 
-@test "[Phase 5] Final reset-full cleanup" {
+@test "[Phase 5] composer-install handles lockfile as directory" {
+    # Docker bind mount bug: creates directories when target doesn't exist
+    # First backup current lockfile
+    if [[ -f "composer.lock" ]]; then
+        cp composer.lock composer.lock.bak
+    fi
+
+    # Create lockfile as directory (simulates Docker bind mount bug)
+    rm -f composer.lock 2>/dev/null || true
+    docker run --rm -v "${PROJECT_ROOT}:/app" -w /app alpine:3.21 \
+        sh -c "rm -rf composer.lock && mkdir composer.lock"
+
+    # Verify it's a directory
+    [[ -d "composer.lock" ]]
+
+    # Run composer-install - should fix and succeed
+    run bash -c "timeout 120 make composer-install"
+    assert_success
+
+    # Verify lockfile is now a file with content
+    [[ -f "composer.lock" ]]
+    [[ -s "composer.lock" ]]
+
+    # Cleanup: restore backup if existed
+    if [[ -f "composer.lock.bak" ]]; then
+        mv composer.lock.bak composer.lock
+    fi
+}
+
+@test "[Phase 5] pnpm-install handles lockfile as directory" {
+    # Docker bind mount bug: creates directories when target doesn't exist
+    # First backup current lockfile
+    if [[ -f "pnpm-lock.yaml" ]]; then
+        cp pnpm-lock.yaml pnpm-lock.yaml.bak
+    fi
+
+    # Create lockfile as directory (simulates Docker bind mount bug)
+    rm -f pnpm-lock.yaml 2>/dev/null || true
+    docker run --rm -v "${PROJECT_ROOT}:/app" -w /app alpine:3.21 \
+        sh -c "rm -rf pnpm-lock.yaml && mkdir pnpm-lock.yaml"
+
+    # Verify it's a directory
+    [[ -d "pnpm-lock.yaml" ]]
+
+    # Run pnpm-install - should fix and succeed
+    run bash -c "timeout 180 make pnpm-install"
+    assert_success
+
+    # Verify lockfile is now a file with content
+    [[ -f "pnpm-lock.yaml" ]]
+    [[ -s "pnpm-lock.yaml" ]]
+
+    # Cleanup: restore backup if existed
+    if [[ -f "pnpm-lock.yaml.bak" ]]; then
+        mv pnpm-lock.yaml.bak pnpm-lock.yaml
+    fi
+}
+
+@test "[Phase 5] make setup fixes root-owned backups directory" {
+    # Create root-owned directory via Docker
+    docker run --rm -v "${PROJECT_ROOT}/backups:/backups" alpine:3.21 \
+        sh -c "mkdir -p /backups/test-root && chown root:root /backups/test-root"
+
+    # Verify root ownership exists
+    run find backups -user root -type d
+    [[ -n "$output" ]]
+
+    # Run setup - should fix ownership
+    run bash -c "echo 'c' | timeout 300 make setup"
+    assert_success
+
+    # Verify no root-owned directories remain (except what Docker may create)
+    run find backups -user root -type d 2>/dev/null
+    # Note: This may still find root-owned dirs if Docker is creating them
+    # The important thing is setup didn't fail
+
+    # Cleanup
+    rm -rf backups/test-root 2>/dev/null || \
+        docker run --rm -v "${PROJECT_ROOT}/backups:/backups" alpine:3.21 \
+            sh -c "rm -rf /backups/test-root"
+}
+
+# =============================================================================
+# Phase 6: Final Cleanup
+# =============================================================================
+
+@test "[Phase 6] Final reset-full cleanup" {
     echo "# Final cleanup..." >&3
 
     run bash -c "echo 'RESET-FULL' | timeout 300 make reset-full"

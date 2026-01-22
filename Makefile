@@ -77,14 +77,13 @@ help: ## Show this help (FILTER=? for categories, FILTER=<name> to filter)
 
 composer-install: ## Install Composer dependencies (Docker - guaranteed consistency)
 	@echo -e "\033[0;33mInstalling Composer dependencies (Docker)...\033[0m"
-	@# Fix bind mount bug: if lockfile is directory, remove and recreate as file
-	@if [ -d composer.lock ]; then \
-		docker run --rm -v "$(PWD):/app" -w /app $(ALPINE_IMAGE) sh -c "rm -rf composer.lock" 2>/dev/null || rm -rf composer.lock; \
+	@# Fix bind mount bug: if lockfile is directory or has wrong ownership, fix via Docker
+	@# Note: Use USER_ID/GROUP_ID from .env (not host user) for Docker container compatibility
+	@. ./.env && \
+	if [ -d composer.lock ] || [ ! -f composer.lock ] || [ -f composer.lock -a ! -s composer.lock ]; then \
+		docker run --rm -v "$(PWD):/app" -w /app $(ALPINE_IMAGE) sh -c \
+			"rm -rf composer.lock && echo '{}' > composer.lock && chown $${USER_ID:-1000}:$${GROUP_ID:-1000} composer.lock"; \
 	fi
-	@# Remove empty lockfile (Composer can't parse empty as JSON)
-	@if [ -f composer.lock ] && [ ! -s composer.lock ]; then rm -f composer.lock; fi
-	@# Ensure lockfile exists as FILE (empty but valid) to prevent Docker bind mount bug
-	@if [ ! -f composer.lock ]; then echo '{}' > composer.lock; fi
 	@XDEBUG_MODE=off $(DC_RUN) run --rm --no-TTY php composer install --prefer-dist --no-interaction
 	@echo -e "\033[0;32mDependencies installed!\033[0m"
 
@@ -190,9 +189,11 @@ setup: ## Create directories, install dev dependencies and ensure structure
 
 	# Lockfiles (must exist as FILES before Docker bind mounts, otherwise Docker creates directories)
 	@# Fix bind mount bug: remove if directories, ensure files exist with correct ownership
+	@# Note: Use USER_ID/GROUP_ID from .env (not host user) for Docker container compatibility
 	@if [ -d composer.lock ] || [ -d pnpm-lock.yaml ] || [ ! -f composer.lock ] || [ ! -f pnpm-lock.yaml ]; then \
+		. ./.env && \
 		docker run --rm -v "$(PWD):/app" -w /app $(ALPINE_IMAGE) sh -c \
-			"rm -rf composer.lock pnpm-lock.yaml && touch composer.lock pnpm-lock.yaml && chown $(shell id -u):$(shell id -g) composer.lock pnpm-lock.yaml"; \
+			"rm -rf composer.lock pnpm-lock.yaml && touch composer.lock pnpm-lock.yaml && chown $${USER_ID:-1000}:$${GROUP_ID:-1000} composer.lock pnpm-lock.yaml"; \
 	fi
 
 	# SSL/TLS Certificates
@@ -204,16 +205,18 @@ setup: ## Create directories, install dev dependencies and ensure structure
 	# Storage (Runtime data) - Set permissions
 	@. ./.env && mkdir -p $${STORAGE_DIR:-./storage}/{app/{uploads,generated},cache,sessions,logs}
 	@# Fix ownership if root-owned (from container operations) - only for default ./storage
+	@# Note: Use USER_ID/GROUP_ID from .env (not host user) for Docker container compatibility
 	@if [ -d storage ] && find storage -user root 2>/dev/null | grep -q .; then \
-		docker run --rm -v "$(PWD)/storage:/storage" $(ALPINE_IMAGE) chown -R $(shell id -u):$(shell id -g) /storage; \
+		. ./.env && docker run --rm -v "$(PWD)/storage:/storage" $(ALPINE_IMAGE) chown -R $${USER_ID:-1000}:$${GROUP_ID:-1000} /storage; \
 	fi
 	@. ./.env && chmod 770 $${STORAGE_DIR:-./storage} -R 2>/dev/null || true
 
 	# Backups directory (encrypted backups for all services)
 	@mkdir -p backups/{db,seaweedfs,rabbitmq,elasticsearch}
 	@# Fix ownership if root-owned (from container backup operations)
+	@# Note: Use USER_ID/GROUP_ID from .env (not host user) for Docker container compatibility
 	@if find backups -user root 2>/dev/null | grep -q .; then \
-		docker run --rm -v "$(PWD)/backups:/backups" $(ALPINE_IMAGE) chown -R $(shell id -u):$(shell id -g) /backups; \
+		. ./.env && docker run --rm -v "$(PWD)/backups:/backups" $(ALPINE_IMAGE) chown -R $${USER_ID:-1000}:$${GROUP_ID:-1000} /backups; \
 	fi
 	@chmod 700 backups backups/* 2>/dev/null || true
 
@@ -1245,9 +1248,12 @@ node-frontend-start: ## Start Node frontend framework production server
 
 pnpm-install: ## Install Node.js dependencies (Docker - guaranteed consistency)
 	@echo -e "\033[0;33mInstalling Node.js dependencies (Docker)...\033[0m"
-	@# Fix bind mount bug: if lockfile is directory, remove it
-	@if [ -d pnpm-lock.yaml ]; then \
-		docker run --rm -v "$(PWD):/app" -w /app $(ALPINE_IMAGE) sh -c "rm -rf pnpm-lock.yaml" 2>/dev/null || rm -rf pnpm-lock.yaml; \
+	@# Fix bind mount bug: if lockfile is directory or missing, fix via Docker
+	@# Note: Use USER_ID/GROUP_ID from .env (not host user) for Docker container compatibility
+	@. ./.env && \
+	if [ -d pnpm-lock.yaml ] || [ ! -f pnpm-lock.yaml ]; then \
+		docker run --rm -v "$(PWD):/app" -w /app $(ALPINE_IMAGE) sh -c \
+			"rm -rf pnpm-lock.yaml && touch pnpm-lock.yaml && chown $${USER_ID:-1000}:$${GROUP_ID:-1000} pnpm-lock.yaml"; \
 	fi
 	@# If lockfile is empty/missing, generate in temp dir first (avoids EBUSY on bind mount)
 	@if [ ! -s pnpm-lock.yaml ]; then \
@@ -2698,6 +2704,7 @@ bats-test-integration-file: ## Run specific BATS integration test file (FILE=lin
 		--network host \
 		--user root \
 		-e INTEGRATION_PRESET=$(INTEGRATION_PRESET) \
+		-e BATS_ENABLE_DESTRUCTIVE=$(BATS_ENABLE_DESTRUCTIVE) \
 		$(BATS_IMAGE) "tests/bats/integration/$(FILE)"
 
 bats-test-all: ## Run all BATS tests (unit + integration)
