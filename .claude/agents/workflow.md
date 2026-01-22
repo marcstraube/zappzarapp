@@ -227,17 +227,17 @@ Agent A (Architect)
 ├── Researches known challenges
 └── Creates plan in .claude/temp/plan-<task>.md
         ↓
-   ┌────┴────┬────┐  (parallel if independent)
-   ↓         ↓    ↓
-Agent B1   B2   B3
-(PHP)    (Node) (SQL)
-   └────┬────┴────┘
+   ┌────┴────┬────┬────┐  (parallel if independent)
+   ↓         ↓    ↓    ↓
+Agent B1   B2   B3   B4
+(PHP)    (Node)(Infra)(SQL)
+   └────┬────┴────┴────┘
         ↓
-   ┌────┴────────────────────────┐  (parallel)
-   ↓      ↓     ↓     ↓     ↓    ↓
-Agent C1  C2   C3    C4   [C5]  Agent D
-(PHP)  (Node) (SQL) (MD) (Cfg)  (Docs)
-   └────┬────────────────────────┘
+   ┌────┴─────────────────────────────┐  (parallel)
+   ↓      ↓     ↓     ↓     ↓    ↓    ↓
+Agent C1  C2   C3    C4   [C5] [C6]  Agent D
+(PHP)  (Node) (SQL) (MD) (Cfg)(Infra) (Docs)
+   └────┬─────────────────────────────┘
         ↓
 Main Agent
 ├── Collects C + D reports
@@ -245,6 +245,8 @@ Main Agent
 ├── Informs user: "Branch ready for review"
 └── After approval: Merge + BACKLOG cleanup
 ```
+
+**B3 Infrastructure includes:** Shell scripts, Dockerfiles, Compose files, Makefile, BATS/Goss tests
 
 ## Main Agent Responsibilities
 
@@ -258,8 +260,9 @@ Main Agent
 ### Coordination
 
 - Spawns agents in correct order
-- Decides on parallelization (B1/B2/B3, C1/C2/C3/C4/C5, D)
+- Decides on parallelization (B1/B2/B3/B4, C1/C2/C3/C4/C5/C6, D)
 - C5 (Config Sync) only runs if config files changed
+- C6 (Infrastructure) only runs if infra files changed (docker/, tests/bats/, Makefile)
 - Collects results
 - **Important:** Subagents are coordinated subprocesses, not separate contexts
 
@@ -381,9 +384,14 @@ single source of truth for completed work.
 ### Commit Workflow on Feature Branch
 
 ```text
-B3 (SQL) done + C3 (SQL Review) OK  ← (if schema changes needed)
+B4 (SQL) done + C3 (SQL Review) OK  ← (if schema changes needed)
     ↓
 Commit: "feat(sql): add redis session tables"
+CHANGELOG: Entry under "Features"
+    ↓
+B3 (Infra) done + C6 (Infra Review) OK  ← (if infra changes needed)
+    ↓
+Commit: "feat(docker): add redis container config"
 CHANGELOG: Entry under "Features"
     ↓
 B1 (PHP) done + C1 (PHP Review) OK

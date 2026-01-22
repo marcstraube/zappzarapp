@@ -113,7 +113,7 @@ if [[ "$FORCE" != true ]]; then
     echo -e "${RED}WARNING: This will overwrite all existing SeaweedFS data!${NC}"
     echo -e "Backup file: ${BLUE}$BACKUP_FILE${NC}"
     echo ""
-    read -p "Are you sure you want to continue? Type 'YES' to confirm: " CONFIRM
+    read -rp "Are you sure you want to continue? Type 'YES' to confirm: " CONFIRM
     if [[ "$CONFIRM" != "YES" ]]; then
         echo -e "${YELLOW}Restore cancelled.${NC}"
         exit 0
@@ -160,7 +160,7 @@ docker compose start seaweedfs
 
 # Wait for SeaweedFS to be healthy
 echo -e "${YELLOW}Waiting for SeaweedFS to be ready...${NC}"
-for i in {1..30}; do
+for _ in {1..30}; do
     if docker compose exec -T seaweedfs wget -q --spider http://127.0.0.1:8333/ 2>/dev/null; then
         echo -e "${GREEN}SeaweedFS is ready!${NC}"
         break

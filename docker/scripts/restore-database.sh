@@ -176,7 +176,7 @@ if [[ "$SKIP_CONFIRM" != true ]]; then
     echo -e "${RED}WARNING: This will OVERWRITE the current database '$DB_NAME'!${NC}"
     echo -e "${YELLOW}All existing data will be lost.${NC}"
     echo ""
-    read -p "Type 'YES' to confirm restore: " CONFIRM
+    read -rp "Type 'YES' to confirm restore: " CONFIRM
     if [[ "$CONFIRM" != "YES" ]]; then
         echo -e "${BLUE}Restore cancelled.${NC}"
         exit 0

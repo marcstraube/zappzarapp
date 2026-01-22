@@ -2088,7 +2088,7 @@ rector-fix: ## Apply Rector refactorings automatically
 	@echo -e "\033[0;33mApplying Rector refactorings...\033[0m"
 	@docker compose exec php composer rector-fix
 
-check: cs-check analyse phpmd rector-check prettier-check type-check lint-node test validate lint-md lint-sql lint-docker ## Run all checks (CI simulation)
+check: cs-check analyse phpmd rector-check prettier-check type-check lint-node test validate lint-md lint-sql lint-docker lint-shell ## Run all checks (CI simulation)
 	@echo -e "\033[0;32mAll checks passed!\033[0m"
 
 cs-check: ## Check coding style (dry-run)
@@ -2230,6 +2230,18 @@ lint-node-fix: ## Fix ESLint issues automatically
 	@echo -e "\033[0;33mFixing ESLint issues...\033[0m"
 	@$(DC) run --rm -T dev-tools pnpm run lint:fix
 	@echo -e "\033[0;32mESLint issues fixed!\033[0m"
+
+lint-shell: ## Lint shell scripts with ShellCheck
+	@echo -e "\033[0;33mLinting shell scripts (ShellCheck)...\033[0m"
+	@SHELL_FILES=$$(find docker -name "*.sh" -type f 2>/dev/null; find tests/bats -name "*.bash" -type f 2>/dev/null); \
+	if [ -n "$$SHELL_FILES" ]; then \
+		docker run --rm -v "$(PWD):/mnt:ro" -w /mnt koalaman/shellcheck:stable \
+			--severity=warning --color=always $$SHELL_FILES \
+		|| (echo -e "\033[0;31mShellCheck found issues!\033[0m" && exit 1); \
+	else \
+		echo -e "\033[0;33mNo shell scripts found to lint.\033[0m"; \
+	fi
+	@echo -e "\033[0;32mShellCheck completed!\033[0m"
 
 type-check: ## Run TypeScript type checking (static analysis)
 	@echo -e "\033[0;33mRunning TypeScript type check...\033[0m"

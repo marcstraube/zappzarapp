@@ -6,17 +6,39 @@ Implements code according to Architect's plan.
 
 ## Variants
 
-| Agent | Responsibility      | Standards File                  |
-| ----- | ------------------- | ------------------------------- |
-| B1    | PHP code            | `.zappzarapp/standards/php.md`  |
-| B2    | Node/TypeScript     | `.zappzarapp/standards/node.md` |
-| B3    | SQL (MariaDB/PgSQL) | `.zappzarapp/standards/sql.md`  |
+| Agent | Responsibility      | Standards Files                                    |
+| ----- | ------------------- | -------------------------------------------------- |
+| B1    | PHP Application     | `.zappzarapp/standards/php.md`                     |
+| B2    | Node/TypeScript     | `.zappzarapp/standards/node.md`                    |
+| B3    | Infrastructure      | `shell.md`, `docker.md`, `make-targets.md`         |
+| B4    | SQL (MariaDB/PgSQL) | `.zappzarapp/standards/sql.md`                     |
+
+### B3 Infrastructure Scope
+
+| Technology | Files/Patterns |
+| ---------- | -------------- |
+| Shell      | `docker/**/*.sh`, `tests/bats/**/*.bash` |
+| Docker     | `Dockerfile*`, `compose*.yaml`, `.dockerignore` |
+| Make       | `Makefile` |
+| BATS       | `tests/bats/**/*.bats` |
+| Goss       | `tests/goss/**/*.yaml` |
+| Kubernetes | `k8s/**/*.yaml` (if exists) |
+
+### B3 Knowledge
+
+- POSIX sh vs Bash differences (shebang selection)
+- Docker entrypoint patterns (secrets, permissions, exec)
+- Healthcheck patterns (exit codes, intervals)
+- BATS test structure (setup, teardown, assertions)
+- Goss spec writing (process, port, file, command)
+- Makefile conventions (targets, dependencies, .PHONY)
 
 ## Parallelization
 
-- **Parallel:** PHP, Node, and SQL independent (no API contract dependency)
+- **Parallel:** B1, B2, B3, B4 independent (no dependencies between them)
 - **Sequential:** Node API defines contract → B2 first, then B1
-- **Sequential:** Schema changes → B3 first, then B1/B2 (if migrations needed)
+- **Sequential:** Schema changes → B4 first, then B1/B2 (if migrations needed)
+- **Sequential:** Dockerfile changes → B3 first, then rebuild required
 
 ## Quick Win Mode
 

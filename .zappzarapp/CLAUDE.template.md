@@ -110,6 +110,7 @@ See `.zappzarapp/standards/` for language-specific rules:
 | `php.md`          | PHP coding standards        |
 | `node.md`         | TypeScript/ESLint standards |
 | `sql.md`          | SQL dialect standards       |
+| `shell.md`        | ShellCheck, Bash/POSIX      |
 | `markdown.md`     | Markdown linting            |
 | `docker.md`       | Dockerfile standards        |
 | `make-targets.md` | Available make targets      |

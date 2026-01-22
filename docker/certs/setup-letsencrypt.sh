@@ -19,7 +19,7 @@ set -e
 DOMAIN="$1"
 EMAIL="$2"
 
-if [ -z "$DOMAIN" ] || [ -z "$EMAIL" ]; then
+if [[ -z "$DOMAIN" ]] || [[ -z "$EMAIL" ]]; then
     echo "❌ Error: Missing arguments"
     echo ""
     echo "Usage: $0 <domain> <email>"
@@ -53,17 +53,12 @@ if ! host "$DOMAIN" > /dev/null 2>&1; then
     fi
 fi
 
-# Install certbot if not available
+# Check if certbot is available locally
+USE_DOCKER=false
 if ! command -v certbot &> /dev/null; then
     echo ""
-    echo "Certbot not found. Installing via Docker..."
-    CERTBOT_CMD="docker run -it --rm --name certbot \
-        -v \"$CERT_DIR/letsencrypt:/etc/letsencrypt\" \
-        -v \"$WEBROOT:/var/www/html\" \
-        -p 80:80 \
-        certbot/certbot"
-else
-    CERTBOT_CMD="certbot"
+    echo "Certbot not found. Using Docker instead..."
+    USE_DOCKER=true
 fi
 
 # Request certificate
@@ -72,7 +67,8 @@ echo "Requesting SSL certificate from Let's Encrypt..."
 echo "This may take a few minutes..."
 echo ""
 
-if command -v certbot &> /dev/null; then
+if [[ "$USE_DOCKER" == "false" ]]; then
+    # Local certbot: use webroot mode (nginx serves challenge files)
     sudo certbot certonly --webroot \
         -w "$WEBROOT" \
         -d "$DOMAIN" \
@@ -81,6 +77,7 @@ if command -v certbot &> /dev/null; then
         --no-eff-email \
         --cert-path "$CERT_DIR/letsencrypt"
 else
+    # Docker certbot: use standalone mode (certbot runs own webserver on port 80)
     docker run -it --rm --name certbot \
         -v "$CERT_DIR/letsencrypt:/etc/letsencrypt" \
         -v "$WEBROOT:/var/www/html" \

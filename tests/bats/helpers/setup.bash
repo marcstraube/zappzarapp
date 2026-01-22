@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # BATS Test Helper - Common Setup
 # Loads bats-support and bats-assert libraries
+# shellcheck disable=SC2154  # BATS_TEST_DIRNAME is provided by BATS framework
 
 # Detect library location (Docker vs local)
 if [[ -d "/usr/local/lib/bats" ]]; then
@@ -29,7 +30,8 @@ _find_project_root() {
     # Fallback: use current working directory
     pwd
 }
-export PROJECT_ROOT="$(_find_project_root)"
+PROJECT_ROOT="$(_find_project_root)"
+export PROJECT_ROOT
 
 # Change to project root for all tests
 cd "${PROJECT_ROOT}" || exit 1

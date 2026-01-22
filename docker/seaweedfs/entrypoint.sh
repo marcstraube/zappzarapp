@@ -1,4 +1,5 @@
 #!/bin/sh
+# shellcheck shell=sh
 # SeaweedFS entrypoint script
 # Loads credentials from Docker Secret files, configures TLS, and starts SeaweedFS
 

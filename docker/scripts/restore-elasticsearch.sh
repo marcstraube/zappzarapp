@@ -79,7 +79,7 @@ echo ""
 
 # Confirmation
 echo -e "${YELLOW}WARNING: This will close existing indices and restore from snapshot!${NC}"
-read -p "Continue? (yes/no): " CONFIRM
+read -rp "Continue? (yes/no): " CONFIRM
 if [[ "$CONFIRM" != "yes" ]]; then
     echo -e "${YELLOW}Restore cancelled.${NC}"
     exit 0

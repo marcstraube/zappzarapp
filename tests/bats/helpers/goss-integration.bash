@@ -62,7 +62,8 @@ cleanup_goss() {
 
 # Get list of available Goss presets
 get_goss_presets() {
-    ls -1 tests/goss/presets/*.env 2>/dev/null | xargs -I{} basename {} .env
+    find tests/goss/presets -maxdepth 1 -name "*.env" -type f -print0 2>/dev/null \
+        | xargs -0 -I{} basename {} .env
 }
 
 # Check if preset exists

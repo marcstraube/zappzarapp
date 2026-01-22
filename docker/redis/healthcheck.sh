@@ -1,4 +1,5 @@
 #!/bin/sh
+# shellcheck shell=sh
 # Redis TLS Health Check
 # Handles both development and production cert paths (bind mounts)
 

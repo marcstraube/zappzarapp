@@ -1,4 +1,7 @@
 #!/bin/sh
+# shellcheck shell=sh
+# Note: This script intentionally uses POSIX sh for Alpine compatibility
+# SC2292 (prefer [[ ]]) doesn't apply to POSIX sh scripts
 set -e
 
 # Make secrets readable by postgres user

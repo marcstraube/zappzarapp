@@ -58,6 +58,11 @@ Architecture:
 Performance:
 - [ ] N+1 risk: Yes/No → Mitigation: ___
 - [ ] Caching needed: Yes/No
+
+Infrastructure (if B3 needed):
+- [ ] Container changes: Rebuild required?
+- [ ] Shell: POSIX sh or Bash?
+- [ ] Tests: BATS/Goss specs needed?
 ```
 
 ---
@@ -112,5 +117,22 @@ Plan in `.claude/temp/plan-<task>.md`:
 ## Reports Back
 
 - Path to plan
-- Recommendation: B1/B2 parallel or sequential?
+- Recommendation: Which agents needed? (B1/B2/B3/B4)
+- Parallelization: Can they run in parallel or sequential?
 - Identified risks
+
+## Agent Selection Guide
+
+| Change Type | Agent | Standards |
+| ----------- | ----- | --------- |
+| PHP application code | B1 | `php.md` |
+| Node/TypeScript code | B2 | `node.md` |
+| Shell scripts, Dockerfiles, Compose, Makefile, BATS, Goss | B3 | `shell.md`, `docker.md` |
+| Database schema/migrations | B4 | `sql.md` |
+
+**B3 Infrastructure triggers:**
+- Entrypoint/healthcheck scripts
+- Dockerfile changes
+- compose.yaml changes
+- Makefile targets
+- BATS or Goss tests

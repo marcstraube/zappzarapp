@@ -34,6 +34,7 @@ integration_setup() {
     # Load preset environment
     if [[ -f "tests/goss/presets/${INTEGRATION_PRESET}.env" ]]; then
         set -a
+        # shellcheck source=/dev/null
         source "tests/goss/presets/${INTEGRATION_PRESET}.env"
         set +a
     fi

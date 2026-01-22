@@ -1,4 +1,5 @@
 #!/bin/sh
+# shellcheck shell=sh
 # Docker PHP Entrypoint Script (Development)
 # Validates dependencies (for php-fpm) and configures development environment
 

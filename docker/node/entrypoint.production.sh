@@ -1,4 +1,5 @@
 #!/bin/sh
+# shellcheck shell=sh
 # Node.js Production Entrypoint
 #
 # This entrypoint runs as the node user (UID 50000) directly.

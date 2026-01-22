@@ -7,6 +7,7 @@
 | PHP         | `analyse`, `phpmd`, `cs-check`, `rector-check` | `cs-fix`, `rector-fix`          | `test-php`   |
 | Node/TS     | `lint-node`, `type-check`, `prettier-check`    | `lint-node-fix`, `prettier-fix` | `test-node`  |
 | SQL         | `lint-sql`                                     | `lint-sql-fix`                  | `test-sql`   |
+| Shell       | `lint-shell`                                   | —                               | —            |
 | Markdown    | `lint-md`                                      | `lint-md-fix`                   | —            |
 | Docker      | `lint-docker`                                  | —                               | `goss-test`  |
 | YAML/Config | `lint-config`                                  | —                               | —            |
@@ -58,6 +59,15 @@ make lint-sql
 # Test (against real DB)
 make test-sql
 ```
+
+## Shell Script Changes
+
+```bash
+# Check (no auto-fix — fix manually)
+make lint-shell
+```
+
+See `.zappzarapp/standards/shell.md` for coding standards.
 
 ## Docker Changes
 

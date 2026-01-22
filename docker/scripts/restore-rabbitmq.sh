@@ -93,7 +93,7 @@ echo ""
 
 # Confirmation
 echo -e "${YELLOW}WARNING: This will import definitions (may overwrite existing exchanges/queues)!${NC}"
-read -p "Continue? (yes/no): " CONFIRM
+read -rp "Continue? (yes/no): " CONFIRM
 if [[ "$CONFIRM" != "yes" ]]; then
     echo -e "${YELLOW}Restore cancelled.${NC}"
     exit 0

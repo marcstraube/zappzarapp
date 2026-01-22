@@ -20,10 +20,10 @@ set -e
 KEYFILE="docker/mariadb/keyfile.key"
 
 # Check if keyfile already exists
-if [ -f "$KEYFILE" ]; then
+if [[ -f "$KEYFILE" ]]; then
     echo "⚠️  Keyfile already exists: $KEYFILE"
     read -p "Overwrite? (y/N): " OVERWRITE
-    if [ "$OVERWRITE" != "y" ] && [ "$OVERWRITE" != "Y" ]; then
+    if [[ "$OVERWRITE" != "y" ]] && [[ "$OVERWRITE" != "Y" ]]; then
         echo "Operation cancelled."
         exit 0
     fi

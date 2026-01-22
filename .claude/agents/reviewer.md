@@ -6,18 +6,27 @@ Runs code quality checks and tests.
 
 ## Variants
 
-| Agent | Responsibility      | Fix Targets                     | Check Targets                  | Test Targets |
-| ----- | ------------------- | ------------------------------- | ------------------------------ | ------------ |
-| C1    | PHP                 | `cs-fix`                        | `analyse`, `phpmd`, `cs-check` | `test-php`   |
-| C2    | Node/TS             | `prettier-fix`, `lint-node-fix` | `lint-node`, `type-check`      | `test-node`  |
-| C3    | SQL (MariaDB/PgSQL) | `lint-sql-fix`                  | `lint-sql`                     | `test-sql`   |
-| C4    | Markdown (Docs)     | `lint-markdown-fix`             | `lint-markdown`                | —            |
-| C5    | Config Sync         | `/sync-check --fix`             | `/sync-check`                  | —            |
+| Agent | Responsibility      | Fix Targets                     | Check Targets                  | Test Targets           |
+| ----- | ------------------- | ------------------------------- | ------------------------------ | ---------------------- |
+| C1    | PHP                 | `cs-fix`                        | `analyse`, `phpmd`, `cs-check` | `test-php`             |
+| C2    | Node/TS             | `prettier-fix`, `lint-node-fix` | `lint-node`, `type-check`      | `test-node`            |
+| C3    | SQL (MariaDB/PgSQL) | `lint-sql-fix`                  | `lint-sql`                     | `test-sql`             |
+| C4    | Markdown (Docs)     | `lint-markdown-fix`             | `lint-markdown`                | —                      |
+| C5    | Config Sync         | `/sync-check --fix`             | `/sync-check`                  | —                      |
+| C6    | Infrastructure      | —                               | `lint-shell`, `lint-docker`    | `test-bats`, `goss-test` |
 
 **C5 Trigger:** Only runs when changed files include:
 
-- `compose*.yaml`, `docker/**`, `.env*`
+- `compose*.yaml`, `.env*`
 - `.vscode/**`, `.idea/**`
+
+**C6 Trigger:** Only runs when changed files include:
+
+- `docker/**/*.sh` (Shell scripts)
+- `docker/**/Dockerfile*` (Dockerfiles)
+- `docker/**/compose*.yaml` (Compose overrides)
+- `tests/bats/**` (BATS tests)
+- `tests/goss/**` (Goss specs)
 - `Makefile`
 
 ## Workflow
@@ -64,6 +73,10 @@ make lint-sql
 
 # Markdown
 make lint-markdown
+
+# Infrastructure (no auto-fix available)
+make lint-shell    # Shell scripts
+make lint-docker   # Dockerfiles
 ```
 
 ### Step 3: Tests
@@ -77,6 +90,10 @@ make test-node
 
 # SQL
 make test-sql
+
+# Infrastructure
+make test-bats     # BATS integration tests
+make goss-test     # Goss container tests
 
 # Markdown: No tests (validation only)
 

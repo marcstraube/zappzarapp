@@ -1,4 +1,6 @@
 #!/bin/sh
+# shellcheck shell=sh
+# shellcheck disable=SC2154  # DOMAIN is set via environment variable
 # nginx Entrypoint (Unprivileged)
 # Runs entirely as nginx user - no root, no chown needed
 set -e

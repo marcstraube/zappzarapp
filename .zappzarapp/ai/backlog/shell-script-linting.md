@@ -26,6 +26,7 @@ Add shellcheck validation for all shell scripts to catch common errors.
 - `docker/scripts/*.sh`
 - `docker/certs/*.sh`
 - `docker/hooks/*.sh`
+- `tests/bats/helpers/*.bash` (BATS test helpers)
 
 ## Implementation
 

@@ -1,0 +1,20 @@
+# ShellCheck Configuration
+# https://www.shellcheck.net/wiki/
+
+# Default shell dialect (scripts should declare their own via shebang)
+shell=bash
+
+# Severity threshold: error, warning, info, style
+severity=warning
+
+# Enable all optional checks
+enable=all
+
+# Disable specific checks:
+# SC1091: Can't follow non-constant source (external files)
+# SC2002: Useless cat (stylistic preference, cat file | cmd is readable)
+# SC2250: Prefer braces around variables (too noisy, $var is fine in most cases)
+disable=SC1091,SC2002,SC2250
+
+# External sources (for shellcheck to find sourced files)
+source-path=SCRIPTDIR

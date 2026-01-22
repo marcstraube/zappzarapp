@@ -147,6 +147,7 @@ agents):
 | `php.md`          | Suppressions, PHPStan, PHPMD |
 | `node.md`         | ESLint, Prettier, TypeScript |
 | `sql.md`          | Dialekte, sqlfluff           |
+| `shell.md`        | ShellCheck, Bash/POSIX       |
 | `markdown.md`     | Code blocks, markdownlint    |
 | `docker.md`       | Hadolint                     |
 | `make-targets.md` | All lint/test/fix targets    |

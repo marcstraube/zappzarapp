@@ -1,4 +1,5 @@
 #!/bin/sh
+# shellcheck shell=sh
 # PHP-FPM Production Entrypoint (Unprivileged)
 # Runs as www-data user - no root, no capabilities needed
 # Secrets are bind-mounted with mode 0644 (world-readable) in compose.production.yaml

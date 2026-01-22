@@ -477,7 +477,7 @@ Code quality, testing, and validation commands.
 
 | Command              | Description                                                                                                             |
 | -------------------- | ----------------------------------------------------------------------------------------------------------------------- |
-| `make check`         | Run ALL checks (cs-check, analyse, phpmd, rector-check, prettier-check, type-check, lint-node, test, validate, lint-md) |
+| `make check`         | Run ALL checks (cs-check, analyse, phpmd, rector-check, prettier-check, type-check, lint-node, test, validate, lint-md, lint-shell) |
 | `make test`          | Run all tests (PHP + Node.js)                                                                                           |
 | `make test-coverage` | Generate coverage reports for PHP and Node.js                                                                           |
 | `make validate`      | Validate composer.json/lock and package.json/lock files                                                                 |
@@ -528,6 +528,7 @@ Code quality, testing, and validation commands.
 | `make lint-config` | Validate YAML configuration files       |
 | `make lint-md`     | Check Markdown files for style issues   |
 | `make lint-md-fix` | Fix Markdown style issues automatically |
+| `make lint-shell`  | Lint shell scripts with ShellCheck      |
 
 ### Coverage Reports
 
