@@ -279,7 +279,14 @@ bats:integration:
     - merge_requests
   script:
     - make bats-build
-    - make build
+    # Create empty lockfiles (Dockerfile COPY needs them)
+    - "[ -f composer.lock ] || echo '{}' > composer.lock"
+    - "[ -f pnpm-lock.yaml ] || touch pnpm-lock.yaml"
+    # Build node-backend first for nginx COPY --from dependency
+    - docker compose --profile node-backend build node-backend || true
+    - docker tag ${COMPOSE_PROJECT_NAME}-node-backend:api zappzarapp-node-backend:latest 2>/dev/null || true
+    # Build remaining images with DOCKER_BUILDKIT=0 (sees local tagged images)
+    - DOCKER_BUILDKIT=0 make build
     - make up
     - make composer-install
     - make pnpm-install

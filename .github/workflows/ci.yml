@@ -310,11 +310,28 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
+      - name: Build goss utility image (dependency)
+        run: docker build -t zappzarapp-goss:latest -f docker/goss/Dockerfile .
+
+      - name: Initialize environment
+        run: |
+          make init
+          make secrets
+          make ssl-selfsigned
+
       - name: Build BATS container
         run: make bats-build
 
       - name: Build application containers
-        run: make build
+        run: |
+          # Create empty lockfiles (Dockerfile COPY needs them)
+          [ -f composer.lock ] || echo '{}' > composer.lock
+          [ -f pnpm-lock.yaml ] || touch pnpm-lock.yaml
+          # Build node-backend first for nginx COPY --from dependency
+          docker compose --profile node-backend build node-backend || true
+          docker tag ${COMPOSE_PROJECT_NAME}-node-backend:api zappzarapp-node-backend:latest 2>/dev/null || true
+          # Build remaining images with DOCKER_BUILDKIT=0 (sees local tagged images)
+          DOCKER_BUILDKIT=0 make build
 
       - name: Start containers
         run: make up
