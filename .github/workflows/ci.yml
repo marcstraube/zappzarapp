@@ -151,7 +151,8 @@ jobs:
       - name: Build Node container
         run: |
           docker compose build node
-          docker compose up -d node
+          # Use idle mode to skip dependency check in entrypoint (deps installed via exec)
+          NODE_MODE=idle docker compose up -d node
 
       - name: Install Node dependencies
         run: |
@@ -206,7 +207,8 @@ jobs:
 
       - name: Start services (Node + Redis)
         run: |
-          docker compose --profile redis up -d node redis
+          # Use idle mode to skip dependency check in entrypoint (deps installed via exec)
+          NODE_MODE=idle docker compose --profile redis up -d node redis
           # Use --frozen-lockfile if lockfile exists AND is non-empty (user project)
           # Otherwise generate lockfile (boilerplate without committed lockfiles)
           docker compose exec -T node sh -c 'if [ -f pnpm-lock.yaml ] && [ -s pnpm-lock.yaml ]; then pnpm install --frozen-lockfile; else pnpm install; fi'
@@ -266,7 +268,8 @@ jobs:
       - name: Build containers
         run: |
           docker compose build php node
-          docker compose up -d php node
+          # Use idle mode for node to skip dependency check (deps installed via exec)
+          NODE_MODE=idle docker compose up -d php node
 
       - name: Install dependencies
         run: |

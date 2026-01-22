@@ -66,34 +66,41 @@ if [ $# -gt 0 ]; then
     exec "$@"
 fi
 
-# Service mode: validate dependencies before starting
+# Service mode: start based on NODE_MODE
 echo "[entrypoint.development] Starting Node.js container..."
-echo "[entrypoint.development] NODE_MODE: ${NODE_MODE:-none}"
+echo "[entrypoint.development] NODE_MODE: ${NODE_MODE:-idle}"
 
-# Fail fast if dependencies are missing (explicit install required)
-if [ ! -d "/app/node_modules" ] || [ -z "$(ls -A /app/node_modules 2>/dev/null)" ]; then
-    echo "[entrypoint.development] ERROR: Node.js dependencies not installed!"
-    echo "[entrypoint.development] Run 'make pnpm-install' to install dependencies."
-    exit 1
-fi
-echo "[entrypoint.development] Dependencies OK"
+# Helper function: check if dependencies are installed
+check_dependencies() {
+    if [ ! -d "/app/node_modules" ] || [ -z "$(ls -A /app/node_modules 2>/dev/null)" ]; then
+        echo "[entrypoint.development] ERROR: Node.js dependencies not installed!"
+        echo "[entrypoint.development] Run 'make pnpm-install' to install dependencies."
+        exit 1
+    fi
+    echo "[entrypoint.development] Dependencies OK"
+}
 
 # Start services based on NODE_MODE
 # Note: framework-api mode is handled by running two containers (node + node-backend)
+# Note: idle mode skips dependency check (used in CI for docker compose exec)
 case "${NODE_MODE:-idle}" in
     assets-api)
+        check_dependencies
         echo "[entrypoint.development] Starting assets-api mode (Vite HMR + Express via PM2)..."
         exec pnpm run dev:full
         ;;
     assets)
+        check_dependencies
         echo "[entrypoint.development] Starting assets mode (Vite HMR via PM2)..."
         exec pnpm run dev:vite
         ;;
     api)
+        check_dependencies
         echo "[entrypoint.development] Starting api mode (Express API via PM2)..."
         exec pnpm run dev:backend
         ;;
     framework)
+        check_dependencies
         echo "[entrypoint.development] Starting framework mode (Node frontend framework)..."
         if [ ! -f "/app/src/node/frontend/package.json" ]; then
             echo "[entrypoint.development] ERROR: No frontend framework installed!"
