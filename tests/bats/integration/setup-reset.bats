@@ -65,7 +65,8 @@ setup() {
     echo "# Running make setup..." >&3
 
     # Pipe 'c' for "continue with defaults" to skip .env.local prompt
-    run bash -c "echo 'c' | timeout 120 make setup"
+    # 300s timeout for slow CI environments
+    run bash -c "echo 'c' | timeout 300 make setup"
     assert_success
 }
 
@@ -184,10 +185,11 @@ setup() {
 
 @test "[Phase 4] make setup is idempotent (can run twice)" {
     # Run setup twice - should not fail
-    run bash -c "echo 'c' | timeout 120 make setup"
+    # 300s timeout for slow CI environments
+    run bash -c "echo 'c' | timeout 300 make setup"
     assert_success
 
-    run bash -c "echo 'c' | timeout 120 make setup"
+    run bash -c "echo 'c' | timeout 300 make setup"
     assert_success
 }
 

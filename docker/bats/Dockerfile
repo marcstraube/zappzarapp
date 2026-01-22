@@ -45,7 +45,26 @@ RUN apk add --no-cache \
     make \
     ncurses \
     openssl \
-    parallel
+    parallel \
+    # PHP + Composer for local install tests
+    php83 \
+    php83-phar \
+    php83-mbstring \
+    php83-openssl \
+    php83-curl \
+    php83-json \
+    php83-iconv \
+    php83-tokenizer \
+    composer \
+    # Node.js + pnpm for local install tests
+    nodejs \
+    npm
+
+# Install pnpm globally
+RUN npm install -g pnpm
+
+# Create php symlink for compatibility
+RUN ln -sf /usr/bin/php83 /usr/bin/php
 
 # Copy BATS from builder (complete installation)
 COPY --from=bats-builder /usr/local/bin/bats /usr/local/bin/bats
@@ -78,7 +97,12 @@ RUN bats --version \
     && echo 'load "/usr/local/lib/bats/bats-support/load.bash"' >> /tmp/test.bats \
     && echo 'load "/usr/local/lib/bats/bats-assert/load.bash"' >> /tmp/test.bats \
     && echo '@test "BATS works" { run echo "hello"; assert_success; assert_output "hello"; }' >> /tmp/test.bats \
-    && bats /tmp/test.bats
+    && bats /tmp/test.bats \
+    && echo "Local tools:" \
+    && php --version \
+    && composer --version \
+    && node --version \
+    && pnpm --version
 
 # Final production image
 FROM runtime AS production
