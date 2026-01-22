@@ -141,6 +141,7 @@ jobs:
         run: |
           make init
           make secrets
+          make ssl-selfsigned
 
       - name: Build Node container
         run: |
@@ -249,6 +250,7 @@ jobs:
         run: |
           make init
           make secrets
+          make ssl-selfsigned
 
       - name: Build containers
         run: |
