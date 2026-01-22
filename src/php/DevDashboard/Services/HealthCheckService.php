@@ -500,7 +500,7 @@ class HealthCheckService
     {
         $certPath = __DIR__ . '/../../../../docker/certs/cert.crt';
 
-        if (!file_exists($certPath)) {
+        if (!file_exists($certPath) || !is_file($certPath)) {
             return [
                 'exists'  => false,
                 'message' => 'No SSL certificate found',

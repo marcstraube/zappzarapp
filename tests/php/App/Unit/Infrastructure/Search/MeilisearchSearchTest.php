@@ -31,7 +31,7 @@ final class MeilisearchSearchTest extends TestCase
 
     public function testSearchReturnsResultsWhenSuccessful(): void
     {
-        $mockSearchResult = $this->createMock(SearchResult::class);
+        $mockSearchResult = $this->createStub(SearchResult::class);
         $mockSearchResult->method('getHits')->willReturn([
             ['id' => 1, 'name' => 'Laptop'],
             ['id' => 2, 'name' => 'Mouse'],
@@ -92,7 +92,7 @@ final class MeilisearchSearchTest extends TestCase
 
     public function testSearchPassesOptionsToMeilisearch(): void
     {
-        $mockSearchResult = $this->createMock(SearchResult::class);
+        $mockSearchResult = $this->createStub(SearchResult::class);
         $mockSearchResult->method('getHits')->willReturn([]);
         $mockSearchResult->method('getEstimatedTotalHits')->willReturn(0);
         $mockSearchResult->method('getProcessingTimeMs')->willReturn(1);
@@ -114,7 +114,7 @@ final class MeilisearchSearchTest extends TestCase
             ->with('test', $expectedOptions)
             ->willReturn($mockSearchResult);
 
-        $mockClient = $this->createMock(Client::class);
+        $mockClient = $this->createStub(Client::class);
         $mockClient->method('index')->willReturn($mockIndex);
 
         $search = $this->createSearchWithMockedClient($mockClient);
@@ -124,7 +124,7 @@ final class MeilisearchSearchTest extends TestCase
 
     public function testIndexReturnsIndexObject(): void
     {
-        $mockIndex = $this->createMock(Indexes::class);
+        $mockIndex = $this->createStub(Indexes::class);
 
         $mockClient = $this->createMock(Client::class);
         $mockClient->expects($this->once())
@@ -151,7 +151,7 @@ final class MeilisearchSearchTest extends TestCase
             ->method('addDocuments')
             ->with($documents);
 
-        $mockClient = $this->createMock(Client::class);
+        $mockClient = $this->createStub(Client::class);
         $mockClient->method('index')->willReturn($mockIndex);
 
         $search = $this->createSearchWithMockedClient($mockClient);
@@ -170,7 +170,7 @@ final class MeilisearchSearchTest extends TestCase
             ->method('addDocuments')
             ->with($documents, 'customId');
 
-        $mockClient = $this->createMock(Client::class);
+        $mockClient = $this->createStub(Client::class);
         $mockClient->method('index')->willReturn($mockIndex);
 
         $search = $this->createSearchWithMockedClient($mockClient);
@@ -203,7 +203,7 @@ final class MeilisearchSearchTest extends TestCase
             ->method('deleteDocuments')
             ->with($documentIds);
 
-        $mockClient = $this->createMock(Client::class);
+        $mockClient = $this->createStub(Client::class);
         $mockClient->method('index')->willReturn($mockIndex);
 
         $search = $this->createSearchWithMockedClient($mockClient);
@@ -233,7 +233,7 @@ final class MeilisearchSearchTest extends TestCase
         $mockIndex->expects($this->once())
             ->method('deleteAllDocuments');
 
-        $mockClient = $this->createMock(Client::class);
+        $mockClient = $this->createStub(Client::class);
         $mockClient->method('index')->willReturn($mockIndex);
 
         $search = $this->createSearchWithMockedClient($mockClient);
@@ -329,19 +329,19 @@ final class MeilisearchSearchTest extends TestCase
 
     public function testGetIndexesReturnsAllIndexes(): void
     {
-        $mockIndex1 = $this->createMock(Indexes::class);
+        $mockIndex1 = $this->createStub(Indexes::class);
         $mockIndex1->method('getUid')->willReturn('products');
         $mockIndex1->method('getPrimaryKey')->willReturn('id');
         $mockIndex1->method('getCreatedAt')->willReturn(new DateTime('2024-01-01T00:00:00Z'));
         $mockIndex1->method('getUpdatedAt')->willReturn(new DateTime('2024-01-02T00:00:00Z'));
 
-        $mockIndex2 = $this->createMock(Indexes::class);
+        $mockIndex2 = $this->createStub(Indexes::class);
         $mockIndex2->method('getUid')->willReturn('users');
         $mockIndex2->method('getPrimaryKey')->willReturn(null);
         $mockIndex2->method('getCreatedAt')->willReturn(new DateTime('2024-01-03T00:00:00Z'));
         $mockIndex2->method('getUpdatedAt')->willReturn(new DateTime('2024-01-04T00:00:00Z'));
 
-        $mockIndexesResults = $this->createMock(IndexesResults::class);
+        $mockIndexesResults = $this->createStub(IndexesResults::class);
         $mockIndexesResults->method('getResults')->willReturn([$mockIndex1, $mockIndex2]);
 
         $mockClient = $this->createMock(Client::class);

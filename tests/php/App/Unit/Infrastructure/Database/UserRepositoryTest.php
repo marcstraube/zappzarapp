@@ -43,11 +43,11 @@ final class UserRepositoryTest extends TestCase
             'totp_enabled' => false,
         ];
 
-        $stmt = $this->createMock(PDOStatement::class);
+        $stmt = $this->createStub(PDOStatement::class);
         $stmt->method('execute')->willReturn(true);
         $stmt->method('fetchAll')->willReturn([$expectedUser]);
 
-        $pdo = $this->createMock(PDO::class);
+        $pdo = $this->createStub(PDO::class);
         $pdo->method('prepare')->willReturn($stmt);
 
         $repository = $this->createRepository($pdo);
@@ -57,11 +57,11 @@ final class UserRepositoryTest extends TestCase
 
     public function testFindByEmailReturnsNullWhenNotFound(): void
     {
-        $stmt = $this->createMock(PDOStatement::class);
+        $stmt = $this->createStub(PDOStatement::class);
         $stmt->method('execute')->willReturn(true);
         $stmt->method('fetchAll')->willReturn([]);
 
-        $pdo = $this->createMock(PDO::class);
+        $pdo = $this->createStub(PDO::class);
         $pdo->method('prepare')->willReturn($stmt);
 
         $repository = $this->createRepository($pdo);
@@ -97,11 +97,11 @@ final class UserRepositoryTest extends TestCase
 
     public function testEmailExistsReturnsFalseWhenEmailNotFound(): void
     {
-        $stmt = $this->createMock(PDOStatement::class);
+        $stmt = $this->createStub(PDOStatement::class);
         $stmt->method('execute')->willReturn(true);
         $stmt->method('fetch')->willReturn(false);
 
-        $pdo = $this->createMock(PDO::class);
+        $pdo = $this->createStub(PDO::class);
         $pdo->method('prepare')->willReturn($stmt);
 
         $repository = $this->createRepository($pdo);
@@ -116,7 +116,9 @@ final class UserRepositoryTest extends TestCase
             ->method('execute')
             ->with(['user@example.com', 5])
             ->willReturn(true);
-        $stmt->method('fetch')->willReturn(false);
+        $stmt->expects($this->once())
+            ->method('fetch')
+            ->willReturn(false);
 
         $pdo = $this->createMock(PDO::class);
         $pdo->expects($this->once())
@@ -131,7 +133,7 @@ final class UserRepositoryTest extends TestCase
 
     public function testEmailExistsReturnsFalseOnException(): void
     {
-        $pdo = $this->createMock(PDO::class);
+        $pdo = $this->createStub(PDO::class);
         $pdo->method('prepare')
             ->willThrowException(new PDOException('Query failed'));
 
@@ -146,11 +148,11 @@ final class UserRepositoryTest extends TestCase
 
     public function testEnableTotpReturnsTrueOnSuccess(): void
     {
-        $encryptStmt = $this->createMock(PDOStatement::class);
+        $encryptStmt = $this->createStub(PDOStatement::class);
         $encryptStmt->method('execute')->willReturn(true);
         $encryptStmt->method('fetchColumn')->willReturn('encrypted_secret');
 
-        $updateStmt = $this->createMock(PDOStatement::class);
+        $updateStmt = $this->createStub(PDOStatement::class);
         $updateStmt->method('execute')->willReturn(true);
         $updateStmt->method('rowCount')->willReturn(1);
 
@@ -173,11 +175,11 @@ final class UserRepositoryTest extends TestCase
 
     public function testEnableTotpReturnsFalseWhenUserNotFound(): void
     {
-        $encryptStmt = $this->createMock(PDOStatement::class);
+        $encryptStmt = $this->createStub(PDOStatement::class);
         $encryptStmt->method('execute')->willReturn(true);
         $encryptStmt->method('fetchColumn')->willReturn('encrypted_secret');
 
-        $updateStmt = $this->createMock(PDOStatement::class);
+        $updateStmt = $this->createStub(PDOStatement::class);
         $updateStmt->method('execute')->willReturn(true);
         $updateStmt->method('rowCount')->willReturn(0);
 
@@ -218,11 +220,11 @@ final class UserRepositoryTest extends TestCase
 
     public function testDisableTotpReturnsFalseWhenUserNotFound(): void
     {
-        $stmt = $this->createMock(PDOStatement::class);
+        $stmt = $this->createStub(PDOStatement::class);
         $stmt->method('execute')->willReturn(true);
         $stmt->method('rowCount')->willReturn(0);
 
-        $pdo = $this->createMock(PDO::class);
+        $pdo = $this->createStub(PDO::class);
         $pdo->method('prepare')->willReturn($stmt);
 
         $repository = $this->createRepository($pdo);
@@ -232,7 +234,7 @@ final class UserRepositoryTest extends TestCase
 
     public function testDisableTotpReturnsFalseOnException(): void
     {
-        $pdo = $this->createMock(PDO::class);
+        $pdo = $this->createStub(PDO::class);
         $pdo->method('prepare')
             ->willThrowException(new PDOException('Update failed'));
 
@@ -247,11 +249,11 @@ final class UserRepositoryTest extends TestCase
 
     public function testGetTotpSecretReturnsDecryptedSecret(): void
     {
-        $selectStmt = $this->createMock(PDOStatement::class);
+        $selectStmt = $this->createStub(PDOStatement::class);
         $selectStmt->method('execute')->willReturn(true);
         $selectStmt->method('fetchColumn')->willReturn('encrypted_secret');
 
-        $decryptStmt = $this->createMock(PDOStatement::class);
+        $decryptStmt = $this->createStub(PDOStatement::class);
         $decryptStmt->method('execute')->willReturn(true);
         $decryptStmt->method('fetchColumn')->willReturn('JBSWY3DPEHPK3PXP');
 
@@ -267,11 +269,11 @@ final class UserRepositoryTest extends TestCase
 
     public function testGetTotpSecretReturnsNullWhenTotpNotEnabled(): void
     {
-        $stmt = $this->createMock(PDOStatement::class);
+        $stmt = $this->createStub(PDOStatement::class);
         $stmt->method('execute')->willReturn(true);
         $stmt->method('fetchColumn')->willReturn(false);
 
-        $pdo = $this->createMock(PDO::class);
+        $pdo = $this->createStub(PDO::class);
         $pdo->method('prepare')->willReturn($stmt);
 
         $repository = $this->createRepository($pdo);
@@ -281,7 +283,7 @@ final class UserRepositoryTest extends TestCase
 
     public function testGetTotpSecretReturnsNullOnException(): void
     {
-        $pdo = $this->createMock(PDO::class);
+        $pdo = $this->createStub(PDO::class);
         $pdo->method('prepare')
             ->willThrowException(new PDOException('Query failed'));
 

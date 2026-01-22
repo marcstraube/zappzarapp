@@ -12,6 +12,7 @@ use PhpAmqpLib\Connection\AMQPStreamConnection;
 use PhpAmqpLib\Message\AMQPMessage;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\MockObject\MockObject;
+use PHPUnit\Framework\MockObject\Stub;
 use PHPUnit\Framework\TestCase;
 use ReflectionClass;
 
@@ -99,12 +100,13 @@ final class RabbitMQQueueTest extends TestCase
 
     public function testGetReturnMessageFromQueue(): void
     {
-        $mockMessage = $this->createMock(AMQPMessage::class);
+        $mockMessage = $this->createStub(AMQPMessage::class);
         $mockMessage->method('getBody')->willReturn('test message body');
         $mockMessage->method('getDeliveryTag')->willReturn(123);
 
         $mockChannel = $this->createMock(AMQPChannel::class);
-        $mockChannel->method('queue_declare');
+        $mockChannel->expects($this->once())
+            ->method('queue_declare');
         $mockChannel->expects($this->once())
             ->method('basic_get')
             ->with('test-queue', false)
@@ -122,7 +124,8 @@ final class RabbitMQQueueTest extends TestCase
     public function testGetReturnsNullWhenQueueIsEmpty(): void
     {
         $mockChannel = $this->createMock(AMQPChannel::class);
-        $mockChannel->method('queue_declare');
+        $mockChannel->expects($this->once())
+            ->method('queue_declare');
         $mockChannel->expects($this->once())
             ->method('basic_get')
             ->with('test-queue', false)
@@ -136,7 +139,8 @@ final class RabbitMQQueueTest extends TestCase
     public function testGetReturnsNullOnException(): void
     {
         $mockChannel = $this->createMock(AMQPChannel::class);
-        $mockChannel->method('queue_declare')
+        $mockChannel->expects($this->once())
+            ->method('queue_declare')
             ->willThrowException(new Exception('Connection lost'));
 
         $queue = $this->createQueueWithMockedChannel($mockChannel);
@@ -313,10 +317,10 @@ final class RabbitMQQueueTest extends TestCase
 
     public function testIsAvailableReturnsTrueWhenConnected(): void
     {
-        $mockConnection = $this->createMock(AMQPStreamConnection::class);
+        $mockConnection = $this->createStub(AMQPStreamConnection::class);
         $mockConnection->method('isConnected')->willReturn(true);
 
-        $mockChannel = $this->createMock(AMQPChannel::class);
+        $mockChannel = $this->createStub(AMQPChannel::class);
         $mockChannel->method('is_open')->willReturn(true);
 
         $queue = $this->createQueueWithMockedChannel($mockChannel, $mockConnection);
@@ -333,10 +337,10 @@ final class RabbitMQQueueTest extends TestCase
 
     public function testIsAvailableReturnsFalseOnException(): void
     {
-        $mockConnection = $this->createMock(AMQPStreamConnection::class);
+        $mockConnection = $this->createStub(AMQPStreamConnection::class);
         $mockConnection->method('isConnected')->willThrowException(new Exception('Error'));
 
-        $mockChannel = $this->createMock(AMQPChannel::class);
+        $mockChannel = $this->createStub(AMQPChannel::class);
 
         $queue = $this->createQueueWithMockedChannel($mockChannel, $mockConnection);
 
@@ -390,9 +394,11 @@ final class RabbitMQQueueTest extends TestCase
 
     /**
      * Create a RabbitMQQueue instance with mocked channel and connection
+     *
+     * @param AMQPChannel&(MockObject|Stub) $mockChannel
      */
     private function createQueueWithMockedChannel(
-        AMQPChannel&MockObject $mockChannel,
+        AMQPChannel $mockChannel,
         ?AMQPStreamConnection $mockConnection = null
     ): RabbitMQQueue {
         $queue = new RabbitMQQueue(self::TEST_URL);
@@ -400,7 +406,7 @@ final class RabbitMQQueueTest extends TestCase
         $mockChannel->method('is_open')->willReturn(true);
 
         if (!$mockConnection instanceof AMQPStreamConnection) {
-            $mockConnection = $this->createMock(AMQPStreamConnection::class);
+            $mockConnection = $this->createStub(AMQPStreamConnection::class);
             $mockConnection->method('isConnected')->willReturn(true);
         }
 

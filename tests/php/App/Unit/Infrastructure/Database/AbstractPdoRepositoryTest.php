@@ -645,7 +645,7 @@ final class AbstractPdoRepositoryTest extends TestCase
 
     public function testIsAvailableReturnsTrueWhenConnected(): void
     {
-        $stmt = $this->createMock(PDOStatement::class);
+        $stmt = $this->createStub(PDOStatement::class);
 
         $pdo = $this->createMock(PDO::class);
         $pdo->expects($this->once())
@@ -683,7 +683,7 @@ final class AbstractPdoRepositoryTest extends TestCase
 
     public function testPostgresUsesDoubleQuotesForIdentifiers(): void
     {
-        $stmt = $this->createMock(PDOStatement::class);
+        $stmt = $this->createStub(PDOStatement::class);
         $stmt->method('execute')->willReturn(true);
         $stmt->method('fetch')->willReturn(['id' => 1]);
 
@@ -700,7 +700,7 @@ final class AbstractPdoRepositoryTest extends TestCase
 
     public function testMariaDbUsesBackticksForIdentifiers(): void
     {
-        $stmt = $this->createMock(PDOStatement::class);
+        $stmt = $this->createStub(PDOStatement::class);
         $stmt->method('execute')->willReturn(true);
         $stmt->method('fetch')->willReturn(['id' => 1]);
 

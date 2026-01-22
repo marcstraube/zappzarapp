@@ -429,7 +429,7 @@ final class RedisSessionTest extends TestCase
 
     public function testGenerateIdReturns64HexCharacters(): void
     {
-        $cache   = $this->createMock(CacheInterface::class);
+        $cache   = $this->createStub(CacheInterface::class);
         $session = new RedisSession($cache);
 
         $id = $session->generateId();
@@ -440,7 +440,7 @@ final class RedisSessionTest extends TestCase
 
     public function testGenerateIdIsUnique(): void
     {
-        $cache   = $this->createMock(CacheInterface::class);
+        $cache   = $this->createStub(CacheInterface::class);
         $session = new RedisSession($cache);
 
         $ids = [];
