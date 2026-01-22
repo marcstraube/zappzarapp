@@ -50,11 +50,8 @@ jobs:
 
       - name: Install PHP dependencies
         run: |
-          # Debug: Check lockfile inside container
-          docker compose exec -T --user root php ls -la /var/www/html/composer.lock || echo "File not found"
-          docker compose exec -T --user root php chmod 666 /var/www/html/composer.lock || echo "chmod failed"
-          docker compose exec -T --user root php ls -la /var/www/html/composer.lock || echo "Still not found"
-          docker compose exec -T php composer install --no-progress --no-interaction
+          # Run as root in CI to avoid bind mount permission issues (safe in ephemeral CI containers)
+          docker compose exec -T --user root php composer install --no-progress --no-interaction
 
       - name: PHP Coding Standards (PHP-CS-Fixer)
         run: docker compose exec -T php composer cs-check
@@ -108,9 +105,8 @@ jobs:
         run: |
           # Use PHP_SKIP_DEPENDENCY_CHECK=1 to skip dependency check in entrypoint (deps installed via exec)
           PHP_SKIP_DEPENDENCY_CHECK=1 docker compose --profile postgres up -d php postgres
-          # Fix lockfile permissions inside container (bind mount may have wrong ownership)
-          docker compose exec -T --user root php chmod 666 /var/www/html/composer.lock
-          docker compose exec -T php composer install --no-progress --no-interaction
+          # Run as root in CI to avoid bind mount permission issues (safe in ephemeral CI containers)
+          docker compose exec -T --user root php composer install --no-progress --no-interaction
 
       - name: Wait for database
         run: |
@@ -296,9 +292,8 @@ jobs:
 
       - name: Install dependencies
         run: |
-          # Fix lockfile permissions inside container (bind mount may have wrong ownership)
-          docker compose exec -T --user root php chmod 666 /var/www/html/composer.lock
-          docker compose exec -T php composer install --no-progress --no-interaction
+          # Run as root in CI to avoid bind mount permission issues (safe in ephemeral CI containers)
+          docker compose exec -T --user root php composer install --no-progress --no-interaction
           # Use --frozen-lockfile if lockfile exists AND is non-empty (user project)
           # Otherwise generate lockfile (boilerplate without committed lockfiles)
           docker compose exec -T node sh -c 'if [ -f pnpm-lock.yaml ] && [ -s pnpm-lock.yaml ]; then pnpm install --frozen-lockfile; else pnpm install --no-lockfile; fi'
