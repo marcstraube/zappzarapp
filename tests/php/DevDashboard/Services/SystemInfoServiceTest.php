@@ -111,12 +111,17 @@ class SystemInfoServiceTest extends TestCase
     {
         $status = $this->service->getGitStatus();
 
+        $this->assertArrayHasKey('initialized', $status);
+
         if ($status['initialized']) {
             $this->assertArrayHasKey('branch', $status);
             $this->assertArrayHasKey('commit', $status);
 
             $this->assertIsString($status['branch']);
             $this->assertIsString($status['commit']);
+        } else {
+            // When not in a git repository, initialized should be false
+            $this->assertFalse($status['initialized']);
         }
     }
 

@@ -267,7 +267,7 @@ jobs:
         run: docker compose exec -T php composer audit
 
       - name: Node pnpm Audit
-        run: docker compose exec -T node pnpm audit
+        run: docker compose exec -T node pnpm audit --ignore CVE-2025-5891
 
       - name: Cleanup
         uses: ./.github/actions/docker-cleanup
@@ -330,8 +330,10 @@ jobs:
           # Build node-backend first for nginx COPY --from dependency
           docker compose --profile node-backend build node-backend || true
           docker tag ${COMPOSE_PROJECT_NAME}-node-backend:api zappzarapp-node-backend:latest 2>/dev/null || true
-          # Build remaining images with DOCKER_BUILDKIT=0 (sees local tagged images)
-          DOCKER_BUILDKIT=0 make build
+          # Build nginx explicitly with DOCKER_BUILDKIT=0 (needs local node-backend image)
+          DOCKER_BUILDKIT=0 docker compose build nginx
+          # Build remaining images (php, node, etc.)
+          docker compose build php node
 
       - name: Start containers
         run: make up

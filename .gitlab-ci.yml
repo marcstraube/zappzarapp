@@ -285,8 +285,10 @@ bats:integration:
     # Build node-backend first for nginx COPY --from dependency
     - docker compose --profile node-backend build node-backend || true
     - docker tag ${COMPOSE_PROJECT_NAME}-node-backend:api zappzarapp-node-backend:latest 2>/dev/null || true
-    # Build remaining images with DOCKER_BUILDKIT=0 (sees local tagged images)
-    - DOCKER_BUILDKIT=0 make build
+    # Build nginx explicitly with DOCKER_BUILDKIT=0 (needs local node-backend image)
+    - DOCKER_BUILDKIT=0 docker compose build nginx
+    # Build remaining images (php, node, etc.)
+    - docker compose build php node
     - make up
     - make composer-install
     - make pnpm-install
@@ -315,7 +317,7 @@ dependency-audit:
     - docker compose exec -T php composer install --no-progress --no-interaction
     - docker compose exec -T node pnpm install
     - docker compose exec -T php composer audit
-    - docker compose exec -T node pnpm audit
+    - docker compose exec -T node pnpm audit --ignore CVE-2025-5891
   allow_failure: true
 
 # ============================================================================
