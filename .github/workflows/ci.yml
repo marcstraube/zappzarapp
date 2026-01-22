@@ -217,6 +217,73 @@ jobs:
         uses: ./.github/actions/docker-cleanup
 
   # ============================================================================
+  # BATS TESTS (Makefile Validation)
+  # ============================================================================
+  bats-quick:
+    name: BATS Quick Tests (Dry-Run)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build BATS container
+        run: make bats-build
+
+      - name: Run BATS dry-run tests
+        run: make bats-test
+
+      - name: Cleanup
+        uses: ./.github/actions/docker-cleanup
+
+  bats-integration:
+    name: BATS Integration Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    needs: [bats-quick]
+    if: github.event_name == 'pull_request' || (github.event_name == 'push' && (github.ref == 'refs/heads/master' || github.ref == 'refs/heads/develop'))
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build BATS container
+        run: make bats-build
+
+      - name: Build application containers
+        run: make build
+
+      - name: Start containers
+        run: make up
+
+      - name: Install dependencies
+        run: |
+          make composer-install
+          make pnpm-install
+
+      - name: Wait for healthy containers
+        run: |
+          timeout 120 sh -c 'until make check-health 2>/dev/null; do sleep 5; done'
+
+      - name: Run BATS integration tests
+        run: make bats-test-integration
+
+      - name: Cleanup
+        if: always()
+        run: make down || true
+
+      - name: Docker cleanup
+        if: always()
+        uses: ./.github/actions/docker-cleanup
+
+  # ============================================================================
   # BUILD TEST (Production)
   # ============================================================================
   build-production:

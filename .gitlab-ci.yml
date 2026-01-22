@@ -235,6 +235,42 @@ node:coverage:
     expire_in: 30 days
 
 # ============================================================================
+# BATS TESTS (Makefile Validation)
+# ============================================================================
+bats:quick:
+  <<: *docker-setup
+  stage: test
+  script:
+    - make bats-build
+    - make bats-test-junit
+  artifacts:
+    reports:
+      junit: build/bats-report.xml
+    when: always
+
+bats:integration:
+  <<: *docker-setup
+  stage: test
+  needs:
+    - bats:quick
+  only:
+    - master
+    - develop
+    - merge_requests
+  script:
+    - make bats-build
+    - make build
+    - make up
+    - make composer-install
+    - make pnpm-install
+    - timeout 120 sh -c 'until make check-health 2>/dev/null; do sleep 5; done'
+    - make bats-test-integration
+  after_script:
+    - make down || true
+    - docker system prune -f || true
+  timeout: 30m
+
+# ============================================================================
 # DEPENDENCY AUDIT
 # ============================================================================
 # Note: Comprehensive security scans (Trivy, secrets, filesystem) are defined

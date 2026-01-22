@@ -23,9 +23,12 @@ Compact task index. Details in `backlog/<slug>.md` files.
 
 ### Quick Wins
 
-| Slug                | Title               | Size  | Status |
-| ------------------- | ------------------- | ----- | ------ |
-| ide-tasks-reduction | IDE Tasks Reduction | Small | Open   |
+| Slug                  | Title                   | Size  | Status |
+| --------------------- | ----------------------- | ----- | ------ |
+| ci-prettier-toml-fix  | CI Prettier TOML Fix    | Small | Open   |
+| ide-tasks-reduction   | IDE Tasks Reduction     | Small | Open   |
+| hadolint-sc2086-fix   | Hadolint SC2086 Fix     | Small | Open   |
+| shell-script-linting  | Shell Script Linting    | Small | Open   |
 
 ### Code Quality
 
@@ -46,13 +49,14 @@ Compact task index. Details in `backlog/<slug>.md` files.
 
 ### Infrastructure
 
-| Slug                      | Title                     | Size   | Status  |
-| ------------------------- | ------------------------- | ------ | ------- |
-| boilerplate-update        | Boilerplate Update Mech.  | Medium | Planned |
-| tls-certificate-arch      | TLS Certificate Arch.     | Medium | Planned |
-| shell-script-linting      | Shell Script Linting      | Small  | Planned |
-| docker-compose-validation | Docker Compose Validation | Small  | Planned |
-| helm-chart-linting        | Helm Chart Linting        | Small  | Planned |
+| Slug                       | Title                     | Size   | Status  |
+| -------------------------- | ------------------------- | ------ | ------- |
+| email-service-implementation | Email Service (Mailpit) | Medium | Open    |
+| boilerplate-update         | Boilerplate Update Mech.  | Medium | Planned |
+| tls-certificate-arch       | TLS Certificate Arch.     | Medium | Planned |
+| docker-compose-validation  | Docker Compose Validation | Small  | Planned |
+| helm-chart-linting         | Helm Chart Linting        | Small  | Planned |
+| docker-labels-standard     | Docker Labels Standard    | Small  | Planned |
 
 ### UI/UX
 
@@ -65,6 +69,7 @@ Compact task index. Details in `backlog/<slug>.md` files.
 
 | Slug                  | Title                  | Size       | Status  |
 | --------------------- | ---------------------- | ---------- | ------- |
+| debug-command         | Debug Command          | Medium     | Planned |
 | devdashboard-features | DevDashboard Features  | Brainstorm | Idea    |
 | livelogs-websocket    | LiveLogs via WebSocket | Large      | Planned |
 

@@ -1,11 +1,73 @@
 # zappzarapp - Changelog
 
-**Erstellt:** 2025-12-19 **Letzte Aktualisierung:** 2026-01-22 (Setup
-Enhancements) **Version:** 3.75
+**Erstellt:** 2025-12-19 **Letzte Aktualisierung:** 2026-01-22 (BATS Testing
+Infrastructure) **Version:** 3.77
 
 ---
 
 ## Changelog
+
+### Version 3.77 (2026-01-22) - BATS Testing Infrastructure (Complete)
+
+Comprehensive Makefile validation using BATS (Bash Automated Testing System)
+with full coverage: dry-run validation, integration tests, and CI matrix.
+
+#### New: BATS Test Framework
+
+- **`docker/bats/Dockerfile`** — Dedicated BATS container (Alpine + BATS 1.11.1)
+- **`tests/bats/`** — Test directory with ~420 tests total
+- Installs bats-support, bats-assert, bats-file helper libraries
+- Multi-stage Docker build for optimized image size
+
+#### New: Test Tiers
+
+| Tier | Tests | Duration | Purpose |
+|------|-------|----------|---------|
+| Quick (Dry-Run) | ~332 | ~2 min | Syntax validation, every push |
+| Integration | ~88 | ~15 min | Full execution, PRs/main |
+| Destructive | ~10 | ~5 min | Manual only, with warnings |
+
+#### New: Test Suites
+
+**Dry-Run Tests:**
+- **make-help.bats** — Help system, filtering (~27 tests)
+- **make-env.bats** — Environment loading (~27 tests)
+- **make-docker.bats** — Docker commands (~33 tests)
+- **make-environment.bats** — DB_TYPE, NODE_MODE matrix (~42 tests)
+- **make-goss.bats** — BATS + Goss integration (~49 tests)
+- **make-targets-dryrun.bats** — All 200+ targets (~154 tests)
+
+**Integration Tests:**
+- **lint.bats** — cs-check, lint-node, PHPStan, etc. (~20 tests)
+- **test.bats** — PHPUnit, Vitest execution (~10 tests)
+- **docs.bats** — Documentation generation (~6 tests)
+- **database.bats** — Database connectivity, migrations (~15 tests)
+- **security.bats** — Audits, SBOM, scans (~12 tests)
+- **services.bats** — Shell access, logs, health (~15 tests)
+- **destructive.bats** — ⚠️ Reset, prune, cleanup (~10 tests)
+
+#### New: Makefile Targets
+
+- **`make bats-build`** — Build BATS testing container
+- **`make bats-test`** — Run dry-run tests
+- **`make bats-test-integration`** — Run integration tests
+- **`make bats-test-all`** — Run all tests (dry-run + integration)
+- **`make bats-test-destructive`** — Run destructive tests (with warning)
+- **`make bats-test-file FILE=...`** — Run specific test file
+- **`make bats-test-integration-file FILE=...`** — Run specific integration test
+
+#### New: CI/CD Matrix
+
+- **GitHub Actions** — Two jobs: `bats-quick` (always) + `bats-integration` (PR/main)
+- **GitLab CI** — Two stages: `bats:quick` + `bats:integration` with dependencies
+- Parallel execution for faster feedback
+
+#### Docs: TESTING-SHELL.md Updated
+
+- Test tier documentation (Quick, Integration, Destructive)
+- Integration test setup guide
+- CI/CD matrix configuration examples
+- Destructive test safety documentation
 
 ### Version 3.75 (2026-01-22) - Setup Enhancements
 

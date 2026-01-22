@@ -18,6 +18,7 @@
 - **Testing**
   - [PHP Testing](testing/TESTING-PHP.md)
   - [Node.js Testing](testing/TESTING-NODE.md)
+  - [Shell Testing (BATS)](testing/TESTING-SHELL.md)
 
 - **Infrastructure**
   - [Architecture](infrastructure/ARCHITECTURE.md)

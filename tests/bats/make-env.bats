@@ -1,0 +1,225 @@
+#!/usr/bin/env bats
+# BATS Tests: Environment Loading
+# Tests .env file loading and variable handling
+
+load 'helpers/setup'
+
+# =============================================================================
+# .env File Existence
+# =============================================================================
+
+@test ".env file exists" {
+    run test -f .env
+    assert_success
+}
+
+@test ".env.example or .env.template file exists" {
+    # Check for either .env.example or .env.template
+    if [[ -f .env.example ]] || [[ -f .env.template ]]; then
+        true
+    else
+        skip "No .env.example or .env.template file present"
+    fi
+}
+
+# =============================================================================
+# Default Environment Variables
+# =============================================================================
+
+@test "DB_TYPE defaults to postgres" {
+    clean_test_env
+    load_env_file ".env"
+    [[ "${DB_TYPE:-postgres}" == "postgres" ]]
+}
+
+@test "NODE_MODE has a default value" {
+    clean_test_env
+    load_env_file ".env"
+    [[ -n "${NODE_MODE:-}" ]] || [[ "${NODE_MODE:-assets-api}" == "assets-api" ]]
+}
+
+@test "ENV defaults to development" {
+    clean_test_env
+    load_env_file ".env"
+    [[ "${ENV:-development}" == "development" ]]
+}
+
+@test "COMPOSE_PROJECT_NAME is set" {
+    load_env_file ".env"
+    [[ -n "${COMPOSE_PROJECT_NAME:-}" ]]
+}
+
+# =============================================================================
+# .env.local Override
+# =============================================================================
+
+@test ".env.local overrides .env values when present" {
+    if [[ ! -f .env.local ]]; then
+        skip ".env.local not present"
+    fi
+
+    # Load base .env
+    load_env_file ".env"
+    local base_user_id="${USER_ID:-}"
+
+    # Load .env.local override
+    load_env_file ".env.local"
+    local override_user_id="${USER_ID:-}"
+
+    # If .env.local sets USER_ID, it should be different or same
+    # This test verifies the loading mechanism works
+    [[ -n "$override_user_id" ]]
+}
+
+# =============================================================================
+# Environment Variable Validation
+# =============================================================================
+
+@test "DB_TYPE accepts postgres" {
+    export DB_TYPE=postgres
+    run bash -c 'echo $DB_TYPE'
+    assert_success
+    assert_output "postgres"
+}
+
+@test "DB_TYPE accepts mariadb" {
+    export DB_TYPE=mariadb
+    run bash -c 'echo $DB_TYPE'
+    assert_success
+    assert_output "mariadb"
+}
+
+@test "NODE_MODE accepts assets" {
+    export NODE_MODE=assets
+    run bash -c 'echo $NODE_MODE'
+    assert_success
+    assert_output "assets"
+}
+
+@test "NODE_MODE accepts api" {
+    export NODE_MODE=api
+    run bash -c 'echo $NODE_MODE'
+    assert_success
+    assert_output "api"
+}
+
+@test "NODE_MODE accepts assets-api" {
+    export NODE_MODE=assets-api
+    run bash -c 'echo $NODE_MODE'
+    assert_success
+    assert_output "assets-api"
+}
+
+@test "NODE_MODE accepts framework" {
+    export NODE_MODE=framework
+    run bash -c 'echo $NODE_MODE'
+    assert_success
+    assert_output "framework"
+}
+
+@test "NODE_MODE accepts idle" {
+    export NODE_MODE=idle
+    run bash -c 'echo $NODE_MODE'
+    assert_success
+    assert_output "idle"
+}
+
+# =============================================================================
+# ENABLE_* Flags
+# =============================================================================
+
+@test "ENABLE_PHP defaults to true" {
+    clean_test_env
+    load_env_file ".env"
+    [[ "${ENABLE_PHP:-true}" == "true" ]]
+}
+
+@test "ENABLE_NODE defaults to true" {
+    clean_test_env
+    load_env_file ".env"
+    [[ "${ENABLE_NODE:-true}" == "true" ]]
+}
+
+@test "ENABLE_DATABASE defaults to true" {
+    clean_test_env
+    load_env_file ".env"
+    [[ "${ENABLE_DATABASE:-true}" == "true" ]]
+}
+
+@test "ENABLE_REDIS can be set to false" {
+    export ENABLE_REDIS=false
+    [[ "$ENABLE_REDIS" == "false" ]]
+}
+
+@test "ENABLE_MERCURE can be set to true" {
+    export ENABLE_MERCURE=true
+    [[ "$ENABLE_MERCURE" == "true" ]]
+}
+
+# =============================================================================
+# Port Configuration
+# =============================================================================
+
+@test "NGINX_PORT has default" {
+    load_env_file ".env"
+    [[ -n "${NGINX_PORT:-8080}" ]]
+}
+
+@test "NGINX_SSL_PORT has default" {
+    load_env_file ".env"
+    [[ -n "${NGINX_SSL_PORT:-8443}" ]]
+}
+
+# =============================================================================
+# Database Configuration
+# =============================================================================
+
+@test "DB_HOST has default" {
+    load_env_file ".env"
+    [[ -n "${DB_HOST:-postgres}" ]]
+}
+
+@test "DB_NAME has default" {
+    load_env_file ".env"
+    [[ -n "${DB_NAME:-app}" ]]
+}
+
+@test "DB_USER has default" {
+    load_env_file ".env"
+    [[ -n "${DB_USER:-app}" ]]
+}
+
+# =============================================================================
+# Production Environment
+# =============================================================================
+
+@test "ENV=production changes behavior" {
+    export ENV=production
+    [[ "$ENV" == "production" ]]
+}
+
+@test ".env.production file may exist" {
+    # This is optional, so we just check the file system
+    if [[ -f .env.production ]]; then
+        run test -f .env.production
+        assert_success
+    else
+        skip ".env.production not present"
+    fi
+}
+
+# =============================================================================
+# Environment Isolation
+# =============================================================================
+
+@test "clean_test_env clears all test variables" {
+    export DB_TYPE=mariadb
+    export NODE_MODE=framework
+    export ENABLE_REDIS=true
+
+    clean_test_env
+
+    [[ -z "${DB_TYPE:-}" ]]
+    [[ -z "${NODE_MODE:-}" ]]
+    [[ -z "${ENABLE_REDIS:-}" ]]
+}

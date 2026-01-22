@@ -2532,6 +2532,124 @@ goss-cleanup: ## Remove all Goss test containers, networks, and volumes
 	fi
 	@echo -e "\033[0;32m✓ Goss cleanup complete\033[0m"
 
+##@ BATS Makefile Tests
+#
+# BATS (Bash Automated Testing System) tests for Makefile targets
+# Validates: Help system, environment loading, Docker commands, presets
+#
+
+BATS_IMAGE := zappzarapp-bats:latest
+BATS_CONTAINER := zappzarapp-bats
+INTEGRATION_PRESET ?= dev-fullstack-optional
+
+bats-build: ## Build BATS testing tool image
+	@echo -e "\033[0;34mBuilding BATS image...\033[0m"
+	@docker build -t $(BATS_IMAGE) -f docker/bats/Dockerfile . --target production
+	@echo -e "\033[0;32m✓ BATS image built successfully\033[0m"
+
+bats-test: ## Run BATS tests for Makefile targets (requires built image)
+	@if ! docker image inspect $(BATS_IMAGE) >/dev/null 2>&1; then \
+		echo -e "\033[0;33mBats image not found, building...\033[0m"; \
+		$(MAKE) --silent bats-build; \
+	fi
+	@echo -e "\033[0;33mRunning BATS tests...\033[0m"
+	@docker run --rm \
+		-v /var/run/docker.sock:/var/run/docker.sock \
+		-v "$(PWD):/app" \
+		-w /app \
+		--network host \
+		$(BATS_IMAGE) tests/bats/
+	@echo -e "\033[0;32m✓ BATS tests complete\033[0m"
+
+bats-test-file: ## Run specific BATS test file (FILE=make-help.bats)
+	@if [ -z "$(FILE)" ]; then \
+		echo -e "\033[0;31mError: FILE parameter required (e.g., make bats-test-file FILE=make-help.bats)\033[0m"; \
+		exit 1; \
+	fi
+	@docker run --rm \
+		-v /var/run/docker.sock:/var/run/docker.sock \
+		-v "$(PWD):/app" \
+		-w /app \
+		--network host \
+		$(BATS_IMAGE) "tests/bats/$(FILE)"
+
+bats-test-verbose: ## Run BATS tests with verbose output (TAP format)
+	@docker run --rm \
+		-v /var/run/docker.sock:/var/run/docker.sock \
+		-v "$(PWD):/app" \
+		-w /app \
+		--network host \
+		$(BATS_IMAGE) --tap tests/bats/
+
+bats-test-local: ## Run BATS tests locally (requires bats installed)
+	@if ! command -v bats &>/dev/null; then \
+		echo -e "\033[0;31mError: bats not found. Install with: brew install bats-core\033[0m"; \
+		exit 1; \
+	fi
+	@bats tests/bats/
+
+bats-test-junit: ## Run BATS tests with JUnit XML output (for CI/CD)
+	@mkdir -p build
+	@docker run --rm \
+		-v /var/run/docker.sock:/var/run/docker.sock \
+		-v "$(PWD):/app" \
+		-w /app \
+		--network host \
+		$(BATS_IMAGE) --formatter junit tests/bats/ > build/bats-report.xml || \
+		(cat build/bats-report.xml && exit 1)
+	@echo -e "\033[0;32m✓ JUnit report: build/bats-report.xml\033[0m"
+
+bats-test-integration: ## Run BATS integration tests (requires running containers)
+	@echo -e "\033[0;33mRunning BATS integration tests...\033[0m"
+	@echo -e "\033[0;34mNote: This requires containers to be running (make up)\033[0m"
+	@docker run --rm \
+		-v /var/run/docker.sock:/var/run/docker.sock \
+		-v "$(PWD):/app" \
+		-w /app \
+		--network host \
+		-e INTEGRATION_PRESET=$(INTEGRATION_PRESET) \
+		$(BATS_IMAGE) tests/bats/integration/
+	@echo -e "\033[0;32m✓ BATS integration tests complete\033[0m"
+
+bats-test-integration-file: ## Run specific BATS integration test file (FILE=lint.bats)
+	@if [ -z "$(FILE)" ]; then \
+		echo -e "\033[0;31mError: FILE parameter required (e.g., make bats-test-integration-file FILE=lint.bats)\033[0m"; \
+		exit 1; \
+	fi
+	@docker run --rm \
+		-v /var/run/docker.sock:/var/run/docker.sock \
+		-v "$(PWD):/app" \
+		-w /app \
+		--network host \
+		-e INTEGRATION_PRESET=$(INTEGRATION_PRESET) \
+		$(BATS_IMAGE) "tests/bats/integration/$(FILE)"
+
+bats-test-all: ## Run all BATS tests (unit + integration)
+	@echo -e "\033[0;33mRunning all BATS tests...\033[0m"
+	@$(MAKE) bats-test
+	@$(MAKE) bats-test-integration
+
+bats-test-destructive: ## Run BATS destructive tests (⚠️ WARNING: modifies data!)
+	@echo -e "\033[0;31m⚠️  WARNING: Running destructive tests!\033[0m"
+	@echo -e "\033[0;31mThese tests will:\033[0m"
+	@echo -e "\033[0;31m  - Stop and remove containers\033[0m"
+	@echo -e "\033[0;31m  - Delete volumes and data\033[0m"
+	@echo -e "\033[0;31m  - Remove Docker images\033[0m"
+	@echo -e "\033[0;31m  - Flush Redis\033[0m"
+	@echo -e ""
+	@read -p "Are you sure you want to continue? [y/N] " confirm; \
+	if [ "$$confirm" != "y" ] && [ "$$confirm" != "Y" ]; then \
+		echo "Aborted."; \
+		exit 1; \
+	fi
+	@docker run --rm \
+		-v /var/run/docker.sock:/var/run/docker.sock \
+		-v "$(PWD):/app" \
+		-w /app \
+		--network host \
+		-e BATS_ENABLE_DESTRUCTIVE=true \
+		$(BATS_IMAGE) tests/bats/integration/destructive.bats
+
 validate: ## Validate composer.json/lock and package.json/lock files
 	@echo -e "\033[0;33mValidating Composer configuration...\033[0m"
 	@docker compose exec php composer validate

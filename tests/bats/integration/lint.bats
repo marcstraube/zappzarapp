@@ -1,0 +1,153 @@
+#!/usr/bin/env bats
+# Integration Tests: Lint & Code Quality
+# Requires running containers and installed dependencies
+
+load 'setup'
+
+# =============================================================================
+# File Setup/Teardown
+# =============================================================================
+
+setup_file() {
+    integration_setup
+}
+
+teardown_file() {
+    integration_teardown
+}
+
+# =============================================================================
+# PHP Lint Tests
+# =============================================================================
+
+@test "[Integration] make cs-check runs successfully" {
+    require_php
+    require_dependencies
+    run timeout 120 make cs-check
+    assert_success
+}
+
+@test "[Integration] make analyse (PHPStan) runs successfully" {
+    require_php
+    require_dependencies
+    run timeout 120 make analyse
+    assert_success
+}
+
+@test "[Integration] make phpmd runs (allow warnings)" {
+    require_php
+    require_dependencies
+    run timeout 120 make phpmd
+    # PHPMD may return warnings, which is acceptable
+    [[ $status -eq 0 ]] || [[ $status -eq 2 ]]
+}
+
+@test "[Integration] make rector-check runs successfully" {
+    require_php
+    require_dependencies
+    run timeout 120 make rector-check
+    assert_success
+}
+
+# =============================================================================
+# Node.js Lint Tests
+# =============================================================================
+
+@test "[Integration] make lint-node runs successfully" {
+    require_node
+    require_dependencies
+    run timeout 120 make lint-node
+    assert_success
+}
+
+@test "[Integration] make type-check runs successfully" {
+    require_node
+    require_dependencies
+    run timeout 120 make type-check
+    assert_success
+}
+
+@test "[Integration] make prettier-check runs successfully" {
+    require_node
+    require_dependencies
+    run timeout 60 make prettier-check
+    assert_success
+}
+
+@test "[Integration] make lint-md runs successfully" {
+    require_node
+    require_dependencies
+    run timeout 60 make lint-md
+    assert_success
+}
+
+# =============================================================================
+# SQL Lint Tests
+# =============================================================================
+
+@test "[Integration] make lint-sql runs successfully" {
+    require_node
+    require_dependencies
+    run timeout 60 make lint-sql
+    assert_success
+}
+
+# =============================================================================
+# Docker Lint Tests
+# =============================================================================
+
+@test "[Integration] make lint-docker runs successfully" {
+    require_node
+    require_dependencies
+    run timeout 60 make lint-docker
+    assert_success
+}
+
+# =============================================================================
+# Config Lint Tests
+# =============================================================================
+
+@test "[Integration] make lint-config runs successfully" {
+    require_node
+    require_dependencies
+    run timeout 60 make lint-config
+    assert_success
+}
+
+# =============================================================================
+# Dependency Checks
+# =============================================================================
+
+@test "[Integration] make knip runs successfully" {
+    require_node
+    require_dependencies
+    run timeout 120 make knip
+    # Knip may find unused exports, which is informational
+    [[ $status -eq 0 ]] || [[ $status -eq 1 ]]
+}
+
+@test "[Integration] make depcheck runs successfully" {
+    require_node
+    require_dependencies
+    run timeout 60 make depcheck
+    assert_success
+}
+
+@test "[Integration] make outdated runs successfully" {
+    require_containers
+    run timeout 120 make outdated
+    # outdated returns non-zero if updates available, which is fine
+    [[ $status -eq 0 ]] || [[ $status -eq 1 ]]
+}
+
+# =============================================================================
+# Combined Check
+# =============================================================================
+
+@test "[Integration] make check runs all quality checks" {
+    require_php
+    require_node
+    require_dependencies
+    run timeout 300 make check
+    assert_success
+}
