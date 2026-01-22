@@ -354,6 +354,11 @@ jobs:
 
       - name: Build production images
         run: |
+          # Create empty lockfiles if missing (boilerplate doesn't commit them)
+          # Required for DOCKER_BUILDKIT=0 which doesn't support empty COPY wildcards
+          [ -f composer.lock ] || echo '{}' > composer.lock
+          [ -f pnpm-lock.yaml ] || touch pnpm-lock.yaml
+
           # Build node-backend first, then tag for cross-image COPY compatibility
           # BuildKit in compose build can't see external local images, so we build
           # node-backend separately and tag it, then build php/nginx with DOCKER_BUILDKIT=0
