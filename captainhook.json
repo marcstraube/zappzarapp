@@ -38,7 +38,10 @@
             "#~/\\.claude/commands#",
             "#~/\\.gemini/commands#",
             "#\\$PROJECT_DIR\\$/vendor/#",
-            "#\\.zappzarapp/docs/#"
+            "#\\.zappzarapp/docs/#",
+            "#X-Amz-(Algorithm|Credential|Signature|Expires)#",
+            "#test-access-key-id#",
+            "#test-secret-access-key#"
           ]
         },
         "config": {
