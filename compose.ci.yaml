@@ -76,7 +76,7 @@ services:
     environment:
       - TZ=${TZ:-UTC}
       - NODE_ENV=development
-      - NODE_MODE=${NODE_MODE:-idle}
+      - NODE_MODE=idle
       - LOG_LEVEL=${LOG_LEVEL:-info}
       - LOG_FORMAT=${LOG_FORMAT:-json}
       - CORS_ORIGINS=${CORS_ORIGINS:-}
@@ -179,7 +179,7 @@ services:
       - ENABLE_MAILPIT=${ENABLE_MAILPIT:-false}
       - ENABLE_SEAWEEDFS=${ENABLE_SEAWEEDFS:-false}
       - ENABLE_RABBITMQ=${ENABLE_RABBITMQ:-false}
-      - NODE_MODE=${NODE_MODE:-idle}
+      - NODE_MODE=idle
       # Database
       - DATABASE_URL=${DATABASE_URL:-}
       - DB_TYPE=${DB_TYPE:-postgres}
