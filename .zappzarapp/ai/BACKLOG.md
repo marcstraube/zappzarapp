@@ -52,6 +52,7 @@ Compact task index. Details in `backlog/<slug>.md` files.
 
 | Slug                         | Title                     | Size   | Status  |
 | ---------------------------- | ------------------------- | ------ | ------- |
+| gitlab-mirror-setup          | GitLab Mirror Setup       | Small  | Planned |
 | email-service-implementation | Email Service (Mailpit)   | Medium | Open    |
 | boilerplate-update           | Boilerplate Update Mech.  | Medium | Planned |
 | tls-certificate-arch         | TLS Certificate Arch.     | Medium | Planned |

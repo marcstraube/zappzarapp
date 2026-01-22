@@ -30,6 +30,11 @@ jobs:
       - name: Build goss utility image (dependency)
         run: docker build -t zappzarapp-goss:latest -f docker/goss/Dockerfile .
 
+      - name: Initialize environment
+        run: |
+          make init
+          make secrets
+
       - name: Build PHP container
         run: |
           docker compose build php
@@ -70,6 +75,14 @@ jobs:
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
+
+      - name: Build goss utility image (dependency)
+        run: docker build -t zappzarapp-goss:latest -f docker/goss/Dockerfile .
+
+      - name: Initialize environment
+        run: |
+          make init
+          make secrets
 
       - name: Start services (PHP + Database)
         run: |
@@ -117,6 +130,11 @@ jobs:
       - name: Build goss utility image (dependency)
         run: docker build -t zappzarapp-goss:latest -f docker/goss/Dockerfile .
 
+      - name: Initialize environment
+        run: |
+          make init
+          make secrets
+
       - name: Build Node container
         run: |
           docker compose build node
@@ -157,6 +175,14 @@ jobs:
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
+
+      - name: Build goss utility image (dependency)
+        run: docker build -t zappzarapp-goss:latest -f docker/goss/Dockerfile .
+
+      - name: Initialize environment
+        run: |
+          make init
+          make secrets
 
       - name: Start services (Node + Redis)
         run: |
@@ -205,6 +231,11 @@ jobs:
 
       - name: Build goss utility image (dependency)
         run: docker build -t zappzarapp-goss:latest -f docker/goss/Dockerfile .
+
+      - name: Initialize environment
+        run: |
+          make init
+          make secrets
 
       - name: Build containers
         run: |
@@ -307,6 +338,19 @@ jobs:
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
+
+      - name: Build goss utility image (dependency)
+        run: docker build -t zappzarapp-goss:latest -f docker/goss/Dockerfile .
+
+      - name: Initialize environment
+        run: |
+          make init
+          make secrets
+
+      - name: Build node-backend (required by nginx)
+        run: |
+          docker compose -f compose.yaml -f compose.production.yaml --profile node-backend build node-backend
+          docker tag zappzarapp-ci-node-backend:production zappzarapp-node-backend:latest
 
       - name: Build production images
         run: |
