@@ -46,7 +46,8 @@ if [[ -z "${COMPOSE_PROJECT_NAME:-}" ]]; then
 fi
 
 # Timeout for long-running commands (seconds)
-export BATS_TEST_TIMEOUT="${BATS_TEST_TIMEOUT:-120}"
+# 300s for CI environments with cold caches
+export BATS_TEST_TIMEOUT="${BATS_TEST_TIMEOUT:-300}"
 
 # Helper: Check if container is running
 is_container_running() {
