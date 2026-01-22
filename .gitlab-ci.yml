@@ -28,6 +28,11 @@ stages:
     # Initialize environment and generate secrets
     - make init
     - make secrets
+    # Create empty lockfiles if missing (boilerplate doesn't commit them)
+    # Required for bind mounts in compose.override.yaml - Docker creates
+    # directories instead of files when mounting non-existent paths
+    - "[ -f pnpm-lock.yaml ] || touch pnpm-lock.yaml"
+    - "[ -f composer.lock ] || echo '{}' > composer.lock"
   after_script:
     - docker compose down -v || true
     - docker system prune -f || true
@@ -167,8 +172,9 @@ node:lint:
     - build:node
   script:
     - docker compose up -d node
-    # Use --frozen-lockfile if lockfile exists (user project), otherwise generate (boilerplate)
-    - docker compose exec -T node sh -c 'if [ -f pnpm-lock.yaml ]; then pnpm install --frozen-lockfile; else pnpm install; fi'
+    # Use --frozen-lockfile if lockfile exists AND is non-empty (user project)
+    # Otherwise generate lockfile (boilerplate without committed lockfiles)
+    - docker compose exec -T node sh -c 'if [ -f pnpm-lock.yaml ] && [ -s pnpm-lock.yaml ]; then pnpm install --frozen-lockfile; else pnpm install; fi'
     - docker compose exec -T node pnpm run lint
 
 node:format-check:
@@ -178,8 +184,9 @@ node:format-check:
     - build:node
   script:
     - docker compose up -d node
-    # Use --frozen-lockfile if lockfile exists (user project), otherwise generate (boilerplate)
-    - docker compose exec -T node sh -c 'if [ -f pnpm-lock.yaml ]; then pnpm install --frozen-lockfile; else pnpm install; fi'
+    # Use --frozen-lockfile if lockfile exists AND is non-empty (user project)
+    # Otherwise generate lockfile (boilerplate without committed lockfiles)
+    - docker compose exec -T node sh -c 'if [ -f pnpm-lock.yaml ] && [ -s pnpm-lock.yaml ]; then pnpm install --frozen-lockfile; else pnpm install; fi'
     - docker compose exec -T node pnpm run format:check
 
 node:type-check:
@@ -189,8 +196,9 @@ node:type-check:
     - build:node
   script:
     - docker compose up -d node
-    # Use --frozen-lockfile if lockfile exists (user project), otherwise generate (boilerplate)
-    - docker compose exec -T node sh -c 'if [ -f pnpm-lock.yaml ]; then pnpm install --frozen-lockfile; else pnpm install; fi'
+    # Use --frozen-lockfile if lockfile exists AND is non-empty (user project)
+    # Otherwise generate lockfile (boilerplate without committed lockfiles)
+    - docker compose exec -T node sh -c 'if [ -f pnpm-lock.yaml ] && [ -s pnpm-lock.yaml ]; then pnpm install --frozen-lockfile; else pnpm install; fi'
     - docker compose exec -T node pnpm run type-check
 
 node:markdownlint:
@@ -200,8 +208,9 @@ node:markdownlint:
     - build:node
   script:
     - docker compose up -d node
-    # Use --frozen-lockfile if lockfile exists (user project), otherwise generate (boilerplate)
-    - docker compose exec -T node sh -c 'if [ -f pnpm-lock.yaml ]; then pnpm install --frozen-lockfile; else pnpm install; fi'
+    # Use --frozen-lockfile if lockfile exists AND is non-empty (user project)
+    # Otherwise generate lockfile (boilerplate without committed lockfiles)
+    - docker compose exec -T node sh -c 'if [ -f pnpm-lock.yaml ] && [ -s pnpm-lock.yaml ]; then pnpm install --frozen-lockfile; else pnpm install; fi'
     - docker compose exec -T node pnpm run lint:md
 
 # ============================================================================
@@ -214,8 +223,9 @@ node:tests:
     - build:node
   script:
     - docker compose --profile redis up -d node redis
-    # Use --frozen-lockfile if lockfile exists (user project), otherwise generate (boilerplate)
-    - docker compose exec -T node sh -c 'if [ -f pnpm-lock.yaml ]; then pnpm install --frozen-lockfile; else pnpm install; fi'
+    # Use --frozen-lockfile if lockfile exists AND is non-empty (user project)
+    # Otherwise generate lockfile (boilerplate without committed lockfiles)
+    - docker compose exec -T node sh -c 'if [ -f pnpm-lock.yaml ] && [ -s pnpm-lock.yaml ]; then pnpm install --frozen-lockfile; else pnpm install; fi'
     - timeout 30 sh -c 'until docker compose exec -T redis redis-cli ping; do sleep 1; done'
     - docker compose exec -T node pnpm test
   coverage: '/All files\s*\|\s*(\d+\.?\d*)\s*\|/'
@@ -237,8 +247,9 @@ node:coverage:
     - develop
   script:
     - docker compose --profile redis up -d node redis
-    # Use --frozen-lockfile if lockfile exists (user project), otherwise generate (boilerplate)
-    - docker compose exec -T node sh -c 'if [ -f pnpm-lock.yaml ]; then pnpm install --frozen-lockfile; else pnpm install; fi'
+    # Use --frozen-lockfile if lockfile exists AND is non-empty (user project)
+    # Otherwise generate lockfile (boilerplate without committed lockfiles)
+    - docker compose exec -T node sh -c 'if [ -f pnpm-lock.yaml ] && [ -s pnpm-lock.yaml ]; then pnpm install --frozen-lockfile; else pnpm install; fi'
     - docker compose exec -T node pnpm test:coverage
   artifacts:
     paths:
@@ -296,8 +307,9 @@ dependency-audit:
   script:
     - docker compose up -d php node
     - docker compose exec -T php composer install --no-progress --no-interaction
-    # Use --frozen-lockfile if lockfile exists (user project), otherwise generate (boilerplate)
-    - docker compose exec -T node sh -c 'if [ -f pnpm-lock.yaml ]; then pnpm install --frozen-lockfile; else pnpm install; fi'
+    # Use --frozen-lockfile if lockfile exists AND is non-empty (user project)
+    # Otherwise generate lockfile (boilerplate without committed lockfiles)
+    - docker compose exec -T node sh -c 'if [ -f pnpm-lock.yaml ] && [ -s pnpm-lock.yaml ]; then pnpm install --frozen-lockfile; else pnpm install; fi'
     - docker compose exec -T php composer audit
     - docker compose exec -T node pnpm audit
   allow_failure: true
@@ -312,10 +324,22 @@ build:production:
     - master
     - develop
   script:
-    - ENV=production docker compose -f compose.yaml -f compose.production.yaml build
+    # Generate SSL certificates for nginx
+    - make ssl-selfsigned
+    # Create empty lockfiles if missing (boilerplate doesn't commit them)
+    # Required for DOCKER_BUILDKIT=0 which doesn't support empty COPY wildcards
+    - "[ -f composer.lock ] || echo '{}' > composer.lock"
+    - "[ -f pnpm-lock.yaml ] || touch pnpm-lock.yaml"
+    # Build node-backend first, then tag for cross-image COPY compatibility
+    - docker compose -f compose.yaml -f compose.production.yaml --profile node-backend build node-backend
+    - docker tag ${COMPOSE_PROJECT_NAME}-node-backend:api zappzarapp-node-backend:latest
+    # Disable BuildKit for php/nginx build so they can see the local tagged image
+    - DOCKER_BUILDKIT=0 ENV=production docker compose -f compose.yaml -f compose.production.yaml build php nginx
+    # Start and test
     - ENV=production docker compose -f compose.yaml -f compose.production.yaml up -d
     - sleep 10
     - docker compose ps
+    - docker compose logs
     - curl -f http://localhost:8080/health || exit 1
   artifacts:
     when: on_success
