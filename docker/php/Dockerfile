@@ -198,7 +198,9 @@ COPY --from=composer-image /usr/bin/composer /usr/bin/composer
 RUN apk add --no-cache --virtual .composer-deps unzip
 
 # Copy composer files and install dependencies
-COPY --chown=www-data:www-data composer.json composer.lock ./
+# Note: composer.lock is optional (not committed in boilerplate)
+COPY --chown=www-data:www-data composer.json ./
+COPY --chown=www-data:www-data composer.lock* ./
 RUN composer install --no-dev --no-scripts --no-autoloader --prefer-dist
 
 # Copy application source code and public files
