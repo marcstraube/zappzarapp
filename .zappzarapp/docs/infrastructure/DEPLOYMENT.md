@@ -130,16 +130,49 @@ on:
   workflow_dispatch: # Manual trigger
 ```
 
-### Coverage Integration
+### Coverage Integration (Codecov)
 
-Coverage reports are automatically uploaded to Codecov:
+Coverage reports are automatically uploaded to Codecov on pushes to `master`.
+
+**Public repositories:** Works automatically without configuration.
+
+**Private repositories:** Requires a Codecov token.
+
+#### Codecov Setup for Private Repos
+
+1. Create account at [codecov.io](https://codecov.io)
+2. Add your repository
+3. Copy the repository token
+4. Add secret to your CI platform:
+
+**GitHub:**
+
+```text
+Settings → Secrets and variables → Actions → New repository secret
+Name: CODECOV_TOKEN
+Value: <your-token>
+```
+
+**GitLab:**
+
+```text
+Settings → CI/CD → Variables → Add variable
+Key: CODECOV_TOKEN
+Value: <your-token>
+Protected: Yes
+Masked: Yes
+```
+
+The workflow is already configured to use the token if available:
 
 ```yaml
 - name: Upload coverage to Codecov
   uses: codecov/codecov-action@v4
   with:
+    token: ${{ secrets.CODECOV_TOKEN }}
     files: ./build/coverage/clover.xml
     flags: php
+    fail_ci_if_error: false # CI passes even without token
 ```
 
 ### Security Scans

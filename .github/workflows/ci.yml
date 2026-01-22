@@ -112,9 +112,11 @@ jobs:
         if: github.event_name == 'push' && github.ref == 'refs/heads/master'
         uses: codecov/codecov-action@v4
         with:
+          token: ${{ secrets.CODECOV_TOKEN }}
           files: ./build/coverage/clover.xml
           flags: php
           name: php-coverage
+          fail_ci_if_error: false
 
       - name: Cleanup
         uses: ./.github/actions/docker-cleanup
@@ -217,9 +219,11 @@ jobs:
         if: github.event_name == 'push' && github.ref == 'refs/heads/master'
         uses: codecov/codecov-action@v4
         with:
+          token: ${{ secrets.CODECOV_TOKEN }}
           files: ./build/coverage/lcov.info
           flags: node
           name: node-coverage
+          fail_ci_if_error: false
 
       - name: Cleanup
         uses: ./.github/actions/docker-cleanup
