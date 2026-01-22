@@ -79,8 +79,9 @@ COPY --chown=node:node pnpm-lock.yaml* ./
 COPY --chown=node:node src/node/backend/package.json ./src/node/backend/
 
 # Install ALL dependencies (including devDependencies for build)
-# Use --frozen-lockfile if lockfile exists (user's project), otherwise generate it (boilerplate)
-RUN if [ -f pnpm-lock.yaml ]; then pnpm install --frozen-lockfile; else pnpm install; fi
+# Use --frozen-lockfile if lockfile exists AND is not empty (user's project)
+# Otherwise generate lockfile (boilerplate or empty placeholder from CI)
+RUN if [ -f pnpm-lock.yaml ] && [ -s pnpm-lock.yaml ]; then pnpm install --frozen-lockfile; else pnpm install; fi
 
 # Copy ONLY necessary source files
 COPY --chown=node:node vite.config.js ./
