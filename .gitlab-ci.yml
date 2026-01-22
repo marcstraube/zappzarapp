@@ -23,6 +23,8 @@ stages:
   before_script:
     - apk add --no-cache docker-compose curl bash
     - docker compose version
+    # Build goss utility image (dependency for other Dockerfiles)
+    - docker build -t zappzarapp-goss:latest -f docker/goss/Dockerfile .
   after_script:
     - docker compose down -v || true
     - docker system prune -f || true

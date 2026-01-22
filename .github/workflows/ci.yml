@@ -27,6 +27,9 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
+      - name: Build goss utility image (dependency)
+        run: docker build -t zappzarapp-goss:latest -f docker/goss/Dockerfile .
+
       - name: Build PHP container
         run: |
           docker compose build php
@@ -110,6 +113,9 @@ jobs:
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
+
+      - name: Build goss utility image (dependency)
+        run: docker build -t zappzarapp-goss:latest -f docker/goss/Dockerfile .
 
       - name: Build Node container
         run: |
@@ -196,6 +202,9 @@ jobs:
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
+
+      - name: Build goss utility image (dependency)
+        run: docker build -t zappzarapp-goss:latest -f docker/goss/Dockerfile .
 
       - name: Build containers
         run: |
