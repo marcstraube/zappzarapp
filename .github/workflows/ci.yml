@@ -157,8 +157,8 @@ jobs:
       - name: Install Node dependencies
         run: |
           # Use --frozen-lockfile if lockfile exists AND is non-empty (user project)
-          # Otherwise generate lockfile (boilerplate without committed lockfiles)
-          docker compose exec -T node sh -c 'if [ -f pnpm-lock.yaml ] && [ -s pnpm-lock.yaml ]; then pnpm install --frozen-lockfile; else pnpm install; fi'
+          # Otherwise install without lockfile (bind mount prevents atomic rename)
+          docker compose exec -T node sh -c 'if [ -f pnpm-lock.yaml ] && [ -s pnpm-lock.yaml ]; then pnpm install --frozen-lockfile; else pnpm install --no-lockfile; fi'
 
       - name: TypeScript Type Check
         run: docker compose exec -T node pnpm run type-check
@@ -211,7 +211,7 @@ jobs:
           NODE_MODE=idle docker compose --profile redis up -d node redis
           # Use --frozen-lockfile if lockfile exists AND is non-empty (user project)
           # Otherwise generate lockfile (boilerplate without committed lockfiles)
-          docker compose exec -T node sh -c 'if [ -f pnpm-lock.yaml ] && [ -s pnpm-lock.yaml ]; then pnpm install --frozen-lockfile; else pnpm install; fi'
+          docker compose exec -T node sh -c 'if [ -f pnpm-lock.yaml ] && [ -s pnpm-lock.yaml ]; then pnpm install --frozen-lockfile; else pnpm install --no-lockfile; fi'
 
       - name: Wait for Redis
         run: |
@@ -276,7 +276,7 @@ jobs:
           docker compose exec -T php composer install --no-progress --no-interaction
           # Use --frozen-lockfile if lockfile exists AND is non-empty (user project)
           # Otherwise generate lockfile (boilerplate without committed lockfiles)
-          docker compose exec -T node sh -c 'if [ -f pnpm-lock.yaml ] && [ -s pnpm-lock.yaml ]; then pnpm install --frozen-lockfile; else pnpm install; fi'
+          docker compose exec -T node sh -c 'if [ -f pnpm-lock.yaml ] && [ -s pnpm-lock.yaml ]; then pnpm install --frozen-lockfile; else pnpm install --no-lockfile; fi'
 
       - name: PHP Composer Audit
         run: docker compose exec -T php composer audit
