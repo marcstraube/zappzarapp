@@ -18,7 +18,7 @@ Compact task index. Details in `backlog/<slug>.md` files.
 | ------------------------ | ------------------------- | ----- | ------- |
 | node-backend-eisdir      | Node Backend EISDIR Error | Small | Open    |
 | v1.0-release-preparation | v1.0 Release Preparation  | Large | Planned |
-| makefile-target-testing  | BATS + Goss Make Testing  | Large | Planned |
+| bats-setup-reset-tests   | BATS Setup/Reset Tests    | Small | Planned |
 
 ## Medium Priority
 
@@ -94,6 +94,7 @@ Compact task index. Details in `backlog/<slug>.md` files.
 
 | Slug                         | Title                        | Completed  |
 | ---------------------------- | ---------------------------- | ---------- |
+| makefile-target-testing      | BATS + Goss Make Testing     | 2026-01-22 |
 | make-integrations-setup      | Make Setup: db-migrations    | 2026-01-22 |
 | make-setup-api-docs          | Make Setup: API Docs         | 2026-01-22 |
 | phpstorm-vscode-sync         | PhpStorm/VSCode Sync         | 2026-01-22 |

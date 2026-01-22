@@ -8,6 +8,9 @@ DC := docker compose --progress=plain
 # This ensures make pnpm/composer/etc. work regardless of .env settings
 DC_RUN := COMPOSE_PROFILES=php,node,node-backend,dev-tools $(DC)
 
+# Alpine image for utility operations (ownership fixes, cleanup)
+ALPINE_IMAGE ?= alpine:3.21
+
 # Load environment files in correct order:
 # 1. .env (team defaults)
 # 2. .env.production (if ENV=production)
@@ -74,8 +77,14 @@ help: ## Show this help (FILTER=? for categories, FILTER=<name> to filter)
 
 composer-install: ## Install Composer dependencies (Docker - guaranteed consistency)
 	@echo -e "\033[0;33mInstalling Composer dependencies (Docker)...\033[0m"
-	@# Remove empty/invalid lockfile (Composer will regenerate it)
+	@# Fix bind mount bug: if lockfile is directory, remove and recreate as file
+	@if [ -d composer.lock ]; then \
+		docker run --rm -v "$(PWD):/app" -w /app $(ALPINE_IMAGE) sh -c "rm -rf composer.lock" 2>/dev/null || rm -rf composer.lock; \
+	fi
+	@# Remove empty lockfile (Composer can't parse empty as JSON)
 	@if [ -f composer.lock ] && [ ! -s composer.lock ]; then rm -f composer.lock; fi
+	@# Ensure lockfile exists as FILE (empty but valid) to prevent Docker bind mount bug
+	@if [ ! -f composer.lock ]; then echo '{}' > composer.lock; fi
 	@XDEBUG_MODE=off $(DC_RUN) run --rm --no-TTY php composer install --prefer-dist --no-interaction
 	@echo -e "\033[0;32mDependencies installed!\033[0m"
 
@@ -174,10 +183,17 @@ setup: ## Create directories, install dev dependencies and ensure structure
 	@mkdir -p tests/node/backend
 
 	# Build & Coverage directories (excluded from IDE indexing)
-	@mkdir -p build/coverage/{php,node} build/vitest-report
+	@mkdir -p build/coverage/{php,node} build/vitest-report dist
 
 	# Config & Templates (app bootstrap references these)
 	@mkdir -p config templates
+
+	# Lockfiles (must exist as FILES before Docker bind mounts, otherwise Docker creates directories)
+	@# Fix bind mount bug: remove if directories, ensure files exist with correct ownership
+	@if [ -d composer.lock ] || [ -d pnpm-lock.yaml ] || [ ! -f composer.lock ] || [ ! -f pnpm-lock.yaml ]; then \
+		docker run --rm -v "$(PWD):/app" -w /app $(ALPINE_IMAGE) sh -c \
+			"rm -rf composer.lock pnpm-lock.yaml && touch composer.lock pnpm-lock.yaml && chown $(shell id -u):$(shell id -g) composer.lock pnpm-lock.yaml"; \
+	fi
 
 	# SSL/TLS Certificates
 	@mkdir -p docker/certs
@@ -187,11 +203,19 @@ setup: ## Create directories, install dev dependencies and ensure structure
 
 	# Storage (Runtime data) - Set permissions
 	@. ./.env && mkdir -p $${STORAGE_DIR:-./storage}/{app/{uploads,generated},cache,sessions,logs}
-	@. ./.env && chmod 770 $${STORAGE_DIR:-./storage} -R
+	@# Fix ownership if root-owned (from container operations) - only for default ./storage
+	@if [ -d storage ] && find storage -user root 2>/dev/null | grep -q .; then \
+		docker run --rm -v "$(PWD)/storage:/storage" $(ALPINE_IMAGE) chown -R $(shell id -u):$(shell id -g) /storage; \
+	fi
+	@. ./.env && chmod 770 $${STORAGE_DIR:-./storage} -R 2>/dev/null || true
 
 	# Backups directory (encrypted backups for all services)
 	@mkdir -p backups/{db,seaweedfs,rabbitmq,elasticsearch}
-	@chmod 700 backups backups/*
+	@# Fix ownership if root-owned (from container backup operations)
+	@if find backups -user root 2>/dev/null | grep -q .; then \
+		docker run --rm -v "$(PWD)/backups:/backups" $(ALPINE_IMAGE) chown -R $(shell id -u):$(shell id -g) /backups; \
+	fi
+	@chmod 700 backups backups/* 2>/dev/null || true
 
 	# Project AI knowledge directory (team backlog, decisions, learnings)
 	@mkdir -p .ai .ai/backlog
@@ -1221,13 +1245,25 @@ node-frontend-start: ## Start Node frontend framework production server
 
 pnpm-install: ## Install Node.js dependencies (Docker - guaranteed consistency)
 	@echo -e "\033[0;33mInstalling Node.js dependencies (Docker)...\033[0m"
-	@# If lockfile is empty/missing, run without --frozen-lockfile to generate it
+	@# Fix bind mount bug: if lockfile is directory, remove it
+	@if [ -d pnpm-lock.yaml ]; then \
+		docker run --rm -v "$(PWD):/app" -w /app $(ALPINE_IMAGE) sh -c "rm -rf pnpm-lock.yaml" 2>/dev/null || rm -rf pnpm-lock.yaml; \
+	fi
+	@# If lockfile is empty/missing, generate in temp dir first (avoids EBUSY on bind mount)
 	@if [ ! -s pnpm-lock.yaml ]; then \
 		echo -e "\033[0;33m  No valid lockfile found, generating...\033[0m"; \
-		$(DC_RUN) run --rm --no-TTY --user root --entrypoint "" -e CI=true node pnpm install; \
-	else \
-		$(DC_RUN) run --rm --no-TTY --user root --entrypoint "" -e CI=true node pnpm install --frozen-lockfile; \
+		$(DC_RUN) run --rm --no-TTY --user root --entrypoint "" -e CI=true node sh -c ' \
+			mkdir -p /tmp/pnpm-install/src/node/backend /tmp/pnpm-install/src/node/frontend && \
+			cp /app/package.json /tmp/pnpm-install/package.json && \
+			cp /app/pnpm-workspace.yaml /tmp/pnpm-install/pnpm-workspace.yaml && \
+			cp /app/src/node/backend/package.json /tmp/pnpm-install/src/node/backend/package.json && \
+			cp /app/src/node/frontend/package.json /tmp/pnpm-install/src/node/frontend/package.json && \
+			cd /tmp/pnpm-install && pnpm install --ignore-scripts && \
+			cat /tmp/pnpm-install/pnpm-lock.yaml > /app/pnpm-lock.yaml \
+		'; \
 	fi
+	@# Now install with frozen lockfile (installs to node_modules volume)
+	@$(DC_RUN) run --rm --no-TTY --user root --entrypoint "" -e CI=true node pnpm install --frozen-lockfile
 	@echo -e "\033[0;32mDependencies installed!\033[0m"
 
 pnpm-update: ## Update Node.js dependencies (updates pnpm-lock.yaml on host)
@@ -1879,28 +1915,20 @@ _reset-core:
 	fi
 	@echo -e "\033[0;33m[2/5] Cleaning up Goss test resources...\033[0m"
 	@$(MAKE) --silent goss-cleanup
-	@echo -e "\033[0;33m[3/5] Stopping and removing all Docker resources...\033[0m"
-	@# Stop and remove all project containers, volumes, images, networks (including orphans)
-	@$(DC) --profile php --profile node --profile node-backend --profile redis --profile postgres --profile mariadb --profile mercure --profile meilisearch --profile elasticsearch --profile mailpit --profile seaweedfs --profile rabbitmq down -v --rmi all --remove-orphans 2>/dev/null || true
-	@# Remove any remaining containers from this project
-	@docker ps -aq --filter "label=com.docker.compose.project=zappzarapp" 2>/dev/null | xargs -r docker rm -f 2>/dev/null || true
-	@# Clear all unused Docker resources (images, containers, networks, volumes)
-	@docker system prune -af --volumes 2>/dev/null || true
-	@# Clear build cache to remove stale layer references
-	@docker builder prune -af 2>/dev/null || true
-	@echo -e "\033[0;33m[4/5] Removing dependencies and lockfiles...\033[0m"
+	@echo -e "\033[0;33m[3/5] Removing dependencies, lockfiles and build artifacts...\033[0m"
 	@# Use Docker to remove directories that may have root ownership (from container operations)
-	@docker run --rm -v "$(PWD):/app" -w /app alpine:3.21 sh -c 'rm -rf vendor node_modules .pnpm-store composer.lock pnpm-lock.yaml 2>/dev/null' || true
+	@# Combined into single run to avoid multiple image pulls
+	@docker run --rm -v "$(PWD):/app" -w /app $(ALPINE_IMAGE) sh -c 'rm -rf vendor node_modules .pnpm-store composer.lock pnpm-lock.yaml build dist 2>/dev/null' || true
 	@# Fallback: try local rm for any remaining files (user-owned)
 	@rm -rf vendor node_modules .pnpm-store composer.lock pnpm-lock.yaml 2>/dev/null || true
-	@echo -e "\033[0;33m[5/5] Removing generated files and build artifacts...\033[0m"
+	@echo -e "\033[0;33m[4/5] Removing generated files...\033[0m"
 	@# Skip directories that are mountpoints
 	@if ! mountpoint -q storage 2>/dev/null; then \
 		find storage -type f ! -name '.gitkeep' -delete 2>/dev/null || true; \
 	else \
 		echo -e "\033[0;33m  Skipping storage/ (mountpoint)\033[0m"; \
 	fi
-	@for dir in build public/build docs/api tools; do \
+	@for dir in build dist public/build docs/api tools; do \
 		if [ -d "$$dir" ] && ! mountpoint -q "$$dir" 2>/dev/null; then \
 			rm -rf "$$dir" 2>/dev/null || true; \
 		elif [ -d "$$dir" ]; then \
@@ -1909,6 +1937,15 @@ _reset-core:
 	done
 	@rm -f .env.local 2>/dev/null || true
 	@rm -rf .ai 2>/dev/null || true
+	@echo -e "\033[0;33m[5/5] Stopping and removing all Docker resources...\033[0m"
+	@# Stop and remove all project containers, volumes, images, networks (including orphans)
+	@$(DC) --profile php --profile node --profile node-backend --profile redis --profile postgres --profile mariadb --profile mercure --profile meilisearch --profile elasticsearch --profile mailpit --profile seaweedfs --profile rabbitmq down -v --rmi all --remove-orphans 2>/dev/null || true
+	@# Remove any remaining containers from this project
+	@docker ps -aq --filter "label=com.docker.compose.project=zappzarapp" 2>/dev/null | xargs -r docker rm -f 2>/dev/null || true
+	@# Clear all unused Docker resources (images, containers, networks, volumes)
+	@docker system prune -af --volumes 2>/dev/null || true
+	@# Clear build cache to remove stale layer references
+	@docker builder prune -af 2>/dev/null || true
 
 reset: ## Reset Docker and generated files (keeps secrets/certs)
 	@echo -e "\033[0;33m╔══════════════════════════════════════════════════════════════════╗\033[0m"
@@ -1921,7 +1958,7 @@ reset: ## Reset Docker and generated files (keeps secrets/certs)
 	@echo -e "\033[0;33m║  • vendor/, node_modules/, .pnpm-store/ (dependencies)           ║\033[0m"
 	@echo -e "\033[0;33m║  • composer.lock, pnpm-lock.yaml (lockfiles)                     ║\033[0m"
 	@echo -e "\033[0;33m║  • .env.local (local overrides)                                  ║\033[0m"
-	@echo -e "\033[0;33m║  • build/, public/build/, docs/api/, tools/ (generated files)    ║\033[0m"
+	@echo -e "\033[0;33m║  • build/, dist/, public/build/, docs/api/, tools/ (generated)   ║\033[0m"
 	@echo -e "\033[0;33m║  • .ai/ (project AI knowledge created by setup)                  ║\033[0m"
 	@echo -e "\033[0;33m╠══════════════════════════════════════════════════════════════════╣\033[0m"
 	@echo -e "\033[0;33m║  KEEPS: secrets/, docker/certs/, source code                     ║\033[0m"
@@ -2967,6 +3004,11 @@ ssl-selfsigned: ## Generate self-signed SSL certificate for development
 	@if [ ! -f docker/certs/generate-selfsigned.sh ]; then \
 		echo -e "\033[0;31mError: generate-selfsigned.sh not found!\033[0m"; \
 		exit 1; \
+	fi
+	@# Fix bind mount bug: remove if cert.crt/cert.key are directories instead of files/symlinks
+	@if [ -d docker/certs/cert.crt ] || [ -d docker/certs/cert.key ]; then \
+		echo -e "\033[0;33mFixing bind mount issue (cert.crt/cert.key are directories)...\033[0m"; \
+		docker run --rm -v "$(PWD)/docker/certs:/certs" $(ALPINE_IMAGE) sh -c "rm -rf /certs/cert.crt /certs/cert.key"; \
 	fi
 	@bash docker/certs/generate-selfsigned.sh localhost
 	@echo -e "\033[0;32mSelf-signed certificate generated!\033[0m"

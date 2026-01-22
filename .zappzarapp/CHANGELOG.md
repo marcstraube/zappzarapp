@@ -1,11 +1,53 @@
 # zappzarapp - Changelog
 
-**Erstellt:** 2025-12-19 **Letzte Aktualisierung:** 2026-01-22 (Lint Fixes)
-**Version:** 3.78
+**Erstellt:** 2025-12-19 **Letzte Aktualisierung:** 2026-01-22 (Setup/Reset Fixes)
+**Version:** 3.79
 
 ---
 
 ## Changelog
+
+### Version 3.79 (2026-01-22) - Setup/Reset Workflow Fixes
+
+Fixed critical issues in the fresh setup workflow (`make reset` → `make init` →
+`make setup` → `make up`) discovered during comprehensive testing.
+
+#### Fixed: Docker Bind Mount Directory Bug
+
+Docker creates directories instead of files when bind mount target doesn't exist
+on host. This affected lockfiles and SSL certificates.
+
+- **composer-install**: Detect directory, remove via Docker, write `{}` (valid JSON)
+- **pnpm-install**: Temp directory approach to avoid EBUSY atomic rename error
+- **ssl-selfsigned**: Detect and remove cert.crt/cert.key if directories
+- **setup**: Create lockfiles as files before Docker operations
+
+#### Fixed: Reset Ordering
+
+Previously, Docker cleanup deleted Alpine image, then file operations re-pulled
+it, leaving orphan image after reset.
+
+- Reordered: File operations (using Alpine) now run BEFORE Docker cleanup
+- Docker cleanup is now the final step
+
+#### Fixed: Root Ownership Issues
+
+Container operations create root-owned files/directories that host user can't
+modify.
+
+- **setup**: Docker-based ownership fix for backups/storage before chmod
+- **reset**: Docker-based removal for root-owned directories
+
+#### Changed: Centralized Alpine Version
+
+- Added `ALPINE_IMAGE ?= alpine:3.21` variable
+- Replaced all hardcoded `alpine:3.21` references
+
+#### Fixed: Node Container Shebang
+
+- Changed `docker/node/entrypoint.development.sh` from `#!/bin/bash` to `#!/bin/sh`
+- Alpine uses ash, not bash
+- BATS tests run in separate container with its own bash (no conflict)
 
 ### Version 3.78 (2026-01-22) - Lint Fixes
 

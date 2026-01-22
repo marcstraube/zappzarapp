@@ -7,6 +7,42 @@ avoid repeating mistakes.
 
 ## Docker & Containers
 
+### Bind Mount Directory Bug
+
+**Problem:** Docker creates directories instead of files when bind mount target
+doesn't exist on host.
+
+**Symptoms:**
+
+- `Error: EISDIR: illegal operation on a directory, read` when Node tries to
+  read a lockfile
+- `cannot load certificate: is a directory` from nginx
+- Container restart loops
+
+**Affected files (boilerplate):**
+
+- `composer.lock` / `pnpm-lock.yaml` (if deleted or never created)
+- `docker/certs/cert.crt` / `docker/certs/cert.key` (if not generated)
+- `secrets/*` files (if not generated)
+
+**Fix:** Ensure files exist before `docker compose up`:
+
+```bash
+# For lockfiles (if directories)
+docker run --rm -v ./:/app alpine sh -c "rm -rf /app/composer.lock && touch /app/composer.lock"
+
+# For certs/secrets: run make targets
+make ssl-generate
+make secrets
+# Or: make setup (runs all)
+```
+
+**Root cause in compose.yaml:** Bind mounts like `./file.txt:/container/file.txt`
+create `/container/file.txt` as directory if `./file.txt` doesn't exist.
+
+**Prevention:** Run `make setup` on fresh clone or after deleting generated
+files.
+
 ### Secrets Handling
 
 - **Docker Compose ignores `mode`, `uid`, `gid` for secrets** - these options
@@ -483,5 +519,4 @@ notifications (e.g., ntfy notifications after agent completion).
 
 ## Last Updated
 
-2026-01-22 (added IDE vs. Linter parity: eslint-plugin-sonarjs for redundant
-variable detection)
+2026-01-22 (added Docker bind mount directory bug documentation)

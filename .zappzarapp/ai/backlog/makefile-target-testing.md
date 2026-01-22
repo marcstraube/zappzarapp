@@ -78,8 +78,64 @@ Modify:
 
 - `Makefile` (new `test-bats` and `test-full` targets)
 
+### Subtask: Setup/Reset Directory Tests (Docker-in-Docker)
+
+Test `make setup` and `make reset` directory handling, including root-owned file
+scenarios using Docker-in-Docker.
+
+**Test cases:**
+
+1. **`make setup` creates `dist/` directory**
+
+   ```bash
+   @test "make setup creates dist directory" {
+     rm -rf dist
+     run make setup
+     [ "$status" -eq 0 ]
+     [ -d "dist" ]
+   }
+   ```
+
+2. **`make reset` removes `dist/` directory**
+
+   ```bash
+   @test "make reset removes dist directory" {
+     mkdir -p dist
+     touch dist/test.txt
+     run make reset <<< "RESET"
+     [ "$status" -eq 0 ]
+     [ ! -d "dist" ]
+   }
+   ```
+
+3. **Ownership fix for root-owned files** (requires Docker-in-Docker)
+
+   ```bash
+   @test "make setup fixes root-owned backups directory" {
+     # Create root-owned directory via Docker
+     docker run --rm -v "$(pwd)/backups:/backups" alpine:3.21 \
+       sh -c "mkdir -p /backups/test && chown root:root /backups/test"
+
+     # Verify root ownership
+     run find backups -user root
+     [ -n "$output" ]
+
+     # Run setup - should fix ownership
+     run make setup
+     [ "$status" -eq 0 ]
+
+     # Verify user ownership
+     run find backups -user root
+     [ -z "$output" ]
+   }
+   ```
+
+**Note:** Test 3 requires BATS to run in an environment with Docker socket access
+(Docker-in-Docker or host Docker socket mounted).
+
 ## Dependencies
 
 - BATS installation (via package manager or git submodule)
 - `bats-support` and `bats-assert` helper libraries
 - Existing Goss setup (already in project)
+- Docker socket access for ownership tests

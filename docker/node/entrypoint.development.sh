@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 # Docker Node.js Development Entrypoint Script
 # Runs as root initially to fix volume permissions, then re-execs as node user
 #
