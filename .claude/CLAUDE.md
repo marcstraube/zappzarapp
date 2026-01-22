@@ -447,9 +447,12 @@ Examples:
 
 ## Language
 
-- **Documentation**: Always in English (agents/, standards/, commands/, code
-  comments, CHANGELOG, README, etc.)
-- **Communication**: In user's language (respond in the language the user uses)
+- **English always**: Documentation, code, technical content, task summaries,
+  error descriptions, implementation details
+- **User's language**: Only for direct questions, confirmations, process
+  explanations
+
+Rule of thumb: If it could be copy-pasted into documentation, use English.
 
 ## Communication
 
