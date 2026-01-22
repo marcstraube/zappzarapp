@@ -26,6 +26,13 @@ fallback.
 - Flags: `--web` (skip local), `--no-save` (don't prompt to save)
 - Complements `/learnings` (manages) with `/research` (discovers)
 
+#### Docs: AI-INTEGRATION.md Updated
+
+- Updated slash commands table (added `/research`, `/audit`)
+- Added scope decision table for agent workflow
+- Added Parallel Fixer documentation
+- Clarified knowledge file layer support (BACKLOG=3, others=2)
+
 ### Version 3.73 (2026-01-22) - Dependency Sync Workflow
 
 Automated reminder for local dependency sync after package changes.

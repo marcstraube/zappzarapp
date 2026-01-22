@@ -26,12 +26,16 @@ AI knowledge files are organized in three layers:
 
 ### Knowledge Files
 
-Each layer can contain:
+Each layer can contain different files based on layer support:
 
-- `BACKLOG.md` — Tasks and todos
-- `LEARNINGS.md` — Technical insights
-- `DECISIONS.md` — Architecture decisions (ADR-style)
-- `REFERENCES.md` — Useful documentation links
+| File       | Layers | Available In                  |
+| ---------- | ------ | ----------------------------- |
+| BACKLOG    | 3      | personal, project, zappzarapp |
+| LEARNINGS  | 2      | project, zappzarapp           |
+| DECISIONS  | 2      | project, zappzarapp           |
+| REFERENCES | 2      | project, zappzarapp           |
+
+**Note:** Personal layer only supports BACKLOG (cross-project task tracking).
 
 ### Path Configuration
 
@@ -173,14 +177,16 @@ AI_SYNC_FROM=claude
 
 Available commands in `.claude/commands/`:
 
-| Command       | Purpose                                    |
-| ------------- | ------------------------------------------ |
-| `/status`     | Project overview (Git, Docker, backlog)    |
-| `/backlog`    | Manage tasks (add, list, prioritize)       |
-| `/commit`     | Guided commit workflow with quality checks |
-| `/learnings`  | View and manage project learnings          |
-| `/sync-check` | Verify config file synchronization         |
-| `/optimize`   | Self-optimization of config and commands   |
+| Command       | Purpose                                          |
+| ------------- | ------------------------------------------------ |
+| `/status`     | Project overview (Git, Docker, backlog)          |
+| `/backlog`    | Manage tasks (add, list, prioritize)             |
+| `/commit`     | Guided commit workflow with quality checks       |
+| `/audit`      | Project audit (quality, security, docs)          |
+| `/learnings`  | View and manage project learnings                |
+| `/research`   | Research topics (local knowledge + optional web) |
+| `/sync-check` | Verify config file synchronization               |
+| `/optimize`   | Self-optimization of config and commands         |
 
 ### Using /backlog Across Projects
 
@@ -202,18 +208,40 @@ Default target: `personal`
 
 ## Agent Workflow
 
-For complex tasks, Claude Code uses specialized agents:
+For complex tasks, Claude Code uses specialized agents based on task scope:
+
+| Scope      | Files   | Workflow                                           |
+| ---------- | ------- | -------------------------------------------------- |
+| Small      | 1-3     | Direct implementation → Lint → Test                |
+| Medium     | 3-10    | Plan-Agent → Implementation → Lint → Test          |
+| Large      | >10     | 4-Agent-Model (Architect → Coder → Reviewer → Doc) |
+| Quick Wins | 1-2     | Parallel Coder agents → Single commit              |
+| Ad-hoc Fix | ≥2 lang | Parallel Fixer → Language-specific agents          |
+
+### 4-Agent-Model
 
 ```text
 Main Agent
     ↓
 Agent A (Architect) — Analysis & planning
     ↓
-Agent B1/B2/B3 (Coder) — PHP/Node/SQL implementation
+Agent B1/B2/B3 (Coder) — PHP/Node/SQL implementation (parallel if independent)
     ↓
-Agent C1-C5 (Reviewer) — Quality checks
+Agent C1-C5 (Reviewer) — Quality checks (parallel)
     ↓
 Agent D (Documenter) — Documentation updates
+```
+
+### Parallel Fixer
+
+For ad-hoc fix requests involving multiple languages:
+
+```text
+Main Agent detects: PHP + Node files
+    ↓
+Spawn parallel agents (one per language)
+    ↓
+Collect results, run lint
 ```
 
 See `.claude/agents/` for detailed workflow documentation.
