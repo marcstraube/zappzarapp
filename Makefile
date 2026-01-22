@@ -2565,8 +2565,8 @@ bats-test: ## Run BATS tests for Makefile targets (requires built image)
 	@echo -e "\033[0;33mRunning BATS tests...\033[0m"
 	@docker run --rm \
 		-v /var/run/docker.sock:/var/run/docker.sock \
-		-v "$(PWD):/app" \
-		-w /app \
+		-v "$(PWD):$(PWD)" \
+		-w "$(PWD)" \
 		--network host \
 		$(BATS_IMAGE) tests/bats/
 	@echo -e "\033[0;32m✓ BATS tests complete\033[0m"
@@ -2578,16 +2578,16 @@ bats-test-file: ## Run specific BATS test file (FILE=make-help.bats)
 	fi
 	@docker run --rm \
 		-v /var/run/docker.sock:/var/run/docker.sock \
-		-v "$(PWD):/app" \
-		-w /app \
+		-v "$(PWD):$(PWD)" \
+		-w "$(PWD)" \
 		--network host \
 		$(BATS_IMAGE) "tests/bats/$(FILE)"
 
 bats-test-verbose: ## Run BATS tests with verbose output (TAP format)
 	@docker run --rm \
 		-v /var/run/docker.sock:/var/run/docker.sock \
-		-v "$(PWD):/app" \
-		-w /app \
+		-v "$(PWD):$(PWD)" \
+		-w "$(PWD)" \
 		--network host \
 		$(BATS_IMAGE) --tap tests/bats/
 
@@ -2602,8 +2602,8 @@ bats-test-junit: ## Run BATS tests with JUnit XML output (for CI/CD)
 	@mkdir -p build
 	@docker run --rm \
 		-v /var/run/docker.sock:/var/run/docker.sock \
-		-v "$(PWD):/app" \
-		-w /app \
+		-v "$(PWD):$(PWD)" \
+		-w "$(PWD)" \
 		--network host \
 		$(BATS_IMAGE) --formatter junit tests/bats/ > build/bats-report.xml || \
 		(cat build/bats-report.xml && exit 1)
@@ -2614,8 +2614,8 @@ bats-test-integration: ## Run BATS integration tests (requires running container
 	@echo -e "\033[0;34mNote: This requires containers to be running (make up)\033[0m"
 	@docker run --rm \
 		-v /var/run/docker.sock:/var/run/docker.sock \
-		-v "$(PWD):/app" \
-		-w /app \
+		-v "$(PWD):$(PWD)" \
+		-w "$(PWD)" \
 		--network host \
 		-e INTEGRATION_PRESET=$(INTEGRATION_PRESET) \
 		$(BATS_IMAGE) tests/bats/integration/
@@ -2628,8 +2628,8 @@ bats-test-integration-file: ## Run specific BATS integration test file (FILE=lin
 	fi
 	@docker run --rm \
 		-v /var/run/docker.sock:/var/run/docker.sock \
-		-v "$(PWD):/app" \
-		-w /app \
+		-v "$(PWD):$(PWD)" \
+		-w "$(PWD)" \
 		--network host \
 		-e INTEGRATION_PRESET=$(INTEGRATION_PRESET) \
 		$(BATS_IMAGE) "tests/bats/integration/$(FILE)"
@@ -2654,8 +2654,8 @@ bats-test-destructive: ## Run BATS destructive tests (⚠️ WARNING: modifies d
 	fi
 	@docker run --rm \
 		-v /var/run/docker.sock:/var/run/docker.sock \
-		-v "$(PWD):/app" \
-		-w /app \
+		-v "$(PWD):$(PWD)" \
+		-w "$(PWD)" \
 		--network host \
 		-e BATS_ENABLE_DESTRUCTIVE=true \
 		$(BATS_IMAGE) tests/bats/integration/destructive.bats

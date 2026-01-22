@@ -26,8 +26,8 @@ _find_project_root() {
         fi
         dir="$(dirname "$dir")"
     done
-    # Fallback for Docker container
-    echo "/app"
+    # Fallback: use current working directory
+    pwd
 }
 export PROJECT_ROOT="$(_find_project_root)"
 
