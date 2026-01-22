@@ -232,7 +232,7 @@ node:tests:
     # Use --frozen-lockfile if lockfile exists AND is non-empty (user project)
     # Otherwise generate lockfile (boilerplate without committed lockfiles)
     - docker compose exec -T node sh -c 'if [ -f pnpm-lock.yaml ] && [ -s pnpm-lock.yaml ]; then pnpm install --frozen-lockfile; else pnpm install --no-lockfile; fi'
-    - timeout 30 sh -c 'until docker compose exec -T redis redis-cli ping; do sleep 1; done'
+    - timeout 30 sh -c 'until docker compose exec -T redis redis-cli --tls --insecure ping; do sleep 1; done'
     - docker compose exec -T node pnpm test
   coverage: '/All files\s*\|\s*(\d+\.?\d*)\s*\|/'
   artifacts:
