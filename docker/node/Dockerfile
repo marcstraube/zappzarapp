@@ -71,13 +71,16 @@ RUN apk add --no-cache --virtual .user-deps shadow && \
 USER node
 
 # Copy workspace configuration and dependency files
-COPY --chown=node:node package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+# Note: pnpm-lock.yaml is optional (not committed in boilerplate)
+COPY --chown=node:node package.json pnpm-workspace.yaml ./
+COPY --chown=node:node pnpm-lock.yaml* ./
 
 # Copy workspace package.json files (required for pnpm install)
 COPY --chown=node:node src/node/backend/package.json ./src/node/backend/
 
 # Install ALL dependencies (including devDependencies for build)
-RUN pnpm install --frozen-lockfile
+# Use --frozen-lockfile if lockfile exists (user's project), otherwise generate it (boilerplate)
+RUN if [ -f pnpm-lock.yaml ]; then pnpm install --frozen-lockfile; else pnpm install; fi
 
 # Copy ONLY necessary source files
 COPY --chown=node:node vite.config.js ./
