@@ -42,7 +42,8 @@ jobs:
       - name: Build PHP container
         run: |
           docker compose build php
-          docker compose up -d php
+          # Use PHP_SKIP_DEPENDENCY_CHECK=1 to skip dependency check in entrypoint (deps installed via exec)
+          PHP_SKIP_DEPENDENCY_CHECK=1 docker compose up -d php
 
       - name: Install PHP dependencies
         run: docker compose exec -T php composer install --no-progress --no-interaction
@@ -95,7 +96,8 @@ jobs:
 
       - name: Start services (PHP + Database)
         run: |
-          docker compose --profile postgres up -d php postgres
+          # Use PHP_SKIP_DEPENDENCY_CHECK=1 to skip dependency check in entrypoint (deps installed via exec)
+          PHP_SKIP_DEPENDENCY_CHECK=1 docker compose --profile postgres up -d php postgres
           docker compose exec -T php composer install --no-progress --no-interaction
 
       - name: Wait for database
@@ -270,8 +272,8 @@ jobs:
       - name: Build containers
         run: |
           docker compose build php node
-          # Use idle mode for node to skip dependency check (deps installed via exec)
-          NODE_MODE=idle docker compose up -d php node
+          # Use idle mode for node and skip PHP dependency check (deps installed via exec)
+          PHP_SKIP_DEPENDENCY_CHECK=1 NODE_MODE=idle docker compose up -d php node
 
       - name: Install dependencies
         run: |

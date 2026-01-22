@@ -29,14 +29,19 @@ if [ -d "/var/www/html/vendor" ]; then
 fi
 
 # Only validate dependencies when starting php-fpm service (not for composer/other commands)
+# Skip dependency check if PHP_SKIP_DEPENDENCY_CHECK=1 (used in CI for docker compose exec)
 if [ "$1" = "php-fpm" ]; then
     echo "[entrypoint.development] Starting PHP-FPM service..."
-    if [ ! -d "/var/www/html/vendor" ] || [ ! -f "/var/www/html/vendor/autoload.php" ]; then
-        echo "[entrypoint.development] ERROR: Composer dependencies not installed!"
-        echo "[entrypoint.development] Run 'make composer-install' to install dependencies."
-        exit 1
+    if [ "${PHP_SKIP_DEPENDENCY_CHECK:-0}" != "1" ]; then
+        if [ ! -d "/var/www/html/vendor" ] || [ ! -f "/var/www/html/vendor/autoload.php" ]; then
+            echo "[entrypoint.development] ERROR: Composer dependencies not installed!"
+            echo "[entrypoint.development] Run 'make composer-install' to install dependencies."
+            exit 1
+        fi
+        echo "[entrypoint.development] Dependencies OK"
+    else
+        echo "[entrypoint.development] Dependency check skipped (PHP_SKIP_DEPENDENCY_CHECK=1)"
     fi
-    echo "[entrypoint.development] Dependencies OK"
 fi
 
 # Execute the main command
