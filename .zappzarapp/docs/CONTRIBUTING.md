@@ -72,10 +72,28 @@ for automated checks:
 - **pre-push:** Runs static analysis (PHPStan, TypeScript) and tests (PHPUnit,
   Vitest)
 
-Install hooks after cloning:
+#### Automatic Setup
+
+Git hooks are installed automatically when running `make setup` (if local
+composer is available).
+
+#### Manual Setup
+
+If `make setup` shows a warning about missing local composer:
 
 ```bash
+# 1. Install composer (https://getcomposer.org/download/)
+# 2. Install local PHP dependencies (for IDE + hooks)
+make composer-install-local
+
+# 3. Install Git hooks
 vendor/bin/captainhook install
+```
+
+**Note:** The `pre-commit` hook runs lint-staged in Docker, so you also need:
+
+```bash
+make pnpm-install    # Ensures lint-staged is available in the container
 ```
 
 ## Adding Documentation

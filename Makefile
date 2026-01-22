@@ -291,7 +291,10 @@ setup: ## Create directories, install dev dependencies and ensure structure
 		fi; \
 	else \
 		echo -e "\033[0;33m  ⚠ Local composer not found - skipping local PHP dependencies\033[0m"; \
-		echo -e "\033[0;33m    Git hooks require: composer, then 'make composer-install-local'\033[0m"; \
+		echo -e "\033[0;33m    To enable Git hooks manually:\033[0m"; \
+		echo -e "\033[0;33m      1. Install composer: https://getcomposer.org/download/\033[0m"; \
+		echo -e "\033[0;33m      2. make composer-install-local\033[0m"; \
+		echo -e "\033[0;33m      3. vendor/bin/captainhook install\033[0m"; \
 	fi
 
 	@echo ""
