@@ -41,11 +41,11 @@ jobs:
         run: |
           docker compose build php
           docker compose up -d php
+          # Wait for container to be ready (entrypoint initialization)
+          sleep 5
 
       - name: Install PHP dependencies
-        run: |
-          # compose.ci.yaml sets PHP_SKIP_DEPENDENCY_CHECK=1 and doesn't bind-mount lockfiles
-          docker compose exec -T php composer install --no-progress --no-interaction
+        run: docker compose exec -T php composer install --no-progress --no-interaction
 
       - name: PHP Coding Standards (PHP-CS-Fixer)
         run: docker compose exec -T php composer cs-check
@@ -91,8 +91,9 @@ jobs:
 
       - name: Start services (PHP + Database)
         run: |
-          # compose.ci.yaml sets PHP_SKIP_DEPENDENCY_CHECK=1 and doesn't bind-mount lockfiles
           docker compose --profile postgres up -d php postgres
+          # Wait for container to be ready (entrypoint initialization)
+          sleep 5
           docker compose exec -T php composer install --no-progress --no-interaction
 
       - name: Wait for database
@@ -144,13 +145,12 @@ jobs:
       - name: Build Node container
         run: |
           docker compose build node
-          # compose.ci.yaml sets NODE_MODE=idle
           docker compose up -d node
+          # Wait for container to be ready (entrypoint initialization)
+          sleep 5
 
       - name: Install Node dependencies
-        run: |
-          # compose.ci.yaml doesn't bind-mount lockfiles, so pnpm generates them fresh
-          docker compose exec -T node pnpm install
+        run: docker compose exec -T node pnpm install
 
       - name: TypeScript Type Check
         run: docker compose exec -T node pnpm run type-check
@@ -198,6 +198,8 @@ jobs:
         run: |
           # compose.ci.yaml sets NODE_MODE=idle and doesn't bind-mount lockfiles
           docker compose --profile redis up -d node redis
+          # Wait for node container to be ready (entrypoint does privilege drop)
+          sleep 5
           docker compose exec -T node pnpm install
 
       - name: Wait for Redis
@@ -251,12 +253,12 @@ jobs:
       - name: Build containers
         run: |
           docker compose build php node
-          # compose.ci.yaml sets PHP_SKIP_DEPENDENCY_CHECK=1 and NODE_MODE=idle
           docker compose up -d php node
+          # Wait for containers to be ready (entrypoint initialization)
+          sleep 5
 
       - name: Install dependencies
         run: |
-          # compose.ci.yaml doesn't bind-mount lockfiles, so they're generated fresh
           docker compose exec -T php composer install --no-progress --no-interaction
           docker compose exec -T node pnpm install
 
