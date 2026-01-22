@@ -1,0 +1,208 @@
+# ./compose.ci.yaml
+# Docker Compose CI Environment
+#
+# Purpose: Override development settings for CI pipelines (GitHub Actions, GitLab CI)
+# Key difference from compose.override.yaml:
+#   - NO lockfile bind mounts (composer.lock, pnpm-lock.yaml)
+#   - Lockfiles are generated fresh inside the container
+#   - Avoids bind mount permission issues in ephemeral CI runners
+#
+# Usage: docker compose -f compose.yaml -f compose.ci.yaml [command]
+#        Or set: COMPOSE_FILE=compose.yaml:compose.ci.yaml
+
+services:
+  # ═══════════════════════════════════════════════════════════════════════════
+  # NODE.JS SERVICES
+  # ═══════════════════════════════════════════════════════════════════════════
+
+  node:
+    build:
+      target: development
+    image: ${COMPOSE_PROJECT_NAME:-zappzarapp}-node:development
+    volumes:
+      # Entrypoint Script
+      - ./docker/node/entrypoint.development.sh:/usr/local/bin/entrypoint.development.sh:ro
+
+      # Package manager config (read-only, lockfile generated inside container)
+      - ./package.json:/app/package.json:ro
+      # NO pnpm-lock.yaml mount - generated fresh inside container
+
+      # Dependencies (named volumes)
+      - node_modules:/app/node_modules
+
+      # Source and Tests (needed for quality checks and tests)
+      - ./src:/app/src
+      - ./tests:/app/tests
+      - ./resources:/app/resources
+
+      # Workspace node_modules (override bind mount - MUST be after ./src mount)
+      - backend_node_modules:/app/src/node/backend/node_modules
+      - frontend_node_modules:/app/src/node/frontend/node_modules
+
+      # Build output
+      - ./build:/app/build
+      - ./dist:/app/dist
+      - ./public:/app/public
+
+      # Build config files (needed for Vite, TypeScript)
+      - ./vite.config.js:/app/vite.config.js:ro
+      - ./tsconfig.json:/app/tsconfig.json:ro
+      - ./tsconfig.base.json:/app/tsconfig.base.json:ro
+      - ./tsconfig.build.json:/app/tsconfig.build.json:ro
+      - ./tsconfig.vitest.json:/app/tsconfig.vitest.json:ro
+      - ./vitest.config.ts:/app/vitest.config.ts:ro
+      - ./pnpm-workspace.yaml:/app/pnpm-workspace.yaml:ro
+
+      # Static config files (read-only)
+      - ./eslint.config.js:/app/eslint.config.js:ro
+      - ./.prettierrc.json:/app/.prettierrc.json:ro
+      - ./.prettierignore:/app/.prettierignore:ro
+      - ./.markdownlint-cli2.jsonc:/app/.markdownlint-cli2.jsonc:ro
+      - ./.depcheckrc.json:/app/.depcheckrc.json:ro
+
+      # Markdown files for linting
+      - ./.zappzarapp:/app/.zappzarapp:ro
+      - ./README.md:/app/README.md:ro
+    environment:
+      - TZ=${TZ:-UTC}
+      - NODE_ENV=development
+      - NODE_MODE=${NODE_MODE:-idle}
+      - LOG_LEVEL=${LOG_LEVEL:-info}
+      - LOG_FORMAT=${LOG_FORMAT:-json}
+      - CORS_ORIGINS=${CORS_ORIGINS:-}
+      # Database
+      - DATABASE_URL=${DATABASE_URL:-}
+      - DB_TYPE=${DB_TYPE:-postgres}
+      - DB_HOST=${DB_HOST:-postgres}
+      - DB_PORT=${DB_PORT:-5432}
+      - DB_NAME=${DB_NAME:-app}
+      - DB_USER=${DB_USER:-app}
+      - DB_PASSWORD=${DB_PASSWORD:-}
+      - DB_SSL_CA=${DB_SSL_CA:-}
+      - DB_SSL_VERIFY=${DB_SSL_VERIFY:-false}
+      - REDIS_URL=${REDIS_URL:-rediss://redis:6379}
+
+  # ═══════════════════════════════════════════════════════════════════════════
+  # PHP SERVICE
+  # ═══════════════════════════════════════════════════════════════════════════
+
+  php:
+    build:
+      target: development
+    image: ${COMPOSE_PROJECT_NAME:-zappzarapp}-php:development
+    entrypoint: ["/entrypoint.development.sh"]
+    command: ["php-fpm"]
+    volumes:
+      # Entrypoint Script
+      - ./docker/php/entrypoint.development.sh:/entrypoint.development.sh:ro
+
+      # Composer config (read-only, lockfile generated inside container)
+      - ./composer.json:/var/www/html/composer.json:ro
+      # NO composer.lock mount - generated fresh inside container
+
+      # Dependencies (named volume)
+      - php_vendor:/var/www/html/vendor
+
+      # Source and Tests (needed for quality checks and tests)
+      - ./src/php:/var/www/html/src/php
+      - ./tests/php:/var/www/html/tests/php
+      - ./templates:/var/www/html/templates
+
+      # Configuration files
+      - ./config:/var/www/html/config:ro
+
+      # Build outputs
+      - ./build:/var/www/html/build
+
+      # Quality Assurance Tools Config
+      - ./phpstan.neon:/var/www/html/phpstan.neon:ro
+      - ./phpmd.xml.dist:/var/www/html/phpmd.xml.dist:ro
+      - ./.php-cs-fixer.dist.php:/var/www/html/.php-cs-fixer.dist.php:ro
+      - ./phpunit.xml.dist:/var/www/html/phpunit.xml.dist:ro
+      - ./rector.php:/var/www/html/rector.php:ro
+
+      # PHP Configuration (Read-Only)
+      - ./docker/php/php.ini:/usr/local/etc/php/php.ini:ro
+      - ./docker/php/php-fpm.conf:/usr/local/etc/php-fpm.d/www.conf:ro
+      - ./docker/php/zz-docker.conf:/usr/local/etc/php-fpm.d/zz-docker.conf:ro
+
+      # PHP Extension Configuration (conf.d/)
+      - ./docker/php/conf.d/exif.ini:/usr/local/etc/php/conf.d/exif.ini:ro
+      - ./docker/php/conf.d/gd.ini:/usr/local/etc/php/conf.d/gd.ini:ro
+      - ./docker/php/conf.d/gmagick.ini:/usr/local/etc/php/conf.d/gmagick.ini:ro
+      - ./docker/php/conf.d/intl.ini:/usr/local/etc/php/conf.d/intl.ini:ro
+      - ./docker/php/conf.d/opcache.ini:/usr/local/etc/php/conf.d/opcache.ini:ro
+      - ./docker/php/conf.d/pdo_mysql.ini:/usr/local/etc/php/conf.d/pdo_mysql.ini:ro
+      - ./docker/php/conf.d/pdo_pgsql.ini:/usr/local/etc/php/conf.d/pdo_pgsql.ini:ro
+      - ./docker/php/conf.d/redis.ini:/usr/local/etc/php/conf.d/redis.ini:ro
+      - ./docker/php/conf.d/sodium.ini:/usr/local/etc/php/conf.d/sodium.ini:ro
+      - ./docker/php/conf.d/zip.ini:/usr/local/etc/php/conf.d/zip.ini:ro
+
+      # Development-only overrides
+      - ./docker/php/conf.d/development.ini:/usr/local/etc/php/conf.d/zz-development.ini:ro
+      - ./docker/php/conf.d/xdebug.ini:/usr/local/etc/php/conf.d/zz-xdebug.ini:ro
+    environment:
+      - TZ=${TZ:-UTC}
+      - ENV=development
+      - LOG_LEVEL=${LOG_LEVEL:-info}
+      - LOG_FORMAT=${LOG_FORMAT:-json}
+      - CORS_ORIGINS=${CORS_ORIGINS:-}
+      - XDEBUG_MODE=${XDEBUG_MODE:-off}
+      - ENABLE_PHP=${ENABLE_PHP:-true}
+      - ENABLE_NODE=${ENABLE_NODE:-false}
+      # Skip vendor check in entrypoint (deps installed via exec)
+      - PHP_SKIP_DEPENDENCY_CHECK=1
+      - ENABLE_DATABASE=${ENABLE_DATABASE:-true}
+      - ENABLE_REDIS=${ENABLE_REDIS:-true}
+      - ENABLE_MERCURE=${ENABLE_MERCURE:-false}
+      - ENABLE_MEILISEARCH=${ENABLE_MEILISEARCH:-false}
+      - ENABLE_ELASTICSEARCH=${ENABLE_ELASTICSEARCH:-false}
+      - ENABLE_MAILPIT=${ENABLE_MAILPIT:-false}
+      - ENABLE_SEAWEEDFS=${ENABLE_SEAWEEDFS:-false}
+      - ENABLE_RABBITMQ=${ENABLE_RABBITMQ:-false}
+      - NODE_MODE=${NODE_MODE:-idle}
+      # Database
+      - DATABASE_URL=${DATABASE_URL:-}
+      - DB_TYPE=${DB_TYPE:-postgres}
+      - DB_HOST=${DB_HOST:-postgres}
+      - DB_PORT=${DB_PORT:-5432}
+      - DB_NAME=${DB_NAME:-app}
+      - DB_USER=${DB_USER:-app}
+      - DB_PASSWORD=${DB_PASSWORD:-}
+      - DB_SSL_CA=${DB_SSL_CA:-}
+      - DB_SSL_VERIFY=${DB_SSL_VERIFY:-false}
+      - REDIS_URL=${REDIS_URL:-rediss://redis:6379}
+
+  # ═══════════════════════════════════════════════════════════════════════════
+  # DATA SERVICES (minimal overrides for CI)
+  # ═══════════════════════════════════════════════════════════════════════════
+
+  postgres:
+    # Use simpler command for CI (no verbose logging needed)
+    command: >
+      postgres
+      -c shared_buffers=64MB
+      -c max_connections=20
+
+  redis:
+    # Simpler Redis config for CI
+    command: >
+      redis-server
+      --appendonly no
+      --maxmemory 64mb
+      --maxmemory-policy allkeys-lru
+      --tls-port 6379
+      --port 0
+      --tls-cert-file /etc/redis/certs/cert.crt
+      --tls-key-file /etc/redis/certs/cert.key
+      --tls-auth-clients no
+
+volumes:
+  node_modules:
+    driver: local
+  backend_node_modules:
+    driver: local
+  frontend_node_modules:
+    driver: local
+  php_vendor:
+    driver: local

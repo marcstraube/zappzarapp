@@ -10,6 +10,8 @@ on:
 env:
   COMPOSE_PROJECT_NAME: zappzarapp-ci
   ENV: development
+  # Use CI-specific compose file (no lockfile bind mounts)
+  COMPOSE_FILE: compose.yaml:compose.ci.yaml
 
 jobs:
   # ============================================================================
@@ -34,24 +36,16 @@ jobs:
         run: |
           make init
           make secrets
-          # Create empty lockfiles if missing (boilerplate doesn't commit them)
-          # Required for bind mounts in compose.override.yaml - Docker creates
-          # directories instead of files when mounting non-existent paths
-          [ -f pnpm-lock.yaml ] || touch pnpm-lock.yaml
-          [ -f composer.lock ] || echo '{}' > composer.lock
-          # Make lockfiles writable by container user (www-data/node)
-          chmod 666 pnpm-lock.yaml composer.lock
 
       - name: Build PHP container
         run: |
           docker compose build php
-          # Use PHP_SKIP_DEPENDENCY_CHECK=1 to skip dependency check in entrypoint (deps installed via exec)
-          PHP_SKIP_DEPENDENCY_CHECK=1 docker compose up -d php
+          docker compose up -d php
 
       - name: Install PHP dependencies
         run: |
-          # Run as root in CI to avoid bind mount permission issues (safe in ephemeral CI containers)
-          docker compose exec -T --user root php composer install --no-progress --no-interaction
+          # compose.ci.yaml sets PHP_SKIP_DEPENDENCY_CHECK=1 and doesn't bind-mount lockfiles
+          docker compose exec -T php composer install --no-progress --no-interaction
 
       - name: PHP Coding Standards (PHP-CS-Fixer)
         run: docker compose exec -T php composer cs-check
@@ -94,19 +88,12 @@ jobs:
           make init
           make secrets
           make ssl-selfsigned
-          # Create empty lockfiles if missing (boilerplate doesn't commit them)
-          # Required for bind mounts in compose.override.yaml
-          [ -f pnpm-lock.yaml ] || touch pnpm-lock.yaml
-          [ -f composer.lock ] || echo '{}' > composer.lock
-          # Make lockfiles writable by container user (www-data/node)
-          chmod 666 pnpm-lock.yaml composer.lock
 
       - name: Start services (PHP + Database)
         run: |
-          # Use PHP_SKIP_DEPENDENCY_CHECK=1 to skip dependency check in entrypoint (deps installed via exec)
-          PHP_SKIP_DEPENDENCY_CHECK=1 docker compose --profile postgres up -d php postgres
-          # Run as root in CI to avoid bind mount permission issues (safe in ephemeral CI containers)
-          docker compose exec -T --user root php composer install --no-progress --no-interaction
+          # compose.ci.yaml sets PHP_SKIP_DEPENDENCY_CHECK=1 and doesn't bind-mount lockfiles
+          docker compose --profile postgres up -d php postgres
+          docker compose exec -T php composer install --no-progress --no-interaction
 
       - name: Wait for database
         run: |
@@ -153,25 +140,17 @@ jobs:
         run: |
           make init
           make secrets
-          # Create empty lockfiles if missing (boilerplate doesn't commit them)
-          # Required for bind mounts in compose.override.yaml - Docker creates
-          # directories instead of files when mounting non-existent paths
-          [ -f pnpm-lock.yaml ] || touch pnpm-lock.yaml
-          [ -f composer.lock ] || echo '{}' > composer.lock
-          # Make lockfiles writable by container user (www-data/node)
-          chmod 666 pnpm-lock.yaml composer.lock
 
       - name: Build Node container
         run: |
           docker compose build node
-          # Use idle mode to skip dependency check in entrypoint (deps installed via exec)
-          NODE_MODE=idle docker compose up -d node
+          # compose.ci.yaml sets NODE_MODE=idle
+          docker compose up -d node
 
       - name: Install Node dependencies
         run: |
-          # Use --frozen-lockfile if lockfile exists AND is non-empty (user project)
-          # Otherwise install without lockfile (bind mount prevents atomic rename)
-          docker compose exec -T node sh -c 'if [ -f pnpm-lock.yaml ] && [ -s pnpm-lock.yaml ]; then pnpm install --frozen-lockfile; else pnpm install --no-lockfile; fi'
+          # compose.ci.yaml doesn't bind-mount lockfiles, so pnpm generates them fresh
+          docker compose exec -T node pnpm install
 
       - name: TypeScript Type Check
         run: docker compose exec -T node pnpm run type-check
@@ -214,20 +193,12 @@ jobs:
           make init
           make secrets
           make ssl-selfsigned
-          # Create empty lockfiles if missing (boilerplate doesn't commit them)
-          # Required for bind mounts in compose.override.yaml
-          [ -f pnpm-lock.yaml ] || touch pnpm-lock.yaml
-          [ -f composer.lock ] || echo '{}' > composer.lock
-          # Make lockfiles writable by container user (www-data/node)
-          chmod 666 pnpm-lock.yaml composer.lock
 
       - name: Start services (Node + Redis)
         run: |
-          # Use idle mode to skip dependency check in entrypoint (deps installed via exec)
-          NODE_MODE=idle docker compose --profile redis up -d node redis
-          # Use --frozen-lockfile if lockfile exists AND is non-empty (user project)
-          # Otherwise generate lockfile (boilerplate without committed lockfiles)
-          docker compose exec -T node sh -c 'if [ -f pnpm-lock.yaml ] && [ -s pnpm-lock.yaml ]; then pnpm install --frozen-lockfile; else pnpm install --no-lockfile; fi'
+          # compose.ci.yaml sets NODE_MODE=idle and doesn't bind-mount lockfiles
+          docker compose --profile redis up -d node redis
+          docker compose exec -T node pnpm install
 
       - name: Wait for Redis
         run: |
@@ -276,27 +247,18 @@ jobs:
         run: |
           make init
           make secrets
-          # Create empty lockfiles if missing (boilerplate doesn't commit them)
-          # Required for bind mounts in compose.override.yaml - Docker creates
-          # directories instead of files when mounting non-existent paths
-          [ -f pnpm-lock.yaml ] || touch pnpm-lock.yaml
-          [ -f composer.lock ] || echo '{}' > composer.lock
-          # Make lockfiles writable by container user (www-data/node)
-          chmod 666 pnpm-lock.yaml composer.lock
 
       - name: Build containers
         run: |
           docker compose build php node
-          # Use idle mode for node and skip PHP dependency check (deps installed via exec)
-          PHP_SKIP_DEPENDENCY_CHECK=1 NODE_MODE=idle docker compose up -d php node
+          # compose.ci.yaml sets PHP_SKIP_DEPENDENCY_CHECK=1 and NODE_MODE=idle
+          docker compose up -d php node
 
       - name: Install dependencies
         run: |
-          # Run as root in CI to avoid bind mount permission issues (safe in ephemeral CI containers)
-          docker compose exec -T --user root php composer install --no-progress --no-interaction
-          # Use --frozen-lockfile if lockfile exists AND is non-empty (user project)
-          # Otherwise generate lockfile (boilerplate without committed lockfiles)
-          docker compose exec -T node sh -c 'if [ -f pnpm-lock.yaml ] && [ -s pnpm-lock.yaml ]; then pnpm install --frozen-lockfile; else pnpm install --no-lockfile; fi'
+          # compose.ci.yaml doesn't bind-mount lockfiles, so they're generated fresh
+          docker compose exec -T php composer install --no-progress --no-interaction
+          docker compose exec -T node pnpm install
 
       - name: PHP Composer Audit
         run: docker compose exec -T php composer audit
@@ -401,8 +363,7 @@ jobs:
 
       - name: Build production images
         run: |
-          # Create empty lockfiles if missing (boilerplate doesn't commit them)
-          # Required for DOCKER_BUILDKIT=0 which doesn't support empty COPY wildcards
+          # Create empty lockfiles for production build (Dockerfile COPY needs them)
           [ -f composer.lock ] || echo '{}' > composer.lock
           [ -f pnpm-lock.yaml ] || touch pnpm-lock.yaml
 

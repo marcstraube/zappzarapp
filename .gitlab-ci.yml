@@ -6,6 +6,8 @@ variables:
   ENV: development
   DOCKER_DRIVER: overlay2
   DOCKER_TLS_CERTDIR: ""
+  # Use CI-specific compose file (no lockfile bind mounts)
+  COMPOSE_FILE: compose.yaml:compose.ci.yaml
 
 # Define pipeline stages
 stages:
@@ -29,13 +31,6 @@ stages:
     - make init
     - make secrets
     - make ssl-selfsigned
-    # Create empty lockfiles if missing (boilerplate doesn't commit them)
-    # Required for bind mounts in compose.override.yaml - Docker creates
-    # directories instead of files when mounting non-existent paths
-    - "[ -f pnpm-lock.yaml ] || touch pnpm-lock.yaml"
-    - "[ -f composer.lock ] || echo '{}' > composer.lock"
-    # Make lockfiles writable by container user (www-data/node)
-    - chmod 666 pnpm-lock.yaml composer.lock
   after_script:
     - docker compose down -v || true
     - docker system prune -f || true
@@ -82,10 +77,9 @@ php:coding-standards:
   dependencies:
     - build:php
   script:
-    # Use PHP_SKIP_DEPENDENCY_CHECK=1 to skip dependency check in entrypoint (deps installed via exec)
-    - PHP_SKIP_DEPENDENCY_CHECK=1 docker compose up -d php
-    # Run as root in CI to avoid bind mount permission issues (safe in ephemeral CI containers)
-    - docker compose exec -T --user root php composer install --no-progress --no-interaction
+    # compose.ci.yaml sets PHP_SKIP_DEPENDENCY_CHECK=1 and doesn't bind-mount lockfiles
+    - docker compose up -d php
+    - docker compose exec -T php composer install --no-progress --no-interaction
     - docker compose exec -T php composer cs-check
   artifacts:
     reports:
@@ -98,10 +92,9 @@ php:static-analysis:
   dependencies:
     - build:php
   script:
-    # Use PHP_SKIP_DEPENDENCY_CHECK=1 to skip dependency check in entrypoint (deps installed via exec)
-    - PHP_SKIP_DEPENDENCY_CHECK=1 docker compose up -d php
-    # Run as root in CI to avoid bind mount permission issues (safe in ephemeral CI containers)
-    - docker compose exec -T --user root php composer install --no-progress --no-interaction
+    # compose.ci.yaml sets PHP_SKIP_DEPENDENCY_CHECK=1 and doesn't bind-mount lockfiles
+    - docker compose up -d php
+    - docker compose exec -T php composer install --no-progress --no-interaction
     - docker compose exec -T php composer analyse
   artifacts:
     reports:
@@ -114,10 +107,9 @@ php:mess-detector:
   dependencies:
     - build:php
   script:
-    # Use PHP_SKIP_DEPENDENCY_CHECK=1 to skip dependency check in entrypoint (deps installed via exec)
-    - PHP_SKIP_DEPENDENCY_CHECK=1 docker compose up -d php
-    # Run as root in CI to avoid bind mount permission issues (safe in ephemeral CI containers)
-    - docker compose exec -T --user root php composer install --no-progress --no-interaction
+    # compose.ci.yaml sets PHP_SKIP_DEPENDENCY_CHECK=1 and doesn't bind-mount lockfiles
+    - docker compose up -d php
+    - docker compose exec -T php composer install --no-progress --no-interaction
     - docker compose exec -T php composer phpmd || true
   allow_failure: true
 
@@ -127,10 +119,9 @@ php:rector-check:
   dependencies:
     - build:php
   script:
-    # Use PHP_SKIP_DEPENDENCY_CHECK=1 to skip dependency check in entrypoint (deps installed via exec)
-    - PHP_SKIP_DEPENDENCY_CHECK=1 docker compose up -d php
-    # Run as root in CI to avoid bind mount permission issues (safe in ephemeral CI containers)
-    - docker compose exec -T --user root php composer install --no-progress --no-interaction
+    # compose.ci.yaml sets PHP_SKIP_DEPENDENCY_CHECK=1 and doesn't bind-mount lockfiles
+    - docker compose up -d php
+    - docker compose exec -T php composer install --no-progress --no-interaction
     - docker compose exec -T php composer rector-check
   allow_failure: true
 
@@ -143,10 +134,9 @@ php:unit-tests:
   dependencies:
     - build:php
   script:
-    # Use PHP_SKIP_DEPENDENCY_CHECK=1 to skip dependency check in entrypoint (deps installed via exec)
-    - PHP_SKIP_DEPENDENCY_CHECK=1 docker compose --profile postgres up -d php postgres
-    # Run as root in CI to avoid bind mount permission issues (safe in ephemeral CI containers)
-    - docker compose exec -T --user root php composer install --no-progress --no-interaction
+    # compose.ci.yaml sets PHP_SKIP_DEPENDENCY_CHECK=1 and doesn't bind-mount lockfiles
+    - docker compose --profile postgres up -d php postgres
+    - docker compose exec -T php composer install --no-progress --no-interaction
     - timeout 30 sh -c 'until docker compose exec -T postgres pg_isready -U app; do sleep 1; done'
     - docker compose exec -T php composer test
   coverage: '/^\s*Lines:\s*\d+.\d+\%/'
@@ -167,10 +157,9 @@ php:coverage:
     - master
     - develop
   script:
-    # Use PHP_SKIP_DEPENDENCY_CHECK=1 to skip dependency check in entrypoint (deps installed via exec)
-    - PHP_SKIP_DEPENDENCY_CHECK=1 docker compose --profile postgres up -d php postgres
-    # Run as root in CI to avoid bind mount permission issues (safe in ephemeral CI containers)
-    - docker compose exec -T --user root php composer install --no-progress --no-interaction
+    # compose.ci.yaml sets PHP_SKIP_DEPENDENCY_CHECK=1 and doesn't bind-mount lockfiles
+    - docker compose --profile postgres up -d php postgres
+    - docker compose exec -T php composer install --no-progress --no-interaction
     - docker compose exec -T php sh -c 'XDEBUG_MODE=coverage vendor/bin/phpunit --coverage-html build/coverage --coverage-clover build/coverage/clover.xml'
   artifacts:
     paths:
@@ -186,11 +175,9 @@ node:lint:
   dependencies:
     - build:node
   script:
-    # Use idle mode to skip dependency check (deps installed via exec)
-    - NODE_MODE=idle docker compose up -d node
-    # Use --frozen-lockfile if lockfile exists AND is non-empty (user project)
-    # Otherwise generate lockfile (boilerplate without committed lockfiles)
-    - docker compose exec -T node sh -c 'if [ -f pnpm-lock.yaml ] && [ -s pnpm-lock.yaml ]; then pnpm install --frozen-lockfile; else pnpm install --no-lockfile; fi'
+    # compose.ci.yaml sets NODE_MODE=idle and doesn't bind-mount lockfiles
+    - docker compose up -d node
+    - docker compose exec -T node pnpm install
     - docker compose exec -T node pnpm run lint
 
 node:format-check:
@@ -199,11 +186,9 @@ node:format-check:
   dependencies:
     - build:node
   script:
-    # Use idle mode to skip dependency check (deps installed via exec)
-    - NODE_MODE=idle docker compose up -d node
-    # Use --frozen-lockfile if lockfile exists AND is non-empty (user project)
-    # Otherwise generate lockfile (boilerplate without committed lockfiles)
-    - docker compose exec -T node sh -c 'if [ -f pnpm-lock.yaml ] && [ -s pnpm-lock.yaml ]; then pnpm install --frozen-lockfile; else pnpm install --no-lockfile; fi'
+    # compose.ci.yaml sets NODE_MODE=idle and doesn't bind-mount lockfiles
+    - docker compose up -d node
+    - docker compose exec -T node pnpm install
     - docker compose exec -T node pnpm run format:check
 
 node:type-check:
@@ -212,11 +197,9 @@ node:type-check:
   dependencies:
     - build:node
   script:
-    # Use idle mode to skip dependency check (deps installed via exec)
-    - NODE_MODE=idle docker compose up -d node
-    # Use --frozen-lockfile if lockfile exists AND is non-empty (user project)
-    # Otherwise generate lockfile (boilerplate without committed lockfiles)
-    - docker compose exec -T node sh -c 'if [ -f pnpm-lock.yaml ] && [ -s pnpm-lock.yaml ]; then pnpm install --frozen-lockfile; else pnpm install --no-lockfile; fi'
+    # compose.ci.yaml sets NODE_MODE=idle and doesn't bind-mount lockfiles
+    - docker compose up -d node
+    - docker compose exec -T node pnpm install
     - docker compose exec -T node pnpm run type-check
 
 node:markdownlint:
@@ -225,11 +208,9 @@ node:markdownlint:
   dependencies:
     - build:node
   script:
-    # Use idle mode to skip dependency check (deps installed via exec)
-    - NODE_MODE=idle docker compose up -d node
-    # Use --frozen-lockfile if lockfile exists AND is non-empty (user project)
-    # Otherwise generate lockfile (boilerplate without committed lockfiles)
-    - docker compose exec -T node sh -c 'if [ -f pnpm-lock.yaml ] && [ -s pnpm-lock.yaml ]; then pnpm install --frozen-lockfile; else pnpm install --no-lockfile; fi'
+    # compose.ci.yaml sets NODE_MODE=idle and doesn't bind-mount lockfiles
+    - docker compose up -d node
+    - docker compose exec -T node pnpm install
     - docker compose exec -T node pnpm run lint:md
 
 # ============================================================================
@@ -241,11 +222,9 @@ node:tests:
   dependencies:
     - build:node
   script:
-    # Use idle mode to skip dependency check (deps installed via exec)
-    - NODE_MODE=idle docker compose --profile redis up -d node redis
-    # Use --frozen-lockfile if lockfile exists AND is non-empty (user project)
-    # Otherwise generate lockfile (boilerplate without committed lockfiles)
-    - docker compose exec -T node sh -c 'if [ -f pnpm-lock.yaml ] && [ -s pnpm-lock.yaml ]; then pnpm install --frozen-lockfile; else pnpm install --no-lockfile; fi'
+    # compose.ci.yaml sets NODE_MODE=idle and doesn't bind-mount lockfiles
+    - docker compose --profile redis up -d node redis
+    - docker compose exec -T node pnpm install
     - timeout 30 sh -c 'until docker compose exec -T redis redis-cli --tls --insecure ping; do sleep 1; done'
     - docker compose exec -T node pnpm test
   coverage: '/All files\s*\|\s*(\d+\.?\d*)\s*\|/'
@@ -266,11 +245,9 @@ node:coverage:
     - master
     - develop
   script:
-    # Use idle mode to skip dependency check (deps installed via exec)
-    - NODE_MODE=idle docker compose --profile redis up -d node redis
-    # Use --frozen-lockfile if lockfile exists AND is non-empty (user project)
-    # Otherwise generate lockfile (boilerplate without committed lockfiles)
-    - docker compose exec -T node sh -c 'if [ -f pnpm-lock.yaml ] && [ -s pnpm-lock.yaml ]; then pnpm install --frozen-lockfile; else pnpm install --no-lockfile; fi'
+    # compose.ci.yaml sets NODE_MODE=idle and doesn't bind-mount lockfiles
+    - docker compose --profile redis up -d node redis
+    - docker compose exec -T node pnpm install
     - docker compose exec -T node pnpm test:coverage
   artifacts:
     paths:
@@ -326,13 +303,10 @@ dependency-audit:
     - build:php
     - build:node
   script:
-    # Use idle mode for node and skip PHP dependency check (deps installed via exec)
-    - PHP_SKIP_DEPENDENCY_CHECK=1 NODE_MODE=idle docker compose up -d php node
-    # Run as root in CI to avoid bind mount permission issues (safe in ephemeral CI containers)
-    - docker compose exec -T --user root php composer install --no-progress --no-interaction
-    # Use --frozen-lockfile if lockfile exists AND is non-empty (user project)
-    # Otherwise generate lockfile (boilerplate without committed lockfiles)
-    - docker compose exec -T node sh -c 'if [ -f pnpm-lock.yaml ] && [ -s pnpm-lock.yaml ]; then pnpm install --frozen-lockfile; else pnpm install --no-lockfile; fi'
+    # compose.ci.yaml sets PHP_SKIP_DEPENDENCY_CHECK=1, NODE_MODE=idle, no lockfile mounts
+    - docker compose up -d php node
+    - docker compose exec -T php composer install --no-progress --no-interaction
+    - docker compose exec -T node pnpm install
     - docker compose exec -T php composer audit
     - docker compose exec -T node pnpm audit
   allow_failure: true
@@ -349,8 +323,7 @@ build:production:
   script:
     # Generate SSL certificates for nginx
     - make ssl-selfsigned
-    # Create empty lockfiles if missing (boilerplate doesn't commit them)
-    # Required for DOCKER_BUILDKIT=0 which doesn't support empty COPY wildcards
+    # Create empty lockfiles for production build (Dockerfile COPY needs them)
     - "[ -f composer.lock ] || echo '{}' > composer.lock"
     - "[ -f pnpm-lock.yaml ] || touch pnpm-lock.yaml"
     # Build node-backend first, then tag for cross-image COPY compatibility
