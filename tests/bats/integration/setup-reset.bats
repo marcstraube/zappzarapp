@@ -48,6 +48,10 @@ setup() {
     [[ ! -d "node_modules" ]] || [[ -z "$(ls -A node_modules 2>/dev/null)" ]]
 }
 
+@test "[Phase 1] Verify: .pnpm-store/ removed after reset-full" {
+    [[ ! -d ".pnpm-store" ]]
+}
+
 @test "[Phase 1] Verify: storage/ contents removed after reset-full" {
     # storage/ itself may exist but should be empty (except .gitkeep)
     if [[ -d "storage" ]]; then

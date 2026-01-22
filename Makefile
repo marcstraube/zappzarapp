@@ -74,6 +74,8 @@ help: ## Show this help (FILTER=? for categories, FILTER=<name> to filter)
 
 composer-install: ## Install Composer dependencies (Docker - guaranteed consistency)
 	@echo -e "\033[0;33mInstalling Composer dependencies (Docker)...\033[0m"
+	@# Remove empty/invalid lockfile (Composer will regenerate it)
+	@if [ -f composer.lock ] && [ ! -s composer.lock ]; then rm -f composer.lock; fi
 	@XDEBUG_MODE=off $(DC_RUN) run --rm --no-TTY php composer install --prefer-dist --no-interaction
 	@echo -e "\033[0;32mDependencies installed!\033[0m"
 
@@ -976,6 +978,11 @@ status: ## Show running containers status and image disk usage
 	@docker images | grep "$(COMPOSE_PROJECT_NAME:-zappzarapp)"
 
 up: ## Start containers (optionally specify service names: make up php nginx)
+	@# Ensure lockfiles exist as files (not directories) to prevent Docker bind mount issues
+	@if [ -d composer.lock ]; then rm -rf composer.lock; fi
+	@if [ -d pnpm-lock.yaml ]; then rm -rf pnpm-lock.yaml; fi
+	@if [ ! -f composer.lock ]; then touch composer.lock; fi
+	@if [ ! -f pnpm-lock.yaml ]; then touch pnpm-lock.yaml; fi
 	@$(LOAD_ENV); if [ "$${ENV:-development}" = "production" ]; then \
 		echo -e "\033[0;33m⚠️  WARNING: Running Compose in production mode.\033[0m"; \
 		echo -e "\033[0;33m   For multi-node deployments, use 'make k8s-deploy' (Kubernetes).\033[0m"; \
@@ -1214,7 +1221,13 @@ node-frontend-start: ## Start Node frontend framework production server
 
 pnpm-install: ## Install Node.js dependencies (Docker - guaranteed consistency)
 	@echo -e "\033[0;33mInstalling Node.js dependencies (Docker)...\033[0m"
-	@$(DC_RUN) run --rm --no-TTY --user root --entrypoint "" -e CI=true node pnpm install --frozen-lockfile
+	@# If lockfile is empty/missing, run without --frozen-lockfile to generate it
+	@if [ ! -s pnpm-lock.yaml ]; then \
+		echo -e "\033[0;33m  No valid lockfile found, generating...\033[0m"; \
+		$(DC_RUN) run --rm --no-TTY --user root --entrypoint "" -e CI=true node pnpm install; \
+	else \
+		$(DC_RUN) run --rm --no-TTY --user root --entrypoint "" -e CI=true node pnpm install --frozen-lockfile; \
+	fi
 	@echo -e "\033[0;32mDependencies installed!\033[0m"
 
 pnpm-update: ## Update Node.js dependencies (updates pnpm-lock.yaml on host)
@@ -1876,8 +1889,10 @@ _reset-core:
 	@# Clear build cache to remove stale layer references
 	@docker builder prune -af 2>/dev/null || true
 	@echo -e "\033[0;33m[4/5] Removing dependencies and lockfiles...\033[0m"
-	@rm -rf vendor node_modules 2>/dev/null || true
-	@rm -f composer.lock pnpm-lock.yaml 2>/dev/null || true
+	@# Use Docker to remove directories that may have root ownership (from container operations)
+	@docker run --rm -v "$(PWD):/app" -w /app alpine:3.21 sh -c 'rm -rf vendor node_modules .pnpm-store composer.lock pnpm-lock.yaml 2>/dev/null' || true
+	@# Fallback: try local rm for any remaining files (user-owned)
+	@rm -rf vendor node_modules .pnpm-store composer.lock pnpm-lock.yaml 2>/dev/null || true
 	@echo -e "\033[0;33m[5/5] Removing generated files and build artifacts...\033[0m"
 	@# Skip directories that are mountpoints
 	@if ! mountpoint -q storage 2>/dev/null; then \
@@ -1903,7 +1918,7 @@ reset: ## Reset Docker and generated files (keeps secrets/certs)
 	@echo -e "\033[0;33m║  • All Docker containers, images, volumes, networks              ║\033[0m"
 	@echo -e "\033[0;33m║  • All Goss test resources                                       ║\033[0m"
 	@echo -e "\033[0;33m║  • storage/ contents (uploads, cache) - if not a mountpoint      ║\033[0m"
-	@echo -e "\033[0;33m║  • vendor/, node_modules/ (dependencies)                         ║\033[0m"
+	@echo -e "\033[0;33m║  • vendor/, node_modules/, .pnpm-store/ (dependencies)           ║\033[0m"
 	@echo -e "\033[0;33m║  • composer.lock, pnpm-lock.yaml (lockfiles)                     ║\033[0m"
 	@echo -e "\033[0;33m║  • .env.local (local overrides)                                  ║\033[0m"
 	@echo -e "\033[0;33m║  • build/, public/build/, docs/api/, tools/ (generated files)    ║\033[0m"
