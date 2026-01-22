@@ -1,7 +1,7 @@
 # zappzarapp - Changelog
 
-**Erstellt:** 2025-12-19 **Letzte Aktualisierung:** 2026-01-22 (Setup/Reset Fixes)
-**Version:** 3.79
+**Erstellt:** 2025-12-19 **Letzte Aktualisierung:** 2026-01-22 (Setup/Reset
+Fixes) **Version:** 3.79
 
 ---
 
@@ -17,7 +17,8 @@ Fixed critical issues in the fresh setup workflow (`make reset` → `make init` 
 Docker creates directories instead of files when bind mount target doesn't exist
 on host. This affected lockfiles and SSL certificates.
 
-- **composer-install**: Detect directory, remove via Docker, write `{}` (valid JSON)
+- **composer-install**: Detect directory, remove via Docker, write `{}` (valid
+  JSON)
 - **pnpm-install**: Temp directory approach to avoid EBUSY atomic rename error
 - **ssl-selfsigned**: Detect and remove cert.crt/cert.key if directories
 - **setup**: Create lockfiles as files before Docker operations
@@ -45,7 +46,8 @@ modify.
 
 #### Fixed: Node Container Shebang
 
-- Changed `docker/node/entrypoint.development.sh` from `#!/bin/bash` to `#!/bin/sh`
+- Changed `docker/node/entrypoint.development.sh` from `#!/bin/bash` to
+  `#!/bin/sh`
 - Alpine uses ash, not bash
 - BATS tests run in separate container with its own bash (no conflict)
 

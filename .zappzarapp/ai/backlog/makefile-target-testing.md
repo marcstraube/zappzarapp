@@ -130,8 +130,8 @@ scenarios using Docker-in-Docker.
    }
    ```
 
-**Note:** Test 3 requires BATS to run in an environment with Docker socket access
-(Docker-in-Docker or host Docker socket mounted).
+**Note:** Test 3 requires BATS to run in an environment with Docker socket
+access (Docker-in-Docker or host Docker socket mounted).
 
 ## Dependencies
 

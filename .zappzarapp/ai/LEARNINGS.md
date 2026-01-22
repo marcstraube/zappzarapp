@@ -37,8 +37,9 @@ make secrets
 # Or: make setup (runs all)
 ```
 
-**Root cause in compose.yaml:** Bind mounts like `./file.txt:/container/file.txt`
-create `/container/file.txt` as directory if `./file.txt` doesn't exist.
+**Root cause in compose.yaml:** Bind mounts like
+`./file.txt:/container/file.txt` create `/container/file.txt` as directory if
+`./file.txt` doesn't exist.
 
 **Prevention:** Run `make setup` on fresh clone or after deleting generated
 files.

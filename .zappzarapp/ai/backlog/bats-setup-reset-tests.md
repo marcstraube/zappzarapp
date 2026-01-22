@@ -1,7 +1,7 @@
 # BATS Setup/Reset Directory Tests
 
-**Status:** Planned **Size:** Small **Scope:** chore **Created:** 2026-01-22
-**Planning:** Not required
+**Status:** In Progress **Size:** Small **Scope:** chore **Created:** 2026-01-22
+**Planning:** Not required **Commits:** `47e0544`
 
 ## Context
 
@@ -155,3 +155,11 @@ EBUSY. Solution: Generate lockfile in temp directory, copy back with
 
 Composer fails if lockfile exists but is empty (not valid JSON). Solution:
 Delete empty lockfile or write `{}` before running composer.
+
+### BATS/CI Permission Error
+
+When BATS runs as root (UID 0), files created on host have root ownership.
+PHP/Node containers run as user 1000 and can't write to these files.
+
+Solution: Use `USER_ID/GROUP_ID` from `.env` (not `$(shell id -u)`) when setting
+ownership in Makefile targets.
