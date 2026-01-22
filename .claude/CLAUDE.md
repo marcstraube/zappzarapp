@@ -206,6 +206,7 @@ Available commands in `.claude/commands/`:
 | `/audit`      | Project audit (quality, security, docs) - quick/full |
 | `/sync-check` | Check configuration files for sync                   |
 | `/learnings`  | View, search, and aggregate project learnings        |
+| `/research`   | Research topics (local knowledge + optional web)     |
 | `/optimize`   | Self-optimization of config, learnings, commands     |
 
 **Note:** Code review and tests are handled by Agent C (Reviewer) in the agent

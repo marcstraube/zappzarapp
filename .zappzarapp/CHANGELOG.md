@@ -1,11 +1,30 @@
 # zappzarapp - Changelog
 
-**Erstellt:** 2025-12-19 **Letzte Aktualisierung:** 2026-01-22 (Dependency Sync
-Workflow) **Version:** 3.73
+**Erstellt:** 2025-12-19 **Letzte Aktualisierung:** 2026-01-22 (Research
+Command) **Version:** 3.74
 
 ---
 
 ## Changelog
+
+### Version 3.74 (2026-01-22) - Research Command
+
+New command for knowledge research with local-first approach and web search
+fallback.
+
+#### New: /research Command
+
+- **`.claude/commands/research.md`** — Research topics across all knowledge
+  sources
+- Local-first: Searches LEARNINGS, DECISIONS, REFERENCES, and Sessions
+- WebSearch fallback with user confirmation ("No local knowledge found. Search
+  web?")
+- Auto-save findings to appropriate knowledge file:
+  - New insights → LEARNINGS.md
+  - Useful links → REFERENCES.md
+  - Architectural choices → DECISIONS.md (as ADR)
+- Flags: `--web` (skip local), `--no-save` (don't prompt to save)
+- Complements `/learnings` (manages) with `/research` (discovers)
 
 ### Version 3.73 (2026-01-22) - Dependency Sync Workflow
 
