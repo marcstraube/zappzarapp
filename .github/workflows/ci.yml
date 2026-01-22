@@ -351,6 +351,7 @@ jobs:
         run: |
           make init
           make secrets
+          make ssl-selfsigned
 
       - name: Build production images
         run: |
