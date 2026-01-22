@@ -28,6 +28,7 @@ stages:
     # Initialize environment and generate secrets
     - make init
     - make secrets
+    - make ssl-selfsigned
     # Create empty lockfiles if missing (boilerplate doesn't commit them)
     # Required for bind mounts in compose.override.yaml - Docker creates
     # directories instead of files when mounting non-existent paths

@@ -87,6 +87,7 @@ jobs:
         run: |
           make init
           make secrets
+          make ssl-selfsigned
           # Create empty lockfiles if missing (boilerplate doesn't commit them)
           # Required for bind mounts in compose.override.yaml
           [ -f pnpm-lock.yaml ] || touch pnpm-lock.yaml
@@ -200,6 +201,7 @@ jobs:
         run: |
           make init
           make secrets
+          make ssl-selfsigned
           # Create empty lockfiles if missing (boilerplate doesn't commit them)
           # Required for bind mounts in compose.override.yaml
           [ -f pnpm-lock.yaml ] || touch pnpm-lock.yaml
