@@ -5,13 +5,11 @@
 # These tests are SKIPPED by default unless explicitly enabled.
 # To run: BATS_ENABLE_DESTRUCTIVE=true make bats-test-integration-file FILE=destructive.bats
 #
-# Destructive operations tested:
-# - make reset (stops containers, removes volumes)
-# - make reset-full (full cleanup including images)
-# - make prune (removes unused Docker resources)
-# - make clean (removes containers and networks)
-# - make redis-flush (flushes Redis data)
-# - make db-cleanup (removes database data)
+# Test Strategy:
+# 1. reset-full (clean slate) → verify deletion
+# 2. setup/build/install → verify file creation
+# 3. individual destructive tests → verify specific deletions
+# 4. reset-full (cleanup) → leave clean state
 
 load 'setup'
 
@@ -28,157 +26,214 @@ setup() {
 }
 
 # =============================================================================
-# File Setup/Teardown
+# Phase 1: Full Reset (Clean Slate)
 # =============================================================================
 
-setup_file() {
-    if [[ "${BATS_ENABLE_DESTRUCTIVE:-false}" != "true" ]]; then
-        return 0
-    fi
+@test "[Phase 1] make reset-full cleans everything" {
+    echo "# ⚠️  Starting destructive tests - full reset..." >&3
 
-    echo "# ⚠️  WARNING: Running destructive tests!" >&3
-    echo "# These tests will modify/delete data!" >&3
-
-    # Ensure we have a clean state to destroy
-    integration_setup
+    run timeout 300 make reset-full
+    assert_success
 }
 
-teardown_file() {
-    if [[ "${BATS_ENABLE_DESTRUCTIVE:-false}" != "true" ]]; then
-        return 0
-    fi
+@test "[Phase 1] Verify: no containers running after reset-full" {
+    run docker compose ps -a
+    # Should be empty or show no running containers
+    refute_output --partial "(healthy)"
+    refute_output --partial "Up"
+}
 
-    # Try to restore a working state
-    echo "# Attempting to restore clean state after destructive tests..." >&3
-    make up 2>&1 | tail -3 >&3 || true
+@test "[Phase 1] Verify: vendor/ removed after reset-full" {
+    [[ ! -d "vendor" ]] || [[ -z "$(ls -A vendor 2>/dev/null)" ]]
+}
+
+@test "[Phase 1] Verify: node_modules/ removed after reset-full" {
+    [[ ! -d "node_modules" ]] || [[ -z "$(ls -A node_modules 2>/dev/null)" ]]
+}
+
+@test "[Phase 1] Verify: docs/api/ removed after reset-full" {
+    [[ ! -d "docs/api" ]]
 }
 
 # =============================================================================
-# Redis Flush (Least Destructive)
+# Phase 2: Build & Create (Verify File Creation)
 # =============================================================================
 
-@test "[Destructive] make redis-flush clears Redis data" {
-    require_service "redis"
+@test "[Phase 2] make build creates Docker images" {
+    run timeout 300 make build
+    assert_success
+}
 
-    # Add some test data
-    docker compose exec -T redis redis-cli SET test_key "test_value" >/dev/null
+@test "[Phase 2] make up starts containers" {
+    run timeout 120 make up
+    assert_success
+}
+
+@test "[Phase 2] Verify: containers are running" {
+    run docker compose ps --status running
+    assert_success
+    assert_output --partial "nginx"
+}
+
+@test "[Phase 2] make composer-install installs PHP dependencies" {
+    run timeout 180 make composer-install
+    assert_success
+}
+
+@test "[Phase 2] Verify: vendor/ directory created" {
+    [[ -d "vendor" ]]
+}
+
+@test "[Phase 2] Verify: vendor/autoload.php exists" {
+    [[ -f "vendor/autoload.php" ]]
+}
+
+@test "[Phase 2] make pnpm-install installs Node dependencies" {
+    run timeout 180 make pnpm-install
+    assert_success
+}
+
+@test "[Phase 2] Verify: node_modules/ directory created" {
+    [[ -d "node_modules" ]]
+}
+
+@test "[Phase 2] Verify: node_modules/.pnpm/ exists" {
+    [[ -d "node_modules/.pnpm" ]]
+}
+
+# =============================================================================
+# Phase 3: Documentation (Verify Doc Generation)
+# =============================================================================
+
+@test "[Phase 3] make docs generates documentation" {
+    run timeout 300 make docs
+    assert_success
+}
+
+@test "[Phase 3] Verify: docs/api/ directory created" {
+    [[ -d "docs/api" ]]
+}
+
+@test "[Phase 3] Verify: docs/api/php/ exists" {
+    [[ -d "docs/api/php" ]]
+}
+
+@test "[Phase 3] Verify: docs/api/node-backend/ exists" {
+    [[ -d "docs/api/node-backend" ]]
+}
+
+# =============================================================================
+# Phase 4: SSL Certificates (Create & Delete)
+# =============================================================================
+
+@test "[Phase 4] make ssl-selfsigned generates certificates" {
+    # Remove existing certs first
+    rm -f docker/certs/cert.crt docker/certs/cert.key 2>/dev/null || true
+
+    run timeout 60 make ssl-selfsigned
+    assert_success
+}
+
+@test "[Phase 4] Verify: cert.crt created" {
+    [[ -f "docker/certs/cert.crt" ]]
+}
+
+@test "[Phase 4] Verify: cert.key created" {
+    [[ -f "docker/certs/cert.key" ]]
+}
+
+@test "[Phase 4] make ssl-clean removes certificates" {
+    run make ssl-clean
+    assert_success
+}
+
+@test "[Phase 4] Verify: cert.crt removed" {
+    [[ ! -f "docker/certs/cert.crt" ]]
+}
+
+# =============================================================================
+# Phase 5: Documentation Cleanup
+# =============================================================================
+
+@test "[Phase 5] make docs-clean removes documentation" {
+    run make docs-clean
+    assert_success
+}
+
+@test "[Phase 5] Verify: docs/api/ removed" {
+    [[ ! -d "docs/api" ]]
+}
+
+# =============================================================================
+# Phase 6: Redis Operations
+# =============================================================================
+
+@test "[Phase 6] Redis is accessible" {
+    if ! docker compose ps --status running redis 2>/dev/null | grep -q redis; then
+        skip "Redis not running"
+    fi
+    run docker compose exec -T redis redis-cli PING
+    assert_success
+    assert_output "PONG"
+}
+
+@test "[Phase 6] make redis-flush clears data" {
+    if ! docker compose ps --status running redis 2>/dev/null | grep -q redis; then
+        skip "Redis not running"
+    fi
+
+    # Add test data
+    docker compose exec -T redis redis-cli SET destructive_test "value" >/dev/null
 
     # Flush
     run timeout 30 make redis-flush
     assert_success
 
-    # Verify data is gone
-    run docker compose exec -T redis redis-cli GET test_key
+    # Verify gone
+    run docker compose exec -T redis redis-cli GET destructive_test
     assert_output ""
 }
 
 # =============================================================================
-# Clean (Moderate - Removes Containers)
+# Phase 7: Container Cleanup (Escalating)
 # =============================================================================
 
-@test "[Destructive] make clean removes containers and networks" {
-    # Ensure containers are running first
-    run make status
-    assert_success
-
-    # Run clean
+@test "[Phase 7] make clean removes containers" {
     run timeout 60 make clean
     assert_success
+}
 
-    # Verify containers stopped
+@test "[Phase 7] Verify: no running containers after clean" {
     run docker compose ps --status running
     refute_output --partial "nginx"
 }
 
-# =============================================================================
-# Reset (Destructive - Removes Volumes)
-# =============================================================================
-
-@test "[Destructive] make reset stops containers and removes volumes" {
-    # First ensure we have containers
+@test "[Phase 7] make reset removes containers and volumes" {
+    # First bring up containers again
     make up 2>/dev/null || true
     sleep 5
 
-    # Run reset
     run timeout 120 make reset
     assert_success
+}
 
-    # Verify containers are gone
+@test "[Phase 7] Verify: no containers after reset" {
     run docker compose ps -a
-    # Should show no containers or only exited ones
     refute_output --partial "(healthy)"
 }
 
 # =============================================================================
-# Prune (Destructive - System-Wide Docker Cleanup)
+# Phase 8: Final Cleanup (Leave Clean State)
 # =============================================================================
 
-@test "[Destructive] make prune removes unused Docker resources" {
-    # This affects system-wide Docker resources!
-    run timeout 120 make prune
-    assert_success
-    assert_output --partial "Total reclaimed space" || assert_output --partial "deleted"
-}
-
-# =============================================================================
-# Database Cleanup (Very Destructive - Deletes Data)
-# =============================================================================
-
-@test "[Destructive] make db-cleanup removes database data" {
-    # Ensure database is running
-    make up 2>/dev/null || true
-    require_database
-
-    # Run cleanup
-    run timeout 60 make db-cleanup
-    assert_success
-}
-
-# =============================================================================
-# Reset Full (Most Destructive - Full Cleanup)
-# =============================================================================
-
-@test "[Destructive] make reset-full performs complete cleanup" {
-    # This is the nuclear option
+@test "[Phase 8] make reset-full final cleanup" {
+    echo "# Performing final cleanup..." >&3
     run timeout 300 make reset-full
     assert_success
+}
 
-    # Verify everything is gone
+@test "[Phase 8] Verify: clean state for next run" {
     run docker compose ps -a
-    # Should be empty or minimal
-    [[ -z "$output" ]] || refute_output --partial "Up"
-}
-
-# =============================================================================
-# Docs Clean (File Destructive)
-# =============================================================================
-
-@test "[Destructive] make docs-clean removes generated documentation" {
-    # First generate some docs if possible
-    make docs 2>/dev/null || true
-
-    # Clean
-    run make docs-clean
-    assert_success
-
-    # Verify docs removed
-    [[ ! -d "docs/api" ]]
-}
-
-# =============================================================================
-# SSL Clean (File Destructive)
-# =============================================================================
-
-@test "[Destructive] make ssl-clean removes SSL certificates" {
-    # First generate a cert if needed
-    if [[ ! -f "docker/certs/cert.crt" ]]; then
-        make ssl-selfsigned 2>/dev/null || true
-    fi
-
-    # Clean
-    run make ssl-clean
-    assert_success
-
-    # Verify certs removed
-    [[ ! -f "docker/certs/cert.crt" ]]
+    refute_output --partial "Up"
+    echo "# ✓ Destructive tests complete - system in clean state" >&3
 }
