@@ -84,6 +84,8 @@ php:coding-standards:
   script:
     # Use PHP_SKIP_DEPENDENCY_CHECK=1 to skip dependency check in entrypoint (deps installed via exec)
     - PHP_SKIP_DEPENDENCY_CHECK=1 docker compose up -d php
+    # Fix lockfile permissions inside container (bind mount may have wrong ownership)
+    - docker compose exec -T --user root php chown www-data:www-data /var/www/html/composer.lock
     - docker compose exec -T php composer install --no-progress --no-interaction
     - docker compose exec -T php composer cs-check
   artifacts:
@@ -99,6 +101,8 @@ php:static-analysis:
   script:
     # Use PHP_SKIP_DEPENDENCY_CHECK=1 to skip dependency check in entrypoint (deps installed via exec)
     - PHP_SKIP_DEPENDENCY_CHECK=1 docker compose up -d php
+    # Fix lockfile permissions inside container (bind mount may have wrong ownership)
+    - docker compose exec -T --user root php chown www-data:www-data /var/www/html/composer.lock
     - docker compose exec -T php composer install --no-progress --no-interaction
     - docker compose exec -T php composer analyse
   artifacts:
@@ -114,6 +118,8 @@ php:mess-detector:
   script:
     # Use PHP_SKIP_DEPENDENCY_CHECK=1 to skip dependency check in entrypoint (deps installed via exec)
     - PHP_SKIP_DEPENDENCY_CHECK=1 docker compose up -d php
+    # Fix lockfile permissions inside container (bind mount may have wrong ownership)
+    - docker compose exec -T --user root php chown www-data:www-data /var/www/html/composer.lock
     - docker compose exec -T php composer install --no-progress --no-interaction
     - docker compose exec -T php composer phpmd || true
   allow_failure: true
@@ -126,6 +132,8 @@ php:rector-check:
   script:
     # Use PHP_SKIP_DEPENDENCY_CHECK=1 to skip dependency check in entrypoint (deps installed via exec)
     - PHP_SKIP_DEPENDENCY_CHECK=1 docker compose up -d php
+    # Fix lockfile permissions inside container (bind mount may have wrong ownership)
+    - docker compose exec -T --user root php chown www-data:www-data /var/www/html/composer.lock
     - docker compose exec -T php composer install --no-progress --no-interaction
     - docker compose exec -T php composer rector-check
   allow_failure: true
@@ -141,6 +149,8 @@ php:unit-tests:
   script:
     # Use PHP_SKIP_DEPENDENCY_CHECK=1 to skip dependency check in entrypoint (deps installed via exec)
     - PHP_SKIP_DEPENDENCY_CHECK=1 docker compose --profile postgres up -d php postgres
+    # Fix lockfile permissions inside container (bind mount may have wrong ownership)
+    - docker compose exec -T --user root php chown www-data:www-data /var/www/html/composer.lock
     - docker compose exec -T php composer install --no-progress --no-interaction
     - timeout 30 sh -c 'until docker compose exec -T postgres pg_isready -U app; do sleep 1; done'
     - docker compose exec -T php composer test
@@ -164,6 +174,8 @@ php:coverage:
   script:
     # Use PHP_SKIP_DEPENDENCY_CHECK=1 to skip dependency check in entrypoint (deps installed via exec)
     - PHP_SKIP_DEPENDENCY_CHECK=1 docker compose --profile postgres up -d php postgres
+    # Fix lockfile permissions inside container (bind mount may have wrong ownership)
+    - docker compose exec -T --user root php chown www-data:www-data /var/www/html/composer.lock
     - docker compose exec -T php composer install --no-progress --no-interaction
     - docker compose exec -T php sh -c 'XDEBUG_MODE=coverage vendor/bin/phpunit --coverage-html build/coverage --coverage-clover build/coverage/clover.xml'
   artifacts:
@@ -322,6 +334,8 @@ dependency-audit:
   script:
     # Use idle mode for node and skip PHP dependency check (deps installed via exec)
     - PHP_SKIP_DEPENDENCY_CHECK=1 NODE_MODE=idle docker compose up -d php node
+    # Fix lockfile permissions inside container (bind mount may have wrong ownership)
+    - docker compose exec -T --user root php chown www-data:www-data /var/www/html/composer.lock
     - docker compose exec -T php composer install --no-progress --no-interaction
     # Use --frozen-lockfile if lockfile exists AND is non-empty (user project)
     # Otherwise generate lockfile (boilerplate without committed lockfiles)
