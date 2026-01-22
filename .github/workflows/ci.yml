@@ -347,20 +347,15 @@ jobs:
           make init
           make secrets
 
-      - name: Build node-backend (required by nginx)
-        run: |
-          # Build node-backend directly (loads to daemon, visible for nginx COPY --from)
-          docker buildx build \
-            --target api \
-            --tag zappzarapp-node-backend:latest \
-            --file docker/node/Dockerfile \
-            --load \
-            .
-
       - name: Build production images
         run: |
-          # Now nginx can find zappzarapp-node-backend:latest locally
-          ENV=production docker compose -f compose.yaml -f compose.production.yaml build php nginx
+          # Build node-backend first, then tag for cross-image COPY compatibility
+          # BuildKit in compose build can't see external local images, so we build
+          # node-backend separately and tag it, then build php/nginx with DOCKER_BUILDKIT=0
+          docker compose -f compose.yaml -f compose.production.yaml --profile node-backend build node-backend
+          docker tag zappzarapp-ci-node-backend:api zappzarapp-node-backend:latest
+          # Disable BuildKit for php/nginx build so they can see the local tagged image
+          DOCKER_BUILDKIT=0 ENV=production docker compose -f compose.yaml -f compose.production.yaml build php nginx
 
       - name: Test production startup
         run: |
