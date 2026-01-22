@@ -287,8 +287,8 @@ bats:integration:
     # Build node-backend first for nginx COPY --from dependency
     - DOCKER_BUILDKIT=0 docker compose --profile node-backend build node-backend || true
     - docker tag ${COMPOSE_PROJECT_NAME}-node-backend:api zappzarapp-node-backend:latest 2>/dev/null || true
-    # Build all remaining images
-    - DOCKER_BUILDKIT=0 docker compose build php node nginx
+    # Build all remaining images (nginx needs NGINX_TARGET=development for :development tag)
+    - DOCKER_BUILDKIT=0 NGINX_TARGET=development docker compose build php node nginx
     - make up
     - make composer-install
     - make pnpm-install
