@@ -50,8 +50,10 @@ jobs:
 
       - name: Install PHP dependencies
         run: |
-          # Fix lockfile permissions inside container (bind mount may have wrong ownership)
-          docker compose exec -T --user root php chmod 666 /var/www/html/composer.lock
+          # Debug: Check lockfile inside container
+          docker compose exec -T --user root php ls -la /var/www/html/composer.lock || echo "File not found"
+          docker compose exec -T --user root php chmod 666 /var/www/html/composer.lock || echo "chmod failed"
+          docker compose exec -T --user root php ls -la /var/www/html/composer.lock || echo "Still not found"
           docker compose exec -T php composer install --no-progress --no-interaction
 
       - name: PHP Coding Standards (PHP-CS-Fixer)
