@@ -279,16 +279,30 @@ setup: ## Create directories, install dev dependencies and ensure structure
 	# Configure IDE database connections
 	@$(MAKE) --silent ide-config
 
+	# Local development tools + Git hooks (optional - requires local composer)
+	@echo -e "\033[0;33mSetting up local development tools...\033[0m"
+	@if command -v composer >/dev/null 2>&1; then \
+		echo -e "\033[0;34m  Installing local PHP dependencies (for IDE + Git hooks)...\033[0m"; \
+		$(MAKE) --silent composer-install-local 2>/dev/null && \
+		if [ -f vendor/bin/captainhook ]; then \
+			echo -e "\033[0;34m  Installing Git hooks (captainhook)...\033[0m"; \
+			vendor/bin/captainhook install --force --skip-existing 2>/dev/null && \
+			echo -e "\033[0;32m  ✓ Git hooks installed\033[0m"; \
+		fi; \
+	else \
+		echo -e "\033[0;33m  ⚠ Local composer not found - skipping local PHP dependencies\033[0m"; \
+		echo -e "\033[0;33m    Git hooks require: composer, then 'make composer-install-local'\033[0m"; \
+	fi
+
 	@echo ""
 	@echo -e "\033[0;32m╔════════════════════════════════════════════════════════════╗\033[0m"
 	@echo -e "\033[0;32m║ Setup complete!                                            ║\033[0m"
 	@echo -e "\033[0;32m╠════════════════════════════════════════════════════════════╣\033[0m"
-	@echo -e "\033[0;32m║\033[0m IDE code completion:                                       \033[0;32m║\033[0m"
-	@echo -e "\033[0;32m║\033[0m   make composer-install-local                              \033[0;32m║\033[0m"
-	@echo -e "\033[0;32m║\033[0m   make pnpm-install-local                                  \033[0;32m║\033[0m"
+	@echo -e "\033[0;32m║\033[0m Next steps:                                                \033[0;32m║\033[0m"
+	@echo -e "\033[0;32m║\033[0m   make up          \033[0;34mStart development environment\033[0m         \033[0;32m║\033[0m"
 	@echo -e "\033[0;32m║\033[0m                                                            \033[0;32m║\033[0m"
-	@echo -e "\033[0;32m║\033[0m Using Gemini, Cursor, Copilot, or other AI tools?          \033[0;32m║\033[0m"
-	@echo -e "\033[0;32m║\033[0m   make ai-sync   \033[0;34mSync config to all AI tools\033[0m              \033[0;32m║\033[0m"
+	@echo -e "\033[0;32m║\033[0m Optional:                                                  \033[0;32m║\033[0m"
+	@echo -e "\033[0;32m║\033[0m   make ai-sync     \033[0;34mSync config to AI tools\033[0m               \033[0;32m║\033[0m"
 	@echo -e "\033[0;32m╚════════════════════════════════════════════════════════════╝\033[0m"
 
 ide-config: ## Configure all IDE database connections (PHPStorm + VS Code)
