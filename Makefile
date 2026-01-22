@@ -1867,8 +1867,14 @@ _reset-core:
 	@echo -e "\033[0;33m[2/5] Cleaning up Goss test resources...\033[0m"
 	@$(MAKE) --silent goss-cleanup
 	@echo -e "\033[0;33m[3/5] Stopping and removing all Docker resources...\033[0m"
-	@$(DC) --profile php --profile node --profile node-backend --profile redis --profile postgres --profile mariadb --profile mercure --profile meilisearch --profile elasticsearch --profile mailpit --profile seaweedfs --profile rabbitmq down -v --rmi all 2>/dev/null || true
+	@# Stop and remove all project containers, volumes, images, networks (including orphans)
+	@$(DC) --profile php --profile node --profile node-backend --profile redis --profile postgres --profile mariadb --profile mercure --profile meilisearch --profile elasticsearch --profile mailpit --profile seaweedfs --profile rabbitmq down -v --rmi all --remove-orphans 2>/dev/null || true
+	@# Remove any remaining containers from this project
+	@docker ps -aq --filter "label=com.docker.compose.project=zappzarapp" 2>/dev/null | xargs -r docker rm -f 2>/dev/null || true
+	@# Clear all unused Docker resources (images, containers, networks, volumes)
 	@docker system prune -af --volumes 2>/dev/null || true
+	@# Clear build cache to remove stale layer references
+	@docker builder prune -af 2>/dev/null || true
 	@echo -e "\033[0;33m[4/5] Removing dependencies and lockfiles...\033[0m"
 	@rm -rf vendor node_modules 2>/dev/null || true
 	@rm -f composer.lock pnpm-lock.yaml 2>/dev/null || true
