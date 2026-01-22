@@ -149,6 +149,9 @@ jobs:
           docker compose up -d node
           # Wait for container to be ready (entrypoint initialization)
           sleep 5
+          # Debug: show container status and logs
+          docker compose ps
+          docker compose logs node || true
 
       - name: Install Node dependencies
         run: docker compose exec -T node pnpm install
@@ -197,10 +200,12 @@ jobs:
 
       - name: Start services (Node + Redis)
         run: |
-          # compose.ci.yaml sets NODE_MODE=idle and doesn't bind-mount lockfiles
           docker compose --profile redis up -d node redis
-          # Wait for node container to be ready (entrypoint does privilege drop)
+          # Wait for container to be ready (entrypoint initialization)
           sleep 5
+          # Debug: show container status and logs
+          docker compose ps
+          docker compose logs node || true
           docker compose exec -T node pnpm install
 
       - name: Wait for Redis
@@ -258,6 +263,9 @@ jobs:
           docker compose up -d php node
           # Wait for containers to be ready (entrypoint initialization)
           sleep 5
+          # Debug: show container status and logs
+          docker compose ps
+          docker compose logs node || true
 
       - name: Install dependencies
         run: |
