@@ -41,6 +41,7 @@
   - [Retention Policy](security/RETENTION-POLICY.md)
   - [Access Log Monitoring](security/ACCESS-LOG-MONITORING.md)
   - [Security Scanning](security/SECURITY-SCANNING.md)
+  - [Known Vulnerabilities](security/KNOWN-VULNERABILITIES.md)
 
 - **Setup Guides**
   - [Windows (WSL2)](setup/WINDOWS.md)

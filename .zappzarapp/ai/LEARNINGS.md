@@ -68,6 +68,18 @@ files.
   `PHP_TARGET` must be set based on `NODE_MODE`.
 - **Asset source for nginx/php**: Changed from `zappzarapp-node:latest` to
   `zappzarapp-node-backend:latest` for Vite assets.
+- **nginx production build requires node-backend first**: The nginx Dockerfile
+  `production` stage has `COPY --from=zappzarapp-node-backend:latest`. This
+  image must exist before nginx is built. In development mode, this is skipped
+  (different target). For CI/production builds:
+
+  ```bash
+  # Build and tag node-backend first
+  docker compose --profile node-backend build node-backend
+  docker tag <project>-node-backend:api zappzarapp-node-backend:latest
+  # Then build nginx with DOCKER_BUILDKIT=0 (sees local images)
+  DOCKER_BUILDKIT=0 docker compose build nginx
+  ```
 
 ### Networking
 
@@ -92,6 +104,21 @@ files.
 ---
 
 ## Node.js
+
+### Known Vulnerabilities (Accepted Risk)
+
+#### pm2 CVE-2025-5891 (ReDoS)
+
+- **Severity**: LOW (CVSS 2.1)
+- **Affected**: All versions ≤6.0.14 (including 5.x likely)
+- **Patched**: None available (fix merged Aug 2025, not released yet)
+- **Impact**: DoS only, no data breach risk
+- **Risk accepted because**:
+  - pm2 is devDependency only (not in production)
+  - Essential for development workflow (process management)
+  - No fix available upstream
+- **Monitor**: <https://github.com/Unitech/pm2/releases> for version >6.0.14
+- **Last checked**: 2026-01-22
 
 ### pnpm Workspaces
 
@@ -520,4 +547,5 @@ notifications (e.g., ntfy notifications after agent completion).
 
 ## Last Updated
 
-2026-01-22 (added Docker bind mount directory bug documentation)
+2026-01-22 (added pm2 CVE-2025-5891 accepted risk, nginx/node-backend build
+dependency)
