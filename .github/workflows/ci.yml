@@ -349,8 +349,8 @@ jobs:
 
       - name: Build node-backend (required by nginx)
         run: |
-          NODE_BACKEND_TARGET=production docker compose -f compose.yaml -f compose.production.yaml --profile node-backend build node-backend
-          docker tag zappzarapp-ci-node-backend:production zappzarapp-node-backend:latest
+          docker compose -f compose.yaml -f compose.production.yaml --profile node-backend build node-backend
+          docker tag zappzarapp-ci-node-backend:api zappzarapp-node-backend:latest
 
       - name: Build production images
         run: |
