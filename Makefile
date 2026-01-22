@@ -239,6 +239,14 @@ setup: ## Create directories, install dev dependencies and ensure structure
 	@echo -e "\033[0;33mStarting containers...\033[0m"
 	@$(MAKE) --silent up
 
+	# Run database migrations (encryption helpers, audit logs)
+	@echo -e "\033[0;33mRunning database migrations...\033[0m"
+	-@$(MAKE) --silent db-migrations 2>/dev/null || echo -e "\033[0;34mNo migrations to run or database not ready yet.\033[0m"
+
+	# Generate API documentation
+	@echo -e "\033[0;33mGenerating API documentation...\033[0m"
+	-@$(MAKE) --silent docs 2>/dev/null || echo -e "\033[0;34mAPI docs generation skipped (tools not yet available).\033[0m"
+
 	# Configure IDE database connections
 	@$(MAKE) --silent ide-config
 

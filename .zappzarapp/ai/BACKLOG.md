@@ -23,12 +23,9 @@ Compact task index. Details in `backlog/<slug>.md` files.
 
 ### Quick Wins
 
-| Slug                    | Title                   | Size  | Status |
-| ----------------------- | ----------------------- | ----- | ------ |
-| make-integrations-setup | Make Integrations Setup | Small | Open   |
-| make-setup-api-docs     | Make Setup: API Docs    | Small | Open   |
-| ide-tasks-reduction     | IDE Tasks Reduction     | Small | Open   |
-| phpstorm-vscode-sync    | PhpStorm/VSCode Sync    | Small | Open   |
+| Slug                | Title               | Size  | Status |
+| ------------------- | ------------------- | ----- | ------ |
+| ide-tasks-reduction | IDE Tasks Reduction | Small | Open   |
 
 ### Code Quality
 
@@ -91,6 +88,9 @@ Compact task index. Details in `backlog/<slug>.md` files.
 
 | Slug                         | Title                        | Completed  |
 | ---------------------------- | ---------------------------- | ---------- |
+| make-integrations-setup      | Make Setup: db-migrations    | 2026-01-22 |
+| make-setup-api-docs          | Make Setup: API Docs         | 2026-01-22 |
+| phpstorm-vscode-sync         | PhpStorm/VSCode Sync         | 2026-01-22 |
 | service-integration-examples | Service Integration Examples | 2026-01-21 |
 
 ---

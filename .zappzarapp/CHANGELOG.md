@@ -1,11 +1,28 @@
 # zappzarapp - Changelog
 
-**Erstellt:** 2025-12-19 **Letzte Aktualisierung:** 2026-01-22 (Research
-Command) **Version:** 3.74
+**Erstellt:** 2025-12-19 **Letzte Aktualisierung:** 2026-01-22 (Setup
+Enhancements) **Version:** 3.75
 
 ---
 
 ## Changelog
+
+### Version 3.75 (2026-01-22) - Setup Enhancements
+
+Improved initial setup workflow with database migrations and API documentation.
+
+#### Enhanced: make setup
+
+- **Database Migrations** — `make db-migrations` now runs automatically during
+  setup (encryption helpers, audit logs)
+- **API Documentation** — `make docs` now generates PHP and Node API docs during
+  setup
+- Both steps handle gracefully if dependencies not yet available (non-blocking)
+
+#### Verified: IDE Settings Sync
+
+- PhpStorm and VSCode settings confirmed in sync (dictionaries, PHP tools,
+  Prettier, editor settings)
 
 ### Version 3.74 (2026-01-22) - Research Command
 

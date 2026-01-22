@@ -21,7 +21,8 @@ make help     # Show all available commands
 
 ## Documentation
 
-- [zappzarapp Documentation](.zappzarapp/docs/README.md) - Setup guides, architecture, configuration
+- [zappzarapp Documentation](.zappzarapp/docs/README.md) - Setup guides,
+  architecture, configuration
 - [Changelog](.zappzarapp/CHANGELOG.md) - zappzarapp version history
 
 ## Project Structure
