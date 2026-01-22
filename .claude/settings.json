@@ -64,6 +64,19 @@
             "command": "TOOL_INPUT=$(cat); if echo \"$TOOL_INPUT\" | grep -qE '(\\.rulesync/.*\\.md|CLAUDE\\.md)'; then echo '[Hook] AI rules updated. Sync to all tools with: make ai-rules-sync'; fi"
           }
         ]
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "TOOL_INPUT=$(cat); if echo \"$TOOL_INPUT\" | grep -qE 'make composer CMD=\"?(require|remove)'; then echo '[Hook] PHP package changed. Run: make composer-install-local'; fi"
+          },
+          {
+            "type": "command",
+            "command": "TOOL_INPUT=$(cat); if echo \"$TOOL_INPUT\" | grep -qE 'make pnpm CMD=\"?(add|remove)'; then echo '[Hook] Node package changed. Run: make pnpm-install-local'; fi"
+          }
+        ]
       }
     ]
   }

@@ -90,3 +90,24 @@ make test-coverage-php   # build/coverage/php/
 make test-coverage-node  # build/coverage/node/
 make test-coverage       # Both
 ```
+
+## Dependency Changes
+
+After adding/removing packages, always sync local dependencies for IDE support:
+
+```bash
+# PHP: After make composer CMD="require ..."
+make composer-install-local
+
+# Node: After make pnpm CMD="add ..."
+make pnpm-install-local
+```
+
+**Note:** Both commands check if local tool exists. Safe to run always.
+
+| Action              | Container Command                        | Local Sync                    |
+| ------------------- | ---------------------------------------- | ----------------------------- |
+| Add PHP package     | `make composer CMD="require vendor/pkg"` | `make composer-install-local` |
+| Add Node package    | `make pnpm CMD="add pkg"`                | `make pnpm-install-local`     |
+| Remove PHP package  | `make composer CMD="remove vendor/pkg"`  | `make composer-install-local` |
+| Remove Node package | `make pnpm CMD="remove pkg"`             | `make pnpm-install-local`     |

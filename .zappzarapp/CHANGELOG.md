@@ -1,11 +1,28 @@
 # zappzarapp - Changelog
 
-**Erstellt:** 2025-12-19 **Letzte Aktualisierung:** 2026-01-22 (Parallel Fixer
-Agent) **Version:** 3.72
+**Erstellt:** 2025-12-19 **Letzte Aktualisierung:** 2026-01-22 (Dependency Sync
+Workflow) **Version:** 3.73
 
 ---
 
 ## Changelog
+
+### Version 3.73 (2026-01-22) - Dependency Sync Workflow
+
+Automated reminder for local dependency sync after package changes.
+
+#### New: Dependency Changes Documentation
+
+- **`.zappzarapp/standards/make-targets.md`** — New "Dependency Changes" section
+- Documents workflow: container install → local sync for IDE support
+- Table with all package operations and corresponding sync commands
+
+#### New: Package Change Hooks
+
+- **`.claude/settings.json`** — PostToolUse hooks for Bash
+- Auto-reminder after `make composer CMD="require/remove ..."`
+- Auto-reminder after `make pnpm CMD="add/remove ..."`
+- Prompts to run `make *-install-local` for IDE code completion
 
 ### Version 3.72 (2026-01-22) - Parallel Fixer Agent
 
