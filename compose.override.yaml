@@ -287,6 +287,8 @@ services:
       - XDEBUG_MODE=${XDEBUG_MODE:-off}
       - ENABLE_PHP=${ENABLE_PHP:-true}
       - ENABLE_NODE=${ENABLE_NODE:-true}
+      # Skip vendor check in entrypoint (used in CI for docker compose exec workflows)
+      - PHP_SKIP_DEPENDENCY_CHECK=${PHP_SKIP_DEPENDENCY_CHECK:-0}
       - ENABLE_DATABASE=${ENABLE_DATABASE:-true}
       - ENABLE_REDIS=${ENABLE_REDIS:-true}
       - ENABLE_MERCURE=${ENABLE_MERCURE:-false}
