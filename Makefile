@@ -1843,29 +1843,8 @@ fresh: ## Complete clean slate rebuild, removing all data volumes (DANGEROUS!)
 	@$(MAKE) --silent pnpm-install
 	@$(MAKE) --silent up
 
-reset: ## Reset Docker and generated files (keeps secrets/certs)
-	@echo -e "\033[0;33m╔══════════════════════════════════════════════════════════════════╗\033[0m"
-	@echo -e "\033[0;33m║  RESET - Remove Docker resources and generated files             ║\033[0m"
-	@echo -e "\033[0;33m╠══════════════════════════════════════════════════════════════════╣\033[0m"
-	@echo -e "\033[0;33m║  This will remove:                                               ║\033[0m"
-	@echo -e "\033[0;33m║  • All Docker containers, images, volumes, networks              ║\033[0m"
-	@echo -e "\033[0;33m║  • All Goss test resources                                       ║\033[0m"
-	@echo -e "\033[0;33m║  • storage/ contents (uploads, cache) - if not a mountpoint      ║\033[0m"
-	@echo -e "\033[0;33m║  • vendor/, node_modules/ (dependencies)                         ║\033[0m"
-	@echo -e "\033[0;33m║  • composer.lock, pnpm-lock.yaml (lockfiles)                     ║\033[0m"
-	@echo -e "\033[0;33m║  • .env.local (local overrides)                                  ║\033[0m"
-	@echo -e "\033[0;33m║  • build/, public/build/, docs/api/, tools/ (generated files)    ║\033[0m"
-	@echo -e "\033[0;33m║  • .ai/ (project AI knowledge created by setup)                  ║\033[0m"
-	@echo -e "\033[0;33m╠══════════════════════════════════════════════════════════════════╣\033[0m"
-	@echo -e "\033[0;33m║  KEEPS: secrets/, docker/certs/, source code                     ║\033[0m"
-	@echo -e "\033[0;33m║  Use 'make reset-full' to also remove secrets and reset code.    ║\033[0m"
-	@echo -e "\033[0;33m╚══════════════════════════════════════════════════════════════════╝\033[0m"
-	@echo ""
-	@read -p "Type 'RESET' to confirm: " CONFIRM_RESET; \
-	if [ "$$CONFIRM_RESET" != "RESET" ]; then \
-		echo -e "\033[0;34mOperation cancelled.\033[0m"; \
-		exit 1; \
-	fi
+# Internal target: Core reset logic without confirmation (used by reset and reset-full)
+_reset-core:
 	@echo ""
 	@# Check for mountpoints in directories we're about to clean
 	@echo -e "\033[0;33m[1/5] Checking for mountpoints...\033[0m"
@@ -1909,6 +1888,31 @@ reset: ## Reset Docker and generated files (keeps secrets/certs)
 	done
 	@rm -f .env.local 2>/dev/null || true
 	@rm -rf .ai 2>/dev/null || true
+
+reset: ## Reset Docker and generated files (keeps secrets/certs)
+	@echo -e "\033[0;33m╔══════════════════════════════════════════════════════════════════╗\033[0m"
+	@echo -e "\033[0;33m║  RESET - Remove Docker resources and generated files             ║\033[0m"
+	@echo -e "\033[0;33m╠══════════════════════════════════════════════════════════════════╣\033[0m"
+	@echo -e "\033[0;33m║  This will remove:                                               ║\033[0m"
+	@echo -e "\033[0;33m║  • All Docker containers, images, volumes, networks              ║\033[0m"
+	@echo -e "\033[0;33m║  • All Goss test resources                                       ║\033[0m"
+	@echo -e "\033[0;33m║  • storage/ contents (uploads, cache) - if not a mountpoint      ║\033[0m"
+	@echo -e "\033[0;33m║  • vendor/, node_modules/ (dependencies)                         ║\033[0m"
+	@echo -e "\033[0;33m║  • composer.lock, pnpm-lock.yaml (lockfiles)                     ║\033[0m"
+	@echo -e "\033[0;33m║  • .env.local (local overrides)                                  ║\033[0m"
+	@echo -e "\033[0;33m║  • build/, public/build/, docs/api/, tools/ (generated files)    ║\033[0m"
+	@echo -e "\033[0;33m║  • .ai/ (project AI knowledge created by setup)                  ║\033[0m"
+	@echo -e "\033[0;33m╠══════════════════════════════════════════════════════════════════╣\033[0m"
+	@echo -e "\033[0;33m║  KEEPS: secrets/, docker/certs/, source code                     ║\033[0m"
+	@echo -e "\033[0;33m║  Use 'make reset-full' to also remove secrets and reset code.    ║\033[0m"
+	@echo -e "\033[0;33m╚══════════════════════════════════════════════════════════════════╝\033[0m"
+	@echo ""
+	@read -p "Type 'RESET' to confirm: " CONFIRM_RESET; \
+	if [ "$$CONFIRM_RESET" != "RESET" ]; then \
+		echo -e "\033[0;34mOperation cancelled.\033[0m"; \
+		exit 1; \
+	fi
+	@$(MAKE) --silent _reset-core
 	@echo ""
 	@echo -e "\033[0;32m✓ Factory reset complete!\033[0m"
 	@echo -e "\033[0;36mTo start fresh, run: make setup && make up\033[0m"
@@ -1929,7 +1933,7 @@ reset-full: ## Full factory reset - removes EVERYTHING including secrets (DANGER
 		echo -e "\033[0;34mOperation cancelled.\033[0m"; \
 		exit 1; \
 	fi
-	@$(MAKE) reset
+	@$(MAKE) --silent _reset-core
 	@echo ""
 	@echo -e "\033[0;33mRemoving secrets...\033[0m"
 	@rm -rf secrets/* 2>/dev/null || true
