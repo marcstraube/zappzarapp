@@ -35,9 +35,12 @@ jobs:
           make init
           make secrets
           # Create empty lockfiles if missing (boilerplate doesn't commit them)
-          # Required for bind mounts in compose.override.yaml
+          # Required for bind mounts in compose.override.yaml - Docker creates
+          # directories instead of files when mounting non-existent paths
           [ -f pnpm-lock.yaml ] || touch pnpm-lock.yaml
           [ -f composer.lock ] || echo '{}' > composer.lock
+          # Make lockfiles writable by container user (www-data/node)
+          chmod 666 pnpm-lock.yaml composer.lock
 
       - name: Build PHP container
         run: |
@@ -93,6 +96,8 @@ jobs:
           # Required for bind mounts in compose.override.yaml
           [ -f pnpm-lock.yaml ] || touch pnpm-lock.yaml
           [ -f composer.lock ] || echo '{}' > composer.lock
+          # Make lockfiles writable by container user (www-data/node)
+          chmod 666 pnpm-lock.yaml composer.lock
 
       - name: Start services (PHP + Database)
         run: |
@@ -150,6 +155,8 @@ jobs:
           # directories instead of files when mounting non-existent paths
           [ -f pnpm-lock.yaml ] || touch pnpm-lock.yaml
           [ -f composer.lock ] || echo '{}' > composer.lock
+          # Make lockfiles writable by container user (www-data/node)
+          chmod 666 pnpm-lock.yaml composer.lock
 
       - name: Build Node container
         run: |
@@ -208,6 +215,8 @@ jobs:
           # Required for bind mounts in compose.override.yaml
           [ -f pnpm-lock.yaml ] || touch pnpm-lock.yaml
           [ -f composer.lock ] || echo '{}' > composer.lock
+          # Make lockfiles writable by container user (www-data/node)
+          chmod 666 pnpm-lock.yaml composer.lock
 
       - name: Start services (Node + Redis)
         run: |
@@ -265,9 +274,12 @@ jobs:
           make init
           make secrets
           # Create empty lockfiles if missing (boilerplate doesn't commit them)
-          # Required for bind mounts in compose.override.yaml
+          # Required for bind mounts in compose.override.yaml - Docker creates
+          # directories instead of files when mounting non-existent paths
           [ -f pnpm-lock.yaml ] || touch pnpm-lock.yaml
           [ -f composer.lock ] || echo '{}' > composer.lock
+          # Make lockfiles writable by container user (www-data/node)
+          chmod 666 pnpm-lock.yaml composer.lock
 
       - name: Build containers
         run: |

@@ -34,6 +34,8 @@ stages:
     # directories instead of files when mounting non-existent paths
     - "[ -f pnpm-lock.yaml ] || touch pnpm-lock.yaml"
     - "[ -f composer.lock ] || echo '{}' > composer.lock"
+    # Make lockfiles writable by container user (www-data/node)
+    - chmod 666 pnpm-lock.yaml composer.lock
   after_script:
     - docker compose down -v || true
     - docker system prune -f || true
