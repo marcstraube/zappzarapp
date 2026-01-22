@@ -2921,7 +2921,7 @@ docs-node-frontend: ## Generate Node.js Frontend documentation using TypeDoc
 
 docs-clean: ## Remove generated documentation
 	@echo -e "\033[0;33mCleaning documentation...\033[0m"
-	@rm -rf docs/ .phpdoc/ tools/
+	@rm -rf docs/api/ .phpdoc/ tools/
 	@echo -e "\033[0;32mDocumentation cleaned!\033[0m"
 
 ##@ SSL/TLS
