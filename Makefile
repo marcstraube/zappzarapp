@@ -1934,13 +1934,7 @@ _reset-core:
 	else \
 		echo -e "\033[0;33m  Skipping storage/ (mountpoint)\033[0m"; \
 	fi
-	@for dir in build dist public/build docs/api tools; do \
-		if [ -d "$$dir" ] && ! mountpoint -q "$$dir" 2>/dev/null; then \
-			rm -rf "$$dir" 2>/dev/null || true; \
-		elif [ -d "$$dir" ]; then \
-			echo -e "\033[0;33m  Skipping $$dir (mountpoint)\033[0m"; \
-		fi; \
-	done
+	@rm -rf build dist public/build docs/api tools 2>/dev/null || true
 	@rm -f .env.local 2>/dev/null || true
 	@rm -rf .ai 2>/dev/null || true
 	@echo -e "\033[0;33m[5/5] Stopping and removing all Docker resources...\033[0m"
