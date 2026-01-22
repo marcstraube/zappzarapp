@@ -141,7 +141,10 @@ jobs:
           docker compose up -d node
 
       - name: Install Node dependencies
-        run: docker compose exec -T node pnpm install --frozen-lockfile
+        run: |
+          # Use --frozen-lockfile if lockfile exists (user project with committed lockfile)
+          # Otherwise generate lockfile (boilerplate without committed lockfiles)
+          docker compose exec -T node sh -c 'if [ -f pnpm-lock.yaml ]; then pnpm install --frozen-lockfile; else pnpm install; fi'
 
       - name: TypeScript Type Check
         run: docker compose exec -T node pnpm run type-check
@@ -187,7 +190,8 @@ jobs:
       - name: Start services (Node + Redis)
         run: |
           docker compose --profile redis up -d node redis
-          docker compose exec -T node pnpm install --frozen-lockfile
+          # Use --frozen-lockfile if lockfile exists (user project), otherwise generate (boilerplate)
+          docker compose exec -T node sh -c 'if [ -f pnpm-lock.yaml ]; then pnpm install --frozen-lockfile; else pnpm install; fi'
 
       - name: Wait for Redis
         run: |
@@ -245,7 +249,8 @@ jobs:
       - name: Install dependencies
         run: |
           docker compose exec -T php composer install --no-progress --no-interaction
-          docker compose exec -T node pnpm install --frozen-lockfile
+          # Use --frozen-lockfile if lockfile exists (user project), otherwise generate (boilerplate)
+          docker compose exec -T node sh -c 'if [ -f pnpm-lock.yaml ]; then pnpm install --frozen-lockfile; else pnpm install; fi'
 
       - name: PHP Composer Audit
         run: docker compose exec -T php composer audit

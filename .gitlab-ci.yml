@@ -167,7 +167,8 @@ node:lint:
     - build:node
   script:
     - docker compose up -d node
-    - docker compose exec -T node pnpm install --frozen-lockfile
+    # Use --frozen-lockfile if lockfile exists (user project), otherwise generate (boilerplate)
+    - docker compose exec -T node sh -c 'if [ -f pnpm-lock.yaml ]; then pnpm install --frozen-lockfile; else pnpm install; fi'
     - docker compose exec -T node pnpm run lint
 
 node:format-check:
@@ -177,7 +178,8 @@ node:format-check:
     - build:node
   script:
     - docker compose up -d node
-    - docker compose exec -T node pnpm install --frozen-lockfile
+    # Use --frozen-lockfile if lockfile exists (user project), otherwise generate (boilerplate)
+    - docker compose exec -T node sh -c 'if [ -f pnpm-lock.yaml ]; then pnpm install --frozen-lockfile; else pnpm install; fi'
     - docker compose exec -T node pnpm run format:check
 
 node:type-check:
@@ -187,7 +189,8 @@ node:type-check:
     - build:node
   script:
     - docker compose up -d node
-    - docker compose exec -T node pnpm install --frozen-lockfile
+    # Use --frozen-lockfile if lockfile exists (user project), otherwise generate (boilerplate)
+    - docker compose exec -T node sh -c 'if [ -f pnpm-lock.yaml ]; then pnpm install --frozen-lockfile; else pnpm install; fi'
     - docker compose exec -T node pnpm run type-check
 
 node:markdownlint:
@@ -197,7 +200,8 @@ node:markdownlint:
     - build:node
   script:
     - docker compose up -d node
-    - docker compose exec -T node pnpm install --frozen-lockfile
+    # Use --frozen-lockfile if lockfile exists (user project), otherwise generate (boilerplate)
+    - docker compose exec -T node sh -c 'if [ -f pnpm-lock.yaml ]; then pnpm install --frozen-lockfile; else pnpm install; fi'
     - docker compose exec -T node pnpm run lint:md
 
 # ============================================================================
@@ -210,7 +214,8 @@ node:tests:
     - build:node
   script:
     - docker compose --profile redis up -d node redis
-    - docker compose exec -T node pnpm install --frozen-lockfile
+    # Use --frozen-lockfile if lockfile exists (user project), otherwise generate (boilerplate)
+    - docker compose exec -T node sh -c 'if [ -f pnpm-lock.yaml ]; then pnpm install --frozen-lockfile; else pnpm install; fi'
     - timeout 30 sh -c 'until docker compose exec -T redis redis-cli ping; do sleep 1; done'
     - docker compose exec -T node pnpm test
   coverage: '/All files\s*\|\s*(\d+\.?\d*)\s*\|/'
@@ -232,7 +237,8 @@ node:coverage:
     - develop
   script:
     - docker compose --profile redis up -d node redis
-    - docker compose exec -T node pnpm install --frozen-lockfile
+    # Use --frozen-lockfile if lockfile exists (user project), otherwise generate (boilerplate)
+    - docker compose exec -T node sh -c 'if [ -f pnpm-lock.yaml ]; then pnpm install --frozen-lockfile; else pnpm install; fi'
     - docker compose exec -T node pnpm test:coverage
   artifacts:
     paths:
@@ -290,7 +296,8 @@ dependency-audit:
   script:
     - docker compose up -d php node
     - docker compose exec -T php composer install --no-progress --no-interaction
-    - docker compose exec -T node pnpm install --frozen-lockfile
+    # Use --frozen-lockfile if lockfile exists (user project), otherwise generate (boilerplate)
+    - docker compose exec -T node sh -c 'if [ -f pnpm-lock.yaml ]; then pnpm install --frozen-lockfile; else pnpm install; fi'
     - docker compose exec -T php composer audit
     - docker compose exec -T node pnpm audit
   allow_failure: true
