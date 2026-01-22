@@ -262,12 +262,14 @@ jobs:
         run: |
           docker compose exec -T php composer install --no-progress --no-interaction
           docker compose exec -T node pnpm install
+          # Wait for pnpm to fully release lockfiles before audit
+          sleep 3
 
       - name: PHP Composer Audit
         run: docker compose exec -T php composer audit
 
       - name: Node pnpm Audit
-        run: docker compose exec -T node pnpm audit --ignore CVE-2025-5891
+        run: docker compose exec -T node pnpm audit
 
       - name: Cleanup
         uses: ./.github/actions/docker-cleanup

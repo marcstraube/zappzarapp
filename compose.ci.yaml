@@ -61,7 +61,8 @@ services:
       - ./tsconfig.build.json:/app/tsconfig.build.json:ro
       - ./tsconfig.vitest.json:/app/tsconfig.vitest.json:ro
       - ./vitest.config.ts:/app/vitest.config.ts:ro
-      - ./pnpm-workspace.yaml:/app/pnpm-workspace.yaml:ro
+      # Note: pnpm-workspace.yaml needs write access (pnpm audit uses atomic rename)
+      - ./pnpm-workspace.yaml:/app/pnpm-workspace.yaml
 
       # Static config files (read-only)
       - ./eslint.config.js:/app/eslint.config.js:ro
@@ -132,6 +133,9 @@ services:
 
       # Build outputs
       - ./build:/var/www/html/build
+
+      # Public directory (needed for PHP-CS-Fixer)
+      - ./public:/var/www/html/public
 
       # Quality Assurance Tools Config
       - ./phpstan.neon:/var/www/html/phpstan.neon:ro

@@ -547,7 +547,7 @@ build: ## Build Docker images (optionally specify service names: make build php 
 				export PHP_TARGET="$${PHP_TARGET:-$$PHP_TARGET_AUTO}"; \
 				echo -e "\033[0;34mBuilding Node images first (NODE_TARGET=$$NODE_TARGET, NGINX_TARGET=$$NGINX_TARGET, PHP_TARGET=$$PHP_TARGET)...\033[0m" && \
 				$(DC) -f compose.yaml -f compose.production.yaml $$PROFILES build node node-backend 2>/dev/null || true && \
-				docker tag zappzarapp-node-backend:$$NODE_BACKEND_TARGET zappzarapp-node-backend:latest 2>/dev/null || true && \
+				docker tag $${COMPOSE_PROJECT_NAME:-zappzarapp}-node-backend:$$NODE_BACKEND_TARGET zappzarapp-node-backend:latest 2>/dev/null || true && \
 				echo -e "\033[0;34mBuilding remaining images...\033[0m" && \
 				$(DC) -f compose.yaml -f compose.production.yaml $$PROFILES build; \
 			else \
@@ -629,7 +629,7 @@ build-no-cache: ## Build Docker images without cache (optionally specify service
 				export PHP_TARGET="$${PHP_TARGET:-$$PHP_TARGET_AUTO}"; \
 				echo -e "\033[0;34mBuilding Node images first (NODE_TARGET=$$NODE_TARGET, NGINX_TARGET=$$NGINX_TARGET, PHP_TARGET=$$PHP_TARGET)...\033[0m" && \
 				$(DC) -f compose.yaml -f compose.production.yaml $$PROFILES build --no-cache node node-backend 2>/dev/null || true && \
-				docker tag zappzarapp-node-backend:$$NODE_BACKEND_TARGET zappzarapp-node-backend:latest 2>/dev/null || true && \
+				docker tag $${COMPOSE_PROJECT_NAME:-zappzarapp}-node-backend:$$NODE_BACKEND_TARGET zappzarapp-node-backend:latest 2>/dev/null || true && \
 				echo -e "\033[0;34mBuilding remaining images...\033[0m" && \
 				$(DC) -f compose.yaml -f compose.production.yaml $$PROFILES build --no-cache; \
 			else \
@@ -1047,11 +1047,12 @@ up: ## Start containers (optionally specify service names: make up php nginx)
 	@# ═══════════════════════════════════════════════════════════════════════════
 	@if [ "$(SKIP_VALIDATION)" != "1" ]; then \
 		$(LOAD_ENV); \
+		PROJECT="$${COMPOSE_PROJECT_NAME:-zappzarapp}"; \
 		TAG="$$([ "$${ENV:-development}" = "production" ] && echo "" || echo ":development")"; \
 		STALE_FILES=""; \
 		CHECKED_IMAGES=0; \
 		for SERVICE in php node nginx; do \
-			IMAGE="zappzarapp-$${SERVICE}$${TAG}"; \
+			IMAGE="$$PROJECT-$${SERVICE}$${TAG}"; \
 			IMAGE_TIME=$$(docker inspect -f '{{.Created}}' "$$IMAGE" 2>/dev/null); \
 			if [ -n "$$IMAGE_TIME" ]; then \
 				CHECKED_IMAGES=$$((CHECKED_IMAGES + 1)); \
@@ -1116,17 +1117,18 @@ up: ## Start containers (optionally specify service names: make up php nginx)
 			echo ""; \
 		fi; \
 		MISSING=""; \
+		PROJECT="$${COMPOSE_PROJECT_NAME:-zappzarapp}"; \
 		TAG="$$([ "$${ENV:-development}" = "production" ] && echo "" || echo ":development")"; \
-		if [ "$${ENABLE_PHP:-true}" = "true" ] && ! docker image inspect zappzarapp-php$$TAG >/dev/null 2>&1; then \
+		if [ "$${ENABLE_PHP:-true}" = "true" ] && ! docker image inspect $$PROJECT-php$$TAG >/dev/null 2>&1; then \
 			MISSING="$$MISSING php"; \
 		fi; \
-		if [ "$${ENABLE_NODE:-true}" = "true" ] && ! docker image inspect zappzarapp-node$$TAG >/dev/null 2>&1; then \
+		if [ "$${ENABLE_NODE:-true}" = "true" ] && ! docker image inspect $$PROJECT-node$$TAG >/dev/null 2>&1; then \
 			MISSING="$$MISSING node"; \
 		fi; \
-		if ! docker image inspect zappzarapp-nginx$$TAG >/dev/null 2>&1; then \
+		if ! docker image inspect $$PROJECT-nginx$$TAG >/dev/null 2>&1; then \
 			MISSING="$$MISSING nginx"; \
 		fi; \
-		if [ "$${ENABLE_DATABASE:-true}" = "true" ] && [ "$${DB_TYPE:-postgres}" = "postgres" ] && ! docker image inspect zappzarapp-postgres >/dev/null 2>&1; then \
+		if [ "$${ENABLE_DATABASE:-true}" = "true" ] && [ "$${DB_TYPE:-postgres}" = "postgres" ] && ! docker image inspect $$PROJECT-postgres >/dev/null 2>&1; then \
 			MISSING="$$MISSING postgres"; \
 		fi; \
 		if [ -n "$$MISSING" ]; then \
@@ -2100,6 +2102,68 @@ ai-rules-sync: ## Sync AI rules to all configured tools (Claude, Gemini, Cursor,
 
 ai-sync: ai-commands-sync ai-rules-sync ## Sync both AI commands and rules
 
+ai-setup: ## Initialize labels and milestones for /tasks command (auto-detects GitHub/GitLab)
+	@REMOTE_URL=$$(git remote get-url origin 2>/dev/null); \
+	if echo "$$REMOTE_URL" | grep -qE 'github\.com'; then \
+		PLATFORM="github"; \
+	elif echo "$$REMOTE_URL" | grep -qE 'gitlab\.com|gitlab\.'; then \
+		PLATFORM="gitlab"; \
+	else \
+		echo -e "\033[0;31mError: Could not detect platform (GitHub/GitLab) from remote URL\033[0m"; \
+		exit 1; \
+	fi; \
+	echo -e "\033[0;33mDetected platform: $$PLATFORM\033[0m"; \
+	echo ""; \
+	if [ "$$PLATFORM" = "github" ]; then \
+		if ! command -v gh >/dev/null 2>&1; then \
+			echo -e "\033[0;31mError: GitHub CLI (gh) not installed. See https://cli.github.com/\033[0m"; \
+			exit 1; \
+		fi; \
+		if ! gh auth status >/dev/null 2>&1; then \
+			echo -e "\033[0;31mError: Not authenticated. Run 'gh auth login' first.\033[0m"; \
+			exit 1; \
+		fi; \
+		echo -e "\033[0;33mInitializing GitHub labels...\033[0m"; \
+		./.zappzarapp/scripts/init-github-labels.sh; \
+		echo ""; \
+		echo -e "\033[0;33mCreating 'Backlog' milestone (if not exists)...\033[0m"; \
+		if gh api repos/{owner}/{repo}/milestones --jq '.[] | select(.title=="Backlog")' 2>/dev/null | grep -q .; then \
+			echo -e "\033[0;36m  'Backlog' milestone already exists\033[0m"; \
+		else \
+			gh api repos/{owner}/{repo}/milestones --method POST \
+				-f title="Backlog" \
+				-f description="Consciously deferred tasks, not scheduled for upcoming releases" \
+				>/dev/null 2>&1 && \
+			echo -e "\033[0;32m  Created 'Backlog' milestone\033[0m"; \
+		fi; \
+	elif [ "$$PLATFORM" = "gitlab" ]; then \
+		if ! command -v glab >/dev/null 2>&1; then \
+			echo -e "\033[0;31mError: GitLab CLI (glab) not installed. See https://gitlab.com/gitlab-org/cli\033[0m"; \
+			exit 1; \
+		fi; \
+		if ! glab auth status >/dev/null 2>&1; then \
+			echo -e "\033[0;31mError: Not authenticated. Run 'glab auth login' first.\033[0m"; \
+			exit 1; \
+		fi; \
+		echo -e "\033[0;33mInitializing GitLab labels...\033[0m"; \
+		./.zappzarapp/scripts/init-gitlab-labels.sh; \
+		echo ""; \
+		echo -e "\033[0;33mCreating 'Backlog' milestone (if not exists)...\033[0m"; \
+		if glab api projects/:id/milestones 2>/dev/null | jq -e '.[] | select(.title=="Backlog")' >/dev/null 2>&1; then \
+			echo -e "\033[0;36m  'Backlog' milestone already exists\033[0m"; \
+		else \
+			glab api projects/:id/milestones --method POST \
+				-f title="Backlog" \
+				-f description="Consciously deferred tasks, not scheduled for upcoming releases" \
+				>/dev/null 2>&1 && \
+			echo -e "\033[0;32m  Created 'Backlog' milestone\033[0m"; \
+		fi; \
+		echo ""; \
+		echo -e "\033[0;36mNote: GitLab Issue Boards are label-based. Create a board and add lists for status labels.\033[0m"; \
+	fi; \
+	echo ""; \
+	echo -e "\033[0;32m✓ AI setup complete! You can now use /tasks\033[0m"
+
 rebuild: clean build up ## Complete rebuild
 
 renovate: ## Run Renovate dependency scanner
@@ -2334,10 +2398,11 @@ dive: ## Analyze Docker image layers and sizes
 	@echo "  2) node"
 	@echo "  3) nginx"
 	@read -p "Enter choice [1-3]: " choice; \
+	PROJECT="$${COMPOSE_PROJECT_NAME:-zappzarapp}"; \
 	case $$choice in \
-		1) IMAGE=zappzarapp-php ;; \
-		2) IMAGE=zappzarapp-node ;; \
-		3) IMAGE=zappzarapp-nginx ;; \
+		1) IMAGE="$$PROJECT-php" ;; \
+		2) IMAGE="$$PROJECT-node" ;; \
+		3) IMAGE="$$PROJECT-nginx" ;; \
 		*) echo "Invalid choice"; exit 1 ;; \
 	esac; \
 	docker run --rm -it -v /var/run/docker.sock:/var/run/docker.sock wagoodman/dive:latest $$IMAGE

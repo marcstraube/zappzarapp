@@ -101,5 +101,12 @@
     "meilisearch": "^0.55.0",
     "mysql2": "^3.16.1",
     "redis": "^5.10.0"
+  },
+  "pnpm": {
+    "auditConfig": {
+      "ignoreCves": [
+        "CVE-2025-5891"
+      ]
+    }
   }
 }

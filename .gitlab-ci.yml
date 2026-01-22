@@ -317,7 +317,7 @@ dependency-audit:
     - docker compose exec -T php composer install --no-progress --no-interaction
     - docker compose exec -T node pnpm install
     - docker compose exec -T php composer audit
-    - docker compose exec -T node pnpm audit --ignore CVE-2025-5891
+    - docker compose exec -T node pnpm audit
   allow_failure: true
 
 # ============================================================================
