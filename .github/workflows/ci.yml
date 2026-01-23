@@ -345,7 +345,9 @@ jobs:
           # Make directories writable by container users (node=1000, www-data=82)
           # This is required because bind mounts preserve host permissions
           # Include parent directories (public, not just public/build) for mkdir operations
-          chmod -R 777 tools docs public
+          # Also include vendor and node_modules so BATS tests can rm -rf them and
+          # containers can recreate them (cross-UID ownership requires 777)
+          chmod -R 777 vendor node_modules tools docs public
           # IMPORTANT: Use DOCKER_BUILDKIT=0 for all builds to ensure images are
           # available to local Docker daemon (setup-buildx-action creates a builder
           # that stores images in BuildKit cache, not local Docker)
