@@ -78,6 +78,7 @@ services:
       # TypeDoc config files (for docs generation)
       - ./typedoc.backend.json:/app/typedoc.backend.json:ro
       - ./typedoc.frontend.json:/app/typedoc.frontend.json:ro
+      - ./tsconfig.typedoc.json:/app/tsconfig.typedoc.json:ro
 
       # Markdown files for linting
       - ./.zappzarapp:/app/.zappzarapp:ro
