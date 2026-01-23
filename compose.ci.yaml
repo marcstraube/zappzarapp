@@ -260,6 +260,63 @@ services:
       --tls-key-file /etc/redis/certs/cert.key
       --tls-auth-clients no
 
+  # ═══════════════════════════════════════════════════════════════════════════
+  # DEV-TOOLS - Dedicated container for Git hooks and linting (CI version)
+  # ═══════════════════════════════════════════════════════════════════════════
+  # Required for Makefile targets: lint-node, lint-md, type-check, prettier-check, test-node
+  # ═══════════════════════════════════════════════════════════════════════════
+  dev-tools:
+    build:
+      context: .
+      dockerfile: docker/node/Dockerfile
+      target: development
+    image: ${COMPOSE_PROJECT_NAME:-zappzarapp}-dev-tools:development
+    # No profile restriction in CI - needs to be accessible for make targets
+    profiles: []
+    working_dir: /app
+    volumes:
+      # Package manager config (read-only, lockfile generated inside container)
+      - ./package.json:/app/package.json:ro
+      # NO pnpm-lock.yaml mount - single file bind mounts can't be atomically replaced
+
+      # Dependencies (bind mounts for CI)
+      - ./node_modules:/app/node_modules
+
+      # Source and Tests (read-write for lint-staged auto-fix)
+      - ./src:/app/src
+      - ./tests:/app/tests
+      - ./templates:/app/templates
+
+      # Workspace node_modules (MUST be after ./src mount)
+      - ./src/node/backend/node_modules:/app/src/node/backend/node_modules
+      - ./src/node/frontend/node_modules:/app/src/node/frontend/node_modules
+
+      # Documentation and boilerplate config
+      - ./.zappzarapp:/app/.zappzarapp
+      - ./README.md:/app/README.md
+
+      # Linting/Formatting config files
+      - ./eslint.config.js:/app/eslint.config.js:ro
+      - ./.prettierrc.json:/app/.prettierrc.json:ro
+      - ./.prettierignore:/app/.prettierignore:ro
+      - ./.markdownlint-cli2.jsonc:/app/.markdownlint-cli2.jsonc:ro
+
+      # TypeScript config (for type-check)
+      - ./tsconfig.json:/app/tsconfig.json:ro
+      - ./tsconfig.base.json:/app/tsconfig.base.json:ro
+      - ./tsconfig.build.json:/app/tsconfig.build.json:ro
+      - ./tsconfig.vitest.json:/app/tsconfig.vitest.json:ro
+      - ./vitest.config.ts:/app/vitest.config.ts:ro
+
+      # pnpm workspace config
+      - ./pnpm-workspace.yaml:/app/pnpm-workspace.yaml:ro
+    environment:
+      - TZ=${TZ:-UTC}
+      - NODE_ENV=development
+    # No entrypoint - run commands directly
+    entrypoint: []
+    command: ["echo", "dev-tools container ready"]
+
 volumes:
   # From compose.yaml (needed for PHP-FPM socket)
   php-fpm-socket:

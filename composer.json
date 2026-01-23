@@ -73,13 +73,13 @@
         }
     },
     "scripts": {
-        "test": "phpunit",
-        "analyse": "phpstan analyse",
-        "phpmd": "phpmd src/php,tests/php text phpmd.xml.dist",
-        "cs-fix": "php-cs-fixer fix",
-        "cs-check": "php-cs-fixer fix --dry-run --diff",
+        "test": "vendor/bin/phpunit",
+        "analyse": "vendor/bin/phpstan analyse",
+        "phpmd": "vendor/bin/phpmd src/php,tests/php text phpmd.xml.dist",
+        "cs-fix": "vendor/bin/php-cs-fixer fix",
+        "cs-check": "vendor/bin/php-cs-fixer fix --dry-run --diff",
         "docs": "php tools/phpdoc.phar --config=phpdoc.xml",
-        "rector-check": "rector process --dry-run",
-        "rector-fix": "rector process"
+        "rector-check": "vendor/bin/rector process --dry-run",
+        "rector-fix": "vendor/bin/rector process"
     }
 }

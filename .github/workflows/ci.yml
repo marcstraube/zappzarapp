@@ -341,7 +341,10 @@ jobs:
           [ -f composer.lock ] || echo '{}' > composer.lock
           [ -f pnpm-lock.yaml ] || touch pnpm-lock.yaml
           # Create dependency directories (compose.ci.yaml uses bind mounts for BATS tests)
-          mkdir -p vendor node_modules src/node/backend/node_modules src/node/frontend/node_modules backups/db docs/api/php docs/api/node-backend docs/api/node-frontend tools
+          mkdir -p vendor node_modules src/node/backend/node_modules src/node/frontend/node_modules backups/db docs/api/php docs/api/node-backend docs/api/node-frontend tools public/build
+          # Make directories writable by container users (node=1000, www-data=82)
+          # This is required because bind mounts preserve host permissions
+          chmod -R 777 tools docs public/build
           # IMPORTANT: Use DOCKER_BUILDKIT=0 for all builds to ensure images are
           # available to local Docker daemon (setup-buildx-action creates a builder
           # that stores images in BuildKit cache, not local Docker)
@@ -350,8 +353,8 @@ jobs:
           DOCKER_BUILDKIT=0 docker compose --profile node-backend build node-backend || true
           docker tag zappzarapp-node-backend:api zappzarapp-node-backend:latest 2>/dev/null || true
           # Build all remaining images (nginx needs NGINX_TARGET=development for :development tag)
-          # Include postgres for make up image check
-          DOCKER_BUILDKIT=0 NGINX_TARGET=development docker compose --profile postgres build php node nginx postgres
+          # Include postgres for make up image check, dev-tools for Node linting/testing
+          DOCKER_BUILDKIT=0 NGINX_TARGET=development docker compose --profile postgres build php node nginx postgres dev-tools
 
       - name: Start containers
         run: make up
