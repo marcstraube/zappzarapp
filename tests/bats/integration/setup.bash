@@ -24,8 +24,25 @@ integration_setup() {
 
     # Check if containers are already running
     if docker compose ps --status running 2>/dev/null | grep -q "nginx"; then
-        echo "# Containers already running, skipping startup" >&3
+        echo "# Containers already running" >&3
         CONTAINERS_STARTED_BY_TEST="false"
+        # CRITICAL: Restart PHP container to refresh bind mounts
+        # Earlier tests (e.g., file-creation.bats) may have deleted and recreated
+        # bind-mounted directories like vendor/. This breaks the mount in the
+        # long-running container. Restarting forces Docker to re-establish mounts.
+        echo "# Restarting PHP container to refresh bind mounts..." >&3
+        docker compose restart php 2>&1 | tail -3 >&3 || true
+        # Wait for PHP container to be healthy
+        local elapsed=0
+        while [[ $elapsed -lt 30 ]]; do
+            if docker compose exec -T php sh -c 'test -e /var/www/html/vendor/autoload.php' 2>/dev/null; then
+                echo "# PHP container ready with refreshed mounts" >&3
+                return 0
+            fi
+            sleep 2
+            elapsed=$((elapsed + 2))
+        done
+        echo "# WARNING: PHP container may not have proper bind mounts" >&3
         return 0
     fi
 
