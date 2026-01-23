@@ -35,9 +35,10 @@ services:
       # Entrypoint Script
       - ./docker/node/entrypoint.development.sh:/usr/local/bin/entrypoint.development.sh:ro
 
-      # Package manager config (read-only, lockfile generated inside container)
+      # Package manager config
       - ./package.json:/app/package.json:ro
-      # NO pnpm-lock.yaml mount - Makefile handles lockfile generation in single container run
+      # Lockfile needs write access for pnpm install to update it
+      - ./pnpm-lock.yaml:/app/pnpm-lock.yaml
 
       # Dependencies (bind mounts for CI - allows host filesystem checks in BATS tests)
       # Note: directories must be created before container startup
