@@ -29,8 +29,9 @@ teardown_file() {
 @test "make composer-install creates vendor/" {
     require_php
 
-    # Clean first if exists
-    rm -rf vendor 2>/dev/null || true
+    # Clean via Docker to handle cross-UID ownership issues in CI
+    # Host rm -rf can fail silently if files are owned by container UID
+    docker run --rm -v "$(pwd):/app" -w /app alpine:3.21 rm -rf /app/vendor 2>/dev/null || true
 
     run timeout 300 make composer-install
     assert_success
@@ -48,6 +49,11 @@ teardown_file() {
     [[ -d "vendor/composer" ]]
 }
 
+@test "make composer-install creates vendor/bin/" {
+    require_php
+    [[ -d "vendor/bin" ]]
+}
+
 # =============================================================================
 # Node Dependencies
 # =============================================================================
@@ -55,8 +61,8 @@ teardown_file() {
 @test "make pnpm-install creates node_modules/" {
     require_node
 
-    # Clean first if exists
-    rm -rf node_modules 2>/dev/null || true
+    # Clean via Docker to handle cross-UID ownership issues in CI
+    docker run --rm -v "$(pwd):/app" -w /app alpine:3.21 rm -rf /app/node_modules 2>/dev/null || true
 
     run timeout 300 make pnpm-install
     assert_success
@@ -82,8 +88,8 @@ teardown_file() {
     require_php
     require_node
 
-    # Clean first
-    rm -rf docs/api 2>/dev/null || true
+    # Clean via Docker to handle cross-UID ownership issues in CI
+    docker run --rm -v "$(pwd):/app" -w /app alpine:3.21 rm -rf /app/docs/api 2>/dev/null || true
 
     run timeout 300 make docs
     assert_success
