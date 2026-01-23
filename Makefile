@@ -2758,6 +2758,7 @@ bats-test-integration: ## Run BATS integration tests (requires running container
 		--network host \
 		--user root \
 		-e INTEGRATION_PRESET=$(INTEGRATION_PRESET) \
+		-e COMPOSE_FILE=$${COMPOSE_FILE:-} \
 		$(BATS_IMAGE) tests/bats/integration/
 	@echo -e "\033[0;32m✓ BATS integration tests complete\033[0m"
 
@@ -2774,6 +2775,7 @@ bats-test-integration-file: ## Run specific BATS integration test file (FILE=lin
 		--user root \
 		-e INTEGRATION_PRESET=$(INTEGRATION_PRESET) \
 		-e BATS_ENABLE_DESTRUCTIVE=$(BATS_ENABLE_DESTRUCTIVE) \
+		-e COMPOSE_FILE=$${COMPOSE_FILE:-} \
 		$(BATS_IMAGE) "tests/bats/integration/$(FILE)"
 
 bats-test-all: ## Run all BATS tests (unit + integration)
@@ -2801,6 +2803,7 @@ bats-test-destructive: ## Run BATS destructive tests (⚠️ WARNING: modifies d
 		--network host \
 		--user root \
 		-e BATS_ENABLE_DESTRUCTIVE=true \
+		-e COMPOSE_FILE=$${COMPOSE_FILE:-} \
 		$(BATS_IMAGE) tests/bats/integration/destructive.bats
 
 validate: ## Validate composer.json/lock and package.json/lock files
