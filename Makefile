@@ -2978,13 +2978,15 @@ security-deps: ## Scan Composer dependencies for known vulnerabilities (uses loc
 
 security-sbom: ## Generate a Software Bill of Materials (SBOM) using Trivy
 	@echo -e "\033[0;33mGenerating SBOM for PHP image...\033[0m"
+	@mkdir -p build
 	@if [ -f .env ]; then \
 		. ./.env && \
 		PROJECT=$${COMPOSE_PROJECT_NAME:-zappzarapp} && \
 		TAG=$$(docker images --format "{{.Tag}}" "$${PROJECT}-php" 2>/dev/null | grep -E "^(development|latest)$$" | head -1) && \
 		if [ -z "$$TAG" ]; then echo -e "\033[0;31mNo PHP image found (development or latest)\033[0m"; exit 1; fi && \
 		docker run --rm -v /var/run/docker.sock:/var/run/docker.sock \
-			aquasec/trivy:latest image --format cyclonedx --output build/sbom-php.json \
+			-v "$$(pwd)/build:/output" \
+			aquasec/trivy:latest image --format cyclonedx --output /output/sbom-php.json \
 			$${PROJECT}-php:$${TAG}; \
 	fi
 	@echo -e "\033[0;32mSBOM generated in build/sbom-php.json!\033[0m"
@@ -3058,6 +3060,8 @@ docs-node: docs-node-backend docs-node-frontend ## Generate all Node/TypeScript 
 
 docs-node-backend: ## Generate Node.js Backend API documentation using TypeDoc
 	@echo -e "\033[0;33mGenerating Node.js Backend API documentation...\033[0m"
+	@# Ensure output directory exists with proper permissions (cross-UID in CI)
+	@mkdir -p docs/api/node-backend && chmod 777 docs/api docs/api/node-backend 2>/dev/null || true
 	@$(DC_RUN) run --rm node pnpm run docs:backend
 	@echo -e "\033[0;33mSetting dynamic title...\033[0m"
 	@$(DC_RUN) run --rm node sh -c '\
@@ -3072,6 +3076,7 @@ docs-node-frontend: ## Generate Node.js Frontend documentation using TypeDoc
 		echo -e "\033[0;33mNo TypeScript files in src/node/frontend/ - skipping frontend docs\033[0m"; \
 	else \
 		echo -e "\033[0;33mGenerating Node.js Frontend documentation...\033[0m"; \
+		mkdir -p docs/api/node-frontend && chmod 777 docs/api docs/api/node-frontend 2>/dev/null || true; \
 		$(DC_RUN) run --rm node pnpm run docs:frontend; \
 		echo -e "\033[0;33mSetting dynamic title...\033[0m"; \
 		$(DC_RUN) run --rm node sh -c '\
