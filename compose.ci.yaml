@@ -141,6 +141,9 @@ services:
       # Configuration files
       - ./config:/var/www/html/config:ro
 
+      # Boilerplate config (needed for docs theme customization)
+      - ./.zappzarapp:/var/www/html/.zappzarapp:ro
+
       # Build outputs and docs
       - ./build:/var/www/html/build
       - ./docs:/var/www/html/docs

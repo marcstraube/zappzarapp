@@ -32,17 +32,22 @@ integration_setup() {
         # long-running container. Restarting forces Docker to re-establish mounts.
         echo "# Restarting PHP container to refresh bind mounts..." >&3
         docker compose restart php 2>&1 | tail -3 >&3 || true
-        # Wait for PHP container to be healthy
+        # Wait for PHP container to be healthy (includes PHP-FPM readiness)
         local elapsed=0
-        while [[ $elapsed -lt 30 ]]; do
-            if docker compose exec -T php sh -c 'test -e /var/www/html/vendor/autoload.php' 2>/dev/null; then
-                echo "# PHP container ready with refreshed mounts" >&3
-                return 0
+        while [[ $elapsed -lt 60 ]]; do
+            local health_status
+            health_status=$(docker inspect --format='{{.State.Health.Status}}' "$(docker compose ps -q php)" 2>/dev/null || echo "unknown")
+            if [[ "$health_status" == "healthy" ]]; then
+                # Also verify bind mounts are accessible
+                if docker compose exec -T php sh -c 'test -e /var/www/html/vendor/autoload.php' 2>/dev/null; then
+                    echo "# PHP container healthy with refreshed mounts" >&3
+                    return 0
+                fi
             fi
-            sleep 2
-            elapsed=$((elapsed + 2))
+            sleep 3
+            elapsed=$((elapsed + 3))
         done
-        echo "# WARNING: PHP container may not have proper bind mounts" >&3
+        echo "# WARNING: PHP container may not be fully healthy" >&3
         return 0
     fi
 
