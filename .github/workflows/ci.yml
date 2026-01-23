@@ -340,7 +340,8 @@ jobs:
           DOCKER_BUILDKIT=0 docker compose --profile node-backend build node-backend || true
           docker tag ${COMPOSE_PROJECT_NAME}-node-backend:api zappzarapp-node-backend:latest 2>/dev/null || true
           # Build all remaining images (nginx needs NGINX_TARGET=development for :development tag)
-          DOCKER_BUILDKIT=0 NGINX_TARGET=development docker compose build php node nginx
+          # Include postgres for make up image check
+          DOCKER_BUILDKIT=0 NGINX_TARGET=development docker compose --profile postgres build php node nginx postgres
 
       - name: Start containers
         run: make up
