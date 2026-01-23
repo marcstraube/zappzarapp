@@ -197,6 +197,17 @@ services:
       - REDIS_URL=${REDIS_URL:-rediss://redis:6379}
 
   # ═══════════════════════════════════════════════════════════════════════════
+  # NGINX SERVICE
+  # ═══════════════════════════════════════════════════════════════════════════
+
+  nginx:
+    # Force development target in CI to avoid COPY --from=zappzarapp-node-backend:latest
+    # (production target requires node-backend image which may not exist in CI)
+    build:
+      target: development
+    image: ${COMPOSE_PROJECT_NAME:-zappzarapp}-nginx:development
+
+  # ═══════════════════════════════════════════════════════════════════════════
   # DATA SERVICES (minimal overrides for CI)
   # ═══════════════════════════════════════════════════════════════════════════
 
