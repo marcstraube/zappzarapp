@@ -1,0 +1,280 @@
+# Sync GitHub Project Board status to Issue labels (opt-in)
+#
+# This workflow enables bidirectional sync between GitHub Projects V2
+# and issue labels. It polls the project board periodically and updates
+# issue labels to match the board column (Status field).
+#
+# SETUP (opt-in):
+# 1. Create a GitHub Project (user or org level)
+# 2. Add a "Status" single-select field with values like:
+#    "To Do", "In Progress", "Review", "Done"
+# 3. Set repository variable PROJECT_NUMBER to your project number
+#    (Settings → Secrets and variables → Actions → Variables)
+# 4. Optionally set PROJECT_OWNER if different from repository owner
+#
+# Without PROJECT_NUMBER set, this workflow does nothing.
+#
+# Column → Label mapping:
+#   "To Do" / "Backlog"  → removes status labels
+#   "In Progress"        → status:in-progress
+#   "Review"             → status:review
+#   "Done"               → closes the issue (removes status labels)
+
+name: Project Board Sync
+
+on:
+  schedule:
+    # Run every 5 minutes for near-real-time sync
+    - cron: '*/5 * * * *'
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Dry run (log changes without applying)'
+        required: false
+        default: 'false'
+        type: boolean
+
+# Prevent concurrent runs
+concurrency:
+  group: project-sync
+  cancel-in-progress: true
+
+jobs:
+  sync:
+    name: Sync Project → Labels
+    runs-on: ubuntu-latest
+    # Only run if PROJECT_NUMBER is configured
+    if: vars.PROJECT_NUMBER != ''
+
+    permissions:
+      issues: write
+      repository-projects: read
+
+    steps:
+      - name: Sync Project Status to Labels
+        uses: actions/github-script@v7
+        env:
+          PROJECT_NUMBER: ${{ vars.PROJECT_NUMBER }}
+          PROJECT_OWNER: ${{ vars.PROJECT_OWNER }}
+          REPO_OWNER: ${{ github.repository_owner }}
+          DRY_RUN: ${{ inputs.dry_run || 'false' }}
+        with:
+          script: |
+            const projectNumber = parseInt(process.env.PROJECT_NUMBER);
+            const projectOwner = process.env.PROJECT_OWNER || process.env.REPO_OWNER;
+            const dryRun = process.env.DRY_RUN === 'true';
+            const repo = context.repo;
+
+            console.log(`Syncing Project #${projectNumber} (owner: ${projectOwner}) to ${repo.owner}/${repo.repo}`);
+            if (dryRun) console.log('DRY RUN - no changes will be made');
+
+            // Status labels we manage
+            const statusLabels = ['status:in-progress', 'status:review', 'status:blocked'];
+
+            // Column name → label mapping (normalized)
+            const columnToLabel = {
+              'to-do': null,
+              'todo': null,
+              'backlog': null,
+              'in-progress': 'status:in-progress',
+              'in_progress': 'status:in-progress',
+              'review': 'status:review',
+              'in-review': 'status:review',
+              'done': 'CLOSE',
+              'completed': 'CLOSE'
+            };
+
+            // Query project items with their status and linked issues
+            const query = `
+              query($owner: String!, $number: Int!, $cursor: String) {
+                user(login: $owner) {
+                  projectV2(number: $number) {
+                    items(first: 100, after: $cursor) {
+                      pageInfo {
+                        hasNextPage
+                        endCursor
+                      }
+                      nodes {
+                        content {
+                          ... on Issue {
+                            number
+                            state
+                            repository {
+                              owner { login }
+                              name
+                            }
+                            labels(first: 20) {
+                              nodes { name }
+                            }
+                          }
+                        }
+                        fieldValues(first: 10) {
+                          nodes {
+                            ... on ProjectV2ItemFieldSingleSelectValue {
+                              name
+                              field { ... on ProjectV2SingleSelectField { name } }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            `;
+
+            // Also try organization query if user query fails
+            const orgQuery = query.replace('user(login: $owner)', 'organization(login: $owner)');
+
+            let items = [];
+            let cursor = null;
+            let hasNextPage = true;
+            let useOrgQuery = false;
+
+            // Fetch all project items (paginated)
+            while (hasNextPage) {
+              let result;
+              try {
+                result = await github.graphql(useOrgQuery ? orgQuery : query, {
+                  owner: projectOwner,
+                  number: projectNumber,
+                  cursor
+                });
+              } catch (e) {
+                if (!useOrgQuery && e.message.includes('Could not resolve')) {
+                  // Try organization query
+                  useOrgQuery = true;
+                  result = await github.graphql(orgQuery, {
+                    owner: projectOwner,
+                    number: projectNumber,
+                    cursor
+                  });
+                } else {
+                  throw e;
+                }
+              }
+
+              const project = useOrgQuery
+                ? result.organization?.projectV2
+                : result.user?.projectV2;
+
+              if (!project) {
+                console.log('Project not found or not accessible');
+                return;
+              }
+
+              items = items.concat(project.items.nodes);
+              hasNextPage = project.items.pageInfo.hasNextPage;
+              cursor = project.items.pageInfo.endCursor;
+            }
+
+            console.log(`Found ${items.length} items in project`);
+
+            let synced = 0;
+            let skipped = 0;
+
+            for (const item of items) {
+              // Skip non-issues or issues from other repos
+              if (!item.content?.number) continue;
+              if (item.content.repository?.owner?.login !== repo.owner) continue;
+              if (item.content.repository?.name !== repo.repo) continue;
+
+              const issueNumber = item.content.number;
+              const issueState = item.content.state;
+              const currentLabels = item.content.labels.nodes.map(l => l.name);
+
+              // Find Status field value
+              let statusValue = null;
+              for (const fv of item.fieldValues.nodes) {
+                if (fv?.field?.name === 'Status') {
+                  statusValue = fv.name;
+                  break;
+                }
+              }
+
+              if (!statusValue) {
+                skipped++;
+                continue;
+              }
+
+              const normalizedStatus = statusValue.toLowerCase().replace(/\s+/g, '-');
+              const targetLabel = columnToLabel[normalizedStatus];
+
+              // Determine required changes
+              const currentStatusLabels = currentLabels.filter(l => statusLabels.includes(l));
+              let labelsToAdd = [];
+              let labelsToRemove = [];
+              let shouldClose = false;
+
+              if (targetLabel === 'CLOSE') {
+                // Done column - close issue and remove status labels
+                shouldClose = issueState === 'OPEN';
+                labelsToRemove = currentStatusLabels;
+              } else if (targetLabel === null) {
+                // To Do/Backlog - remove all status labels
+                labelsToRemove = currentStatusLabels;
+              } else {
+                // Specific status - add target, remove others
+                if (!currentLabels.includes(targetLabel)) {
+                  labelsToAdd = [targetLabel];
+                }
+                labelsToRemove = currentStatusLabels.filter(l => l !== targetLabel);
+              }
+
+              // Skip if no changes needed
+              if (labelsToAdd.length === 0 && labelsToRemove.length === 0 && !shouldClose) {
+                skipped++;
+                continue;
+              }
+
+              console.log(`#${issueNumber}: "${statusValue}" → ${targetLabel || '(none)'}`);
+              if (labelsToAdd.length) console.log(`  + ${labelsToAdd.join(', ')}`);
+              if (labelsToRemove.length) console.log(`  - ${labelsToRemove.join(', ')}`);
+              if (shouldClose) console.log(`  → Close issue`);
+
+              if (dryRun) {
+                synced++;
+                continue;
+              }
+
+              // Apply changes
+              for (const label of labelsToRemove) {
+                try {
+                  await github.rest.issues.removeLabel({
+                    owner: repo.owner,
+                    repo: repo.repo,
+                    issue_number: issueNumber,
+                    name: label
+                  });
+                } catch (e) {
+                  // Label might not exist
+                }
+              }
+
+              if (labelsToAdd.length > 0) {
+                try {
+                  await github.rest.issues.addLabels({
+                    owner: repo.owner,
+                    repo: repo.repo,
+                    issue_number: issueNumber,
+                    labels: labelsToAdd
+                  });
+                } catch (e) {
+                  console.log(`  Warning: Could not add labels: ${e.message}`);
+                }
+              }
+
+              if (shouldClose) {
+                await github.rest.issues.update({
+                  owner: repo.owner,
+                  repo: repo.repo,
+                  issue_number: issueNumber,
+                  state: 'closed',
+                  state_reason: 'completed'
+                });
+              }
+
+              synced++;
+            }
+
+            console.log(`\nSummary: ${synced} synced, ${skipped} skipped (no changes needed)`);
