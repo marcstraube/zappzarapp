@@ -115,10 +115,10 @@ Thumbs.db
 .zappzarapp/ai/config.local.md
 
 # Project AI knowledge (created by make setup):
-# - .ai/BACKLOG.md (team backlog)
 # - .ai/DECISIONS.md (ADRs)
 # - .ai/LEARNINGS.md (project learnings)
 # - .ai/REFERENCES.md (documentation links)
+# Tasks managed via /tasks command (GitHub/GitLab Issues)
 
 # Gemini CLI - Generated from Claude via: make ai-commands-sync FROM=claude TO=gemini
 # Not committed - generate with: make ai-sync

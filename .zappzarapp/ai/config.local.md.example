@@ -13,5 +13,5 @@ personal_knowledge_path: ~/.local/share/zappzarapp/
 
 Default: `~/.local/share/zappzarapp/`
 
-The personal layer stores private notes (BACKLOG.md, LEARNINGS.md, etc.)
-that are not shared with the team.
+The personal layer stores private notes (LEARNINGS.md, etc.)
+that are not shared with the team. Tasks are managed via `/tasks --private`.

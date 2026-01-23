@@ -220,9 +220,8 @@ setup: ## Create directories, install dev dependencies and ensure structure
 	fi
 	@chmod 700 backups backups/* 2>/dev/null || true
 
-	# Project AI knowledge directory (team backlog, decisions, learnings)
-	@mkdir -p .ai .ai/backlog
-	@if [ ! -f .ai/BACKLOG.md ]; then cp .zappzarapp/ai/templates/BACKLOG.md .ai/; fi
+	# Project AI knowledge directory (decisions, learnings, references)
+	@mkdir -p .ai
 	@if [ ! -f .ai/LEARNINGS.md ]; then cp .zappzarapp/ai/templates/LEARNINGS.md .ai/; fi
 	@if [ ! -f .ai/DECISIONS.md ]; then cp .zappzarapp/ai/templates/DECISIONS.md .ai/; fi
 	@if [ ! -f .ai/REFERENCES.md ]; then cp .zappzarapp/ai/templates/REFERENCES.md .ai/; fi

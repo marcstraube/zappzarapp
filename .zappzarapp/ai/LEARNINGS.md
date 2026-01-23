@@ -419,7 +419,7 @@ make build && make up
 1. Implement change
 2. Run relevant checks/tests (e.g., `make lint-node`, execute new make targets)
 3. Verify functionality (health endpoints, manual tests)
-4. When removing backlog item → add changelog entry immediately (keeps context)
+4. When closing task → add changelog entry immediately (keeps context)
 5. Only then report completion to user
 
 **Important:** Database password or credential changes require fresh

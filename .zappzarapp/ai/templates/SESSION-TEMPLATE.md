@@ -30,5 +30,5 @@ Session-specific links, branches, commits:
 
 - Learnings → `.ai/LEARNINGS.md` (or `.zappzarapp/ai/` for boilerplate)
 - Decisions → `.ai/DECISIONS.md`
-- Open Items → `.ai/BACKLOG.md`
+- Open Items → `/tasks --add` (GitHub/GitLab Issues)
 - References → `.ai/REFERENCES.md`

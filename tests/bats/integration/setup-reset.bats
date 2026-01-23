@@ -78,10 +78,6 @@ setup() {
     [[ -d ".ai" ]]
 }
 
-@test "[Phase 2] Verify: .ai/BACKLOG.md created" {
-    [[ -f ".ai/BACKLOG.md" ]]
-}
-
 @test "[Phase 2] Verify: .ai/LEARNINGS.md created" {
     [[ -f ".ai/LEARNINGS.md" ]]
 }
@@ -219,7 +215,7 @@ setup() {
 
 @test "[Phase 4] Verify: .ai/ still exists after double setup" {
     [[ -d ".ai" ]]
-    [[ -f ".ai/BACKLOG.md" ]]
+    [[ -f ".ai/LEARNINGS.md" ]]
 }
 
 # =============================================================================

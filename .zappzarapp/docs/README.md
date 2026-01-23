@@ -93,7 +93,6 @@ directories):
 ```text
 .zappzarapp/
 ├── ai/                       # AI knowledge files
-│   ├── BACKLOG.md
 │   ├── DECISIONS.md
 │   ├── LEARNINGS.md
 │   └── REFERENCES.md
