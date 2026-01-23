@@ -30,9 +30,6 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Build goss utility image (dependency)
-        run: docker build -t zappzarapp-goss:latest -f docker/goss/Dockerfile .
-
       - name: Initialize environment
         run: |
           make init
@@ -80,9 +77,6 @@ jobs:
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
-
-      - name: Build goss utility image (dependency)
-        run: docker build -t zappzarapp-goss:latest -f docker/goss/Dockerfile .
 
       - name: Initialize environment
         run: |
@@ -137,9 +131,6 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Build goss utility image (dependency)
-        run: docker build -t zappzarapp-goss:latest -f docker/goss/Dockerfile .
-
       - name: Initialize environment
         run: |
           make init
@@ -190,9 +181,6 @@ jobs:
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
-
-      - name: Build goss utility image (dependency)
-        run: docker build -t zappzarapp-goss:latest -f docker/goss/Dockerfile .
 
       - name: Initialize environment
         run: |
@@ -397,9 +385,6 @@ jobs:
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
-
-      - name: Build goss utility image (dependency)
-        run: docker build -t zappzarapp-goss:latest -f docker/goss/Dockerfile .
 
       - name: Initialize environment
         run: |
