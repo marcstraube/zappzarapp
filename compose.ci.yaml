@@ -73,6 +73,10 @@ services:
       - ./.markdownlint-cli2.jsonc:/app/.markdownlint-cli2.jsonc:ro
       - ./.depcheckrc.json:/app/.depcheckrc.json:ro
 
+      # TypeDoc config files (for docs generation)
+      - ./typedoc.backend.json:/app/typedoc.backend.json:ro
+      - ./typedoc.frontend.json:/app/typedoc.frontend.json:ro
+
       # Markdown files for linting
       - ./.zappzarapp:/app/.zappzarapp:ro
       - ./README.md:/app/README.md:ro
@@ -148,6 +152,7 @@ services:
       - ./.php-cs-fixer.dist.php:/var/www/html/.php-cs-fixer.dist.php:ro
       - ./phpunit.xml.dist:/var/www/html/phpunit.xml.dist:ro
       - ./rector.php:/var/www/html/rector.php:ro
+      - ./phpdoc.xml:/var/www/html/phpdoc.xml:ro
 
       # PHP Configuration (Read-Only)
       - ./docker/php/php.ini:/usr/local/etc/php/php.ini:ro
