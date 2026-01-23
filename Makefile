@@ -1274,9 +1274,12 @@ pnpm-install: ## Install Node.js dependencies (Docker - guaranteed consistency)
 		docker run --rm -v "$(PWD):/app" -w /app $(ALPINE_IMAGE) sh -c \
 			"rm -rf pnpm-lock.yaml && touch pnpm-lock.yaml && chown $${USER_ID:-1000}:$${GROUP_ID:-1000} pnpm-lock.yaml"; \
 	fi
-	@# If lockfile exists and is valid, use --frozen-lockfile for consistency
-	@# If lockfile is empty/missing (CI without mount), install normally (pnpm generates lockfile)
-	@if [ -s pnpm-lock.yaml ]; then \
+	@# If lockfile exists and is valid AND not in CI mode, use --frozen-lockfile
+	@# In CI (compose.ci.yaml), lockfile is not mounted so always use normal install
+	@if echo "$${COMPOSE_FILE:-}" | grep -q "compose.ci.yaml"; then \
+		echo -e "\033[0;33m  CI mode: lockfile not mounted, generating inside container...\033[0m"; \
+		$(DC_RUN) run --rm --no-TTY --user root --entrypoint "" -e CI=true node pnpm install; \
+	elif [ -s pnpm-lock.yaml ]; then \
 		$(DC_RUN) run --rm --no-TTY --user root --entrypoint "" -e CI=true node pnpm install --frozen-lockfile; \
 	else \
 		echo -e "\033[0;33m  No valid lockfile found, generating...\033[0m"; \
