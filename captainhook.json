@@ -122,7 +122,7 @@
         "description": "Fix root config file permissions (644)"
       },
       {
-        "action": "find documentation -type f -name '*.md' -not -perm 644 -exec chmod 644 {} +",
+        "action": "find .zappzarapp/docs -type f -name '*.md' -not -perm 644 -exec chmod 644 {} +",
         "options": [],
         "type": "cli",
         "description": "Fix documentation file permissions (644)"
@@ -145,7 +145,7 @@
         "description": "Fix root config file permissions (644)"
       },
       {
-        "action": "find documentation -type f -name '*.md' -not -perm 644 -exec chmod 644 {} +",
+        "action": "find .zappzarapp/docs -type f -name '*.md' -not -perm 644 -exec chmod 644 {} +",
         "options": [],
         "type": "cli",
         "description": "Fix documentation file permissions (644)"
