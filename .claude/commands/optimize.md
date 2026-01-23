@@ -5,7 +5,10 @@ allowed-tools:
   Read, Write, Edit, Grep, Glob, Bash(date:*), Bash(git:*), Bash(wc:*),
   Bash(ls:*), Bash(jq:*)
 argument-hint:
-  [--config | --learnings | --commands | --sessions | --settings | --all]
+  [
+    --config | --template | --terminology | --docs | --learnings | --commands |
+    --sessions | --settings | --all,
+  ]
 ---
 
 # Self-Optimization
@@ -17,6 +20,9 @@ Analyze and improve Claude's own configuration for better effectiveness.
 Parse `$ARGUMENTS`:
 
 - `--config`: Optimize CLAUDE.md (structure, clarity, redundancy)
+- `--template`: Sync check CLAUDE.md ↔ CLAUDE.template.md
+- `--terminology`: Find outdated terms across all AI config files
+- `--docs`: Check AI-INTEGRATION.md consistency with actual config
 - `--learnings`: Clean up and reorganize LEARNINGS.md
 - `--commands`: Audit slash commands (usefulness, gaps, redundancy)
 - `--sessions`: Archive old sessions, clean up session directory
@@ -109,9 +115,183 @@ Clarity:
 
 ---
 
-## Phase 2: Learnings Optimization (`--learnings`)
+## Phase 2: Template Sync (`--template`)
 
-### 2.1 Duplicate Detection
+Compare CLAUDE.md with CLAUDE.template.md to ensure consistency.
+
+### 2.1 Structure Comparison
+
+```bash
+# Extract section headers from both files
+grep -E '^#{1,3} ' .claude/CLAUDE.md > /tmp/claude-sections.txt
+grep -E '^#{1,3} ' .zappzarapp/CLAUDE.template.md > /tmp/template-sections.txt
+diff /tmp/claude-sections.txt /tmp/template-sections.txt
+```
+
+### 2.2 Check for Drift
+
+| Check            | Description                                  |
+| ---------------- | -------------------------------------------- |
+| Missing sections | Template has section that CLAUDE.md lacks    |
+| Extra sections   | CLAUDE.md has project-specific sections (OK) |
+| Renamed sections | Same content, different header               |
+| Outdated content | Template not updated after CLAUDE.md changes |
+
+### 2.3 Sync Direction
+
+- **CLAUDE.md → Template**: Generic improvements should propagate
+- **Template → CLAUDE.md**: Usually not (template is simpler)
+- **Boilerplate-specific**: Keep in CLAUDE.md only
+
+### 2.4 Output Format
+
+```text
+Template Sync Report
+════════════════════
+
+Structure Diff:
+  CLAUDE.md sections: 18
+  Template sections: 14
+
+  [OK] Template is subset of CLAUDE.md
+  [DRIFT] "Knowledge File Paths" updated in CLAUDE.md but not template
+  [DRIFT] "Error Prevention" simplified in CLAUDE.md, template outdated
+
+Content Drift:
+  - Session Auto-Start: Minor wording differences (OK)
+  - Agent-Workflow: Template missing "Project context" line
+  - Git & Commits: Template has old workflow diagram
+
+Recommendations:
+  [SYNC] Update template "Agent-Workflow" section
+  [SYNC] Update template "Git & Commits" section
+  [SKIP] "Error Prevention" is boilerplate-specific
+```
+
+---
+
+## Phase 3: Terminology Check (`--terminology`)
+
+Find outdated or inconsistent terms across all AI configuration files.
+
+### 3.1 Files to Scan
+
+```bash
+# All AI-related config files
+find .claude -name "*.md" -o -name "*.json"
+find .zappzarapp -name "*.md" | grep -E '(ai/|CLAUDE|AI-INTEGRATION)'
+```
+
+### 3.2 Term Registry
+
+Maintain a list of deprecated → current terms:
+
+| Deprecated | Current   | Context                |
+| ---------- | --------- | ---------------------- |
+| BACKLOG    | /tasks    | Task management        |
+| 3-layer    | 2-layer   | Knowledge architecture |
+| --fast     | --no-plan | Task arguments         |
+| --review   | --plan    | Task arguments         |
+
+### 3.3 Language Check
+
+Find non-English terms in English-only files:
+
+```bash
+# Common German terms that slip through
+grep -rniE '\b(Dialekt|Datei|Ordner|Befehl|Einstellung)\b' .claude/ .zappzarapp/
+```
+
+### 3.4 Output Format
+
+```text
+Terminology Check Report
+════════════════════════
+
+Deprecated Terms Found:
+  .claude/agents/workflow.md:45 - "BACKLOG" → should be "/tasks"
+  .zappzarapp/docs/AI-INTEGRATION.md:89 - "3-layer" → should be "2-layer"
+
+Language Issues:
+  .zappzarapp/standards/sql.md:12 - "Dialekte" → should be "Dialects"
+
+Inconsistent Usage:
+  "task" vs "tasks" - 3 files use singular, 5 use plural
+
+Actions:
+  [1] Auto-fix deprecated terms (creates backup)
+  [2] Review each manually
+  [3] Skip terminology check
+```
+
+---
+
+## Phase 4: Documentation Sync (`--docs`)
+
+Ensure AI-INTEGRATION.md reflects actual configuration.
+
+### 4.1 Cross-Reference Checks
+
+| AI-INTEGRATION.md Section | Verify Against                 |
+| ------------------------- | ------------------------------ |
+| Supported Tools           | Actual tool configs exist      |
+| Layer Architecture        | CLAUDE.md Knowledge File Paths |
+| Slash Commands table      | .claude/commands/\*.md         |
+| Agent Workflow            | .claude/agents/workflow.md     |
+| Settings Structure        | .claude/settings.json          |
+
+### 4.2 Scope Table Sync
+
+Compare Agent Workflow scope table in AI-INTEGRATION.md with workflow.md:
+
+```bash
+# Extract scope tables
+grep -A10 "Scope.*Trigger" .zappzarapp/docs/development/AI-INTEGRATION.md
+grep -A10 "Scope.*Trigger" .claude/agents/workflow.md
+```
+
+### 4.3 Command List Sync
+
+```bash
+# Commands in AI-INTEGRATION.md
+grep -E '^\| `/[a-z-]+`' .zappzarapp/docs/development/AI-INTEGRATION.md
+
+# Actual commands
+ls .claude/commands/*.md | xargs -I{} basename {} .md
+```
+
+### 4.4 Output Format
+
+```text
+Documentation Sync Report
+═════════════════════════
+
+AI-INTEGRATION.md vs Actual Config:
+
+Slash Commands:
+  [OK] /status - documented and exists
+  [OK] /tasks - documented and exists
+  [MISS] /optimize - exists but not in docs table
+  [STALE] /backlog - in docs but command removed
+
+Agent Workflow:
+  [DRIFT] Scope table missing "Trivial" row
+  [DRIFT] 4-Agent-Model shows B1-B3, should be B1-B4
+
+Layer Architecture:
+  [OK] 2-layer matches CLAUDE.md
+
+Actions:
+  [1] Update AI-INTEGRATION.md automatically
+  [2] Review changes manually
+  [3] Skip documentation sync
+```
+
+---
+
+## Phase 5: Learnings Optimization (`--learnings`)
+
+### 5.1 Duplicate Detection
 
 Find semantic duplicates:
 
@@ -119,7 +299,7 @@ Find semantic duplicates:
 - Learnings that evolved (keep latest, archive old)
 - Overlapping information across categories
 
-### 2.2 Category Review
+### 5.2 Category Review
 
 For each category in LEARNINGS.md:
 
@@ -127,7 +307,7 @@ For each category in LEARNINGS.md:
 - Learnings correctly categorized?
 - Any orphaned learnings (no category)?
 
-### 2.3 Freshness Check
+### 5.3 Freshness Check
 
 For each learning:
 
@@ -135,7 +315,7 @@ For each learning:
 - Still applicable? (project structure may have changed)
 - Source still exists? (session log reference valid?)
 
-### 2.4 Consolidation Strategy
+### 5.4 Consolidation Strategy
 
 When learnings overlap:
 
@@ -144,7 +324,7 @@ When learnings overlap:
 3. **Update "Last Updated" with merge date**
 4. **Archive originals to `.claude/archive/learnings-{date}.md`**
 
-### 2.5 Output Format
+### 5.5 Output Format
 
 ```text
 Learnings Optimization Report
@@ -173,9 +353,9 @@ Actions:
 
 ---
 
-## Phase 3: Commands Audit (`--commands`)
+## Phase 6: Commands Audit (`--commands`)
 
-### 3.1 Usage Analysis
+### 6.1 Usage Analysis
 
 Scan session logs for command usage:
 
@@ -200,7 +380,7 @@ Command Usage (from session logs)
    0  /sync-check       ← Never used
 ```
 
-### 3.2 Redundancy Check
+### 6.2 Redundancy Check
 
 Identify overlapping commands:
 
@@ -208,7 +388,7 @@ Identify overlapping commands:
 - `/docs-audit` vs `/docs-review` (similar purpose)
 - `/quality-audit` vs `/security-audit` (could be one with flags?)
 
-### 3.3 Gap Analysis
+### 6.3 Gap Analysis
 
 What's missing based on actual workflow?
 
@@ -216,7 +396,7 @@ What's missing based on actual workflow?
 - Frequently typed bash commands
 - Repetitive multi-step processes
 
-### 3.4 Command Health
+### 6.4 Command Health
 
 For each command, check:
 
@@ -225,7 +405,7 @@ For each command, check:
 - [ ] Prompt clear and complete?
 - [ ] Works with current project structure?
 
-### 3.5 Recommendations
+### 6.5 Recommendations
 
 ```text
 Commands Audit Report
@@ -250,9 +430,9 @@ Structural Issues:
 
 ---
 
-## Phase 4: Sessions Cleanup (`--sessions`)
+## Phase 7: Sessions Cleanup (`--sessions`)
 
-### 4.1 Session Inventory
+### 7.1 Session Inventory
 
 ```bash
 # List sessions with age and size
@@ -260,7 +440,7 @@ ls -lth .claude/sessions/session-*.md
 wc -l .claude/sessions/session-*.md
 ```
 
-### 4.2 Archival Criteria
+### 7.2 Archival Criteria
 
 Sessions older than 30 days:
 
@@ -271,7 +451,7 @@ Sessions older than 30 days:
 2. Create condensed archive entry
 3. Move original to `.claude/archive/sessions/`
 
-### 4.3 Integrity Check
+### 7.3 Integrity Check
 
 Before archiving, verify:
 
@@ -279,7 +459,7 @@ Before archiving, verify:
 - [ ] Open items captured as tasks?
 - [ ] Summary present?
 
-### 4.4 Archive Format
+### 7.4 Archive Format
 
 Create `.claude/archive/sessions-{year}.md`:
 
@@ -300,7 +480,7 @@ Create `.claude/archive/sessions-{year}.md`:
 ...
 ```
 
-### 4.5 Cleanup Actions
+### 7.5 Cleanup Actions
 
 ```text
 Sessions Cleanup Report
@@ -323,18 +503,18 @@ Actions:
 
 ---
 
-## Phase 5: Settings Optimization (`--settings`)
+## Phase 8: Settings Optimization (`--settings`)
 
 Analyze and improve Claude Code settings files.
 
-### 5.1 File Overview
+### 8.1 File Overview
 
 | File                  | Purpose                                | Committed |
 | --------------------- | -------------------------------------- | --------- |
 | `settings.json`       | Shared team settings (hooks)           | Yes       |
 | `settings.local.json` | Personal settings (permissions, hooks) | No        |
 
-### 5.2 Permissions Analysis
+### 8.2 Permissions Analysis
 
 **File Responsibilities:**
 
@@ -385,7 +565,7 @@ Analyze and improve Claude Code settings files.
 - Logical grouping (file ops, git, docker, etc.)
 - Alphabetical within groups for readability
 
-### 5.3 Hooks Analysis
+### 8.3 Hooks Analysis
 
 For both `settings.json` and `settings.local.json`:
 
@@ -410,7 +590,7 @@ For both `settings.json` and `settings.local.json`:
 - Common mistakes not caught by hooks?
 - Workflow improvements possible?
 
-### 5.4 Consistency Check
+### 8.4 Consistency Check
 
 Between `settings.json` and `settings.local.json`:
 
@@ -418,7 +598,7 @@ Between `settings.json` and `settings.local.json`:
 - Team hooks overridden locally without reason?
 - Local hooks that should be shared?
 
-### 5.5 Best Practices Audit
+### 8.5 Best Practices Audit
 
 **Permissions:**
 
@@ -436,7 +616,7 @@ Between `settings.json` and `settings.local.json`:
 [STALE] Hook references removed script path
 ```
 
-### 5.6 Output Format
+### 8.6 Output Format
 
 ```text
 Settings Optimization Report
@@ -471,7 +651,7 @@ Actions:
   [4] Skip settings optimization
 ```
 
-### 5.7 Optimization Actions
+### 8.7 Optimization Actions
 
 **Safe auto-fixes (with confirmation):**
 
@@ -491,15 +671,18 @@ documentation of commonly used commands.
 
 ---
 
-## Phase 6: Full Optimization (`--all`)
+## Phase 9: Full Optimization (`--all`)
 
 Run all phases sequentially:
 
 1. CLAUDE.md optimization
-2. Learnings cleanup
-3. Commands audit
-4. Sessions archival
-5. Settings optimization
+2. Template sync
+3. Terminology check
+4. Documentation sync
+5. Learnings cleanup
+6. Commands audit
+7. Sessions archival
+8. Settings optimization
 
 Generate combined report.
 

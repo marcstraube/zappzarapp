@@ -187,7 +187,7 @@ Available commands in `.claude/commands/`:
 | `/audit`      | Project audit (quality, security, docs)        |
 | `/learnings`  | View and manage project learnings              |
 | `/sync-check` | Verify config file synchronization             |
-| `/optimize`   | Self-optimization of config and commands       |
+| `/optimize`   | Self-optimization of config, docs, terminology |
 
 ### Task Management with /tasks
 
@@ -230,6 +230,31 @@ Issues, plus local file fallback.
 ```bash
 make ai-setup  # Auto-detects GitHub/GitLab, creates labels + milestones
 ```
+
+### Self-Optimization with /optimize
+
+The `/optimize` command analyzes and improves Claude's configuration.
+
+**Phases:**
+
+| Phase | Argument        | Purpose                                   |
+| ----- | --------------- | ----------------------------------------- |
+| 1     | `--config`      | CLAUDE.md structure, redundancy, clarity  |
+| 2     | `--template`    | Sync CLAUDE.md ↔ CLAUDE.template.md       |
+| 3     | `--terminology` | Find outdated terms across all files      |
+| 4     | `--docs`        | Sync AI-INTEGRATION.md with actual config |
+| 5     | `--learnings`   | Clean up LEARNINGS.md                     |
+| 6     | `--commands`    | Audit slash commands                      |
+| 7     | `--sessions`    | Archive old sessions                      |
+| 8     | `--settings`    | Optimize settings.json                    |
+| 9     | `--all`         | Run all phases                            |
+
+**Key Features:**
+
+- **Template drift detection**: Finds when CLAUDE.md changes aren't in template
+- **Terminology registry**: Tracks deprecated terms (e.g., BACKLOG → /tasks)
+- **Language check**: Finds non-English terms in English-only files
+- **Cross-file consistency**: Verifies docs match actual configuration
 
 ## Agent Workflow
 
