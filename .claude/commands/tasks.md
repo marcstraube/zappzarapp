@@ -8,56 +8,96 @@ allowed-tools:
   Bash(glab issue:*), Bash(glab label:*), Bash(glab milestone:*), Bash(glab
   api:*), Bash(glab auth:*), AskUserQuestion
 argument-hint:
-  --add [--private] | --list [--private] [--milestone <name>] | --choose
-  [--plan|--no-plan] | --milestone <name> <task> | --defer <task> | --close
-  <task> | --add-label <labels> <task> | --remove-label <labels> <task> |
-  --reprioritize
+  --add [--zappzarapp|--upstream|--private] | --list [--all|--zappzarapp|
+  --upstream|--private] [--milestone <name>] | --choose [--plan|--no-plan] |
+  --milestone <name> <task> | --defer <task> | --close <task> | --add-label
+  <labels> <task> | --remove-label <labels> <task> | --reprioritize
 ---
 
 # Task Management
 
-Manage project tasks with GitHub Issues integration and local fallback.
+Manage project tasks with a 4-tier storage model following Git conventions.
 
-## Storage Mode Detection
+## 4-Tier Storage Model
 
-**IMPORTANT:** Before processing any command, detect storage mode and platform.
+Tasks can be stored at different levels, following the fork chain:
 
-### Step 0: Detect Platform and Storage Mode
-
-```bash
-# Check platform via remote URL
-REMOTE_URL=$(git remote get-url origin 2>/dev/null)
-
-# GitHub?
-echo "$REMOTE_URL" | grep -qE 'github\.com' && PLATFORM="github"
-
-# GitLab?
-echo "$REMOTE_URL" | grep -qE 'gitlab\.com|gitlab\.' && PLATFORM="gitlab"
-
-# Upstream zappzarapp?
-echo "$REMOTE_URL" | grep -qE '(github|gitlab)\.com[:/]marcstraube/zappzarapp' && IS_UPSTREAM=true
+```text
+marcstraube/zappzarapp          ← --zappzarapp (Boilerplate, hardcoded)
+    ↓ clone
+user-a/my-project               ← --upstream (upstream remote)
+    ↓ fork
+user-b/my-project               ← --repo / default (origin remote)
+    ↓
+~/.local/share/zappzarapp/      ← --private (local, not shared)
 ```
 
-**Decision tree:**
+| Flag           | Git Remote  | Target                       | Use Case                        |
+| -------------- | ----------- | ---------------------------- | ------------------------------- |
+| `--zappzarapp` | (hardcoded) | `marcstraube/zappzarapp`     | Feature requests to boilerplate |
+| `--upstream`   | `upstream`  | Configured upstream repo     | Contribute to original project  |
+| `--repo`       | `origin`    | Your repo (default)          | Your project tasks              |
+| `--private`    | —           | `~/.local/share/zappzarapp/` | Personal, offline tasks         |
 
-1. If `--private` flag → **Local Mode** (`~/.local/share/zappzarapp/`)
-2. Else if upstream zappzarapp AND no `.claude/config.local.md`: → **Remote
-   Mode** (GitHub Issues or GitLab Issues, depending on platform)
-3. Else if `.claude/config.local.md` exists → Check config for
-   `Storage: github|gitlab|local`
-4. Else → **Local Mode** (`.ai/`)
+**Default:** `--repo` (origin remote) — where you push, you track tasks.
 
-**Platform CLI prerequisites:**
+---
+
+## Storage Detection
+
+**IMPORTANT:** Before processing any command, detect target and platform.
+
+### Step 0: Detect Target Repository
 
 ```bash
-# GitHub
-gh auth status
-
-# GitLab
-glab auth status
+# Determine target based on flags
+if [[ "$ARGUMENTS" == *"--zappzarapp"* ]]; then
+  TARGET_REPO="marcstraube/zappzarapp"
+  TARGET_NAME="zappzarapp"
+  # TODO: Once zappzarapp is published with a GitHub Project Board,
+  # set PROJECT_NUMBER here for --zappzarapp to enable board sync
+elif [[ "$ARGUMENTS" == *"--upstream"* ]]; then
+  TARGET_REPO=$(git remote get-url upstream 2>/dev/null | sed -E 's|.*[:/]([^/]+/[^/]+)\.git$|\1|; s|.*[:/]([^/]+/[^/]+)$|\1|')
+  TARGET_NAME="upstream"
+elif [[ "$ARGUMENTS" == *"--private"* ]]; then
+  TARGET_REPO=""
+  TARGET_NAME="private"
+else
+  # Default: origin (--repo)
+  TARGET_REPO=$(git remote get-url origin 2>/dev/null | sed -E 's|.*[:/]([^/]+/[^/]+)\.git$|\1|; s|.*[:/]([^/]+/[^/]+)$|\1|')
+  TARGET_NAME="repo"
+fi
 ```
 
-If not authenticated, inform user to run `gh auth login` or `glab auth login`.
+### Step 1: Detect Platform
+
+```bash
+if [[ -n "$TARGET_REPO" ]]; then
+  # Check platform from repo URL or config
+  REMOTE_URL=$(git remote get-url origin 2>/dev/null)
+
+  echo "$REMOTE_URL" | grep -qE 'github\.com' && PLATFORM="github"
+  echo "$REMOTE_URL" | grep -qE 'gitlab\.com|gitlab\.' && PLATFORM="gitlab"
+fi
+```
+
+### Step 2: Verify Access
+
+```bash
+# For remote targets, verify CLI authentication
+if [[ "$PLATFORM" == "github" ]]; then
+  gh auth status || echo "Run: gh auth login"
+elif [[ "$PLATFORM" == "gitlab" ]]; then
+  glab auth status || echo "Run: glab auth login"
+fi
+
+# For --upstream, verify remote exists
+if [[ "$TARGET_NAME" == "upstream" && -z "$TARGET_REPO" ]]; then
+  echo "No upstream remote configured."
+  echo "Add with: git remote add upstream <url>"
+  exit 1
+fi
+```
 
 ### Platform Differences
 
@@ -74,8 +114,17 @@ If not authenticated, inform user to run `gh auth login` or `glab auth login`.
 
 Parse `$ARGUMENTS`:
 
-- `--add [--private]`: Add a new task
-- `--list [--private] [--milestone <name>]`: List tasks
+**Target flags (mutually exclusive):**
+
+- `--zappzarapp`: Target marcstraube/zappzarapp
+- `--upstream`: Target upstream remote
+- `--repo`: Target origin remote (default, implicit)
+- `--private`: Target local storage
+
+**Action flags:**
+
+- `--add`: Add a new task
+- `--list [--all]`: List tasks (--all shows all tiers)
 - `--choose [--plan|--no-plan]`: Select and start a task
 - `--milestone <name> <task>`: Assign task to milestone
 - `--defer <task>`: Move task to "Backlog" milestone
@@ -151,21 +200,19 @@ When configured, tasks sync bidirectionally with a Kanban board.
 
 ### GitHub Projects
 
-Requires explicit configuration and a GitHub Action for bidirectional sync.
+GitHub Projects V2 exist at User/Org level and can be linked to repositories.
 
 **Configuration** (in `.claude/config.local.md`):
 
 ```markdown
 ## Tasks
 
-- Storage: github
-- Repository: user/repo
-- Project: "Project Board Name"
+- Projects:
+  - repo: "My Project Board"
+  - upstream: ""
 ```
 
-If `Project` is empty or missing, no Project sync occurs.
-
-**Sync mechanism:** `.github/workflows/project-sync.yml`
+If Project is empty or missing, no Project sync occurs.
 
 ### GitLab Issue Boards
 
@@ -181,26 +228,19 @@ GitLab Boards are **label-based by default** — no extra configuration needed!
    etc.)
 3. Done — bidirectional sync is automatic
 
-**No CI pipeline needed** — GitLab handles this natively.
-
 ---
 
-## Local File Structure
+## Local File Structure (--private)
 
 ```text
-.ai/
-├── TASKS.md              # Index
+~/.local/share/zappzarapp/
+├── TASKS.md              # Private Index
 └── tasks/
-    ├── fix-auth-bug.md
+    ├── learn-mcp.md
     └── done/
         └── 2026/
             └── 01/
                 └── completed-task.md
-
-~/.local/share/zappzarapp/
-├── TASKS.md              # Private Index
-└── tasks/
-    └── ...
 ```
 
 ### Index Format (TASKS.md)
@@ -208,17 +248,11 @@ GitLab Boards are **label-based by default** — no extra configuration needed!
 ```markdown
 # Tasks Index
 
-## v1.0
+## Active
 
-| Slug     | Title        | Type | Status |
-| -------- | ------------ | ---- | ------ |
-| fix-auth | Fix Auth Bug | bug  | open   |
-
-## v1.1
-
-| Slug         | Title                 | Type          | Status |
-| ------------ | --------------------- | ------------- | ------ |
-| improve-docs | Improve Documentation | documentation | open   |
+| Slug      | Title             | Type        | Status |
+| --------- | ----------------- | ----------- | ------ |
+| learn-mcp | Learn MCP Servers | enhancement | open   |
 
 ## Backlog
 
@@ -232,8 +266,8 @@ GitLab Boards are **label-based by default** — no extra configuration needed!
 ```markdown
 # Task Title
 
-**Type:** bug **Status:** open | in-progress | review | done **Milestone:** v1.0
-**Labels:** security, backend **Created:** 2026-01-22
+**Type:** bug **Status:** open | in-progress | review | done **Labels:**
+security, backend **Created:** 2026-01-22
 
 ## Context
 
@@ -257,7 +291,7 @@ What success looks like.
 
 ## Workflow: Add Task (`--add`)
 
-**First:** Detect storage mode (see above).
+**First:** Detect target (see above).
 
 ### Remote Mode (GitHub / GitLab)
 
@@ -274,6 +308,7 @@ What success looks like.
 
 ```bash
 gh issue create \
+  --repo "$TARGET_REPO" \
   --title "Task Title" \
   --body "$(cat <<'EOF'
 ## Context
@@ -298,6 +333,7 @@ EOF
 
 ```bash
 glab issue create \
+  --repo "$TARGET_REPO" \
   --title "Task Title" \
   --description "$(cat <<'EOF'
 ## Context
@@ -330,51 +366,38 @@ gh project item-add <project-number> --owner <owner> --url <issue-url>
 
 1. Show confirmation with issue number and URL.
 
-### Local Mode
+### Private Mode (`--private`)
 
 1. Gather information (same as above)
 2. Generate slug from title
-3. Create task detail file: `tasks/<slug>.md`
-4. Update index: Add row to appropriate milestone table in `TASKS.md`
+3. Create task detail file: `~/.local/share/zappzarapp/tasks/<slug>.md`
+4. Update index: Add row to `TASKS.md`
 5. Show confirmation
-
-### Private Mode (`--private`)
-
-Same as Local Mode, but in `~/.local/share/zappzarapp/`.
 
 ---
 
 ## Workflow: List Tasks (`--list`)
 
-**First:** Detect storage mode.
+**First:** Detect target.
 
-### Remote Mode (GitHub / GitLab)
+### Single Target (default)
 
 **GitHub:**
 
 ```bash
-# All open issues grouped by milestone
-gh issue list --state open --json number,title,labels,milestone
-
-# Filter by milestone
-gh issue list --milestone "v1.0" --json number,title,labels
+gh issue list --repo "$TARGET_REPO" --state open --json number,title,labels,milestone
 ```
 
 **GitLab:**
 
 ```bash
-# All open issues
-glab issue list --all
-
-# Filter by milestone
-glab issue list --milestone "v1.0"
+glab issue list --repo "$TARGET_REPO" --all
 ```
 
 **Output format:**
 
 ```text
-Tasks (GitHub: marcstraube/zappzarapp)
-# or: Tasks (GitLab: marcstraube/zappzarapp)
+Tasks (repo: marcstraube/zappzarapp)
 ════════════════════════════════════════════════
 
 v1.0 (3 issues)
@@ -382,31 +405,46 @@ v1.0 (3 issues)
   #38 [enhancement]   Add Retry Logic
   #35 [documentation] Update README
 
-v1.1 (2 issues)
-  #44 [enhancement]   New Feature
-  #43 [chore]         Update Dependencies
-
 Backlog (1 issue)
   #40 [enhancement]   Future Idea
 
-Needs Triage (1 issue)
-  #47 [bug]           Reported Bug (no milestone)
-
 ════════════════════════════════════════════════
-Total: 7 open issues
-
-View on GitHub: https://github.com/marcstraube/zappzarapp/issues
+Total: 4 open issues
 ```
 
-### Local Mode
+### All Tiers (`--list --all`)
 
-Read `TASKS.md` index and display grouped by milestone.
+Aggregate from all available tiers:
+
+```text
+Tasks (all tiers)
+════════════════════════════════════════════════
+
+zappzarapp (marcstraube/zappzarapp): 12 issues
+  #101 [enhancement] Add feature X
+
+upstream (user-a/project): 5 issues
+  #42 [bug] Fix critical bug
+
+repo (user-b/project): 3 issues
+  #7 [enhancement] My feature
+
+private (~/.local/share/): 2 tasks
+  learn-mcp [enhancement] Learn MCP Servers
+
+════════════════════════════════════════════════
+Total: 22 tasks across 4 tiers
+```
+
+### Private Mode
+
+Read `~/.local/share/zappzarapp/TASKS.md` index and display.
 
 ---
 
 ## Workflow: Choose Task (`--choose`)
 
-**First:** Detect storage mode.
+**First:** Detect target.
 
 ### Step 1: List and Select
 
@@ -418,9 +456,6 @@ Which task would you like to work on?
 v1.0:
   ○ #42 [bug] Fix Auth Bug
   ○ #38 [enhancement] Add Retry Logic
-
-v1.1:
-  ○ #44 [enhancement] New Feature
 
 Backlog:
   ○ #40 [enhancement] Future Idea
@@ -442,26 +477,18 @@ Create a plan before starting?
 **GitHub:**
 
 ```bash
-# Add label
-gh issue edit <number> --add-label "status:in-progress"
-
-# Assign to self
-gh issue edit <number> --add-assignee "@me"
-
-# If Project configured, move to "In Progress" column
+gh issue edit <number> --repo "$TARGET_REPO" --add-label "status:in-progress"
+gh issue edit <number> --repo "$TARGET_REPO" --add-assignee "@me"
 ```
 
 **GitLab:**
 
 ```bash
-# Add label (note: :: for scoped labels)
-glab issue update <number> --label "status::in-progress"
-
-# Assign to self
-glab issue update <number> --assignee "@me"
+glab issue update <number> --repo "$TARGET_REPO" --label "status::in-progress"
+glab issue update <number> --repo "$TARGET_REPO" --assignee "@me"
 ```
 
-**Local Mode:**
+**Private Mode:**
 
 Update status in task file and index.
 
@@ -478,16 +505,16 @@ Assign or change task milestone.
 **GitHub:**
 
 ```bash
-gh issue edit <number> --milestone "v1.0"
+gh issue edit <number> --repo "$TARGET_REPO" --milestone "v1.0"
 ```
 
 **GitLab:**
 
 ```bash
-glab issue update <number> --milestone "v1.0"
+glab issue update <number> --repo "$TARGET_REPO" --milestone "v1.0"
 ```
 
-**Local Mode:**
+**Private Mode:**
 
 1. Update milestone in task detail file
 2. Move row to correct table in `TASKS.md` index
@@ -505,11 +532,8 @@ Equivalent to `--milestone Backlog <task>`.
 **GitHub:**
 
 ```bash
-# Check if Backlog milestone exists
-gh api repos/{owner}/{repo}/milestones --jq '.[] | select(.title=="Backlog")'
-
-# If not, create it
-gh api repos/{owner}/{repo}/milestones --method POST \
+gh api repos/$TARGET_REPO/milestones --jq '.[] | select(.title=="Backlog")' | grep -q . || \
+gh api repos/$TARGET_REPO/milestones --method POST \
   -f title="Backlog" \
   -f description="Consciously deferred tasks, not scheduled for upcoming releases"
 ```
@@ -517,10 +541,7 @@ gh api repos/{owner}/{repo}/milestones --method POST \
 **GitLab:**
 
 ```bash
-# Check if Backlog milestone exists
-glab api projects/:id/milestones --jq '.[] | select(.title=="Backlog")'
-
-# If not, create it
+glab api projects/:id/milestones --jq '.[] | select(.title=="Backlog")' | grep -q . || \
 glab api projects/:id/milestones --method POST \
   -f title="Backlog" \
   -f description="Consciously deferred tasks, not scheduled for upcoming releases"
@@ -548,30 +569,23 @@ Why is this task being closed?
 
 ```bash
 # Completed
-gh issue close <number> --reason "completed"
+gh issue close <number> --repo "$TARGET_REPO" --reason "completed"
 
 # Not planned
-gh issue close <number> --reason "not planned" --comment "Reason: [user reason]"
+gh issue close <number> --repo "$TARGET_REPO" --reason "not planned" --comment "Reason: [user reason]"
 
 # Duplicate
-gh issue close <number> --reason "not planned" --comment "Duplicate of #XX"
+gh issue close <number> --repo "$TARGET_REPO" --reason "not planned" --comment "Duplicate of #XX"
 ```
 
 **GitLab:**
 
 ```bash
-# Close issue
-glab issue close <number>
-
-# Add closing note
-glab issue note <number> --message "Closed: [reason]"
-
-# For duplicates
-glab issue note <number> --message "Duplicate of #XX"
-glab issue close <number>
+glab issue close <number> --repo "$TARGET_REPO"
+glab issue note <number> --repo "$TARGET_REPO" --message "Closed: [reason]"
 ```
 
-**Local Mode:**
+**Private Mode:**
 
 1. Update status to `done` in task file
 2. Move file to `tasks/done/YYYY/MM/`
@@ -586,8 +600,8 @@ Add one or more labels (comma-separated).
 ### Remote Mode (GitHub / GitLab)
 
 1. Fetch existing labels:
-   - GitHub: `gh label list --json name`
-   - GitLab: `glab label list`
+   - GitHub: `gh label list --repo "$TARGET_REPO" --json name`
+   - GitLab: `glab label list --repo "$TARGET_REPO"`
 
 2. For each label to add:
    - If exists → add it
@@ -609,41 +623,7 @@ Did you mean:
 ○ Continue without label
 ```
 
-**If user wants to create new label:**
-
-Check permission, then:
-
-**GitHub:**
-
-```bash
-gh label create "label-name" --color "c5def5" --description "Description"
-```
-
-**GitLab:**
-
-```bash
-glab label create "label-name" --color "#c5def5" --description "Description"
-```
-
-Note: GitLab colors require `#` prefix.
-
-**If no permission:**
-
-```text
-Label "custom-label" does not exist.
-You don't have permission to create labels.
-
-Available labels:
-  bug                  Something isn't working
-  enhancement          New feature or request
-  effort:xs            Extra small task
-  effort:s             Small task
-  ...
-
-→ Choose different label or continue without?
-```
-
-### Local Mode
+### Private Mode
 
 Add to Labels field in task detail file.
 
@@ -656,16 +636,16 @@ Remove one or more labels (comma-separated).
 **GitHub:**
 
 ```bash
-gh issue edit <number> --remove-label "label-name"
+gh issue edit <number> --repo "$TARGET_REPO" --remove-label "label-name"
 ```
 
 **GitLab:**
 
 ```bash
-glab issue update <number> --unlabel "label-name"
+glab issue update <number> --repo "$TARGET_REPO" --unlabel "label-name"
 ```
 
-**Local Mode:**
+**Private Mode:**
 
 Remove from Labels field in task detail file.
 
@@ -688,7 +668,7 @@ Analyze all tasks and suggest changes.
 ### Output Format
 
 ```text
-Task Analysis
+Task Analysis (repo: marcstraube/zappzarapp)
 ════════════════════════════════════════════════
 
 ⚠️  Needs Triage (2 issues without milestone)
@@ -731,27 +711,11 @@ For new repositories, run the init script:
 make ai-setup
 ```
 
-**Manual creation (GitHub):**
-
-```bash
-gh label create "chore" --color "fef2c0" --description "Maintenance, tooling, dependencies"
-gh label create "status:in-progress" --color "fbca04" --description "Currently being worked on"
-```
-
-**Manual creation (GitLab):**
-
-```bash
-glab label create "chore" --color "#fef2c0" --description "Maintenance, tooling, dependencies"
-glab label create "status::in-progress" --color "#fbca04" --description "Currently being worked on"
-```
-
-Note: GitLab uses `::` for scoped labels and requires `#` prefix for colors.
-
 ---
 
 ## Examples
 
-### Adding a Task (GitHub)
+### Adding a Task (default: origin)
 
 ```text
 $ /tasks --add
@@ -761,105 +725,96 @@ Type: bug
 Milestone: v1.0
 Context: Security audit found issue in session handling
 
-Creating GitHub Issue...
+Creating GitHub Issue (repo: user/my-project)...
 
 Issue Created
 ════════════════════════════════════════════════
 Number:   #49
 Title:    Fix authentication bypass
-URL:      https://github.com/marcstraube/zappzarapp/issues/49
+URL:      https://github.com/user/my-project/issues/49
 Labels:   bug
 Milestone: v1.0
 ════════════════════════════════════════════════
 ```
 
-### Listing Tasks
+### Adding a Task to Upstream
 
 ```text
-$ /tasks --list
+$ /tasks --add --upstream
 
-Tasks (GitHub: marcstraube/zappzarapp)
+Title: Fix shared utility bug
+Type: bug
+Context: Found bug in shared component
+
+Creating GitHub Issue (upstream: original-author/project)...
+
+Issue Created
 ════════════════════════════════════════════════
-
-v1.0 (2 issues)
-  #49 [bug]         Fix authentication bypass
-  #42 [enhancement] Add retry logic
-
-Backlog (1 issue)
-  #40 [enhancement] Future idea
-
+Number:   #142
+Title:    Fix shared utility bug
+URL:      https://github.com/original-author/project/issues/142
 ════════════════════════════════════════════════
 ```
 
-### Choosing a Task
+### Feature Request to Boilerplate
 
 ```text
-$ /tasks --choose
+$ /tasks --add --zappzarapp
 
-Which task would you like to work on?
-● #49 [bug] Fix authentication bypass (v1.0)
+Title: Add support for PostgreSQL
+Type: enhancement
+Context: MySQL is default, PostgreSQL would be useful
 
-Create a plan before starting?
-● No — Start implementation directly
+Creating GitHub Issue (zappzarapp: marcstraube/zappzarapp)...
 
-Task Selected
+Issue Created
 ════════════════════════════════════════════════
-Number:   #49
-Title:    Fix authentication bypass
-Status:   → in-progress
-Assignee: → @you
-════════════════════════════════════════════════
-
-Ready to start implementation.
-```
-
-### Deferring a Task
-
-```text
-$ /tasks --defer #40
-
-Task Deferred
-════════════════════════════════════════════════
-Number:   #40
-Title:    Future idea
-Milestone: enhancement → Backlog
+Number:   #89
+Title:    Add support for PostgreSQL
+URL:      https://github.com/marcstraube/zappzarapp/issues/89
 ════════════════════════════════════════════════
 ```
 
-### Adding Labels with Typo Correction
-
-```text
-$ /tasks --add-label "effor:m" #49
-
-Label "effor:m" does not exist.
-
-Did you mean:
-  → effort:m
-  → effort:l
-
-● Use effort:m
-
-Label Added
-════════════════════════════════════════════════
-Issue:  #49
-Added:  effort:m
-════════════════════════════════════════════════
-```
-
-### Adding Private Task
+### Private Task
 
 ```text
 $ /tasks --add --private
 
-Title: Research MCP server options
+Title: Learn MCP server development
 Type: enhancement
 Context: Personal learning goal
 
-Task Added (Private)
+Task Added (private)
 ════════════════════════════════════════════════
 Location: ~/.local/share/zappzarapp/tasks/
-Slug:     research-mcp-server-options
+Slug:     learn-mcp-server-development
 ════════════════════════════════════════════════
+```
+
+### Listing All Tiers
+
+```text
+$ /tasks --list --all
+
+Tasks (all tiers)
+════════════════════════════════════════════════
+
+zappzarapp (marcstraube/zappzarapp): 2 issues
+  #89 [enhancement] Add PostgreSQL support
+
+upstream (original-author/project): 1 issue
+  #142 [bug] Fix shared utility bug
+
+repo (user/my-project): 3 issues
+  #49 [bug] Fix authentication bypass
+  #48 [enhancement] Add dark mode
+  #45 [chore] Update dependencies
+
+private (~/.local/share/): 1 task
+  learn-mcp [enhancement] Learn MCP server development
+
+════════════════════════════════════════════════
+Total: 7 tasks across 4 tiers
 ```
 
 ---
@@ -867,12 +822,16 @@ Slug:     research-mcp-server-options
 ## Integration with Other Commands
 
 - `/commit` can reference closed tasks in commit message
-- `/status --todo` shows high-priority tasks from current milestone
+- `/status --todo` shows high-priority tasks from current milestone (origin)
 
 ---
 
 ## Notes
 
+- **Default is origin** — where you push code, you track tasks
+- Use `--upstream` for bugs/features in the project you forked from
+- Use `--zappzarapp` for boilerplate-specific requests
+- Use `--private` for personal notes, learning goals, offline work
 - Task slugs/numbers should be unique and descriptive
 - Context is crucial — future you needs to understand why
 - Use milestones for release planning, not priority
