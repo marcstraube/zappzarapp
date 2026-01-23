@@ -2,7 +2,8 @@
 # For more information, see: https://docs.gitlab.com/ee/ci/
 
 variables:
-  COMPOSE_PROJECT_NAME: zappzarapp-ci
+  # Note: COMPOSE_PROJECT_NAME intentionally not set here - uses value from .env
+  # to ensure consistency between docker compose build and make up (which sources .env)
   ENV: development
   DOCKER_DRIVER: overlay2
   DOCKER_TLS_CERTDIR: ""
@@ -285,8 +286,9 @@ bats:integration:
     # IMPORTANT: Use DOCKER_BUILDKIT=0 for all builds to ensure images are
     # available to local Docker daemon (GitLab CI runners use BuildKit by default)
     # Build node-backend first for nginx COPY --from dependency
+    # Note: Uses COMPOSE_PROJECT_NAME=zappzarapp from .env
     - DOCKER_BUILDKIT=0 docker compose --profile node-backend build node-backend || true
-    - docker tag ${COMPOSE_PROJECT_NAME}-node-backend:api zappzarapp-node-backend:latest 2>/dev/null || true
+    - docker tag zappzarapp-node-backend:api zappzarapp-node-backend:latest 2>/dev/null || true
     # Build all remaining images (nginx needs NGINX_TARGET=development for :development tag)
     # Include postgres for make up image check
     - DOCKER_BUILDKIT=0 NGINX_TARGET=development docker compose --profile postgres build php node nginx postgres
@@ -337,8 +339,9 @@ build:production:
     - "[ -f composer.lock ] || echo '{}' > composer.lock"
     - "[ -f pnpm-lock.yaml ] || touch pnpm-lock.yaml"
     # Build node-backend first, then tag for cross-image COPY compatibility
+    # Note: Uses COMPOSE_PROJECT_NAME=zappzarapp from .env
     - docker compose -f compose.yaml -f compose.production.yaml --profile node-backend build node-backend
-    - docker tag ${COMPOSE_PROJECT_NAME}-node-backend:api zappzarapp-node-backend:latest
+    - docker tag zappzarapp-node-backend:api zappzarapp-node-backend:latest
     # Disable BuildKit for php/nginx build so they can see the local tagged image
     - DOCKER_BUILDKIT=0 ENV=production docker compose -f compose.yaml -f compose.production.yaml build php nginx
     # Start and test
