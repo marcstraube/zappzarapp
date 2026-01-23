@@ -23,10 +23,27 @@ teardown_file() {
 @test "[Integration] vendor/bin is accessible from PHP container" {
     require_php
     require_dependencies
-    # Diagnostic: Check if vendor/bin/ is visible inside the running container
-    # This helps diagnose bind mount sync issues between host and container
+
+    # Diagnostic 1: What does the HOST see in vendor?
+    echo "=== HOST VIEW ===" >&3
+    ls -la vendor/ 2>&1 | head -5 >&3 || echo "HOST: vendor/ not accessible" >&3
+    ls -la vendor/bin/ 2>&1 | head -5 >&3 || echo "HOST: vendor/bin/ not accessible" >&3
+
+    # Diagnostic 2: What mount points does the php container have?
+    echo "=== CONTAINER MOUNTS ===" >&3
+    run docker inspect zappzarapp-php --format '{{range .Mounts}}{{.Source}} -> {{.Destination}}{{"\n"}}{{end}}'
+    echo "Container mounts: $output" >&3
+
+    # Diagnostic 3: What does the CONTAINER see in /var/www/html/vendor?
+    echo "=== CONTAINER VIEW ===" >&3
+    run docker compose exec -T php sh -c 'ls -la /var/www/html/ 2>&1 | grep vendor || echo "vendor not in /var/www/html/"'
+    echo "Container /var/www/html/ listing: $output" >&3
+    run docker compose exec -T php sh -c 'ls -la /var/www/html/vendor/ 2>&1 | head -5'
+    echo "Container vendor/: $output" >&3
     run docker compose exec -T php sh -c 'ls -la /var/www/html/vendor/bin/ 2>&1 | head -10'
-    echo "Container view of vendor/bin/: $output" >&3
+    echo "Container vendor/bin/: $output" >&3
+
+    # Actual test
     run docker compose exec -T php sh -c 'test -e /var/www/html/vendor/bin/php-cs-fixer && echo "EXISTS" || echo "NOT FOUND"'
     assert_output "EXISTS"
 }
