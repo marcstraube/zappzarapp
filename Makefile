@@ -3030,8 +3030,8 @@ $(PHPDOC_PHAR):
 
 docs-php: ## Generate PHP API documentation using phpDocumentor
 	@echo -e "\033[0;33mEnsuring phpDocumentor is available...\033[0m"
-	@# Download phpdoc.phar inside PHP container if not present (avoids bind mount issues in CI)
-	@docker compose exec php sh -c '[ -f tools/phpdoc.phar ] || (mkdir -p tools && curl -fsSL "https://github.com/phpDocumentor/phpDocumentor/releases/download/v$(PHPDOC_VERSION)/phpDocumentor.phar" -o tools/phpdoc.phar && chmod +x tools/phpdoc.phar && echo "phpDocumentor v$(PHPDOC_VERSION) downloaded")'
+	@# Download phpdoc.phar inside PHP container if not present (run as root for bind mount permissions)
+	@docker compose exec -u root php sh -c '[ -f tools/phpdoc.phar ] || (mkdir -p tools && curl -fsSL "https://github.com/phpDocumentor/phpDocumentor/releases/download/v$(PHPDOC_VERSION)/phpDocumentor.phar" -o tools/phpdoc.phar && chmod +x tools/phpdoc.phar && echo "phpDocumentor v$(PHPDOC_VERSION) downloaded")'
 	@echo -e "\033[0;33mGenerating PHP API documentation...\033[0m"
 	@docker compose exec php composer docs
 	@echo -e "\033[0;33mApplying custom theme...\033[0m"
