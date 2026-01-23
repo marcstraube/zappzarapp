@@ -54,6 +54,26 @@ teardown_file() {
     [[ -d "vendor/bin" ]]
 }
 
+@test "make composer-install creates vendor/bin/php-cs-fixer" {
+    require_php
+    # Check that the symlink exists and points to a valid target
+    [[ -e "vendor/bin/php-cs-fixer" ]] || {
+        echo "vendor/bin/php-cs-fixer does not exist or is a broken symlink"
+        ls -la vendor/bin/ 2>/dev/null || echo "vendor/bin/ is empty or doesn't exist"
+        false
+    }
+}
+
+@test "make composer-install creates vendor/bin/phpstan" {
+    require_php
+    [[ -e "vendor/bin/phpstan" ]]
+}
+
+@test "make composer-install creates vendor/bin/phpunit" {
+    require_php
+    [[ -e "vendor/bin/phpunit" ]]
+}
+
 # =============================================================================
 # Node Dependencies
 # =============================================================================
