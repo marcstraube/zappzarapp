@@ -136,6 +136,8 @@ teardown_file() {
 
 @test "make ssl-clean removes certificates" {
     [[ -f "docker/certs/cert.crt" ]] || skip "Certificates not created"
+    # ssl-clean requires interactive confirmation (read -p), skip in CI
+    [[ -t 0 ]] || skip "Requires interactive terminal for confirmation"
 
     run make ssl-clean
     assert_success
@@ -172,22 +174,24 @@ teardown_file() {
 }
 
 # =============================================================================
-# Vite Build
+# Node Build (Vite)
 # =============================================================================
 
-@test "make vite-build creates public/build/" {
+@test "make node-build creates public/build/" {
     require_node
+    require_dependencies
 
     # Clean first
     rm -rf public/build 2>/dev/null || true
 
-    run timeout 120 make vite-build
+    run timeout 180 make node-build
     assert_success
 
     [[ -d "public/build" ]]
 }
 
-@test "make vite-build creates public/build/manifest.json" {
+@test "make node-build creates public/build/manifest.json" {
     require_node
+    require_dependencies
     [[ -f "public/build/manifest.json" ]] || [[ -f "public/build/.vite/manifest.json" ]]
 }

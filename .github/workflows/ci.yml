@@ -334,6 +334,8 @@ jobs:
           # Create empty lockfiles (Dockerfile COPY needs them)
           [ -f composer.lock ] || echo '{}' > composer.lock
           [ -f pnpm-lock.yaml ] || touch pnpm-lock.yaml
+          # Create dependency directories (compose.ci.yaml uses bind mounts for BATS tests)
+          mkdir -p vendor node_modules src/node/backend/node_modules src/node/frontend/node_modules backups/db docs/api tools
           # IMPORTANT: Use DOCKER_BUILDKIT=0 for all builds to ensure images are
           # available to local Docker daemon (setup-buildx-action creates a builder
           # that stores images in BuildKit cache, not local Docker)

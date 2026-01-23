@@ -22,14 +22,18 @@ teardown_file() {
 
 @test "[Integration] nginx responds to requests" {
     require_service "nginx"
-    run timeout 10 curl -sf http://localhost:8080/health || curl -sf http://localhost:80/health
+    # Development nginx uses HTTPS only (port 8080 redirects to 8443)
+    # Use --insecure for self-signed certificates
+    run timeout 10 curl -sf --insecure https://localhost:8443/health
     assert_success
 }
 
 @test "[Integration] PHP-FPM is accessible from nginx" {
     require_service "nginx"
     require_service "php"
-    run timeout 10 curl -sf http://localhost:8080/ || curl -sf http://localhost:80/
+    # Development nginx uses HTTPS only (port 8080 redirects to 8443)
+    # Use --insecure for self-signed certificates
+    run timeout 10 curl -sf --insecure https://localhost:8443/
     # May return 200 or redirect, both are fine
     [[ $status -eq 0 ]] || [[ $status -eq 22 ]]
 }

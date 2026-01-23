@@ -37,22 +37,24 @@ services:
       - ./package.json:/app/package.json:ro
       # NO pnpm-lock.yaml mount - Makefile handles lockfile generation in single container run
 
-      # Dependencies (named volumes)
-      - node_modules:/app/node_modules
+      # Dependencies (bind mounts for CI - allows host filesystem checks in BATS tests)
+      # Note: directories must be created before container startup
+      - ./node_modules:/app/node_modules
 
       # Source and Tests (needed for quality checks and tests)
       - ./src:/app/src
       - ./tests:/app/tests
       - ./resources:/app/resources
 
-      # Workspace node_modules (override bind mount - MUST be after ./src mount)
-      - backend_node_modules:/app/src/node/backend/node_modules
-      - frontend_node_modules:/app/src/node/frontend/node_modules
+      # Workspace node_modules (bind mounts for CI - MUST be after ./src mount)
+      - ./src/node/backend/node_modules:/app/src/node/backend/node_modules
+      - ./src/node/frontend/node_modules:/app/src/node/frontend/node_modules
 
-      # Build output
+      # Build output and docs
       - ./build:/app/build
       - ./dist:/app/dist
       - ./public:/app/public
+      - ./docs:/app/docs
 
       # Build config files (needed for Vite, TypeScript)
       - ./vite.config.js:/app/vite.config.js:ro
@@ -120,8 +122,9 @@ services:
       - ./composer.json:/var/www/html/composer.json:ro
       # NO composer.lock mount - generated fresh inside container
 
-      # Dependencies (named volume)
-      - php_vendor:/var/www/html/vendor
+      # Dependencies (bind mount for CI - allows host filesystem checks in BATS tests)
+      # Note: directory must be created before container startup
+      - ./vendor:/var/www/html/vendor
 
       # Source and Tests (needed for quality checks and tests)
       - ./src/php:/var/www/html/src/php
@@ -131,8 +134,10 @@ services:
       # Configuration files
       - ./config:/var/www/html/config:ro
 
-      # Build outputs
+      # Build outputs and docs
       - ./build:/var/www/html/build
+      - ./docs:/var/www/html/docs
+      - ./tools:/var/www/html/tools
 
       # Public directory (needed for PHP-CS-Fixer)
       - ./public:/var/www/html/public
@@ -235,12 +240,5 @@ volumes:
   # From compose.yaml (needed for PHP-FPM socket)
   php-fpm-socket:
     driver: local
-  # CI-specific volumes
-  node_modules:
-    driver: local
-  backend_node_modules:
-    driver: local
-  frontend_node_modules:
-    driver: local
-  php_vendor:
-    driver: local
+  # Note: vendor, node_modules, and workspace node_modules use bind mounts (not named volumes)
+  # to allow BATS tests to verify directories exist on the host filesystem

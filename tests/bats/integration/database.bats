@@ -68,14 +68,16 @@ teardown_file() {
 
 @test "[Integration] Redis is accessible" {
     require_service "redis"
-    run docker compose exec -T redis redis-cli ping
+    # Redis is configured with TLS only (--port 0 --tls-port 6379)
+    run docker compose exec -T redis redis-cli --tls --insecure ping
     assert_success
     assert_output "PONG"
 }
 
 @test "[Integration] make redis-cli connects successfully" {
     require_service "redis"
-    run timeout 10 docker compose exec -T redis redis-cli INFO server
+    # Redis is configured with TLS only (--port 0 --tls-port 6379)
+    run timeout 10 docker compose exec -T redis redis-cli --tls --insecure INFO server
     assert_success
     assert_output --partial "redis_version"
 }
