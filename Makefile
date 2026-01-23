@@ -1274,21 +1274,14 @@ pnpm-install: ## Install Node.js dependencies (Docker - guaranteed consistency)
 		docker run --rm -v "$(PWD):/app" -w /app $(ALPINE_IMAGE) sh -c \
 			"rm -rf pnpm-lock.yaml && touch pnpm-lock.yaml && chown $${USER_ID:-1000}:$${GROUP_ID:-1000} pnpm-lock.yaml"; \
 	fi
-	@# If lockfile is empty/missing, generate in temp dir first (avoids EBUSY on bind mount)
-	@if [ ! -s pnpm-lock.yaml ]; then \
+	@# If lockfile exists and is valid, use --frozen-lockfile for consistency
+	@# If lockfile is empty/missing (CI without mount), install normally (pnpm generates lockfile)
+	@if [ -s pnpm-lock.yaml ]; then \
+		$(DC_RUN) run --rm --no-TTY --user root --entrypoint "" -e CI=true node pnpm install --frozen-lockfile; \
+	else \
 		echo -e "\033[0;33m  No valid lockfile found, generating...\033[0m"; \
-		$(DC_RUN) run --rm --no-TTY --user root --entrypoint "" -e CI=true node sh -c ' \
-			mkdir -p /tmp/pnpm-install/src/node/backend /tmp/pnpm-install/src/node/frontend && \
-			cp /app/package.json /tmp/pnpm-install/package.json && \
-			cp /app/pnpm-workspace.yaml /tmp/pnpm-install/pnpm-workspace.yaml && \
-			cp /app/src/node/backend/package.json /tmp/pnpm-install/src/node/backend/package.json && \
-			cp /app/src/node/frontend/package.json /tmp/pnpm-install/src/node/frontend/package.json && \
-			cd /tmp/pnpm-install && pnpm install --ignore-scripts && \
-			cat /tmp/pnpm-install/pnpm-lock.yaml > /app/pnpm-lock.yaml \
-		'; \
+		$(DC_RUN) run --rm --no-TTY --user root --entrypoint "" -e CI=true node pnpm install; \
 	fi
-	@# Now install with frozen lockfile (installs to node_modules volume)
-	@$(DC_RUN) run --rm --no-TTY --user root --entrypoint "" -e CI=true node pnpm install --frozen-lockfile
 	@echo -e "\033[0;32mDependencies installed!\033[0m"
 
 pnpm-update: ## Update Node.js dependencies (updates pnpm-lock.yaml on host)
