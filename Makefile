@@ -1428,6 +1428,8 @@ node-frontend-sveltekit: node-frontend-clean ## Scaffold SvelteKit frontend (int
 
 node-build: ## Executes the frontend build inside the Node container
 	@echo -e "\033[0;33mExecuting frontend build...\033[0m"
+	@# Clean Vite temp directory to avoid cross-UID permission issues in CI
+	@rm -rf node_modules/.vite-temp 2>/dev/null || true
 	@$(DC_RUN) run --rm node pnpm run build
 
 node-up: ## Starts the Node service alongside the standard stack (Uses the default 'assets' target)
@@ -2978,9 +2980,12 @@ security-sbom: ## Generate a Software Bill of Materials (SBOM) using Trivy
 	@echo -e "\033[0;33mGenerating SBOM for PHP image...\033[0m"
 	@if [ -f .env ]; then \
 		. ./.env && \
+		PROJECT=$${COMPOSE_PROJECT_NAME:-zappzarapp} && \
+		TAG=$$(docker images --format "{{.Tag}}" "$${PROJECT}-php" 2>/dev/null | grep -E "^(development|latest)$$" | head -1) && \
+		if [ -z "$$TAG" ]; then echo -e "\033[0;31mNo PHP image found (development or latest)\033[0m"; exit 1; fi && \
 		docker run --rm -v /var/run/docker.sock:/var/run/docker.sock \
 			aquasec/trivy:latest image --format cyclonedx --output build/sbom-php.json \
-			$${COMPOSE_PROJECT_NAME:-zappzarapp}-php:latest; \
+			$${PROJECT}-php:$${TAG}; \
 	fi
 	@echo -e "\033[0;32mSBOM generated in build/sbom-php.json!\033[0m"
 
@@ -3053,9 +3058,9 @@ docs-node: docs-node-backend docs-node-frontend ## Generate all Node/TypeScript 
 
 docs-node-backend: ## Generate Node.js Backend API documentation using TypeDoc
 	@echo -e "\033[0;33mGenerating Node.js Backend API documentation...\033[0m"
-	@docker compose exec -u node node pnpm run docs:backend
+	@$(DC_RUN) run --rm node pnpm run docs:backend
 	@echo -e "\033[0;33mSetting dynamic title...\033[0m"
-	@docker compose exec -u node node sh -c '\
+	@$(DC_RUN) run --rm node sh -c '\
 		PROJECT_NAME=$$(node -e "console.log(require(\"/app/package.json\").name.split(\"/\").pop().replace(/^./, c => c.toUpperCase()))"); \
 		PROJECT_VERSION=$$(node -e "console.log(require(\"/app/package.json\").version || \"0.0.0\")"); \
 		find /app/docs/api/node-backend -name "*.html" -exec sed -i "s|<title>Node Backend API - v$$PROJECT_VERSION</title>|<title>$$PROJECT_NAME - Backend API - v$$PROJECT_VERSION</title>|g" {} \; ; \
@@ -3067,9 +3072,9 @@ docs-node-frontend: ## Generate Node.js Frontend documentation using TypeDoc
 		echo -e "\033[0;33mNo TypeScript files in src/node/frontend/ - skipping frontend docs\033[0m"; \
 	else \
 		echo -e "\033[0;33mGenerating Node.js Frontend documentation...\033[0m"; \
-		docker compose exec -u node node pnpm run docs:frontend; \
+		$(DC_RUN) run --rm node pnpm run docs:frontend; \
 		echo -e "\033[0;33mSetting dynamic title...\033[0m"; \
-		docker compose exec -u node node sh -c '\
+		$(DC_RUN) run --rm node sh -c '\
 			PROJECT_NAME=$$(node -e "console.log(require(\"/app/package.json\").name.split(\"/\").pop().replace(/^./, c => c.toUpperCase()))"); \
 			PROJECT_VERSION=$$(node -e "console.log(require(\"/app/package.json\").version || \"0.0.0\")"); \
 			find /app/docs/api/node-frontend -name "*.html" -exec sed -i "s|<title>Node Frontend - v$$PROJECT_VERSION</title>|<title>$$PROJECT_NAME - Frontend - v$$PROJECT_VERSION</title>|g" {} \; ; \

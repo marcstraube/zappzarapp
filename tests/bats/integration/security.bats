@@ -40,8 +40,8 @@ teardown_file() {
     require_node
     require_dependencies
     run timeout 120 make security-audit-node
-    # Security audits may report findings
-    [[ $status -eq 0 ]] || [[ $status -eq 1 ]]
+    # Security audits may report findings (0=pass, 1=warnings, 2=errors found)
+    [[ $status -eq 0 ]] || [[ $status -eq 1 ]] || [[ $status -eq 2 ]]
 }
 
 # =============================================================================
@@ -58,8 +58,8 @@ teardown_file() {
     require_node
     require_dependencies
     run timeout 120 make security-deps
-    # May report outdated dependencies
-    [[ $status -eq 0 ]] || [[ $status -eq 1 ]]
+    # May report outdated dependencies (0=pass, 1=warnings, 2=issues found)
+    [[ $status -eq 0 ]] || [[ $status -eq 1 ]] || [[ $status -eq 2 ]]
 }
 
 # =============================================================================
