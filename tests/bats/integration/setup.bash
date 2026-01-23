@@ -30,24 +30,32 @@ integration_setup() {
         # Earlier tests (e.g., file-creation.bats) may have deleted and recreated
         # bind-mounted directories like vendor/. This breaks the mount in the
         # long-running container. Restarting forces Docker to re-establish mounts.
-        echo "# Restarting PHP container to refresh bind mounts..." >&3
-        docker compose restart php 2>&1 | tail -3 >&3 || true
+        # CRITICAL: Restart containers to refresh bind mounts
+        # Earlier tests (e.g., file-creation.bats) may have deleted and recreated
+        # bind-mounted directories like vendor/ and node_modules/. This breaks the
+        # mount in the long-running container. Restarting forces re-establishment.
+        echo "# Restarting PHP and Node containers to refresh bind mounts..." >&3
+        docker compose restart php node 2>&1 | tail -5 >&3 || true
+
         # Wait for PHP container to be healthy (includes PHP-FPM readiness)
+        echo "# Waiting for containers to be healthy..." >&3
         local elapsed=0
         while [[ $elapsed -lt 60 ]]; do
-            local health_status
-            health_status=$(docker inspect --format='{{.State.Health.Status}}' "$(docker compose ps -q php)" 2>/dev/null || echo "unknown")
-            if [[ "$health_status" == "healthy" ]]; then
-                # Also verify bind mounts are accessible
-                if docker compose exec -T php sh -c 'test -e /var/www/html/vendor/autoload.php' 2>/dev/null; then
-                    echo "# PHP container healthy with refreshed mounts" >&3
+            local php_health node_health
+            php_health=$(docker inspect --format='{{.State.Health.Status}}' "$(docker compose ps -q php)" 2>/dev/null || echo "unknown")
+            node_health=$(docker inspect --format='{{.State.Health.Status}}' "$(docker compose ps -q node)" 2>/dev/null || echo "unknown")
+            if [[ "$php_health" == "healthy" ]] && [[ "$node_health" == "healthy" ]]; then
+                # Verify bind mounts are accessible
+                if docker compose exec -T php sh -c 'test -e /var/www/html/vendor/autoload.php' 2>/dev/null && \
+                   docker compose exec -T node sh -c 'test -d /app/node_modules/.pnpm' 2>/dev/null; then
+                    echo "# PHP ($php_health) and Node ($node_health) containers ready with refreshed mounts" >&3
                     return 0
                 fi
             fi
             sleep 3
             elapsed=$((elapsed + 3))
         done
-        echo "# WARNING: PHP container may not be fully healthy" >&3
+        echo "# WARNING: Containers may not be fully healthy (PHP: $php_health, Node: $node_health)" >&3
         return 0
     fi
 
