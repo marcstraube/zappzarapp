@@ -32,6 +32,8 @@ stages:
     - make init
     - make secrets
     - make ssl-selfsigned
+    # Create lockfile for bind mount (compose.ci.yaml)
+    - "[ -f pnpm-lock.yaml ] || touch pnpm-lock.yaml"
   after_script:
     - docker compose down -v || true
     - docker system prune -f || true

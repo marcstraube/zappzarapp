@@ -148,6 +148,8 @@ jobs:
 
       - name: Build Node container
         run: |
+          # Create lockfile for bind mount (compose.ci.yaml)
+          [ -f pnpm-lock.yaml ] || touch pnpm-lock.yaml
           docker compose build node
           docker compose up -d node
           # Wait for container to be ready (entrypoint initialization)
@@ -200,6 +202,8 @@ jobs:
 
       - name: Start services (Node + Redis)
         run: |
+          # Create lockfile for bind mount (compose.ci.yaml)
+          [ -f pnpm-lock.yaml ] || touch pnpm-lock.yaml
           docker compose --profile redis up -d node redis
           # Wait for container to be ready (entrypoint initialization)
           sleep 5
@@ -258,6 +262,8 @@ jobs:
 
       - name: Build containers
         run: |
+          # Create lockfile for bind mount (compose.ci.yaml)
+          [ -f pnpm-lock.yaml ] || touch pnpm-lock.yaml
           docker compose build php node
           docker compose up -d php node
           # Wait for containers to be ready (entrypoint initialization)
