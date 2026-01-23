@@ -150,12 +150,12 @@ make test              → Run all tests
 
 Available commands in `.claude/commands/`:
 
-| Command      | Purpose                                     |
-| ------------ | ------------------------------------------- |
-| `/status`    | Project overview (Git, Docker, tasks)       |
-| `/tasks`     | Task management (GitHub/GitLab integration) |
-| `/commit`    | Guided commit workflow with quality checks  |
-| `/learnings` | View and manage project learnings           |
+| Command      | Purpose                                                    |
+| ------------ | ---------------------------------------------------------- |
+| `/status`    | Project overview (Git, Docker, tasks)                      |
+| `/tasks`     | Task management (4-tier: zappzarapp/upstream/repo/private) |
+| `/commit`    | Guided commit workflow with quality checks                 |
+| `/learnings` | View and manage project learnings                          |
 
 ---
 
@@ -192,8 +192,14 @@ User reviews → Merge → `/tasks --close <id>`
 | 1        | `.ai/`            | `.ai/LEARNINGS.md` exists |
 | 2        | `.zappzarapp/ai/` | fallback                  |
 
-**Note:** Task management is handled via `/tasks` command (auto-detects
-storage).
+**Note:** Task management is handled via `/tasks` command with 4-tier model:
+
+| Flag           | Target                 | Use Case                     |
+| -------------- | ---------------------- | ---------------------------- |
+| (default)      | origin repo            | Your project tasks           |
+| `--upstream`   | upstream remote        | Contribute to forked project |
+| `--zappzarapp` | marcstraube/zappzarapp | Boilerplate feature requests |
+| `--private`    | ~/.local/share/        | Personal, offline tasks      |
 
 ---
 

@@ -109,8 +109,14 @@ In practice this means:
 
 Different files have different layer support:
 
-**Note:** Task management is handled via `/tasks` command (auto-detects
-storage).
+**Note:** Task management is handled via `/tasks` command with 4-tier model:
+
+| Flag           | Target                 | Use Case                     |
+| -------------- | ---------------------- | ---------------------------- |
+| (default)      | origin repo            | Your project tasks           |
+| `--upstream`   | upstream remote        | Contribute to forked project |
+| `--zappzarapp` | marcstraube/zappzarapp | Boilerplate feature requests |
+| `--private`    | ~/.local/share/        | Personal, offline tasks      |
 
 **LEARNINGS, DECISIONS, REFERENCES — 2 Layer:**
 
@@ -196,16 +202,16 @@ For all lint/test/fix targets: See `.zappzarapp/standards/make-targets.md`
 
 Available commands in `.claude/commands/`:
 
-| Command       | Purpose                                              |
-| ------------- | ---------------------------------------------------- |
-| `/status`     | Project overview (Git, Docker, tasks)                |
-| `/tasks`      | Task management (GitHub/GitLab Issues or local)      |
-| `/commit`     | Guided commit workflow with quality checks           |
-| `/audit`      | Project audit (quality, security, docs) - quick/full |
-| `/sync-check` | Check configuration files for sync                   |
-| `/learnings`  | View, search, and aggregate project learnings        |
-| `/research`   | Research topics (local knowledge + optional web)     |
-| `/optimize`   | Self-optimization of config, learnings, commands     |
+| Command       | Purpose                                                    |
+| ------------- | ---------------------------------------------------------- |
+| `/status`     | Project overview (Git, Docker, tasks)                      |
+| `/tasks`      | Task management (4-tier: zappzarapp/upstream/repo/private) |
+| `/commit`     | Guided commit workflow with quality checks                 |
+| `/audit`      | Project audit (quality, security, docs) - quick/full       |
+| `/sync-check` | Check configuration files for sync                         |
+| `/learnings`  | View, search, and aggregate project learnings              |
+| `/research`   | Research topics (local knowledge + optional web)           |
+| `/optimize`   | Self-optimization of config, learnings, commands           |
 
 ## Git & Commits
 
