@@ -20,6 +20,17 @@ teardown_file() {
 # PHP Lint Tests
 # =============================================================================
 
+@test "[Integration] vendor/bin is accessible from PHP container" {
+    require_php
+    require_dependencies
+    # Diagnostic: Check if vendor/bin/ is visible inside the running container
+    # This helps diagnose bind mount sync issues between host and container
+    run docker compose exec -T php sh -c 'ls -la /var/www/html/vendor/bin/ 2>&1 | head -10'
+    echo "Container view of vendor/bin/: $output" >&3
+    run docker compose exec -T php sh -c 'test -e /var/www/html/vendor/bin/php-cs-fixer && echo "EXISTS" || echo "NOT FOUND"'
+    assert_output "EXISTS"
+}
+
 @test "[Integration] make cs-check runs successfully" {
     require_php
     require_dependencies
