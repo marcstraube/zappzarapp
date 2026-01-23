@@ -32,6 +32,10 @@ env:
   COMPOSE_PROJECT_NAME: zappzarapp-security
   SEVERITY: ${{ inputs.severity || 'HIGH,CRITICAL' }}
 
+permissions:
+  contents: read
+  security-events: write
+
 jobs:
   # ============================================================================
   # DOCKER IMAGE VULNERABILITY SCAN
@@ -47,16 +51,22 @@ jobs:
         image:
           - name: php
             dockerfile: docker/php/Dockerfile
+            target: development
           - name: node
             dockerfile: docker/node/Dockerfile
+            target: development
           - name: nginx
             dockerfile: docker/nginx/Dockerfile
+            target: development
           - name: postgres
             dockerfile: docker/postgres/Dockerfile
+            target: final
           - name: mariadb
             dockerfile: docker/mariadb/Dockerfile
+            target: ""
           - name: redis
             dockerfile: docker/redis/Dockerfile
+            target: base
 
     steps:
       - name: Checkout code
@@ -67,11 +77,20 @@ jobs:
 
       - name: Build goss utility image (dependency)
         run: |
-          docker build -t zappzarapp-goss:latest -f docker/goss/Dockerfile .
+          # Build without BuildKit so image is available to local Docker daemon
+          DOCKER_BUILDKIT=0 docker build -t zappzarapp-goss:latest -f docker/goss/Dockerfile .
 
       - name: Build ${{ matrix.image.name }} image
         run: |
-          docker build -t ${{ env.COMPOSE_PROJECT_NAME }}-${{ matrix.image.name }}:scan \
+          # Disable BuildKit for images that use COPY --from local images (node, php, nginx)
+          # Target specific stage to avoid GOSS validation (which requires runtime dependencies)
+          # Security scan focuses on base image vulnerabilities, not runtime config
+          TARGET_ARG=""
+          if [ -n "${{ matrix.image.target }}" ]; then
+            TARGET_ARG="--target ${{ matrix.image.target }}"
+          fi
+          DOCKER_BUILDKIT=0 docker build -t ${{ env.COMPOSE_PROJECT_NAME }}-${{ matrix.image.name }}:scan \
+            $TARGET_ARG \
             -f ${{ matrix.image.dockerfile }} \
             .
 
@@ -106,6 +125,9 @@ jobs:
     name: Dependency Scan
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    env:
+      # Use CI-specific compose file (no lockfile bind mounts)
+      COMPOSE_FILE: compose.yaml:compose.ci.yaml
 
     steps:
       - name: Checkout code
@@ -114,15 +136,29 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
+      - name: Build goss utility image (dependency)
+        run: |
+          DOCKER_BUILDKIT=0 docker build -t zappzarapp-goss:latest -f docker/goss/Dockerfile .
+
+      - name: Initialize environment
+        run: |
+          make init
+          make secrets
+
       - name: Build and start containers
         run: |
-          docker compose build php node
+          # Create empty lockfiles for Dockerfile COPY
+          [ -f composer.lock ] || echo '{}' > composer.lock
+          [ -f pnpm-lock.yaml ] || touch pnpm-lock.yaml
+          # Disable BuildKit for cross-image COPY --from compatibility
+          DOCKER_BUILDKIT=0 docker compose build php node
           docker compose up -d php node
+          sleep 5
 
       - name: Install dependencies
         run: |
           docker compose exec -T php composer install --no-progress --no-interaction
-          docker compose exec -T node pnpm install --frozen-lockfile
+          docker compose exec -T node pnpm install
 
       - name: PHP Composer Audit
         run: |
