@@ -252,7 +252,7 @@ The `/optimize` command analyzes and improves Claude's configuration.
 **Key Features:**
 
 - **Template drift detection**: Finds when CLAUDE.md changes aren't in template
-- **Terminology registry**: Tracks deprecated terms (e.g., BACKLOG → /tasks)
+- **Terminology registry**: Tracks deprecated terms and naming conventions
 - **Language check**: Finds non-English terms in English-only files
 - **Cross-file consistency**: Verifies docs match actual configuration
 

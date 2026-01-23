@@ -188,7 +188,6 @@ Maintain a list of deprecated → current terms:
 
 | Deprecated | Current   | Context                |
 | ---------- | --------- | ---------------------- |
-| BACKLOG    | /tasks    | Task management        |
 | 3-layer    | 2-layer   | Knowledge architecture |
 | --fast     | --no-plan | Task arguments         |
 | --review   | --plan    | Task arguments         |
@@ -209,7 +208,6 @@ Terminology Check Report
 ════════════════════════
 
 Deprecated Terms Found:
-  .claude/agents/workflow.md:45 - "BACKLOG" → should be "/tasks"
   .zappzarapp/docs/AI-INTEGRATION.md:89 - "3-layer" → should be "2-layer"
 
 Language Issues:
