@@ -18,7 +18,7 @@ Parse `$ARGUMENTS`:
 - (default): Show all sections
 - `--git`: Only Git status
 - `--docker`: Only Docker/container status
-- `--todo`: Only pending tasks from backlog
+- `--todo`: Only pending tasks (via `/tasks --list`)
 - `--all`: Verbose output with details
 
 Examples:
@@ -110,21 +110,20 @@ Changes:  12 files modified
 
 ### 4. Pending Tasks
 
-Read from backlog (3-layer: personal → project → boilerplate, same as
-`/backlog`):
+Run `/tasks --list` (respects configured storage mode):
 
 ```text
-Backlog
-═══════
-High Priority:
+Tasks
+═════
+v1.0 (current milestone):
   - [ ] Fix authentication timeout
   - [ ] Add rate limiting
 
-Medium Priority:
+Deferred:
   - [ ] Refactor UserService
   - [ ] Update documentation
 
-Total: 4 pending tasks
+Total: 4 open tasks
 ```
 
 ### 5. Recent Reports
@@ -159,8 +158,8 @@ Recent Reports
 ║ Session                                                      ║
 ║   Active: 45 min, 12 changes logged                         ║
 ╠══════════════════════════════════════════════════════════════╣
-║ Backlog                                                      ║
-║   Pending: 4 tasks (2 high priority)                        ║
+║ Tasks                                                        ║
+║   Open: 4 tasks (2 in current milestone)                    ║
 ╚══════════════════════════════════════════════════════════════╝
 ```
 
@@ -201,5 +200,5 @@ Environment Health
 
 - Run at session start for quick orientation
 - Use `--all` for verbose output before commits
-- Backlog path: 3-layer resolution (personal → project → boilerplate)
+- Tasks: via `/tasks --list` (respects configured storage mode)
 - Session logs are in `.claude/sessions/`

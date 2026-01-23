@@ -9,30 +9,21 @@
 1. Find and read last session:
    `find .claude/sessions -name "session-*.md" -type f | xargs ls -1t | head -1`
 2. Extract: Goal, Summary, References
-3. Read backlog for open items (see "Knowledge File Paths" for resolution)
-4. Create new session in year/month folder:
-   `.claude/sessions/YYYY/MM/session-YYYY-MM-DD-HHMM-<task-slug>.md`
-   - Use template from `.zappzarapp/ai/templates/SESSION-TEMPLATE.md`
-5. Brief user on context (previous session, backlog)
-6. Ask: "What would you like to work on?"
+3. Run `/tasks --list` for open items (respects configured storage mode)
+4. Create new session from `.zappzarapp/ai/templates/SESSION-TEMPLATE.md`
 
-**Skip if:** User's first message is a direct task (then create session silently
-and start working).
+**If fresh context (new conversation):**
 
-**Session path format:**
-`.claude/sessions/YYYY/MM/session-YYYY-MM-DD-HHMM-<task-slug>.md`
+1. Brief user on context (previous session, tasks)
+2. Ask: "What would you like to work on?"
 
-Example: `.claude/sessions/2026/01/session-2026-01-21-1311-agent-workflow.md`
+**If continued from context compression:**
 
-## Session End
+1. Find and continue previous session file (same task-slug)
+2. Continue working silently
 
-When ending a session (user confirms):
-
-1. Update session log with Summary, Open Items, Next Steps
-2. Tell user: "Bitte `/clear` eingeben für neuen Kontext."
-3. New conversation will auto-start new session
-
-**Note:** `/clear` is a built-in CLI command - only the user can execute it.
+**Skip steps 5-6 if:** User's first message is a direct task (then create
+session silently and start working).
 
 ## Context Overflow / Continued Sessions
 
@@ -58,7 +49,7 @@ overflow:**
 
 ## Session Log Updates
 
-**Update the session log DURING work, not just at the end:**
+**Update DURING work, not just at the end:**
 
 - After each significant change: add to Changes table
 - After each decision: add to Decisions section
@@ -69,6 +60,25 @@ overflow:**
 
 **Subagents:** Do NOT update session file directly. Report changes back to main
 agent, who updates centrally (prevents conflicts).
+
+### Knowledge File Updates
+
+**Write learnings, decisions, and references IMMEDIATELY when discovered:**
+
+| Discovery                       | Action                    |
+| ------------------------------- | ------------------------- |
+| New insight / gotcha / pattern  | Append to `LEARNINGS.md`  |
+| Architecture decision made      | Add ADR to `DECISIONS.md` |
+| Useful documentation link found | Add to `REFERENCES.md`    |
+
+Session files are not committed (lost on context overflow). Knowledge files are
+committed (persistent). In session file, only note "Added learning: <title>".
+
+### Ending a Session
+
+1. Complete session log: Fill in `## Summary`
+2. Verify learnings/decisions were written to knowledge files
+3. Tell user: "Please enter `/clear` for fresh context."
 
 ---
 
@@ -99,13 +109,8 @@ In practice this means:
 
 Different files have different layer support:
 
-**BACKLOG — 3 Layer:**
-
-| Priority | Path                         | Condition                        |
-| -------- | ---------------------------- | -------------------------------- |
-| 1        | `~/.local/share/zappzarapp/` | `.claude/config.local.md` exists |
-| 2        | `.ai/`                       | `.ai/BACKLOG.md` exists          |
-| 3        | `.zappzarapp/ai/`            | fallback                         |
+**Note:** Task management is handled via `/tasks` command (auto-detects
+storage).
 
 **LEARNINGS, DECISIONS, REFERENCES — 2 Layer:**
 
@@ -121,21 +126,19 @@ Different files have different layer support:
 | 1        | `documentation/` | `documentation/CHANGELOG.md` exists |
 | 2        | `.zappzarapp/`   | fallback                            |
 
-**Note:** Personal layer only exists for BACKLOG (cross-project task tracking).
-
 ---
 
 ## Agent-Workflow
 
-For complex tasks, use specialized agents. See `.claude/agents/` for details:
+**Before any implementation task:** Read `.claude/agents/workflow.md` to
+determine scope (Trivial/Small/Medium/Large) and select appropriate workflow.
 
-| File            | Content                                      |
-| --------------- | -------------------------------------------- |
-| `workflow.md`   | Scope decision, Main Agent responsibilities  |
-| `architect.md`  | Agent A: Analysis, plan creation             |
-| `coder.md`      | Agent B: Implementation (B1/B2 for PHP/Node) |
-| `reviewer.md`   | Agent C: Code review, feedback loop          |
-| `documenter.md` | Agent D: Documentation check & update        |
+Agents are selected automatically based on file count, complexity, and
+languages. The workflow.md contains scope detection, agent roles, pre-flight
+checks, and user checkpoints.
+
+**Project context:** See `.claude/context/project.md` for architecture and test
+conventions.
 
 ## Code Standards
 
@@ -146,7 +149,7 @@ agents):
 | ----------------- | ---------------------------- |
 | `php.md`          | Suppressions, PHPStan, PHPMD |
 | `node.md`         | ESLint, Prettier, TypeScript |
-| `sql.md`          | Dialekte, sqlfluff           |
+| `sql.md`          | Dialects, sqlfluff           |
 | `shell.md`        | ShellCheck, Bash/POSIX       |
 | `markdown.md`     | Code blocks, markdownlint    |
 | `docker.md`       | Hadolint                     |
@@ -155,19 +158,28 @@ agents):
 ## Project Structure
 
 ```text
-.ai/                   → Project AI knowledge (team backlog, decisions, learnings)
+.ai/                   → Project AI knowledge (decisions, learnings, references)
+.claude/               → Claude tooling (agents, commands, sessions)
 .zappzarapp/           → Boilerplate config (standards, docs, changelog)
 docker/                → Docker configurations
+documentation/         → Project documentation (CHANGELOG)
 resources/             → Frontend assets (JS/CSS/Images)
-src/node/backend/      → Node.js backend (Express API)
-src/node/frontend/     → Node.js frontend (optional, e.g., Nuxt/Next.js)
-src/php/App/           → Main PHP application
-src/php/DevDashboard/  → Development Dashboard (separate module)
+src/node/              → Node.js code (backend/, frontend/)
+src/php/               → PHP code (App/, DevDashboard/)
 templates/             → PHP templates (app/, dev-dashboard/)
-tests/goss/            → Container tests (Goss YAML specs)
-tests/node/            → Vitest tests (mirrors src/node/)
-tests/php/             → PHPUnit tests (mirrors src/php/)
+tests/                 → Tests (goss/, node/, php/)
 ```
+
+**Claude-specific folders:**
+
+| Folder              | Purpose                      | Committed |
+| ------------------- | ---------------------------- | --------- |
+| `.claude/agents/`   | Agent workflow documentation | Yes       |
+| `.claude/commands/` | Slash command definitions    | Yes       |
+| `.claude/sessions/` | Session logs (YYYY/MM/)      | No        |
+| `.claude/temp/`     | Agent work files             | No        |
+| `.ai/`              | Project knowledge files      | Yes       |
+| `.zappzarapp/ai/`   | Boilerplate knowledge        | Yes       |
 
 ## Key Make Targets
 
@@ -180,29 +192,14 @@ make fresh             → Rebuild everything
 
 For all lint/test/fix targets: See `.zappzarapp/standards/make-targets.md`
 
-## Architecture
-
-- DevDashboard is a standalone module (own routes, controllers, services)
-- Vite for frontend build (resources/ → public/build/)
-- Multi-DB support: PostgreSQL (default), MariaDB (optional)
-- Code comments and documentation always in English!
-
-## Test Conventions
-
-- PHP: tests/php/{Module}/Unit/ and tests/php/{Module}/Feature/
-- Node: tests/node/backend/unit/ and tests/node/backend/integration/
-- Test class suffix: _Test.php /_.test.ts
-- Coverage reports: build/coverage/
-- New code always requires corresponding tests (Unit/Feature)
-
 ## Slash Commands
 
 Available commands in `.claude/commands/`:
 
 | Command       | Purpose                                              |
 | ------------- | ---------------------------------------------------- |
-| `/status`     | Project overview (Git, Docker, backlog)              |
-| `/backlog`    | Manage backlog tasks (add, list, prioritize)         |
+| `/status`     | Project overview (Git, Docker, tasks)                |
+| `/tasks`      | Task management (GitHub/GitLab Issues or local)      |
 | `/commit`     | Guided commit workflow with quality checks           |
 | `/audit`      | Project audit (quality, security, docs) - quick/full |
 | `/sync-check` | Check configuration files for sync                   |
@@ -210,201 +207,46 @@ Available commands in `.claude/commands/`:
 | `/research`   | Research topics (local knowledge + optional web)     |
 | `/optimize`   | Self-optimization of config, learnings, commands     |
 
-**Note:** Code review and tests are handled by Agent C (Reviewer) in the agent
-workflow. Use `make test` for manual testing.
-
 ## Git & Commits
 
 ### Feature-Branch Workflow
 
-Jeder Task wird auf einem eigenen Feature-Branch entwickelt:
+Each task is developed on its own feature branch:
 
 ```text
 git checkout -b feature/<task-slug>
     ↓
-[Entwicklung + Zwischen-Commits + CHANGELOG-Einträge]
+[Development + Commits + CHANGELOG entries]
     ↓
-User-Review (gesamter Branch)
+Claude: "Branch ready for review"
     ↓
-Merge → BACKLOG-Task entfernen
+User reviews → Merge → `/tasks --close <id>`
 ```
 
-**Branch-Naming:** `feature/<slug>`, `fix/<slug>`, `refactor/<slug>`
+**Branch naming:** `feature/<slug>`, `fix/<slug>`, `refactor/<slug>`
 
-### Commit-Regeln
+### Commit Rules
 
-- Do not commit unless the user explicitly requests it
+- Commit regularly on feature branches (intermediate commits encouraged)
 - Use `/commit` for the guided commit workflow
-- Run `/sync-check` before commits that touch configuration files
-
-### CHANGELOG & BACKLOG Timing
-
-| Phase                              | CHANGELOG             | BACKLOG           |
-| ---------------------------------- | --------------------- | ----------------- |
-| Zwischen-Commit (Feature-Branch)   | ✅ Eintrag hinzufügen | ❌ Task bleibt    |
-| Merge to main (nach User-Approval) | Bereits eingetragen   | ✅ Task entfernen |
-
-### Task-Abschluss Workflow
-
-1. Claude erledigt Task auf Feature-Branch
-2. Claude informiert User: "Branch ready for review"
-3. User reviewed den gesamten Branch
-4. User approved → Merge + BACKLOG-Task entfernen
-
-## Bash Commands
-
-- **Single commands instead of chaining**: Use separate Bash calls instead of
-  `cmd1 && cmd2 && cmd3`. Chained commands require manual confirmation, single
-  ones don't.
-- **Better error handling**: With single commands, errors can be handled
-  precisely instead of the entire chain aborting.
-- **Use `git mv` for file operations**: Prefer `git mv` over plain `mv` for
-  renaming/moving tracked files. This updates the Git index immediately and
-  provides better IDE integration.
+- Never commit directly to develop or master — only via feature branch merges
 
 ## Error Prevention
 
 - Containers not running? → `make up` first
-- Composer/pnpm changes always via `make composer`/`make pnpm`, never directly
-  in composer.json/package.json
-- **Never commit lockfiles** (`composer.lock`, `pnpm-lock.yaml`) - this is a
-  boilerplate, users generate their own
-- After changes to Dockerfiles, compose._, entrypoints, php.ini or other Docker
-  configurations: rebuild containers (`make build-_`) and restart (`make down &&
-  make up`) for changes to take effect
-- For problems with Make commands or Docker: analyze and fix the root cause!
-  Never manually edit files to work around tooling issues
+- After Docker config changes: `make build-*` + `make down && make up`
+- Never commit lockfiles (`composer.lock`, `pnpm-lock.yaml`)
+- For Make/Docker problems: fix root cause, don't work around
 
-## Forbidden Commands
+**Package manager commands** — always use make targets:
 
-**NEVER use local package managers for dependency changes.** Always use make
-targets:
+| ❌ Forbidden         | ✅ Use instead                  |
+| -------------------- | ------------------------------- |
+| `composer require X` | `make composer CMD="require X"` |
+| `pnpm add X`         | `make pnpm CMD="add X"`         |
 
-| ❌ Forbidden                    | ✅ Use instead                  |
-| ------------------------------- | ------------------------------- |
-| `composer install`              | `make composer-install`         |
-| `composer update`               | `make composer-update`          |
-| `composer require X`            | `make composer CMD="require X"` |
-| `composer remove X`             | `make composer CMD="remove X"`  |
-| `pnpm install`                  | `make pnpm-install`             |
-| `pnpm update`                   | `make pnpm-update`              |
-| `pnpm add X`                    | `make pnpm CMD="add X"`         |
-| `pnpm remove X`                 | `make pnpm CMD="remove X"`      |
-| `npm install/add/update/remove` | Use pnpm equivalents above      |
-
-**Allowed** (info only, no changes): `composer --version`, `composer show`,
-`pnpm list`, etc.
-
-**Why blocked?**
-
-- Ensures correct PHP/Node version (container vs local mismatch)
-- Guarantees consistent environment across team
-- Proper volume mounts and permissions
-- Lockfiles generated with correct platform
-
-## Session Workflow
-
-### Starting a Session
-
-Sessions start automatically (see "Session Auto-Start" at top of this file).
-
-### Session Log
-
-Maintain a session log in `.claude/sessions/session-YYYY-MM-DD-HHMM.md`:
-
-Session log contains only: Goal, Branch, Changes, References, Summary.
-
-Use `.zappzarapp/ai/templates/SESSION-TEMPLATE.md` as the base.
-
-### Knowledge File Updates
-
-**Write learnings, decisions, and references IMMEDIATELY when discovered — not
-at session end.**
-
-| Discovery                       | Action                    |
-| ------------------------------- | ------------------------- |
-| New insight / gotcha / pattern  | Append to `LEARNINGS.md`  |
-| Architecture decision made      | Add ADR to `DECISIONS.md` |
-| Useful documentation link found | Add to `REFERENCES.md`    |
-
-**Why immediately?**
-
-- Session files are not committed (lost on context overflow)
-- Knowledge files are committed (persistent across sessions)
-- Prevents knowledge loss
-
-**Session file:** Only note "Added learning: <title>" as reference, not the full
-content.
-
-**Path:** Use resolved path from "Knowledge File Paths" section above.
-
-### Ending a Session
-
-1. Complete session log: Fill in `## Summary`
-2. Verify all learnings/decisions were written to knowledge files (should
-   already be done during session)
-3. Tell user: "Bitte `/clear` eingeben für neuen Kontext."
-
-### Knowledge Management
-
-| Layer       | Location                     | Purpose               | Git Status | Files                                     |
-| ----------- | ---------------------------- | --------------------- | ---------- | ----------------------------------------- |
-| Personal    | `~/.local/share/zappzarapp/` | Private notes         | Outside    | BACKLOG only                              |
-| Project     | `.ai/`                       | Team-shared knowledge | Committed  | BACKLOG, LEARNINGS, DECISIONS, REFERENCES |
-| Boilerplate | `.zappzarapp/ai/`            | Boilerplate knowledge | Committed  | BACKLOG, LEARNINGS, DECISIONS, REFERENCES |
-
-**Note:** Personal layer only supports BACKLOG (cross-project task tracking).
-Other knowledge files (LEARNINGS, DECISIONS, REFERENCES) are always project or
-boilerplate level.
-
-See "Knowledge File Paths" section for full resolution logic.
-
-Session logs are minimal (Goal, Changes, References, Summary).
-
-### Folder Structure
-
-**`.zappzarapp/` (boilerplate config, committed):**
-
-| Folder/File          | Purpose                             |
-| -------------------- | ----------------------------------- |
-| `ai/`                | Knowledge files (all AI agents)     |
-| `standards/`         | Coding standards (all AI agents)    |
-| `docs/`              | Boilerplate documentation           |
-| `CHANGELOG.md`       | Boilerplate version history         |
-| `CLAUDE.template.md` | Generic CLAUDE.md for user projects |
-
-**`.claude/` (Claude tooling):**
-
-| Folder      | Purpose                      | Committed |
-| ----------- | ---------------------------- | --------- |
-| `CLAUDE.md` | Claude instructions          | Yes       |
-| `agents/`   | Agent workflow documentation | Yes       |
-| `commands/` | Slash command definitions    | Yes       |
-| `sessions/` | Session logs (YYYY/MM/)      | No        |
-| `state/`    | Persistent state (audit)     | No        |
-| `cache/`    | Temporary data               | No        |
-| `temp/`     | Agent work files             | No        |
-| `reports/`  | Generated audit reports      | No        |
-
-**`.ai/` (project AI knowledge, created by make setup):**
-
-| File            | Purpose                       |
-| --------------- | ----------------------------- |
-| `BACKLOG.md`    | Team backlog                  |
-| `DECISIONS.md`  | Architecture decisions (ADRs) |
-| `LEARNINGS.md`  | Project learnings             |
-| `REFERENCES.md` | Documentation links           |
-
-**`documentation/` (project docs, created by make setup):**
-
-| File           | Purpose                 |
-| -------------- | ----------------------- |
-| `CHANGELOG.md` | Project version history |
-
-**CHANGELOG path resolution:**
-
-- Project: `documentation/CHANGELOG.md` (if exists)
-- Boilerplate: `.zappzarapp/CHANGELOG.md` (fallback)
+Same pattern for `install`, `update`, `remove`. Info commands allowed
+(`composer show`, `pnpm list`).
 
 ## Hooks
 
@@ -414,37 +256,8 @@ Default hooks in `settings.json`:
 
 Example personal hooks in `settings.local.json`:
 
-- **PreToolUse (Bash)**: BACKLOG/CHANGELOG reminder before commits
+- **PreToolUse (Bash)**: Task/CHANGELOG reminder before commits
 - **PostToolUse (TodoWrite)**: Session log update reminder
-
-## Task Notifications (ntfy)
-
-Send notifications at key points during agent workflow.
-
-**Setup:** Copy `.claude/config.local.md.example` to `.claude/config.local.md`
-and set your ntfy topic.
-
-**Read topic from** `.claude/config.local.md` before sending notifications.
-
-**Task completed:**
-
-```bash
-curl -s -d "[zappzarapp] ✓ <task-description>" ntfy.sh/<NTFY_TOPIC>
-```
-
-**Waiting for user input** (plan review, errors, decisions):
-
-```bash
-curl -s -H "Priority: high" -H "Tags: hourglass" \
-  -d "[zappzarapp] ⏳ <context> - waiting for input" ntfy.sh/<NTFY_TOPIC>
-```
-
-Examples:
-
-- `⏳ Plan ready for review`
-- `⏳ Undocumented warning - decision needed`
-- `⏳ Reviewer found errors - user input required`
-- `✓ SearchService implementation completed`
 
 ## Language
 

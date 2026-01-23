@@ -267,7 +267,7 @@ Sessions older than 30 days:
 1. Extract key information:
    - Session Summary
    - Learnings (should already be in LEARNINGS.md)
-   - Open Items (should be in BACKLOG.md)
+   - Open Items (should be captured as tasks)
 2. Create condensed archive entry
 3. Move original to `.claude/archive/sessions/`
 
@@ -276,7 +276,7 @@ Sessions older than 30 days:
 Before archiving, verify:
 
 - [ ] All learnings synced to LEARNINGS.md?
-- [ ] Open items captured in BACKLOG.md?
+- [ ] Open items captured as tasks?
 - [ ] Summary present?
 
 ### 4.4 Archive Format
@@ -313,7 +313,7 @@ Pre-Archive Check:
   session-2026-01-10:
     [OK] Summary present
     [OK] Learnings synced
-    [WARN] 2 open items not in BACKLOG
+    [WARN] 2 open items not captured as tasks
 
 Actions:
   [1] Archive all (moves to .claude/archive/)

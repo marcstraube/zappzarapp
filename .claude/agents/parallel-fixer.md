@@ -8,7 +8,7 @@ Coordinates parallel fixing of files across multiple languages.
 
 Main Agent invokes when:
 
-- Ad-hoc fix request (not via `/backlog`)
+- Ad-hoc fix request (not via `/tasks`)
 - Files belong to ≥2 different languages
 - Files are independent (no cross-language dependencies)
 
@@ -62,7 +62,7 @@ Requirements:
 - Run language-specific lint after changes
 - Report: files changed, issues resolved/remaining
 
-DO NOT update: session files, BACKLOG, CHANGELOG (Main Agent handles)
+DO NOT update: session files, tasks, CHANGELOG (Main Agent handles)
 ```
 
 ## Spawning Example

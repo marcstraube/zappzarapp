@@ -62,7 +62,7 @@ Main Agent spawns multiple Coder agents in parallel:
 
 - No architectural changes
 - No new dependencies
-- No session/BACKLOG/CHANGELOG updates (Main Agent handles)
+- No session/task/CHANGELOG updates (Main Agent handles)
 - Max 2 retry attempts, then skip task
 
 **Reports back:**

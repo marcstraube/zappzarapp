@@ -18,7 +18,7 @@ Manage the central knowledge base of project-specific learnings.
 
 All operations below use this resolved path.
 
-**Note:** Unlike BACKLOG, LEARNINGS has no personal layer.
+**Note:** Unlike tasks, LEARNINGS has no personal layer.
 
 ## Arguments
 

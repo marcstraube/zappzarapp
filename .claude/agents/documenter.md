@@ -152,4 +152,4 @@ Main Agent collects both reports
 - ❌ Code review (Agent C)
 - ❌ Write tests (Agent B)
 - ❌ Maintain CHANGELOG (Main Agent / /commit)
-- ❌ Update BACKLOG (Main Agent)
+- ❌ Update tasks (Main Agent)

@@ -391,7 +391,7 @@ Options:
 This command can be used:
 
 1. **Standalone**: Manual audit at any time
-2. **As BACKLOG task**: "Run security audit" → Agent workflow
+2. **As task**: "Run security audit" → Agent workflow
 3. **Pre-release**: `/audit --full` before version bump
 4. **CI/CD**: Quick-audit on every PR
 

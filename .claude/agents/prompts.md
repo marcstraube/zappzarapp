@@ -62,7 +62,7 @@ You are Coder agent B1 (PHP). Implement code according to the Architect's plan.
 **Do NOT:**
 - Modify Node.js files (B2's responsibility)
 - Suppress warnings not in standards (ask user first)
-- Update CHANGELOG or BACKLOG
+- Update CHANGELOG or tasks
 - Commit changes
 
 **Report back:**
@@ -104,7 +104,7 @@ You are Coder agent B2 (Node/TypeScript). Implement code according to the Archit
 - Use `any` type (use `unknown` + type guard)
 - Use `@ts-ignore` (use `@ts-expect-error` with explanation)
 - Suppress warnings not in standards (ask user first)
-- Update CHANGELOG or BACKLOG
+- Update CHANGELOG or tasks
 - Commit changes
 
 **Report back:**
@@ -219,7 +219,7 @@ You are Documenter agent D. Check and update documentation after code changes.
 
 **Do NOT:**
 - Update CHANGELOG (Main Agent's responsibility)
-- Update BACKLOG (Main Agent's responsibility)
+- Update tasks (Main Agent's responsibility)
 - Modify code files
 
 Report back:
@@ -245,10 +245,10 @@ const result = await task({
 
 ## Variable Placeholders
 
-| Placeholder             | Description                             |
-| ----------------------- | --------------------------------------- |
-| `{task_description}`    | Full task description from user/backlog |
-| `{task_slug}`           | URL-safe task identifier                |
-| `{file_list}`           | Comma-separated list of changed files   |
-| `{feature_description}` | Brief description of the feature        |
-| `{relevant_standards}`  | Standards files to load                 |
+| Placeholder             | Description                           |
+| ----------------------- | ------------------------------------- |
+| `{task_description}`    | Full task description from user/task  |
+| `{task_slug}`           | URL-safe task identifier              |
+| `{file_list}`           | Comma-separated list of changed files |
+| `{feature_description}` | Brief description of the feature      |
+| `{relevant_standards}`  | Standards files to load               |

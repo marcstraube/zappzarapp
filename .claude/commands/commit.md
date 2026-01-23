@@ -41,13 +41,14 @@ User reviews branch              │
          ↓                       │
 Merge ──────────────────────────→│ Clean history
          ↓                       │
-BACKLOG task removed             │
+Task closed                      │
 ```
 
 **Key rules:**
 
 - CHANGELOG entries: Add per commit (on feature branch)
-- BACKLOG removal: Only at merge to main (after user approval)
+- Task closure: Only at merge to main (after user approval, via
+  `/tasks --close`)
 
 ## Workflow
 
@@ -201,32 +202,32 @@ Present the draft commit message and ask:
 
 1. Add entry under appropriate category:
 
-Without backlog task:
+Without task reference:
 
 ```markdown
 - <Description from commit message>
 ```
 
-With backlog task:
+With task reference:
 
 ```markdown
-- <Description from commit message> (Backlog: <Task Name>)
+- <Description from commit message> (Task: <Task Name>)
 ```
 
-### Step 9: Backlog Cleanup (only on merge to main)
+### Step 9: Task Closure (only on merge to main)
 
-**Important:** BACKLOG cleanup happens only when merging a feature branch to
-main, NOT on intermediate commits on the feature branch.
+**Important:** Task closure happens only when merging a feature branch to main,
+NOT on intermediate commits on the feature branch.
 
 **On Feature-Branch commits:**
 
 - CHANGELOG: ✅ Add entry per commit
-- BACKLOG: ❌ Do NOT remove (task not complete yet)
+- Task: ❌ Do NOT close (task not complete yet)
 
 **On Merge to main (after user approval):**
 
 - CHANGELOG: Already contains entries from feature branch
-- BACKLOG: ✅ Remove the completed task
+- Task: ✅ Close via `/tasks --close <id>`
 
 **Detection (at merge time):**
 
@@ -236,20 +237,13 @@ main, NOT on intermediate commits on the feature branch.
 
 **If task detected:**
 
-- If certain: Remove task from backlog (use 3-layer path resolution: personal →
-  project → boilerplate, same as `/backlog --target`)
+- If certain: Close task via `/tasks --close <id>`
 - If uncertain: Ask "Schließt dieser Merge den Task **'{task name}'** ab?"
 
-**Removal process:**
+**Important:** Closed tasks are removed/closed, not marked as "Completed".
+Changelog = single source of truth.
 
-1. Find the task section by title (### Task Name)
-2. Remove entire block (from `### Task Name` to next `---`)
-3. Keep surrounding structure intact
-
-**Important:** Remove completely, don't move to "Completed". Changelog = single
-source of truth.
-
-**If no backlog task:** Skip this step.
+**If no task:** Skip this step.
 
 ### Step 10: Stage All Changes
 
@@ -262,8 +256,8 @@ git add <code-files>
 # Stage changelog (project or boilerplate)
 git add documentation/CHANGELOG.md 2>/dev/null || git add .zappzarapp/CHANGELOG.md
 
-# Stage backlog (only if modified)
-git add .ai/BACKLOG.md 2>/dev/null || git add .zappzarapp/ai/BACKLOG.md
+# Stage tasks file (only if using local storage and modified)
+git add .ai/TASKS.md 2>/dev/null || true
 ```
 
 ### Step 11: Execute Commit
@@ -295,11 +289,11 @@ Display summary:
 ╠════════════════════════════════════════════════════════════╣
 ║ Commit:    abc1234 fix(docker): resolve hook issue         ║
 ║ Changelog: Entry added under "Fixed"                       ║
-║ Backlog:   "Pre-Commit Hook Container Dependency" removed  ║
+║ Task:      "Pre-Commit Hook Container Dependency" closed   ║
 ╚════════════════════════════════════════════════════════════╝
 ```
 
-Without backlog task:
+Without task:
 
 ```text
 ╔════════════════════════════════════════════════════════════╗

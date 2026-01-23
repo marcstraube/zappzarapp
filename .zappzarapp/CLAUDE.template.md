@@ -7,27 +7,21 @@
 1. Find and read last session:
    `find .claude/sessions -name "session-*.md" -type f | xargs ls -1t | head -1`
 2. Extract: Goal, Summary, References
-3. Read `.ai/BACKLOG.md` for open items (if exists)
-4. Create new session in year/month folder:
-   `.claude/sessions/YYYY/MM/session-YYYY-MM-DD-HHMM-<task-slug>.md`
-5. Brief user on context (previous session, backlog)
-6. Ask: "What would you like to work on?"
+3. Run `/tasks --list` for open items (respects configured storage mode)
+4. Create new session from `.zappzarapp/ai/templates/SESSION-TEMPLATE.md`
 
-**Skip if:** User's first message is a direct task (then create session silently
-and start working).
+**If fresh context (new conversation):**
 
-**Session path format:**
-`.claude/sessions/YYYY/MM/session-YYYY-MM-DD-HHMM-<task-slug>.md`
+1. Brief user on context (previous session, tasks)
+2. Ask: "What would you like to work on?"
 
-## Session End
+**If continued from context compression:**
 
-When ending a session (user confirms):
+1. Find and continue previous session file (same task-slug)
+2. Continue working silently
 
-1. Update session log with Summary, Open Items, Next Steps
-2. Tell user: "Please type `/clear` for new context."
-3. New conversation will auto-start new session
-
-**Note:** `/clear` is a built-in CLI command - only the user can execute it.
+**Skip steps 5-6 if:** User's first message is a direct task (then create
+session silently and start working).
 
 ## Context Overflow / Continued Sessions
 
@@ -52,7 +46,7 @@ overflow:**
 
 ## Session Log Updates
 
-**Update the session log DURING work, not just at the end:**
+**Update DURING work, not just at the end:**
 
 - After each significant change: add to Changes table
 - After each decision: add to Decisions section
@@ -91,15 +85,15 @@ In practice this means:
 
 ## Agent-Workflow
 
-For complex tasks, use specialized agents. See `.claude/agents/` for details:
+**Before any implementation task:** Read `.claude/agents/workflow.md` to
+determine scope (Trivial/Small/Medium/Large) and select appropriate workflow.
 
-| File            | Content                                     |
-| --------------- | ------------------------------------------- |
-| `workflow.md`   | Scope decision, Main Agent responsibilities |
-| `architect.md`  | Agent A: Analysis, plan creation            |
-| `coder.md`      | Agent B: Implementation                     |
-| `reviewer.md`   | Agent C: Code review, feedback loop         |
-| `documenter.md` | Agent D: Documentation check & update       |
+Agents are selected automatically based on file count, complexity, and
+languages. The workflow.md contains scope detection, agent roles, pre-flight
+checks, and user checkpoints.
+
+**Project context:** See `.claude/context/project.md` for architecture and test
+conventions (create if needed).
 
 ## Code Standards
 
@@ -122,12 +116,23 @@ See `.zappzarapp/standards/` for language-specific rules:
 <!-- TODO: Customize for your project -->
 
 ```text
-.ai/                → Project AI knowledge (BACKLOG, LEARNINGS, etc.)
+.ai/                → Project AI knowledge (LEARNINGS, DECISIONS, etc.)
+.claude/            → Claude tooling (agents, commands, sessions)
 .zappzarapp/        → Boilerplate config & docs
 docker/             → Docker configurations
 src/                → Source code
 tests/              → Test files
 ```
+
+**Claude-specific folders:**
+
+| Folder              | Purpose                      | Committed |
+| ------------------- | ---------------------------- | --------- |
+| `.claude/agents/`   | Agent workflow documentation | Yes       |
+| `.claude/commands/` | Slash command definitions    | Yes       |
+| `.claude/sessions/` | Session logs (YYYY/MM/)      | No        |
+| `.ai/`              | Project knowledge files      | Yes       |
+| `.zappzarapp/ai/`   | Boilerplate knowledge        | Yes       |
 
 ## Key Make Targets
 
@@ -145,22 +150,16 @@ make test              → Run all tests
 
 Available commands in `.claude/commands/`:
 
-| Command      | Purpose                                      |
-| ------------ | -------------------------------------------- |
-| `/status`    | Project overview (Git, Docker, backlog)      |
-| `/backlog`   | Manage backlog tasks (add, list, prioritize) |
-| `/commit`    | Guided commit workflow with quality checks   |
-| `/learnings` | View and manage project learnings            |
+| Command      | Purpose                                     |
+| ------------ | ------------------------------------------- |
+| `/status`    | Project overview (Git, Docker, tasks)       |
+| `/tasks`     | Task management (GitHub/GitLab integration) |
+| `/commit`    | Guided commit workflow with quality checks  |
+| `/learnings` | View and manage project learnings           |
 
 ---
 
 ## Git & Commits
-
-### Commit Rules
-
-- Do not commit unless the user explicitly requests it
-- Use `/commit` for the guided commit workflow
-- Run `/sync-check` before commits that touch configuration files
 
 ### Feature-Branch Workflow
 
@@ -169,42 +168,32 @@ git checkout -b feature/<task-slug>
     ↓
 [Development + Commits + CHANGELOG entries]
     ↓
-User review (entire branch)
+Claude: "Branch ready for review"
     ↓
-Merge → Remove BACKLOG task
+User reviews → Merge → `/tasks --close <id>`
 ```
 
-**Branch-Naming:** `feature/<slug>`, `fix/<slug>`, `refactor/<slug>`
+**Branch naming:** `feature/<slug>`, `fix/<slug>`, `refactor/<slug>`
+
+### Commit Rules
+
+- Commit regularly on feature branches (intermediate commits encouraged)
+- Use `/commit` for the guided commit workflow
+- Never commit directly to develop or master — only via feature branch merges
 
 ---
 
-## Knowledge Management
+## Knowledge File Paths
 
-### 3-Layer Architecture
+**LEARNINGS, DECISIONS, REFERENCES — 2 Layer:**
 
-| Layer       | Location                     | Purpose               |
-| ----------- | ---------------------------- | --------------------- |
-| Personal    | `~/.local/share/zappzarapp/` | Private notes         |
-| Boilerplate | `.zappzarapp/ai/`            | Boilerplate knowledge |
-| Project     | `.ai/`                       | Team-shared knowledge |
+| Priority | Path              | Condition                 |
+| -------- | ----------------- | ------------------------- |
+| 1        | `.ai/`            | `.ai/LEARNINGS.md` exists |
+| 2        | `.zappzarapp/ai/` | fallback                  |
 
-Files: BACKLOG.md, LEARNINGS.md, DECISIONS.md, REFERENCES.md
-
-### Session Workflow
-
-1. Capture new knowledge in session log
-2. At session end, move relevant items to `.ai/`
-3. Team reviews and maintains shared knowledge
-
-### Folder Structure
-
-| Folder              | Purpose                              | Git Status |
-| ------------------- | ------------------------------------ | ---------- |
-| `.claude/agents/`   | Agent workflow documentation         | Committed  |
-| `.claude/commands/` | Slash command definitions            | Committed  |
-| `.claude/sessions/` | Session logs (YYYY/MM/)              | Ignored    |
-| `.zappzarapp/ai/`   | Boilerplate knowledge                | Committed  |
-| `.ai/`              | Project knowledge (created by setup) | Committed  |
+**Note:** Task management is handled via `/tasks` command (auto-detects
+storage).
 
 ---
 
@@ -221,8 +210,12 @@ Default hooks in `settings.json`:
 
 ## Language
 
-- **Documentation**: Always in English
-- **Communication**: In user's language (respond in the language the user uses)
+- **English always**: Documentation, code, technical content, task summaries,
+  error descriptions, implementation details
+- **User's language**: Only for direct questions, confirmations, process
+  explanations
+
+Rule of thumb: If it could be copy-pasted into documentation, use English.
 
 ## Communication
 
@@ -234,7 +227,3 @@ Rules for effective collaboration:
 - **On options**: State preference or say "you decide"
 - **Limit scope**: "Only X, not Y" when boundaries matter
 - **Feedback**: Brief "worked" or "problem with X" helps
-
-## Miscellaneous
-
-- Answer user questions directly. Do not make unsolicited changes.

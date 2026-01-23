@@ -14,36 +14,25 @@ approach.
 | Cline          | No       | Yes   | No             |
 | Roo Code       | No       | Yes   | No             |
 
-## 3-Layer Architecture
+## 2-Layer Architecture
 
-AI knowledge files are organized in three layers:
+AI knowledge files are organized in two layers:
 
-| Layer        | Location                     | Committed | Purpose                     |
-| ------------ | ---------------------------- | --------- | --------------------------- |
-| `zappzarapp` | `.zappzarapp/ai/`            | Yes       | Boilerplate development     |
-| `project`    | `.ai/`                       | Yes       | Team-shared knowledge       |
-| `personal`   | `~/.local/share/zappzarapp/` | No        | Private cross-project notes |
+| Layer        | Location          | Committed | Purpose                 |
+| ------------ | ----------------- | --------- | ----------------------- |
+| `project`    | `.ai/`            | Yes       | Team-shared knowledge   |
+| `zappzarapp` | `.zappzarapp/ai/` | Yes       | Boilerplate development |
 
 ### Knowledge Files
 
-Each layer can contain different files based on layer support:
+| File       | Layers | Available In        |
+| ---------- | ------ | ------------------- |
+| LEARNINGS  | 2      | project, zappzarapp |
+| DECISIONS  | 2      | project, zappzarapp |
+| REFERENCES | 2      | project, zappzarapp |
 
-| File       | Layers | Available In                  |
-| ---------- | ------ | ----------------------------- |
-| BACKLOG    | 3      | personal, project, zappzarapp |
-| LEARNINGS  | 2      | project, zappzarapp           |
-| DECISIONS  | 2      | project, zappzarapp           |
-| REFERENCES | 2      | project, zappzarapp           |
-
-**Note:** Personal layer only supports BACKLOG (cross-project task tracking).
-
-### Path Configuration
-
-Override the personal path in `.zappzarapp/ai/config.local.md`:
-
-```markdown
-personal_knowledge_path: ~/.my-custom-path/
-```
+**Task Management:** Handled via `/tasks` command with automatic storage
+detection (GitHub Issues, GitLab Issues, or local `.ai/TASKS.md`).
 
 ## Configuration
 
@@ -164,6 +153,19 @@ Uses [rulesync](https://github.com/dyoshikawa/rulesync).
 make ai-sync FROM=claude
 ```
 
+### Task Integration Setup
+
+```bash
+# Initialize labels and milestones (auto-detects GitHub/GitLab)
+make ai-setup
+```
+
+This creates:
+
+- Standard labels (bug, enhancement, chore, status::in-progress, etc.)
+- "Backlog" milestone for deferred tasks
+- GitLab uses `::` for scoped labels (mutually exclusive)
+
 ### Environment Configuration
 
 Set defaults in `.env.local`:
@@ -177,46 +179,70 @@ AI_SYNC_FROM=claude
 
 Available commands in `.claude/commands/`:
 
-| Command       | Purpose                                          |
-| ------------- | ------------------------------------------------ |
-| `/status`     | Project overview (Git, Docker, backlog)          |
-| `/backlog`    | Manage tasks (add, list, prioritize)             |
-| `/commit`     | Guided commit workflow with quality checks       |
-| `/audit`      | Project audit (quality, security, docs)          |
-| `/learnings`  | View and manage project learnings                |
-| `/research`   | Research topics (local knowledge + optional web) |
-| `/sync-check` | Verify config file synchronization               |
-| `/optimize`   | Self-optimization of config and commands         |
+| Command       | Purpose                                        |
+| ------------- | ---------------------------------------------- |
+| `/status`     | Project overview (Git, Docker, tasks)          |
+| `/tasks`      | Task management with GitHub/GitLab integration |
+| `/commit`     | Guided commit workflow with quality checks     |
+| `/audit`      | Project audit (quality, security, docs)        |
+| `/learnings`  | View and manage project learnings              |
+| `/sync-check` | Verify config file synchronization             |
+| `/optimize`   | Self-optimization of config and commands       |
 
-### Using /backlog Across Projects
+### Task Management with /tasks
 
-Copy to your user commands directory for global use:
+The `/tasks` command provides full integration with GitHub Issues and GitLab
+Issues, plus local file fallback.
+
+**Arguments:**
+
+| Argument                       | Purpose                            |
+| ------------------------------ | ---------------------------------- |
+| `--add [--private]`            | Create new task                    |
+| `--list [--milestone <name>]`  | List tasks                         |
+| `--choose [--plan\|--no-plan]` | Select and start a task            |
+| `--milestone <name> <task>`    | Assign task to milestone           |
+| `--defer <task>`               | Move to "Backlog" milestone        |
+| `--close <task>`               | Close task (completed/not planned) |
+| `--add-label <labels> <task>`  | Add labels                         |
+| `--remove-label <labels>`      | Remove labels                      |
+| `--reprioritize`               | Analyze and suggest changes        |
+
+**Storage Modes:**
+
+| Mode    | Storage                      | When                              |
+| ------- | ---------------------------- | --------------------------------- |
+| GitHub  | GitHub Issues                | Upstream zappzarapp on github.com |
+| GitLab  | GitLab Issues                | Upstream zappzarapp on gitlab.com |
+| Local   | `.ai/TASKS.md`               | Forks, other projects             |
+| Private | `~/.local/share/zappzarapp/` | With `--private` flag             |
+
+**Features:**
+
+- **Milestones** instead of priority labels (v1.0, v1.1, Backlog)
+- **Prioritization** via Milestone → Type → Age
+- **Label typo detection** with "Did you mean...?" suggestions
+- **Bidirectional board sync** (GitHub Projects / GitLab Issue Boards)
+- **Platform parity** between GitHub and GitLab
+
+**Setup:**
 
 ```bash
-cp .claude/commands/backlog.md ~/.claude/commands/
+make ai-setup  # Auto-detects GitHub/GitLab, creates labels + milestones
 ```
-
-Targets:
-
-| Target       | Path                                   | Purpose             |
-| ------------ | -------------------------------------- | ------------------- |
-| `zappzarapp` | `./.zappzarapp/ai/BACKLOG.md`          | Boilerplate tasks   |
-| `project`    | `./.ai/BACKLOG.md`                     | Team backlog        |
-| `personal`   | `~/.local/share/zappzarapp/BACKLOG.md` | Cross-project tasks |
-
-Default target: `personal`
 
 ## Agent Workflow
 
 For complex tasks, Claude Code uses specialized agents based on task scope:
 
-| Scope      | Files   | Workflow                                           |
-| ---------- | ------- | -------------------------------------------------- |
-| Small      | 1-3     | Direct implementation → Lint → Test                |
-| Medium     | 3-10    | Plan-Agent → Implementation → Lint → Test          |
-| Large      | >10     | 4-Agent-Model (Architect → Coder → Reviewer → Doc) |
-| Quick Wins | 1-2     | Parallel Coder agents → Single commit              |
-| Ad-hoc Fix | ≥2 lang | Parallel Fixer → Language-specific agents          |
+| Scope      | Trigger                    | Workflow                                     |
+| ---------- | -------------------------- | -------------------------------------------- |
+| Trivial    | 1 file, simple change      | Direct (typo, config, one-liner)             |
+| Small      | 1-3 files, code changes    | Coder Agent → Lint → Test                    |
+| Medium     | 3-10 files                 | Plan Mode → Coder → Lint → Test              |
+| Large      | >10 files                  | 4-Agent-Model (Architect→Coder→Reviewer→Doc) |
+| Quick Wins | Multiple independent tasks | Parallel Coder agents → Single commit        |
+| Ad-hoc Fix | ≥2 languages, independent  | Parallel Fixer → Language-specific agents    |
 
 ### 4-Agent-Model
 
@@ -225,11 +251,23 @@ Main Agent
     ↓
 Agent A (Architect) — Analysis & planning
     ↓
-Agent B1/B2/B3 (Coder) — PHP/Node/SQL implementation (parallel if independent)
+Agent B1-B4 (Coder) — PHP/Node/Infra/SQL implementation (parallel if independent)
     ↓
-Agent C1-C5 (Reviewer) — Quality checks (parallel)
+Agent C1-C6 (Reviewer) — Quality checks per language (parallel)
     ↓
 Agent D (Documenter) — Documentation updates
+```
+
+### Quick Wins Batch
+
+For multiple small, independent tasks:
+
+```text
+Main Agent validates independence
+    ↓
+Spawn parallel Coder agents (one per task)
+    ↓
+Collect results → Run lint → Single commit
 ```
 
 ### Parallel Fixer
@@ -239,12 +277,12 @@ For ad-hoc fix requests involving multiple languages:
 ```text
 Main Agent detects: PHP + Node files
     ↓
-Spawn parallel agents (one per language)
+Spawn parallel Fixer agents (one per language)
     ↓
-Collect results, run lint
+Collect results → Run lint
 ```
 
-See `.claude/agents/` for detailed workflow documentation.
+See `.claude/agents/workflow.md` for detailed documentation.
 
 ## make setup Behavior
 

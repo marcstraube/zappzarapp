@@ -2,15 +2,16 @@
 
 ## Scope Decision
 
-Based on Task Scope Guide (BACKLOG.md):
+Automatic detection based on file count, complexity, and languages:
 
-| Scope      | Files   | Workflow                                                  |
-| ---------- | ------- | --------------------------------------------------------- |
-| Small      | 1-3     | Direct implementation → Lint → Test                       |
-| Medium     | 3-10    | Plan-Agent → Implementation → Lint → Test                 |
-| Large      | >10     | 4-Agent-Model (Architect → Coder → Reviewer → Documenter) |
-| Quick Wins | 1-2     | Parallel Coder agents → Single commit (batch mode)        |
-| Ad-hoc Fix | ≥2 lang | Parallel Fixer → Language-specific agents                 |
+| Scope      | Trigger                    | Workflow                                     |
+| ---------- | -------------------------- | -------------------------------------------- |
+| Trivial    | 1 file, simple change      | Direct (typo, config, one-liner)             |
+| Small      | 1-3 files, code changes    | Coder Agent → Lint → Test                    |
+| Medium     | 3-10 files                 | Plan Mode → Coder → Lint → Test              |
+| Large      | >10 files                  | 4-Agent-Model (Architect→Coder→Reviewer→Doc) |
+| Quick Wins | Multiple independent tasks | Parallel Coder agents → Single commit        |
+| Ad-hoc Fix | ≥2 languages, independent  | Parallel Fixer → Language-specific agents    |
 
 ## Pre-Flight Checks
 
@@ -63,7 +64,7 @@ git checkout -b feature/<task-slug>
     ↓
 User Review (entire branch)
     ↓
-Merge → Remove BACKLOG task
+Merge → Close task (via `/tasks --close`)
 ```
 
 ### Branch Naming
@@ -95,7 +96,7 @@ For multiple small, independent tasks from the "Quick Wins" section.
 ### Workflow
 
 ```text
-/backlog --choose
+/tasks --choose
     ↓
 [1] 🚀 Quick Wins (4 tasks)  ← User selects batch option
     ↓
@@ -117,7 +118,7 @@ Run lint checks (make check-quick)
     ↓
 Single commit: "chore: batch quick wins"
     ↓
-Update BACKLOG: Remove completed Quick Wins
+Close completed Quick Wins (via `/tasks --close`)
 Update CHANGELOG: Add entries
 ```
 
@@ -149,7 +150,7 @@ Requirements:
 - No architectural changes
 - Report back: files changed, any issues encountered
 
-DO NOT: Update session files, BACKLOG, or CHANGELOG (Main Agent handles this)
+DO NOT: Update session files, tasks, or CHANGELOG (Main Agent handles this)
 ```
 
 ### Validation Before Batch
@@ -243,7 +244,7 @@ Main Agent
 ├── Collects C + D reports
 ├── Intermediate commits on feature branch
 ├── Informs user: "Branch ready for review"
-└── After approval: Merge + BACKLOG cleanup
+└── After approval: Merge + close task
 ```
 
 **B3 Infrastructure includes:** Shell scripts, Dockerfiles, Compose files,
@@ -253,10 +254,10 @@ Makefile, BATS/Goss tests
 
 ### Branch Management
 
-- **Task Start:** Create feature branch + set BACKLOG status to "In Progress"
+- **Task Start:** Create feature branch + set task status to "In Progress"
 - **During Task:** All commits on feature branch
 - **Task End:** Inform user, wait for review
-- **After Approval:** Perform merge + remove task from BACKLOG
+- **After Approval:** Perform merge + close task (via `/tasks --close`)
 
 ### Coordination
 
@@ -297,7 +298,7 @@ Report:
 
 **Path:** Use 2-layer resolution (`.ai/` if exists, otherwise
 `.zappzarapp/ai/`). Note: LEARNINGS, DECISIONS, REFERENCES have no personal
-layer (unlike BACKLOG).
+layer (tasks are managed via `/tasks` command).
 
 **Timing:** After Completion Report, before "Branch ready for review" message.
 
@@ -329,34 +330,38 @@ Main Agent decides:
 
 **Plan Review (Size-based default):**
 
-| Task Size | Default       | Override                   |
-| --------- | ------------- | -------------------------- |
-| Small     | Skip review   | `--review` to force review |
-| Medium    | Ask user      | `--fast` or `--review`     |
-| Large     | Always review | `--fast` to skip           |
+| Task Size | Default     | Override                   |
+| --------- | ----------- | -------------------------- |
+| Small     | Skip plan   | `--plan` to force planning |
+| Medium    | Ask user    | `--plan` or `--no-plan`    |
+| Large     | Always plan | `--no-plan` to skip        |
 
-Override via `/backlog --choose --fast` or `/backlog --choose --review`.
+Override via `/tasks --choose --plan` or `/tasks --choose --no-plan`.
 
 **ntfy Notifications:**
 
-Send ntfy notification when waiting for user input. Read topic from
-`.claude/config.local.md`.
+**Setup:** Copy `.claude/config.local.md.example` to `.claude/config.local.md`
+and set your ntfy topic.
 
 ```bash
+# Task completed
+curl -s -d "[zappzarapp] ✓ <task-description>" ntfy.sh/<NTFY_TOPIC>
+
+# Waiting for user input
 curl -s -H "Priority: high" -H "Tags: hourglass" \
   -d "[zappzarapp] ⏳ <context> - waiting for input" ntfy.sh/<NTFY_TOPIC>
 ```
 
-## BACKLOG Status Management
+## Task Status Management
 
-Main Agent is responsible for BACKLOG status updates:
+Main Agent is responsible for task status updates:
 
 | Event                          | Action                            |
 | ------------------------------ | --------------------------------- |
 | Feature branch created         | Set status `Open` → `In Progress` |
-| Merge to main (after approval) | Remove task from BACKLOG entirely |
+| Merge to main (after approval) | Close task (via `/tasks --close`) |
 
-**Note:** `/backlog --choose` also sets status to "In Progress", but Main Agent
+**Note:** `/tasks --choose` also sets status to "In Progress", but Main Agent
 does it regardless of how the task was started. This ensures consistency.
 
 **Status values:**
@@ -372,16 +377,16 @@ single source of truth for completed work.
 
 ### During Development (Feature Branch)
 
-| Action              | CHANGELOG        | BACKLOG       |
+| Action              | CHANGELOG        | Task          |
 | ------------------- | ---------------- | ------------- |
-| Intermediate commit | ✅ Add entry     | ❌ Task stays |
-| Further commit      | ✅ Another entry | ❌ Task stays |
+| Intermediate commit | ✅ Add entry     | ❌ Stays open |
+| Further commit      | ✅ Another entry | ❌ Stays open |
 
 ### After User Approval (Merge)
 
-| Action        | CHANGELOG       | BACKLOG        |
-| ------------- | --------------- | -------------- |
-| Merge to main | Already entered | ✅ Remove task |
+| Action        | CHANGELOG       | Task                |
+| ------------- | --------------- | ------------------- |
+| Merge to main | Already entered | ✅ `/tasks --close` |
 
 ### Commit Workflow on Feature Branch
 
@@ -437,8 +442,8 @@ git merge feature/<task-slug>
 git merge --squash feature/<task-slug>
 git commit -m "feat: add redis cache service"
 
-# BACKLOG cleanup
-# Remove task from BACKLOG.md
+# Close task
+# /tasks --close <task-id>
 
 # Delete feature branch
 git branch -d feature/<task-slug>

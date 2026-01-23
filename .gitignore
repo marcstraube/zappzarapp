@@ -101,10 +101,11 @@ Thumbs.db
 !.claude/CLAUDE.md
 !.claude/agents/
 !.claude/commands/
+!.claude/context/
 !.claude/settings.json
 #
 # Committed in .zappzarapp/:
-# - ai/ (knowledge files: BACKLOG, LEARNINGS, DECISIONS, REFERENCES)
+# - ai/ (knowledge files: LEARNINGS, DECISIONS, REFERENCES)
 # - standards/ (coding standards, shared across all AI agents)
 # - docs/ (boilerplate documentation)
 # - CHANGELOG.md (boilerplate version history)
