@@ -344,7 +344,8 @@ jobs:
           mkdir -p vendor node_modules src/node/backend/node_modules src/node/frontend/node_modules backups/db docs/api/php docs/api/node-backend docs/api/node-frontend tools public/build
           # Make directories writable by container users (node=1000, www-data=82)
           # This is required because bind mounts preserve host permissions
-          chmod -R 777 tools docs public/build
+          # Include parent directories (public, not just public/build) for mkdir operations
+          chmod -R 777 tools docs public
           # IMPORTANT: Use DOCKER_BUILDKIT=0 for all builds to ensure images are
           # available to local Docker daemon (setup-buildx-action creates a builder
           # that stores images in BuildKit cache, not local Docker)
