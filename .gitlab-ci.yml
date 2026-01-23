@@ -297,6 +297,8 @@ bats:integration:
     - make up
     - make composer-install
     - make pnpm-install
+    # Download phpdoc.phar for BATS docs generation tests
+    - PHPDOC_VERSION=3.9.1 && curl -L "https://github.com/phpDocumentor/phpDocumentor/releases/download/v${PHPDOC_VERSION}/phpDocumentor.phar" -o tools/phpdoc.phar && chmod +x tools/phpdoc.phar
     - timeout 120 sh -c 'until make check-health 2>/dev/null; do sleep 5; done'
     - make bats-test-integration
   after_script:
