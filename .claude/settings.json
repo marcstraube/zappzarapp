@@ -155,6 +155,10 @@
         "hooks": [
           {
             "type": "command",
+            "command": "./.claude/hooks/post-edit-lint.sh"
+          },
+          {
+            "type": "command",
             "command": "TOOL_INPUT=$(cat); if echo \"$TOOL_INPUT\" | grep -qE '(Dockerfile|compose\\.yaml|compose\\.override|compose\\.production|\\.env\\.example|entrypoint|php\\.ini|nginx\\.conf)'; then echo '[Hook] Config file changed. Remember: make build && make down && make up'; fi"
           },
           {

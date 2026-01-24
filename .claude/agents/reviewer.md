@@ -32,9 +32,11 @@ Runs code quality checks and tests.
 ## Workflow
 
 ```text
-1. Auto-Fix
+[PostToolUse Hook - quick lint after each Edit]
+        ↓
+1. Auto-Fix (if hook reported errors)
    ↓
-2. Lint/Check
+2. Deep Analysis (analyse, phpmd, type-check)
    ↓
 3. Tests
    ↓

@@ -107,6 +107,7 @@ Thumbs.db
 !.claude/agents/
 !.claude/commands/
 !.claude/context/
+!.claude/hooks/
 !.claude/settings.json
 #
 # Committed in .zappzarapp/:
