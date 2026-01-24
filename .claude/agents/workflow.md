@@ -58,9 +58,9 @@ Each task is developed on its own feature branch:
 ```text
 Task Start
     ↓
-git checkout -b feature/<task-slug>
+git checkout develop && git checkout -b feature/<task-slug>
     ↓
-[Development + Intermediate Commits]
+[Development + Intermediate Commits + CHANGELOG entries]
     ↓
 User Review (entire branch)
     ↓
@@ -221,7 +221,7 @@ chore: batch quick wins
 ```text
 Main Agent
     ↓
-git checkout -b feature/<task-slug>
+git checkout develop && git checkout -b feature/<task-slug>
     ↓
 Agent A (Architect)
 ├── Analyzes requirements
