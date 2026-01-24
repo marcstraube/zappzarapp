@@ -21,7 +21,7 @@ define LOAD_ENV
 [ -f .env.local ] && . ./.env.local || true
 endef
 
-.PHONY: $(shell awk '/^[a-zA-Z_-]+:.*?## / { print $$1 }' $(MAKEFILE_LIST) | sed 's/://')
+.PHONY: $(shell awk '/^[a-zA-Z0-9_-]+:.*## / { print $$1 }' $(MAKEFILE_LIST) | sed 's/://')
 
 help: ## Show this help (FILTER=? for categories, FILTER=<name> to filter)
 	@if [ "$(FILTER)" = "?" ] || [ "$(FILTER)" = "list" ]; then \
@@ -55,7 +55,7 @@ help: ## Show this help (FILTER=? for categories, FILTER=<name> to filter)
 			} \
 			next; \
 		} \
-		show && /^[a-zA-Z_-]+:.*?## / { \
+		show && /^[a-zA-Z0-9_-]+:.*## / { \
 			cmds = cmds $$1 "\t" $$2 "\n"; \
 		} \
 		END { \
