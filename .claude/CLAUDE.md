@@ -22,9 +22,6 @@
 1. Find and continue previous session file (same task-slug)
 2. Continue working silently
 
-**Skip steps 5-6 if:** User's first message is a direct task (then create
-session silently and start working).
-
 ## Context Overflow / Continued Sessions
 
 **When a session is "continued from previous conversation" after context
@@ -239,31 +236,9 @@ User reviews → Merge → `/tasks --close <id>`
 
 ## Error Prevention
 
-- Containers not running? → `make up` first
-- After Docker config changes: `make build-*` + `make down && make up`
-- Never commit lockfiles (`composer.lock`, `pnpm-lock.yaml`)
-- For Make/Docker problems: fix root cause, don't work around
-
-**Package manager commands** — always use make targets:
-
-| ❌ Forbidden         | ✅ Use instead                  |
-| -------------------- | ------------------------------- |
-| `composer require X` | `make composer CMD="require X"` |
-| `pnpm add X`         | `make pnpm CMD="add X"`         |
-
-Same pattern for `install`, `update`, `remove`. Info commands allowed
-(`composer show`, `pnpm list`).
-
-## Hooks
-
-Default hooks in `settings.json`:
-
-- **PostToolUse (Edit)**: Reminder to rebuild after Docker config file changes
-
-Example personal hooks in `settings.local.json`:
-
-- **PreToolUse (Bash)**: Task/CHANGELOG reminder before commits
-- **PostToolUse (TodoWrite)**: Session log update reminder
+See `.zappzarapp/standards/make-targets.md` for container prerequisites and
+package manager usage. Direct package manager commands are blocked via
+`settings.json` deny rules.
 
 ## Language
 

@@ -82,7 +82,7 @@ jobs:
         run: |
           make init
           make secrets
-          make ssl-selfsigned
+          make ssl-internal
 
       - name: Start services (PHP + Database)
         run: |
@@ -135,7 +135,7 @@ jobs:
         run: |
           make init
           make secrets
-          make ssl-selfsigned
+          make ssl-internal
 
       - name: Build Node container
         run: |
@@ -186,7 +186,7 @@ jobs:
         run: |
           make init
           make secrets
-          make ssl-selfsigned
+          make ssl-internal
 
       - name: Start services (Node + Redis)
         run: |
@@ -246,7 +246,7 @@ jobs:
         run: |
           make init
           make secrets
-          make ssl-selfsigned
+          make ssl-internal
 
       - name: Build containers
         run: |
@@ -318,7 +318,7 @@ jobs:
         run: |
           make init
           make secrets
-          make ssl-selfsigned
+          make ssl-internal
 
       - name: Build BATS container
         run: make bats-build
@@ -390,7 +390,7 @@ jobs:
         run: |
           make init
           make secrets
-          make ssl-selfsigned
+          make ssl-internal
 
       - name: Build production images
         run: |

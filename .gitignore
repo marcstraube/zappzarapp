@@ -10,10 +10,9 @@
 /logs/*
 /storage/logs/*
 
-# SSL Certificates (don't commit private keys!)
-docker/certs/*.pem
-docker/certs/*.key
-docker/certs/*.crt
+# Certificates (keep scripts, ignore everything else)
+docker/certs/*
+!docker/certs/*.sh
 
 # Generated SSL config (from template)
 docker/nginx/conf.d/ssl-production.conf

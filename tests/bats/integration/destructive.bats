@@ -187,21 +187,28 @@ wait_for_containers() {
 # Phase 4: SSL Certificates (Create & Delete)
 # =============================================================================
 
-@test "[Phase 4] make ssl-selfsigned generates certificates" {
-    # Remove existing certs first (both actual files and symlinks)
-    rm -f docker/certs/selfsigned.crt docker/certs/selfsigned.key 2>/dev/null || true
-    rm -f docker/certs/cert.crt docker/certs/cert.key 2>/dev/null || true
+@test "[Phase 4] make ssl-internal generates certificates" {
+    # Remove existing certs first
+    rm -rf docker/certs/ca docker/certs/nginx docker/certs/internal 2>/dev/null || true
 
-    run timeout 60 make ssl-selfsigned
+    run timeout 60 make ssl-internal
     assert_success
 }
 
-@test "[Phase 4] Verify: selfsigned.crt created" {
-    [[ -f "docker/certs/selfsigned.crt" ]]
+@test "[Phase 4] Verify: CA created" {
+    [[ -f "docker/certs/ca/ca.crt" ]]
+    [[ -f "docker/certs/ca/ca.key" ]]
 }
 
-@test "[Phase 4] Verify: selfsigned.key created" {
-    [[ -f "docker/certs/selfsigned.key" ]]
+@test "[Phase 4] Verify: nginx certificates created" {
+    [[ -f "docker/certs/nginx/cert.crt" ]]
+    [[ -f "docker/certs/nginx/cert.key" ]]
+}
+
+@test "[Phase 4] Verify: internal certificates created" {
+    [[ -f "docker/certs/internal/cert.crt" ]]
+    [[ -f "docker/certs/internal/cert.key" ]]
+    [[ -f "docker/certs/internal/ca.crt" ]]
 }
 
 @test "[Phase 4] make ssl-clean removes certificates" {
@@ -210,8 +217,10 @@ wait_for_containers() {
     assert_success
 }
 
-@test "[Phase 4] Verify: selfsigned.crt removed" {
-    [[ ! -f "docker/certs/selfsigned.crt" ]]
+@test "[Phase 4] Verify: certificate directories removed" {
+    [[ ! -d "docker/certs/ca" ]]
+    [[ ! -d "docker/certs/nginx" ]]
+    [[ ! -d "docker/certs/internal" ]]
 }
 
 # =============================================================================

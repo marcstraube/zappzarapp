@@ -45,8 +45,7 @@ services:
       # Shared socket directory for PHP-FPM Unix socket communication
       - php-fpm-socket:/var/run/php-fpm
       # SSL certificates (bind mount)
-      - ./docker/certs/cert.crt:/etc/nginx/certs/cert.crt:ro
-      - ./docker/certs/cert.key:/etc/nginx/certs/cert.key:ro
+      - ${CERT_PATH_NGINX:-./docker/certs/nginx}:/etc/nginx/certs:ro
     depends_on:
       node:
         condition: service_started
@@ -89,11 +88,10 @@ services:
     restart: unless-stopped
     profiles: ["node"]
     volumes:
-      # SSL certificates for external database connections
-      - ./docker/certs:/etc/ssl/db-certs:ro
-      # SSL certificates for internal HTTPS server (Nuxt/Nitro)
-      - ./docker/certs/cert.crt:/etc/ssl/certs/cert.crt:ro
-      - ./docker/certs/cert.key:/etc/ssl/private/cert.key:ro
+      # Internal certificates + CA for trust
+      - ${CERT_PATH_INTERNAL:-./docker/certs/internal}/cert.crt:/etc/ssl/certs/cert.crt:ro
+      - ${CERT_PATH_INTERNAL:-./docker/certs/internal}/cert.key:/etc/ssl/private/cert.key:ro
+      - ${CERT_PATH_INTERNAL:-./docker/certs/internal}/ca.crt:/etc/ssl/certs/internal-ca.crt:ro
       # Secrets (bind mount)
       - ./secrets:/run/secrets:ro
     environment:
@@ -144,11 +142,10 @@ services:
     restart: unless-stopped
     profiles: ["node-backend"]
     volumes:
-      # SSL certificates for external database connections
-      - ./docker/certs:/etc/ssl/db-certs:ro
-      # SSL certificates for internal HTTPS server
-      - ./docker/certs/cert.crt:/etc/ssl/certs/cert.crt:ro
-      - ./docker/certs/cert.key:/etc/ssl/private/cert.key:ro
+      # Internal certificates + CA for trust
+      - ${CERT_PATH_INTERNAL:-./docker/certs/internal}/cert.crt:/etc/ssl/certs/cert.crt:ro
+      - ${CERT_PATH_INTERNAL:-./docker/certs/internal}/cert.key:/etc/ssl/private/cert.key:ro
+      - ${CERT_PATH_INTERNAL:-./docker/certs/internal}/ca.crt:/etc/ssl/certs/internal-ca.crt:ro
       # Secrets (bind mount)
       - ./secrets:/run/secrets:ro
     environment:
@@ -196,8 +193,8 @@ services:
     volumes:
       # Shared socket directory for PHP-FPM Unix socket communication
       - php-fpm-socket:/var/run/php-fpm
-      # SSL certificates for external database connections
-      - ./docker/certs:/etc/ssl/db-certs:ro
+      # Internal CA for TLS verification
+      - ${CERT_PATH_INTERNAL:-./docker/certs/internal}/ca.crt:/etc/ssl/certs/internal-ca.crt:ro
       # Secrets (bind mount)
       - ./secrets:/run/secrets:ro
     depends_on:
@@ -365,8 +362,8 @@ services:
     volumes:
       - redis-data:/data
       # SSL certificates (bind mount)
-      - ./docker/certs/cert.crt:/etc/redis/certs/cert.crt:ro
-      - ./docker/certs/cert.key:/etc/redis/certs/cert.key:ro
+      - ${CERT_PATH_INTERNAL:-./docker/certs/internal}/cert.crt:/etc/redis/certs/cert.crt:ro
+      - ${CERT_PATH_INTERNAL:-./docker/certs/internal}/cert.key:/etc/redis/certs/cert.key:ro
     networks:
       - database
     # Health check defined in Dockerfile (with TLS support)
@@ -416,8 +413,8 @@ services:
       - elasticsearch-data:/usr/share/elasticsearch/data
       - elasticsearch-backup:/usr/share/elasticsearch/backup
       # TLS certificates for internal HTTPS
-      - ./docker/certs/cert.crt:/usr/share/elasticsearch/config/certs/cert.crt:ro
-      - ./docker/certs/cert.key:/usr/share/elasticsearch/config/certs/cert.key:ro
+      - ${CERT_PATH_INTERNAL:-./docker/certs/internal}/cert.crt:/usr/share/elasticsearch/config/certs/cert.crt:ro
+      - ${CERT_PATH_INTERNAL:-./docker/certs/internal}/cert.key:/usr/share/elasticsearch/config/certs/cert.key:ro
       # Secrets (bind mount)
       - ./secrets:/run/secrets:ro
     networks:
@@ -480,8 +477,8 @@ services:
       # Secrets (bind mount)
       - ./secrets:/run/secrets:ro
       # TLS certificates for internal HTTPS
-      - ./docker/certs/cert.crt:/etc/ssl/certs/cert.crt:ro
-      - ./docker/certs/cert.key:/etc/ssl/private/cert.key:ro
+      - ${CERT_PATH_INTERNAL:-./docker/certs/internal}/cert.crt:/etc/ssl/certs/cert.crt:ro
+      - ${CERT_PATH_INTERNAL:-./docker/certs/internal}/cert.key:/etc/ssl/private/cert.key:ro
     networks:
       - database
     # Health check defined in Dockerfile
@@ -514,8 +511,8 @@ services:
       # Secrets (bind mount)
       - ./secrets:/run/secrets:ro
       # TLS certificates for internal HTTPS
-      - ./docker/certs/cert.crt:/etc/mercure/certs/cert.crt:ro
-      - ./docker/certs/cert.key:/etc/mercure/certs/cert.key:ro
+      - ${CERT_PATH_INTERNAL:-./docker/certs/internal}/cert.crt:/etc/mercure/certs/cert.crt:ro
+      - ${CERT_PATH_INTERNAL:-./docker/certs/internal}/cert.key:/etc/mercure/certs/cert.key:ro
     networks:
       - backend
     # Health check defined in Dockerfile
@@ -573,8 +570,8 @@ services:
       # Secrets (bind mount)
       - ./secrets:/run/secrets:ro
       # TLS certificates for internal HTTPS (zero-trust architecture)
-      - ./docker/certs/cert.crt:/etc/ssl/certs/cert.crt:ro
-      - ./docker/certs/cert.key:/etc/ssl/private/cert.key:ro
+      - ${CERT_PATH_INTERNAL:-./docker/certs/internal}/cert.crt:/etc/ssl/certs/cert.crt:ro
+      - ${CERT_PATH_INTERNAL:-./docker/certs/internal}/cert.key:/etc/ssl/private/cert.key:ro
     networks:
       - backend
     # Health check defined in Dockerfile

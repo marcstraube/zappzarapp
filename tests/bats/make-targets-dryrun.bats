@@ -160,11 +160,6 @@ load 'helpers/setup'
     assert_success
 }
 
-@test "make test-sql --dry-run validates" {
-    run make -n test-sql
-    assert_success
-}
-
 @test "make test-coverage --dry-run validates" {
     run make -n test-coverage
     assert_success

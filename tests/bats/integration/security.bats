@@ -108,13 +108,21 @@ teardown_file() {
     [[ $status -eq 0 ]] || [[ $status -eq 1 ]]
 }
 
-@test "[Integration] make ssl-selfsigned generates certificate" {
+@test "[Integration] make ssl-internal generates CA and certificates" {
     # Skip if certificates already exist
-    if [[ -f "docker/certs/cert.crt" ]]; then
+    if [[ -f "docker/certs/nginx/cert.crt" ]]; then
         skip "Certificates already exist"
     fi
-    run timeout 60 make ssl-selfsigned
+    run timeout 60 make ssl-internal
     assert_success
-    # Verify certificate created
-    [[ -f "docker/certs/cert.crt" ]]
+    # Verify CA created
+    [[ -f "docker/certs/ca/ca.crt" ]]
+    [[ -f "docker/certs/ca/ca.key" ]]
+    # Verify nginx certificate created
+    [[ -f "docker/certs/nginx/cert.crt" ]]
+    [[ -f "docker/certs/nginx/cert.key" ]]
+    # Verify internal certificate created
+    [[ -f "docker/certs/internal/cert.crt" ]]
+    [[ -f "docker/certs/internal/cert.key" ]]
+    [[ -f "docker/certs/internal/ca.crt" ]]
 }

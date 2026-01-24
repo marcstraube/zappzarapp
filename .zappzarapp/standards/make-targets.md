@@ -1,12 +1,18 @@
 # Make Targets Overview
 
+## Prerequisites
+
+Most targets require running containers. Start with `make up` if containers are
+not running. After Docker config changes: `make build-*` +
+`make down && make up`.
+
 ## By File Type
 
 | File Type   | Check Targets                                  | Fix Targets                     | Test Targets |
 | ----------- | ---------------------------------------------- | ------------------------------- | ------------ |
 | PHP         | `analyse`, `phpmd`, `cs-check`, `rector-check` | `cs-fix`, `rector-fix`          | `test-php`   |
 | Node/TS     | `lint-node`, `type-check`, `prettier-check`    | `lint-node-fix`, `prettier-fix` | `test-node`  |
-| SQL         | `lint-sql`                                     | `lint-sql-fix`                  | `test-sql`   |
+| SQL         | `lint-sql`                                     | `lint-sql-fix`                  | —            |
 | Shell       | `lint-shell`                                   | —                               | —            |
 | Markdown    | `lint-md`                                      | `lint-md-fix`                   | —            |
 | Docker      | `lint-docker`                                  | —                               | `goss-test`  |
@@ -56,8 +62,8 @@ make lint-sql-fix
 # Check
 make lint-sql
 
-# Test (against real DB)
-make test-sql
+# Apply migrations (against configured DB)
+make db-migrations
 ```
 
 ## Shell Script Changes

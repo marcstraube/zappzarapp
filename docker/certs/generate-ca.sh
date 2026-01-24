@@ -1,0 +1,46 @@
+#!/bin/bash
+# ============================================================================
+# INTERNAL CA GENERATOR (Development/Internal Use)
+# ============================================================================
+# Generates a Certificate Authority for signing internal service certificates.
+# The CA certificate can be added to system trust stores for browser access.
+#
+# Usage: ./generate-ca.sh
+# ============================================================================
+
+set -e
+
+CERT_DIR="$(cd "$(dirname "$0")" && pwd)"
+CA_DIR="$CERT_DIR/ca"
+DAYS=3650  # 10 years for CA
+
+echo "============================================================================"
+echo "Generating Internal Certificate Authority"
+echo "============================================================================"
+
+mkdir -p "$CA_DIR"
+
+# Generate CA private key
+echo "Generating CA private key..."
+openssl genrsa -out "$CA_DIR/ca.key" 4096
+
+# Generate CA certificate
+echo "Generating CA certificate..."
+openssl req -x509 -new -nodes \
+    -key "$CA_DIR/ca.key" \
+    -sha256 -days $DAYS \
+    -out "$CA_DIR/ca.crt" \
+    -subj "/C=DE/ST=Development/L=Local/O=Zappzarapp/OU=Internal CA/CN=Zappzarapp Internal CA"
+
+# Set permissions
+chmod 644 "$CA_DIR/ca.crt"
+chmod 600 "$CA_DIR/ca.key"
+
+echo "============================================================================"
+echo "Internal CA generated successfully!"
+echo "============================================================================"
+echo "CA Certificate: $CA_DIR/ca.crt"
+echo "CA Private Key: $CA_DIR/ca.key (keep secure!)"
+echo ""
+echo "To trust this CA in your browser/system, run: make ssl-trust-ca"
+echo "============================================================================"

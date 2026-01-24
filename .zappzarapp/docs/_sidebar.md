@@ -22,6 +22,7 @@
 
 - **Infrastructure**
   - [Architecture](infrastructure/ARCHITECTURE.md)
+  - [Database](infrastructure/DATABASE.md)
   - [Network](infrastructure/NETWORK.md)
   - [Nginx](infrastructure/NGINX.md)
   - [Deployment](infrastructure/DEPLOYMENT.md)

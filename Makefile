@@ -197,7 +197,7 @@ setup: ## Create directories, install dev dependencies and ensure structure
 	fi
 
 	# SSL/TLS Certificates
-	@mkdir -p docker/certs
+	@mkdir -p docker/certs/{ca,nginx,internal}
 
 	# Documentation Output & Tools
 	@mkdir -p docs/api/{php,node} tools
@@ -226,6 +226,10 @@ setup: ## Create directories, install dev dependencies and ensure structure
 	@if [ ! -f .ai/DECISIONS.md ]; then cp .zappzarapp/ai/templates/DECISIONS.md .ai/; fi
 	@if [ ! -f .ai/REFERENCES.md ]; then cp .zappzarapp/ai/templates/REFERENCES.md .ai/; fi
 
+	# Claude context directory (project-specific agent context)
+	@mkdir -p .claude/context
+	@if [ ! -f .claude/context/project.md ]; then cp .zappzarapp/ai/templates/PROJECT.md .claude/context/project.md; fi
+
 	@echo -e "\033[0;32mProject structure created!\033[0m"
 
 	# README Setup (replace boilerplate README with user template)
@@ -247,11 +251,11 @@ setup: ## Create directories, install dev dependencies and ensure structure
 
 	# SSL/TLS Certificate Check
 	@echo -e "\033[0;33mChecking SSL/TLS certificates...\033[0m"
-	@if [ ! -f docker/certs/cert.crt ]; then \
-		echo -e "\033[0;34mSSL certificates not found. Generating self-signed certificates...\033[0m"; \
-		$(MAKE) --silent ssl-selfsigned; \
+	@if [ ! -f docker/certs/nginx/cert.crt ]; then \
+		echo -e "\033[0;34mSSL certificates not found. Generating CA-signed certificates...\033[0m"; \
+		$(MAKE) --silent ssl-internal; \
 	else \
-		echo -e "\033[0;32mSSL certificates already exist.\033[0m"; \
+		echo -e "\033[0;32m✓ SSL certificates exist\033[0m"; \
 	fi
 
 	# Generate Docker Secrets (file-based)
@@ -2025,7 +2029,7 @@ reset-full: ## Full factory reset - removes EVERYTHING including secrets (DANGER
 	@echo -e "\033[0;31m╠══════════════════════════════════════════════════════════════════╣\033[0m"
 	@echo -e "\033[0;31m║  This will remove everything from 'make reset' PLUS:             ║\033[0m"
 	@echo -e "\033[0;31m║  • secrets/ (all generated secrets)                              ║\033[0m"
-	@echo -e "\033[0;31m║  • docker/certs/*.crt, *.key, *.pem (generated certificates)     ║\033[0m"
+	@echo -e "\033[0;31m║  • docker/certs/{ca,nginx,internal}/ (certificate directories)    ║\033[0m"
 	@echo -e "\033[0;31m║  • Source code reset via git checkout                            ║\033[0m"
 	@echo -e "\033[0;31m║  • README.md, .claude/CLAUDE.md reset to boilerplate             ║\033[0m"
 	@echo -e "\033[0;31m╚══════════════════════════════════════════════════════════════════╝\033[0m"
@@ -2040,7 +2044,8 @@ reset-full: ## Full factory reset - removes EVERYTHING including secrets (DANGER
 	@echo -e "\033[0;33mRemoving secrets...\033[0m"
 	@rm -rf secrets/* 2>/dev/null || true
 	@echo -e "\033[0;33mRemoving generated certificates...\033[0m"
-	@rm -f docker/certs/*.crt docker/certs/*.key docker/certs/*.pem docker/certs/*.srl 2>/dev/null || true
+	@rm -rf docker/certs/ca docker/certs/nginx docker/certs/internal 2>/dev/null || true
+	@rm -f docker/certs/*.srl 2>/dev/null || true
 	@echo -e "\033[0;33mResetting source code to boilerplate defaults...\033[0m"
 	@git checkout -- src/ tests/ resources/ config/ templates/ public/index.php 2>/dev/null || \
 		echo -e "\033[0;31m  ⚠ git checkout failed - source code not reset\033[0m"
@@ -2317,53 +2322,6 @@ lint-sql-fix: ## Fix SQL style issues automatically
 	fi
 	@echo -e "\033[0;32mSQL files fixed!\033[0m"
 
-test-sql: ## Validate SQL syntax by executing against real database (requires running containers)
-	@echo -e "\033[0;33mValidating SQL syntax...\033[0m"
-	@failed=0; \
-	DB_USER="$${DB_USER:-app}"; \
-	DB_PASSWORD="$${DB_PASSWORD:-secret}"; \
-	if [ -d "migrations/postgresql" ] && [ -n "$$(ls -A migrations/postgresql/*.sql 2>/dev/null)" ]; then \
-		if docker compose ps postgres 2>/dev/null | grep -q "Up"; then \
-			echo -e "\033[0;90m  Validating PostgreSQL migrations...\033[0m"; \
-			docker compose exec -T postgres psql -U "$$DB_USER" -c "DROP DATABASE IF EXISTS sql_test;" >/dev/null 2>&1 || true; \
-			docker compose exec -T postgres psql -U "$$DB_USER" -c "CREATE DATABASE sql_test;" >/dev/null 2>&1; \
-			for migration in $$(ls -1 migrations/postgresql/*.sql | sort); do \
-				echo -e "\033[0;90m    Testing $$(basename $$migration)...\033[0m"; \
-				if ! docker compose exec -T postgres psql -U "$$DB_USER" -d sql_test -v ON_ERROR_STOP=1 -f /dev/stdin < "$$migration" >/dev/null 2>&1; then \
-					echo -e "\033[0;31m    FAILED: $$(basename $$migration)\033[0m"; \
-					docker compose exec -T postgres psql -U "$$DB_USER" -d sql_test -v ON_ERROR_STOP=1 -f /dev/stdin < "$$migration" 2>&1 | tail -5; \
-					failed=1; \
-				fi; \
-			done; \
-			docker compose exec -T postgres psql -U "$$DB_USER" -c "DROP DATABASE IF EXISTS sql_test;" >/dev/null 2>&1; \
-		else \
-			echo -e "\033[0;90m  Skipping PostgreSQL (container not running)\033[0m"; \
-		fi; \
-	fi; \
-	if [ -d "migrations/mariadb" ] && [ -n "$$(ls -A migrations/mariadb/*.sql 2>/dev/null)" ]; then \
-		if docker compose ps mariadb 2>/dev/null | grep -q "Up"; then \
-			echo -e "\033[0;90m  Validating MariaDB migrations...\033[0m"; \
-			docker compose exec -T mariadb mariadb -u "$$DB_USER" -p"$$DB_PASSWORD" -e "DROP DATABASE IF EXISTS sql_test;" 2>/dev/null || true; \
-			docker compose exec -T mariadb mariadb -u "$$DB_USER" -p"$$DB_PASSWORD" -e "CREATE DATABASE sql_test;" 2>/dev/null; \
-			for migration in $$(ls -1 migrations/mariadb/*.sql | sort); do \
-				echo -e "\033[0;90m    Testing $$(basename $$migration)...\033[0m"; \
-				if ! docker compose exec -T mariadb mariadb -u "$$DB_USER" -p"$$DB_PASSWORD" sql_test < "$$migration" >/dev/null 2>&1; then \
-					echo -e "\033[0;31m    FAILED: $$(basename $$migration)\033[0m"; \
-					docker compose exec -T mariadb mariadb -u "$$DB_USER" -p"$$DB_PASSWORD" sql_test < "$$migration" 2>&1 | tail -5; \
-					failed=1; \
-				fi; \
-			done; \
-			docker compose exec -T mariadb mariadb -u "$$DB_USER" -p"$$DB_PASSWORD" -e "DROP DATABASE IF EXISTS sql_test;" 2>/dev/null; \
-		else \
-			echo -e "\033[0;90m  Skipping MariaDB (container not running)\033[0m"; \
-		fi; \
-	fi; \
-	if [ $$failed -eq 1 ]; then \
-		echo -e "\033[0;31mSQL validation failed!\033[0m"; \
-		exit 1; \
-	fi
-	@echo -e "\033[0;32mSQL validation completed!\033[0m"
-
 lint-node: ## Run ESLint on TypeScript/JavaScript files
 	@echo -e "\033[0;33mRunning ESLint...\033[0m"
 	@$(DC) run --rm -T dev-tools pnpm run lint
@@ -2432,11 +2390,10 @@ dive: ## Analyze Docker image layers and sizes
 	esac; \
 	docker run --rm -it -v /var/run/docker.sock:/var/run/docker.sock wagoodman/dive:latest $$IMAGE
 
-test: ## Run all tests (PHP + Node.js + SQL) - continues even if some fail
+test: ## Run all tests (PHP + Node.js) - continues even if some fail
 	@failed=0; \
 	$(MAKE) test-php || failed=1; \
 	$(MAKE) test-node || failed=1; \
-	$(MAKE) test-sql || failed=1; \
 	echo ""; \
 	echo "════════════════════════════════════════════════════════════"; \
 	echo "                      TEST SUMMARY                          "; \
@@ -3164,22 +3121,37 @@ docs-clean: ## Remove generated documentation
 
 ##@ SSL/TLS
 
-ssl-selfsigned: ## Generate self-signed SSL certificate for development
-	@echo -e "\033[0;33mGenerating self-signed SSL certificate...\033[0m"
-	@if [ ! -f docker/certs/generate-selfsigned.sh ]; then \
-		echo -e "\033[0;31mError: generate-selfsigned.sh not found!\033[0m"; \
-		exit 1; \
-	fi
-	@# Fix bind mount bug: remove if cert.crt/cert.key are directories instead of files/symlinks
-	@if [ -d docker/certs/cert.crt ] || [ -d docker/certs/cert.key ]; then \
-		echo -e "\033[0;33mFixing bind mount issue (cert.crt/cert.key are directories)...\033[0m"; \
-		docker run --rm -v "$(PWD)/docker/certs:/certs" $(ALPINE_IMAGE) sh -c "rm -rf /certs/cert.crt /certs/cert.key"; \
-	fi
-	@bash docker/certs/generate-selfsigned.sh localhost
-	@echo -e "\033[0;32mSelf-signed certificate generated!\033[0m"
-	@echo -e "\033[0;34mTo enable HTTPS (Development):\033[0m"
-	@echo -e "\033[0;34m  1. Uncomment SSL port and volumes in compose.yaml\033[0m"
-	@echo -e "\033[0;34m  2. Restart: make restart\033[0m"
+ssl-ca: ## Generate internal Certificate Authority
+	@echo -e "\033[0;33mGenerating internal CA...\033[0m"
+	@mkdir -p docker/certs/ca
+	@chmod +x docker/certs/generate-ca.sh
+	@docker/certs/generate-ca.sh
+
+ssl-internal: ssl-ca ## Generate internal service certificates (signed by CA)
+	@echo -e "\033[0;33mGenerating internal certificates...\033[0m"
+	@mkdir -p docker/certs/{nginx,internal}
+	@chmod +x docker/certs/generate-internal.sh
+	@docker/certs/generate-internal.sh
+
+ssl-trust-ca: ## Show instructions to trust internal CA in your system
+	@echo "============================================================================"
+	@echo "To trust the internal CA in your system:"
+	@echo "============================================================================"
+	@echo ""
+	@echo "macOS:"
+	@echo "  sudo security add-trusted-cert -d -r trustRoot -k /Library/Keychains/System.keychain docker/certs/ca/ca.crt"
+	@echo ""
+	@echo "Linux (Debian/Ubuntu):"
+	@echo "  sudo cp docker/certs/ca/ca.crt /usr/local/share/ca-certificates/zappzarapp-ca.crt"
+	@echo "  sudo update-ca-certificates"
+	@echo ""
+	@echo "Linux (RHEL/Fedora):"
+	@echo "  sudo cp docker/certs/ca/ca.crt /etc/pki/ca-trust/source/anchors/zappzarapp-ca.crt"
+	@echo "  sudo update-ca-trust"
+	@echo ""
+	@echo "Windows:"
+	@echo "  Import docker/certs/ca/ca.crt into 'Trusted Root Certification Authorities'"
+	@echo "============================================================================"
 
 ssl-letsencrypt: ## Setup Let's Encrypt SSL certificate (production)
 	@echo -e "\033[0;33mSetting up Let's Encrypt certificate...\033[0m"
@@ -3216,8 +3188,8 @@ ssl-renew: ## Renew Let's Encrypt certificate and reload all SSL services
 	@echo -e "\033[0;33mRenewing Let's Encrypt certificate...\033[0m"
 	@CERT_CHANGED=false; \
 	CERT_BEFORE=""; \
-	if [ -f docker/certs/cert.crt ]; then \
-		CERT_BEFORE=$$(openssl x509 -in docker/certs/cert.crt -noout -fingerprint 2>/dev/null || echo ""); \
+	if [ -f docker/certs/nginx/cert.crt ]; then \
+		CERT_BEFORE=$$(openssl x509 -in docker/certs/nginx/cert.crt -noout -fingerprint 2>/dev/null || echo ""); \
 	fi; \
 	if command -v certbot >/dev/null 2>&1; then \
 		sudo certbot renew --quiet; \
@@ -3228,8 +3200,8 @@ ssl-renew: ## Renew Let's Encrypt certificate and reload all SSL services
 			certbot/certbot renew --quiet; \
 	fi; \
 	CERT_AFTER=""; \
-	if [ -f docker/certs/cert.crt ]; then \
-		CERT_AFTER=$$(openssl x509 -in docker/certs/cert.crt -noout -fingerprint 2>/dev/null || echo ""); \
+	if [ -f docker/certs/nginx/cert.crt ]; then \
+		CERT_AFTER=$$(openssl x509 -in docker/certs/nginx/cert.crt -noout -fingerprint 2>/dev/null || echo ""); \
 	fi; \
 	if [ "$$CERT_BEFORE" != "$$CERT_AFTER" ] && [ -n "$$CERT_AFTER" ]; then \
 		CERT_CHANGED=true; \
@@ -3275,12 +3247,30 @@ ssl-reload-services: ## Reload all SSL-dependent services after certificate rene
 
 ssl-info: ## Show SSL certificate information
 	@echo -e "\033[0;33mSSL Certificate Information:\033[0m"
-	@if [ -f docker/certs/cert.crt ]; then \
-		openssl x509 -in docker/certs/cert.crt -text -noout | grep -E "Subject:|Issuer:|Not Before|Not After|DNS:"; \
-	else \
-		echo -e "\033[0;31mNo certificate found. Generate one with:\033[0m"; \
-		echo -e "\033[0;34m  - make ssl-selfsigned (development)\033[0m"; \
-		echo -e "\033[0;34m  - make ssl-letsencrypt (production)\033[0m"; \
+	@echo ""
+	@# CA certificate
+	@if [ -f docker/certs/ca/ca.crt ]; then \
+		echo -e "\033[0;36m=== Internal CA ===\033[0m"; \
+		openssl x509 -in docker/certs/ca/ca.crt -noout -subject -dates | sed 's/^/  /'; \
+		echo ""; \
+	fi
+	@# Nginx certificate
+	@if [ -f docker/certs/nginx/cert.crt ]; then \
+		echo -e "\033[0;36m=== Nginx Certificate ===\033[0m"; \
+		openssl x509 -in docker/certs/nginx/cert.crt -noout -subject -issuer -dates | sed 's/^/  /'; \
+		echo ""; \
+	fi
+	@# Internal certificate
+	@if [ -f docker/certs/internal/cert.crt ]; then \
+		echo -e "\033[0;36m=== Internal Services Certificate ===\033[0m"; \
+		openssl x509 -in docker/certs/internal/cert.crt -noout -subject -issuer -dates | sed 's/^/  /'; \
+		echo ""; \
+	fi
+	@# No certificates found
+	@if [ ! -f docker/certs/ca/ca.crt ] && [ ! -f docker/certs/nginx/cert.crt ]; then \
+		echo -e "\033[0;31mNo certificates found. Generate with:\033[0m"; \
+		echo -e "\033[0;34m  make ssl-internal   (development - CA-signed)\033[0m"; \
+		echo -e "\033[0;34m  make ssl-letsencrypt (production)\033[0m"; \
 	fi
 
 ssl-prod-enable: ## Enable SSL/TLS for production (generates ssl-production.conf from template)
@@ -3346,7 +3336,8 @@ ssl-clean: ## Remove all SSL certificates (WARNING: Destructive!)
 	@echo -e "\033[0;31m⚠️  WARNING: This will delete all SSL certificates!\033[0m"
 	@read -p "Type 'YES' to confirm: " CONFIRM; \
 	if [ "$$CONFIRM" = "YES" ]; then \
-		rm -rf docker/certs/*.crt docker/certs/*.key docker/certs/*.pem docker/certs/letsencrypt; \
+		rm -rf docker/certs/ca docker/certs/nginx docker/certs/internal; \
+		rm -rf docker/certs/*.srl docker/certs/letsencrypt; \
 		echo -e "\033[0;32mSSL certificates removed!\033[0m"; \
 	else \
 		echo -e "\033[0;34mOperation cancelled.\033[0m"; \

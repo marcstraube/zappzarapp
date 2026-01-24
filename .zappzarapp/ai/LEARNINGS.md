@@ -55,6 +55,16 @@ files.
 - **Secrets flow in Compose**: Entrypoint (root) copies secrets to
   `/tmp/secrets/` with mode 0444, app processes read from there.
 
+### Elasticsearch Security
+
+- **Secret-Dateiberechtigungen müssen 400 oder 600 sein**: Elasticsearch
+  verlangt striktere Berechtigungen als andere Services. Während Redis/RabbitMQ
+  mit 644 funktionieren, lehnt Elasticsearch dies ab:
+
+  ```text
+  ERROR: File ... must have file permissions 400 or 600, but actually has: 644
+  ```
+
 ### Volume Permissions
 
 - **Dev↔Prod volume incompatibility**: Different UIDs (dev: 1000, prod:
@@ -104,21 +114,6 @@ files.
 ---
 
 ## Node.js
-
-### Known Vulnerabilities (Accepted Risk)
-
-#### pm2 CVE-2025-5891 (ReDoS)
-
-- **Severity**: LOW (CVSS 2.1)
-- **Affected**: All versions ≤6.0.14 (including 5.x likely)
-- **Patched**: None available (fix merged Aug 2025, not released yet)
-- **Impact**: DoS only, no data breach risk
-- **Risk accepted because**:
-  - pm2 is devDependency only (not in production)
-  - Essential for development workflow (process management)
-  - No fix available upstream
-- **Monitor**: <https://github.com/Unitech/pm2/releases> for version >6.0.14
-- **Last checked**: 2026-01-22
 
 ### pnpm Workspaces
 
@@ -208,17 +203,6 @@ changes - linter checks alone may miss IDE-specific inspections.
   (scaffolds, branch switches).
 - **`sync-lockfiles`**: Convenience target that syncs both Composer and pnpm
   lockfiles.
-
-### NODE_MODE Architecture
-
-| Mode          | Frontend  | Backend | Description                 |
-| ------------- | --------- | ------- | --------------------------- |
-| assets        | Vite HMR  | -       | Static assets only          |
-| api           | -         | Express | API only                    |
-| assets-api    | Vite HMR  | Express | Full-stack (Vite + Express) |
-| framework     | Nuxt/Next | -       | SSR framework only          |
-| framework-api | Nuxt/Next | Express | SSR + API                   |
-| idle          | -         | -       | Container sleeps            |
 
 ### Port Configuration
 
@@ -386,20 +370,6 @@ make build && make up
 
 ---
 
-## Documentation
-
-### Markdown Tables
-
-- **Emojis cause alignment issues** - use ASCII labels `[CRIT]`/`[MED]`/`[LOW]`
-  instead of emoji.
-
-### CLAUDE.md Location
-
-- Claude Code recognizes both `./CLAUDE.md` and `./.claude/CLAUDE.md`. Latter
-  keeps project root cleaner.
-
----
-
 ## Claude Workflow
 
 ### Post-Implementation Verification
@@ -547,5 +517,5 @@ notifications (e.g., ntfy notifications after agent completion).
 
 ## Last Updated
 
-2026-01-22 (added pm2 CVE-2025-5891 accepted risk, nginx/node-backend build
-dependency)
+2026-01-24 (cleanup: removed duplicated docs - pm2 CVE to KNOWN-VULNERABILITIES,
+NODE_MODE to .env, markdown tables to standards/markdown.md)

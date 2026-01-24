@@ -10,7 +10,7 @@ Runs code quality checks and tests.
 | ----- | ------------------- | ------------------------------- | ------------------------------ | ------------------------ |
 | C1    | PHP                 | `cs-fix`                        | `analyse`, `phpmd`, `cs-check` | `test-php`               |
 | C2    | Node/TS             | `prettier-fix`, `lint-node-fix` | `lint-node`, `type-check`      | `test-node`              |
-| C3    | SQL (MariaDB/PgSQL) | `lint-sql-fix`                  | `lint-sql`                     | `test-sql`               |
+| C3    | SQL (MariaDB/PgSQL) | `lint-sql-fix`                  | `lint-sql`                     | —                        |
 | C4    | Markdown (Docs)     | `lint-markdown-fix`             | `lint-markdown`                | —                        |
 | C5    | Config Sync         | `/sync-check --fix`             | `/sync-check`                  | —                        |
 | C6    | Infrastructure      | —                               | `lint-shell`, `lint-docker`    | `test-bats`, `goss-test` |
@@ -88,8 +88,7 @@ make test-php
 # Node
 make test-node
 
-# SQL
-make test-sql
+# SQL: No separate test target (use db-migrations to apply)
 
 # Infrastructure
 make test-bats     # BATS integration tests

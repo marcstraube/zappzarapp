@@ -146,30 +146,36 @@ teardown_file() {
 # SSL Certificates
 # =============================================================================
 
-@test "make ssl-selfsigned creates docker/certs/cert.crt" {
+@test "make ssl-internal creates CA and certificates" {
     # Clean first
-    rm -f docker/certs/cert.crt docker/certs/cert.key 2>/dev/null || true
+    rm -rf docker/certs/ca docker/certs/nginx docker/certs/internal 2>/dev/null || true
 
-    run timeout 60 make ssl-selfsigned
+    run timeout 60 make ssl-internal
     assert_success
 
-    [[ -f "docker/certs/cert.crt" ]]
+    # Verify CA
+    [[ -f "docker/certs/ca/ca.crt" ]]
+    [[ -f "docker/certs/ca/ca.key" ]]
+    # Verify nginx certs
+    [[ -f "docker/certs/nginx/cert.crt" ]]
+    [[ -f "docker/certs/nginx/cert.key" ]]
+    # Verify internal certs
+    [[ -f "docker/certs/internal/cert.crt" ]]
+    [[ -f "docker/certs/internal/cert.key" ]]
+    [[ -f "docker/certs/internal/ca.crt" ]]
 }
 
-@test "make ssl-selfsigned creates docker/certs/cert.key" {
-    [[ -f "docker/certs/cert.key" ]]
-}
-
-@test "make ssl-clean removes certificates" {
-    [[ -f "docker/certs/cert.crt" ]] || skip "Certificates not created"
+@test "make ssl-clean removes all certificates" {
+    [[ -f "docker/certs/nginx/cert.crt" ]] || skip "Certificates not created"
     # ssl-clean requires interactive confirmation (read -p), skip in CI
     [[ -t 0 ]] || skip "Requires interactive terminal for confirmation"
 
     run make ssl-clean
     assert_success
 
-    [[ ! -f "docker/certs/cert.crt" ]]
-    [[ ! -f "docker/certs/cert.key" ]]
+    [[ ! -d "docker/certs/ca" ]]
+    [[ ! -d "docker/certs/nginx" ]]
+    [[ ! -d "docker/certs/internal" ]]
 }
 
 # =============================================================================
