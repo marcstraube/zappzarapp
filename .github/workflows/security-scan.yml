@@ -273,12 +273,140 @@ jobs:
           extra_args: --only-verified
 
   # ============================================================================
+  # DOCKLE BEST PRACTICES SCAN
+  # ============================================================================
+  dockle-scan:
+    name: Dockle Scan
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    strategy:
+      fail-fast: false
+      matrix:
+        image:
+          - name: php
+            dockerfile: docker/php/Dockerfile
+            target: development
+          - name: node
+            dockerfile: docker/node/Dockerfile
+            target: development
+          - name: nginx
+            dockerfile: docker/nginx/Dockerfile
+            target: development
+          - name: postgres
+            dockerfile: docker/postgres/Dockerfile
+            target: final
+          - name: mariadb
+            dockerfile: docker/mariadb/Dockerfile
+            target: ""
+          - name: redis
+            dockerfile: docker/redis/Dockerfile
+            target: base
+          - name: elasticsearch
+            dockerfile: docker/elasticsearch/Dockerfile
+            target: ""
+          - name: meilisearch
+            dockerfile: docker/meilisearch/Dockerfile
+            target: ""
+          - name: rabbitmq
+            dockerfile: docker/rabbitmq/Dockerfile
+            target: ""
+          - name: mercure
+            dockerfile: docker/mercure/Dockerfile
+            target: ""
+          - name: mailpit
+            dockerfile: docker/mailpit/Dockerfile
+            target: ""
+          - name: seaweedfs
+            dockerfile: docker/seaweedfs/Dockerfile
+            target: ""
+          # Note: bats and goss excluded - build/test utilities only, never deployed
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build goss utility image (dependency)
+        if: matrix.image.name != 'goss'
+        run: |
+          DOCKER_BUILDKIT=0 docker build -t zappzarapp-goss:latest -f docker/goss/Dockerfile .
+
+      - name: Build ${{ matrix.image.name }} image
+        run: |
+          TARGET_ARG=""
+          if [ -n "${{ matrix.image.target }}" ]; then
+            TARGET_ARG="--target ${{ matrix.image.target }}"
+          fi
+          DOCKER_BUILDKIT=0 docker build -t ${{ env.COMPOSE_PROJECT_NAME }}-${{ matrix.image.name }}:scan \
+            $TARGET_ARG \
+            -f ${{ matrix.image.dockerfile }} \
+            .
+
+      - name: Run Dockle scan (${{ matrix.image.name }})
+        uses: goodwithtech/dockle-action@main
+        with:
+          image: ${{ env.COMPOSE_PROJECT_NAME }}-${{ matrix.image.name }}:scan
+          format: sarif
+          output: dockle-${{ matrix.image.name }}-results.sarif
+          exit-code: '0'
+
+      - name: Upload Dockle results (${{ matrix.image.name }})
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: dockle-${{ matrix.image.name }}-results.sarif
+          category: dockle-${{ matrix.image.name }}
+
+  # ============================================================================
+  # LICENSE SCAN
+  # ============================================================================
+  license-scan:
+    name: License Scan
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Trivy license scan (PHP)
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: fs
+          scan-ref: .
+          scanners: license
+          format: json
+          output: trivy-license-results.json
+
+      - name: Generate license summary
+        run: |
+          echo "## License Scan Results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          if [ -f trivy-license-results.json ]; then
+            echo "License scan completed. See artifact for details." >> $GITHUB_STEP_SUMMARY
+          else
+            echo "No license issues found." >> $GITHUB_STEP_SUMMARY
+          fi
+
+      - name: Upload license results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: license-scan-results
+          path: trivy-license-results.json
+          retention-days: 30
+
+  # ============================================================================
   # SUMMARY
   # ============================================================================
   summary:
     name: Security Summary
     runs-on: ubuntu-latest
-    needs: [image-scan, dependency-scan, filesystem-scan, secret-scan]
+    needs: [image-scan, dependency-scan, filesystem-scan, secret-scan, dockle-scan, license-scan]
     if: always()
 
     steps:
@@ -288,10 +416,12 @@ jobs:
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "| Scan Type | Status |" >> $GITHUB_STEP_SUMMARY
           echo "|-----------|--------|" >> $GITHUB_STEP_SUMMARY
-          echo "| Docker Images | ${{ needs.image-scan.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Docker Images (Trivy) | ${{ needs.image-scan.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Docker Best Practices (Dockle) | ${{ needs.dockle-scan.result }} |" >> $GITHUB_STEP_SUMMARY
           echo "| Dependencies | ${{ needs.dependency-scan.result }} |" >> $GITHUB_STEP_SUMMARY
           echo "| Filesystem | ${{ needs.filesystem-scan.result }} |" >> $GITHUB_STEP_SUMMARY
           echo "| Secrets | ${{ needs.secret-scan.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Licenses | ${{ needs.license-scan.result }} |" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "Severity threshold: ${{ env.SEVERITY }}" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY

@@ -51,7 +51,9 @@ Thumbs.db
 .idea/**/workspace.xml
 .idea/**/tasks.xml
 .idea/**/usage.statistics.xml
-.idea/**/dictionaries
+# User dictionaries (project.xml is shared)
+.idea/**/dictionaries/*
+!.idea/**/dictionaries/project.xml
 .idea/**/shelf
 
 # Ignore caches and generated files

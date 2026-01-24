@@ -1,0 +1,18 @@
+# ZAP Baseline Scan Rules Configuration
+# Format: rule_id	action	reason
+# Actions: IGNORE, WARN, FAIL
+# See: https://www.zaproxy.org/docs/docker/baseline-scan/
+#
+# Security-by-design: All security headers are configured by default.
+# No rules are ignored - if ZAP reports an issue, investigate it.
+#
+# Configured headers (see docker/nginx/snippets/security-headers.conf):
+# - X-Content-Type-Options: nosniff
+# - X-Frame-Options: SAMEORIGIN
+# - X-XSS-Protection: 1; mode=block
+# - Referrer-Policy: strict-origin-when-cross-origin
+# - Permissions-Policy: restricted
+# - Content-Security-Policy: per environment (dev/prod)
+# - server_tokens: off (nginx.conf)
+# - expose_php: Off (php.ini)
+# - CORS: restricted via CORS_ORIGINS env var

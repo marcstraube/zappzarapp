@@ -1,0 +1,21 @@
+# Dockle configuration for zappzarapp Docker images
+# See: https://github.com/goodwithtech/dockle
+#
+# Security-by-design: All images follow best practices by default.
+# No rules are globally ignored - issues should be investigated.
+#
+# Image compliance:
+# - USER: All runtime images define non-root users
+# - HEALTHCHECK: All runtime images have health checks
+# - Tags: CI builds use specific tags (:scan), not :latest
+#
+# Note: bats and goss utility images are excluded from Dockle scans
+# (build/test time only, never deployed).
+
+# Accept these environment variables as safe (not secrets)
+acceptKeys:
+  - COMPOSER_ALLOW_SUPERUSER
+  - NODE_ENV
+  - PHP_IDE_CONFIG
+  - XDEBUG_MODE
+  - XDEBUG_CONFIG
