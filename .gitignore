@@ -77,7 +77,9 @@ Thumbs.db
 /backups/
 
 # Docker Secrets (sensitive data - never commit!)
-/secrets/
+# Actual secrets are ignored in secrets/.gitignore, but example files are kept
+/secrets/*.txt
+!/secrets/*.example.txt
 
 # Tool Caches & Build Outputs
 /build/

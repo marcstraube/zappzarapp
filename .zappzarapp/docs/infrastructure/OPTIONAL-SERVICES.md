@@ -166,38 +166,86 @@ make shell-meilisearch  # Open shell
 
 ## Elasticsearch
 
-Full-featured distributed search and analytics engine. Use for complex queries,
-aggregations, and large datasets.
+Full-text search engine with security enabled by default.
 
-### Configuration
+### Quick Start
 
 ```bash
-# .env
+# 1. Enable Elasticsearch
 ENABLE_ELASTICSEARCH=true
-ELASTICSEARCH_PORT=9200
-ELASTICSEARCH_TRANSPORT_PORT=9300
-ELASTICSEARCH_HEAP_SIZE=512m  # Increase for production (1g-2g recommended)
-#ELASTICSEARCH_HOST=elasticsearch
-#ELASTICSEARCH_URL=http://elasticsearch:9200
+make up
+
+# 2. Wait for healthy (may take 60+ seconds)
+make status  # Wait until elasticsearch shows "healthy"
+
+# 3. Generate API key (one-time setup)
+make es-setup-api-key
+
+# 4. Verify
+make es-health
 ```
 
-### Usage
+### Authentication
 
-**Development URL:** `http://localhost:9200`
+Elasticsearch uses API key authentication. The boilerplate generates a
+development API key during setup.
 
-**Health Check:**
+| Credential         | Location                                       | Purpose                     |
+| ------------------ | ---------------------------------------------- | --------------------------- |
+| Bootstrap password | `secrets/elasticsearch_bootstrap_password.txt` | Initial setup, healthchecks |
+| API key            | `secrets/elasticsearch_api_key.txt`            | Application access          |
 
-```bash
-curl http://localhost:9200/_cluster/health
-```
+### Production Setup
 
-**PHP Integration (Elasticsearch PHP Client):**
+1. Generate strong bootstrap password:
+
+   ```bash
+   openssl rand -base64 32 > secrets/elasticsearch_bootstrap_password.txt
+   ```
+
+2. Start Elasticsearch and generate API key:
+
+   ```bash
+   make up
+   make es-setup-api-key
+   ```
+
+3. Create application-specific API keys with limited permissions:
+
+   ```bash
+   curl -sk -u "elastic:$(cat secrets/elasticsearch_bootstrap_password.txt)" \
+     -X POST "https://localhost:9200/_security/api_key" \
+     -H "Content-Type: application/json" \
+     -d '{
+       "name": "app-readonly",
+       "role_descriptors": {
+         "app_role": {
+           "indices": [{"names": ["app-*"], "privileges": ["read"]}]
+         }
+       }
+     }'
+   ```
+
+### Make Targets
+
+| Target                  | Description                                 |
+| ----------------------- | ------------------------------------------- |
+| `make es-setup-api-key` | Generate API key (run once after ES starts) |
+| `make es-health`        | Check cluster health                        |
+| `make es-api-key`       | Show current API key                        |
+
+### PHP Integration (Elasticsearch PHP Client)
 
 ```php
 use Elastic\Elasticsearch\ClientBuilder;
 
+// Load API key from secret
+$apiKey = file_get_contents('/run/secrets/elasticsearch_api_key.txt');
+
 $client = ClientBuilder::create()
-    ->setHosts(['elasticsearch:9200'])
+    ->setHosts(['https://elasticsearch:9200'])
+    ->setApiKey($apiKey)
+    ->setSSLVerification(false) // For self-signed certs in development
     ->build();
 
 // Index document
@@ -216,12 +264,27 @@ $response = $client->search([
 ]);
 ```
 
-**Node.js Integration:**
+### Node.js Integration
 
 ```typescript
 import { Client } from '@elastic/elasticsearch';
+import { readFileSync } from 'fs';
 
-const client = new Client({ node: 'http://elasticsearch:9200' });
+// Load API key from secret
+const apiKey = readFileSync(
+  '/run/secrets/elasticsearch_api_key.txt',
+  'utf8'
+).trim();
+
+const client = new Client({
+  node: 'https://elasticsearch:9200',
+  auth: {
+    apiKey: apiKey,
+  },
+  tls: {
+    rejectUnauthorized: false, // For self-signed certs in development
+  },
+});
 
 // Search
 const result = await client.search({

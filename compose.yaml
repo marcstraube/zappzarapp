@@ -399,9 +399,8 @@ services:
       xpack.security.http.ssl.verification_mode: 'none'
       # Disable transport TLS (single-node, no inter-node communication)
       xpack.security.transport.ssl.enabled: 'false'
-      # Allow anonymous access for internal services
-      xpack.security.authc.anonymous.roles: 'superuser'
-      xpack.security.authc.anonymous.username: 'anonymous_user'
+      # Bootstrap password for initial API key generation
+      ELASTIC_PASSWORD_FILE: /run/secrets/elasticsearch_bootstrap_password.txt
       # JVM heap size (should be ~50% of available container memory)
       ES_JAVA_OPTS: '-Xms${ELASTICSEARCH_HEAP_SIZE:-512m} -Xmx${ELASTICSEARCH_HEAP_SIZE:-512m}'
       # Disable machine learning (reduces memory footprint)
@@ -419,6 +418,8 @@ services:
       # TLS certificates for internal HTTPS
       - ./docker/certs/cert.crt:/usr/share/elasticsearch/config/certs/cert.crt:ro
       - ./docker/certs/cert.key:/usr/share/elasticsearch/config/certs/cert.key:ro
+      # Secrets (bind mount)
+      - ./secrets:/run/secrets:ro
     networks:
       - database
     # Health check defined in Dockerfile

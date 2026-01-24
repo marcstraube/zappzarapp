@@ -95,7 +95,19 @@ teardown_file() {
 
 @test "[Integration] Elasticsearch is accessible" {
     require_service "elasticsearch"
-    run timeout 30 docker compose exec -T elasticsearch curl -s http://localhost:9200/_cluster/health
+
+    # Load API key from secrets
+    local api_key
+    api_key=$(cat secrets/elasticsearch_api_key.txt 2>/dev/null || echo "")
+
+    if [ -z "$api_key" ]; then
+        skip "Elasticsearch API key not configured (run: make es-setup-api-key)"
+    fi
+
+    # Use HTTPS with API key authentication
+    run timeout 30 docker compose exec -T elasticsearch curl -sk \
+        -H "Authorization: ApiKey $api_key" \
+        "https://localhost:9200/_cluster/health"
     assert_success
     assert_output --partial "status"
 }

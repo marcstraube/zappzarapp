@@ -352,16 +352,16 @@ test_meilisearch() {
 }
 
 test_elasticsearch() {
-    log_test "elasticsearch: Cluster health (HTTPS)"
+    log_test "elasticsearch: Cluster health (HTTPS with auth)"
 
     if ! is_container_running elasticsearch; then
         log_skip "elasticsearch container not running"
         return
     fi
 
-    # Test cluster health via HTTPS (internal TLS with xpack.security)
-    if $DOCKER_COMPOSE exec -T elasticsearch curl -sfk --max-time $TIMEOUT "https://localhost:9200/_cluster/health" 2>/dev/null | grep -q "status"; then
-        log_pass "elasticsearch: HTTPS cluster health responds"
+    # Test cluster health via HTTPS with bootstrap password authentication
+    if $DOCKER_COMPOSE exec -T elasticsearch sh -c 'curl -sfk --max-time '"$TIMEOUT"' -u "elastic:$(cat /run/secrets/elasticsearch_bootstrap_password.txt)" "https://localhost:9200/_cluster/health"' 2>/dev/null | grep -q "status"; then
+        log_pass "elasticsearch: HTTPS cluster health responds with authentication"
     else
         log_fail "elasticsearch: HTTPS cluster health not responding"
     fi

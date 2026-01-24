@@ -1532,6 +1532,34 @@ mariadb-restore: ## Restore MariaDB database from dump.sql
 		docker compose exec -T mariadb mariadb -u "$$DB_USER" -p"$$DB_PASSWORD" "$$DB_NAME" < dump.sql
 	@echo -e "\033[0;32mMariaDB database restored!\033[0m"
 
+##@ Elasticsearch
+
+.PHONY: es-setup-api-key es-health es-api-key
+
+es-setup-api-key: ## Generate Elasticsearch API key (run after ES is healthy)
+	@echo -e "\033[0;33mGenerating Elasticsearch API key...\033[0m"
+	@BOOTSTRAP_PW=$$(cat secrets/elasticsearch_bootstrap_password.txt 2>/dev/null || cat secrets/elasticsearch_bootstrap_password.example.txt) && \
+	docker compose exec -T elasticsearch curl -sk \
+		-u "elastic:$$BOOTSTRAP_PW" \
+		-X POST "https://localhost:9200/_security/api_key" \
+		-H "Content-Type: application/json" \
+		-d '{"name": "zappzarapp-dev", "role_descriptors": {"all_access": {"cluster": ["all"], "indices": [{"names": ["*"], "privileges": ["all"]}]}}}' \
+		| jq -r '.encoded' > secrets/elasticsearch_api_key.txt
+	@echo -e "\033[0;32mAPI key saved to secrets/elasticsearch_api_key.txt\033[0m"
+
+es-health: ## Check Elasticsearch cluster health
+	@API_KEY=$$(cat secrets/elasticsearch_api_key.txt 2>/dev/null) && \
+	if [ -z "$$API_KEY" ]; then \
+		echo -e "\033[0;31mError: No API key found. Run: make es-setup-api-key\033[0m"; \
+		exit 1; \
+	fi && \
+	docker compose exec -T elasticsearch curl -sk \
+		-H "Authorization: ApiKey $$API_KEY" \
+		"https://localhost:9200/_cluster/health" | jq .
+
+es-api-key: ## Show Elasticsearch API key
+	@cat secrets/elasticsearch_api_key.txt 2>/dev/null || echo -e "\033[0;31mNo API key found. Run: make es-setup-api-key\033[0m"
+
 ##@ Backup & Migrations
 
 backup-all: ## Create backups of all enabled services (database, seaweedfs, rabbitmq, elasticsearch)
@@ -2915,6 +2943,16 @@ secrets: ## Generate missing Docker Secrets (idempotent)
 		echo -e "\033[0;32mmercure_jwt_secret secret generated.\033[0m"; \
 	else \
 		echo -e "\033[0;32mmercure_jwt_secret secret already exists.\033[0m"; \
+	fi
+	@if [ ! -f secrets/elasticsearch_bootstrap_password.txt ]; then \
+		echo -e "\033[0;34mGenerating elasticsearch_bootstrap_password secret...\033[0m"; \
+		cp secrets/elasticsearch_bootstrap_password.example.txt secrets/elasticsearch_bootstrap_password.txt 2>/dev/null || \
+		echo "dev-bootstrap-password" > secrets/elasticsearch_bootstrap_password.txt; \
+		chmod 600 secrets/elasticsearch_bootstrap_password.txt; \
+		echo -e "\033[0;32melasticsearch_bootstrap_password secret generated.\033[0m"; \
+		echo -e "\033[0;34m  Note: API key must be generated after ES starts: make es-setup-api-key\033[0m"; \
+	else \
+		echo -e "\033[0;32melasticsearch_bootstrap_password secret already exists.\033[0m"; \
 	fi
 	@echo -e "\033[0;32mSecrets check completed!\033[0m"
 

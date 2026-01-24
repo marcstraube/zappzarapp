@@ -1,8 +1,6 @@
 # GOSS Tests for elasticsearch container
-# Two-phase testing: dgoss (external) + docker exec (internal)
-#
-# Elasticsearch on port 9200 (HTTP) and 9300 (transport)
-# Internal service, accessed via PHP/Node
+# Note: HTTP tests use internal localhost (inside container)
+# Authentication via bootstrap password (API key may not exist yet during GOSS)
 
 # ============================================================================
 # PROCESS TESTS (Internal)
@@ -28,47 +26,33 @@ port:
 # FILE TESTS (Internal)
 # ============================================================================
 file:
-  # Data directory
   /usr/share/elasticsearch/data:
     exists: true
     filetype: directory
-
-  # Backup directory
   /usr/share/elasticsearch/backup:
     exists: true
     filetype: directory
-
-  # Config
   /usr/share/elasticsearch/config/elasticsearch.yml:
+    exists: true
+  # Bootstrap password secret should be mounted
+  /run/secrets/elasticsearch_bootstrap_password.txt:
     exists: true
 
 # ============================================================================
-# HTTP TESTS (Internal - localhost)
-# ============================================================================
-http:
-  # Cluster health endpoint
-  http://localhost:9200/_cluster/health:
-    status: 200
-    timeout: 30000
-    body:
-      - '"cluster_name"'
-      - '"status"'
-
-  # Root endpoint (version info)
-  http://localhost:9200/:
-    status: 200
-    timeout: 10000
-    body:
-      - '"version"'
-      - '"tagline":"You Know, for Search"'
-
-# ============================================================================
-# COMMAND TESTS (Internal)
+# COMMAND TESTS (Internal - with authentication)
 # ============================================================================
 command:
-  # Elasticsearch is responsive
-  curl -s http://localhost:9200/_cluster/health?wait_for_status=yellow&timeout=30s:
+  # Health check using bootstrap password (API key may not exist yet during GOSS)
+  "curl -sk -u elastic:$(cat /run/secrets/elasticsearch_bootstrap_password.txt) https://localhost:9200/_cluster/health":
     exit-status: 0
     timeout: 35000
     stdout:
       - '"status"'
+      - '"cluster_name"'
+
+  # Verify security is enabled (anonymous access should fail)
+  "curl -sk https://localhost:9200/_cluster/health":
+    exit-status: 0
+    stdout:
+      - '"error"'
+      - '"security_exception"'
