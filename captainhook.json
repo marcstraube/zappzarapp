@@ -45,7 +45,9 @@
             "#X-Amz-(Algorithm|Credential|Signature|Expires)#",
             "#test-access-key-id#",
             "#test-secret-access-key#",
-            "#key:/usr/share/elasticsearch#"
+            "#key:/usr/share/elasticsearch#",
+            "#\\.zappzarapp/ai/templates/#",
+            "#\\.claude/sessions/#"
           ]
         },
         "config": {

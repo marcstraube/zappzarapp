@@ -85,18 +85,42 @@ See: <https://code.claude.com/docs/en/settings#hook-configuration>
 
 #### Hooks Configuration
 
-Hooks use this format:
+Hooks automate session management and provide contextual reminders.
+
+**Available Hook Events:**
+
+| Event              | When                       | Use Case                           |
+| ------------------ | -------------------------- | ---------------------------------- |
+| `SessionStart`     | Session begins             | Create session files, load context |
+| `SessionEnd`       | Session ends               | Remind about cleanup tasks         |
+| `UserPromptSubmit` | User sends message         | Analyze input, detect patterns     |
+| `PreCompact`       | Before context compression | Save work before context loss      |
+| `PreToolUse`       | Before tool execution      | Validate, block, or modify         |
+| `PostToolUse`      | After tool execution       | Lint, notify, log                  |
+| `Stop`             | Claude finishes responding | Post-response actions              |
+
+**Project Hooks (`.claude/settings.json`):**
+
+| Hook                | Script                  | Purpose                                             |
+| ------------------- | ----------------------- | --------------------------------------------------- |
+| `SessionStart`      | `session-start.sh`      | Creates pending session file                        |
+| `SessionEnd`        | `session-end.sh`        | Reminds about Summary, Learnings                    |
+| `UserPromptSubmit`  | `user-prompt-submit.sh` | Detects context continuation + implementation tasks |
+| `PreCompact`        | (inline)                | Reminds to update session before compression        |
+| `PostToolUse(Edit)` | `post-edit-lint.sh`     | Runs linters after file edits                       |
+
+**Hook Format:**
 
 ```json
 {
   "hooks": {
-    "PostToolUse": [
+    "SessionStart": [
       {
-        "matcher": "Edit",
+        "matcher": "",
         "hooks": [
           {
             "type": "command",
-            "command": "echo 'File edited'"
+            "command": "./.claude/hooks/session-start.sh"
           }
         ]
       }
@@ -105,10 +129,38 @@ Hooks use this format:
 }
 ```
 
-Available hook types:
+**Hook Input (stdin JSON):**
 
-- `PreToolUse` — Before tool execution
-- `PostToolUse` — After tool execution
+```json
+{
+  "session_id": "uuid",
+  "transcript_path": "/path/to/conversation.jsonl",
+  "prompt": "user message text",
+  "hook_event_name": "UserPromptSubmit"
+}
+```
+
+**Hook Output (stdout JSON):**
+
+```json
+{
+  "message": "[Hook Name] Message shown to Claude"
+}
+```
+
+#### UserPromptSubmit Detection Examples
+
+When detecting a continued session:
+
+```text
+[Context Continuation] Previous session: session-2026-01-24-1827-tls-verification.md
+```
+
+When detecting an implementation task:
+
+```text
+[Implementation Task] Check .claude/agents/workflow.md for scope before starting.
+```
 
 ### Gemini CLI
 

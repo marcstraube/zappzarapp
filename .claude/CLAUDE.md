@@ -2,47 +2,23 @@
 
 # Claude Instructions
 
-## Session Auto-Start
+## Session Management
 
-**At conversation start (first user message), automatically:**
+**Hooks handle session lifecycle automatically:**
 
-1. Find and read last session:
-   `find .claude/sessions -name "session-*.md" -type f | xargs ls -1t | head -1`
-2. Extract: Goal, Summary, References
-3. Run `/tasks --list` for open items (respects configured storage mode)
-4. Create new session from `.zappzarapp/ai/templates/SESSION-TEMPLATE.md`
+| Hook               | Action                                                    |
+| ------------------ | --------------------------------------------------------- |
+| `SessionStart`     | Creates `.claude/sessions/YYYY/MM/session-...-pending.md` |
+| `UserPromptSubmit` | Detects context continuation, shows previous session      |
+| `SessionEnd`       | Reminds about Summary, Learnings, Decisions               |
+| `PreCompact`       | Reminds before context compaction                         |
 
-**If fresh context (new conversation):**
+**Your tasks:**
 
-1. Brief user on context (previous session, tasks)
-2. Ask: "What would you like to work on?"
-
-**If continued from context compression:**
-
-1. Find and continue previous session file (same task-slug)
-2. Continue working silently
-
-## Context Overflow / Continued Sessions
-
-**When a session is "continued from previous conversation" after context
-overflow:**
-
-1. **Find previous session by task-slug from Summary:**
-
-   ```bash
-   # Extract task theme from Summary, search for matching slug
-   find .claude/sessions -name "session-*<slug>*.md" -type f | xargs ls -1t | head -1
-   ```
-
-2. **Fallback if unclear:**
-   - Filter by current branch:
-     `grep -rl "Branch.*$(git branch --show-current)" .claude/sessions/`
-   - Filter by time window (last 2h)
-   - If still ambiguous: Ask user which session to continue
-3. **Create continuation session file** in current year/month with same slug
-4. Continue with normal session logging
-
-**This is NOT optional** — the summarized context loses session file updates!
+1. **After understanding the task:** Rename pending →
+   `session-...-<task-slug>.md`
+2. **Fresh conversation:** Brief user on previous session, ask what to work on
+3. **Context continuation:** Hook shows previous session — read and continue it
 
 ## Session Log Updates
 
@@ -73,9 +49,11 @@ committed (persistent). In session file, only note "Added learning: <title>".
 
 ### Ending a Session
 
-1. Complete session log: Fill in `## Summary`
-2. Verify learnings/decisions were written to knowledge files
-3. Tell user: "Please enter `/clear` for fresh context."
+`SessionEnd` hook reminds you. Checklist:
+
+1. Fill in `## Summary`
+2. Verify learnings/decisions written to knowledge files
+3. Tell user: "Bitte `/clear` eingeben."
 
 ---
 
@@ -122,67 +100,30 @@ Different files have different layer support:
 | 1        | `.ai/`            | `.ai/LEARNINGS.md` exists |
 | 2        | `.zappzarapp/ai/` | fallback                  |
 
-**CHANGELOG — 2 Layer (different paths):**
+**CHANGELOG — Root level:**
 
-| Priority | Path             | Condition                           |
-| -------- | ---------------- | ----------------------------------- |
-| 1        | `documentation/` | `documentation/CHANGELOG.md` exists |
-| 2        | `.zappzarapp/`   | fallback                            |
+| File                       | Purpose                                     |
+| -------------------------- | ------------------------------------------- |
+| `CHANGELOG.md`             | Project changelog (Keep a Changelog format) |
+| `.zappzarapp/CHANGELOG.md` | Boilerplate changelog (after `make setup`)  |
 
 ---
 
 ## Agent-Workflow
 
-**Before any implementation task:** Read `.claude/agents/workflow.md` to
-determine scope (Trivial/Small/Medium/Large) and select appropriate workflow.
+`UserPromptSubmit` hook reminds about workflow. Details:
+`.claude/agents/workflow.md`
 
-Agents are selected automatically based on file count, complexity, and
-languages. The workflow.md contains scope detection, agent roles, pre-flight
-checks, and user checkpoints.
-
-**Project context:** See `.claude/context/project.md` for architecture and test
-conventions.
+Project context: `.claude/context/project.md`
 
 ## Code Standards
 
-See `.zappzarapp/standards/` for language-specific rules (shared across all AI
-agents):
-
-| File              | Content                      |
-| ----------------- | ---------------------------- |
-| `php.md`          | Suppressions, PHPStan, PHPMD |
-| `node.md`         | ESLint, Prettier, TypeScript |
-| `sql.md`          | Dialects, sqlfluff           |
-| `shell.md`        | ShellCheck, Bash/POSIX       |
-| `markdown.md`     | Code blocks, markdownlint    |
-| `docker.md`       | Hadolint                     |
-| `make-targets.md` | All lint/test/fix targets    |
+Standards: `.zappzarapp/standards/` (php.md, node.md, shell.md, etc.)
 
 ## Project Structure
 
-```text
-.ai/                   → Project AI knowledge (decisions, learnings, references)
-.claude/               → Claude tooling (agents, commands, sessions)
-.zappzarapp/           → Boilerplate config (standards, docs, changelog)
-docker/                → Docker configurations
-documentation/         → Project documentation (CHANGELOG)
-resources/             → Frontend assets (JS/CSS/Images)
-src/node/              → Node.js code (backend/, frontend/)
-src/php/               → PHP code (App/, DevDashboard/)
-templates/             → PHP templates (app/, dev-dashboard/)
-tests/                 → Tests (goss/, node/, php/)
-```
-
-**Claude-specific folders:**
-
-| Folder              | Purpose                      | Committed |
-| ------------------- | ---------------------------- | --------- |
-| `.claude/agents/`   | Agent workflow documentation | Yes       |
-| `.claude/commands/` | Slash command definitions    | Yes       |
-| `.claude/sessions/` | Session logs (YYYY/MM/)      | No        |
-| `.claude/temp/`     | Agent work files             | No        |
-| `.ai/`              | Project knowledge files      | Yes       |
-| `.zappzarapp/ai/`   | Boilerplate knowledge        | Yes       |
+Key: `.claude/` (tooling), `.ai/` (knowledge), `.zappzarapp/` (boilerplate),
+`src/` (code), `tests/`
 
 ## Key Make Targets
 
@@ -197,42 +138,13 @@ For all lint/test/fix targets: See `.zappzarapp/standards/make-targets.md`
 
 ## Slash Commands
 
-Available commands in `.claude/commands/`:
-
-| Command       | Purpose                                                    |
-| ------------- | ---------------------------------------------------------- |
-| `/status`     | Project overview (Git, Docker, tasks)                      |
-| `/tasks`      | Task management (4-tier: zappzarapp/upstream/repo/private) |
-| `/commit`     | Guided commit workflow with quality checks                 |
-| `/audit`      | Project audit (quality, security, docs) - quick/full       |
-| `/sync-check` | Check configuration files for sync                         |
-| `/learnings`  | View, search, and aggregate project learnings              |
-| `/research`   | Research topics (local knowledge + optional web)           |
-| `/optimize`   | Self-optimization of config, learnings, commands           |
+Commands in `.claude/commands/`: `/status`, `/tasks`, `/commit`, `/audit`,
+`/learnings`, `/research`, `/optimize`
 
 ## Git & Commits
 
-### Feature-Branch Workflow
-
-Each task is developed on its own feature branch:
-
-```text
-git checkout -b feature/<task-slug>
-    ↓
-[Development + Commits + CHANGELOG entries]
-    ↓
-Claude: "Branch ready for review"
-    ↓
-User reviews → Merge → `/tasks --close <id>`
-```
-
-**Branch naming:** `feature/<slug>`, `fix/<slug>`, `refactor/<slug>`
-
-### Commit Rules
-
-- Commit regularly on feature branches (intermediate commits encouraged)
-- Use `/commit` for the guided commit workflow
-- Never commit directly to develop or master — only via feature branch merges
+See `.claude/agents/workflow.md` (Branch Naming, Commit Strategy, Branch
+Management)
 
 ## Error Prevention
 

@@ -104,6 +104,8 @@
       "Bash(yq:*)"
     ],
     "deny": [
+      "Read(./secrets/**)",
+
       "Bash(make clean:*)",
       "Bash(make down-all:*)",
       "Bash(make fresh:*)",
@@ -138,6 +140,39 @@
     ]
   },
   "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "./.claude/hooks/session-start.sh"
+          }
+        ]
+      }
+    ],
+    "SessionEnd": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "./.claude/hooks/session-end.sh"
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "./.claude/hooks/user-prompt-submit.sh"
+          }
+        ]
+      }
+    ],
     "PreCompact": [
       {
         "matcher": "auto|manual",
