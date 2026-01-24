@@ -22,7 +22,7 @@ doesn't exist on host.
 **Affected files (boilerplate):**
 
 - `composer.lock` / `pnpm-lock.yaml` (if deleted or never created)
-- `docker/certs/cert.crt` / `docker/certs/cert.key` (if not generated)
+- `docker/certs/nginx/` and `docker/certs/internal/` (if not generated)
 - `secrets/*` files (if not generated)
 
 **Fix:** Ensure files exist before `docker compose up`:

@@ -13,14 +13,14 @@ Docker network, they cannot intercept or modify traffic between services.
 
 ```text
 ┌─────────────────────────────────────────────────────────────────┐
-│                        External Clients                          │
+│                        External Clients                         │
 └─────────────────────────────────────────────────────────────────┘
                               │
                          HTTPS:8443
                               ▼
 ┌─────────────────────────────────────────────────────────────────┐
-│                          nginx                                   │
-│                    (TLS Termination)                             │
+│                          nginx                                  │
+│                    (TLS Termination)                            │
 └─────────────────────────────────────────────────────────────────┘
          │                    │                    │
     HTTPS:3000           HTTPS:3001          Unix Socket
@@ -58,12 +58,13 @@ Docker network, they cannot intercept or modify traffic between services.
 All services use the same certificate generated in `docker/certs/`:
 
 ```bash
-# Generate self-signed certificate for development
-make ssl-selfsigned
+# Generate Internal CA and certificates
+make ssl-internal
 
-# Files created:
-# - docker/certs/cert.crt  (public certificate)
-# - docker/certs/cert.key  (private key)
+# Directory structure created:
+# - docker/certs/ca/          (Internal CA)
+# - docker/certs/nginx/       (nginx certificates)
+# - docker/certs/internal/    (internal service certificates)
 ```
 
 ### Subject Alternative Names (SANs)

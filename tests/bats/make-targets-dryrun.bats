@@ -404,8 +404,8 @@ load 'helpers/setup'
 # SSL Targets
 # =============================================================================
 
-@test "make ssl-selfsigned --dry-run validates" {
-    run make -n ssl-selfsigned
+@test "make ssl-internal --dry-run validates" {
+    run make -n ssl-internal
     assert_success
 }
 

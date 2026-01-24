@@ -26,8 +26,8 @@ services:
       # SSL certificates for external database connections
       - ./docker/certs:/etc/ssl/db-certs:ro
       # SSL certificates for internal HTTPS server (Nuxt/Nitro)
-      - ./docker/certs/cert.crt:/etc/ssl/certs/cert.crt:ro
-      - ./docker/certs/cert.key:/etc/ssl/private/cert.key:ro
+      - ./docker/certs/internal/cert.crt:/etc/ssl/certs/cert.crt:ro
+      - ./docker/certs/internal/cert.key:/etc/ssl/private/cert.key:ro
       # Secrets (bind mount)
       - ./secrets:/run/secrets:ro
 
@@ -227,8 +227,8 @@ services:
       # Shared socket directory for PHP-FPM Unix socket communication
       - php-fpm-socket:/var/run/php-fpm
       # SSL certificates (bind mount)
-      - ./docker/certs/cert.crt:/etc/nginx/certs/cert.crt:ro
-      - ./docker/certs/cert.key:/etc/nginx/certs/cert.key:ro
+      - ./docker/certs/nginx/cert.crt:/etc/nginx/certs/cert.crt:ro
+      - ./docker/certs/nginx/cert.key:/etc/nginx/certs/cert.key:ro
       # === CI-specific / Development mounts ===
       - ./public:/var/www/html/public:ro
       - ./docs:/var/www/html/docs:ro

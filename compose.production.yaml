@@ -43,8 +43,8 @@ services:
       # Production SSL config template (processed by entrypoint at runtime)
       - ./docker/nginx/conf.d/ssl-production.conf.template:/etc/nginx/conf.d/ssl-production.conf.template:ro
       # SSL certificates (bind mount, readable by all container users)
-      - ./docker/certs/cert.crt:/etc/nginx/certs/cert.crt:ro
-      - ./docker/certs/cert.key:/etc/nginx/certs/cert.key:ro
+      - ./docker/certs/nginx/cert.crt:/etc/nginx/certs/cert.crt:ro
+      - ./docker/certs/nginx/cert.key:/etc/nginx/certs/cert.key:ro
     read_only: true
     tmpfs:
       # All tmpfs owned by nginx user (uid 101) - no root needed
@@ -294,8 +294,8 @@ services:
     volumes:
       - redis-data:/data
       # SSL certificates (bind mount)
-      - ./docker/certs/cert.crt:/etc/redis/certs/cert.crt:ro
-      - ./docker/certs/cert.key:/etc/redis/certs/cert.key:ro
+      - ./docker/certs/internal/cert.crt:/etc/redis/certs/cert.crt:ro
+      - ./docker/certs/internal/cert.key:/etc/redis/certs/cert.key:ro
     security_opt:
       - no-new-privileges:true
     cap_drop:
@@ -455,8 +455,8 @@ services:
       # Secrets (bind mount)
       - ./secrets:/run/secrets:ro
       # SSL certificates (bind mount)
-      - ./docker/certs/cert.crt:/etc/rabbitmq/certs/server.crt:ro
-      - ./docker/certs/cert.key:/etc/rabbitmq/certs/server.key:ro
+      - ./docker/certs/internal/cert.crt:/etc/rabbitmq/certs/server.crt:ro
+      - ./docker/certs/internal/cert.key:/etc/rabbitmq/certs/server.key:ro
     logging:
       driver: "json-file"
       options:
@@ -483,8 +483,8 @@ services:
       # Secrets (bind mount)
       - ./secrets:/run/secrets:ro
       # SSL certificates (TLS is configured via entrypoint)
-      - ./docker/certs/cert.crt:/etc/ssl/certs/cert.crt:ro
-      - ./docker/certs/cert.key:/etc/ssl/private/cert.key:ro
+      - ./docker/certs/internal/cert.crt:/etc/ssl/certs/cert.crt:ro
+      - ./docker/certs/internal/cert.key:/etc/ssl/private/cert.key:ro
     # Healthcheck defined in Dockerfile
     logging:
       driver: "json-file"

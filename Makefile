@@ -3324,7 +3324,7 @@ ssl-prod-enable: ## Enable SSL/TLS for production (generates ssl-production.conf
 	@echo -e "\033[0;34mNext steps:\033[0m"
 	@echo -e "\033[0;34m  1. Generate SSL certificate:\033[0m"
 	@echo -e "\033[0;34m     For Let's Encrypt: make ssl-letsencrypt\033[0m"
-	@echo -e "\033[0;34m     For self-signed:   make ssl-selfsigned\033[0m"
+	@echo -e "\033[0;34m     For internal CA:   make ssl-internal\033[0m"
 	@echo ""
 	@echo -e "\033[0;34m  2. Deploy:\033[0m"
 	@echo -e "\033[0;34m     ENV=production make build && make up\033[0m"

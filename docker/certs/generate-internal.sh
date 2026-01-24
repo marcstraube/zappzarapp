@@ -78,11 +78,6 @@ rm -f "$NGINX_DIR/cert.csr"
 chmod 644 "$INTERNAL_DIR/cert.crt" "$INTERNAL_DIR/ca.crt" "$NGINX_DIR/cert.crt"
 chmod 644 "$INTERNAL_DIR/cert.key" "$NGINX_DIR/cert.key"
 
-# Create symlinks for compose compatibility (legacy paths)
-cd "$CERT_DIR"
-ln -sf nginx/cert.crt cert.crt
-ln -sf nginx/cert.key cert.key
-
 echo "============================================================================"
 echo "Internal certificates generated successfully!"
 echo "============================================================================"

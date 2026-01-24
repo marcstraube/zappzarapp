@@ -391,8 +391,8 @@ services:
       # Custom entrypoint for SSL certificate setup
       - ./docker/mariadb/entrypoint.sh:/entrypoint-wrapper.sh:ro
       # SSL/TLS Certificates for encrypted database connections (mounted to /tmp first)
-      - ./docker/certs/cert.crt:/tmp/certs/server.crt:ro
-      - ./docker/certs/cert.key:/tmp/certs/server.key:ro
+      - ./docker/certs/internal/cert.crt:/tmp/certs/server.crt:ro
+      - ./docker/certs/internal/cert.key:/tmp/certs/server.key:ro
     command: >
       --general-log=1
       --general-log-file=/var/log/mysql/general.log
@@ -412,8 +412,8 @@ services:
       # Custom entrypoint for SSL certificate setup
       - ./docker/postgres/entrypoint.sh:/entrypoint-wrapper.sh:ro
       # SSL/TLS Certificates for encrypted database connections (mounted to /tmp first)
-      - ./docker/certs/cert.crt:/tmp/certs/server.crt:ro
-      - ./docker/certs/cert.key:/tmp/certs/server.key:ro
+      - ./docker/certs/internal/cert.crt:/tmp/certs/server.crt:ro
+      - ./docker/certs/internal/cert.key:/tmp/certs/server.key:ro
     command: >
       postgres
       -c shared_buffers=128MB
@@ -431,8 +431,8 @@ services:
       - "${REDIS_PORT:-6379}:6379"
     volumes:
       # SSL/TLS Certificates for encrypted connections (same as production for parity)
-      - ./docker/certs/cert.crt:/etc/ssl/certs/redis.crt:ro
-      - ./docker/certs/cert.key:/etc/ssl/private/redis.key:ro
+      - ./docker/certs/internal/cert.crt:/etc/ssl/certs/redis.crt:ro
+      - ./docker/certs/internal/cert.key:/etc/ssl/private/redis.key:ro
     command: >
       redis-server
       --appendonly no
@@ -493,8 +493,8 @@ services:
       - "${RABBITMQ_MANAGEMENT_PORT:-15672}:15672"
     volumes:
       # SSL/TLS Certificates for encrypted connections
-      - ./docker/certs/cert.crt:/etc/rabbitmq/certs/server.crt:ro
-      - ./docker/certs/cert.key:/etc/rabbitmq/certs/server.key:ro
+      - ./docker/certs/internal/cert.crt:/etc/rabbitmq/certs/server.crt:ro
+      - ./docker/certs/internal/cert.key:/etc/rabbitmq/certs/server.key:ro
       # RabbitMQ TLS configuration
       - ./docker/rabbitmq/rabbitmq.conf:/etc/rabbitmq/rabbitmq.conf:ro
 
