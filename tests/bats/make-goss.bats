@@ -122,8 +122,8 @@ load 'helpers/goss-integration'
     assert_success
 }
 
-@test "build-goss target exists" {
-    run target_exists "build-goss"
+@test "goss-build target exists" {
+    run target_exists "goss-build"
     assert_success
 }
 
@@ -250,8 +250,8 @@ load 'helpers/goss-integration'
     assert_success
 }
 
-@test "make build-goss --dry-run validates" {
-    run make -n build-goss
+@test "make goss-build --dry-run validates" {
+    run make -n goss-build
     assert_success
 }
 

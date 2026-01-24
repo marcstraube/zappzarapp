@@ -521,6 +521,95 @@ Code quality, testing, and validation commands.
 | `make test-node-watch`    | Run Vitest in watch mode               |
 | `make test-coverage-node` | Generate Vitest coverage report (HTML) |
 
+### GOSS Container Testing
+
+GOSS provides automated testing for Docker containers, validating
+configurations, services, packages, and runtime behavior.
+
+#### Core GOSS Commands
+
+| Command                | Description                                                   |
+| ---------------------- | ------------------------------------------------------------- |
+| `make goss-build`      | Build GOSS testing tool image (required for build-time tests) |
+| `make goss-test`       | Run runtime integration tests for all running containers      |
+| `make goss-test-build` | Run GOSS build-time tests for all images                      |
+| `make goss-test-all`   | Run both build-time and runtime tests                         |
+| `make goss-cleanup`    | Remove all Goss test containers, networks, and volumes        |
+
+#### Service-Specific Tests
+
+Run runtime tests for specific containers:
+
+| Command                        | Description                            |
+| ------------------------------ | -------------------------------------- |
+| `make goss-test-nginx`         | Test nginx container (runtime)         |
+| `make goss-test-php`           | Test PHP container (runtime)           |
+| `make goss-test-node-backend`  | Test node-backend container (runtime)  |
+| `make goss-test-node-frontend` | Test node-frontend container (runtime) |
+| `make goss-test-postgres`      | Test PostgreSQL container (runtime)    |
+| `make goss-test-mariadb`       | Test MariaDB container (runtime)       |
+| `make goss-test-redis`         | Test Redis container (runtime)         |
+| `make goss-test-mercure`       | Test Mercure container (runtime)       |
+| `make goss-test-meilisearch`   | Test Meilisearch container (runtime)   |
+| `make goss-test-elasticsearch` | Test Elasticsearch container (runtime) |
+| `make goss-test-mailpit`       | Test Mailpit container (runtime)       |
+| `make goss-test-seaweedfs`     | Test SeaweedFS container (runtime)     |
+| `make goss-test-rabbitmq`      | Test RabbitMQ container (runtime)      |
+
+#### Preset Testing
+
+Test complete stack configurations:
+
+| Command                      | Description                                     |
+| ---------------------------- | ----------------------------------------------- |
+| `make goss-test-preset`      | Test a preset (PRESET=dev-fullstack, VERBOSE=1) |
+| `make goss-test-matrix`      | Run ALL preset tests (dev + prod)               |
+| `make goss-test-matrix-dev`  | Run development preset tests only               |
+| `make goss-test-matrix-prod` | Run production preset tests only (CI/CD)        |
+
+**Development Presets:**
+
+| Command                                 | Description                                |
+| --------------------------------------- | ------------------------------------------ |
+| `make goss-test-dev-fullstack`          | Full-Stack (PHP + Node + Postgres + Redis) |
+| `make goss-test-dev-php-only`           | PHP-Only (PHP + Postgres + Redis)          |
+| `make goss-test-dev-node-only`          | Node-Only (Node + Postgres + Redis)        |
+| `make goss-test-dev-minimal`            | Minimal (Nginx only)                       |
+| `make goss-test-dev-fullstack-mariadb`  | Full-Stack with MariaDB                    |
+| `make goss-test-dev-fullstack-optional` | Full-Stack with all optional services      |
+| `make goss-test-dev-framework`          | Framework mode (Nuxt/Next + Express)       |
+| `make goss-test-dev-assets`             | Assets-only (Vite HMR, no Express)         |
+| `make goss-test-dev-idle`               | Idle mode (Node container idle)            |
+
+**Production Presets:**
+
+| Command                                  | Description                                |
+| ---------------------------------------- | ------------------------------------------ |
+| `make goss-test-prod-fullstack`          | Full-Stack (PHP + Node + Postgres + Redis) |
+| `make goss-test-prod-php-only`           | PHP-Only (PHP + Postgres + Redis)          |
+| `make goss-test-prod-node-only`          | Node-Only (Node + Postgres + Redis)        |
+| `make goss-test-prod-minimal`            | Minimal (Nginx only)                       |
+| `make goss-test-prod-fullstack-mariadb`  | Full-Stack with MariaDB                    |
+| `make goss-test-prod-fullstack-optional` | Full-Stack with all optional services      |
+
+**Examples:**
+
+```bash
+# Run all tests (build + runtime)
+make goss-test-all
+
+# Test specific service
+make goss-test-redis
+
+# Test a specific preset
+make goss-test-preset PRESET=dev-fullstack
+
+# Run full test matrix (CI/CD)
+make goss-test-matrix VERBOSE=1
+```
+
+See `tests/goss/README.md` for detailed GOSS testing documentation.
+
 ### Linting
 
 | Command            | Description                             |
@@ -548,6 +637,7 @@ Security scanning and secrets management.
 | `make secrets`                  | Generate missing Docker Secrets (idempotent)                 |
 | `make secrets-rotate-passwords` | Rotate database passwords only (safe, keeps encryption keys) |
 | `make secrets-rotate`           | Rotate ALL secrets (DANGER: breaks existing backups!)        |
+| `make check-cors`               | Show current CORS configuration and security check           |
 
 ### Security Scanning
 

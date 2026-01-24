@@ -11,6 +11,11 @@ Fixes) **Version:** 3.79
 
 #### Changed
 
+- **Make Target Naming**: Renamed `build-goss` to `goss-build` for consistency
+  - Follows established `goss-*` naming pattern (goss-test, goss-cleanup, etc.)
+  - Updated all references in Makefile, tests, and documentation
+  - Files: `Makefile`, `tests/bats/make-goss.bats`, `tests/goss/README.md`
+
 - **Redis Upgrade**: Upgraded from `redis:7.4-alpine3.21` to
   `redis:8.4-alpine3.22`
   - Redis 8.4 with Alpine 3.22 (closest available to Alpine 3.23)

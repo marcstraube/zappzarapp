@@ -2518,11 +2518,11 @@ goss-test: ## Run runtime integration tests for all running containers
 	@echo -e "\033[0;33mRunning runtime integration tests...\033[0m"
 	@tests/goss/runtime-tests.sh all
 
-build-goss: ## Build GOSS testing tool image (required for build-time tests)
+goss-build: ## Build GOSS testing tool image (required for build-time tests)
 	@echo -e "\033[0;34mBuilding GOSS image...\033[0m"
 	@docker build -t zappzarapp-goss:latest -f docker/goss/Dockerfile . >/dev/null
 
-goss-test-build: build-goss ## Run GOSS build-time tests for all images
+goss-test-build: goss-build ## Run GOSS build-time tests for all images
 	@echo -e "\033[0;33mRunning GOSS build-time tests...\033[0m"
 	@echo -e "\033[0;34mBuilding PHP with test stage...\033[0m"
 	@docker build --target test -f docker/php/Dockerfile . >/dev/null && echo -e "\033[0;32m✓ PHP tests passed\033[0m" || echo -e "\033[0;31m✗ PHP tests failed\033[0m"

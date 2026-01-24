@@ -67,7 +67,7 @@ Tests run during `docker build --target test`:
 
 ```dockerfile
 # GOSS version is centralized in docker/goss/Dockerfile
-# Build it first: make build-goss
+# Build it first: make goss-build
 
 # Example from docker/php/Dockerfile
 FROM production-base AS test
