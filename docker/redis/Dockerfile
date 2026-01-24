@@ -2,15 +2,16 @@
 #
 # This is a minimal wrapper around the official Redis image.
 # TLS configuration is handled via command arguments in compose files.
-#
+
+ARG REDIS_VERSION=8.4
+ARG ALPINE_VERSION=3.22
+
 # Version Pinning:
 # - Minor version pinned for stability
+# - Alpine version pinned for consistency across services
 # - To update: check https://hub.docker.com/_/redis/tags
 # - For SHA digest pinning in production, use:
-#   FROM redis:7.4-alpine3.21@sha256:<digest>
-
-ARG REDIS_VERSION=7.4
-ARG ALPINE_VERSION=3.21
+#   FROM redis:8.4-alpine3.22@sha256:<digest>
 
 FROM redis:${REDIS_VERSION}-alpine${ALPINE_VERSION} AS base
 

@@ -1,18 +1,18 @@
 # Nginx Multi-Stage Dockerfile (Unprivileged)
 #
 # Security: Runs entirely as nginx user (uid 101) - NO root, NO capabilities needed
-#
+
+ARG ALPINE_VERSION=3.23
+
 # Version Pinning:
-# - Alpine version pinned (includes nginx + brotli module)
-# - Alpine 3.23 provides nginx 1.28.0 and nginx-mod-http-brotli 1.28.0 (version-matched)
+# - Alpine version pinned for consistency across services
+# - Alpine includes version-matched nginx + brotli module
 # - To update: check https://hub.docker.com/_/alpine/tags
 # - For SHA digest pinning in production, use:
 #   FROM alpine:3.23@sha256:<digest>
 
-ARG ALPINE_VERSION=3.23
-
 # --- 1. BASE STAGE (Shared) ---
-# Using Alpine 3.23 directly for version-matched nginx + brotli module
+# Using Alpine directly for version-matched nginx + brotli module
 FROM alpine:${ALPINE_VERSION} AS base
 
 # Install Nginx with Brotli module & envsubst for template processing & Setup

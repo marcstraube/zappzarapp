@@ -13,6 +13,13 @@
 
 ARG RABBITMQ_VERSION=4.0
 
+# Version Pinning:
+# - Major version pinned for stability
+# - Alpine version follows RabbitMQ official image (currently 3.23)
+# - To update: check https://hub.docker.com/_/rabbitmq/tags
+# - For SHA digest pinning in production, use:
+#   FROM rabbitmq:4.0-management-alpine@sha256:<digest>
+
 FROM rabbitmq:${RABBITMQ_VERSION}-management-alpine
 
 # Copy entrypoint wrapper to load credentials from Docker Secrets

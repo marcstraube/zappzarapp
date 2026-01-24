@@ -7,6 +7,32 @@ Fixes) **Version:** 3.79
 
 ## Changelog
 
+### Unreleased
+
+#### Changed
+
+- **Redis Upgrade**: Upgraded from `redis:7.4-alpine3.21` to
+  `redis:8.4-alpine3.22`
+  - Redis 8.4 with Alpine 3.22 (closest available to Alpine 3.23)
+  - Backward-compatible for standard operations (GET, SET, HGET, etc.)
+  - New features: hash field expiration, improved memory efficiency
+  - File: `docker/redis/Dockerfile`
+
+- **BATS Testing**: Upgraded BATS container from Alpine 3.21 to Alpine 3.23
+  - Consistency with other Alpine-based services
+  - All 420+ tests passing with Alpine 3.23
+  - File: `docker/bats/Dockerfile`
+
+- **Dockerfile Standardization**: Standardized version pinning comments across
+  all Dockerfiles
+  - ARG variables before version pinning comments (Best Practice)
+  - Digest examples use concrete values, not variables (copy-pastable)
+  - Removed duplicate version numbers from comments (DRY principle)
+  - Affected files:
+    `docker/{redis,nginx,node,php,postgres,bats,rabbitmq}/Dockerfile`
+
+---
+
 ### Version 3.79 (2026-01-22) - Setup/Reset Workflow Fixes
 
 Fixed critical issues in the fresh setup workflow (`make reset` → `make init` →

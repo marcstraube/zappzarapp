@@ -11,16 +11,17 @@
 # - Locale and encoding configuration
 # The official entrypoint (docker-entrypoint.sh) drops privileges to the
 # postgres user (uid 70 on Alpine) via gosu before starting postgres.
-#
-# Version Pinning:
-# - Minor version pinned for stability
-# - To update: check https://hub.docker.com/_/postgres/tags
-# - For SHA digest pinning in production, use:
-#   FROM postgres:17.7-alpine3.23@sha256:<digest>
 
 ARG POSTGRES_VERSION=17.7
 ARG ALPINE_VERSION=3.23
 ARG PG_CRON_VERSION=1.6.4
+
+# Version Pinning:
+# - Minor version pinned for stability
+# - Alpine version pinned for consistency across services
+# - To update: check https://hub.docker.com/_/postgres/tags
+# - For SHA digest pinning in production, use:
+#   FROM postgres:17.7-alpine3.23@sha256:<digest>
 
 FROM postgres:${POSTGRES_VERSION}-alpine${ALPINE_VERSION} AS builder
 

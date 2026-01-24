@@ -1,15 +1,16 @@
 # PHP Multi-Stage Dockerfile
-#
-# Version Pinning:
-# - Minor version pinned for stability
-# - To update: check https://hub.docker.com/_/php/tags
-# - For SHA digest pinning in production, use:
-#   FROM php:8.4-fpm-alpine3.23@sha256:<digest>
 
 ARG PHP_VERSION=8.4
 ARG ALPINE_VERSION=3.23
 ARG GMAGICK_VERSION=2.0.6RC1
 ARG COMPOSER_VERSION=2
+
+# Version Pinning:
+# - Minor version pinned for stability
+# - Alpine version pinned for consistency across services
+# - To update: check https://hub.docker.com/_/php/tags
+# - For SHA digest pinning in production, use:
+#   FROM php:8.4-fpm-alpine3.23@sha256:<digest>
 
 # Alias stages for external images (BuildKit doesn't support variable expansion in --from)
 FROM composer:${COMPOSER_VERSION} AS composer-image

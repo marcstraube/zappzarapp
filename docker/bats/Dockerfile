@@ -2,7 +2,13 @@
 # BATS Testing Container
 # Provides BATS test framework for Makefile target testing
 
-ARG ALPINE_VERSION=3.21
+ARG ALPINE_VERSION=3.23
+
+# Version Pinning:
+# - Alpine version pinned for consistency across services
+# - To update: check https://hub.docker.com/_/alpine/tags
+# - For SHA digest pinning in production, use:
+#   FROM alpine:3.23@sha256:<digest>
 
 FROM alpine:${ALPINE_VERSION} AS bats-builder
 
