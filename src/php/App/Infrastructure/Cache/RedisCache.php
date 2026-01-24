@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Infrastructure\Cache;
 
+use App\Infrastructure\TlsConfig;
 use Redis;
 use RedisException;
 
@@ -199,7 +200,7 @@ final class RedisCache implements CacheInterface
             $useTls = str_starts_with($this->redisUrl, 'rediss://');
 
             if ($useTls) {
-                // TLS connection with self-signed certificate support (dev)
+                // TLS connection with environment-based verification
                 $connected = $redis->connect(
                     $parsed['host'],
                     $parsed['port'],
@@ -207,13 +208,7 @@ final class RedisCache implements CacheInterface
                     '',
                     0,
                     0,
-                    [
-                        'stream' => [
-                            'verify_peer'       => false,
-                            'verify_peer_name'  => false,
-                            'allow_self_signed' => true,
-                        ],
-                    ]
+                    TlsConfig::getRedisStreamOptions()
                 );
             } else {
                 // Plain connection

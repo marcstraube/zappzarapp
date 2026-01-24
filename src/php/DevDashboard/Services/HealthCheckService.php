@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace DevDashboard\Services;
 
 use App\Infrastructure\DatabaseConfig;
+use App\Infrastructure\TlsConfig;
 use Exception;
 use PDO;
 use PDOException;
@@ -336,13 +337,7 @@ class HealthCheckService
             $port      = $parsedUrl['port'] ?? 6379;
 
             if ($useTls) {
-                $connected = $this->safeRedisConnect($redis, $host, $port, [
-                    'stream' => [
-                        'verify_peer'       => false,
-                        'verify_peer_name'  => false,
-                        'allow_self_signed' => true,
-                    ],
-                ]);
+                $connected = $this->safeRedisConnect($redis, $host, $port, TlsConfig::getRedisStreamOptions());
             } else {
                 $connected = $this->safeRedisConnect($redis, $host, $port);
             }

@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace Tests\DevDashboard\Controllers;
 
 use DevDashboard\Controllers\DashboardController;
+use DevDashboard\Response\JsonResponse;
+use DevDashboard\Response\Response;
 use DevDashboard\Services\DatabaseService;
 use DevDashboard\Services\HealthCheckService;
 use DevDashboard\Services\LogService;
@@ -28,6 +30,23 @@ class DashboardControllerTest extends TestCase
         );
     }
 
+    /**
+     * Helper to get JSON data from a Response object
+     *
+     * @return array<string, mixed>
+     */
+    private function getJsonFromResponse(Response $response): array
+    {
+        ob_start();
+        $response->send();
+        $output = ob_get_clean();
+
+        $this->assertNotFalse($output, 'Output buffer should not be empty');
+        $this->assertJson($output);
+
+        return json_decode($output, true);
+    }
+
     public function testControllerCanBeInstantiated(): void
     {
         $controller = $this->createController();
@@ -35,33 +54,27 @@ class DashboardControllerTest extends TestCase
         $this->assertInstanceOf(DashboardController::class, $controller);
     }
 
-    public function testApiHealthCheckReturnsValidJson(): void
+    public function testApiHealthCheckReturnsJsonResponse(): void
     {
         $controller = $this->createController();
 
-        ob_start();
-        $controller->apiHealthCheck();
-        $output = ob_get_clean();
+        $response = $controller->apiHealthCheck();
 
-        $this->assertNotFalse($output, 'Output buffer should not be empty');
-        $this->assertJson($output);
+        $this->assertInstanceOf(JsonResponse::class, $response);
 
-        $data = json_decode($output, true);
+        $data = $this->getJsonFromResponse($response);
         $this->assertArrayHasKey('status', $data);
     }
 
-    public function testApiServicesStatusReturnsValidJson(): void
+    public function testApiServicesStatusReturnsJsonResponse(): void
     {
         $controller = $this->createController();
 
-        ob_start();
-        $controller->apiServicesStatus();
-        $output = ob_get_clean();
+        $response = $controller->apiServicesStatus();
 
-        $this->assertNotFalse($output, 'Output buffer should not be empty');
-        $this->assertJson($output);
+        $this->assertInstanceOf(JsonResponse::class, $response);
 
-        $data = json_decode($output, true);
+        $data = $this->getJsonFromResponse($response);
         $this->assertNotEmpty($data);
         $this->assertArrayHasKey('core', $data);
         $this->assertArrayHasKey('data', $data);
@@ -73,14 +86,11 @@ class DashboardControllerTest extends TestCase
         $_GET       = [];
         $controller = $this->createController();
 
-        ob_start();
-        $controller->apiLogContent();
-        $output = ob_get_clean();
+        $response = $controller->apiLogContent();
 
-        $this->assertNotFalse($output, 'Output buffer should not be empty');
-        $this->assertJson($output);
+        $this->assertInstanceOf(JsonResponse::class, $response);
 
-        $data = json_decode($output, true);
+        $data = $this->getJsonFromResponse($response);
         $this->assertArrayHasKey('error', $data);
         $this->assertEquals('No filename provided', $data['error']);
     }
@@ -90,14 +100,11 @@ class DashboardControllerTest extends TestCase
         $_GET['file'] = 'nonexistent.log';
         $controller   = $this->createController();
 
-        ob_start();
-        $controller->apiLogContent();
-        $output = ob_get_clean();
+        $response = $controller->apiLogContent();
 
-        $this->assertNotFalse($output, 'Output buffer should not be empty');
-        $this->assertJson($output);
+        $this->assertInstanceOf(JsonResponse::class, $response);
 
-        $data = json_decode($output, true);
+        $data = $this->getJsonFromResponse($response);
         $this->assertArrayHasKey('error', $data);
         $this->assertEquals('Log file not found', $data['error']);
     }

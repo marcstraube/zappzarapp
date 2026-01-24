@@ -6,20 +6,32 @@
 # Production paths (bind-mounted to /etc/redis/certs/)
 PROD_CERT="/etc/redis/certs/cert.crt"
 PROD_KEY="/etc/redis/certs/cert.key"
+PROD_CA="/etc/redis/certs/ca.crt"
 
 # Development paths (compose.override.yaml bind-mounts)
 DEV_CERT="/etc/ssl/certs/redis.crt"
 DEV_KEY="/etc/ssl/private/redis.key"
+DEV_CA="/etc/ssl/certs/internal-ca.crt"
 
 # Determine which paths to use
 if [ -f "$PROD_CERT" ] && [ -f "$PROD_KEY" ]; then
     CERT="$PROD_CERT"
     KEY="$PROD_KEY"
-    CA="$PROD_CERT"
+    # Use CA if available, otherwise use cert itself (self-signed)
+    if [ -f "$PROD_CA" ]; then
+        CA="$PROD_CA"
+    else
+        CA="$PROD_CERT"
+    fi
 elif [ -f "$DEV_CERT" ] && [ -f "$DEV_KEY" ]; then
     CERT="$DEV_CERT"
     KEY="$DEV_KEY"
-    CA="$DEV_CERT"
+    # Use CA if available, otherwise use cert itself (self-signed)
+    if [ -f "$DEV_CA" ]; then
+        CA="$DEV_CA"
+    else
+        CA="$DEV_CERT"
+    fi
 else
     # Fallback: try without TLS (for non-TLS setups)
     exec redis-cli ping

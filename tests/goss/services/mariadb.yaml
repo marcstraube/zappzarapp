@@ -41,6 +41,11 @@ file:
   /run/secrets/db_root_password.txt:
     exists: true
 
+  # Database initialization script
+  /docker-entrypoint-initdb.d/10-init-db.sh:
+    exists: true
+    mode: "0755"
+
 # ============================================================================
 # COMMAND TESTS (Internal)
 # ============================================================================
@@ -68,3 +73,10 @@ command:
   mariadb -u {{.Env.DB_USER}} -p$(cat /run/secrets/db_password.txt) -e "USE {{.Env.DB_NAME}};":
     exit-status: 0
     timeout: 5000
+
+  # User cannot create databases (security check - should fail)
+  mariadb -u {{.Env.DB_USER}} -p$(cat /run/secrets/db_password.txt) -e "CREATE DATABASE test_forbidden;":
+    exit-status: 1
+    timeout: 5000
+    stderr:
+      - "/Access denied|CREATE command denied/"

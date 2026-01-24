@@ -4,7 +4,10 @@ declare(strict_types=1);
 
 namespace App\Http\Controller;
 
+use App\Http\Response\JsonResponse;
+use App\Http\Response\Response;
 use App\Infrastructure\HealthCheck;
+use App\Infrastructure\TlsConfig;
 use Exception;
 
 /**
@@ -18,15 +21,14 @@ class ExampleController
         private readonly HealthCheck $healthCheck,
     ) {}
 
-    public function index(): void
+    public function index(): Response
     {
-        header('Content-Type: application/json');
-        echo json_encode([
+        return new JsonResponse([
             'message'     => 'Hello from PHP!',
             'timestamp'   => time(),
             'php_version' => PHP_VERSION,
             'server'      => 'PHP-FPM 8.4',
-        ], JSON_THROW_ON_ERROR);
+        ]);
     }
 
     /**
@@ -34,15 +36,12 @@ class ExampleController
      *
      * Returns combined health status of both PHP and Node.js backends.
      */
-    public function health(): void
+    public function health(): Response
     {
-        $result = $this->checkAggregatedHealth();
-
+        $result   = $this->checkAggregatedHealth();
         $httpCode = $result['status'] === 'ok' ? 200 : 503;
-        http_response_code($httpCode);
 
-        header('Content-Type: application/json');
-        echo json_encode($result, JSON_THROW_ON_ERROR);
+        return new JsonResponse($result, $httpCode);
     }
 
     /**
@@ -102,11 +101,7 @@ class ExampleController
                     'timeout'       => 2,
                     'ignore_errors' => true,
                 ],
-                'ssl' => [
-                    'verify_peer'       => false,
-                    'verify_peer_name'  => false,
-                    'allow_self_signed' => true,
-                ],
+                'ssl' => TlsConfig::getSslContextOptions(),
             ]);
 
             set_error_handler(static fn (): bool => true);

@@ -481,7 +481,7 @@ ide-config-vscode-full: ## Update VS Code settings.json with custom ports (shows
 ##@ Docker
 
 build: ## Build Docker images (optionally specify service names: make build php nginx)
-	@SERVICES="$(filter-out $@,$(MAKECMDGOALS))"; \
+	@SERVICES="$(filter-out $@ rebuild,$(MAKECMDGOALS))"; \
 	if [ -n "$$SERVICES" ]; then \
 		echo -e "\033[0;33mBuilding images: $$SERVICES...\033[0m"; \
 		if [ -f .env ]; then \
@@ -2194,7 +2194,10 @@ ai-setup: ## Initialize labels and milestones for /tasks command (auto-detects G
 	echo ""; \
 	echo -e "\033[0;32m✓ AI setup complete! You can now use /tasks\033[0m"
 
-rebuild: clean build up ## Complete rebuild
+rebuild: ## Complete rebuild
+	@$(MAKE) clean
+	@$(MAKE) build
+	@$(MAKE) up SKIP_VALIDATION=1
 
 renovate: ## Run Renovate dependency scanner
 	@echo -e "\033[0;33mRunning Renovate dependency scanner...\033[0m"
@@ -3138,8 +3141,8 @@ ssl-trust-ca: ## Show instructions to trust internal CA in your system
 	@echo "To trust the internal CA in your system:"
 	@echo "============================================================================"
 	@echo ""
-	@echo "macOS:"
-	@echo "  sudo security add-trusted-cert -d -r trustRoot -k /Library/Keychains/System.keychain docker/certs/ca/ca.crt"
+	@echo "Linux (Arch):"
+	@echo "  sudo trust anchor --store docker/certs/ca/ca.crt"
 	@echo ""
 	@echo "Linux (Debian/Ubuntu):"
 	@echo "  sudo cp docker/certs/ca/ca.crt /usr/local/share/ca-certificates/zappzarapp-ca.crt"
@@ -3148,6 +3151,9 @@ ssl-trust-ca: ## Show instructions to trust internal CA in your system
 	@echo "Linux (RHEL/Fedora):"
 	@echo "  sudo cp docker/certs/ca/ca.crt /etc/pki/ca-trust/source/anchors/zappzarapp-ca.crt"
 	@echo "  sudo update-ca-trust"
+	@echo ""
+	@echo "macOS:"
+	@echo "  sudo security add-trusted-cert -d -r trustRoot -k /Library/Keychains/System.keychain docker/certs/ca/ca.crt"
 	@echo ""
 	@echo "Windows:"
 	@echo "  Import docker/certs/ca/ca.crt into 'Trusted Root Certification Authorities'"

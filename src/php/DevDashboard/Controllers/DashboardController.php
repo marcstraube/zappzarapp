@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace DevDashboard\Controllers;
 
+use DevDashboard\Response\HtmlResponse;
+use DevDashboard\Response\JsonResponse;
+use DevDashboard\Response\Response;
 use DevDashboard\Services\DatabaseService;
 use DevDashboard\Services\HealthCheckService;
 use DevDashboard\Services\LogService;
@@ -28,7 +31,7 @@ readonly class DashboardController
     /**
      * Dashboard home page with overview
      */
-    public function index(): void
+    public function index(): Response
     {
         $data = [
             'title'        => 'Development Dashboard',
@@ -38,13 +41,13 @@ readonly class DashboardController
             'dbStats'      => $this->databaseService->getQuickStats(),
         ];
 
-        $this->render('dashboard', $data);
+        return $this->render('dashboard', $data);
     }
 
     /**
      * System information page (phpinfo, versions, environment)
      */
-    public function system(): void
+    public function system(): Response
     {
         $data = [
             'title'       => 'System Information',
@@ -54,13 +57,13 @@ readonly class DashboardController
             'showPhpInfo' => $_GET['phpinfo'] ?? false,
         ];
 
-        $this->render('system', $data);
+        return $this->render('system', $data);
     }
 
     /**
      * Health check page (services, connections, ssl)
      */
-    public function health(): void
+    public function health(): Response
     {
         $data = [
             'title'       => 'Health Checks',
@@ -69,13 +72,13 @@ readonly class DashboardController
             'ssl'         => $this->healthCheckService->getSslInfo(),
         ];
 
-        $this->render('health', $data);
+        return $this->render('health', $data);
     }
 
     /**
      * Code quality dashboard
      */
-    public function quality(): void
+    public function quality(): Response
     {
         $metrics = $this->qualityService->getQualityMetrics();
 
@@ -88,13 +91,13 @@ readonly class DashboardController
             'quick_actions' => $this->qualityService->getQuickActions(),
         ];
 
-        $this->render('quality', $data);
+        return $this->render('quality', $data);
     }
 
     /**
      * Database tools page
      */
-    public function database(): void
+    public function database(): Response
     {
         $data = [
             'title'            => 'Database Tools',
@@ -104,13 +107,13 @@ readonly class DashboardController
             'commands'         => $this->databaseService->getDatabaseCommands(),
         ];
 
-        $this->render('database', $data);
+        return $this->render('database', $data);
     }
 
     /**
      * Logs viewer page
      */
-    public function logs(): void
+    public function logs(): Response
     {
         $data = [
             'title'        => 'Logs Viewer',
@@ -119,45 +122,40 @@ readonly class DashboardController
             'log_stats'    => $this->logService->getLogStatistics(),
         ];
 
-        $this->render('logs', $data);
+        return $this->render('logs', $data);
     }
 
     /**
      * API: Health check endpoint (JSON)
      */
-    public function apiHealthCheck(): void
+    public function apiHealthCheck(): Response
     {
-        header('Content-Type: application/json');
-        echo json_encode($this->healthCheckService->getOverallStatus());
+        return new JsonResponse($this->healthCheckService->getOverallStatus());
     }
 
     /**
      * API: Services status endpoint (JSON)
      */
-    public function apiServicesStatus(): void
+    public function apiServicesStatus(): Response
     {
-        header('Content-Type: application/json');
-        echo json_encode($this->healthCheckService->getServices());
+        return new JsonResponse($this->healthCheckService->getServices());
     }
 
     /**
      * API: Get log file content (JSON)
      */
-    public function apiLogContent(): void
+    public function apiLogContent(): Response
     {
-        header('Content-Type: application/json');
-
         $filename = $_GET['file'] ?? '';
         $lines    = (int) ($_GET['lines'] ?? 100);
 
         if ($filename === '') {
-            echo json_encode(['error' => 'No filename provided']);
-
-            return;
+            return new JsonResponse(['error' => 'No filename provided'], 400);
         }
 
         $result = $this->logService->readLogFile($filename, min($lines, 500));
-        echo json_encode($result);
+
+        return new JsonResponse($result);
     }
 
     /**
@@ -165,7 +163,7 @@ readonly class DashboardController
      *
      * @param array<string, mixed> $data
      */
-    private function render(string $view, array $data = []): void
+    private function render(string $view, array $data = []): Response
     {
         extract($data);
         $templateDir = __DIR__ . '/../../../../templates/dev-dashboard';
@@ -173,9 +171,7 @@ readonly class DashboardController
         $layoutPath  = $templateDir . '/layout.php';
 
         if (!file_exists($viewPath)) {
-            http_response_code(404);
-            echo 'View not found: ' . $view;
-            return;
+            return new HtmlResponse('View not found: ' . $view, 404);
         }
 
         // Start output buffering for content
@@ -189,6 +185,10 @@ readonly class DashboardController
         }
 
         // Render with layout
+        ob_start();
         include $layoutPath;
+        $html = ob_get_clean();
+
+        return new HtmlResponse($html ?: '');
     }
 }

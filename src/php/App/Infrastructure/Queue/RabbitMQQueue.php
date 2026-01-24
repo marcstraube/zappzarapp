@@ -6,6 +6,7 @@ declare(strict_types=1);
 
 namespace App\Infrastructure\Queue;
 
+use App\Infrastructure\TlsConfig;
 use Exception;
 use PhpAmqpLib\Channel\AMQPChannel;
 use PhpAmqpLib\Connection\AMQPSSLConnection;
@@ -433,11 +434,7 @@ final class RabbitMQQueue implements QueueInterface
                 $this->config->user,
                 $this->config->password,
                 $this->config->vhost,
-                [
-                    'verify_peer'       => false,
-                    'verify_peer_name'  => false,
-                    'allow_self_signed' => true,
-                ],
+                TlsConfig::getSslContextOptions(),
                 [
                     'connection_timeout' => $this->timeout,
                     'read_write_timeout' => 30,

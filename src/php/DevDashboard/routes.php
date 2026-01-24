@@ -12,6 +12,7 @@ declare(strict_types=1);
 namespace DevDashboard;
 
 use DevDashboard\Controllers\DashboardController;
+use DevDashboard\Response\Response;
 use DI\ContainerBuilder;
 
 // Only enable dashboard in development or when explicitly enabled
@@ -25,6 +26,8 @@ if ($isProduction && !$dashboardEnabled) {
 /**
  * Simple routing handler for development dashboard
  * Matches routes and calls appropriate controller methods
+ *
+ * @param callable(): Response $handler
  */
 function route(string $method, string $path, callable $handler): void
 {
@@ -32,7 +35,8 @@ function route(string $method, string $path, callable $handler): void
     $requestPath   = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH);
 
     if ($requestMethod === $method && $requestPath === $path) {
-        $handler();
+        $response = $handler();
+        $response->send();
         exit;
     }
 }

@@ -31,6 +31,7 @@ import { Pool } from 'pg';
 import { createClient, RedisClientType } from 'redis';
 import * as http from 'http';
 import * as https from 'https';
+import { getHttpsTlsOptions, getTlsSocketOptions } from '../utils/tls';
 
 // Service check result
 export interface ServiceCheckResult {
@@ -302,10 +303,7 @@ export class HealthCheckService {
           url: this.config.redisUrl,
           socket: {
             connectTimeout: CHECK_TIMEOUT_MS,
-            ...(useTls && {
-              tls: true,
-              rejectUnauthorized: false, // Allow self-signed certs in dev
-            }),
+            ...(useTls && getTlsSocketOptions()),
           },
         });
 
@@ -353,7 +351,7 @@ export class HealthCheckService {
             path: '/health',
             method: 'GET',
             timeout: HTTP_TIMEOUT_MS,
-            rejectUnauthorized: false, // Allow self-signed certs
+            ...getHttpsTlsOptions(),
           };
 
           const transport = isHttps ? https : http;
@@ -412,7 +410,7 @@ export class HealthCheckService {
             path: '/',
             method: 'HEAD',
             timeout: HTTP_TIMEOUT_MS,
-            rejectUnauthorized: false, // Allow self-signed certs
+            ...getHttpsTlsOptions(),
           };
 
           const req = https.request(options, (res) => {

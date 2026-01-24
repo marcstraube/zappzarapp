@@ -46,5 +46,25 @@ if [ -n "$SSL_CERT" ] && [ -n "$SSL_KEY" ]; then
     echo "[entrypoint] SSL certificates configured successfully."
 fi
 
+# For existing volumes: Run init script after PostgreSQL is ready
+# (init scripts in /docker-entrypoint-initdb.d/ only run on first init)
+PGDATA="${PGDATA:-/var/lib/postgresql/data/pgdata}"
+if [ -d "$PGDATA" ] && [ -f "$PGDATA/PG_VERSION" ]; then
+    echo "[entrypoint] Existing database detected, scheduling post-start initialization..."
+    # Run init in background after postgres is ready
+    (
+        # Wait for PostgreSQL to be ready (max 60 seconds)
+        for _ in $(seq 1 60); do
+            if pg_isready -U "${POSTGRES_USER:-app}" -q 2>/dev/null; then
+                echo "[entrypoint] PostgreSQL ready, running initialization..."
+                # Run as postgres user using gosu
+                gosu postgres /docker-entrypoint-initdb.d/10-init-db.sh || true
+                break
+            fi
+            sleep 1
+        done
+    ) &
+fi
+
 # Execute the original entrypoint
 exec docker-entrypoint.sh "$@"

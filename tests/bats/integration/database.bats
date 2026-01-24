@@ -28,8 +28,23 @@ teardown_file() {
 
 @test "[Integration] make postgres-cli connects successfully" {
     require_service "postgres"
-    run timeout 10 docker compose exec -T postgres psql -U app -c "SELECT 1;"
+    run timeout 10 docker compose exec -T postgres psql -U app -d app -c "SELECT 1;"
     assert_success
+}
+
+@test "[Integration] PostgreSQL app database exists" {
+    require_service "postgres"
+    run docker compose exec -T postgres psql -U app -d postgres -tAc "SELECT 1 FROM pg_database WHERE datname = 'app'"
+    assert_success
+    assert_output "1"
+}
+
+@test "[Integration] PostgreSQL app user cannot create databases" {
+    require_service "postgres"
+    # Check that rolcreatedb is false for the app user
+    run docker compose exec -T postgres psql -U app -d postgres -tAc "SELECT rolcreatedb FROM pg_roles WHERE rolname='app'"
+    assert_success
+    assert_output "f"
 }
 
 # =============================================================================

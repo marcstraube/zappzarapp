@@ -35,5 +35,24 @@ if [ -n "$SSL_CERT" ] && [ -n "$SSL_KEY" ]; then
     echo "[entrypoint] SSL certificates configured successfully."
 fi
 
+# For existing volumes: Run init script after MariaDB is ready
+# (init scripts in /docker-entrypoint-initdb.d/ only run on first init)
+DATADIR="/var/lib/mysql"
+if [ -d "$DATADIR/mysql" ]; then
+    echo "[entrypoint] Existing database detected, scheduling post-start initialization..."
+    # Run init in background after mariadb is ready
+    (
+        # Wait for MariaDB to be ready (max 60 seconds)
+        for _ in $(seq 1 60); do
+            if healthcheck.sh --connect 2>/dev/null; then
+                echo "[entrypoint] MariaDB ready, running initialization..."
+                /docker-entrypoint-initdb.d/10-init-db.sh || true
+                break
+            fi
+            sleep 1
+        done
+    ) &
+fi
+
 # Execute the original entrypoint
 exec docker-entrypoint.sh "$@"

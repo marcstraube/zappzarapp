@@ -8,25 +8,31 @@ parameters:
         - tests/php
 
     # Security: Banned dangerous functions
+    # Overrides defaults from ekino/phpstan-banned-code
     # See: https://github.com/ekino/phpstan-banned-code
-    bannedCode:
-        functions:
-            # Code execution
-            - { name: 'eval', message: 'eval() is dangerous - use safer alternatives' }
-            - { name: 'create_function', message: 'create_function() is deprecated and dangerous' }
-            # Shell execution
-            - { name: 'exec', message: 'exec() can lead to command injection' }
-            - { name: 'passthru', message: 'passthru() can lead to command injection' }
-            - { name: 'shell_exec', message: 'shell_exec() can lead to command injection' }
-            - { name: 'system', message: 'system() can lead to command injection' }
-            - { name: 'proc_open', message: 'proc_open() can lead to command injection' }
-            - { name: 'popen', message: 'popen() can lead to command injection' }
-            - { name: 'pcntl_exec', message: 'pcntl_exec() can lead to command injection' }
-            # Debug output (should not be in production)
-            - { name: 'var_dump', message: 'var_dump() should not be in production code' }
-            - { name: 'print_r', message: 'print_r() should not be in production code' }
-            - { name: 'dd', message: 'dd() should not be in production code' }
-            - { name: 'dump', message: 'dump() should not be in production code' }
+    # Note: echo/exit are allowed (legitimate for HTML output and routing)
+    banned_code:
+        non_ignorable: false
+        nodes:
+            # eval() - code injection risk
+            -
+                type: Expr_Eval
+                functions: null
+            # Dangerous functions
+            -
+                type: Expr_FuncCall
+                functions:
+                    - dd
+                    - debug_backtrace
+                    - dump
+                    - exec
+                    - passthru
+                    - phpinfo
+                    - print_r
+                    - proc_open
+                    - shell_exec
+                    - system
+                    - var_dump
 
     # Performance
     parallel:
@@ -53,3 +59,12 @@ parameters:
             message: '#will always evaluate to true#'
             identifier: method.alreadyNarrowedType
             path: tests/*
+        # exit is legitimate for routing
+        -
+            message: '#Should not use node with type "Expr_Exit"#'
+            paths:
+                - src/php/DevDashboard/routes.php
+        # proc_open needed for SystemInfoService (runs safe commands)
+        -
+            message: '#Should not use function "proc_open"#'
+            path: src/php/DevDashboard/Services/SystemInfoService.php

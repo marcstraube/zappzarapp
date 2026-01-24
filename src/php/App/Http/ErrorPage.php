@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace App\Http;
 
+use App\Http\Response\HtmlResponse;
+use App\Http\Response\Response;
+
 /**
  * Dynamic Error Page Renderer
  *
@@ -25,14 +28,11 @@ class ErrorPage
     private const string TEMPLATE_PATH = __DIR__ . '/../../../../templates/app/error.php';
 
     /**
-     * Render an error page and send HTTP response.
+     * Create an error response.
      */
-    public static function render(int $statusCode, ?string $path = null): void
+    public static function render(int $statusCode, ?string $path = null): Response
     {
-        http_response_code($statusCode);
-        header('Content-Type: text/html; charset=UTF-8');
-
-        echo self::renderHtml($statusCode, $path);
+        return new HtmlResponse(self::renderHtml($statusCode, $path), $statusCode);
     }
 
     /**

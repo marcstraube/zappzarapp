@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Http\Controller;
 
+use App\Http\Response\JsonResponse;
+use App\Http\Response\Response;
 use App\Infrastructure\HealthCheck;
 
 /**
@@ -25,16 +27,12 @@ class StatusController
      * Returns status of all services including disabled ones.
      * Used for monitoring dashboards and debugging.
      */
-    public function index(): void
+    public function index(): Response
     {
-        $status = $this->health->checkAll();
-
-        // Set appropriate HTTP status code
+        $status   = $this->health->checkAll();
         $httpCode = $status['overall_status'] === 'ok' ? 200 : 503;
-        http_response_code($httpCode);
 
-        header('Content-Type: application/json');
-        echo json_encode($status, JSON_THROW_ON_ERROR | JSON_PRETTY_PRINT);
+        return new JsonResponse($status, $httpCode, JSON_THROW_ON_ERROR | JSON_PRETTY_PRINT);
     }
 
     /**
@@ -43,15 +41,11 @@ class StatusController
      * Returns readiness status with latency metrics for enabled services.
      * Used by Kubernetes readinessProbe.
      */
-    public function ready(): void
+    public function ready(): Response
     {
-        $result = $this->health->checkReadiness();
-
-        // 200 if ok, 503 if degraded or unhealthy
+        $result   = $this->health->checkReadiness();
         $httpCode = $result['status'] === 'ok' ? 200 : 503;
-        http_response_code($httpCode);
 
-        header('Content-Type: application/json');
-        echo json_encode($result, JSON_THROW_ON_ERROR);
+        return new JsonResponse($result, $httpCode);
     }
 }

@@ -433,6 +433,7 @@ services:
       # SSL/TLS Certificates for encrypted connections (same as production for parity)
       - ./docker/certs/internal/cert.crt:/etc/ssl/certs/redis.crt:ro
       - ./docker/certs/internal/cert.key:/etc/ssl/private/redis.key:ro
+      - ./docker/certs/internal/ca.crt:/etc/ssl/certs/internal-ca.crt:ro
     command: >
       redis-server
       --appendonly no

@@ -37,6 +37,7 @@
  */
 
 import { createClient, RedisClientType } from 'redis';
+import { getTlsSocketOptions } from '../utils/tls';
 
 /**
  * Cache Service Interface
@@ -137,10 +138,7 @@ export class CacheService implements CacheServiceInterface {
       url: this.redisUrl,
       socket: {
         connectTimeout: this.timeout,
-        ...(useTls && {
-          tls: true,
-          rejectUnauthorized: false, // Allow self-signed certs in dev
-        }),
+        ...(useTls && getTlsSocketOptions()),
       },
     });
 

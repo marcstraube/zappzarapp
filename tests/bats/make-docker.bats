@@ -64,6 +64,45 @@ load 'helpers/setup'
 }
 
 # =============================================================================
+# Meta-Target Service Name Leak Prevention
+# =============================================================================
+
+# Usage: assert_no_service_leak "rebuild" "build"
+assert_no_service_leak() {
+    local meta_target="$1"
+    local sub_target="$2"
+
+    run make -n "$meta_target"
+    assert_success
+
+    # The meta-target name should NOT appear as argument to docker compose commands
+    # after the sub-target (build/up/down/restart) command
+    refute_output --regexp "docker compose[^;]*${sub_target}[^;]*${meta_target}"
+    refute_output --regexp "docker compose[^;]* ${meta_target}\$"
+    refute_output --regexp "docker compose[^;]* ${meta_target};"
+    refute_output --regexp "docker compose[^;]* ${meta_target} "
+}
+
+@test "make rebuild does not pass 'rebuild' as service to build" {
+    assert_no_service_leak "rebuild" "build"
+}
+
+@test "make rebuild does not pass 'rebuild' as service to up" {
+    assert_no_service_leak "rebuild" "up"
+}
+
+@test "make down-all does not pass 'down-all' as service to down" {
+    assert_no_service_leak "down-all" "down"
+}
+
+@test "make down-all does not pass 'goss-cleanup' as service to down" {
+    # down-all: down goss-cleanup - both could leak
+    run make -n down-all
+    assert_success
+    refute_output --regexp "docker compose[^;]*down[^;]*goss-cleanup"
+}
+
+# =============================================================================
 # Up/Down Commands (Dry Run)
 # =============================================================================
 
@@ -185,6 +224,13 @@ load 'helpers/setup'
 @test "make fresh --dry-run validates" {
     run make -n fresh
     assert_success
+}
+
+@test "make fresh does not pass 'fresh' as service to docker compose" {
+    run make -n fresh
+    assert_success
+    # fresh has its own inline build logic, verify it doesn't leak
+    refute_output --regexp "docker compose[^;]* fresh[^a-z]"
 }
 
 @test "make rebuild --dry-run validates" {

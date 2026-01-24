@@ -259,7 +259,10 @@ services:
       - "3306"
     environment:
       TZ: ${TZ:-UTC}
+      # Database name - created by init script (also on existing volumes)
       MARIADB_DATABASE: ${DB_NAME:-app}
+      # User configuration - user has privileges only on app database,
+      # init script ensures user cannot create new databases
       MARIADB_USER: ${DB_USER:-app}
       # ─────────────────────────────────────────────────────────────────
       # PASSWORD CONFIGURATION - Choose ONE option (mutually exclusive!)
@@ -306,7 +309,10 @@ services:
     environment:
       TZ: ${TZ:-UTC}
       PGTZ: ${TZ:-UTC}
+      # Database name - created by init script (also on existing volumes)
       POSTGRES_DB: ${DB_NAME:-app}
+      # User configuration - user is created as superuser initially,
+      # then init script restricts privileges (removes CREATEDB)
       POSTGRES_USER: ${DB_USER:-app}
       # ─────────────────────────────────────────────────────────────────
       # PASSWORD CONFIGURATION - Choose ONE option (mutually exclusive!)
@@ -364,6 +370,7 @@ services:
       # SSL certificates (bind mount)
       - ${CERT_PATH_INTERNAL:-./docker/certs/internal}/cert.crt:/etc/redis/certs/cert.crt:ro
       - ${CERT_PATH_INTERNAL:-./docker/certs/internal}/cert.key:/etc/redis/certs/cert.key:ro
+      - ${CERT_CA_PATH:-./docker/certs/internal/ca.crt}:/etc/redis/certs/ca.crt:ro
     networks:
       - database
     # Health check defined in Dockerfile (with TLS support)

@@ -57,7 +57,12 @@ COPY --from=builder /usr/local/share/postgresql/extension/pg_cron* /usr/local/sh
 # Copy custom entrypoint for SSL certificate setup
 # Path matches compose.override.yaml volume mount for development hot-reload
 COPY docker/postgres/entrypoint.sh /entrypoint-wrapper.sh
-RUN chmod +x /entrypoint-wrapper.sh
+
+# Copy database initialization script
+# Runs on first init AND on existing volumes (via entrypoint)
+COPY docker/postgres/init-db.sh /docker-entrypoint-initdb.d/10-init-db.sh
+
+RUN chmod +x /entrypoint-wrapper.sh /docker-entrypoint-initdb.d/10-init-db.sh
 
 ENTRYPOINT ["/entrypoint-wrapper.sh"]
 CMD ["postgres"]

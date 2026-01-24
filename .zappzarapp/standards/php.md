@@ -86,9 +86,25 @@ PHPStan blocks dangerous functions automatically:
 **If you need to use a banned function:**
 
 1. This is a red flag - reconsider your approach
-2. If absolutely necessary, add `@phpstan-ignore bannedCode.function` with
-   explanation
+2. If absolutely necessary, add an exception in `phpstan.neon` under
+   `ignoreErrors` with a comment explaining why it's safe
 3. Security Agent will review all suppressions
+
+**Output via Response Pattern:**
+
+`echo` is centralized in Response classes only:
+
+- `src/php/App/Http/Response/`
+- `src/php/DevDashboard/Response/`
+
+These use inline suppression due to PHPStorm bug
+[WI-79952](https://youtrack.jetbrains.com/issue/WI-79952) where `ignoreErrors`
+with `paths` is not respected:
+
+```php
+/** @phpstan-ignore-next-line echo is intentional in Response classes (WI-79952) */
+echo $this->content;
+```
 
 ### Exception Handling
 

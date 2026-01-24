@@ -147,18 +147,14 @@ class HealthCheck
     private function checkNodeBackend(): void
     {
         try {
-            // Use internal Docker network hostname with TLS (self-signed certs)
+            // Use internal Docker network hostname with TLS
             $url     = 'https://node-backend:3000/health';
             $context = stream_context_create([
                 'http' => [
                     'timeout'       => 2,
                     'ignore_errors' => true,
                 ],
-                'ssl' => [
-                    'verify_peer'       => false,
-                    'verify_peer_name'  => false,
-                    'allow_self_signed' => true,
-                ],
+                'ssl' => TlsConfig::getSslContextOptions(),
             ]);
 
             $response = $this->fetchUrl($url, $context);
@@ -504,11 +500,7 @@ class HealthCheck
                     'timeout'       => 2,
                     'ignore_errors' => true,
                 ],
-                'ssl' => [
-                    'verify_peer'       => false,
-                    'verify_peer_name'  => false,
-                    'allow_self_signed' => true,
-                ],
+                'ssl' => TlsConfig::getSslContextOptions(),
             ]);
 
             $response = $this->fetchUrl($url, $context);
@@ -551,11 +543,7 @@ class HealthCheck
                     'ignore_errors' => true,
                     'method'        => 'HEAD',
                 ],
-                'ssl' => [
-                    'verify_peer'       => false,
-                    'verify_peer_name'  => false,
-                    'allow_self_signed' => true,
-                ],
+                'ssl' => TlsConfig::getSslContextOptions(),
             ]);
 
             $response = $this->fetchUrl($url, $context);
@@ -744,13 +732,7 @@ class HealthCheck
         $redis = new Redis();
 
         if ($useTls) {
-            $connected = $redis->connect($host, $port, 2, '', 0, 0, [
-                'stream' => [
-                    'verify_peer'       => false,
-                    'verify_peer_name'  => false,
-                    'allow_self_signed' => true,
-                ],
-            ]);
+            $connected = $redis->connect($host, $port, 2, '', 0, 0, TlsConfig::getRedisStreamOptions());
         } else {
             $connected = $redis->connect($host, $port, 2);
         }
