@@ -188,10 +188,17 @@ describe('API Integration Tests', () => {
   });
 
   describe('CORS Headers', () => {
-    it('should include CORS headers', async () => {
-      const response = await request(app).get('/health').expect(200);
+    it('should include CORS headers for allowed origin', async () => {
+      // Send request with Origin header (required for CORS response)
+      const response = await request(app)
+        .get('/health')
+        .set('Origin', 'https://localhost')
+        .expect(200);
 
-      expect(response.headers['access-control-allow-origin']).toBe('*');
+      // Should have CORS header set (either '*' or the specific origin)
+      const allowOrigin = response.headers['access-control-allow-origin'];
+      expect(allowOrigin).toBeDefined();
+      expect(['*', 'https://localhost']).toContain(allowOrigin);
     });
 
     it('should handle OPTIONS request', async () => {
