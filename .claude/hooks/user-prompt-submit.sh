@@ -61,10 +61,27 @@ if [[ -n "$TRANSCRIPT_PATH" && -f "$TRANSCRIPT_PATH" ]]; then
 fi
 
 # --- Detection 2: Implementation Task ---
-# Check if prompt contains implementation keywords (English only)
+# Check if prompt contains implementation keywords (language-agnostic tech terms)
 if [[ -n "$PROMPT" ]]; then
-    # Action keywords + target keywords (flexible matching)
-    if echo "$PROMPT" | grep -qiE "\b(implement|add|create|build|refactor|migrate|upgrade|fix|update|change|modify|extend|integrate|write)\b.+\b(function|class|service|component|module|api|endpoint|feature|system|handler|controller|test|authentication|validation|middleware|route|model|view|helper|util|config|hook|command|workflow|pattern|logic|method)\b"; then
+    # Action keywords (verbs indicating implementation work)
+    ACTION_KEYWORDS="implement|add|create|build|refactor|migrate|upgrade|fix|update|change|modify|extend|integrate|write"
+    ACTION_KEYWORDS+="|setup|configure|remove|delete|extract|optimize|convert|generate"
+
+    # Target keywords (nouns indicating code artifacts)
+    # Architecture & Patterns
+    TARGET_KEYWORDS="function|class|service|component|module|api|endpoint|feature|system|handler|controller"
+    TARGET_KEYWORDS+="|repository|entity|dto|interface|enum|trait|provider|facade|decorator|adapter|factory"
+    # Web & Frameworks
+    TARGET_KEYWORDS+="|middleware|route|router|model|view|template|request|response|form|field|policy|resource"
+    # Infrastructure
+    TARGET_KEYWORDS+="|container|docker|pipeline|database|schema|migration|cache|queue|job|worker"
+    # Testing
+    TARGET_KEYWORDS+="|test|spec|mock|fixture|suite"
+    # General
+    TARGET_KEYWORDS+="|authentication|validation|helper|util|config|hook|command|workflow|pattern|logic|method"
+    TARGET_KEYWORDS+="|script|package|dependency|plugin|extension|linter|formatter"
+
+    if echo "$PROMPT" | grep -qiE "\b(${ACTION_KEYWORDS})\b.+\b(${TARGET_KEYWORDS})\b"; then
         MESSAGES+=("[Implementation Task] Check .claude/agents/workflow.md for scope (Trivial/Small/Medium/Large) before starting.")
     fi
 fi

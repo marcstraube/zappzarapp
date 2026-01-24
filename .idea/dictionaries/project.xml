@@ -31,17 +31,17 @@
       <w>decrypt</w>
       <w>depcheck</w>
       <w>devdashboard</w>
-      <w>dockle</w>
       <w>dockerfile</w>
+      <w>dockle</w>
       <w>docsify</w>
       <w>documentor</w>
       <w>dotenv</w>
       <w>dto</w>
+      <w>elasticsearch</w>
       <w>encrypt</w>
       <w>entrypoint</w>
       <w>entrypoints</w>
       <w>envsubst</w>
-      <w>elasticsearch</w>
       <w>esbuild</w>
       <w>eslint</w>
       <w>falco</w>
@@ -122,8 +122,8 @@
       <w>sast</w>
       <w>sbom</w>
       <w>seaweedfs</w>
-      <w>semgrep</w>
       <w>selfsigned</w>
+      <w>semgrep</w>
       <w>sqlfluff</w>
       <w>sqltools</w>
       <w>sslmode</w>
