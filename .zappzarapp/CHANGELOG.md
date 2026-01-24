@@ -11,6 +11,13 @@ Fixes) **Version:** 3.79
 
 #### Changed
 
+- **Documentation Structure**: Moved Node.js SSL documentation for better
+  organization
+  - Moved: `docker/node/ssl-example.md` →
+    `.zappzarapp/docs/infrastructure/NODE-SSL.md`
+  - Rationale: Infrastructure documentation belongs in central docs location
+  - Component-specific docs remain with components (.idea, .vscode, tests/goss)
+
 - **Make Target Naming**: Renamed `build-goss` to `goss-build` for consistency
   - Follows established `goss-*` naming pattern (goss-test, goss-cleanup, etc.)
   - Updated all references in Makefile, tests, and documentation

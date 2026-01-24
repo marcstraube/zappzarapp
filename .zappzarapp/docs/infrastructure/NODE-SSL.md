@@ -11,8 +11,8 @@ This document describes how to enable SSL/TLS for the Node.js backend server
 
 Do NOT enable SSL in Node.js.
 
-When using Nginx as a reverse proxy (default setup), SSL termination happens
-at Nginx. Node.js backend communicates with Nginx over HTTP internally.
+When using Nginx as a reverse proxy (default setup), SSL termination happens at
+Nginx. Node.js backend communicates with Nginx over HTTP internally.
 
 ```text
 Client (HTTPS) → Nginx (SSL Termination) → Node.js (HTTP)
@@ -24,8 +24,8 @@ Client (HTTPS) → Nginx (SSL Termination) → Node.js (HTTP)
 
 Enable SSL in Node.js when exposing directly.
 
-If you expose the Node.js backend directly to the internet (without Nginx),
-you need to configure SSL in the Node.js application.
+If you expose the Node.js backend directly to the internet (without Nginx), you
+need to configure SSL in the Node.js application.
 
 ```text
 Client (HTTPS) → Node.js (HTTPS)
@@ -76,16 +76,18 @@ server.listen(PORT, () => {
 ### 3. Mount Certificates
 
 **Development (`compose.yaml`):**
+
 ```yaml
 services:
   node:
     volumes:
       - ./docker/certs:/app/certs:ro
     ports:
-      - "${NODE_SSL_PORT:-3443}:3000"
+      - '${NODE_SSL_PORT:-3443}:3000'
 ```
 
 **Production (`compose.production.yaml`):**
+
 ```yaml
 services:
   node:
@@ -105,10 +107,10 @@ NODE_SSL_PORT=3443
 ## Best Practices
 
 1. **SSL Termination**: Prefer SSL termination at Nginx (Scenario A)
-2. **Internal Communication**: HTTP is acceptable for internal service-to-service
-   communication within Docker network
-3. **Certificate Management**: Use the same certificates across all services
-   for simplicity
+2. **Internal Communication**: HTTP is acceptable for internal
+   service-to-service communication within Docker network
+3. **Certificate Management**: Use the same certificates across all services for
+   simplicity
 4. **Environment-Specific**: Only enable SSL when exposing Node.js directly
 
 ## Troubleshooting
@@ -119,5 +121,5 @@ Certificate files not mounted. Check volumes in compose files.
 
 ### Performance Impact
 
-SSL has minimal performance impact in modern systems. Benefits (security)
-far outweigh costs.
+SSL has minimal performance impact in modern systems. Benefits (security) far
+outweigh costs.
