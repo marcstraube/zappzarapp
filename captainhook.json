@@ -94,6 +94,12 @@
         "description": "Run PHPStan static analysis (Level 5) before pushing to remote"
       },
       {
+        "action": "./docker/hooks/hook-runner.sh php vendor/bin/rector process --dry-run",
+        "options": [],
+        "type": "cli",
+        "description": "Run Rector code modernization check (PHP 8.3 compatibility)"
+      },
+      {
         "action": "./docker/hooks/hook-runner.sh php vendor/bin/phpunit",
         "options": [],
         "type": "cli",
