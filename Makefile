@@ -249,6 +249,15 @@ setup: ## Create directories, install dev dependencies and ensure structure
 		echo -e "\033[0;34mOriginal boilerplate CLAUDE.md moved to .zappzarapp/CLAUDE.md\033[0m"; \
 	fi
 
+	# CHANGELOG.md Setup (swap boilerplate changelog with generic template)
+	@if grep -q "zappzarapp - Changelog" CHANGELOG.md 2>/dev/null; then \
+		echo -e "\033[0;33mSetting up CHANGELOG...\033[0m"; \
+		mv CHANGELOG.md .zappzarapp/CHANGELOG.md; \
+		cp .zappzarapp/CHANGELOG.template.md CHANGELOG.md; \
+		echo -e "\033[0;32mCHANGELOG.md replaced with generic template.\033[0m"; \
+		echo -e "\033[0;34mOriginal boilerplate CHANGELOG.md moved to .zappzarapp/CHANGELOG.md\033[0m"; \
+	fi
+
 	# SSL/TLS Certificate Check
 	@echo -e "\033[0;33mChecking SSL/TLS certificates...\033[0m"
 	@if [ ! -f docker/certs/nginx/cert.crt ]; then \
@@ -477,6 +486,32 @@ ide-config-vscode-full: ## Update VS Code settings.json with custom ports (shows
 	@echo -e "\033[0;33m║  git update-index --assume-unchanged .vscode/settings.json     ║\033[0m"
 	@echo -e "\033[0;33m╚════════════════════════════════════════════════════════════════╝\033[0m"
 	@$(MAKE) --silent ide-config-vscode
+
+##@ Release
+
+release: ## Create a new patch release (bump version, update CHANGELOG, create tag)
+	@echo -e "\033[0;33mCreating patch release...\033[0m"
+	@$(DC_RUN) run --rm --no-TTY node npx standard-version
+	@echo -e "\033[0;32mRelease created! Don't forget to push with tags: git push --follow-tags\033[0m"
+
+release-minor: ## Create a new minor release
+	@echo -e "\033[0;33mCreating minor release...\033[0m"
+	@$(DC_RUN) run --rm --no-TTY node npx standard-version --release-as minor
+	@echo -e "\033[0;32mRelease created! Don't forget to push with tags: git push --follow-tags\033[0m"
+
+release-major: ## Create a new major release
+	@echo -e "\033[0;33mCreating major release...\033[0m"
+	@$(DC_RUN) run --rm --no-TTY node npx standard-version --release-as major
+	@echo -e "\033[0;32mRelease created! Don't forget to push with tags: git push --follow-tags\033[0m"
+
+release-dry: ## Preview next release without making changes
+	@echo -e "\033[0;33mPreviewing next release...\033[0m"
+	@$(DC_RUN) run --rm --no-TTY node npx standard-version --dry-run
+
+release-first: ## Create first release (0.1.0) for new projects
+	@echo -e "\033[0;33mCreating first release (0.1.0)...\033[0m"
+	@$(DC_RUN) run --rm --no-TTY node npx standard-version --first-release
+	@echo -e "\033[0;32mFirst release created! Don't forget to push with tags: git push --follow-tags\033[0m"
 
 ##@ Docker
 

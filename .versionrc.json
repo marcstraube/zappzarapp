@@ -1,0 +1,28 @@
+{
+  "header": "# Changelog\n\nAll notable changes to this project will be documented in this file.\n\nThe format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),\nand this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).\n",
+  "types": [
+    { "type": "feat", "section": "Added" },
+    { "type": "fix", "section": "Fixed" },
+    { "type": "perf", "section": "Changed" },
+    { "type": "refactor", "section": "Changed" },
+    { "type": "docs", "section": "Documentation" },
+    { "type": "chore", "hidden": true },
+    { "type": "style", "hidden": true },
+    { "type": "test", "hidden": true },
+    { "type": "ci", "hidden": true },
+    { "type": "build", "hidden": true }
+  ],
+  "commitUrlFormat": "https://github.com/marcstraube/zappzarapp/commit/{{hash}}",
+  "compareUrlFormat": "https://github.com/marcstraube/zappzarapp/compare/{{previousTag}}...{{currentTag}}",
+  "issueUrlFormat": "https://github.com/marcstraube/zappzarapp/issues/{{id}}",
+  "releaseCommitMessageFormat": "chore(release): {{currentTag}}",
+  "scripts": {
+    "prerelease": "make check"
+  },
+  "skip": {
+    "bump": false,
+    "changelog": false,
+    "commit": false,
+    "tag": false
+  }
+}

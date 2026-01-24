@@ -354,6 +354,7 @@ services:
       - ./.claude:/app/.claude
       - ./.gemini:/app/.gemini
       - ./README.md:/app/README.md
+      - ./CHANGELOG.md:/app/CHANGELOG.md
 
       # Linting/Formatting config files
       - ./eslint.config.js:/app/eslint.config.js:ro

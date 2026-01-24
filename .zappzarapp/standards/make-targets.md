@@ -127,3 +127,34 @@ make pnpm-install-local
 | Add Node package    | `make pnpm CMD="add pkg"`                | `make pnpm-install-local`     |
 | Remove PHP package  | `make composer CMD="remove vendor/pkg"`  | `make composer-install-local` |
 | Remove Node package | `make pnpm CMD="remove pkg"`             | `make pnpm-install-local`     |
+
+## Release Workflow
+
+Uses `standard-version` for automated versioning and CHANGELOG generation from
+conventional commits.
+
+```bash
+# Preview next release
+make release-dry
+
+# Create patch release (0.0.X)
+make release
+
+# Create minor release (0.X.0)
+make release-minor
+
+# Create major release (X.0.0)
+make release-major
+
+# First release for new projects
+make release-first
+```
+
+After release, push with tags:
+
+```bash
+git push --follow-tags
+```
+
+**Note:** Releases require a clean working directory and conventional commit
+messages. See `.versionrc.json` for commit type → CHANGELOG section mapping.
