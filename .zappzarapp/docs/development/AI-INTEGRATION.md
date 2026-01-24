@@ -368,17 +368,37 @@ See `.claude/agents/workflow.md` for detailed documentation.
 
 ## make setup Behavior
 
-When users clone the boilerplate and run `make setup`:
+### Auto-Detection: Contributor vs Boilerplate User
 
-1. **CLAUDE.md swap**: Boilerplate instructions moved to
-   `.zappzarapp/CLAUDE.md`, generic template copied to `.claude/CLAUDE.md`
-2. **Gemini commands**: Not generated automatically, run `make ai-sync` if
-   needed
+`make setup` auto-detects whether you're contributing to zappzarapp or using it
+as a boilerplate:
 
-After setup:
+| Mode            | Detection                                         | File Swaps                           |
+| --------------- | ------------------------------------------------- | ------------------------------------ |
+| **Contributor** | `origin` or `upstream` → `marcstraube/zappzarapp` | Skipped                              |
+| **Boilerplate** | Any other remote                                  | README, CLAUDE.md, CHANGELOG swapped |
+
+**Override:** Force boilerplate mode with `BOILERPLATE=1 make setup`
+
+### File Swaps (Boilerplate Mode Only)
+
+When in boilerplate mode, `make setup` swaps these files:
+
+| File                | Action                                          |
+| ------------------- | ----------------------------------------------- |
+| `README.md`         | Replaced with `.zappzarapp/README.template.md`  |
+| `.claude/CLAUDE.md` | Moved to `.zappzarapp/`, replaced with template |
+| `CHANGELOG.md`      | Moved to `.zappzarapp/`, replaced with template |
+
+After setup (boilerplate mode):
 
 - `.claude/CLAUDE.md` contains generic project instructions
 - `.zappzarapp/CLAUDE.md` preserves boilerplate-specific instructions
+- `.zappzarapp/CHANGELOG.md` preserves boilerplate changelog
+
+### Gemini Commands
+
+Not generated automatically. Run `make ai-sync` if needed.
 
 ## Team Workflow
 

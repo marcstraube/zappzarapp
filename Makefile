@@ -149,7 +149,7 @@ init: ## Initialize project (create .env.local for local overrides) - Run this f
 	@echo -e "\033[0;32mInitialization complete!\033[0m"
 	@echo -e "\033[0;34mNext: Run 'make setup' to build containers and install dependencies.\033[0m"
 
-setup: ## Create directories, install dev dependencies and ensure structure
+setup: ## Create directories, install dependencies (BOILERPLATE=1 to force file swaps)
 	@if [ ! -f .env.local ]; then \
 		echo -e "\033[0;33m.env.local not found. This file stores your local USER_ID/GROUP_ID.\033[0m"; \
 		echo -e "\033[0;33mWithout it, defaults from .env are used (USER_ID=1000, GROUP_ID=1000).\033[0m"; \
@@ -232,30 +232,38 @@ setup: ## Create directories, install dev dependencies and ensure structure
 
 	@echo -e "\033[0;32mProject structure created!\033[0m"
 
-	# README Setup (replace boilerplate README with user template)
-	@if grep -q "zappzarapp-boilerplate-readme" README.md 2>/dev/null; then \
-		echo -e "\033[0;33mSetting up project README...\033[0m"; \
-		cp .zappzarapp/README.template.md README.md; \
-		echo -e "\033[0;32mREADME.md replaced with project template.\033[0m"; \
-		echo -e "\033[0;34mBoilerplate docs remain in .zappzarapp/docs/\033[0m"; \
-	fi
-
-	# CLAUDE.md Setup (swap boilerplate Claude instructions with generic template)
-	@if grep -q "zappzarapp-boilerplate-claude" .claude/CLAUDE.md 2>/dev/null; then \
-		echo -e "\033[0;33mSetting up Claude configuration...\033[0m"; \
-		mv .claude/CLAUDE.md .zappzarapp/CLAUDE.md; \
-		cp .zappzarapp/CLAUDE.template.md .claude/CLAUDE.md; \
-		echo -e "\033[0;32mCLAUDE.md replaced with generic template.\033[0m"; \
-		echo -e "\033[0;34mOriginal boilerplate CLAUDE.md moved to .zappzarapp/CLAUDE.md\033[0m"; \
-	fi
-
-	# CHANGELOG.md Setup (swap boilerplate changelog with generic template)
-	@if grep -q "zappzarapp - Changelog" CHANGELOG.md 2>/dev/null; then \
-		echo -e "\033[0;33mSetting up CHANGELOG...\033[0m"; \
-		mv CHANGELOG.md .zappzarapp/CHANGELOG.md; \
-		cp .zappzarapp/CHANGELOG.template.md CHANGELOG.md; \
-		echo -e "\033[0;32mCHANGELOG.md replaced with generic template.\033[0m"; \
-		echo -e "\033[0;34mOriginal boilerplate CHANGELOG.md moved to .zappzarapp/CHANGELOG.md\033[0m"; \
+	# Boilerplate file swaps (README, CLAUDE.md, CHANGELOG)
+	# Auto-detect mode: If origin/upstream is marcstraube/zappzarapp → dev mode (skip swaps)
+	# Override: BOILERPLATE=1 make setup → force boilerplate mode (do swaps)
+	@IS_BOILERPLATE_MODE=""; \
+	if [ "$(BOILERPLATE)" = "1" ]; then \
+		IS_BOILERPLATE_MODE="true"; \
+		echo -e "\033[0;34mBoilerplate mode forced via BOILERPLATE=1\033[0m"; \
+	elif git remote get-url origin 2>/dev/null | grep -qE 'marcstraube/zappzarapp'; then \
+		echo -e "\033[0;36m✓ Detected zappzarapp development (origin) - skipping file swaps\033[0m"; \
+	elif git remote get-url upstream 2>/dev/null | grep -qE 'marcstraube/zappzarapp'; then \
+		echo -e "\033[0;36m✓ Detected zappzarapp development (upstream) - skipping file swaps\033[0m"; \
+	else \
+		IS_BOILERPLATE_MODE="true"; \
+	fi; \
+	if [ -n "$$IS_BOILERPLATE_MODE" ]; then \
+		if grep -q "zappzarapp-boilerplate-readme" README.md 2>/dev/null; then \
+			echo -e "\033[0;33mSetting up project README...\033[0m"; \
+			cp .zappzarapp/README.template.md README.md; \
+			echo -e "\033[0;32mREADME.md replaced with project template.\033[0m"; \
+		fi; \
+		if grep -q "zappzarapp-boilerplate-claude" .claude/CLAUDE.md 2>/dev/null; then \
+			echo -e "\033[0;33mSetting up Claude configuration...\033[0m"; \
+			mv .claude/CLAUDE.md .zappzarapp/CLAUDE.md; \
+			cp .zappzarapp/CLAUDE.template.md .claude/CLAUDE.md; \
+			echo -e "\033[0;32mCLAUDE.md replaced with generic template.\033[0m"; \
+		fi; \
+		if grep -q "zappzarapp - Changelog" CHANGELOG.md 2>/dev/null; then \
+			echo -e "\033[0;33mSetting up CHANGELOG...\033[0m"; \
+			mv CHANGELOG.md .zappzarapp/CHANGELOG.md; \
+			cp .zappzarapp/CHANGELOG.template.md CHANGELOG.md; \
+			echo -e "\033[0;32mCHANGELOG.md replaced with generic template.\033[0m"; \
+		fi; \
 	fi
 
 	# SSL/TLS Certificate Check

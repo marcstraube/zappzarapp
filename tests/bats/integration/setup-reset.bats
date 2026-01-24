@@ -66,11 +66,12 @@ setup() {
 # =============================================================================
 
 @test "[Phase 2] make setup creates project structure" {
-    echo "# Running make setup..." >&3
+    echo "# Running make setup (BOILERPLATE=1 to force file swaps)..." >&3
 
     # Pipe 'c' for "continue with defaults" to skip .env.local prompt
+    # BOILERPLATE=1 forces boilerplate mode (file swaps) even when developing zappzarapp
     # 600s timeout for cold builds (Docker images + dependencies from scratch)
-    run bash -c "echo 'c' | timeout 600 make setup"
+    run bash -c "echo 'c' | timeout 600 make setup BOILERPLATE=1"
     assert_success
 }
 
@@ -241,11 +242,12 @@ setup() {
 
 @test "[Phase 4] make setup is idempotent (can run twice)" {
     # Run setup twice - should not fail
+    # BOILERPLATE=1 forces boilerplate mode for consistent testing
     # 600s timeout for cold builds (second run should be faster due to cache)
-    run bash -c "echo 'c' | timeout 600 make setup"
+    run bash -c "echo 'c' | timeout 600 make setup BOILERPLATE=1"
     assert_success
 
-    run bash -c "echo 'c' | timeout 600 make setup"
+    run bash -c "echo 'c' | timeout 600 make setup BOILERPLATE=1"
     assert_success
 }
 
@@ -326,7 +328,8 @@ setup() {
     [[ -n "$output" ]]
 
     # Run setup - should fix ownership
-    run bash -c "echo 'c' | timeout 300 make setup"
+    # BOILERPLATE=1 for consistent testing
+    run bash -c "echo 'c' | timeout 300 make setup BOILERPLATE=1"
     assert_success
 
     # Verify no root-owned directories remain (except what Docker may create)
