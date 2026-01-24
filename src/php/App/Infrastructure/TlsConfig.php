@@ -16,7 +16,7 @@ namespace App\Infrastructure;
 final class TlsConfig
 {
     /** Default CA path (from Task 06 Certificate Architecture) */
-    private const DEFAULT_CA_PATH = '/etc/ssl/certs/internal-ca.crt';
+    private const string DEFAULT_CA_PATH = '/etc/ssl/certs/internal-ca.crt';
 
     public static function shouldVerify(): bool
     {
