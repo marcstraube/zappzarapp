@@ -150,6 +150,25 @@ setup() {
     [[ ! -d "pnpm-lock.yaml" ]]
 }
 
+@test "[Phase 2] Verify: README.md replaced (no boilerplate marker)" {
+    # After setup, README.md should NOT contain the boilerplate marker
+    run grep -q "zappzarapp-boilerplate-readme" README.md
+    assert_failure
+}
+
+@test "[Phase 2] Verify: CHANGELOG.md replaced (no boilerplate marker)" {
+    # After setup, CHANGELOG.md should NOT contain the boilerplate marker
+    run grep -q "zappzarapp - Changelog" CHANGELOG.md
+    assert_failure
+}
+
+@test "[Phase 2] Verify: .zappzarapp/CHANGELOG.md created (boilerplate moved)" {
+    # Boilerplate changelog should be moved here
+    [[ -f ".zappzarapp/CHANGELOG.md" ]]
+    run grep -q "zappzarapp - Changelog" .zappzarapp/CHANGELOG.md
+    assert_success
+}
+
 # =============================================================================
 # Phase 3: Reset-Full Restores Original State
 # =============================================================================
@@ -197,6 +216,23 @@ setup() {
 
 @test "[Phase 3] Verify: docs/assets/ preserved (not removed)" {
     [[ -d "docs/assets" ]]
+}
+
+@test "[Phase 3] Verify: README.md restored to boilerplate (contains marker)" {
+    # After reset-full, README.md should contain the boilerplate marker
+    run grep -q "zappzarapp-boilerplate-readme" README.md
+    assert_success
+}
+
+@test "[Phase 3] Verify: CHANGELOG.md restored to boilerplate (contains marker)" {
+    # After reset-full, CHANGELOG.md should contain the boilerplate marker
+    run grep -q "zappzarapp - Changelog" CHANGELOG.md
+    assert_success
+}
+
+@test "[Phase 3] Verify: .zappzarapp/CHANGELOG.md removed" {
+    # The moved boilerplate changelog should be removed
+    [[ ! -f ".zappzarapp/CHANGELOG.md" ]]
 }
 
 # =============================================================================

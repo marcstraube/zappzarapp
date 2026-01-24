@@ -2066,7 +2066,7 @@ reset-full: ## Full factory reset - removes EVERYTHING including secrets (DANGER
 	@echo -e "\033[0;31m║  • secrets/ (all generated secrets)                              ║\033[0m"
 	@echo -e "\033[0;31m║  • docker/certs/{ca,nginx,internal}/ (certificate directories)    ║\033[0m"
 	@echo -e "\033[0;31m║  • Source code reset via git checkout                            ║\033[0m"
-	@echo -e "\033[0;31m║  • README.md, .claude/CLAUDE.md reset to boilerplate             ║\033[0m"
+	@echo -e "\033[0;31m║  • README.md, CHANGELOG.md, .claude/CLAUDE.md reset to boilerplate║\033[0m"
 	@echo -e "\033[0;31m╚══════════════════════════════════════════════════════════════════╝\033[0m"
 	@echo ""
 	@read -p "Type 'RESET-FULL' to confirm full factory reset: " CONFIRM_RESET; \
@@ -2084,11 +2084,14 @@ reset-full: ## Full factory reset - removes EVERYTHING including secrets (DANGER
 	@echo -e "\033[0;33mResetting source code to boilerplate defaults...\033[0m"
 	@git checkout -- src/ tests/ resources/ config/ templates/ public/index.php 2>/dev/null || \
 		echo -e "\033[0;31m  ⚠ git checkout failed - source code not reset\033[0m"
-	@echo -e "\033[0;33mResetting README.md and CLAUDE.md to boilerplate state...\033[0m"
+	@echo -e "\033[0;33mResetting README.md, CLAUDE.md, and CHANGELOG.md to boilerplate state...\033[0m"
 	@git checkout -- README.md 2>/dev/null || \
 		echo -e "\033[0;31m  ⚠ README.md not reset (not tracked or modified)\033[0m"
 	@git checkout -- .claude/CLAUDE.md 2>/dev/null || \
 		echo -e "\033[0;31m  ⚠ CLAUDE.md not reset (not tracked or modified)\033[0m"
+	@git checkout -- CHANGELOG.md 2>/dev/null || \
+		echo -e "\033[0;31m  ⚠ CHANGELOG.md not reset (not tracked or modified)\033[0m"
+	@rm -f .zappzarapp/CHANGELOG.md 2>/dev/null || true
 	@echo -e "\033[0;32m✓ Full factory reset complete! Project is now in boilerplate state.\033[0m"
 
 # AI Sync configuration (can be overridden via .env or command line)
