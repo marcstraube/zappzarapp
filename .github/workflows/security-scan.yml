@@ -67,6 +67,25 @@ jobs:
           - name: redis
             dockerfile: docker/redis/Dockerfile
             target: base
+          # Optional services
+          - name: elasticsearch
+            dockerfile: docker/elasticsearch/Dockerfile
+            target: ""
+          - name: meilisearch
+            dockerfile: docker/meilisearch/Dockerfile
+            target: ""
+          - name: rabbitmq
+            dockerfile: docker/rabbitmq/Dockerfile
+            target: ""
+          - name: mercure
+            dockerfile: docker/mercure/Dockerfile
+            target: ""
+          - name: mailpit
+            dockerfile: docker/mailpit/Dockerfile
+            target: ""
+          - name: seaweedfs
+            dockerfile: docker/seaweedfs/Dockerfile
+            target: ""
 
     steps:
       - name: Checkout code
