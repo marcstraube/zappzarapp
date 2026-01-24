@@ -2,6 +2,38 @@
 
 Thank you for your interest in contributing to zappzarapp!
 
+## Getting Started
+
+### Contributor vs Boilerplate Mode
+
+`make setup` auto-detects whether you're contributing to zappzarapp or using it
+as a boilerplate:
+
+| Mode            | Detection                                         | File Swaps |
+| --------------- | ------------------------------------------------- | ---------- |
+| **Contributor** | `origin` or `upstream` → `marcstraube/zappzarapp` | Skipped    |
+| **Boilerplate** | Any other remote                                  | Applied    |
+
+**As a contributor**, your README.md, CHANGELOG.md, and .claude/CLAUDE.md remain
+unchanged - exactly what you need for development.
+
+**Override:** Force boilerplate mode with `BOILERPLATE=1 make setup` (useful for
+testing the boilerplate experience).
+
+### File Swaps (Boilerplate Mode Only)
+
+When users clone zappzarapp as a boilerplate for their own project, `make setup`
+swaps these files:
+
+| File                | Action                                          |
+| ------------------- | ----------------------------------------------- |
+| `README.md`         | Replaced with `.zappzarapp/README.template.md`  |
+| `.claude/CLAUDE.md` | Moved to `.zappzarapp/`, replaced with template |
+| `CHANGELOG.md`      | Moved to `.zappzarapp/`, replaced with template |
+
+This gives boilerplate users a clean starting point while preserving the
+originals in `.zappzarapp/`.
+
 ## Important: What NOT to Commit
 
 ### Lock Files
