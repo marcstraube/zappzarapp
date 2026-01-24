@@ -9,7 +9,7 @@
  */
 
 import { createServer as createHttpsServer, Server } from 'https';
-import { readFileSync, existsSync } from 'fs';
+import { readFileSync, statSync } from 'fs';
 import { createApp, logger } from './app.js';
 import { fileURLToPath } from 'url';
 
@@ -33,11 +33,23 @@ process.env.NODE_TLS_REJECT_UNAUTHORIZED = tlsRejectUnauthorized ? '1' : '0';
 export function startServer(): Server {
   const app = createApp();
 
-  // Verify certificates exist
-  if (!existsSync(CERT_PATH) || !existsSync(KEY_PATH)) {
+  // Verify certificates exist and are files (not directories from Docker bind mount bug)
+  const isFile = (path: string): boolean => {
+    try {
+      return statSync(path).isFile();
+    } catch {
+      return false;
+    }
+  };
+
+  if (!isFile(CERT_PATH) || !isFile(KEY_PATH)) {
+    const hint =
+      NODE_ENV === 'production'
+        ? 'Ensure TLS certificates are properly mounted, then restart the container.'
+        : 'Run "make ssl-internal", then restart with "make up".';
     logger.error(
       { certPath: CERT_PATH, keyPath: KEY_PATH },
-      'TLS certificates not found. Run "make ssl-selfsigned" to generate them.'
+      `TLS certificates not found or invalid. ${hint}`
     );
     process.exit(1);
   }
