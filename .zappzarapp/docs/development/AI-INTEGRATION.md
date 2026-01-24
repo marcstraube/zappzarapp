@@ -70,13 +70,18 @@ detection (GitHub Issues, GitLab Issues, or local `.ai/TASKS.md`).
 }
 ```
 
-#### Settings Override Behavior
+#### Settings Scope Behavior
 
-**Important:** `settings.local.json` completely **replaces** (not merges) hooks
-from `settings.json`.
+Hooks are **merged across scopes** (all matching hooks run):
 
-If you create a local settings file, copy any desired hooks from `settings.json`
-to your local file.
+1. Managed hooks (highest priority)
+2. User hooks (`~/.claude/settings.json`)
+3. Project hooks (`.claude/settings.json`)
+4. Local hooks (`.claude/settings.local.json`)
+
+Permissions follow standard scope precedence (local overrides project).
+
+See: <https://code.claude.com/docs/en/settings#hook-configuration>
 
 #### Hooks Configuration
 

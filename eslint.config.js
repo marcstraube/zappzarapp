@@ -3,6 +3,7 @@ import tsPlugin from '@typescript-eslint/eslint-plugin';
 import tsParser from '@typescript-eslint/parser';
 import prettierConfig from 'eslint-config-prettier';
 import prettierPlugin from 'eslint-plugin-prettier';
+import securityPlugin from 'eslint-plugin-security';
 import sonarjsPlugin from 'eslint-plugin-sonarjs';
 
 export default [
@@ -55,6 +56,7 @@ export default [
     plugins: {
       '@typescript-eslint': tsPlugin,
       prettier: prettierPlugin,
+      security: securityPlugin,
       sonarjs: sonarjsPlugin,
     },
     rules: {
@@ -64,6 +66,19 @@ export default [
 
       // Prettier integration
       'prettier/prettier': 'error',
+
+      // Security rules - detect dangerous patterns
+      // Critical: These indicate likely security issues
+      'security/detect-eval-with-expression': 'error',
+      'security/detect-child-process': 'error',
+      'security/detect-unsafe-regex': 'error',
+      'security/detect-non-literal-require': 'error',
+      // Warning: Review these manually (may have false positives in config code)
+      'security/detect-non-literal-fs-filename': 'off', // Too noisy for config/utils
+      'security/detect-non-literal-regexp': 'warn',
+      'security/detect-possible-timing-attacks': 'warn',
+      // Disabled: Very high false positive rate
+      'security/detect-object-injection': 'off', // obj[key] is common pattern
 
       // SonarJS - IDE parity (catches "redundant variable" warnings)
       'sonarjs/prefer-immediate-return': 'warn',

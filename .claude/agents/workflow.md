@@ -227,21 +227,23 @@ Agent A (Architect)
 ├── Analyzes requirements
 ├── Researches known challenges
 └── Creates plan in .claude/temp/plan-<task>.md
-        ↓
-   ┌────┴────┬────┬────┐  (parallel if independent)
-   ↓         ↓    ↓    ↓
-Agent B1   B2   B3   B4
-(PHP)    (Node)(Infra)(SQL)
-   └────┬────┴────┴────┘
-        ↓
-   ┌────┴─────────────────────────────┐  (parallel)
-   ↓      ↓     ↓     ↓     ↓    ↓    ↓
-Agent C1  C2   C3    C4   [C5] [C6]  Agent D
-(PHP)  (Node) (SQL) (MD) (Cfg)(Infra) (Docs)
-   └────┬─────────────────────────────┘
-        ↓
+    ↓
+[Agent S Pre-Review]  ← Conditional
+    ↓
+┌───────┬───────┬───────┬───────┐  (parallel if independent)
+↓       ↓       ↓       ↓       │
+B1      B2      B3      B4      │
+(PHP)   (Node)  (Infra) (SQL)   │
+└───────┴───────┴───────┴───────┘
+    ↓
+┌───────┬───────┬───────┬───────┬───────┬───────┬───────┬───────┐
+↓       ↓       ↓       ↓       ↓       ↓       ↓       ↓       │
+C1      C2      C3      C4      [C5]    [C6]    [S]     D       │  (parallel)
+(PHP)   (Node)  (SQL)   (MD)    (Cfg)   (Infra) (Sec)   (Docs)  │
+└───────┴───────┴───────┴───────┴───────┴───────┴───────┴───────┘
+    ↓
 Main Agent
-├── Collects C + D reports
+├── Collects C + D + S reports
 ├── Intermediate commits on feature branch
 ├── Informs user: "Branch ready for review"
 └── After approval: Merge + close task
@@ -249,6 +251,54 @@ Main Agent
 
 **B3 Infrastructure includes:** Shell scripts, Dockerfiles, Compose files,
 Makefile, BATS/Goss tests
+
+**[S] Security Agent:** Runs conditionally based on scope and affected files.
+See "Security Agent Triggering" section below.
+
+## Security Agent Triggering
+
+Agent S (Security Auditor) runs **conditionally** to avoid overhead on low-risk
+tasks. See `.claude/agents/security.md` for full details.
+
+### By Task Scope
+
+| Scope      | Security Agent | Reason                       |
+| ---------- | -------------- | ---------------------------- |
+| `critical` | **Mandatory**  | Security/critical issues     |
+| `feature`  | Conditional    | If touches auth/payment/data |
+| `fix`      | Conditional    | If security-related          |
+| `breaking` | Recommended    | API changes may expose risks |
+| `refactor` | Optional       | Only if auth/security code   |
+| `docs`     | No             | —                            |
+| `chore`    | No             | —                            |
+
+### By Affected Files
+
+Trigger Security Agent if changed files match these patterns:
+
+- `**/Auth/**`, `**/Security/**`, `**/Middleware/Auth*`
+- `**/login*`, `**/password*`, `**/session*`, `**/token*`
+- `**/User/**`, `**/Payment/**`, `**/Api/**`
+- `**/migrations/**`, `**/Repository/**`
+- `.env*`, `**/secrets*`, `Dockerfile*`
+
+### Two-Phase Security Review
+
+| Phase               | When                           | Focus                                       |
+| ------------------- | ------------------------------ | ------------------------------------------- |
+| Pre-Implementation  | After Architect, before Coders | Threat modeling, security requirements      |
+| Post-Implementation | After Coders, with Reviewers   | OWASP checks, code review, dependency audit |
+
+### Escalation
+
+| Severity | Action                               |
+| -------- | ------------------------------------ |
+| Critical | Block merge, notify user immediately |
+| High     | Block merge, fix required            |
+| Medium   | Warning, fix recommended             |
+| Low      | Document, fix optional               |
+
+---
 
 ## Main Agent Responsibilities
 
@@ -262,10 +312,11 @@ Makefile, BATS/Goss tests
 ### Coordination
 
 - Spawns agents in correct order
-- Decides on parallelization (B1/B2/B3/B4, C1/C2/C3/C4/C5/C6, D)
+- Decides on parallelization (B1/B2/B3/B4, C1/C2/C3/C4/C5/C6/S, D)
 - C5 (Config Sync) only runs if config files changed
 - C6 (Infrastructure) only runs if infra files changed (docker/, tests/bats/,
   Makefile)
+- S (Security) only runs if security-relevant (see "Security Agent Triggering")
 - Collects results
 - **Important:** Subagents are coordinated subprocesses, not separate contexts
 

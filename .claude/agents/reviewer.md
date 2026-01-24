@@ -174,3 +174,88 @@ Apply fix       → Back to B     Apply filter
 ## Retry Limit
 
 Max 2 iterations with Coder, then escalation to Main Agent.
+
+---
+
+## Security Baseline (All Reviews)
+
+Most security checks are now **automated** via linters and pre-commit hooks.
+Reviewers verify the automated checks pass and review remaining manual items.
+
+### Automated Security Checks
+
+These run automatically during `make check` / `make lint-*`:
+
+| Check                                          | Tool                                | Reviewer   |
+| ---------------------------------------------- | ----------------------------------- | ---------- |
+| `eval()`, `exec()`, `shell_exec()`, `system()` | PHPStan (ekino/phpstan-banned-code) | C1         |
+| `var_dump()`, `print_r()`, `dd()`, `dump()`    | PHPStan (ekino/phpstan-banned-code) | C1         |
+| `eval()`, `child_process`, unsafe regex        | ESLint (eslint-plugin-security)     | C2         |
+| Hardcoded secrets (AWS, GitHub, etc.)          | CaptainHook BlockSecrets            | Pre-commit |
+
+**Reviewer action:** Verify `make check` passes. If security rules are
+suppressed, review the justification comment.
+
+### Manual Security Checks (Still Required)
+
+These cannot be automated and require manual review:
+
+**PHP (C1):**
+
+```text
+- [ ] Prepared statements for all SQL (logic review, not just syntax)
+- [ ] `htmlspecialchars()` for HTML output
+- [ ] No `$_GET`/`$_POST` directly in queries
+```
+
+**Node/TS (C2):**
+
+```text
+- [ ] Parameterized queries (no string interpolation)
+- [ ] Proper escaping for output context
+```
+
+**SQL (C3):**
+
+```text
+- [ ] No dynamic SQL with user input
+- [ ] Proper permissions (GRANT statements reviewed)
+- [ ] Sensitive columns encrypted or hashed
+```
+
+**Infrastructure (C6):**
+
+```text
+- [ ] Containers run as non-root (where possible)
+- [ ] No `--privileged` without justification
+- [ ] Health checks don't expose sensitive info
+```
+
+### When to Escalate to Agent S
+
+Escalate to Security Agent for deep analysis when:
+
+| Finding                                              | Action        |
+| ---------------------------------------------------- | ------------- |
+| Security rule suppressed without clear justification | Escalate to S |
+| Auth/session code changed                            | Escalate to S |
+| Payment/financial code                               | Escalate to S |
+| New API endpoints exposed                            | Consider S    |
+| Multiple security-adjacent changes                   | Consider S    |
+
+### Reporting
+
+Include in Review Result:
+
+```markdown
+### Security Baseline
+
+| Check                      | Status                       |
+| -------------------------- | ---------------------------- |
+| Automated (PHPStan/ESLint) | ✅ Passed                    |
+| SQL parameterization       | ✅ Verified                  |
+| Output encoding            | ✅ Verified                  |
+| Suppressions reviewed      | ⚠️ 1 suppression (justified) |
+
+**Escalation:** None / Recommended Agent S review
+```

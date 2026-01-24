@@ -1,8 +1,32 @@
+includes:
+    - vendor/ekino/phpstan-banned-code/extension.neon
+
 parameters:
     level: 8
     paths:
         - src/php
         - tests/php
+
+    # Security: Banned dangerous functions
+    # See: https://github.com/ekino/phpstan-banned-code
+    bannedCode:
+        functions:
+            # Code execution
+            - { name: 'eval', message: 'eval() is dangerous - use safer alternatives' }
+            - { name: 'create_function', message: 'create_function() is deprecated and dangerous' }
+            # Shell execution
+            - { name: 'exec', message: 'exec() can lead to command injection' }
+            - { name: 'passthru', message: 'passthru() can lead to command injection' }
+            - { name: 'shell_exec', message: 'shell_exec() can lead to command injection' }
+            - { name: 'system', message: 'system() can lead to command injection' }
+            - { name: 'proc_open', message: 'proc_open() can lead to command injection' }
+            - { name: 'popen', message: 'popen() can lead to command injection' }
+            - { name: 'pcntl_exec', message: 'pcntl_exec() can lead to command injection' }
+            # Debug output (should not be in production)
+            - { name: 'var_dump', message: 'var_dump() should not be in production code' }
+            - { name: 'print_r', message: 'print_r() should not be in production code' }
+            - { name: 'dd', message: 'dd() should not be in production code' }
+            - { name: 'dump', message: 'dump() should not be in production code' }
 
     # Performance
     parallel:

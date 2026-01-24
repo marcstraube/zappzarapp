@@ -94,6 +94,7 @@ function loadFromIndividualVars(): DatabaseConfig {
   const defaultHost = type === 'postgres' ? 'postgres' : 'mariadb';
   const password = getEnvOrFile('DB_PASSWORD', '');
 
+  // eslint-disable-next-line security/detect-possible-timing-attacks -- Not a secret comparison, just empty check
   if (password === '') {
     throw new Error(
       'Database password not configured. Set DB_PASSWORD_FILE (recommended) or DB_PASSWORD environment variable. ' +

@@ -58,6 +58,25 @@ overflow:**
 **Subagents:** Do NOT update session file directly. Report changes back to main
 agent, who updates centrally (prevents conflicts).
 
+### Knowledge File Updates
+
+**Write learnings, decisions, and references IMMEDIATELY when discovered:**
+
+| Discovery                       | Action                    |
+| ------------------------------- | ------------------------- |
+| New insight / gotcha / pattern  | Append to `LEARNINGS.md`  |
+| Architecture decision made      | Add ADR to `DECISIONS.md` |
+| Useful documentation link found | Add to `REFERENCES.md`    |
+
+Session files are not committed (lost on context overflow). Knowledge files are
+committed (persistent).
+
+### Ending a Session
+
+1. Complete session log: Fill in `## Summary`
+2. Verify learnings/decisions were written to knowledge files
+3. Tell user: "Please enter `/clear` for fresh context."
+
 ---
 
 ## Solution Principles
@@ -93,7 +112,7 @@ languages. The workflow.md contains scope detection, agent roles, pre-flight
 checks, and user checkpoints.
 
 **Project context:** See `.claude/context/project.md` for architecture and test
-conventions (create if needed).
+conventions.
 
 ## Code Standards
 
@@ -181,6 +200,12 @@ User reviews → Merge → `/tasks --close <id>`
 - Use `/commit` for the guided commit workflow
 - Never commit directly to develop or master — only via feature branch merges
 
+## Error Prevention
+
+See `.zappzarapp/standards/make-targets.md` for container prerequisites and
+package manager usage. Direct package manager commands are blocked via
+`settings.json` deny rules.
+
 ---
 
 ## Knowledge File Paths
@@ -200,17 +225,6 @@ User reviews → Merge → `/tasks --close <id>`
 | `--upstream`   | upstream remote        | Contribute to forked project |
 | `--zappzarapp` | marcstraube/zappzarapp | Boilerplate feature requests |
 | `--private`    | ~/.local/share/        | Personal, offline tasks      |
-
----
-
-## Hooks
-
-Default hooks in `settings.json`:
-
-- **PostToolUse (Edit)**: Reminder to rebuild after Docker config file changes
-
-**Note:** `settings.local.json` completely overrides hooks from `settings.json`
-(no merging). If you create a local settings file, copy any desired hooks.
 
 ---
 

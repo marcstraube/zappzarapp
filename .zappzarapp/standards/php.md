@@ -72,6 +72,24 @@ Options:
 - Baseline: `phpstan-baseline.neon` for legacy issues
 - Never add new errors to baseline without justification
 
+### Security Rules (ekino/phpstan-banned-code)
+
+PHPStan blocks dangerous functions automatically:
+
+| Banned Function                                    | Reason                       |
+| -------------------------------------------------- | ---------------------------- |
+| `eval()`                                           | Code execution vulnerability |
+| `exec()`, `shell_exec()`, `system()`, `passthru()` | Command injection            |
+| `proc_open()`, `popen()`, `pcntl_exec()`           | Command injection            |
+| `var_dump()`, `print_r()`, `dd()`, `dump()`        | Debug output in production   |
+
+**If you need to use a banned function:**
+
+1. This is a red flag - reconsider your approach
+2. If absolutely necessary, add `@phpstan-ignore bannedCode.function` with
+   explanation
+3. Security Agent will review all suppressions
+
 ### Exception Handling
 
 **Coding Standard (always apply):**

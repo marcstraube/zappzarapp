@@ -62,6 +62,30 @@ Options:
 | `any` Type                       | Strict mode — use `unknown` + type guard instead |
 | `eslint-disable` for entire file | Too broad, use per-line                          |
 
+## Security Rules (eslint-plugin-security)
+
+ESLint blocks dangerous patterns automatically:
+
+| Rule                             | What it Detects               | Severity |
+| -------------------------------- | ----------------------------- | -------- |
+| `detect-eval-with-expression`    | `eval()` with dynamic content | Error    |
+| `detect-child-process`           | `child_process` usage         | Error    |
+| `detect-non-literal-require`     | Dynamic `require()`           | Error    |
+| `detect-unsafe-regex`            | ReDoS vulnerable regex        | Error    |
+| `detect-non-literal-regexp`      | Dynamic RegExp constructor    | Warning  |
+| `detect-possible-timing-attacks` | Timing-based comparisons      | Warning  |
+
+**If you need to suppress a security rule:**
+
+1. This is a red flag - reconsider your approach
+2. If justified (e.g., internal value, not user input), add comment:
+
+   ```typescript
+   // eslint-disable-next-line security/detect-non-literal-regexp -- tag is internal, not user input
+   ```
+
+3. Security Agent will review all suppressions
+
 ## Imports
 
 **Use `node:` prefix for Node.js built-in modules:**

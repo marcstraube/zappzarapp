@@ -507,11 +507,12 @@ values.
 **Workaround:** Use CLAUDE.md instructions instead of hooks for Task-related
 notifications (e.g., ntfy notifications after agent completion).
 
-### Settings Override Behavior
+### Settings Scope Behavior
 
-- `settings.local.json` **completely overrides** hooks from `settings.json` (no
-  merging)
-- If you use local settings, copy any desired hooks from `settings.json`
+- Hooks are **merged across scopes** (not overridden)
+- Precedence: Managed → User → Project → Local → Plugin (all matching hooks run)
+- Permissions follow standard scope precedence (local overrides project)
+- See: <https://code.claude.com/docs/en/settings#hook-configuration>
 
 ---
 

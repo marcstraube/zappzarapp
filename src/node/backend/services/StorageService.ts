@@ -722,6 +722,7 @@ export class StorageService implements StorageServiceInterface {
    * Extract value from XML element
    */
   private extractXmlValue(xml: string, tag: string): string | null {
+    // eslint-disable-next-line security/detect-non-literal-regexp -- tag is internal, not user input
     const regex = new RegExp(`<${tag}>([\\s\\S]*?)<\\/${tag}>`);
     const match = regex.exec(xml);
     return match !== null && match[1] !== undefined ? match[1] : null;

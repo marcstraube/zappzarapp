@@ -31,6 +31,14 @@ Reusable documentation links, tutorials, and best practices.
 
 ---
 
+## Claude Code
+
+- [Settings & Permissions](https://code.claude.com/docs/en/settings)
+- [Hooks Reference](https://code.claude.com/docs/en/hooks)
+- [Hooks Guide](https://code.claude.com/docs/en/hooks-guide)
+- [Plugins Reference](https://code.claude.com/docs/en/plugins-reference)
+- [Documentation Index](https://code.claude.com/docs/llms.txt)
+
 ## Project-Specific
 
 Add project-specific references here as discovered.

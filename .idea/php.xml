@@ -54,6 +54,7 @@
       <path value="$PROJECT_DIR$/vendor/captainhook/secrets" />
       <path value="$PROJECT_DIR$/vendor/clue/ndjson-react" />
       <path value="$PROJECT_DIR$/vendor/composer" />
+      <path value="$PROJECT_DIR$/vendor/ekino/phpstan-banned-code" />
       <path value="$PROJECT_DIR$/vendor/evenement/evenement" />
       <path value="$PROJECT_DIR$/vendor/fakerphp/faker" />
       <path value="$PROJECT_DIR$/vendor/fidry/cpu-core-counter" />
