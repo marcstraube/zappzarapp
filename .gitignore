@@ -1,5 +1,9 @@
-# Environment (local overrides only - .env and .env.production are committed)
+# Environment overrides (contain local/production secrets - never commit!)
+# Base .env is committed with secure defaults
+# Examples (.env.local.example, .env.production.example) are committed
 .env.local
+.env.production
+.env.*.local
 
 # Logs
 *.log

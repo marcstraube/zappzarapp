@@ -2985,6 +2985,39 @@ secrets-rotate: ## Rotate ALL secrets (DANGER: breaks existing backups!)
 	@$(MAKE) --silent secrets
 	@echo -e "\033[0;33mSecrets rotated. Run 'make down && make up' to apply changes.\033[0m"
 
+.PHONY: check-cors
+check-cors: ## Show current CORS configuration
+	@echo -e "\033[0;36m╔══════════════════════════════════════════════════════════════════════╗\033[0m"
+	@echo -e "\033[0;36m║  CORS Configuration (Cross-Origin Resource Sharing)                  ║\033[0m"
+	@echo -e "\033[0;36m╚══════════════════════════════════════════════════════════════════════╝\033[0m"
+	@echo ""
+	@echo -e "\033[0;33mCORS_ORIGINS (from running containers):\033[0m"
+	@docker compose exec php printenv CORS_ORIGINS 2>/dev/null && echo -e "\033[0;32m  PHP container: OK\033[0m" || echo -e "\033[0;31m  PHP container not running\033[0m"
+	@docker compose exec node printenv CORS_ORIGINS 2>/dev/null && echo -e "\033[0;32m  Node container: OK\033[0m" || echo -e "\033[0;31m  Node container not running\033[0m"
+	@echo ""
+	@echo -e "\033[0;33mSource files:\033[0m"
+	@if [ -f .env ]; then \
+		echo -e "\033[0;34m  .env:\033[0m $$(grep "^CORS_ORIGINS=" .env | cut -d'=' -f2)"; \
+	fi
+	@if [ -f .env.local ]; then \
+		echo -e "\033[0;33m  .env.local (OVERRIDE):\033[0m $$(grep "^CORS_ORIGINS=" .env.local | cut -d'=' -f2)"; \
+	fi
+	@if [ -f .env.production ]; then \
+		echo -e "\033[0;35m  .env.production (PROD):\033[0m $$(grep "^CORS_ORIGINS=" .env.production | cut -d'=' -f2)"; \
+	fi
+	@echo ""
+	@echo -e "\033[0;36mSecurity Check:\033[0m"
+	@if grep -q "^CORS_ORIGINS=\*" .env 2>/dev/null; then \
+		echo -e "\033[0;31m  ⚠️  WARNING: .env uses CORS_ORIGINS=* (insecure default!)\033[0m"; \
+	else \
+		echo -e "\033[0;32m  ✓ .env has restrictive CORS_ORIGINS (secure default)\033[0m"; \
+	fi
+	@if [ -f .env.production ] && grep -q "^CORS_ORIGINS=\*" .env.production 2>/dev/null; then \
+		echo -e "\033[0;31m  ⚠️  DANGER: .env.production uses CORS_ORIGINS=* (NEVER use in production!)\033[0m"; \
+	fi
+	@echo ""
+	@echo -e "\033[0;36mDocumentation:\033[0m .zappzarapp/docs/security/CORS.md"
+
 falco-run: ## Start Falco for Runtime Security Monitoring (requires root/sudo on Linux)
 	@echo -e "\033[0;33mStarting Falco for runtime monitoring...\033[0m"
 	@echo -e "\033[0;31mNote: Falco runs with --privileged and monitors ALL containers on the host.\033[0m"
