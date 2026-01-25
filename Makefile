@@ -3147,8 +3147,7 @@ secrets: ## Generate missing Docker Secrets (idempotent)
 	fi
 	@if [ ! -f secrets/elasticsearch_bootstrap_password.txt ]; then \
 		echo -e "\033[0;34mGenerating elasticsearch_bootstrap_password secret...\033[0m"; \
-		cp secrets/elasticsearch_bootstrap_password.example.txt secrets/elasticsearch_bootstrap_password.txt 2>/dev/null || \
-		echo "dev-bootstrap-password" > secrets/elasticsearch_bootstrap_password.txt; \
+		openssl rand -base64 24 | tr -dc 'a-zA-Z0-9' | head -c 24 > secrets/elasticsearch_bootstrap_password.txt; \
 		chmod 600 secrets/elasticsearch_bootstrap_password.txt; \
 		echo -e "\033[0;32melasticsearch_bootstrap_password secret generated.\033[0m"; \
 		echo -e "\033[0;34m  Note: API key must be generated after ES starts: make es-setup-api-key\033[0m"; \
