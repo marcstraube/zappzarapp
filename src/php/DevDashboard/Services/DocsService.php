@@ -15,6 +15,7 @@ use RecursiveIteratorIterator;
 readonly class DocsService
 {
     private string $docsPath;
+
     private string $srcPath;
 
     public function __construct()
@@ -141,7 +142,7 @@ readonly class DocsService
                     continue;
                 }
 
-                if (!preg_match($extPattern, $file->getFilename())) {
+                if (!preg_match($extPattern, (string) $file->getFilename())) {
                     continue;
                 }
 
@@ -165,11 +166,13 @@ readonly class DocsService
         if ($seconds < 60) {
             return 'just now';
         }
+
         if ($seconds < 3600) {
             $mins = (int) floor($seconds / 60);
 
             return $mins . ' min' . ($mins > 1 ? 's' : '') . ' ago';
         }
+
         if ($seconds < 86400) {
             $hours = (int) floor($seconds / 3600);
 
@@ -317,6 +320,7 @@ readonly class DocsService
             if ($phpNeedsRegen) {
                 $commands['php'] = 'make docs-php';
             }
+
             if ($backendNeedsRegen && $frontendNeedsRegen) {
                 $commands['node'] = 'make docs-node';
             } elseif ($backendNeedsRegen) {

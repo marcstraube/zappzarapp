@@ -52,13 +52,10 @@ abstract class AbstractPdoRepository implements RepositoryInterface
 
     private readonly DatabaseConfigInterface $config;
 
-    private readonly AuditLoggerInterface $auditLogger;
-
     public function __construct(
-        AuditLoggerInterface $auditLogger,
+        private readonly AuditLoggerInterface $auditLogger,
         ?DatabaseConfigInterface $config = null
     ) {
-        $this->auditLogger = $auditLogger;
         $this->config      = $config ?? new DatabaseConfig();
     }
 

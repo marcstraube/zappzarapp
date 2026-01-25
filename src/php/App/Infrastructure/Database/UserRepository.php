@@ -6,8 +6,6 @@ declare(strict_types=1);
 
 namespace App\Infrastructure\Database;
 
-use App\Infrastructure\Audit\AuditLoggerInterface;
-use App\Infrastructure\DatabaseConfigInterface;
 use Override;
 use PDO;
 use PDOException;
@@ -37,13 +35,6 @@ use PDOException;
  */
 class UserRepository extends AbstractPdoRepository implements UserRepositoryInterface
 {
-    public function __construct(
-        AuditLoggerInterface $auditLogger,
-        ?DatabaseConfigInterface $config = null
-    ) {
-        parent::__construct($auditLogger, $config);
-    }
-
     /**
      * @inheritDoc
      */
