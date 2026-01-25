@@ -56,32 +56,15 @@ import { Pool, QueryResult } from 'pg';
 import { createHash } from 'node:crypto';
 import { appendFile, mkdir } from 'node:fs/promises';
 import { dirname } from 'node:path';
+import type { AuditLoggerInterface, AuditLogEntry, AuditLogResult } from './AuditLoggerInterface';
 
-export interface AuditLogEntry {
-  action: string;
-  entityType: string;
-  entityId: string | number;
-  userId?: number | null;
-  ipAddress?: string;
-  userAgent?: string;
-  data?: Record<string, unknown>;
-}
+// Re-export types from interface for convenience
+export type { AuditLogEntry, AuditLogResult } from './AuditLoggerInterface';
 
-export interface AuditLogResult {
-  id: number;
-  timestamp: Date;
-  user_id: number | null;
-  ip_address: string;
-  action: string;
-  entity_type: string;
-  entity_id: string;
-  data_decrypted: string | null;
-}
-
-export class AuditLogger {
-  private pool: Pool;
-  private encryptionKey: string;
-  private logFilePath: string;
+export class AuditLogger implements AuditLoggerInterface {
+  private readonly pool: Pool;
+  private readonly encryptionKey: string;
+  private readonly logFilePath: string;
 
   /**
    * @param pool - PostgreSQL connection pool

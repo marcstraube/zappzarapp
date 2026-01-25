@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Infrastructure\Database;
 
+use App\Infrastructure\Audit\AuditLoggerInterface;
 use App\Infrastructure\DatabaseConfig;
 use App\Infrastructure\DatabaseConfigInterface;
 use PDO;
@@ -51,9 +52,14 @@ abstract class AbstractPdoRepository implements RepositoryInterface
 
     private readonly DatabaseConfigInterface $config;
 
-    public function __construct(?DatabaseConfigInterface $config = null)
-    {
-        $this->config = $config ?? new DatabaseConfig();
+    private readonly AuditLoggerInterface $auditLogger;
+
+    public function __construct(
+        AuditLoggerInterface $auditLogger,
+        ?DatabaseConfigInterface $config = null
+    ) {
+        $this->auditLogger = $auditLogger;
+        $this->config      = $config ?? new DatabaseConfig();
     }
 
     /**
@@ -220,7 +226,19 @@ abstract class AbstractPdoRepository implements RepositoryInterface
                 $lastId       = $pdo->lastInsertId($sequenceName);
             }
 
-            return is_numeric($lastId) ? (int) $lastId : $lastId;
+            /** @var int|string $insertedId */
+            $insertedId = is_numeric($lastId) ? (int) $lastId : $lastId;
+
+            // Audit log: Record creation
+            $this->auditLogger->log(
+                $this->getTable() . '.create',
+                $this->getTable(),
+                $insertedId,
+                $this->getCurrentUserId(),
+                ['fields' => array_keys($data)]
+            );
+
+            return $insertedId;
         } catch (PDOException) {
             $this->disconnect();
 
@@ -262,7 +280,20 @@ abstract class AbstractPdoRepository implements RepositoryInterface
             $stmt = $pdo->prepare($sql);
             $stmt->execute($parameters);
 
-            return $stmt->rowCount() > 0;
+            $success = $stmt->rowCount() > 0;
+
+            if ($success) {
+                // Audit log: Record update
+                $this->auditLogger->log(
+                    $this->getTable() . '.update',
+                    $this->getTable(),
+                    $id,
+                    $this->getCurrentUserId(),
+                    ['fields' => array_keys($data)]
+                );
+            }
+
+            return $success;
         } catch (PDOException) {
             $this->disconnect();
 
@@ -287,7 +318,19 @@ abstract class AbstractPdoRepository implements RepositoryInterface
             $stmt = $pdo->prepare($sql);
             $stmt->execute([$id]);
 
-            return $stmt->rowCount() > 0;
+            $success = $stmt->rowCount() > 0;
+
+            if ($success) {
+                // Audit log: Record deletion (GDPR Art. 17 - Right to erasure)
+                $this->auditLogger->log(
+                    $this->getTable() . '.delete',
+                    $this->getTable(),
+                    $id,
+                    $this->getCurrentUserId()
+                );
+            }
+
+            return $success;
         } catch (PDOException) {
             $this->disconnect();
 
@@ -673,5 +716,23 @@ abstract class AbstractPdoRepository implements RepositoryInterface
         }
 
         return $clause;
+    }
+
+    // =========================================================================
+    // Audit Logging Helpers
+    // =========================================================================
+
+    /**
+     * Get current user ID from session (for audit logging)
+     *
+     * Override in subclass if user context is stored differently.
+     *
+     * @SuppressWarnings("PHPMD.Superglobals") Required for session access
+     */
+    protected function getCurrentUserId(): ?int
+    {
+        return isset($_SESSION['user_id']) && is_numeric($_SESSION['user_id'])
+            ? (int) $_SESSION['user_id']
+            : null;
     }
 }

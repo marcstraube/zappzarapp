@@ -8,6 +8,7 @@ use DevDashboard\Controllers\DashboardController;
 use DevDashboard\Response\JsonResponse;
 use DevDashboard\Response\Response;
 use DevDashboard\Services\DatabaseService;
+use DevDashboard\Services\DocsService;
 use DevDashboard\Services\HealthCheckService;
 use DevDashboard\Services\LogService;
 use DevDashboard\Services\QualityService;
@@ -27,6 +28,7 @@ class DashboardControllerTest extends TestCase
             new QualityService(),
             new LogService(),
             new DatabaseService(),
+            new DocsService(),
         );
     }
 

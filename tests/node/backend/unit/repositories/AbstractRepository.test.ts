@@ -8,6 +8,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach, type Mock } from 'vitest';
 import { AbstractRepository } from '@backend/repositories/AbstractRepository';
 import type { Row } from '@backend/repositories/RepositoryInterface';
+import { NullAuditLogger } from '@backend/services/NullAuditLogger';
 
 // Mock connection interface - uses simple Mock type to avoid generic issues with vi.fn()
 interface MockConnection {
@@ -110,7 +111,10 @@ describe('AbstractRepository', () => {
 
   describe('constructor', () => {
     it('should use default primary key', () => {
-      const repo = new TestRepository({ connectionFactory: mockFactory as never });
+      const repo = new TestRepository({
+        connectionFactory: mockFactory as never,
+        auditLogger: new NullAuditLogger(),
+      });
 
       // Access protected method via type assertion
       expect((repo as unknown as { getPrimaryKey: () => string }).getPrimaryKey()).toBe('id');
@@ -119,6 +123,7 @@ describe('AbstractRepository', () => {
     it('should accept custom primary key', () => {
       const repo = new TestRepository({
         connectionFactory: mockFactory as never,
+        auditLogger: new NullAuditLogger(),
         primaryKey: 'custom_id',
       });
 
@@ -130,6 +135,7 @@ describe('AbstractRepository', () => {
     it('should accept encryption key', () => {
       const repo = new TestRepository({
         connectionFactory: mockFactory as never,
+        auditLogger: new NullAuditLogger(),
         encryptionKey: 'my-secret-key',
       });
 
@@ -139,7 +145,10 @@ describe('AbstractRepository', () => {
 
   describe('find', () => {
     it('should return entity when found', async () => {
-      const repo = new TestRepository({ connectionFactory: mockFactory as never });
+      const repo = new TestRepository({
+        connectionFactory: mockFactory as never,
+        auditLogger: new NullAuditLogger(),
+      });
       const testEntity: TestEntity = { id: 1, name: 'Test', email: 'test@example.com' };
 
       mockConnection.query.mockResolvedValueOnce([testEntity]);
@@ -154,7 +163,10 @@ describe('AbstractRepository', () => {
     });
 
     it('should return null when not found', async () => {
-      const repo = new TestRepository({ connectionFactory: mockFactory as never });
+      const repo = new TestRepository({
+        connectionFactory: mockFactory as never,
+        auditLogger: new NullAuditLogger(),
+      });
 
       mockConnection.query.mockResolvedValueOnce([]);
 
@@ -166,7 +178,10 @@ describe('AbstractRepository', () => {
 
   describe('findAll', () => {
     it('should return all entities', async () => {
-      const repo = new TestRepository({ connectionFactory: mockFactory as never });
+      const repo = new TestRepository({
+        connectionFactory: mockFactory as never,
+        auditLogger: new NullAuditLogger(),
+      });
       const testEntities: TestEntity[] = [
         { id: 1, name: 'Test1', email: 'test1@example.com' },
         { id: 2, name: 'Test2', email: 'test2@example.com' },
@@ -181,7 +196,10 @@ describe('AbstractRepository', () => {
     });
 
     it('should support limit and offset', async () => {
-      const repo = new TestRepository({ connectionFactory: mockFactory as never });
+      const repo = new TestRepository({
+        connectionFactory: mockFactory as never,
+        auditLogger: new NullAuditLogger(),
+      });
 
       mockConnection.query.mockResolvedValueOnce([]);
 
@@ -196,7 +214,10 @@ describe('AbstractRepository', () => {
 
   describe('findBy', () => {
     it('should return entities matching criteria', async () => {
-      const repo = new TestRepository({ connectionFactory: mockFactory as never });
+      const repo = new TestRepository({
+        connectionFactory: mockFactory as never,
+        auditLogger: new NullAuditLogger(),
+      });
       const testEntity: TestEntity = { id: 1, name: 'Test', email: 'test@example.com' };
 
       mockConnection.query.mockResolvedValueOnce([testEntity]);
@@ -213,7 +234,10 @@ describe('AbstractRepository', () => {
 
   describe('insert', () => {
     it('should insert entity and return id (PostgreSQL)', async () => {
-      const repo = new TestRepository({ connectionFactory: mockFactory as never });
+      const repo = new TestRepository({
+        connectionFactory: mockFactory as never,
+        auditLogger: new NullAuditLogger(),
+      });
 
       mockConnection.query.mockResolvedValueOnce([{ id: 42 }]);
 
@@ -227,7 +251,10 @@ describe('AbstractRepository', () => {
     });
 
     it('should return null for empty data', async () => {
-      const repo = new TestRepository({ connectionFactory: mockFactory as never });
+      const repo = new TestRepository({
+        connectionFactory: mockFactory as never,
+        auditLogger: new NullAuditLogger(),
+      });
 
       const result = await repo.insert({});
 
@@ -237,7 +264,10 @@ describe('AbstractRepository', () => {
 
   describe('update', () => {
     it('should update entity and return true on success', async () => {
-      const repo = new TestRepository({ connectionFactory: mockFactory as never });
+      const repo = new TestRepository({
+        connectionFactory: mockFactory as never,
+        auditLogger: new NullAuditLogger(),
+      });
 
       mockConnection.execute.mockResolvedValueOnce({ affectedRows: 1 });
 
@@ -251,7 +281,10 @@ describe('AbstractRepository', () => {
     });
 
     it('should return false when no rows affected', async () => {
-      const repo = new TestRepository({ connectionFactory: mockFactory as never });
+      const repo = new TestRepository({
+        connectionFactory: mockFactory as never,
+        auditLogger: new NullAuditLogger(),
+      });
 
       mockConnection.execute.mockResolvedValueOnce({ affectedRows: 0 });
 
@@ -261,7 +294,10 @@ describe('AbstractRepository', () => {
     });
 
     it('should return false for empty data', async () => {
-      const repo = new TestRepository({ connectionFactory: mockFactory as never });
+      const repo = new TestRepository({
+        connectionFactory: mockFactory as never,
+        auditLogger: new NullAuditLogger(),
+      });
 
       const result = await repo.update(1, {});
 
@@ -271,7 +307,10 @@ describe('AbstractRepository', () => {
 
   describe('delete', () => {
     it('should delete entity and return true on success', async () => {
-      const repo = new TestRepository({ connectionFactory: mockFactory as never });
+      const repo = new TestRepository({
+        connectionFactory: mockFactory as never,
+        auditLogger: new NullAuditLogger(),
+      });
 
       mockConnection.execute.mockResolvedValueOnce({ affectedRows: 1 });
 
@@ -285,7 +324,10 @@ describe('AbstractRepository', () => {
     });
 
     it('should return false when no rows affected', async () => {
-      const repo = new TestRepository({ connectionFactory: mockFactory as never });
+      const repo = new TestRepository({
+        connectionFactory: mockFactory as never,
+        auditLogger: new NullAuditLogger(),
+      });
 
       mockConnection.execute.mockResolvedValueOnce({ affectedRows: 0 });
 
@@ -297,7 +339,10 @@ describe('AbstractRepository', () => {
 
   describe('exists', () => {
     it('should return true when entity exists', async () => {
-      const repo = new TestRepository({ connectionFactory: mockFactory as never });
+      const repo = new TestRepository({
+        connectionFactory: mockFactory as never,
+        auditLogger: new NullAuditLogger(),
+      });
 
       mockConnection.query.mockResolvedValueOnce([{ '1': 1 }]);
 
@@ -307,7 +352,10 @@ describe('AbstractRepository', () => {
     });
 
     it('should return false when entity does not exist', async () => {
-      const repo = new TestRepository({ connectionFactory: mockFactory as never });
+      const repo = new TestRepository({
+        connectionFactory: mockFactory as never,
+        auditLogger: new NullAuditLogger(),
+      });
 
       mockConnection.query.mockResolvedValueOnce([]);
 
@@ -319,7 +367,10 @@ describe('AbstractRepository', () => {
 
   describe('count', () => {
     it('should return count without criteria', async () => {
-      const repo = new TestRepository({ connectionFactory: mockFactory as never });
+      const repo = new TestRepository({
+        connectionFactory: mockFactory as never,
+        auditLogger: new NullAuditLogger(),
+      });
 
       mockConnection.query.mockResolvedValueOnce([{ count: 42 }]);
 
@@ -333,7 +384,10 @@ describe('AbstractRepository', () => {
     });
 
     it('should return count with criteria', async () => {
-      const repo = new TestRepository({ connectionFactory: mockFactory as never });
+      const repo = new TestRepository({
+        connectionFactory: mockFactory as never,
+        auditLogger: new NullAuditLogger(),
+      });
 
       mockConnection.query.mockResolvedValueOnce([{ count: 5 }]);
 
@@ -349,7 +403,10 @@ describe('AbstractRepository', () => {
 
   describe('transactions', () => {
     it('should begin transaction', async () => {
-      const repo = new TestRepository({ connectionFactory: mockFactory as never });
+      const repo = new TestRepository({
+        connectionFactory: mockFactory as never,
+        auditLogger: new NullAuditLogger(),
+      });
 
       const result = await repo.beginTransaction();
 
@@ -359,7 +416,10 @@ describe('AbstractRepository', () => {
     });
 
     it('should commit transaction', async () => {
-      const repo = new TestRepository({ connectionFactory: mockFactory as never });
+      const repo = new TestRepository({
+        connectionFactory: mockFactory as never,
+        auditLogger: new NullAuditLogger(),
+      });
 
       await repo.beginTransaction();
       const result = await repo.commit();
@@ -370,7 +430,10 @@ describe('AbstractRepository', () => {
     });
 
     it('should rollback transaction', async () => {
-      const repo = new TestRepository({ connectionFactory: mockFactory as never });
+      const repo = new TestRepository({
+        connectionFactory: mockFactory as never,
+        auditLogger: new NullAuditLogger(),
+      });
 
       await repo.beginTransaction();
       const result = await repo.rollback();
@@ -383,7 +446,10 @@ describe('AbstractRepository', () => {
 
   describe('isAvailable', () => {
     it('should return true when connection is available', async () => {
-      const repo = new TestRepository({ connectionFactory: mockFactory as never });
+      const repo = new TestRepository({
+        connectionFactory: mockFactory as never,
+        auditLogger: new NullAuditLogger(),
+      });
 
       mockConnection.query.mockResolvedValueOnce([{ '1': 1 }]);
 
@@ -393,7 +459,10 @@ describe('AbstractRepository', () => {
     });
 
     it('should return false when connection fails', async () => {
-      const repo = new TestRepository({ connectionFactory: mockFactory as never });
+      const repo = new TestRepository({
+        connectionFactory: mockFactory as never,
+        auditLogger: new NullAuditLogger(),
+      });
 
       mockConnection.query.mockRejectedValueOnce(new Error('Connection failed'));
 
@@ -408,7 +477,10 @@ describe('AbstractRepository', () => {
       const mariaDbFactory = createMockFactory(false);
       const mariaDbConnection = await mariaDbFactory.create();
 
-      const repo = new TestRepository({ connectionFactory: mariaDbFactory as never });
+      const repo = new TestRepository({
+        connectionFactory: mariaDbFactory as never,
+        auditLogger: new NullAuditLogger(),
+      });
 
       mariaDbConnection.query.mockResolvedValueOnce([]);
 
@@ -424,7 +496,10 @@ describe('AbstractRepository', () => {
       const mariaDbFactory = createMockFactory(false);
       const mariaDbConnection = await mariaDbFactory.create();
 
-      const repo = new TestRepository({ connectionFactory: mariaDbFactory as never });
+      const repo = new TestRepository({
+        connectionFactory: mariaDbFactory as never,
+        auditLogger: new NullAuditLogger(),
+      });
 
       mariaDbConnection.execute.mockResolvedValueOnce({ affectedRows: 1, insertId: 42 });
 

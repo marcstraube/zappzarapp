@@ -7,13 +7,22 @@ namespace App\Infrastructure\Audit;
 use RuntimeException;
 
 /**
- * Convenience Trait for Audit Logging
+ * Convenience Trait for Service-Layer Audit Logging
  *
- * Provides easy access to audit logging functionality in any class.
+ * Provides easy access to audit logging functionality in SERVICE classes.
+ *
+ * Note: Do NOT use this trait in Repositories!
+ * Repositories use AuditLoggerInterface directly via AbstractPdoRepository,
+ * which automatically logs all CRUD operations (insert, update, delete).
+ *
+ * This trait is specifically for:
+ * - Authentication events (login, logout, password change)
+ * - Administrative actions (role changes, permission grants)
+ * - Business logic events that don't involve direct CRUD
  *
  * Usage:
  * <code>
- * class UserService
+ * class AuthService
  * {
  *     use HasAuditLogging;
  *
@@ -24,16 +33,15 @@ use RuntimeException;
  *         $this->auditLogger = $auditLogger;
  *     }
  *
- *     public function updateUser(int $userId, array $data): void
+ *     public function login(string $email, string $password): bool
  *     {
- *         // Update user...
+ *         // Authenticate user...
  *
- *         // Log audit event
- *         $this->auditLog(
- *             action: 'user.update',
- *             entityType: 'user',
- *             entityId: $userId,
- *             data: ['changed_fields' => array_keys($data)]
+ *         // Log authentication event
+ *         $this->auditLogAuth(
+ *             action: 'login.success',
+ *             userId: $userId,
+ *             data: ['ip' => $_SERVER['REMOTE_ADDR']]
  *         );
  *     }
  * }

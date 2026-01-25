@@ -20,12 +20,15 @@ import {
   getConnectionFactory,
   type ExtendedDatabaseConnection,
 } from '../db/ConnectionFactory';
+import type { AuditLoggerInterface } from '../services/AuditLoggerInterface';
 import { existsSync, readFileSync } from 'fs';
 
 /**
  * Abstract Repository Options
  */
 export interface AbstractRepositoryOptions extends RepositoryOptions {
+  /** Audit logger for GDPR-compliant logging (required - use NullAuditLogger for no logging) */
+  auditLogger: AuditLoggerInterface;
   /** Encryption key (loaded from environment/secrets if not provided) */
   encryptionKey?: string;
   /** Connection factory (uses default singleton if not provided) */
@@ -67,8 +70,10 @@ export abstract class AbstractRepository<T extends Row = Row> implements Reposit
   private readonly primaryKey: string;
   private readonly encryptionKey: string | null;
   private readonly connectionFactory: ConnectionFactory;
+  private readonly auditLogger: AuditLoggerInterface;
 
-  constructor(options: AbstractRepositoryOptions = {}) {
+  constructor(options: AbstractRepositoryOptions) {
+    this.auditLogger = options.auditLogger;
     this.primaryKey = options.primaryKey ?? 'id';
     this.encryptionKey = options.encryptionKey ?? this.loadEncryptionKey();
     this.connectionFactory = options.connectionFactory ?? getConnectionFactory();
@@ -308,17 +313,31 @@ export abstract class AbstractRepository<T extends Row = Row> implements Reposit
     const placeholders = columns.map((_, i) => this.param(i + 1)).join(', ');
 
     let sql = `INSERT INTO ${table} (${columnList}) VALUES (${placeholders})`;
+    let insertedId: number | string | null;
 
     // PostgreSQL: Use RETURNING to get the inserted ID
     if (this.isPostgres()) {
       sql += ` RETURNING ${this.quoteIdentifier(this.primaryKey)}`;
       const results = await this.query<{ [key: string]: number | string }>(sql, values);
-      return results[0]?.[this.primaryKey] ?? null;
+      insertedId = results[0]?.[this.primaryKey] ?? null;
+    } else {
+      // MariaDB: Use lastInsertId from execute result
+      const result = await this.execute(sql, values);
+      insertedId = result.insertId ?? null;
     }
 
-    // MariaDB: Use lastInsertId from execute result
-    const result = await this.execute(sql, values);
-    return result.insertId ?? null;
+    // Audit log: Record creation
+    if (insertedId !== null) {
+      await this.auditLogger.log({
+        action: `${this.getTable()}.create`,
+        entityType: this.getTable(),
+        entityId: insertedId,
+        userId: this.getCurrentUserId(),
+        data: { fields: columns },
+      });
+    }
+
+    return insertedId;
   }
 
   async update(id: number | string, data: Partial<T>): Promise<boolean> {
@@ -337,7 +356,20 @@ export abstract class AbstractRepository<T extends Row = Row> implements Reposit
     const sql = `UPDATE ${table} SET ${setClauses.join(', ')} WHERE ${pk} = ${this.param(columns.length + 1)}`;
 
     const result = await this.execute(sql, [...(values as unknown[]), id]);
-    return result.affectedRows > 0;
+    const success = result.affectedRows > 0;
+
+    // Audit log: Record update
+    if (success) {
+      await this.auditLogger.log({
+        action: `${this.getTable()}.update`,
+        entityType: this.getTable(),
+        entityId: id,
+        userId: this.getCurrentUserId(),
+        data: { fields: columns },
+      });
+    }
+
+    return success;
   }
 
   async delete(id: number | string): Promise<boolean> {
@@ -346,7 +378,19 @@ export abstract class AbstractRepository<T extends Row = Row> implements Reposit
     const sql = `DELETE FROM ${table} WHERE ${pk} = ${this.param(1)}`;
 
     const result = await this.execute(sql, [id]);
-    return result.affectedRows > 0;
+    const success = result.affectedRows > 0;
+
+    // Audit log: Record deletion (GDPR Art. 17 - Right to erasure)
+    if (success) {
+      await this.auditLogger.log({
+        action: `${this.getTable()}.delete`,
+        entityType: this.getTable(),
+        entityId: id,
+        userId: this.getCurrentUserId(),
+      });
+    }
+
+    return success;
   }
 
   async exists(id: number | string): Promise<boolean> {
@@ -546,5 +590,26 @@ export abstract class AbstractRepository<T extends Row = Row> implements Reposit
    */
   isInTransaction(): boolean {
     return this.inTransaction;
+  }
+
+  // =========================================================================
+  // Audit Logging Helpers
+  // =========================================================================
+
+  /**
+   * Get current user ID (override in subclass for request-scoped user context)
+   *
+   * Default returns null (system action). Override this in your repository
+   * to get user ID from request context, session, or JWT token.
+   *
+   * @example
+   * ```typescript
+   * protected getCurrentUserId(): number | null {
+   *   return this.requestContext?.userId ?? null;
+   * }
+   * ```
+   */
+  protected getCurrentUserId(): number | null {
+    return null;
   }
 }

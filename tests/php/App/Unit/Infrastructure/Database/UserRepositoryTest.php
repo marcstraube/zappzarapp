@@ -6,6 +6,8 @@ declare(strict_types=1);
 
 namespace App\Tests\Unit\Infrastructure\Database;
 
+use App\Infrastructure\Audit\AuditLoggerInterface;
+use App\Infrastructure\Audit\NullAuditLogger;
 use App\Infrastructure\Database\AbstractPdoRepository;
 use App\Infrastructure\Database\UserRepository;
 use App\Infrastructure\DatabaseConfigInterface;
@@ -388,9 +390,11 @@ final class UserRepositoryTest extends TestCase
  */
 class TestableUserRepository extends UserRepository
 {
-    public function __construct(DatabaseConfigInterface $config)
-    {
-        parent::__construct($config);
+    public function __construct(
+        DatabaseConfigInterface $config,
+        ?AuditLoggerInterface $auditLogger = null
+    ) {
+        parent::__construct($auditLogger ?? new NullAuditLogger(), $config);
     }
 
     /**
@@ -429,9 +433,11 @@ class TestableUserRepository extends UserRepository
  */
 class TestableUserRepositoryWithEncryption extends UserRepository
 {
-    public function __construct(DatabaseConfigInterface $config)
-    {
-        parent::__construct($config);
+    public function __construct(
+        DatabaseConfigInterface $config,
+        ?AuditLoggerInterface $auditLogger = null
+    ) {
+        parent::__construct($auditLogger ?? new NullAuditLogger(), $config);
     }
 
     /**

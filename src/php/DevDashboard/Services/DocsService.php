@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace DevDashboard\Services;
 
 use Exception;
+use FilesystemIterator;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
 
@@ -131,7 +132,7 @@ readonly class DocsService
 
         try {
             $iterator = new RecursiveIteratorIterator(
-                new RecursiveDirectoryIterator($directory, RecursiveDirectoryIterator::SKIP_DOTS),
+                new RecursiveDirectoryIterator($directory, FilesystemIterator::SKIP_DOTS),
                 RecursiveIteratorIterator::LEAVES_ONLY,
             );
 
@@ -233,6 +234,7 @@ readonly class DocsService
             2 => ['pipe', 'w'],  // stderr
         ];
 
+        // @phpstan-ignore ekinoBannedCode.function (exec disabled in PHP config, proc_open is the secure alternative)
         $process = proc_open($command, $descriptors, $pipes, '/var/www/html');
 
         if (!is_resource($process)) {

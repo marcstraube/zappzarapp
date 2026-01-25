@@ -73,7 +73,7 @@ export interface UserRepositoryInterface {
  * User Repository Implementation
  */
 export class UserRepository extends AbstractRepository<User> implements UserRepositoryInterface {
-  constructor(options: AbstractRepositoryOptions = {}) {
+  constructor(options: AbstractRepositoryOptions) {
     super(options);
   }
 

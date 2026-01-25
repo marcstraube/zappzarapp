@@ -6,6 +6,8 @@ declare(strict_types=1);
 
 namespace App\Tests\Unit\Infrastructure\Database;
 
+use App\Infrastructure\Audit\AuditLoggerInterface;
+use App\Infrastructure\Audit\NullAuditLogger;
 use App\Infrastructure\Database\AbstractPdoRepository;
 use App\Infrastructure\DatabaseConfigInterface;
 use Override;
@@ -889,9 +891,11 @@ final class AbstractPdoRepositoryTest extends TestCase
  */
 class MariaDbTestableRepository extends AbstractPdoRepository
 {
-    public function __construct(DatabaseConfigInterface $config)
-    {
-        parent::__construct($config);
+    public function __construct(
+        DatabaseConfigInterface $config,
+        ?AuditLoggerInterface $auditLogger = null
+    ) {
+        parent::__construct($auditLogger ?? new NullAuditLogger(), $config);
     }
 
     /**
@@ -930,9 +934,11 @@ class MariaDbTestableRepository extends AbstractPdoRepository
  */
 class PostgresTestableRepository extends AbstractPdoRepository
 {
-    public function __construct(DatabaseConfigInterface $config)
-    {
-        parent::__construct($config);
+    public function __construct(
+        DatabaseConfigInterface $config,
+        ?AuditLoggerInterface $auditLogger = null
+    ) {
+        parent::__construct($auditLogger ?? new NullAuditLogger(), $config);
     }
 
     /**
@@ -976,9 +982,10 @@ class EncryptedTestableRepository extends AbstractPdoRepository
      */
     public function __construct(
         DatabaseConfigInterface $config,
-        private readonly array $encryptedFields = []
+        private readonly array $encryptedFields = [],
+        ?AuditLoggerInterface $auditLogger = null
     ) {
-        parent::__construct($config);
+        parent::__construct($auditLogger ?? new NullAuditLogger(), $config);
     }
 
     /**

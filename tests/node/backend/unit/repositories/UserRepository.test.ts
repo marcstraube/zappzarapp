@@ -8,6 +8,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach, type Mock } from 'vitest';
 import { UserRepository, type User } from '@backend/repositories/UserRepository';
 import type { Row } from '@backend/repositories/RepositoryInterface';
+import { NullAuditLogger } from '@backend/services/NullAuditLogger';
 
 // Mock connection interface
 interface MockConnection {
@@ -114,7 +115,10 @@ describe('UserRepository', () => {
 
   describe('findByEmail', () => {
     it('should return user when found', async () => {
-      const repo = new UserRepository({ connectionFactory: mockFactory as never });
+      const repo = new UserRepository({
+        auditLogger: new NullAuditLogger(),
+        connectionFactory: mockFactory as never,
+      });
 
       mockConnection.query.mockResolvedValueOnce([sampleUser]);
 
@@ -124,7 +128,10 @@ describe('UserRepository', () => {
     });
 
     it('should return null when not found', async () => {
-      const repo = new UserRepository({ connectionFactory: mockFactory as never });
+      const repo = new UserRepository({
+        auditLogger: new NullAuditLogger(),
+        connectionFactory: mockFactory as never,
+      });
 
       mockConnection.query.mockResolvedValueOnce([]);
 
@@ -140,7 +147,10 @@ describe('UserRepository', () => {
 
   describe('emailExists', () => {
     it('should return true when email found', async () => {
-      const repo = new UserRepository({ connectionFactory: mockFactory as never });
+      const repo = new UserRepository({
+        auditLogger: new NullAuditLogger(),
+        connectionFactory: mockFactory as never,
+      });
 
       mockConnection.query.mockResolvedValueOnce([{ '?column?': 1 }]);
 
@@ -154,7 +164,10 @@ describe('UserRepository', () => {
     });
 
     it('should return false when email not found', async () => {
-      const repo = new UserRepository({ connectionFactory: mockFactory as never });
+      const repo = new UserRepository({
+        auditLogger: new NullAuditLogger(),
+        connectionFactory: mockFactory as never,
+      });
 
       mockConnection.query.mockResolvedValueOnce([]);
 
@@ -164,7 +177,10 @@ describe('UserRepository', () => {
     });
 
     it('should exclude user id when provided', async () => {
-      const repo = new UserRepository({ connectionFactory: mockFactory as never });
+      const repo = new UserRepository({
+        auditLogger: new NullAuditLogger(),
+        connectionFactory: mockFactory as never,
+      });
 
       mockConnection.query.mockResolvedValueOnce([]);
 
@@ -178,7 +194,10 @@ describe('UserRepository', () => {
     });
 
     it('should return false on error', async () => {
-      const repo = new UserRepository({ connectionFactory: mockFactory as never });
+      const repo = new UserRepository({
+        auditLogger: new NullAuditLogger(),
+        connectionFactory: mockFactory as never,
+      });
 
       mockConnection.query.mockRejectedValueOnce(new Error('Query failed'));
 
@@ -191,7 +210,10 @@ describe('UserRepository', () => {
       const mariaDbFactory = createMockFactory(false);
       const mariaDbConnection = await mariaDbFactory.create();
 
-      const repo = new UserRepository({ connectionFactory: mariaDbFactory as never });
+      const repo = new UserRepository({
+        auditLogger: new NullAuditLogger(),
+        connectionFactory: mariaDbFactory as never,
+      });
 
       mariaDbConnection.query.mockResolvedValueOnce([{ '?column?': 1 }]);
 
@@ -212,6 +234,7 @@ describe('UserRepository', () => {
   describe('enableTotp', () => {
     it('should return true on success', async () => {
       const repo = new UserRepository({
+        auditLogger: new NullAuditLogger(),
         connectionFactory: mockFactory as never,
         encryptionKey: 'test-key',
       });
@@ -236,7 +259,10 @@ describe('UserRepository', () => {
       const originalEnv = process.env.ENCRYPTION_KEY;
       delete process.env.ENCRYPTION_KEY;
 
-      const repo = new UserRepository({ connectionFactory: mockFactory as never });
+      const repo = new UserRepository({
+        auditLogger: new NullAuditLogger(),
+        connectionFactory: mockFactory as never,
+      });
       const result = await repo.enableTotp(1, 'JBSWY3DPEHPK3PXP');
 
       expect(result).toBe(false);
@@ -246,6 +272,7 @@ describe('UserRepository', () => {
 
     it('should return false when user not found', async () => {
       const repo = new UserRepository({
+        auditLogger: new NullAuditLogger(),
         connectionFactory: mockFactory as never,
         encryptionKey: 'test-key',
       });
@@ -267,7 +294,10 @@ describe('UserRepository', () => {
 
   describe('disableTotp', () => {
     it('should return true on success', async () => {
-      const repo = new UserRepository({ connectionFactory: mockFactory as never });
+      const repo = new UserRepository({
+        auditLogger: new NullAuditLogger(),
+        connectionFactory: mockFactory as never,
+      });
 
       mockConnection.execute.mockResolvedValueOnce({ affectedRows: 1 });
 
@@ -281,7 +311,10 @@ describe('UserRepository', () => {
     });
 
     it('should return false when user not found', async () => {
-      const repo = new UserRepository({ connectionFactory: mockFactory as never });
+      const repo = new UserRepository({
+        auditLogger: new NullAuditLogger(),
+        connectionFactory: mockFactory as never,
+      });
 
       mockConnection.execute.mockResolvedValueOnce({ affectedRows: 0 });
 
@@ -291,7 +324,10 @@ describe('UserRepository', () => {
     });
 
     it('should return false on error', async () => {
-      const repo = new UserRepository({ connectionFactory: mockFactory as never });
+      const repo = new UserRepository({
+        auditLogger: new NullAuditLogger(),
+        connectionFactory: mockFactory as never,
+      });
 
       mockConnection.execute.mockRejectedValueOnce(new Error('Update failed'));
 
@@ -304,7 +340,10 @@ describe('UserRepository', () => {
       const mariaDbFactory = createMockFactory(false);
       const mariaDbConnection = await mariaDbFactory.create();
 
-      const repo = new UserRepository({ connectionFactory: mariaDbFactory as never });
+      const repo = new UserRepository({
+        auditLogger: new NullAuditLogger(),
+        connectionFactory: mariaDbFactory as never,
+      });
 
       mariaDbConnection.execute.mockResolvedValueOnce({ affectedRows: 1 });
 
@@ -325,6 +364,7 @@ describe('UserRepository', () => {
   describe('getTotpSecret', () => {
     it('should return decrypted secret', async () => {
       const repo = new UserRepository({
+        auditLogger: new NullAuditLogger(),
         connectionFactory: mockFactory as never,
         encryptionKey: 'test-key',
       });
@@ -345,7 +385,10 @@ describe('UserRepository', () => {
     });
 
     it('should return null when totp not enabled', async () => {
-      const repo = new UserRepository({ connectionFactory: mockFactory as never });
+      const repo = new UserRepository({
+        auditLogger: new NullAuditLogger(),
+        connectionFactory: mockFactory as never,
+      });
 
       mockConnection.query.mockResolvedValueOnce([]);
 
@@ -355,7 +398,10 @@ describe('UserRepository', () => {
     });
 
     it('should return null when secret is null', async () => {
-      const repo = new UserRepository({ connectionFactory: mockFactory as never });
+      const repo = new UserRepository({
+        auditLogger: new NullAuditLogger(),
+        connectionFactory: mockFactory as never,
+      });
 
       mockConnection.query.mockResolvedValueOnce([{ totp_secret: null }]);
 
@@ -365,7 +411,10 @@ describe('UserRepository', () => {
     });
 
     it('should return null on error', async () => {
-      const repo = new UserRepository({ connectionFactory: mockFactory as never });
+      const repo = new UserRepository({
+        auditLogger: new NullAuditLogger(),
+        connectionFactory: mockFactory as never,
+      });
 
       mockConnection.query.mockRejectedValueOnce(new Error('Query failed'));
 
@@ -381,7 +430,10 @@ describe('UserRepository', () => {
 
   describe('configuration', () => {
     it('should use users table', async () => {
-      const repo = new UserRepository({ connectionFactory: mockFactory as never });
+      const repo = new UserRepository({
+        auditLogger: new NullAuditLogger(),
+        connectionFactory: mockFactory as never,
+      });
 
       mockConnection.query.mockResolvedValueOnce([sampleUser]);
 
@@ -392,6 +444,7 @@ describe('UserRepository', () => {
 
     it('should encrypt totp_secret field', async () => {
       const repo = new UserRepository({
+        auditLogger: new NullAuditLogger(),
         connectionFactory: mockFactory as never,
         encryptionKey: 'test-key',
       });
@@ -421,7 +474,10 @@ describe('UserRepository', () => {
 
   describe('interface compliance', () => {
     it('should implement UserRepositoryInterface', () => {
-      const repo = new UserRepository({ connectionFactory: mockFactory as never });
+      const repo = new UserRepository({
+        auditLogger: new NullAuditLogger(),
+        connectionFactory: mockFactory as never,
+      });
 
       // Type check - these should all exist
       expect(typeof repo.findByEmail).toBe('function');
@@ -432,7 +488,10 @@ describe('UserRepository', () => {
     });
 
     it('should inherit from AbstractRepository', () => {
-      const repo = new UserRepository({ connectionFactory: mockFactory as never });
+      const repo = new UserRepository({
+        auditLogger: new NullAuditLogger(),
+        connectionFactory: mockFactory as never,
+      });
 
       // Inherited methods should exist
       expect(typeof repo.find).toBe('function');
