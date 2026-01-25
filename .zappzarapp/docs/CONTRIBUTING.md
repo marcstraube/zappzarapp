@@ -9,13 +9,15 @@ Thank you for your interest in contributing to zappzarapp!
 `make setup` auto-detects whether you're contributing to zappzarapp or using it
 as a boilerplate:
 
-| Mode            | Detection                                         | File Swaps |
-| --------------- | ------------------------------------------------- | ---------- |
-| **Contributor** | `origin` or `upstream` → `marcstraube/zappzarapp` | Skipped    |
-| **Boilerplate** | Any other remote                                  | Applied    |
+| Mode            | Detection                                              | File Swaps |
+| --------------- | ------------------------------------------------------ | ---------- |
+| **Contributor** | `origin` or `upstream` → `marcstraube/zappzarapp`      | Skipped    |
+| **Boilerplate** | Neither of the above                                   | Applied    |
 
 **As a contributor**, your README.md, CHANGELOG.md, and .claude/CLAUDE.md remain
-unchanged - exactly what you need for development.
+unchanged - exactly what you need for development. Additionally, IDE config
+files are automatically unlocked (`ide-unlock`) so you can commit changes to
+them.
 
 **Override:** Force boilerplate mode with `BOILERPLATE=1 make setup` (useful for
 testing the boilerplate experience).
@@ -62,6 +64,32 @@ Do not commit personal tool configurations:
 and hooks). See [AI Integration](development/AI-INTEGRATION.md) for details.
 
 ## Development Workflow
+
+### IDE Config Files
+
+Some IDE config files (like `.idea/php.xml`) are locked via git's skip-worktree
+flag to prevent noise from auto-generated content (PhpStorm regenerates vendor
+paths on every `composer install`).
+
+**For contributors:** `make setup` automatically runs `ide-unlock` when it
+detects contributor mode, so you can commit IDE config changes right away.
+
+**If you need to re-lock/unlock manually:**
+
+```bash
+make ide-unlock        # Unlock .idea/php.xml for git
+# ... make your changes ...
+git add .idea/php.xml
+git commit -m "chore(ide): update PHPStan config"
+make ide-lock          # Re-lock after commit (optional for contributors)
+```
+
+**Check lock status:**
+
+```bash
+git ls-files -v .idea/php.xml
+# 'S' = skip-worktree (locked), 'H' = normal (unlocked)
+```
 
 ### Before Committing
 

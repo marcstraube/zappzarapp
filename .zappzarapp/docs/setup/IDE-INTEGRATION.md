@@ -160,6 +160,20 @@ tests/goss/README.md     → GOSS testing documentation
 4. Database password: `cat secrets/db_password.txt`
 5. Enable Xdebug (optional): Set `XDEBUG_MODE=debug` in `.env`
 
+## Automatic Config Locking
+
+During `make setup`, certain IDE config files are automatically locked using
+git's skip-worktree flag to prevent unnecessary git noise:
+
+| File            | Reason                                                  |
+| --------------- | ------------------------------------------------------- |
+| `.idea/php.xml` | PhpStorm regenerates vendor paths on `composer install` |
+
+This means local changes to these files won't appear in `git status`.
+
+**For zappzarapp contributors** who need to commit changes to these files, see
+[CONTRIBUTING.md](../CONTRIBUTING.md#ide-config-files).
+
 ## Troubleshooting
 
 ### Common Issues
