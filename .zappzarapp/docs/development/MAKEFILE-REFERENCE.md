@@ -31,6 +31,22 @@ available categories are shown at the end of the output for reference.
 | Run all checks   | `make check` |
 | View logs        | `make logs`  |
 
+## Development Mode Defaults
+
+In development mode (`ENV=development` or not set), `make up` applies:
+
+| Default            | Condition                   | Purpose         |
+| ------------------ | --------------------------- | --------------- |
+| `NODE_MODE=assets` | NODE_MODE not set or "idle" | Enable Vite HMR |
+
+**Vite HMR** (Hot Module Replacement) provides instant hot-reload for CSS/JS
+changes without page refresh.
+
+**Override options:**
+
+- `NODE_MODE=assets-api` - Full-stack with Express API backend
+- `ENABLE_NODE=false` - Disable Node completely (no HMR)
+
 ## Setup Commands
 
 Commands for initial project setup and configuration.

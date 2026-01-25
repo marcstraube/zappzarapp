@@ -81,6 +81,9 @@ The boilerplate supports 7 configurable stack presets via `.env`:
 | **Minimal PHP**          | Yes | No   | No       | No    | Simple PHP scripts             |
 | **Custom**               | Mix | Mix  | Mix      | Mix   | Custom configuration           |
 
+**Development Defaults:** `make up` ensures Node starts with minimum `assets`
+mode to enable Vite HMR (Hot Module Replacement).
+
 Configuration in `.env`:
 
 ```bash
