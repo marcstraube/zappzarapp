@@ -72,6 +72,30 @@ files.
 - **Read-only container filesystems**: Production containers have read-only
   rootfs. Can't copy binaries at runtime - use build-time installation.
 
+### Docker Socket Access Without Root
+
+**Problem:** Running containers with `--user root` changes file ownership to
+root:root on bind-mounted volumes.
+
+**Solution:** Use host user UID/GID with Docker group access:
+
+```bash
+docker run --rm \
+    -v /var/run/docker.sock:/var/run/docker.sock \
+    -v "$(pwd):$(pwd)" -w "$(pwd)" \
+    --user "$(id -u):$(id -g)" \
+    --group-add "$(stat -c %g /var/run/docker.sock)" \
+    my-image command
+```
+
+**Why it works:**
+
+- `--user "$(id -u):$(id -g)"` - runs as host user, files keep correct ownership
+- `--group-add "$(stat -c %g /var/run/docker.sock)"` - adds docker group for
+  socket access
+
+**Note:** The `stat -c %g` syntax is Linux-specific. On macOS, use `stat -f %g`.
+
 ### Build & Targets
 
 - **Multi-stage builds need explicit targets**: `NODE_TARGET`, `NGINX_TARGET`,
