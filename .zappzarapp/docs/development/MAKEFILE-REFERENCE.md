@@ -475,12 +475,13 @@ Code quality, testing, and validation commands.
 
 ### Combined Checks
 
-| Command              | Description                                                                                                                         |
-| -------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
-| `make check`         | Run ALL checks (cs-check, analyse, phpmd, rector-check, prettier-check, type-check, lint-node, test, validate, lint-md, lint-shell) |
-| `make test`          | Run all tests (PHP + Node.js)                                                                                                       |
-| `make test-coverage` | Generate coverage reports for PHP and Node.js                                                                                       |
-| `make validate`      | Validate composer.json/lock and package.json/lock files                                                                             |
+| Command                 | Description                                                                                                                                                |
+| ----------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `make check`            | Run ALL checks (cs-check, analyse, phpmd, rector-check, prettier-check, type-check, lint-node, test, deps-validate, compose-validate, lint-md, lint-shell) |
+| `make test`             | Run all tests (PHP + Node.js)                                                                                                                              |
+| `make test-coverage`    | Generate coverage reports for PHP and Node.js                                                                                                              |
+| `make deps-validate`    | Validate dependency lockfiles (composer.lock, pnpm-lock.yaml)                                                                                              |
+| `make compose-validate` | Validate Docker Compose configuration files                                                                                                                |
 
 ### PHP Quality Tools
 
@@ -771,7 +772,7 @@ make down
 ### Before Committing
 
 ```bash
-make check  # Runs: cs-check, analyse, phpmd, rector-check, test, validate
+make check  # Runs: cs-check, analyse, phpmd, rector-check, test, deps-validate, compose-validate
 ```
 
 ### After Pulling Changes
