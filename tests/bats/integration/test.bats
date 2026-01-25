@@ -87,10 +87,10 @@ teardown_file() {
 # Validation
 # =============================================================================
 
-@test "[Integration] make validate checks composer and pnpm" {
+@test "[Integration] make deps-validate checks composer and pnpm" {
     require_php
     require_node
     require_dependencies
-    run timeout 60 make validate
+    run timeout 60 make deps-validate
     assert_success
 }

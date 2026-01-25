@@ -189,8 +189,13 @@ load 'helpers/setup'
     assert_success
 }
 
-@test "make validate --dry-run validates" {
-    run make -n validate
+@test "make deps-validate --dry-run validates" {
+    run make -n deps-validate
+    assert_success
+}
+
+@test "make compose-validate --dry-run validates" {
+    run make -n compose-validate
     assert_success
 }
 
