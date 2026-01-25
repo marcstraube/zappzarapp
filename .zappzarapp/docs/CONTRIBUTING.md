@@ -9,10 +9,10 @@ Thank you for your interest in contributing to zappzarapp!
 `make setup` auto-detects whether you're contributing to zappzarapp or using it
 as a boilerplate:
 
-| Mode            | Detection                                                        | File Swaps |
-| --------------- | ---------------------------------------------------------------- | ---------- |
-| **Contributor** | `origin`, `upstream`, or `zappzarapp` → `marcstraube/zappzarapp` | Skipped    |
-| **Boilerplate** | None of the above                                                | Applied    |
+| Mode            | Detection                                              | File Swaps |
+| --------------- | ------------------------------------------------------ | ---------- |
+| **Contributor** | `origin` or `upstream` → `marcstraube/zappzarapp`      | Skipped    |
+| **Boilerplate** | Neither of the above                                   | Applied    |
 
 **As a contributor**, your README.md, CHANGELOG.md, and .claude/CLAUDE.md remain
 unchanged - exactly what you need for development. Additionally, IDE config

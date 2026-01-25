@@ -182,6 +182,11 @@ setup: ## Create directories, install dependencies (BOILERPLATE=1 to force file 
 	@mkdir -p tests/node/backend
 
 	# Build & Coverage directories (excluded from IDE indexing)
+	@# Fix ownership FIRST if root-owned (from container test/coverage operations)
+	@# Note: Use USER_ID/GROUP_ID from .env (not host user) for Docker container compatibility
+	@if [ -d build ] && find build -user root 2>/dev/null | grep -q .; then \
+		. ./.env && docker run --rm -v "$(PWD)/build:/build" $(ALPINE_IMAGE) chown -R $${USER_ID:-1000}:$${GROUP_ID:-1000} /build; \
+	fi
 	@mkdir -p build/coverage/{php,node} build/vitest-report dist
 
 	# Config & Templates (app bootstrap references these)
@@ -220,11 +225,8 @@ setup: ## Create directories, install dependencies (BOILERPLATE=1 to force file 
 	fi
 	@chmod 700 backups backups/* 2>/dev/null || true
 
-	# Project AI knowledge directory (decisions, learnings, references)
-	@mkdir -p .ai
-	@if [ ! -f .ai/LEARNINGS.md ]; then cp .zappzarapp/ai/templates/LEARNINGS.md .ai/; fi
-	@if [ ! -f .ai/DECISIONS.md ]; then cp .zappzarapp/ai/templates/DECISIONS.md .ai/; fi
-	@if [ ! -f .ai/REFERENCES.md ]; then cp .zappzarapp/ai/templates/REFERENCES.md .ai/; fi
+	# Project AI knowledge directory - created in boilerplate mode only (see below)
+	# Contributors use .zappzarapp/ai/ directly
 
 	# Claude context directory (project-specific agent context)
 	@mkdir -p .claude/context
@@ -238,7 +240,8 @@ setup: ## Create directories, install dependencies (BOILERPLATE=1 to force file 
 	@echo -e "\033[0;32mProject structure created!\033[0m"
 
 	# Boilerplate file swaps (README, CLAUDE.md, CHANGELOG)
-	# Auto-detect mode: If origin/upstream/zappzarapp remote → marcstraube/zappzarapp = contributor mode
+	# Auto-detect: origin OR upstream → marcstraube/zappzarapp = contributor mode
+	# Note: zappzarapp remote is for boilerplate users (added by boilerplate-sync)
 	# Override: BOILERPLATE=1 make setup → force boilerplate mode (do swaps)
 	@IS_BOILERPLATE_MODE=""; \
 	IS_CONTRIBUTOR_MODE=""; \
@@ -247,13 +250,10 @@ setup: ## Create directories, install dependencies (BOILERPLATE=1 to force file 
 		echo -e "\033[0;34mBoilerplate mode forced via BOILERPLATE=1\033[0m"; \
 	elif git remote get-url origin 2>/dev/null | grep -qE 'marcstraube/zappzarapp'; then \
 		IS_CONTRIBUTOR_MODE="true"; \
-		echo -e "\033[0;36m✓ Detected zappzarapp contributor (origin remote) - skipping file swaps\033[0m"; \
+		echo -e "\033[0;36m✓ Detected zappzarapp contributor (origin) - skipping file swaps\033[0m"; \
 	elif git remote get-url upstream 2>/dev/null | grep -qE 'marcstraube/zappzarapp'; then \
 		IS_CONTRIBUTOR_MODE="true"; \
-		echo -e "\033[0;36m✓ Detected zappzarapp contributor (upstream remote) - skipping file swaps\033[0m"; \
-	elif git remote get-url zappzarapp 2>/dev/null | grep -qE 'marcstraube/zappzarapp'; then \
-		IS_CONTRIBUTOR_MODE="true"; \
-		echo -e "\033[0;36m✓ Detected zappzarapp contributor (zappzarapp remote) - skipping file swaps\033[0m"; \
+		echo -e "\033[0;36m✓ Detected zappzarapp contributor (upstream) - skipping file swaps\033[0m"; \
 	else \
 		IS_BOILERPLATE_MODE="true"; \
 	fi; \
@@ -274,6 +274,14 @@ setup: ## Create directories, install dependencies (BOILERPLATE=1 to force file 
 			mv CHANGELOG.md .zappzarapp/CHANGELOG.md; \
 			cp .zappzarapp/CHANGELOG.template.md CHANGELOG.md; \
 			echo -e "\033[0;32mCHANGELOG.md replaced with generic template.\033[0m"; \
+		fi; \
+		if [ ! -d .ai ] || [ ! -f .ai/LEARNINGS.md ]; then \
+			echo -e "\033[0;33mSetting up project AI knowledge directory...\033[0m"; \
+			mkdir -p .ai; \
+			[ ! -f .ai/LEARNINGS.md ] && cp .zappzarapp/ai/templates/LEARNINGS.md .ai/; \
+			[ ! -f .ai/DECISIONS.md ] && cp .zappzarapp/ai/templates/DECISIONS.md .ai/; \
+			[ ! -f .ai/REFERENCES.md ] && cp .zappzarapp/ai/templates/REFERENCES.md .ai/; \
+			echo -e "\033[0;32m.ai/ created with knowledge templates.\033[0m"; \
 		fi; \
 	fi; \
 	if [ -n "$$IS_CONTRIBUTOR_MODE" ]; then \

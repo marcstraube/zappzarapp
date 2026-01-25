@@ -41,15 +41,24 @@ require_git_access() {
     assert_output --partial "Cannot sync zappzarapp to itself"
 }
 
-@test "boilerplate-sync refuses to run in zappzarapp repo (upstream)" {
-    # When upstream is marcstraube/zappzarapp, sync should also fail
+@test "boilerplate-sync allows fork contributors with upstream remote" {
+    # Fork contributors have upstream → marcstraube/zappzarapp but their own origin
+    # They SHOULD be able to sync (unlike direct contributors where origin → zappzarapp)
+    # This is the correct behavior: only origin blocks self-sync, not upstream
     if ! git remote get-url upstream 2>/dev/null | grep -qE 'marcstraube/zappzarapp'; then
-        skip "No zappzarapp upstream remote"
+        skip "No zappzarapp upstream remote - test requires fork setup"
     fi
 
-    # Temporarily rename origin to test upstream detection
-    # (This test may need adjustment based on actual remote setup)
-    skip "Complex remote manipulation required - manual testing recommended"
+    # If origin is also marcstraube/zappzarapp, we're a direct contributor (not fork)
+    if git remote get-url origin 2>/dev/null | grep -qE 'marcstraube/zappzarapp'; then
+        skip "Direct contributor setup - not a fork"
+    fi
+
+    # Fork setup: origin != zappzarapp, upstream = zappzarapp
+    # Sync should be allowed (this is read-only check, not actual sync)
+    run make boilerplate-sync --dry-run 2>&1 || true
+    # Should NOT contain "Cannot sync zappzarapp to itself"
+    refute_output --partial "Cannot sync zappzarapp to itself"
 }
 
 # =============================================================================
