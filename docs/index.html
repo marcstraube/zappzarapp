@@ -187,9 +187,86 @@
                 display: none;
             }
         }
+
+        /* API Docs Navigation - starts after sidebar */
+        .api-docs-nav {
+            position: fixed;
+            top: 0;
+            right: 0;
+            left: 300px;
+            z-index: 100;
+            background: #fff;
+            border-bottom: 1px solid #e9ecef;
+            padding: 0.5rem 1rem;
+            display: flex;
+            justify-content: flex-end;
+            gap: 1rem;
+            font-size: 0.875rem;
+        }
+
+        .api-docs-nav a {
+            color: #303f9f;
+            text-decoration: none;
+            padding: 0.25rem 0.75rem;
+            border-radius: 0.25rem;
+            transition: background-color 0.2s;
+        }
+
+        .api-docs-nav a:hover {
+            background: #e8eaf6;
+        }
+
+        .api-docs-nav .unavailable {
+            color: #92400e;
+            background: #fef3c7;
+            cursor: help;
+        }
+
+        .api-docs-nav .unavailable:hover {
+            background: #fde68a;
+        }
+
+        /* Adjust main content for fixed nav (content area is right of sidebar) */
+        .content {
+            padding-top: 2.5rem !important;
+        }
+
+        /* Missing docs info box */
+        .docs-warning {
+            background: #fef3c7;
+            border: 1px solid #fcd34d;
+            border-radius: 0.5rem;
+            padding: 1rem 1.5rem;
+            margin: 1rem 0;
+        }
+
+        .docs-warning-title {
+            color: #92400e;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+
+        .docs-warning-text {
+            color: #78350f;
+            font-size: 0.875rem;
+        }
+
+        .docs-warning code {
+            background: #fde68a !important;
+            color: #78350f !important;
+            padding: 0.15rem 0.4rem;
+        }
     </style>
 </head>
 <body>
+    <!-- API Documentation Navigation -->
+    <nav class="api-docs-nav" id="api-docs-nav">
+        <span style="color: #6c757d; margin-right: auto;">API Docs:</span>
+        <a href="/docs/api/php/" id="link-php-api" class="unavailable" title="Checking...">PHP API</a>
+        <a href="/docs/api/node-backend/" id="link-node-backend" class="unavailable" title="Checking...">Node Backend</a>
+        <a href="/docs/api/node-frontend/" id="link-node-frontend" class="unavailable" title="Checking...">Node Frontend</a>
+    </nav>
+
     <div id="app">Loading...</div>
     <script>
         window.$docsify = {
@@ -229,5 +306,75 @@
     <script src="https://cdn.jsdelivr.net/npm/prismjs@1/components/prism-json.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/prismjs@1/components/prism-nginx.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/prismjs@1/components/prism-docker.min.js"></script>
+
+    <!-- API Docs Availability Check -->
+    <script>
+        (function() {
+            const apiDocs = [
+                { id: 'link-php-api', path: '/docs/api/php/', name: 'PHP API', cmd: 'make docs-php' },
+                { id: 'link-node-backend', path: '/docs/api/node-backend/', name: 'Node Backend', cmd: 'make docs-node-backend' },
+                { id: 'link-node-frontend', path: '/docs/api/node-frontend/', name: 'Node Frontend', cmd: 'make docs-node-frontend' }
+            ];
+
+            const missingDocs = [];
+
+            apiDocs.forEach(function(doc) {
+                const link = document.getElementById(doc.id);
+                if (!link) return;
+
+                fetch(doc.path, { method: 'HEAD' })
+                    .then(function(response) {
+                        if (response.ok) {
+                            link.classList.remove('unavailable');
+                            link.title = 'View ' + doc.name + ' documentation';
+                        } else {
+                            throw new Error('Not found');
+                        }
+                    })
+                    .catch(function() {
+                        link.classList.add('unavailable');
+                        link.title = 'Not generated - run: ' + doc.cmd;
+                        link.addEventListener('click', function(e) {
+                            e.preventDefault();
+                            alert(doc.name + ' documentation is not generated.\n\nRun: ' + doc.cmd);
+                        });
+                        missingDocs.push(doc);
+                        updateWarningBanner();
+                    });
+            });
+
+            function updateWarningBanner() {
+                // Add warning to docsify after render
+                if (window.$docsify && missingDocs.length > 0) {
+                    const originalReady = window.$docsify.plugins || [];
+                    window.$docsify.plugins = [].concat(originalReady, [
+                        function(hook) {
+                            hook.afterEach(function(html, next) {
+                                if (missingDocs.length > 0) {
+                                    const commands = missingDocs.length === apiDocs.length
+                                        ? '<code>make docs</code>'
+                                        : missingDocs.map(d => '<code>' + d.cmd + '</code>').join(' or ');
+
+                                    const warning = '<div class="docs-warning">' +
+                                        '<div class="docs-warning-title">Some API Documentation Not Generated</div>' +
+                                        '<div class="docs-warning-text">' +
+                                        'The following API docs are missing: ' +
+                                        missingDocs.map(d => d.name).join(', ') + '. ' +
+                                        'Generate with: ' + commands +
+                                        '</div></div>';
+
+                                    // Only add warning once at the top of the main README
+                                    if (!html.includes('docs-warning') && location.hash.match(/^#\/?$/)) {
+                                        html = warning + html;
+                                    }
+                                }
+                                next(html);
+                            });
+                        }
+                    ]);
+                }
+            }
+        })();
+    </script>
 </body>
 </html>

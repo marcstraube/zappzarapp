@@ -8,6 +8,7 @@ use DevDashboard\Response\HtmlResponse;
 use DevDashboard\Response\JsonResponse;
 use DevDashboard\Response\Response;
 use DevDashboard\Services\DatabaseService;
+use DevDashboard\Services\DocsService;
 use DevDashboard\Services\HealthCheckService;
 use DevDashboard\Services\LogService;
 use DevDashboard\Services\QualityService;
@@ -26,6 +27,7 @@ readonly class DashboardController
         private QualityService $qualityService,
         private LogService $logService,
         private DatabaseService $databaseService,
+        private DocsService $docsService,
     ) {}
 
     /**
@@ -34,11 +36,12 @@ readonly class DashboardController
     public function index(): Response
     {
         $data = [
-            'title'        => 'Development Dashboard',
-            'healthStatus' => $this->healthCheckService->getOverallStatus(),
-            'systemInfo'   => $this->systemInfoService->getBasicInfo(),
-            'gitStatus'    => $this->systemInfoService->getGitStatus(),
-            'dbStats'      => $this->databaseService->getQuickStats(),
+            'title'         => 'Development Dashboard',
+            'healthStatus'  => $this->healthCheckService->getOverallStatus(),
+            'systemInfo'    => $this->systemInfoService->getBasicInfo(),
+            'gitStatus'     => $this->systemInfoService->getGitStatus(),
+            'dbStats'       => $this->databaseService->getQuickStats(),
+            'apiDocsStatus' => $this->docsService->getApiDocsStatus(),
         ];
 
         return $this->render('dashboard', $data);
@@ -156,6 +159,25 @@ readonly class DashboardController
         $result = $this->logService->readLogFile($filename, min($lines, 500));
 
         return new JsonResponse($result);
+    }
+
+    /**
+     * API: Generate PHP documentation (JSON)
+     */
+    public function apiGenerateDocs(): Response
+    {
+        $type = $_GET['type'] ?? 'php';
+
+        if ($type !== 'php') {
+            return new JsonResponse([
+                'success' => false,
+                'message' => 'Only PHP docs can be generated from dashboard. Run "make docs-node" for Node docs.',
+            ], 400);
+        }
+
+        $result = $this->docsService->generatePhpDocs();
+
+        return new JsonResponse($result, $result['success'] ? 200 : 500);
     }
 
     /**

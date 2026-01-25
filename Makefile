@@ -3371,6 +3371,8 @@ docs-php: ## Generate PHP API documentation using phpDocumentor
 		PROJECT_VERSION=$$(php -r "echo json_decode(file_get_contents(\"/var/www/html/composer.json\"), true)[\"version\"] ?? \"0.0.0\";"); \
 		find /var/www/html/docs/api/php -name "*.html" -exec sed -i "s|<title>PHP API</title>|<title>$$PROJECT_NAME - PHP API - v$$PROJECT_VERSION</title>|g" {} \; ; \
 		find /var/www/html/docs/api/php -name "*.html" -exec sed -i "s|>PHP API</a>|>$$PROJECT_NAME - PHP API</a>|g" {} \;'
+	@# Fix ownership (docs generated as root, fix to host user)
+	@$(LOAD_ENV) && docker compose exec -u root php chown -R $${USER_ID:-1000}:$${GROUP_ID:-1000} /var/www/html/docs/api/php
 	@echo -e "\033[0;32mPHP documentation generated in docs/api/php/\033[0m"
 
 docs-node: docs-node-backend docs-node-frontend ## Generate all Node/TypeScript API documentation
@@ -3386,6 +3388,8 @@ docs-node-backend: ## Generate Node.js Backend API documentation using TypeDoc
 		PROJECT_VERSION=$$(node -e "console.log(require(\"/app/package.json\").version || \"0.0.0\")"); \
 		find /app/docs/api/node-backend -name "*.html" -exec sed -i "s|<title>Node Backend API - v$$PROJECT_VERSION</title>|<title>$$PROJECT_NAME - Backend API - v$$PROJECT_VERSION</title>|g" {} \; ; \
 		find /app/docs/api/node-backend -name "*.html" -exec sed -i "s|>Node Backend API - v$$PROJECT_VERSION</a>|>$$PROJECT_NAME - Backend API</a>|g" {} \;'
+	@# Fix ownership (docs may be generated with different UID)
+	@$(LOAD_ENV) && docker run --rm -v "$$(pwd)/docs:/docs" $(ALPINE_IMAGE) chown -R $${USER_ID:-1000}:$${GROUP_ID:-1000} /docs/api/node-backend
 	@echo -e "\033[0;32mBackend documentation generated in docs/api/node-backend/\033[0m"
 
 docs-node-frontend: ## Generate Node.js Frontend documentation using TypeDoc
@@ -3401,6 +3405,7 @@ docs-node-frontend: ## Generate Node.js Frontend documentation using TypeDoc
 			PROJECT_VERSION=$$(node -e "console.log(require(\"/app/package.json\").version || \"0.0.0\")"); \
 			find /app/docs/api/node-frontend -name "*.html" -exec sed -i "s|<title>Node Frontend - v$$PROJECT_VERSION</title>|<title>$$PROJECT_NAME - Frontend - v$$PROJECT_VERSION</title>|g" {} \; ; \
 			find /app/docs/api/node-frontend -name "*.html" -exec sed -i "s|>Node Frontend - v$$PROJECT_VERSION</a>|>$$PROJECT_NAME - Frontend</a>|g" {} \;'; \
+		$(LOAD_ENV) && docker run --rm -v "$$(pwd)/docs:/docs" $(ALPINE_IMAGE) chown -R $${USER_ID:-1000}:$${GROUP_ID:-1000} /docs/api/node-frontend; \
 		echo -e "\033[0;32mFrontend documentation generated in docs/api/node-frontend/\033[0m"; \
 	fi
 
