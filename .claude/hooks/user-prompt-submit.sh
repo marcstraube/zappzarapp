@@ -5,6 +5,7 @@
 # On new session:
 # 1. Detects context continuation → shows previous session
 # 2. Detects implementation tasks → reminds about workflow
+# 3. Warns if on main branch during implementation task
 
 set -euo pipefail
 
@@ -83,6 +84,16 @@ if [[ -n "$PROMPT" ]]; then
 
     if echo "$PROMPT" | grep -qiE "\b(${ACTION_KEYWORDS})\b.+\b(${TARGET_KEYWORDS})\b"; then
         MESSAGES+=("[Implementation Task] Check .claude/agents/workflow.md for scope (Trivial/Small/Medium/Large) before starting.")
+        IMPL_TASK_DETECTED=true
+    fi
+fi
+
+# --- Detection 3: Wrong Branch for Implementation ---
+# Warn if implementation task detected and on a protected branch
+if [[ "${IMPL_TASK_DETECTED:-false}" == "true" ]]; then
+    CURRENT_BRANCH=$(cd "$PROJECT_DIR" && git branch --show-current 2>/dev/null || echo "")
+    if [[ "$CURRENT_BRANCH" == "develop" || "$CURRENT_BRANCH" == "main" || "$CURRENT_BRANCH" == "master" ]]; then
+        MESSAGES+=("[Branch Warning] On '$CURRENT_BRANCH' - create feature branch first: git checkout -b fix/<slug> or feature/<slug>")
     fi
 fi
 
