@@ -158,14 +158,28 @@ use App\Infrastructure\ViteHelper;
     </div>
 
     <?php if ($vite->isDevelopment()): ?>
+    <?php
+    // Check which API docs exist
+    $docsBase             = '/var/www/html/docs/api';
+    $phpDocsExist         = file_exists($docsBase . '/php/index.html');
+    $nodeBackendDocsExist = file_exists($docsBase . '/node-backend/index.html');
+    $hasPhpSource         = is_dir('/var/www/html/src/php');
+    $hasNodeBackendSource = is_dir('/var/www/html/src/node/backend');
+    $docsMissing          = ($hasPhpSource && !$phpDocsExist) || ($hasNodeBackendSource && !$nodeBackendDocsExist);
+    ?>
     <div class="card">
         <h2>📖 Documentation</h2>
+        <?php if ($docsMissing): ?>
+        <div style="background: #fff3cd; border: 1px solid #ffc107; border-radius: 4px; padding: 0.75rem 1rem; margin-bottom: 1rem;">
+            <strong style="color: #856404;">⚠️ API documentation not generated.</strong>
+            <span style="color: #856404;">Run <code style="background: #f8f9fa; padding: 0.2rem 0.4rem; border-radius: 3px;">make docs</code> to generate.</span>
+        </div>
+        <?php endif; ?>
         <p style="margin-bottom: 1rem;">Guides and auto-generated API documentation:</p>
         <ul style="list-style: disc; padding-left: 1.5rem;">
             <li><a href="/docs/" style="color: #007bff; text-decoration: none;"><strong>/docs/</strong></a> - Guides & Documentation (Docsify)</li>
-            <li><a href="/docs/api/php/" style="color: #007bff; text-decoration: none;"><strong>/docs/api/php/</strong></a> - PHP API Documentation (phpDocumentor)</li>
-            <li><a href="/docs/api/node-backend/" style="color: #007bff; text-decoration: none;"><strong>/docs/api/node-backend/</strong></a> - Node.js Backend API Documentation (TypeDoc)</li>
-            <li><a href="/docs/api/node-frontend/" style="color: #007bff; text-decoration: none;"><strong>/docs/api/node-frontend/</strong></a> - Node.js Frontend Documentation (TypeDoc)</li>
+            <li><a href="/docs/api/php/" style="color: <?= $phpDocsExist ? '#007bff' : '#999' ?>; text-decoration: none;"><strong>/docs/api/php/</strong></a> - PHP API Documentation<?= !$phpDocsExist && $hasPhpSource ? ' <span style="color: #dc3545;">(not generated)</span>' : '' ?></li>
+            <li><a href="/docs/api/node-backend/" style="color: <?= $nodeBackendDocsExist ? '#007bff' : '#999' ?>; text-decoration: none;"><strong>/docs/api/node-backend/</strong></a> - Node.js Backend API<?= !$nodeBackendDocsExist && $hasNodeBackendSource ? ' <span style="color: #dc3545;">(not generated)</span>' : '' ?></li>
         </ul>
         <p style="margin-top: 1rem; font-size: 0.9em; color: #666;">
             <strong>Generate API Docs:</strong> Run <code>make docs</code> to generate/update API documentation.

@@ -10,6 +10,9 @@
         body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f9fafb; color: #111827; line-height: 1.5; }
         .container { max-width: 1280px; margin: 0 auto; padding: 0 1rem; }
 
+        /* Sticky Top Bar */
+        .sticky-top { position: sticky; top: 0; z-index: 100; background: white; }
+
         /* Header */
         header { background: white; border-bottom: 1px solid #e5e7eb; box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
         header .container { display: flex; justify-content: space-between; align-items: center; padding: 1rem; }
@@ -266,44 +269,47 @@
     </style>
 </head>
 <body>
-    <!-- Header -->
-    <header>
-        <div class="container">
-            <div class="flex items-center justify-between gap-4">
-                <div class="flex items-center gap-2">
-                    <h1>⚡ zappzarapp</h1>
-                    <span class="env-badge">Development Dashboard</span>
-                </div>
-                <div class="text-sm text-gray-500">
-                    <?= date('Y-m-d H:i:s') ?>
+    <!-- Sticky Top Bar -->
+    <div class="sticky-top">
+        <!-- Header -->
+        <header>
+            <div class="container">
+                <div class="flex items-center justify-between gap-4">
+                    <div class="flex items-center gap-2">
+                        <h1>⚡ zappzarapp</h1>
+                        <span class="env-badge">Development Dashboard</span>
+                    </div>
+                    <div class="text-sm text-gray-500">
+                        <?= date('Y-m-d H:i:s') ?>
+                    </div>
                 </div>
             </div>
-        </div>
-    </header>
+        </header>
 
-    <!-- Navigation -->
-    <nav>
-        <div class="container">
-            <a href="/_dev" class="<?= ($_SERVER['REQUEST_URI'] ?? '') === '/_dev' || ($_SERVER['REQUEST_URI'] ?? '') === '/_dev/' ? 'active' : '' ?>">
-                📊 Dashboard
-            </a>
-            <a href="/_dev/system" class="<?= str_contains($_SERVER['REQUEST_URI'] ?? '', '/_dev/system') ? 'active' : '' ?>">
-                💻 System
-            </a>
-            <a href="/_dev/health" class="<?= str_contains($_SERVER['REQUEST_URI'] ?? '', '/_dev/health') ? 'active' : '' ?>">
-                🏥 Health
-            </a>
-            <a href="/_dev/quality" class="<?= str_contains($_SERVER['REQUEST_URI'] ?? '', '/_dev/quality') ? 'active' : '' ?>">
-                ✅ Quality
-            </a>
-            <a href="/_dev/database" class="<?= str_contains($_SERVER['REQUEST_URI'] ?? '', '/_dev/database') ? 'active' : '' ?>">
-                💾 Database
-            </a>
-            <a href="/_dev/logs" class="<?= str_contains($_SERVER['REQUEST_URI'] ?? '', '/_dev/logs') ? 'active' : '' ?>">
-                📝 Logs
-            </a>
-        </div>
-    </nav>
+        <!-- Navigation -->
+        <nav>
+            <div class="container">
+                <a href="/_dev" class="<?= ($_SERVER['REQUEST_URI'] ?? '') === '/_dev' || ($_SERVER['REQUEST_URI'] ?? '') === '/_dev/' ? 'active' : '' ?>">
+                    📊 Dashboard
+                </a>
+                <a href="/_dev/system" class="<?= str_contains($_SERVER['REQUEST_URI'] ?? '', '/_dev/system') ? 'active' : '' ?>">
+                    💻 System
+                </a>
+                <a href="/_dev/health" class="<?= str_contains($_SERVER['REQUEST_URI'] ?? '', '/_dev/health') ? 'active' : '' ?>">
+                    🏥 Health
+                </a>
+                <a href="/_dev/quality" class="<?= str_contains($_SERVER['REQUEST_URI'] ?? '', '/_dev/quality') ? 'active' : '' ?>">
+                    ✅ Quality
+                </a>
+                <a href="/_dev/database" class="<?= str_contains($_SERVER['REQUEST_URI'] ?? '', '/_dev/database') ? 'active' : '' ?>">
+                    💾 Database
+                </a>
+                <a href="/_dev/logs" class="<?= str_contains($_SERVER['REQUEST_URI'] ?? '', '/_dev/logs') ? 'active' : '' ?>">
+                    📝 Logs
+                </a>
+            </div>
+        </nav>
+    </div>
 
     <!-- Main Content -->
     <main>
@@ -318,7 +324,8 @@
             <p>
                 ⚡ zappzarapp Development Dashboard • PHP <?= PHP_VERSION ?> •
                 <a href="/docs/">Documentation</a> •
-                <a href="/">Home</a>
+                <a href="/">Home</a> •
+                <a href="https://github.com/marcstraube/zappzarapp" target="_blank" rel="noopener">GitHub</a>
             </p>
         </div>
     </footer>
