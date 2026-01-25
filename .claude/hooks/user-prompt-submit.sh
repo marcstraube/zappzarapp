@@ -106,6 +106,21 @@ if [[ -n "$PENDING_SESSION" ]]; then
     MESSAGES+=("[Session Reminder] '$PENDING_NAME' still pending - rename with task slug and update Changes table")
 fi
 
+# --- Detection 5: Change Watch ---
+# Check if uncommitted changes might require doc/test updates
+CHANGE_WATCH_SCRIPT="${PROJECT_DIR}/.claude/hooks/change-watch.sh"
+if [[ -x "$CHANGE_WATCH_SCRIPT" ]]; then
+    # Only run if there are uncommitted changes
+    if cd "$PROJECT_DIR" && git diff --quiet HEAD 2>/dev/null; then
+        : # No changes, skip
+    else
+        CHANGE_WATCH_OUTPUT=$("$CHANGE_WATCH_SCRIPT" "$PROJECT_DIR" 2>/dev/null || true)
+        if [[ -n "$CHANGE_WATCH_OUTPUT" ]]; then
+            MESSAGES+=("$CHANGE_WATCH_OUTPUT")
+        fi
+    fi
+fi
+
 # --- Output ---
 if [[ ${#MESSAGES[@]} -gt 0 ]]; then
     # Join messages with newline

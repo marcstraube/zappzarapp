@@ -1,0 +1,80 @@
+# Change Watch Configuration Reference
+#
+# This file documents the extractors used by doc-watch.sh.
+# The extractors are hard-coded in the script for performance.
+# Edit doc-watch.sh to add/modify patterns.
+#
+# The script checks two categories:
+# 1. Docs - code changes that might need documentation updates
+# 2. Tests - infrastructure changes that might need GOSS/BATS updates
+
+# ============================================================================
+# DOCUMENTATION EXTRACTORS
+# ============================================================================
+# Search paths: .zappzarapp/docs/, .claude/CLAUDE.md, README.md
+# Extensions: *.md
+
+doc_extractors:
+  # Makefile targets
+  Makefile:
+    regex: '(?<=^\+)[a-z][-a-z0-9_]+(?=:\s)'
+    search_template: "make {1}"
+    example: "+foo-bar: ## Help" → searches for "make foo-bar"
+
+  # Docker Compose services
+  compose.yaml:
+    regex: '(?<=^\+  )[a-z][-a-z0-9_]+(?=:$)'
+    search_template: "{1}"
+    example: "+  redis:" → searches for "redis"
+
+  # Slash commands (uses filename)
+  ".claude/commands/*.md":
+    use_filename: true
+    search_template: "/{1}"
+    example: "status.md" → searches for "/status"
+
+  # Environment variables
+  ".env.example":
+    regex: '(?<=^\+)[A-Z][A-Z0-9_]+(?==)'
+    search_template: "{1}"
+    example: "+REDIS_HOST=localhost" → searches for "REDIS_HOST"
+
+# ============================================================================
+# TEST EXTRACTORS
+# ============================================================================
+# Search paths: tests/goss/, tests/bats/
+# Extensions: *.yaml, *.bats
+
+test_extractors:
+  # Dockerfile changes - uses parent directory name
+  "docker/*/Dockerfile":
+    use_filename: dirname
+    search_template: "{1}"
+    example: "docker/php/Dockerfile" → searches for "php"
+
+  # Compose service changes
+  compose.yaml:
+    regex: '(?<=^\+  )[a-z][-a-z0-9_]+(?=:$)'
+    search_template: "{1}"
+    example: "+  redis:" → searches for "redis" in tests
+
+  # Makefile target changes
+  Makefile:
+    regex: '(?<=^\+)[a-z][-a-z0-9_]+(?=:\s)'
+    search_template: "make {1}"
+    example: "+build:" → searches for "make build" in BATS
+
+# ============================================================================
+# ADDING NEW EXTRACTORS
+# ============================================================================
+#
+# 1. Edit doc-watch.sh
+# 2. Add entry to DOC_EXTRACTORS or TEST_EXTRACTORS array:
+#    'file_pattern|regex_pattern|search_template|use_filename'
+#
+#    - file_pattern: glob pattern to match files (e.g., "docker/*/Dockerfile")
+#    - regex_pattern: PCRE regex with lookbehind/lookahead
+#    - search_template: {1} is replaced with extracted value
+#    - use_filename: "true" (use filename), "dirname" (use parent dir), "false" (use regex)
+#
+# 3. Update this reference file
