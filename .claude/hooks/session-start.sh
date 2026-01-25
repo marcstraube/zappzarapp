@@ -7,8 +7,17 @@
 
 set -euo pipefail
 
-# Use project directory from env or current directory
-PROJECT_DIR="${CLAUDE_PROJECT_DIR:-.}"
+# Detect project directory with fallbacks:
+# 1. CLAUDE_PROJECT_DIR env var (set by Claude Code)
+# 2. Git repository root (most reliable)
+# 3. Current directory (last resort)
+if [[ -n "${CLAUDE_PROJECT_DIR:-}" ]]; then
+    PROJECT_DIR="${CLAUDE_PROJECT_DIR}"
+elif PROJECT_DIR=$(git rev-parse --show-toplevel 2>/dev/null); then
+    : # Git root found
+else
+    PROJECT_DIR="."
+fi
 SESSION_TEMPLATE_PATH="${PROJECT_DIR}/.zappzarapp/ai/templates/SESSION-TEMPLATE.md"
 SESSION_BASE="${PROJECT_DIR}/.claude/sessions"
 
