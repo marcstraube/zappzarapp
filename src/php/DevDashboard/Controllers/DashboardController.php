@@ -58,6 +58,7 @@ readonly class DashboardController
             'extensions'  => $this->systemInfoService->getPhpExtensions(),
             'envVars'     => $this->systemInfoService->getEnvironmentVariables(),
             'showPhpInfo' => $_GET['phpinfo'] ?? false,
+            'gitStatus'   => $this->systemInfoService->getGitStatus(),
         ];
 
         return $this->render('system', $data);
@@ -108,6 +109,7 @@ readonly class DashboardController
             'tables'           => $this->databaseService->getTables(),
             'connection_stats' => $this->databaseService->getConnectionStats(),
             'commands'         => $this->databaseService->getDatabaseCommands(),
+            'db_tools'         => $this->databaseService->getDbToolsStatus(),
         ];
 
         return $this->render('database', $data);
@@ -159,6 +161,25 @@ readonly class DashboardController
         $result = $this->logService->readLogFile($filename, min($lines, 500));
 
         return new JsonResponse($result);
+    }
+
+    /**
+     * API: Generate test coverage (JSON)
+     */
+    public function apiGenerateCoverage(): Response
+    {
+        $type = $_GET['type'] ?? 'php';
+
+        if ($type !== 'php') {
+            return new JsonResponse([
+                'success' => false,
+                'message' => 'Only PHP coverage can be generated from dashboard. Run "make test-coverage-node" for Node coverage.',
+            ], 400);
+        }
+
+        $result = $this->qualityService->runPhpCoverage();
+
+        return new JsonResponse($result, $result['success'] ? 200 : 500);
     }
 
     /**

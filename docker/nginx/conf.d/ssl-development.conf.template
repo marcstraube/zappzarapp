@@ -73,73 +73,14 @@ server {
     # Custom Error Pages (shared)
     include /etc/nginx/snippets/error-pages.conf;
 
-    # ============================================================================
-    # VITE HMR PROXY (DEVELOPMENT ONLY)
-    # ============================================================================
-    # These locations proxy Vite dev server for Hot Module Replacement.
-    # In Production, these URLs are never called, so they're harmless.
-    # The node container runs on port 5173 only in Development mode.
+    # Vite HMR Proxy (Development Only)
+    include /etc/nginx/snippets/development-vite-hmr.conf;
 
-    # Vite HMR WebSocket
-    location /@vite/client {
-        set $upstream_node node:5173;
-        proxy_pass http://$upstream_node;
-        proxy_http_version 1.1;
-        proxy_set_header Upgrade $http_upgrade;
-        proxy_set_header Connection "upgrade";
-        proxy_set_header Host $host;
-        proxy_cache_bypass $http_upgrade;
-        # Note: Vite returns 404 status with valid JS body - don't intercept
-        proxy_intercept_errors off;
-    }
+    # API Documentation (Development Only)
+    include /etc/nginx/snippets/development-api-docs.conf;
 
-    # Vite Dev Server (JS/CSS/Images)
-    location ~ ^/(js|css|images)/ {
-        set $upstream_node node:5173;
-        proxy_pass http://$upstream_node;
-        proxy_http_version 1.1;
-        proxy_set_header Upgrade $http_upgrade;
-        proxy_set_header Connection "upgrade";
-        proxy_set_header Host $host;
-        proxy_cache_bypass $http_upgrade;
-        # Note: Vite returns 404 status with valid JS body - don't intercept
-        proxy_intercept_errors off;
-    }
-
-    # Vite Internal Routes (filesystem, module IDs, node_modules)
-    location ~ ^/(@fs|@id|@vite|node_modules)/ {
-        set $upstream_node node:5173;
-        proxy_pass http://$upstream_node;
-        proxy_http_version 1.1;
-        proxy_set_header Upgrade $http_upgrade;
-        proxy_set_header Connection "upgrade";
-        proxy_set_header Host $host;
-        proxy_cache_bypass $http_upgrade;
-        proxy_intercept_errors off;
-    }
-    # ============================================================================
-
-    # ============================================================================
-    # API DOCUMENTATION (DEVELOPMENT ONLY)
-    # ============================================================================
-    location = /docs {
-        return 301 /docs/;
-    }
-
-    # Docsify guides (rendered Markdown documentation)
-    location ^~ /docs/guides/ {
-        alias /var/www/html/.zappzarapp/docs/;
-        try_files $uri $uri/ =404;
-        add_header Cache-Control "no-cache, must-revalidate";
-    }
-
-    location ^~ /docs/ {
-        alias /var/www/html/docs/;
-        autoindex on;
-        try_files $uri $uri/ =404;
-        add_header Cache-Control "no-cache, must-revalidate";
-    }
-    # ============================================================================
+    # Database Tools (Adminer, pgAdmin)
+    include /etc/nginx/snippets/development-tools-proxy.conf;
 
     # Node.js Backend API Proxy (shared)
     include /etc/nginx/snippets/node-backend-proxy.conf;

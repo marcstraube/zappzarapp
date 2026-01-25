@@ -28,6 +28,11 @@ if [ -d "/var/www/html/vendor" ]; then
     chown -R www-data:www-data /var/www/html/vendor 2>/dev/null || true
 fi
 
+# Fix build directory permissions (for test coverage generation from dashboard)
+if [ -d "/var/www/html/build" ]; then
+    chown -R www-data:www-data /var/www/html/build 2>/dev/null || true
+fi
+
 # Only validate dependencies when starting php-fpm service (not for composer/other commands)
 # Skip dependency check if PHP_SKIP_DEPENDENCY_CHECK=1 (used in CI for docker compose exec)
 if [ "$1" = "php-fpm" ]; then

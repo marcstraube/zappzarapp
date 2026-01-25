@@ -491,48 +491,89 @@ class HealthCheckService
           *
      * @return array<string, mixed>
      */
+    /**
+     * Get SSL certificate information for all certificate locations
+     *
+     * @return array<string, mixed>
+     */
     public function getSslInfo(): array
     {
-        $certPath = __DIR__ . '/../../../../docker/certs/cert.crt';
+        $certsDir = __DIR__ . '/../../../../docker/certs';
 
-        if (!file_exists($certPath) || !is_file($certPath)) {
+        // Define certificate locations to check
+        $certLocations = [
+            'nginx'      => ['path' => $certsDir . '/nginx/cert.crt', 'name' => 'Nginx (HTTPS)'],
+            'internal'   => ['path' => $certsDir . '/internal/cert.crt', 'name' => 'Internal Services'],
+            'ca'         => ['path' => $certsDir . '/ca/ca.crt', 'name' => 'CA Certificate'],
+            'selfsigned' => ['path' => $certsDir . '/selfsigned.crt', 'name' => 'Self-Signed (Fallback)'],
+        ];
+
+        $certificates = [];
+        $hasAnyCert   = false;
+
+        foreach ($certLocations as $key => $location) {
+            $certInfo = $this->parseCertificate($location['path'], $location['name']);
+            if ($certInfo !== null) {
+                $certificates[$key] = $certInfo;
+                $hasAnyCert         = true;
+            }
+        }
+
+        if (!$hasAnyCert) {
             return [
-                'exists'  => false,
-                'message' => 'No SSL certificate found',
+                'exists'       => false,
+                'message'      => 'No SSL certificates found. Run make ssl-selfsigned or make ssl-internal.',
+                'certificates' => [],
             ];
         }
 
-        $certContent = file_get_contents($certPath);
+        return [
+            'exists'       => true,
+            'certificates' => $certificates,
+        ];
+    }
+
+    /**
+     * Parse a single certificate file
+     *
+     * @return array<string, mixed>|null
+     */
+    private function parseCertificate(string $path, string $name): ?array
+    {
+        if (!file_exists($path) || !is_file($path)) {
+            return null;
+        }
+
+        $certContent = file_get_contents($path);
         if ($certContent === false) {
             return [
-                'exists'  => true,
+                'name'    => $name,
                 'valid'   => false,
                 'message' => 'Could not read certificate file',
             ];
         }
 
         $certData = openssl_x509_parse($certContent);
-
         if (!$certData) {
             return [
-                'exists'  => true,
+                'name'    => $name,
                 'valid'   => false,
-                'message' => 'Invalid certificate',
+                'message' => 'Invalid certificate format',
             ];
         }
 
         $now             = time();
         $validFrom       = $certData['validFrom_time_t'];
         $validTo         = $certData['validTo_time_t'];
-        $daysUntilExpiry = floor(($validTo - $now) / 86400);
+        $daysUntilExpiry = (int) floor(($validTo - $now) / 86400);
 
         return [
-            'exists'            => true,
+            'name'              => $name,
             'valid'             => $now >= $validFrom && $now <= $validTo,
             'subject'           => $certData['subject']['CN'] ?? 'Unknown',
             'issuer'            => $certData['issuer']['CN'] ?? 'Unknown',
-            'valid_from'        => date('Y-m-d H:i:s', $validFrom),
-            'valid_to'          => date('Y-m-d H:i:s', $validTo),
+            'valid_from'        => date('Y-m-d', $validFrom),
+            'valid_to'          => date('Y-m-d', $validTo),
             'days_until_expiry' => $daysUntilExpiry,
             'expires_soon'      => $daysUntilExpiry < 30,
         ];

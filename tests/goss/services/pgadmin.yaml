@@ -1,0 +1,43 @@
+# GOSS Tests for pgadmin container
+# Two-phase testing: dgoss (external) + docker exec (internal)
+#
+# pgAdmin PostgreSQL admin UI
+# Web UI on port 80
+# Development only - accessed via Nginx proxy at /_dev/pgadmin/
+
+# ============================================================================
+# PORT TESTS (Internal)
+# ============================================================================
+port:
+  # Web UI port
+  tcp:80:
+    listening: true
+    ip:
+      - 0.0.0.0
+
+# ============================================================================
+# FILE TESTS (Internal)
+# ============================================================================
+file:
+  # Pre-configured servers
+  /pgadmin4/servers.json:
+    exists: true
+    filetype: file
+    contains:
+      - "Zappzarapp PostgreSQL"
+
+  # Data directory
+  /var/lib/pgadmin:
+    exists: true
+    filetype: directory
+
+# ============================================================================
+# HTTP TESTS (Internal - localhost)
+# ============================================================================
+http:
+  # pgAdmin login page (redirects to login if not authenticated)
+  http://localhost:80/login:
+    status: 200
+    timeout: 10000
+    body:
+      - "pgAdmin"

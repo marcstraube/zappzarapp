@@ -21,6 +21,16 @@ define LOAD_ENV
 [ -f .env.local ] && . ./.env.local || true
 endef
 
+# Helper to check development mode (guards dev-only targets)
+define require_development
+	@if [ -f .env ]; then . ./.env; fi && \
+	if [ "$${ENV:-development}" = "production" ]; then \
+		echo -e "\033[0;31mError: $(1) is only available in development mode\033[0m"; \
+		echo -e "\033[0;33mSet ENV=development in .env to enable\033[0m"; \
+		exit 1; \
+	fi
+endef
+
 .PHONY: $(shell awk '/^[a-zA-Z0-9_-]+:.*## / { print $$1 }' $(MAKEFILE_LIST) | sed 's/://')
 
 help: ## Show this help (FILTER=? for categories, FILTER=<name> to filter)
@@ -125,24 +135,10 @@ hooks-install: ## Install Git hooks using CaptainHook
 init: ## Initialize project (create .env.local for local overrides) - Run this first!
 	@echo -e "\033[0;33mInitializing local configuration...\033[0m"
 	@if [ ! -f .env.local ]; then \
-		echo "# Local Environment Overrides" > .env.local; \
-		echo "# This file is gitignored - safe for personal settings and secrets" >> .env.local; \
-		echo "#" >> .env.local; \
-		echo "# Adjust USER_ID/GROUP_ID to match your host user (run: id -u && id -g)" >> .env.local; \
-		echo "USER_ID=$$(id -u)" >> .env.local; \
-		echo "GROUP_ID=$$(id -g)" >> .env.local; \
-		echo "" >> .env.local; \
-		echo "# Uncomment to override ports if conflicts exist:" >> .env.local; \
-		echo "#POSTGRES_PORT=5433" >> .env.local; \
-		echo "#MARIADB_PORT=3307" >> .env.local; \
-		echo "#NGINX_PORT=8081" >> .env.local; \
-		echo "" >> .env.local; \
-		echo "# Remote DB SSH tunnel (for IDE access to production):" >> .env.local; \
-		echo "#DB_REMOTE_SSH_HOST=bastion.example.com" >> .env.local; \
-		echo "#DB_REMOTE_SSH_PORT=22" >> .env.local; \
-		echo "#DB_REMOTE_SSH_USER=your-username" >> .env.local; \
-		echo "#DB_REMOTE_SSH_KEY=~/.ssh/id_ed25519" >> .env.local; \
-		echo -e "\033[0;32m.env.local created with your USER_ID=$$(id -u) and GROUP_ID=$$(id -g)\033[0m"; \
+		sed -e "s/^USER_ID=.*/USER_ID=$$(id -u)/" \
+		    -e "s/^GROUP_ID=.*/GROUP_ID=$$(id -g)/" \
+		    .env.local.example > .env.local; \
+		echo -e "\033[0;32m.env.local created from .env.local.example with your USER_ID=$$(id -u) and GROUP_ID=$$(id -g)\033[0m"; \
 	else \
 		echo -e "\033[0;34m.env.local already exists. Skipped.\033[0m"; \
 	fi
@@ -789,7 +785,7 @@ down: ## Stop containers (optionally specify service names: make down php nginx)
 		fi; \
 	else \
 		echo -e "\033[0;33mStopping containers...\033[0m"; \
-		ALL_PROFILES="--profile postgres --profile mariadb --profile php --profile node --profile node-backend --profile redis --profile mercure --profile meilisearch --profile elasticsearch --profile mailpit --profile seaweedfs --profile rabbitmq"; \
+		ALL_PROFILES="--profile postgres --profile mariadb --profile php --profile node --profile node-backend --profile redis --profile mercure --profile meilisearch --profile elasticsearch --profile mailpit --profile seaweedfs --profile rabbitmq --profile adminer --profile pgadmin"; \
 		if [ -f .env ]; then \
 			. ./.env && if [ "$$ENV" = "production" ]; then \
 				$(DC) -f compose.yaml -f compose.production.yaml $$ALL_PROFILES down --remove-orphans; \
@@ -1200,7 +1196,7 @@ up: ## Start containers (optionally specify service names: make up php nginx)
 		fi; \
 		echo -e "\033[0;32mServices started!\033[0m"; \
 	else \
-		. ./.env && \
+		. ./.env && [ -f .env.local ] && . ./.env.local; \
 		if [ "$${ENABLE_MAILPIT:-false}" = "true" ] && [ "$${ENV:-development}" = "production" ]; then \
 			echo -e "\033[0;33m⚠️  WARNING: Mailpit is enabled but ENV=production.\033[0m"; \
 			echo -e "\033[0;33m   Mailpit won't start (compose.production.yaml sets replicas: 0).\033[0m"; \
@@ -1269,6 +1265,8 @@ up: ## Start containers (optionally specify service names: make up php nginx)
 		if [ "$${ENABLE_MAILPIT:-false}" = "true" ]; then PROFILES="$$PROFILES --profile mailpit"; fi; \
 		if [ "$${ENABLE_SEAWEEDFS:-false}" = "true" ]; then PROFILES="$$PROFILES --profile seaweedfs"; fi; \
 		if [ "$${ENABLE_RABBITMQ:-false}" = "true" ]; then PROFILES="$$PROFILES --profile rabbitmq"; fi; \
+		if [ "$${ENABLE_ADMINER:-false}" = "true" ]; then PROFILES="$$PROFILES --profile adminer"; fi; \
+		if [ "$${ENABLE_PGADMIN:-false}" = "true" ]; then PROFILES="$$PROFILES --profile pgadmin"; fi; \
 		echo -e "\033[0;33mStarting containers in $${ENV:-development} mode...\033[0m"; \
 		if [ "$$ENV" = "production" ]; then \
 			NODE_TARGET_AUTO="assets"; \
@@ -1654,6 +1652,56 @@ mariadb-restore: ## Restore MariaDB database from dump.sql
 	@. ./.env && . ./docker/scripts/parse-db-url.sh && \
 		docker compose exec -T mariadb mariadb -u "$$DB_USER" -p"$$DB_PASSWORD" "$$DB_NAME" < dump.sql
 	@echo -e "\033[0;32mMariaDB database restored!\033[0m"
+
+##@ Database Tools
+
+adminer-up: ## Start Adminer database UI (development only)
+	$(call require_development,Adminer)
+	@echo -e "\033[0;34mStarting Adminer...\033[0m"
+	@$(DC) --profile adminer up -d adminer
+	@echo -e "\033[0;32mAdminer available at: https://localhost:$${NGINX_SSL_PORT:-8443}/_dev/adminer/\033[0m"
+
+adminer-down: ## Stop Adminer
+	$(call require_development,Adminer)
+	@$(DC) --profile adminer stop adminer
+
+pgadmin-up: ## Start pgAdmin PostgreSQL UI (development only)
+	$(call require_development,pgAdmin)
+	@echo -e "\033[0;34mStarting pgAdmin...\033[0m"
+	@$(DC) --profile pgadmin up -d pgadmin
+	@echo -e "\033[0;32mpgAdmin available at: https://localhost:$${NGINX_SSL_PORT:-8443}/_dev/pgadmin/\033[0m"
+
+pgadmin-down: ## Stop pgAdmin
+	$(call require_development,pgAdmin)
+	@$(DC) --profile pgadmin stop pgadmin
+
+db-tools-up: ## Start all database tools (Adminer + pgAdmin)
+	$(call require_development,Database tools)
+	@$(MAKE) adminer-up
+	@$(MAKE) pgadmin-up
+
+db-tools-down: ## Stop all database tools
+	$(call require_development,Database tools)
+	@$(MAKE) adminer-down
+	@$(MAKE) pgadmin-down
+
+postgres-cli-enhanced: ## Open PostgreSQL CLI with auto-complete (pgcli)
+	$(call require_development,pgcli)
+	@. ./.env && . ./docker/scripts/parse-db-url.sh && \
+		docker compose exec php pgcli -h postgres -U "$$DB_USER" -d "$$DB_NAME"
+
+mariadb-cli-enhanced: ## Open MariaDB CLI with auto-complete (mycli)
+	$(call require_development,mycli)
+	@. ./.env && . ./docker/scripts/parse-db-url.sh && \
+		docker compose exec php mycli -h mariadb -u "$$DB_USER" -p"$$DB_PASSWORD" "$$DB_NAME"
+
+sqlite-cli: ## Open SQLite CLI - Usage: make sqlite-cli FILE=storage/app.sqlite
+	$(call require_development,litecli)
+	@if [ -z "$(FILE)" ]; then \
+		echo -e "\033[0;31mUsage: make sqlite-cli FILE=path/to/database.sqlite\033[0m"; \
+		exit 1; \
+	fi
+	@docker compose exec php litecli /var/www/html/$(FILE)
 
 ##@ Elasticsearch
 
@@ -2047,18 +2095,18 @@ fresh: ## Complete clean slate rebuild, removing all data volumes (DANGEROUS!)
 	@# Stop ALL containers and rebuild ALL images regardless of profile settings (fresh = complete reset)
 	@if [ -f .env ]; then \
 		. ./.env && if [ "$$ENV" = "production" ]; then \
-			$(DC) -f compose.yaml -f compose.production.yaml --profile php --profile node --profile redis --profile postgres --profile mariadb --profile mercure --profile meilisearch --profile elasticsearch --profile mailpit --profile seaweedfs --profile rabbitmq down -v --rmi all && \
+			$(DC) -f compose.yaml -f compose.production.yaml --profile php --profile node --profile redis --profile postgres --profile mariadb --profile mercure --profile meilisearch --profile elasticsearch --profile mailpit --profile seaweedfs --profile rabbitmq --profile adminer --profile pgadmin down -v --rmi all && \
 			echo -e "\033[0;34mBuilding Node image first (required by PHP and NGINX)...\033[0m" && \
-			$(DC) -f compose.yaml -f compose.production.yaml --profile php --profile node --profile redis --profile postgres --profile mariadb --profile mercure --profile meilisearch --profile elasticsearch --profile mailpit --profile seaweedfs --profile rabbitmq build --no-cache node && \
+			$(DC) -f compose.yaml -f compose.production.yaml --profile php --profile node --profile redis --profile postgres --profile mariadb --profile mercure --profile meilisearch --profile elasticsearch --profile mailpit --profile seaweedfs --profile rabbitmq --profile adminer --profile pgadmin build --no-cache node && \
 			echo -e "\033[0;34mBuilding remaining images...\033[0m" && \
-			$(DC) -f compose.yaml -f compose.production.yaml --profile php --profile node --profile redis --profile postgres --profile mariadb --profile mercure --profile meilisearch --profile elasticsearch --profile mailpit --profile seaweedfs --profile rabbitmq build --no-cache; \
+			$(DC) -f compose.yaml -f compose.production.yaml --profile php --profile node --profile redis --profile postgres --profile mariadb --profile mercure --profile meilisearch --profile elasticsearch --profile mailpit --profile seaweedfs --profile rabbitmq --profile adminer --profile pgadmin build --no-cache; \
 		else \
-			$(DC) --profile php --profile node --profile redis --profile postgres --profile mariadb --profile mercure --profile meilisearch --profile elasticsearch --profile mailpit --profile seaweedfs --profile rabbitmq down -v --rmi all && \
-			$(DC) --profile php --profile node --profile redis --profile postgres --profile mariadb --profile mercure --profile meilisearch --profile elasticsearch --profile mailpit --profile seaweedfs --profile rabbitmq build --no-cache; \
+			$(DC) --profile php --profile node --profile redis --profile postgres --profile mariadb --profile mercure --profile meilisearch --profile elasticsearch --profile mailpit --profile seaweedfs --profile rabbitmq --profile adminer --profile pgadmin down -v --rmi all && \
+			$(DC) --profile php --profile node --profile redis --profile postgres --profile mariadb --profile mercure --profile meilisearch --profile elasticsearch --profile mailpit --profile seaweedfs --profile rabbitmq --profile adminer --profile pgadmin build --no-cache; \
 		fi; \
 	else \
-		$(DC) --profile php --profile node --profile redis --profile postgres --profile mariadb --profile mercure --profile meilisearch --profile elasticsearch --profile mailpit --profile seaweedfs --profile rabbitmq down -v --rmi all && \
-		$(DC) --profile php --profile node --profile redis --profile postgres --profile mariadb --profile mercure --profile meilisearch --profile elasticsearch --profile mailpit --profile seaweedfs --profile rabbitmq build --no-cache; \
+		$(DC) --profile php --profile node --profile redis --profile postgres --profile mariadb --profile mercure --profile meilisearch --profile elasticsearch --profile mailpit --profile seaweedfs --profile rabbitmq --profile adminer --profile pgadmin down -v --rmi all && \
+		$(DC) --profile php --profile node --profile redis --profile postgres --profile mariadb --profile mercure --profile meilisearch --profile elasticsearch --profile mailpit --profile seaweedfs --profile rabbitmq --profile adminer --profile pgadmin build --no-cache; \
 	fi
 	@echo -e "\033[0;33mInstalling dependencies...\033[0m"
 	@$(MAKE) --silent composer-install
@@ -3211,6 +3259,14 @@ secrets: ## Generate missing Docker Secrets (idempotent)
 		echo -e "\033[0;32mrabbitmq_password secret generated.\033[0m"; \
 	else \
 		echo -e "\033[0;32mrabbitmq_password secret already exists.\033[0m"; \
+	fi
+	@if [ ! -f secrets/pgadmin_password.txt ]; then \
+		echo -e "\033[0;34mGenerating pgadmin_password secret...\033[0m"; \
+		openssl rand -base64 24 | tr -dc 'a-zA-Z0-9' | head -c 24 > secrets/pgadmin_password.txt; \
+		chmod 644 secrets/pgadmin_password.txt; \
+		echo -e "\033[0;32mpgadmin_password secret generated.\033[0m"; \
+	else \
+		echo -e "\033[0;32mpgadmin_password secret already exists.\033[0m"; \
 	fi
 	@if [ ! -f secrets/mercure_jwt_secret.txt ]; then \
 		echo -e "\033[0;34mGenerating mercure_jwt_secret secret...\033[0m"; \

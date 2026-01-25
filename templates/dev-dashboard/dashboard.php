@@ -8,84 +8,104 @@
  */
 ?>
 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-    <!-- Overall Health Status -->
-    <div class="bg-white rounded-lg shadow p-6 col-span-full">
-        <h2 class="text-lg font-semibold text-gray-900 mb-4">System Health</h2>
-        <div class="flex items-center space-x-4">
-            <?php
-            $status       = $healthStatus['status'] ?? 'unknown';
-            $statusColors = [
-                'healthy'   => 'text-green-600 bg-green-100',
-                'degraded'  => 'text-yellow-600 bg-yellow-100',
-                'unhealthy' => 'text-red-600 bg-red-100',
-            ];
-            $statusIcons = [
-                'healthy'   => '✓',
-                'degraded'  => '⚠',
-                'unhealthy' => '✗',
-            ];
-            $color = $statusColors[$status] ?? 'text-gray-600 bg-gray-100';
-            $icon  = $statusIcons[$status] ?? '?';
-            ?>
-            <div class="flex-shrink-0">
-                <span class="inline-flex items-center justify-center h-12 w-12 rounded-full <?= $color ?> text-2xl">
-                    <?= $icon ?>
-                </span>
+    <!-- Health Status Overview -->
+    <div class="card col-span-full">
+        <div class="flex items-center justify-between">
+            <div class="flex items-center space-x-4">
+                <?php
+                $status       = $healthStatus['status'] ?? 'unknown';
+                $statusColors = [
+                    'healthy'   => 'text-green-600 bg-green-100',
+                    'degraded'  => 'text-yellow-600 bg-yellow-100',
+                    'unhealthy' => 'text-red-600 bg-red-100',
+                ];
+                $statusIcons = [
+                    'healthy'   => '✓',
+                    'degraded'  => '⚠',
+                    'unhealthy' => '✗',
+                ];
+                $color = $statusColors[$status] ?? 'text-gray-600 bg-gray-100';
+                $icon  = $statusIcons[$status] ?? '?';
+                ?>
+                <div class="flex-shrink-0">
+                    <span class="inline-flex items-center justify-center h-12 w-12 rounded-full <?= $color ?> text-2xl">
+                        <?= $icon ?>
+                    </span>
+                </div>
+                <div>
+                    <p class="text-sm text-gray-500">System Status</p>
+                    <p class="text-2xl font-bold capitalize <?= explode(' ', $color)[0] ?>"><?= $status ?></p>
+                </div>
+                <div class="border-l border-gray-200 pl-4">
+                    <p class="text-sm text-gray-500">Services</p>
+                    <p class="text-lg font-bold text-gray-900">
+                        <?= $healthStatus['healthy_count'] ?? 0 ?>/<?= ($healthStatus['healthy_count'] ?? 0) + ($healthStatus['unhealthy_count'] ?? 0) ?>
+                    </p>
+                </div>
+                <?php if (($healthStatus['unhealthy_count'] ?? 0) > 0): ?>
+                <div class="border-l border-gray-200 pl-4">
+                    <p class="text-sm text-gray-500">Issues</p>
+                    <p class="text-lg font-bold text-red-600"><?= $healthStatus['unhealthy_count'] ?></p>
+                </div>
+                <?php endif; ?>
             </div>
-            <div>
-                <p class="text-sm text-gray-500">Status</p>
-                <p class="text-2xl font-bold capitalize <?= explode(' ', $color)[0] ?>"><?= $status ?></p>
-            </div>
-            <div class="border-l border-gray-200 pl-4">
-                <p class="text-sm text-gray-500">Healthy Services</p>
-                <p class="text-2xl font-bold text-gray-900"><?= $healthStatus['healthy_count'] ?? 0 ?></p>
-            </div>
-            <?php if (($healthStatus['unhealthy_count'] ?? 0) > 0): ?>
-            <div class="border-l border-gray-200 pl-4">
-                <p class="text-sm text-gray-500">Issues</p>
-                <p class="text-2xl font-bold text-red-600"><?= $healthStatus['unhealthy_count'] ?></p>
-            </div>
-            <?php endif; ?>
-            <div class="ml-auto text-sm text-gray-500">
-                Last check: <?= $healthStatus['timestamp'] ?? 'Unknown' ?>
-            </div>
+            <a href="/_dev/health" class="btn btn-secondary">Details</a>
         </div>
     </div>
 
-    <!-- System Information Card -->
-    <div class="bg-white rounded-lg shadow p-6">
-        <h3 class="text-lg font-semibold text-gray-900 mb-4">💻 System</h3>
-        <dl class="space-y-2">
+    <!-- Quick Info Cards Row -->
+    <div class="card">
+        <div class="flex items-center justify-between mb-3">
+            <h3 class="font-semibold text-gray-900">System</h3>
+            <a href="/_dev/system" class="text-xs text-blue-600 hover:text-blue-800">Details</a>
+        </div>
+        <dl class="space-y-1 text-sm">
             <div class="flex justify-between">
-                <dt class="text-sm text-gray-500">PHP Version</dt>
-                <dd class="text-sm font-medium text-gray-900"><?= $systemInfo['php_version'] ?? 'Unknown' ?></dd>
+                <dt class="text-gray-500">PHP</dt>
+                <dd class="font-mono text-gray-900"><?= $systemInfo['php_version'] ?? 'Unknown' ?></dd>
             </div>
             <div class="flex justify-between">
-                <dt class="text-sm text-gray-500">Server</dt>
-                <dd class="text-sm font-medium text-gray-900"><?= htmlspecialchars($systemInfo['server_software'] ?? 'Unknown') ?></dd>
-            </div>
-            <div class="flex justify-between">
-                <dt class="text-sm text-gray-500">Hostname</dt>
-                <dd class="text-sm font-medium text-gray-900"><?= htmlspecialchars($systemInfo['hostname'] ?? 'Unknown') ?></dd>
+                <dt class="text-gray-500">Server</dt>
+                <dd class="text-gray-900 text-xs"><?= htmlspecialchars($systemInfo['server_software'] ?? 'Unknown') ?></dd>
             </div>
         </dl>
-        <div class="mt-4">
-            <a href="/_dev/system" class="text-sm text-blue-600 hover:text-blue-800 font-medium">View Details →</a>
-        </div>
     </div>
 
-    <!-- Git Status Card -->
-    <div class="bg-white rounded-lg shadow p-6">
-        <h3 class="text-lg font-semibold text-gray-900 mb-4">🔀 Git Status</h3>
-        <?php if ($gitStatus['initialized'] ?? false): ?>
-        <dl class="space-y-2">
+    <div class="card">
+        <div class="flex items-center justify-between mb-3">
+            <h3 class="font-semibold text-gray-900">Database</h3>
+            <a href="/_dev/database" class="text-xs text-blue-600 hover:text-blue-800">Details</a>
+        </div>
+        <?php if ($dbStats['available'] ?? false): ?>
+        <dl class="space-y-1 text-sm">
             <div class="flex justify-between">
-                <dt class="text-sm text-gray-500">Branch</dt>
-                <dd class="text-sm font-medium text-gray-900"><?= htmlspecialchars($gitStatus['branch'] ?? 'Unknown') ?></dd>
+                <dt class="text-gray-500">Type</dt>
+                <dd class="font-medium text-gray-900"><?= strtoupper((string) $dbStats['type']) ?></dd>
             </div>
             <div class="flex justify-between">
-                <dt class="text-sm text-gray-500">Commit</dt>
-                <dd class="text-sm font-mono text-gray-900"><?= htmlspecialchars($gitStatus['commit'] ?? 'Unknown') ?></dd>
+                <dt class="text-gray-500">Tables</dt>
+                <dd class="font-medium text-gray-900"><?= $dbStats['tables'] ?? 0 ?></dd>
+            </div>
+        </dl>
+        <?php else: ?>
+        <p class="text-sm text-gray-500"><?= $dbStats['message'] ?? 'Not connected' ?></p>
+        <?php endif; ?>
+    </div>
+
+    <div class="card">
+        <div class="flex items-center justify-between mb-3">
+            <h3 class="font-semibold text-gray-900">Git</h3>
+            <a href="/_dev/system#git" class="text-xs text-blue-600 hover:text-blue-800">Details</a>
+        </div>
+        <?php if ($gitStatus['initialized'] ?? false): ?>
+        <dl class="space-y-1 text-sm">
+            <div class="flex justify-between">
+                <dt class="text-gray-500">Branch</dt>
+                <dd class="font-mono text-gray-900"><?= htmlspecialchars($gitStatus['branch'] ?? 'Unknown') ?></dd>
+            </div>
+            <div class="flex justify-between">
+                <dt class="text-gray-500">Commit</dt>
+                <dd class="font-mono text-xs text-gray-700"><?= htmlspecialchars($gitStatus['commit'] ?? '-') ?></dd>
             </div>
         </dl>
         <?php else: ?>
@@ -93,61 +113,27 @@
         <?php endif; ?>
     </div>
 
-    <!-- Database Status Card -->
-    <div class="bg-white rounded-lg shadow p-6">
-        <h3 class="text-lg font-semibold text-gray-900 mb-4">🗄️ Database</h3>
-        <?php if ($dbStats['available'] ?? false): ?>
-        <dl class="space-y-2">
-            <div class="flex justify-between">
-                <dt class="text-sm text-gray-500">Type</dt>
-                <dd class="text-sm font-medium text-gray-900"><?= htmlspecialchars($dbStats['type'] ?? 'Unknown') ?></dd>
-            </div>
-            <div class="flex justify-between">
-                <dt class="text-sm text-gray-500">Version</dt>
-                <dd class="text-sm font-medium text-gray-900"><?= htmlspecialchars($dbStats['version'] ?? 'Unknown') ?></dd>
-            </div>
-            <div class="flex justify-between">
-                <dt class="text-sm text-gray-500">Tables</dt>
-                <dd class="text-sm font-medium text-gray-900"><?= $dbStats['tables'] ?? 0 ?></dd>
-            </div>
-            <div class="flex justify-between">
-                <dt class="text-sm text-gray-500">Size</dt>
-                <dd class="text-sm font-medium text-gray-900"><?= htmlspecialchars($dbStats['size'] ?? 'Unknown') ?></dd>
-            </div>
-        </dl>
-        <div class="mt-4">
-            <a href="/_dev/database" class="text-sm text-blue-600 hover:text-blue-800 font-medium">View Details →</a>
-        </div>
-        <?php else: ?>
-        <p class="text-sm text-gray-500"><?= $dbStats['message'] ?? 'Database not available' ?></p>
-        <?php endif; ?>
-    </div>
-
-    <!-- Quick Actions Card -->
-    <div class="bg-white rounded-lg shadow p-6">
-        <h3 class="text-lg font-semibold text-gray-900 mb-4">⚡ Quick Actions</h3>
+    <!-- Quick Actions -->
+    <div class="card">
+        <h3 class="font-semibold text-gray-900 mb-3">Quick Actions</h3>
         <div class="space-y-2">
-            <a href="/_dev/health" class="block w-full px-4 py-2 text-center text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded transition">
-                Run Health Check
-            </a>
-            <a href="/_dev/system?phpinfo=1" class="block w-full px-4 py-2 text-center text-sm font-medium text-blue-600 bg-blue-50 hover:bg-blue-100 rounded transition">
-                View phpinfo()
-            </a>
-            <a href="/_dev/logs" class="block w-full px-4 py-2 text-center text-sm font-medium text-blue-600 bg-blue-50 hover:bg-blue-100 rounded transition">
-                View Logs
-            </a>
+            <a href="/_dev/health" class="btn btn-primary btn-block text-sm">Run Health Check</a>
+            <a href="/_dev/logs" class="btn btn-secondary btn-block text-sm">View Logs</a>
+            <a href="/_dev/quality" class="btn btn-secondary btn-block text-sm">Quality Tools</a>
         </div>
     </div>
 
-    <!-- Documentation Card -->
-    <div class="bg-white rounded-lg shadow p-6">
-        <h3 class="text-lg font-semibold text-gray-900 mb-4">📚 Documentation</h3>
-        <div class="space-y-3">
+    <!-- Documentation Status -->
+    <div class="card col-span-1 md:col-span-2">
+        <div class="flex items-center justify-between mb-3">
+            <h3 class="font-semibold text-gray-900">Documentation</h3>
+        </div>
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
             <!-- Guides -->
-            <div class="flex items-center justify-between">
-                <a href="/docs/" class="text-sm text-blue-600 hover:text-blue-800 font-medium">Guides & Docs</a>
+            <a href="/docs/" class="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition">
+                <span class="text-sm font-medium text-gray-900">Guides</span>
                 <span class="badge badge-green">Available</span>
-            </div>
+            </a>
 
             <!-- PHP API -->
             <?php
@@ -156,22 +142,26 @@
             $phpExists    = $phpStatus['exists'] ?? false;
             $phpOutdated  = $phpStatus['outdated'] ?? false;
             ?>
-            <div class="flex items-center justify-between">
-                <?php if ($phpExists): ?>
-                <a href="/docs/api/php/" class="text-sm text-blue-600 hover:text-blue-800 font-medium">PHP API</a>
-                <?php else: ?>
-                <span class="text-sm text-gray-400">PHP API</span>
-                <?php endif; ?>
+            <?php if ($phpExists): ?>
+            <a href="/docs/api/php/" class="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition">
+            <?php else: ?>
+            <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg opacity-60">
+            <?php endif; ?>
+                <span class="text-sm font-medium <?= $phpExists ? 'text-gray-900' : 'text-gray-400' ?>">PHP API</span>
                 <?php if (!$phpHasSource): ?>
                 <span class="badge badge-gray">No source</span>
                 <?php elseif (!$phpExists): ?>
                 <span class="badge badge-red">Missing</span>
                 <?php elseif ($phpOutdated): ?>
-                <span class="badge badge-yellow"><?= $phpStatus['docsAge'] ?? 'Outdated' ?></span>
+                <span class="badge badge-yellow">Outdated</span>
                 <?php else: ?>
-                <span class="badge badge-green"><?= $phpStatus['docsAge'] ?? 'Fresh' ?></span>
+                <span class="badge badge-green">Fresh</span>
                 <?php endif; ?>
+            <?php if ($phpExists): ?>
+            </a>
+            <?php else: ?>
             </div>
+            <?php endif; ?>
 
             <!-- Node Backend API -->
             <?php
@@ -180,22 +170,26 @@
             $backendExists    = $backendStatus['exists'] ?? false;
             $backendOutdated  = $backendStatus['outdated'] ?? false;
             ?>
-            <div class="flex items-center justify-between">
-                <?php if ($backendExists): ?>
-                <a href="/docs/api/node-backend/" class="text-sm text-blue-600 hover:text-blue-800 font-medium">Node Backend API</a>
-                <?php else: ?>
-                <span class="text-sm text-gray-400">Node Backend API</span>
-                <?php endif; ?>
+            <?php if ($backendExists): ?>
+            <a href="/docs/api/node-backend/" class="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition">
+            <?php else: ?>
+            <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg opacity-60">
+            <?php endif; ?>
+                <span class="text-sm font-medium <?= $backendExists ? 'text-gray-900' : 'text-gray-400' ?>">Backend API</span>
                 <?php if (!$backendHasSource): ?>
                 <span class="badge badge-gray">No source</span>
                 <?php elseif (!$backendExists): ?>
                 <span class="badge badge-red">Missing</span>
                 <?php elseif ($backendOutdated): ?>
-                <span class="badge badge-yellow"><?= $backendStatus['docsAge'] ?? 'Outdated' ?></span>
+                <span class="badge badge-yellow">Outdated</span>
                 <?php else: ?>
-                <span class="badge badge-green"><?= $backendStatus['docsAge'] ?? 'Fresh' ?></span>
+                <span class="badge badge-green">Fresh</span>
                 <?php endif; ?>
+            <?php if ($backendExists): ?>
+            </a>
+            <?php else: ?>
             </div>
+            <?php endif; ?>
 
             <!-- Node Frontend -->
             <?php
@@ -204,44 +198,64 @@
             $frontendExists    = $frontendStatus['exists'] ?? false;
             $frontendOutdated  = $frontendStatus['outdated'] ?? false;
             ?>
-            <div class="flex items-center justify-between">
-                <?php if ($frontendExists): ?>
-                <a href="/docs/api/node-frontend/" class="text-sm text-blue-600 hover:text-blue-800 font-medium">Node Frontend</a>
-                <?php else: ?>
-                <span class="text-sm text-gray-400">Node Frontend</span>
-                <?php endif; ?>
+            <?php if ($frontendExists): ?>
+            <a href="/docs/api/node-frontend/" class="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition">
+            <?php else: ?>
+            <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg opacity-60">
+            <?php endif; ?>
+                <span class="text-sm font-medium <?= $frontendExists ? 'text-gray-900' : 'text-gray-400' ?>">Frontend</span>
                 <?php if (!$frontendHasSource): ?>
                 <span class="badge badge-gray">No source</span>
                 <?php elseif (!$frontendExists): ?>
                 <span class="badge badge-red">Missing</span>
                 <?php elseif ($frontendOutdated): ?>
-                <span class="badge badge-yellow"><?= $frontendStatus['docsAge'] ?? 'Outdated' ?></span>
+                <span class="badge badge-yellow">Outdated</span>
                 <?php else: ?>
-                <span class="badge badge-green"><?= $frontendStatus['docsAge'] ?? 'Fresh' ?></span>
+                <span class="badge badge-green">Fresh</span>
                 <?php endif; ?>
+            <?php if ($frontendExists): ?>
+            </a>
+            <?php else: ?>
             </div>
+            <?php endif; ?>
         </div>
 
         <?php
-        $phpNeedsRegen  = $phpHasSource && (!$phpExists || $phpOutdated);
-        $nodeNeedsRegen = ($backendHasSource && (!$backendExists || $backendOutdated))
-                       || ($frontendHasSource && (!$frontendExists || $frontendOutdated));
+        $phpNeedsRegen      = $phpHasSource && (!$phpExists || $phpOutdated);
+        $backendNeedsRegen  = $backendHasSource && (!$backendExists || $backendOutdated);
+        $frontendNeedsRegen = $frontendHasSource && (!$frontendExists || $frontendOutdated);
+        $nodeNeedsRegen     = $backendNeedsRegen || $frontendNeedsRegen;
+        $multipleNeedRegen  = ($phpNeedsRegen ? 1 : 0) + ($nodeNeedsRegen ? 1 : 0) > 1;
         ?>
         <?php if ($phpNeedsRegen || $nodeNeedsRegen): ?>
-        <div class="mt-4 pt-3 border-t border-gray-200 space-y-2">
+        <div style="margin-top: 1rem; padding-top: 0.75rem; border-top: 1px solid #e5e7eb; display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem;">
             <?php if ($phpNeedsRegen): ?>
             <button
                 id="btn-regen-php-docs"
-                onclick="regeneratePhpDocs()"
-                class="w-full px-3 py-2 text-xs font-medium text-white bg-purple-600 hover:bg-purple-700 rounded transition disabled:opacity-50 disabled:cursor-not-allowed"
+                onclick="regenerateDocs('php')"
+                class="btn btn-secondary text-xs"
             >
-                Regenerate PHP Docs
+                Regenerate PHP
             </button>
             <?php endif; ?>
             <?php if ($nodeNeedsRegen): ?>
-            <p class="text-xs text-gray-500">
-                Node docs: <code class="bg-gray-100 px-1 rounded">make docs-node</code>
-            </p>
+            <button
+                type="button"
+                onclick="copyCmd('make docs-node', this)"
+                class="btn btn-secondary text-xs"
+                title="Node docs require shell access - copy command to run in terminal"
+            >
+                Copy: make docs-node
+            </button>
+            <?php endif; ?>
+            <?php if ($multipleNeedRegen): ?>
+            <button
+                id="btn-regen-all-docs"
+                onclick="regenerateAllDocs()"
+                class="btn btn-primary text-xs"
+            >
+                Regenerate All
+            </button>
             <?php endif; ?>
         </div>
         <?php endif; ?>
@@ -249,15 +263,24 @@
 </div>
 
 <script>
-async function regeneratePhpDocs() {
-    const btn = document.getElementById('btn-regen-php-docs');
-    const originalText = btn.textContent;
+function copyCmd(cmd, btn) {
+    navigator.clipboard.writeText(cmd).then(() => {
+        const orig = btn.textContent;
+        btn.textContent = 'Copied!';
+        setTimeout(() => { btn.textContent = orig; }, 1500);
+    });
+}
 
+async function regenerateDocs(type, skipReload = false) {
+    const btn = document.getElementById('btn-regen-' + type + '-docs');
+    if (!btn) return false;
+
+    const originalText = btn.textContent;
     btn.disabled = true;
     btn.textContent = 'Generating...';
 
     try {
-        const response = await fetch('/_dev/api/docs/generate?type=php', {
+        const response = await fetch('/_dev/api/docs/generate?type=' + type, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' }
         });
@@ -266,48 +289,60 @@ async function regeneratePhpDocs() {
 
         if (result.success) {
             btn.textContent = 'Done!';
-            btn.classList.remove('bg-purple-600', 'hover:bg-purple-700');
-            btn.classList.add('bg-green-600');
-            setTimeout(() => location.reload(), 1000);
+            btn.classList.remove('btn-secondary');
+            btn.classList.add('btn-success');
+            if (!skipReload) {
+                setTimeout(() => location.reload(), 1000);
+            }
+            return true;
         } else {
             btn.textContent = 'Failed';
-            btn.classList.remove('bg-purple-600', 'hover:bg-purple-700');
-            btn.classList.add('bg-red-600');
+            btn.classList.remove('btn-secondary');
+            btn.classList.add('btn-danger');
             alert('Error: ' + result.message);
             setTimeout(() => {
                 btn.textContent = originalText;
-                btn.classList.remove('bg-red-600');
-                btn.classList.add('bg-purple-600', 'hover:bg-purple-700');
+                btn.classList.remove('btn-danger');
+                btn.classList.add('btn-secondary');
                 btn.disabled = false;
             }, 2000);
+            return false;
         }
     } catch (error) {
         btn.textContent = 'Error';
-        btn.classList.remove('bg-purple-600', 'hover:bg-purple-700');
-        btn.classList.add('bg-red-600');
+        btn.classList.remove('btn-secondary');
+        btn.classList.add('btn-danger');
         alert('Request failed: ' + error.message);
         setTimeout(() => {
             btn.textContent = originalText;
-            btn.classList.remove('bg-red-600');
-            btn.classList.add('bg-purple-600', 'hover:bg-purple-700');
+            btn.classList.remove('btn-danger');
+            btn.classList.add('btn-secondary');
             btn.disabled = false;
         }, 2000);
+        return false;
+    }
+}
+
+async function regenerateAllDocs() {
+    const btn = document.getElementById('btn-regen-all-docs');
+    const originalText = btn.textContent;
+    btn.disabled = true;
+    btn.textContent = 'Generating...';
+
+    // Regenerate PHP docs (skip auto-reload)
+    const phpSuccess = await regenerateDocs('php', true);
+
+    // Copy Node command to clipboard
+    await navigator.clipboard.writeText('make docs-node');
+
+    if (phpSuccess) {
+        btn.textContent = 'Done! Node cmd copied';
+        btn.classList.remove('btn-primary');
+        btn.classList.add('btn-success');
+        setTimeout(() => location.reload(), 1500);
+    } else {
+        btn.textContent = originalText;
+        btn.disabled = false;
     }
 }
 </script>
-
-<!-- Recent Activity / Info -->
-<div class="mt-8 bg-blue-50 border border-blue-200 rounded-lg p-6">
-    <h3 class="text-lg font-semibold text-blue-900 mb-2">ℹ️ Welcome to the zappzarapp Development Dashboard</h3>
-    <p class="text-sm text-blue-700">
-        This dashboard provides real-time insights into your development environment.
-        Monitor system health, check container status, view logs, and more.
-    </p>
-    <div class="mt-4 flex items-center space-x-4 text-sm text-blue-600">
-        <a href="/_dev/system" class="hover:text-blue-800 font-medium">System Info</a>
-        <span class="text-blue-300">•</span>
-        <a href="/_dev/health" class="hover:text-blue-800 font-medium">Health Checks</a>
-        <span class="text-blue-300">•</span>
-        <a href="https://github.com" class="hover:text-blue-800 font-medium">Documentation</a>
-    </div>
-</div>

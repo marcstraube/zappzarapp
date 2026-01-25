@@ -24,6 +24,20 @@ load 'helpers/setup'
 }
 
 # =============================================================================
+# Setup Targets
+# =============================================================================
+
+@test "make init --dry-run validates" {
+    run make -n init
+    assert_success
+}
+
+@test "make setup --dry-run validates" {
+    run make -n setup
+    assert_success
+}
+
+# =============================================================================
 # PHP Quality Targets
 # =============================================================================
 
@@ -319,6 +333,55 @@ load 'helpers/setup'
 
 @test "make redis-monitor --dry-run validates" {
     run make -n redis-monitor
+    assert_success
+}
+
+# =============================================================================
+# Database Tools Targets
+# =============================================================================
+
+@test "make adminer-up --dry-run validates" {
+    run make -n adminer-up
+    assert_success
+}
+
+@test "make adminer-down --dry-run validates" {
+    run make -n adminer-down
+    assert_success
+}
+
+@test "make pgadmin-up --dry-run validates" {
+    run make -n pgadmin-up
+    assert_success
+}
+
+@test "make pgadmin-down --dry-run validates" {
+    run make -n pgadmin-down
+    assert_success
+}
+
+@test "make db-tools-up --dry-run validates" {
+    run make -n db-tools-up
+    assert_success
+}
+
+@test "make db-tools-down --dry-run validates" {
+    run make -n db-tools-down
+    assert_success
+}
+
+@test "make postgres-cli-enhanced --dry-run validates" {
+    run make -n postgres-cli-enhanced
+    assert_success
+}
+
+@test "make mariadb-cli-enhanced --dry-run validates" {
+    run make -n mariadb-cli-enhanced
+    assert_success
+}
+
+@test "make sqlite-cli --dry-run validates" {
+    run make -n sqlite-cli
     assert_success
 }
 
