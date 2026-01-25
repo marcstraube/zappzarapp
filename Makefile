@@ -2938,18 +2938,30 @@ bats-test-junit: ## Run BATS tests with JUnit XML output (for CI/CD)
 bats-test-integration: ## Run BATS integration tests (requires running containers)
 	@echo -e "\033[0;33mRunning BATS integration tests...\033[0m"
 	@echo -e "\033[0;34mNote: This requires containers to be running (make up)\033[0m"
-	@# Run BATS with host user UID/GID + docker group access
-	@# This preserves file ownership while allowing Docker socket access
-	docker run --rm \
-		-v /var/run/docker.sock:/var/run/docker.sock \
-		-v "$(PWD):$(PWD)" \
-		-w "$(PWD)" \
-		--network host \
-		--user "$$(id -u):$$(id -g)" \
-		--group-add "$$(stat -c %g /var/run/docker.sock)" \
-		-e INTEGRATION_PRESET=$(INTEGRATION_PRESET) \
-		-e COMPOSE_FILE=$${COMPOSE_FILE:-} \
-		$(BATS_IMAGE) tests/bats/integration/
+	@# In CI: use root (can delete files created by containers)
+	@# Locally: use host user UID/GID (preserves file ownership)
+	@if [ -n "$${CI:-}" ]; then \
+		docker run --rm \
+			-v /var/run/docker.sock:/var/run/docker.sock \
+			-v "$(PWD):$(PWD)" \
+			-w "$(PWD)" \
+			--network host \
+			--user root \
+			-e INTEGRATION_PRESET=$(INTEGRATION_PRESET) \
+			-e COMPOSE_FILE=$${COMPOSE_FILE:-} \
+			$(BATS_IMAGE) tests/bats/integration/; \
+	else \
+		docker run --rm \
+			-v /var/run/docker.sock:/var/run/docker.sock \
+			-v "$(PWD):$(PWD)" \
+			-w "$(PWD)" \
+			--network host \
+			--user "$$(id -u):$$(id -g)" \
+			--group-add "$$(stat -c %g /var/run/docker.sock)" \
+			-e INTEGRATION_PRESET=$(INTEGRATION_PRESET) \
+			-e COMPOSE_FILE=$${COMPOSE_FILE:-} \
+			$(BATS_IMAGE) tests/bats/integration/; \
+	fi
 	@echo -e "\033[0;32m✓ BATS integration tests complete\033[0m"
 
 bats-test-integration-file: ## Run specific BATS integration test file (FILE=lint.bats)
@@ -2957,19 +2969,32 @@ bats-test-integration-file: ## Run specific BATS integration test file (FILE=lin
 		echo -e "\033[0;31mError: FILE parameter required (e.g., make bats-test-integration-file FILE=lint.bats)\033[0m"; \
 		exit 1; \
 	fi
-	@# Run BATS with host user UID/GID + docker group access
-	@# This preserves file ownership while allowing Docker socket access
-	@docker run --rm \
-		-v /var/run/docker.sock:/var/run/docker.sock \
-		-v "$(PWD):$(PWD)" \
-		-w "$(PWD)" \
-		--network host \
-		--user "$$(id -u):$$(id -g)" \
-		--group-add "$$(stat -c %g /var/run/docker.sock)" \
-		-e INTEGRATION_PRESET=$(INTEGRATION_PRESET) \
-		-e BATS_ENABLE_DESTRUCTIVE=$(BATS_ENABLE_DESTRUCTIVE) \
-		-e COMPOSE_FILE=$${COMPOSE_FILE:-} \
-		$(BATS_IMAGE) "tests/bats/integration/$(FILE)"
+	@# In CI: use root (can delete files created by containers)
+	@# Locally: use host user UID/GID (preserves file ownership)
+	@if [ -n "$${CI:-}" ]; then \
+		docker run --rm \
+			-v /var/run/docker.sock:/var/run/docker.sock \
+			-v "$(PWD):$(PWD)" \
+			-w "$(PWD)" \
+			--network host \
+			--user root \
+			-e INTEGRATION_PRESET=$(INTEGRATION_PRESET) \
+			-e BATS_ENABLE_DESTRUCTIVE=$(BATS_ENABLE_DESTRUCTIVE) \
+			-e COMPOSE_FILE=$${COMPOSE_FILE:-} \
+			$(BATS_IMAGE) "tests/bats/integration/$(FILE)"; \
+	else \
+		docker run --rm \
+			-v /var/run/docker.sock:/var/run/docker.sock \
+			-v "$(PWD):$(PWD)" \
+			-w "$(PWD)" \
+			--network host \
+			--user "$$(id -u):$$(id -g)" \
+			--group-add "$$(stat -c %g /var/run/docker.sock)" \
+			-e INTEGRATION_PRESET=$(INTEGRATION_PRESET) \
+			-e BATS_ENABLE_DESTRUCTIVE=$(BATS_ENABLE_DESTRUCTIVE) \
+			-e COMPOSE_FILE=$${COMPOSE_FILE:-} \
+			$(BATS_IMAGE) "tests/bats/integration/$(FILE)"; \
+	fi
 
 bats-test-all: ## Run all BATS tests (unit + integration)
 	@echo -e "\033[0;33mRunning all BATS tests...\033[0m"
@@ -2989,17 +3014,30 @@ bats-test-destructive: ## Run BATS destructive tests (⚠️ WARNING: modifies d
 		echo "Aborted."; \
 		exit 1; \
 	fi
-	@# Run BATS with host user UID/GID + docker group access
-	@docker run --rm \
-		-v /var/run/docker.sock:/var/run/docker.sock \
-		-v "$(PWD):$(PWD)" \
-		-w "$(PWD)" \
-		--network host \
-		--user "$$(id -u):$$(id -g)" \
-		--group-add "$$(stat -c %g /var/run/docker.sock)" \
-		-e BATS_ENABLE_DESTRUCTIVE=true \
-		-e COMPOSE_FILE=$${COMPOSE_FILE:-} \
-		$(BATS_IMAGE) tests/bats/integration/destructive.bats
+	@# In CI: use root (can delete files created by containers)
+	@# Locally: use host user UID/GID (preserves file ownership)
+	@if [ -n "$${CI:-}" ]; then \
+		docker run --rm \
+			-v /var/run/docker.sock:/var/run/docker.sock \
+			-v "$(PWD):$(PWD)" \
+			-w "$(PWD)" \
+			--network host \
+			--user root \
+			-e BATS_ENABLE_DESTRUCTIVE=true \
+			-e COMPOSE_FILE=$${COMPOSE_FILE:-} \
+			$(BATS_IMAGE) tests/bats/integration/destructive.bats; \
+	else \
+		docker run --rm \
+			-v /var/run/docker.sock:/var/run/docker.sock \
+			-v "$(PWD):$(PWD)" \
+			-w "$(PWD)" \
+			--network host \
+			--user "$$(id -u):$$(id -g)" \
+			--group-add "$$(stat -c %g /var/run/docker.sock)" \
+			-e BATS_ENABLE_DESTRUCTIVE=true \
+			-e COMPOSE_FILE=$${COMPOSE_FILE:-} \
+			$(BATS_IMAGE) tests/bats/integration/destructive.bats; \
+	fi
 
 validate: ## Validate composer.json/lock and package.json/lock files
 	@echo -e "\033[0;33mValidating Composer configuration...\033[0m"

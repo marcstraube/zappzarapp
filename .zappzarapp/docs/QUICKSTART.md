@@ -20,7 +20,7 @@ make --version      # GNU Make
 
 ### 1. Create Your Project
 
-**Option A: Fork on GitHub (recommended)**
+#### Option A: Fork on GitHub (recommended)
 
 1. Fork `marcstraube/zappzarapp` on GitHub
 2. Clone your fork:
@@ -31,7 +31,7 @@ cd my-project
 make setup
 ```
 
-**Option B: Direct clone**
+#### Option B: Direct clone
 
 ```bash
 git clone https://github.com/marcstraube/zappzarapp.git my-project
