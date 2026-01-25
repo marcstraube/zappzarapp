@@ -2938,48 +2938,38 @@ bats-test-junit: ## Run BATS tests with JUnit XML output (for CI/CD)
 bats-test-integration: ## Run BATS integration tests (requires running containers)
 	@echo -e "\033[0;33mRunning BATS integration tests...\033[0m"
 	@echo -e "\033[0;34mNote: This requires containers to be running (make up)\033[0m"
-	@# Run BATS as root (required for Docker socket access)
-	@# Store exit code to fix ownership even on test failure
-	@exit_code=0; \
+	@# Run BATS with host user UID/GID + docker group access
+	@# This preserves file ownership while allowing Docker socket access
 	docker run --rm \
 		-v /var/run/docker.sock:/var/run/docker.sock \
 		-v "$(PWD):$(PWD)" \
 		-w "$(PWD)" \
 		--network host \
-		--user root \
+		--user "$$(id -u):$$(id -g)" \
+		--group-add "$$(stat -c %g /var/run/docker.sock)" \
 		-e INTEGRATION_PRESET=$(INTEGRATION_PRESET) \
 		-e COMPOSE_FILE=$${COMPOSE_FILE:-} \
-		$(BATS_IMAGE) tests/bats/integration/ || exit_code=$$?; \
-	echo -e "\033[0;34mFixing file ownership after root-user test...\033[0m"; \
-	docker run --rm -v "$(PWD):$(PWD)" -w "$(PWD)" $(ALPINE_IMAGE) \
-		chown -R $$(id -u):$$(id -g) "$(PWD)" 2>/dev/null || true; \
-	if [ $$exit_code -eq 0 ]; then \
-		echo -e "\033[0;32m✓ BATS integration tests complete\033[0m"; \
-	fi; \
-	exit $$exit_code
+		$(BATS_IMAGE) tests/bats/integration/
+	@echo -e "\033[0;32m✓ BATS integration tests complete\033[0m"
 
 bats-test-integration-file: ## Run specific BATS integration test file (FILE=lint.bats)
 	@if [ -z "$(FILE)" ]; then \
 		echo -e "\033[0;31mError: FILE parameter required (e.g., make bats-test-integration-file FILE=lint.bats)\033[0m"; \
 		exit 1; \
 	fi
-	@# Run BATS as root (required for Docker socket access)
-	@# Store exit code to fix ownership even on test failure
-	@exit_code=0; \
-	docker run --rm \
+	@# Run BATS with host user UID/GID + docker group access
+	@# This preserves file ownership while allowing Docker socket access
+	@docker run --rm \
 		-v /var/run/docker.sock:/var/run/docker.sock \
 		-v "$(PWD):$(PWD)" \
 		-w "$(PWD)" \
 		--network host \
-		--user root \
+		--user "$$(id -u):$$(id -g)" \
+		--group-add "$$(stat -c %g /var/run/docker.sock)" \
 		-e INTEGRATION_PRESET=$(INTEGRATION_PRESET) \
 		-e BATS_ENABLE_DESTRUCTIVE=$(BATS_ENABLE_DESTRUCTIVE) \
 		-e COMPOSE_FILE=$${COMPOSE_FILE:-} \
-		$(BATS_IMAGE) "tests/bats/integration/$(FILE)" || exit_code=$$?; \
-	echo -e "\033[0;34mFixing file ownership after root-user test...\033[0m"; \
-	docker run --rm -v "$(PWD):$(PWD)" -w "$(PWD)" $(ALPINE_IMAGE) \
-		chown -R $$(id -u):$$(id -g) "$(PWD)" 2>/dev/null || true; \
-	exit $$exit_code
+		$(BATS_IMAGE) "tests/bats/integration/$(FILE)"
 
 bats-test-all: ## Run all BATS tests (unit + integration)
 	@echo -e "\033[0;33mRunning all BATS tests...\033[0m"
@@ -2999,12 +2989,14 @@ bats-test-destructive: ## Run BATS destructive tests (⚠️ WARNING: modifies d
 		echo "Aborted."; \
 		exit 1; \
 	fi
+	@# Run BATS with host user UID/GID + docker group access
 	@docker run --rm \
 		-v /var/run/docker.sock:/var/run/docker.sock \
 		-v "$(PWD):$(PWD)" \
 		-w "$(PWD)" \
 		--network host \
-		--user root \
+		--user "$$(id -u):$$(id -g)" \
+		--group-add "$$(stat -c %g /var/run/docker.sock)" \
 		-e BATS_ENABLE_DESTRUCTIVE=true \
 		-e COMPOSE_FILE=$${COMPOSE_FILE:-} \
 		$(BATS_IMAGE) tests/bats/integration/destructive.bats
