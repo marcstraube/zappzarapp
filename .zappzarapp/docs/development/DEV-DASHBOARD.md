@@ -17,6 +17,11 @@ configurations:
 | Database    | No       | Dashboard shows connection status if enabled |
 | Redis       | No       | Dashboard shows connection status if enabled |
 
+**Note:** In development mode, `make up` starts Node with `NODE_MODE=assets` to
+enable **Vite HMR** (instant hot-reload for CSS/JS). The DevDashboard itself is
+self-contained PHP and works without Node. Set `ENABLE_NODE=false` to disable
+Node completely.
+
 **Minimal configuration:**
 
 ```bash

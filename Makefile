@@ -591,6 +591,20 @@ build: ## Build Docker images (optionally specify service names: make build php 
 		echo -e "\033[0;33mBuilding Docker images...\033[0m"; \
 		if [ -f .env ]; then \
 			. ./.env && \
+			if [ "$${ENV:-development}" != "production" ]; then \
+				DEV_INFO=""; \
+				if [ "$${ENABLE_NODE}" = "false" ]; then \
+					echo -e "\033[0;33m⚠️  ENABLE_NODE=false: Vite HMR disabled, no frontend hot-reload.\033[0m"; \
+					echo -e "\033[0;33m   DevDashboard (/_dev) still works (self-contained PHP).\033[0m"; \
+					echo ""; \
+				elif [ -z "$${NODE_MODE}" ] || [ "$${NODE_MODE}" = "idle" ]; then \
+					export NODE_MODE="assets"; \
+					DEV_INFO=" NODE_MODE=assets"; \
+				fi; \
+				if [ -n "$$DEV_INFO" ]; then \
+					echo -e "\033[0;36mℹ️  Dev-defaults:$$DEV_INFO (override in .env)\033[0m"; \
+				fi; \
+			fi; \
 			PROFILES=""; \
 			if [ "$${ENABLE_DATABASE:-true}" = "true" ]; then \
 				PROFILES="$$PROFILES --profile $${DB_TYPE:-postgres}"; \
@@ -1198,6 +1212,20 @@ up: ## Start containers (optionally specify service names: make up php nginx)
 			echo -e "\033[0;33m⚠ $$GOSS_RUNNING Goss-Test-Container laufen parallel\033[0m"; \
 			echo -e "  \033[0;36mBei Problemen: make goss-cleanup\033[0m"; \
 			echo ""; \
+		fi; \
+		if [ "$${ENV:-development}" != "production" ]; then \
+			DEV_INFO=""; \
+			if [ "$${ENABLE_NODE}" = "false" ]; then \
+				echo -e "\033[0;33m⚠️  ENABLE_NODE=false: Vite HMR disabled, no frontend hot-reload.\033[0m"; \
+				echo -e "\033[0;33m   DevDashboard (/_dev) still works (self-contained PHP).\033[0m"; \
+				echo ""; \
+			elif [ -z "$${NODE_MODE}" ] || [ "$${NODE_MODE}" = "idle" ]; then \
+				export NODE_MODE="assets"; \
+				DEV_INFO=" NODE_MODE=assets"; \
+			fi; \
+			if [ -n "$$DEV_INFO" ]; then \
+				echo -e "\033[0;36mℹ️  Dev-defaults:$$DEV_INFO (override in .env)\033[0m"; \
+			fi; \
 		fi; \
 		MISSING=""; \
 		PROJECT="$${COMPOSE_PROJECT_NAME:-zappzarapp}"; \
@@ -3372,7 +3400,7 @@ docs-php: ## Generate PHP API documentation using phpDocumentor
 		find /var/www/html/docs/api/php -name "*.html" -exec sed -i "s|<title>PHP API</title>|<title>$$PROJECT_NAME - PHP API - v$$PROJECT_VERSION</title>|g" {} \; ; \
 		find /var/www/html/docs/api/php -name "*.html" -exec sed -i "s|>PHP API</a>|>$$PROJECT_NAME - PHP API</a>|g" {} \;'
 	@# Fix ownership (docs generated as root, fix to host user)
-	@$(LOAD_ENV) && docker compose exec -u root php chown -R $${USER_ID:-1000}:$${GROUP_ID:-1000} /var/www/html/docs/api/php
+	@$(LOAD_ENV) && docker run --rm -v "$$(pwd)/docs:/docs" $(ALPINE_IMAGE) chown -R $${USER_ID:-1000}:$${GROUP_ID:-1000} /docs/api/php
 	@echo -e "\033[0;32mPHP documentation generated in docs/api/php/\033[0m"
 
 docs-node: docs-node-backend docs-node-frontend ## Generate all Node/TypeScript API documentation

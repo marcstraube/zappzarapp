@@ -82,6 +82,11 @@ make node-dev
 make node-dev-full
 ```
 
+> **Note:** In development mode, Node starts with `NODE_MODE=assets` by default.
+> This enables **Vite HMR** (Hot Module Replacement) for instant CSS/JS
+> hot-reload. Override with `NODE_MODE=assets-api` for full-stack Node.js
+> development.
+
 ### Access URLs
 
 | Service       | URL                          | Description           |
