@@ -230,6 +230,11 @@ setup: ## Create directories, install dependencies (BOILERPLATE=1 to force file 
 	@mkdir -p .claude/context
 	@if [ ! -f .claude/context/project.md ]; then cp .zappzarapp/ai/templates/PROJECT.md .claude/context/project.md; fi
 
+	# Config example (for ntfy, personal_knowledge_path)
+	@if [ ! -f .claude/config.local.md.example ]; then \
+		cp .zappzarapp/ai/templates/config.local.md.example .claude/; \
+	fi
+
 	@echo -e "\033[0;32mProject structure created!\033[0m"
 
 	# Boilerplate file swaps (README, CLAUDE.md, CHANGELOG)
@@ -254,8 +259,8 @@ setup: ## Create directories, install dependencies (BOILERPLATE=1 to force file 
 		fi; \
 		if grep -q "zappzarapp-boilerplate-claude" .claude/CLAUDE.md 2>/dev/null; then \
 			echo -e "\033[0;33mSetting up Claude configuration...\033[0m"; \
-			mv .claude/CLAUDE.md .zappzarapp/CLAUDE.md; \
-			cp .zappzarapp/CLAUDE.template.md .claude/CLAUDE.md; \
+			mv .claude/CLAUDE.md .zappzarapp/ai/CLAUDE.md; \
+			cp .zappzarapp/ai/templates/CLAUDE.md .claude/CLAUDE.md; \
 			echo -e "\033[0;32mCLAUDE.md replaced with generic template.\033[0m"; \
 		fi; \
 		if grep -q "zappzarapp - Changelog" CHANGELOG.md 2>/dev/null; then \
@@ -278,43 +283,38 @@ setup: ## Create directories, install dependencies (BOILERPLATE=1 to force file 
 	# Generate Docker Secrets (file-based)
 	@$(MAKE) --silent secrets
 
-	@echo -e "\033[0;33mBuilding Docker images...\033[0m"
-	@$(MAKE) --silent build
-
-	@echo -e "\033[0;33mInstalling dependencies...\033[0m"
-	@$(MAKE) --silent composer-install
-	@$(MAKE) --silent pnpm-install
-
-	@echo -e "\033[0;33mStarting containers...\033[0m"
-	@$(MAKE) --silent up
-
-	# Run database migrations (encryption helpers, audit logs)
-	@echo -e "\033[0;33mRunning database migrations...\033[0m"
-	-@$(MAKE) --silent db-migrations 2>/dev/null || echo -e "\033[0;34mNo migrations to run or database not ready yet.\033[0m"
-
-	# Generate API documentation
-	@echo -e "\033[0;33mGenerating API documentation...\033[0m"
-	-@$(MAKE) --silent docs 2>/dev/null || echo -e "\033[0;34mAPI docs generation skipped (tools not yet available).\033[0m"
-
-	# Configure IDE database connections
-	@$(MAKE) --silent ide-config
-
-	# Local development tools + Git hooks (optional - requires local composer)
-	@echo -e "\033[0;33mSetting up local development tools...\033[0m"
-	@if command -v composer >/dev/null 2>&1; then \
-		echo -e "\033[0;34m  Installing local PHP dependencies (for IDE + Git hooks)...\033[0m"; \
-		$(MAKE) --silent composer-install-local 2>/dev/null && \
-		if [ -f vendor/bin/captainhook ]; then \
-			echo -e "\033[0;34m  Installing Git hooks (captainhook)...\033[0m"; \
-			vendor/bin/captainhook install --force --skip-existing 2>/dev/null && \
-			echo -e "\033[0;32m  ✓ Git hooks installed\033[0m"; \
+	# Docker-dependent steps (skip with CI_TEST=1 for BATS integration tests)
+	@if [ "$${CI_TEST:-}" != "1" ]; then \
+		echo -e "\033[0;33mBuilding Docker images...\033[0m"; \
+		$(MAKE) --silent build; \
+		echo -e "\033[0;33mInstalling dependencies...\033[0m"; \
+		$(MAKE) --silent composer-install; \
+		$(MAKE) --silent pnpm-install; \
+		echo -e "\033[0;33mStarting containers...\033[0m"; \
+		$(MAKE) --silent up; \
+		echo -e "\033[0;33mRunning database migrations...\033[0m"; \
+		$(MAKE) --silent db-migrations 2>/dev/null || echo -e "\033[0;34mNo migrations to run or database not ready yet.\033[0m"; \
+		echo -e "\033[0;33mGenerating API documentation...\033[0m"; \
+		$(MAKE) --silent docs 2>/dev/null || echo -e "\033[0;34mAPI docs generation skipped (tools not yet available).\033[0m"; \
+		$(MAKE) --silent ide-config; \
+		echo -e "\033[0;33mSetting up local development tools...\033[0m"; \
+		if command -v composer >/dev/null 2>&1; then \
+			echo -e "\033[0;34m  Installing local PHP dependencies (for IDE + Git hooks)...\033[0m"; \
+			$(MAKE) --silent composer-install-local 2>/dev/null && \
+			if [ -f vendor/bin/captainhook ]; then \
+				echo -e "\033[0;34m  Installing Git hooks (captainhook)...\033[0m"; \
+				vendor/bin/captainhook install --force --skip-existing 2>/dev/null && \
+				echo -e "\033[0;32m  ✓ Git hooks installed\033[0m"; \
+			fi; \
+		else \
+			echo -e "\033[0;33m  ⚠ Local composer not found - skipping local PHP dependencies\033[0m"; \
+			echo -e "\033[0;33m    To enable Git hooks manually:\033[0m"; \
+			echo -e "\033[0;33m      1. Install composer: https://getcomposer.org/download/\033[0m"; \
+			echo -e "\033[0;33m      2. make composer-install-local\033[0m"; \
+			echo -e "\033[0;33m      3. vendor/bin/captainhook install\033[0m"; \
 		fi; \
 	else \
-		echo -e "\033[0;33m  ⚠ Local composer not found - skipping local PHP dependencies\033[0m"; \
-		echo -e "\033[0;33m    To enable Git hooks manually:\033[0m"; \
-		echo -e "\033[0;33m      1. Install composer: https://getcomposer.org/download/\033[0m"; \
-		echo -e "\033[0;33m      2. make composer-install-local\033[0m"; \
-		echo -e "\033[0;33m      3. vendor/bin/captainhook install\033[0m"; \
+		echo -e "\033[0;34mSkipping Docker-dependent steps (CI_TEST=1)...\033[0m"; \
 	fi
 
 	@echo ""
@@ -1322,6 +1322,8 @@ pnpm-install: ## Install Node.js dependencies (Docker - guaranteed consistency)
 	fi
 	@# If lockfile exists and is valid AND not in CI mode, use --frozen-lockfile
 	@# In CI (compose.ci.yaml), lockfile is not mounted so always use normal install
+	@# Docker bind mounts don't support atomic rename (EBUSY error when pnpm writes lockfile)
+	@# Solution: When generating lockfile, run in temp location and copy back
 	@if echo "$${COMPOSE_FILE:-}" | grep -q "compose.ci.yaml"; then \
 		echo -e "\033[0;33m  CI mode: lockfile not mounted, generating inside container...\033[0m"; \
 		$(DC_RUN) run --rm --no-TTY --user root --entrypoint "" -e CI=true node pnpm install; \
@@ -1329,7 +1331,16 @@ pnpm-install: ## Install Node.js dependencies (Docker - guaranteed consistency)
 		$(DC_RUN) run --rm --no-TTY --user root --entrypoint "" -e CI=true node pnpm install --frozen-lockfile; \
 	else \
 		echo -e "\033[0;33m  No valid lockfile found, generating...\033[0m"; \
-		$(DC_RUN) run --rm --no-TTY --user root --entrypoint "" -e CI=true node pnpm install; \
+		$(DC_RUN) run --rm --no-TTY --user root --entrypoint "" -e CI=true node sh -c ' \
+			mkdir -p /tmp/pnpm-install/src/node/backend /tmp/pnpm-install/src/node/frontend && \
+			cp /app/package.json /tmp/pnpm-install/ && \
+			cp /app/pnpm-workspace.yaml /tmp/pnpm-install/ && \
+			cp /app/src/node/backend/package.json /tmp/pnpm-install/src/node/backend/ && \
+			cp /app/src/node/frontend/package.json /tmp/pnpm-install/src/node/frontend/ && \
+			cd /tmp/pnpm-install && pnpm install && \
+			cat /tmp/pnpm-install/pnpm-lock.yaml > /app/pnpm-lock.yaml && \
+			cd /app && pnpm install --frozen-lockfile \
+		'; \
 	fi
 	@echo -e "\033[0;32mDependencies installed!\033[0m"
 
@@ -2100,7 +2111,145 @@ reset-full: ## Full factory reset - removes EVERYTHING including secrets (DANGER
 	@git checkout -- CHANGELOG.md 2>/dev/null || \
 		echo -e "\033[0;31m  ⚠ CHANGELOG.md not reset (not tracked or modified)\033[0m"
 	@rm -f .zappzarapp/CHANGELOG.md 2>/dev/null || true
+	@rm -f .zappzarapp/ai/CLAUDE.md 2>/dev/null || true
 	@echo -e "\033[0;32m✓ Full factory reset complete! Project is now in boilerplate state.\033[0m"
+
+# =============================================================================
+# Boilerplate Sync - Update infrastructure from zappzarapp upstream
+# =============================================================================
+
+ZAPPZARAPP_UPSTREAM := https://github.com/marcstraube/zappzarapp.git
+ZAPPZARAPP_BRANCH ?= master
+
+# Files/directories to sync from upstream (infrastructure)
+BOILERPLATE_SYNC_PATHS := \
+	.zappzarapp \
+	docker \
+	.github \
+	.gitlab-ci.yml \
+	.editorconfig \
+	.markdownlint.json \
+	.prettierrc \
+	.shellcheckrc \
+	captainhook.json \
+	eslint.config.js \
+	phpstan.neon \
+	phpunit.xml \
+	tsconfig.json \
+	vite.config.ts \
+	vitest.config.ts
+
+# Files to NEVER sync (project-specific, even if in sync paths)
+BOILERPLATE_EXCLUDE := \
+	.zappzarapp/CHANGELOG.md \
+	.zappzarapp/ai/CLAUDE.md
+
+boilerplate-sync: ## Sync infrastructure from zappzarapp upstream (preserves project files)
+	@echo -e "\033[0;36m╔════════════════════════════════════════════════════════════╗\033[0m"
+	@echo -e "\033[0;36m║           Boilerplate Sync - Infrastructure Update         ║\033[0m"
+	@echo -e "\033[0;36m╚════════════════════════════════════════════════════════════╝\033[0m"
+	@echo ""
+	@# Check if this IS the zappzarapp repo (should not sync to itself)
+	@if git remote get-url origin 2>/dev/null | grep -qE 'marcstraube/zappzarapp'; then \
+		echo -e "\033[0;31mError: Cannot sync zappzarapp to itself.\033[0m"; \
+		echo -e "\033[0;33mThis command is for projects derived from zappzarapp.\033[0m"; \
+		exit 1; \
+	fi
+	@# Ensure zappzarapp remote exists
+	@if ! git remote get-url zappzarapp >/dev/null 2>&1; then \
+		echo -e "\033[0;33mAdding zappzarapp remote...\033[0m"; \
+		git remote add zappzarapp $(ZAPPZARAPP_UPSTREAM); \
+		echo -e "\033[0;32m✓ Remote 'zappzarapp' added\033[0m"; \
+	else \
+		echo -e "\033[0;32m✓ Remote 'zappzarapp' exists\033[0m"; \
+	fi
+	@echo ""
+	@echo -e "\033[0;33mFetching from zappzarapp...\033[0m"
+	@git fetch zappzarapp $(ZAPPZARAPP_BRANCH)
+	@echo ""
+	@echo -e "\033[0;33mFiles to sync:\033[0m"
+	@echo -e "\033[0;34m  Infrastructure: .zappzarapp/, docker/, .github/, config files\033[0m"
+	@echo -e "\033[0;34m  Excluded: README.md, CHANGELOG.md, .claude/CLAUDE.md, src/, tests/\033[0m"
+	@echo ""
+	@# Show what would change
+	@echo -e "\033[0;33mChanges from upstream:\033[0m"
+	@CHANGES_FOUND=0; \
+	for path in $(BOILERPLATE_SYNC_PATHS); do \
+		if git ls-tree -r --name-only zappzarapp/$(ZAPPZARAPP_BRANCH) -- "$$path" >/dev/null 2>&1; then \
+			DIFF=$$(git diff HEAD...zappzarapp/$(ZAPPZARAPP_BRANCH) --stat -- "$$path" 2>/dev/null | head -20); \
+			if [ -n "$$DIFF" ]; then \
+				echo "$$DIFF"; \
+				CHANGES_FOUND=1; \
+			fi; \
+		fi; \
+	done; \
+	if [ "$$CHANGES_FOUND" = "0" ]; then \
+		echo -e "\033[0;32m  No changes - already up to date!\033[0m"; \
+		exit 0; \
+	fi
+	@echo ""
+	@read -p "Apply these changes? [y/N] " CONFIRM; \
+	if [ "$$CONFIRM" != "y" ] && [ "$$CONFIRM" != "Y" ]; then \
+		echo -e "\033[0;34mSync cancelled.\033[0m"; \
+		exit 0; \
+	fi
+	@echo ""
+	@echo -e "\033[0;33mApplying changes...\033[0m"
+	@# Checkout infrastructure files from upstream
+	@for path in $(BOILERPLATE_SYNC_PATHS); do \
+		if git ls-tree -r --name-only zappzarapp/$(ZAPPZARAPP_BRANCH) -- "$$path" >/dev/null 2>&1; then \
+			git checkout zappzarapp/$(ZAPPZARAPP_BRANCH) -- "$$path" 2>/dev/null || true; \
+		fi; \
+	done
+	@# Restore excluded files (project-specific that may have been in synced dirs)
+	@for excluded in $(BOILERPLATE_EXCLUDE); do \
+		git checkout HEAD -- "$$excluded" 2>/dev/null || true; \
+	done
+	@# Show files that need manual review (not auto-synced)
+	@echo ""
+	@echo -e "\033[0;33m┌─────────────────────────────────────────────────────────────┐\033[0m"
+	@echo -e "\033[0;33m│  Files requiring manual review (not auto-synced):           │\033[0m"
+	@echo -e "\033[0;33m└─────────────────────────────────────────────────────────────┘\033[0m"
+	@echo ""
+	@echo -e "\033[0;36mMakefile\033[0m — may have project customizations"
+	@git diff HEAD...zappzarapp/$(ZAPPZARAPP_BRANCH) --stat -- Makefile 2>/dev/null | head -5 || echo "  (no changes)"
+	@echo ""
+	@echo -e "\033[0;36m.gitignore\033[0m — may have project-specific ignores"
+	@git diff HEAD...zappzarapp/$(ZAPPZARAPP_BRANCH) --stat -- .gitignore 2>/dev/null | head -5 || echo "  (no changes)"
+	@echo ""
+	@echo -e "\033[0;36mcomposer.json\033[0m — may have project dependencies"
+	@git diff HEAD...zappzarapp/$(ZAPPZARAPP_BRANCH) --stat -- composer.json 2>/dev/null | head -5 || echo "  (no changes)"
+	@echo ""
+	@echo -e "\033[0;36mpackage.json\033[0m — may have project dependencies"
+	@git diff HEAD...zappzarapp/$(ZAPPZARAPP_BRANCH) --stat -- package.json 2>/dev/null | head -5 || echo "  (no changes)"
+	@echo ""
+	@echo -e "\033[0;34mTo view full diff:  git diff HEAD...zappzarapp/$(ZAPPZARAPP_BRANCH) -- <file>\033[0m"
+	@echo -e "\033[0;34mTo apply changes:   git checkout zappzarapp/$(ZAPPZARAPP_BRANCH) -- <file>\033[0m"
+	@echo ""
+	@echo -e "\033[0;32m✓ Infrastructure synced from zappzarapp!\033[0m"
+	@echo -e "\033[0;33mReview changes with: git status && git diff --cached\033[0m"
+	@echo -e "\033[0;33mCommit with: git commit -m \"chore: sync infrastructure from zappzarapp\"\033[0m"
+
+boilerplate-diff: ## Show diff between local and zappzarapp upstream (dry-run)
+	@# Ensure remote exists
+	@if ! git remote get-url zappzarapp >/dev/null 2>&1; then \
+		echo -e "\033[0;33mAdding zappzarapp remote...\033[0m"; \
+		git remote add zappzarapp $(ZAPPZARAPP_UPSTREAM); \
+	fi
+	@git fetch zappzarapp $(ZAPPZARAPP_BRANCH) 2>/dev/null
+	@echo -e "\033[0;36mDifferences from zappzarapp/$(ZAPPZARAPP_BRANCH):\033[0m"
+	@echo ""
+	@for path in $(BOILERPLATE_SYNC_PATHS); do \
+		if git ls-tree -r --name-only zappzarapp/$(ZAPPZARAPP_BRANCH) -- "$$path" >/dev/null 2>&1; then \
+			DIFF=$$(git diff HEAD...zappzarapp/$(ZAPPZARAPP_BRANCH) --stat -- "$$path" 2>/dev/null); \
+			if [ -n "$$DIFF" ]; then \
+				echo -e "\033[0;33m$$path:\033[0m"; \
+				echo "$$DIFF"; \
+				echo ""; \
+			fi; \
+		fi; \
+	done
+	@echo -e "\033[0;34mFor full diff: git diff HEAD...zappzarapp/$(ZAPPZARAPP_BRANCH) -- <path>\033[0m"
 
 # AI Sync configuration (can be overridden via .env or command line)
 # Command line: make ai-commands-sync FROM=claude TO=gemini
@@ -2789,7 +2938,10 @@ bats-test-junit: ## Run BATS tests with JUnit XML output (for CI/CD)
 bats-test-integration: ## Run BATS integration tests (requires running containers)
 	@echo -e "\033[0;33mRunning BATS integration tests...\033[0m"
 	@echo -e "\033[0;34mNote: This requires containers to be running (make up)\033[0m"
-	@docker run --rm \
+	@# Run BATS as root (required for Docker socket access)
+	@# Store exit code to fix ownership even on test failure
+	@exit_code=0; \
+	docker run --rm \
 		-v /var/run/docker.sock:/var/run/docker.sock \
 		-v "$(PWD):$(PWD)" \
 		-w "$(PWD)" \
@@ -2797,15 +2949,24 @@ bats-test-integration: ## Run BATS integration tests (requires running container
 		--user root \
 		-e INTEGRATION_PRESET=$(INTEGRATION_PRESET) \
 		-e COMPOSE_FILE=$${COMPOSE_FILE:-} \
-		$(BATS_IMAGE) tests/bats/integration/
-	@echo -e "\033[0;32m✓ BATS integration tests complete\033[0m"
+		$(BATS_IMAGE) tests/bats/integration/ || exit_code=$$?; \
+	echo -e "\033[0;34mFixing file ownership after root-user test...\033[0m"; \
+	docker run --rm -v "$(PWD):$(PWD)" -w "$(PWD)" $(ALPINE_IMAGE) \
+		chown -R $$(id -u):$$(id -g) "$(PWD)" 2>/dev/null || true; \
+	if [ $$exit_code -eq 0 ]; then \
+		echo -e "\033[0;32m✓ BATS integration tests complete\033[0m"; \
+	fi; \
+	exit $$exit_code
 
 bats-test-integration-file: ## Run specific BATS integration test file (FILE=lint.bats)
 	@if [ -z "$(FILE)" ]; then \
 		echo -e "\033[0;31mError: FILE parameter required (e.g., make bats-test-integration-file FILE=lint.bats)\033[0m"; \
 		exit 1; \
 	fi
-	@docker run --rm \
+	@# Run BATS as root (required for Docker socket access)
+	@# Store exit code to fix ownership even on test failure
+	@exit_code=0; \
+	docker run --rm \
 		-v /var/run/docker.sock:/var/run/docker.sock \
 		-v "$(PWD):$(PWD)" \
 		-w "$(PWD)" \
@@ -2814,7 +2975,11 @@ bats-test-integration-file: ## Run specific BATS integration test file (FILE=lin
 		-e INTEGRATION_PRESET=$(INTEGRATION_PRESET) \
 		-e BATS_ENABLE_DESTRUCTIVE=$(BATS_ENABLE_DESTRUCTIVE) \
 		-e COMPOSE_FILE=$${COMPOSE_FILE:-} \
-		$(BATS_IMAGE) "tests/bats/integration/$(FILE)"
+		$(BATS_IMAGE) "tests/bats/integration/$(FILE)" || exit_code=$$?; \
+	echo -e "\033[0;34mFixing file ownership after root-user test...\033[0m"; \
+	docker run --rm -v "$(PWD):$(PWD)" -w "$(PWD)" $(ALPINE_IMAGE) \
+		chown -R $$(id -u):$$(id -g) "$(PWD)" 2>/dev/null || true; \
+	exit $$exit_code
 
 bats-test-all: ## Run all BATS tests (unit + integration)
 	@echo -e "\033[0;33mRunning all BATS tests...\033[0m"

@@ -141,7 +141,8 @@ ARG USER_ID=1000
 ARG GROUP_ID=1000
 
 # Install development utilities and build tools
-RUN apk add --no-cache git unzip su-exec "$PHPIZE_DEPS" linux-headers && \
+# hadolint ignore=SC2086 -- $PHPIZE_DEPS must be unquoted for word splitting (multiple packages)
+RUN apk add --no-cache git unzip su-exec $PHPIZE_DEPS linux-headers && \
     if [ "$USER_ID" != "82" ]; then \
         apk add --no-cache --virtual .user-deps shadow && \
         usermod -u $USER_ID www-data && \

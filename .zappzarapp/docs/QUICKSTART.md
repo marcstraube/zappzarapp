@@ -18,16 +18,34 @@ make --version      # GNU Make
 
 ## Quick Setup
 
-### 1. Clone and Run Setup
+### 1. Create Your Project
+
+**Option A: Fork on GitHub (recommended)**
+
+1. Fork `marcstraube/zappzarapp` on GitHub
+2. Clone your fork:
 
 ```bash
-git clone <repository-url> my-project
+git clone git@github.com:YOUR-USERNAME/my-project.git
 cd my-project
+make setup
+```
+
+**Option B: Direct clone**
+
+```bash
+git clone https://github.com/marcstraube/zappzarapp.git my-project
+cd my-project
+git remote set-url origin git@github.com:YOUR-USERNAME/my-project.git
 make setup
 ```
 
 On first run, `make setup` will ask whether to auto-detect your USER_ID/GROUP_ID
 (recommended) or continue with defaults.
+
+> **Note:** After `make setup`, your project files (README, CHANGELOG, etc.) are
+> replaced with project templates. The `zappzarapp` remote for updates is added
+> automatically when you run `make boilerplate-sync`.
 
 This command:
 
@@ -246,6 +264,41 @@ VITE_PORT=5174         # Default: 5173
 
 See [TROUBLESHOOTING.md](TROUBLESHOOTING.md) for more solutions.
 
+## Updating from zappzarapp
+
+When zappzarapp releases new features or fixes, sync the infrastructure:
+
+```bash
+# Preview changes (dry-run)
+make boilerplate-diff
+
+# Apply infrastructure updates
+make boilerplate-sync
+```
+
+> **Automatic remote:** The `zappzarapp` remote is added automatically on first
+> run. No manual setup required.
+
+**Auto-synced (infrastructure):**
+
+- `.zappzarapp/` — Boilerplate docs, standards, templates
+- `docker/` — Docker configurations
+- `.github/` — CI/CD workflows
+- Config files — eslint, phpstan, vite, etc.
+
+**Preserved (your project):**
+
+- `README.md`, `CHANGELOG.md` — Your project docs
+- `.claude/CLAUDE.md` — Your Claude configuration
+- `src/`, `tests/` — Your code
+- `.ai/` — Your project knowledge
+
+**Manual review (shown after sync):**
+
+- `Makefile` — May have project customizations
+- `.gitignore` — May have project-specific ignores
+- `composer.json`, `package.json` — May have project dependencies
+
 ## Next Steps
 
 1. **Read the Architecture**: [ARCHITECTURE.md](infrastructure/ARCHITECTURE.md)
@@ -280,8 +333,12 @@ make mariadb-cli     # MariaDB shell
 make redis-cli       # Redis shell
 
 # === MAINTENANCE ===
-make composer-update # Update PHP deps
-make pnpm-update     # Update Node deps
-make backup-db       # Backup database
-make backup-all      # Backup all services
+make composer-update  # Update PHP deps
+make pnpm-update      # Update Node deps
+make backup-db        # Backup database
+make backup-all       # Backup all services
+
+# === BOILERPLATE ===
+make boilerplate-diff # Preview upstream changes
+make boilerplate-sync # Sync infrastructure
 ```

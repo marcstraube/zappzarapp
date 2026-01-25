@@ -29,7 +29,7 @@ user-a/my-project               ← --upstream (upstream remote)
     ↓ fork
 user-b/my-project               ← --repo / default (origin remote)
     ↓
-~/.local/share/zappzarapp/      ← --private (local, not shared)
+$PERSONAL_PATH                  ← --private (local, not shared)
 ```
 
 | Flag           | Git Remote  | Target                       | Use Case                        |
@@ -37,7 +37,7 @@ user-b/my-project               ← --repo / default (origin remote)
 | `--zappzarapp` | (hardcoded) | `marcstraube/zappzarapp`     | Feature requests to boilerplate |
 | `--upstream`   | `upstream`  | Configured upstream repo     | Contribute to original project  |
 | `--repo`       | `origin`    | Your repo (default)          | Your project tasks              |
-| `--private`    | —           | `~/.local/share/zappzarapp/` | Personal, offline tasks         |
+| `--private`    | —           | Configured path (see Step 0.5) | Personal, offline tasks         |
 
 **Default:** `--repo` (origin remote) — where you push, you track tasks.
 
@@ -66,6 +66,22 @@ else
   # Default: origin (--repo)
   TARGET_REPO=$(git remote get-url origin 2>/dev/null | sed -E 's|.*[:/]([^/]+/[^/]+)\.git$|\1|; s|.*[:/]([^/]+/[^/]+)$|\1|')
   TARGET_NAME="repo"
+fi
+```
+
+### Step 0.5: Load Personal Configuration
+
+```bash
+# Default personal storage path
+PERSONAL_PATH="$HOME/.local/share/zappzarapp"
+
+# Override from config.local.md if exists
+if [[ -f ".claude/config.local.md" ]]; then
+  CONFIGURED_PATH=$(grep -oP '^personal_knowledge_path\s*[=:]\s*\K.+' .claude/config.local.md 2>/dev/null | head -1 | xargs)
+  if [[ -n "$CONFIGURED_PATH" ]]; then
+    # Expand ~ to $HOME
+    PERSONAL_PATH="${CONFIGURED_PATH/#\~/$HOME}"
+  fi
 fi
 ```
 
@@ -233,7 +249,7 @@ GitLab Boards are **label-based by default** — no extra configuration needed!
 ## Local File Structure (--private)
 
 ```text
-~/.local/share/zappzarapp/
+$PERSONAL_PATH/
 ├── TASKS.md              # Private Index
 └── tasks/
     ├── learn-mcp.md
@@ -370,7 +386,7 @@ gh project item-add <project-number> --owner <owner> --url <issue-url>
 
 1. Gather information (same as above)
 2. Generate slug from title
-3. Create task detail file: `~/.local/share/zappzarapp/tasks/<slug>.md`
+3. Create task detail file: `$PERSONAL_PATH/tasks/<slug>.md`
 4. Update index: Add row to `TASKS.md`
 5. Show confirmation
 
@@ -429,7 +445,7 @@ upstream (user-a/project): 5 issues
 repo (user-b/project): 3 issues
   #7 [enhancement] My feature
 
-private (~/.local/share/): 2 tasks
+private ($PERSONAL_PATH): 2 tasks
   learn-mcp [enhancement] Learn MCP Servers
 
 ════════════════════════════════════════════════
@@ -438,7 +454,7 @@ Total: 22 tasks across 4 tiers
 
 ### Private Mode
 
-Read `~/.local/share/zappzarapp/TASKS.md` index and display.
+Read `$PERSONAL_PATH/TASKS.md` index and display.
 
 ---
 
@@ -786,7 +802,7 @@ Context: Personal learning goal
 
 Task Added (private)
 ════════════════════════════════════════════════
-Location: ~/.local/share/zappzarapp/tasks/
+Location: $PERSONAL_PATH/tasks/
 Slug:     learn-mcp-server-development
 ════════════════════════════════════════════════
 ```
@@ -810,7 +826,7 @@ repo (user/my-project): 3 issues
   #48 [enhancement] Add dark mode
   #45 [chore] Update dependencies
 
-private (~/.local/share/): 1 task
+private ($PERSONAL_PATH): 1 task
   learn-mcp [enhancement] Learn MCP server development
 
 ════════════════════════════════════════════════

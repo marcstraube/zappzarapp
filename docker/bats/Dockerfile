@@ -81,6 +81,10 @@ COPY --from=bats-builder /usr/local/lib/bats /usr/local/lib/bats
 # Set BATS library path
 ENV BATS_LIB_PATH=/usr/local/lib/bats
 
+# Configure Git to trust all directories (needed for running as root on mounted volumes)
+# This prevents "dubious ownership" errors when container user differs from host user
+RUN git config --global --add safe.directory '*'
+
 # Create non-root user for testing
 RUN addgroup -g 1000 bats \
     && adduser -u 1000 -G bats -D -h /app bats
