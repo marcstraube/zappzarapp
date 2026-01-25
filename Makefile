@@ -238,16 +238,22 @@ setup: ## Create directories, install dependencies (BOILERPLATE=1 to force file 
 	@echo -e "\033[0;32mProject structure created!\033[0m"
 
 	# Boilerplate file swaps (README, CLAUDE.md, CHANGELOG)
-	# Auto-detect mode: If origin/upstream is marcstraube/zappzarapp → dev mode (skip swaps)
+	# Auto-detect mode: If origin/upstream/zappzarapp remote → marcstraube/zappzarapp = contributor mode
 	# Override: BOILERPLATE=1 make setup → force boilerplate mode (do swaps)
 	@IS_BOILERPLATE_MODE=""; \
+	IS_CONTRIBUTOR_MODE=""; \
 	if [ "$(BOILERPLATE)" = "1" ]; then \
 		IS_BOILERPLATE_MODE="true"; \
 		echo -e "\033[0;34mBoilerplate mode forced via BOILERPLATE=1\033[0m"; \
 	elif git remote get-url origin 2>/dev/null | grep -qE 'marcstraube/zappzarapp'; then \
-		echo -e "\033[0;36m✓ Detected zappzarapp development (origin) - skipping file swaps\033[0m"; \
+		IS_CONTRIBUTOR_MODE="true"; \
+		echo -e "\033[0;36m✓ Detected zappzarapp contributor (origin remote) - skipping file swaps\033[0m"; \
 	elif git remote get-url upstream 2>/dev/null | grep -qE 'marcstraube/zappzarapp'; then \
-		echo -e "\033[0;36m✓ Detected zappzarapp development (upstream) - skipping file swaps\033[0m"; \
+		IS_CONTRIBUTOR_MODE="true"; \
+		echo -e "\033[0;36m✓ Detected zappzarapp contributor (upstream remote) - skipping file swaps\033[0m"; \
+	elif git remote get-url zappzarapp 2>/dev/null | grep -qE 'marcstraube/zappzarapp'; then \
+		IS_CONTRIBUTOR_MODE="true"; \
+		echo -e "\033[0;36m✓ Detected zappzarapp contributor (zappzarapp remote) - skipping file swaps\033[0m"; \
 	else \
 		IS_BOILERPLATE_MODE="true"; \
 	fi; \
@@ -269,6 +275,10 @@ setup: ## Create directories, install dependencies (BOILERPLATE=1 to force file 
 			cp .zappzarapp/CHANGELOG.template.md CHANGELOG.md; \
 			echo -e "\033[0;32mCHANGELOG.md replaced with generic template.\033[0m"; \
 		fi; \
+	fi; \
+	if [ -n "$$IS_CONTRIBUTOR_MODE" ]; then \
+		$(MAKE) --silent ide-unlock; \
+		echo -e "\033[0;36mℹ️  Contributor mode: IDE config files unlocked for committing\033[0m"; \
 	fi
 
 	# SSL/TLS Certificate Check
@@ -331,6 +341,7 @@ setup: ## Create directories, install dependencies (BOILERPLATE=1 to force file 
 ide-config: ## Configure all IDE database connections (PHPStorm + VS Code)
 	@$(MAKE) --silent ide-config-phpstorm
 	@$(MAKE) --silent ide-config-vscode
+	@$(MAKE) --silent ide-lock
 
 ide-config-full: ## Update all IDE configs with custom ports from .env
 	@$(MAKE) --silent ide-config-phpstorm-full
@@ -494,6 +505,24 @@ ide-config-vscode-full: ## Update VS Code settings.json with custom ports (shows
 	@echo -e "\033[0;33m║  git update-index --assume-unchanged .vscode/settings.json     ║\033[0m"
 	@echo -e "\033[0;33m╚════════════════════════════════════════════════════════════════╝\033[0m"
 	@$(MAKE) --silent ide-config-vscode
+
+ide-lock: ## Lock IDE config files from git tracking (prevents noise from composer install)
+	@if [ -f .idea/php.xml ] && git ls-files --error-unmatch .idea/php.xml >/dev/null 2>&1; then \
+		if git ls-files -v .idea/php.xml 2>/dev/null | grep -q '^S'; then \
+			echo -e "\033[0;90m.idea/php.xml already locked (skip-worktree)\033[0m"; \
+		else \
+			git update-index --skip-worktree .idea/php.xml 2>/dev/null && \
+			echo -e "\033[0;36mℹ️  .idea/php.xml locked (local changes ignored by git)\033[0m" || true; \
+		fi; \
+	fi
+
+ide-unlock: ## Unlock IDE config files for committing (zappzarapp contributors only)
+	@if [ -f .idea/php.xml ] && git ls-files --error-unmatch .idea/php.xml >/dev/null 2>&1; then \
+		git update-index --no-skip-worktree .idea/php.xml 2>/dev/null && \
+		echo -e "\033[0;32m✓ .idea/php.xml unlocked (changes visible to git)\033[0m" || true; \
+	else \
+		echo -e "\033[0;33m.idea/php.xml not tracked or not found\033[0m"; \
+	fi
 
 ##@ Release
 

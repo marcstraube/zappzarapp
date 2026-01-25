@@ -50,6 +50,8 @@ Commands for initial project setup and configuration.
 | `make ide-config-vscode`        | Configure VS Code only (`.vscode/settings.json`)                          |
 | `make ide-config-phpstorm-full` | Update PHPStorm shared config with custom ports                           |
 | `make ide-config-vscode-full`   | Update VS Code config with custom ports                                   |
+| `make ide-lock`                 | Lock IDE config files from git (auto-run by ide-config)                   |
+| `make ide-unlock`               | Unlock IDE config files for committing (zappzarapp contributors)          |
 
 ### Setup Workflow
 
@@ -142,6 +144,36 @@ DB_REMOTE_SSH_KEY=~/.ssh/id_ed25519
 ```
 
 Run `make ide-config` to apply configuration.
+
+### IDE Config Lock (Skip-Worktree)
+
+PhpStorm regenerates `.idea/php.xml` on every `composer install/update`, adding
+vendor include paths. This causes unnecessary git noise.
+
+**Automatic behavior:**
+
+`make ide-config` (run during `make setup`) automatically locks `.idea/php.xml`
+using git's skip-worktree flag. Local changes are ignored by git.
+
+**For zappzarapp contributors:**
+
+When you need to commit changes to `.idea/php.xml` (e.g., new tool config):
+
+```bash
+make ide-unlock        # Unlock for committing
+# ... make changes ...
+git add .idea/php.xml
+git commit -m "chore(ide): update PHPStan config"
+make ide-lock          # Re-lock after commit
+```
+
+**Check lock status:**
+
+```bash
+git ls-files -v .idea/php.xml
+# 'S' prefix = skip-worktree (locked)
+# 'H' prefix = normal (unlocked)
+```
 
 ## Docker Commands
 
