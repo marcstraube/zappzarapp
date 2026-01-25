@@ -2434,7 +2434,7 @@ rector-fix: ## Apply Rector refactorings automatically
 	@echo -e "\033[0;33mApplying Rector refactorings...\033[0m"
 	@docker compose exec php composer rector-fix
 
-check: cs-check analyse phpmd rector-check prettier-check type-check lint-node test validate lint-md lint-sql lint-docker lint-shell ## Run all checks (CI simulation)
+check: cs-check analyse phpmd rector-check prettier-check type-check lint-node test deps-validate compose-validate lint-md lint-sql lint-docker lint-shell ## Run all checks (CI simulation)
 	@echo -e "\033[0;32mAll checks passed!\033[0m"
 
 cs-check: ## Check coding style (dry-run)
@@ -3039,7 +3039,7 @@ bats-test-destructive: ## Run BATS destructive tests (⚠️ WARNING: modifies d
 			$(BATS_IMAGE) tests/bats/integration/destructive.bats; \
 	fi
 
-validate: ## Validate composer.json/lock and package.json/lock files
+deps-validate: ## Validate dependency lockfiles (composer.lock, pnpm-lock.yaml)
 	@echo -e "\033[0;33mValidating Composer configuration...\033[0m"
 	@docker compose exec php composer validate
 	@echo -e "\033[0;32m✓ Composer configuration is valid!\033[0m"
@@ -3056,6 +3056,16 @@ validate: ## Validate composer.json/lock and package.json/lock files
 	@echo "✓ package.json exists"
 	@echo "✓ pnpm-lock.yaml exists"
 	@echo -e "\033[0;32m✓ pnpm lockfile is present!\033[0m"
+
+compose-validate: ## Validate Docker Compose configuration files
+	@echo -e "\033[0;33mValidating Docker Compose files...\033[0m"
+	@docker compose config --quiet && \
+		echo -e "\033[0;32m  ✓ compose.yaml valid\033[0m"
+	@docker compose -f compose.yaml -f compose.production.yaml config --quiet && \
+		echo -e "\033[0;32m  ✓ compose.yaml + compose.production.yaml valid\033[0m"
+	@docker compose -f compose.yaml -f compose.ci.yaml config --quiet && \
+		echo -e "\033[0;32m  ✓ compose.yaml + compose.ci.yaml valid\033[0m"
+	@echo -e "\033[0;32m✓ All compose configurations valid\033[0m"
 
 ##@ Security
 
