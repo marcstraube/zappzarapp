@@ -162,25 +162,6 @@ readonly class DashboardController
     }
 
     /**
-     * API: Generate PHP documentation (JSON)
-     */
-    public function apiGenerateDocs(): Response
-    {
-        $type = $_GET['type'] ?? 'php';
-
-        if ($type !== 'php') {
-            return new JsonResponse([
-                'success' => false,
-                'message' => 'Only PHP docs can be generated from dashboard. Run "make docs-node" for Node docs.',
-            ], 400);
-        }
-
-        $result = $this->docsService->generatePhpDocs();
-
-        return new JsonResponse($result, $result['success'] ? 200 : 500);
-    }
-
-    /**
      * Render a view with layout
      *
      * @param array<string, mixed> $data

@@ -32,11 +32,11 @@ user-b/my-project               ← --repo / default (origin remote)
 $PERSONAL_PATH                  ← --private (local, not shared)
 ```
 
-| Flag           | Git Remote  | Target                       | Use Case                        |
-| -------------- | ----------- | ---------------------------- | ------------------------------- |
-| `--zappzarapp` | (hardcoded) | `marcstraube/zappzarapp`     | Feature requests to boilerplate |
-| `--upstream`   | `upstream`  | Configured upstream repo     | Contribute to original project  |
-| `--repo`       | `origin`    | Your repo (default)          | Your project tasks              |
+| Flag           | Git Remote  | Target                         | Use Case                        |
+| -------------- | ----------- | ------------------------------ | ------------------------------- |
+| `--zappzarapp` | (hardcoded) | `marcstraube/zappzarapp`       | Feature requests to boilerplate |
+| `--upstream`   | `upstream`  | Configured upstream repo       | Contribute to original project  |
+| `--repo`       | `origin`    | Your repo (default)            | Your project tasks              |
 | `--private`    | —           | Configured path (see Step 0.5) | Personal, offline tasks         |
 
 **Default:** `--repo` (origin remote) — where you push, you track tasks.

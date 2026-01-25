@@ -45,3 +45,15 @@ composer.lock
 .depcheckrc.json
 knip.config.js
 .hadolint.yaml
+
+# Claude Code (non-committed directories/files)
+# Matches .gitignore: .claude/* with exceptions for committed files
+.claude/cache/
+.claude/reports/
+.claude/sessions/
+.claude/state/
+.claude/temp/
+.claude/config.local.md
+.claude/settings.local.json
+.claude/plan.md
+.claude/*-plan.md

@@ -32,5 +32,20 @@
   },
 
   // Files to ignore
-  "ignores": ["**/node_modules/**", "vendor/**", "build/**", "docs/**", ".git/**", "CHANGELOG.md"]
+  "ignores": [
+    "**/node_modules/**",
+    "vendor/**",
+    "build/**",
+    "docs/**",
+    ".git/**",
+    "CHANGELOG.md",
+    // Claude Code non-committed directories (matches .gitignore pattern)
+    ".claude/cache/**",
+    ".claude/reports/**",
+    ".claude/sessions/**",
+    ".claude/state/**",
+    ".claude/temp/**",
+    ".claude/plan.md",
+    ".claude/*-plan.md"
+  ]
 }

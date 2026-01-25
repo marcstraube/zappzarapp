@@ -12,6 +12,7 @@ declare(strict_types=1);
 namespace DevDashboard;
 
 use DevDashboard\Controllers\DashboardController;
+use DevDashboard\Controllers\DocsController;
 use DevDashboard\Response\Response;
 use DI\ContainerBuilder;
 
@@ -46,6 +47,7 @@ function route(string $method, string $path, callable $handler): void
 $containerBuilder = new ContainerBuilder();
 $container        = $containerBuilder->build();
 $controller       = $container->get(DashboardController::class);
+$docsController   = $container->get(DocsController::class);
 
 // Dashboard routes
 route('GET', '/_dev', $controller->index(...));
@@ -60,4 +62,4 @@ route('GET', '/_dev/logs', $controller->logs(...));
 route('GET', '/_dev/api/health-check', $controller->apiHealthCheck(...));
 route('GET', '/_dev/api/services', $controller->apiServicesStatus(...));
 route('GET', '/_dev/api/logs', $controller->apiLogContent(...));
-route('POST', '/_dev/api/docs/generate', $controller->apiGenerateDocs(...));
+route('POST', '/_dev/api/docs/generate', $docsController->apiGenerateDocs(...));
