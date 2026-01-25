@@ -6,6 +6,7 @@
 # 1. Detects context continuation → shows previous session
 # 2. Detects implementation tasks → reminds about workflow
 # 3. Warns if on main branch during implementation task
+# 4. Reminds about stale pending session files
 
 set -euo pipefail
 
@@ -95,6 +96,14 @@ if [[ "${IMPL_TASK_DETECTED:-false}" == "true" ]]; then
     if [[ "$CURRENT_BRANCH" == "develop" || "$CURRENT_BRANCH" == "main" || "$CURRENT_BRANCH" == "master" ]]; then
         MESSAGES+=("[Branch Warning] On '$CURRENT_BRANCH' - create feature branch first: git checkout -b fix/<slug> or feature/<slug>")
     fi
+fi
+
+# --- Detection 4: Stale Pending Session ---
+# Remind if session file is still pending after 5 minutes
+PENDING_SESSION=$(find "${SESSION_BASE}" -name "session-*-pending.md" -mmin +5 -type f 2>/dev/null | head -1)
+if [[ -n "$PENDING_SESSION" ]]; then
+    PENDING_NAME=$(basename "$PENDING_SESSION")
+    MESSAGES+=("[Session Reminder] '$PENDING_NAME' still pending - rename with task slug and update Changes table")
 fi
 
 # --- Output ---
