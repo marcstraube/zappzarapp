@@ -401,7 +401,7 @@ build:production:
     - DOCKER_BUILDKIT=0 ENV=production docker compose -f compose.yaml -f compose.production.yaml --profile php --profile postgres build php nginx postgres
     # Test production build using ENV-aware target
     # Tests nginx + app (php/node) + database + activated services
-    - make test-production
+    - ENV=production make test-production
   after_script:
     - docker compose ps || true
     - docker compose logs --tail=100 || true
