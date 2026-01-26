@@ -2546,7 +2546,9 @@ renovate: ## Run Renovate dependency scanner
 
 ##@ Quality Assurance
 
-analyse: ## Run PHPStan static analysis
+analyse: analyse-php analyse-node  ## Run static analysis (PHP + Node)
+
+analyse-php: ## Run PHPStan static analysis
 	@echo -e "\033[0;33mRunning PHPStan...\033[0m"
 	@docker compose exec php composer analyse
 
@@ -2562,7 +2564,7 @@ rector-fix: ## Apply Rector refactorings automatically
 	@echo -e "\033[0;33mApplying Rector refactorings...\033[0m"
 	@docker compose exec php composer rector-fix
 
-check: cs-check analyse phpmd rector-check prettier-check type-check lint-node test deps-validate compose-validate lint-md lint-sql lint-docker lint-shell ## Run all checks (CI simulation)
+check: cs-check analyse-php phpmd rector-check prettier-check analyse-node lint-node test deps-validate compose-validate lint-md lint-sql lint-docker lint-shell ## Run all checks (CI simulation)
 	@echo -e "\033[0;32mAll checks passed!\033[0m"
 
 cs-check: ## Check coding style (dry-run)
@@ -2670,7 +2672,7 @@ lint-shell: ## Lint shell scripts with ShellCheck
 	fi
 	@echo -e "\033[0;32mShellCheck completed!\033[0m"
 
-type-check: ## Run TypeScript type checking (static analysis)
+analyse-node: ## Run TypeScript type checking (static analysis)
 	@echo -e "\033[0;33mRunning TypeScript type check...\033[0m"
 	@$(DC) run --rm -T dev-tools pnpm run type-check
 	@echo -e "\033[0;32mTypeScript check completed!\033[0m"

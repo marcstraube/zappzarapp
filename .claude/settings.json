@@ -118,6 +118,8 @@
       "Bash(make secrets-rotate:*)",
       "Bash(make ssl-clean:*)",
 
+      "Bash(bats:*)",
+
       "Bash(composer exec:*)",
       "Bash(composer install:*)",
       "Bash(composer remove:*)",

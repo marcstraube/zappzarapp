@@ -8,16 +8,16 @@ not running. After Docker config changes: `make build-*` +
 
 ## By File Type
 
-| File Type   | Check Targets                                  | Fix Targets                     | Test Targets |
-| ----------- | ---------------------------------------------- | ------------------------------- | ------------ |
-| PHP         | `analyse`, `phpmd`, `cs-check`, `rector-check` | `cs-fix`, `rector-fix`          | `test-php`   |
-| Node/TS     | `lint-node`, `type-check`, `prettier-check`    | `lint-node-fix`, `prettier-fix` | `test-node`  |
-| SQL         | `lint-sql`                                     | `lint-sql-fix`                  | —            |
-| Shell       | `lint-shell`                                   | —                               | —            |
-| Markdown    | `lint-md`                                      | `lint-md-fix`                   | —            |
-| Docker      | `lint-docker`                                  | —                               | `goss-test`  |
-| YAML/Config | `lint-config`                                  | —                               | —            |
-| All         | `check`                                        | —                               | `test`       |
+| File Type   | Check Targets                                      | Fix Targets                     | Test Targets |
+| ----------- | -------------------------------------------------- | ------------------------------- | ------------ |
+| PHP         | `analyse-php`, `phpmd`, `cs-check`, `rector-check` | `cs-fix`, `rector-fix`          | `test-php`   |
+| Node/TS     | `lint-node`, `analyse-node`, `prettier-check`      | `lint-node-fix`, `prettier-fix` | `test-node`  |
+| SQL         | `lint-sql`                                         | `lint-sql-fix`                  | —            |
+| Shell       | `lint-shell`                                       | —                               | —            |
+| Markdown    | `lint-md`                                          | `lint-md-fix`                   | —            |
+| Docker      | `lint-docker`                                      | —                               | `goss-test`  |
+| YAML/Config | `lint-config`                                      | —                               | —            |
+| All         | `check`                                            | —                               | `test`       |
 
 ## Reviewer Workflow
 
@@ -34,7 +34,7 @@ not running. After Docker config changes: `make build-*` +
 make cs-fix
 
 # Check
-make analyse phpmd cs-check rector-check
+make analyse-php phpmd cs-check rector-check
 
 # Test
 make test-php
@@ -47,7 +47,7 @@ make test-php
 make prettier-fix lint-node-fix
 
 # Check
-make lint-node type-check prettier-check
+make lint-node analyse-node prettier-check
 
 # Test
 make test-node

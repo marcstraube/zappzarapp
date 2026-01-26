@@ -46,6 +46,16 @@ load 'helpers/setup'
     assert_success
 }
 
+@test "make analyse-php --dry-run validates" {
+    run make -n analyse-php
+    assert_success
+}
+
+@test "make analyse-node --dry-run validates" {
+    run make -n analyse-node
+    assert_success
+}
+
 @test "make cs-check --dry-run validates" {
     run make -n cs-check
     assert_success
@@ -130,10 +140,6 @@ load 'helpers/setup'
     assert_success
 }
 
-@test "make type-check --dry-run validates" {
-    run make -n type-check
-    assert_success
-}
 
 @test "make knip --dry-run validates" {
     run make -n knip
