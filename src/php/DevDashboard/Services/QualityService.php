@@ -59,8 +59,11 @@ class QualityService
         }
 
         // Ensure cache directory exists
-        if (!is_dir($cachePath)) {
-            @mkdir($cachePath, 0755, true);
+        if (!is_dir($cachePath) && !mkdir($cachePath, 0755, true) && !is_dir($cachePath)) {
+            return [
+                'success' => false,
+                'message' => 'Failed to create cache directory: ' . $cachePath,
+            ];
         }
 
         // Build command with Xdebug coverage mode

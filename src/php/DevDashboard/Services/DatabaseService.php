@@ -398,8 +398,8 @@ readonly class DatabaseService
 
         [$host, $port] = explode(':', $hosts[$service]);
 
-        $connection = @fsockopen($host, (int) $port, $errno, $errstr, 1);
-        if ($connection) {
+        $connection = fsockopen($host, (int) $port, timeout: 1);
+        if ($connection !== false) {
             fclose($connection);
 
             return true;
