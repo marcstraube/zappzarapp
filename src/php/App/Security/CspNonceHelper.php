@@ -78,7 +78,7 @@ final class CspNonceHelper
         $directives = [
             "default-src 'self'",
             sprintf("script-src 'self' 'nonce-%s' 'strict-dynamic' 'unsafe-eval'", $nonce),
-            "style-src 'self' 'unsafe-inline' 'unsafe-hashes'", // No nonce - allows Vite's dynamic styles and inline style attributes
+            "style-src 'self' 'unsafe-inline'", // Allows Vite's dynamic styles
             "img-src 'self' data:",
             "font-src 'self'",
             "connect-src 'self' wss://localhost:8443 https://localhost:8443",
