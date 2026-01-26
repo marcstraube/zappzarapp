@@ -110,6 +110,7 @@ readonly class DashboardController
             'connection_stats' => $this->databaseService->getConnectionStats(),
             'commands'         => $this->databaseService->getDatabaseCommands(),
             'db_tools'         => $this->databaseService->getDbToolsStatus(),
+            'backup_stats'     => $this->databaseService->getBackupStats(),
         ];
 
         return $this->render('database', $data);
@@ -178,6 +179,68 @@ readonly class DashboardController
         }
 
         $result = $this->qualityService->runPhpCoverage();
+
+        return new JsonResponse($result, $result['success'] ? 200 : 500);
+    }
+
+    /**
+     * API: List database backups (JSON)
+     */
+    public function apiListBackups(): Response
+    {
+        $result = $this->databaseService->listBackups();
+
+        return new JsonResponse($result, 200);
+    }
+
+    /**
+     * API: Create database backup (JSON)
+     */
+    public function apiCreateBackup(): Response
+    {
+        $retention = isset($_GET['retention']) ? (int) $_GET['retention'] : null;
+
+        $result = $this->databaseService->createBackup($retention);
+
+        return new JsonResponse($result, $result['success'] ? 200 : 500);
+    }
+
+    /**
+     * API: Restore database from backup (JSON)
+     */
+    public function apiRestoreBackup(): Response
+    {
+        $requestBody = file_get_contents('php://input');
+        $data        = json_decode($requestBody ?: '{}', true);
+
+        if (!isset($data['filename']) || !is_string($data['filename'])) {
+            return new JsonResponse([
+                'success' => false,
+                'message' => 'Missing required parameter: filename',
+            ], 400);
+        }
+
+        $result = $this->databaseService->restoreBackup($data['filename']);
+
+        return new JsonResponse($result, $result['success'] ? 200 : 500);
+    }
+
+    /**
+     * API: Delete backup file (JSON)
+     */
+    public function apiDeleteBackup(): Response
+    {
+        $requestBody = file_get_contents('php://input');
+        $data        = json_decode($requestBody ?: '{}', true);
+
+        if (!isset($data['filename']) || !is_string($data['filename'])) {
+            return new JsonResponse([
+                'success' => false,
+                'message' => 'Missing required parameter: filename',
+            ], 400);
+        }
+
+        $result = $this->databaseService->deleteBackup($data['filename']);
 
         return new JsonResponse($result, $result['success'] ? 200 : 500);
     }
