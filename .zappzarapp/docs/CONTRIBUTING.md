@@ -168,7 +168,7 @@ make pnpm-install    # Ensures lint-staged is available in the container
 This project supports multiple AI coding assistants (Claude, Gemini, Cursor,
 Copilot, etc.) with:
 
-- Slash commands in `.claude/commands/`
+- Skills (slash commands) in `.claude/skills/`
 - Automated sync between tools (`make ai-sync`)
 - 3-layer knowledge architecture (zappzarapp/project/personal)
 - Agent workflow for complex tasks

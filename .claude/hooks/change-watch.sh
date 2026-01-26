@@ -31,7 +31,7 @@ fi
 DOC_EXTRACTORS=(
     'Makefile|(?<=^\+)[a-z][-a-z0-9_]+(?=:\s)|make {1}|false'
     'compose.yaml|(?<=^\+  )[a-z][-a-z0-9_]+(?=:$)|{1}|false'
-    '.claude/commands/*.md||/{1}|true'
+    '.claude/skills/*.md||/{1}|true'
     '.env.example|(?<=^\+)[A-Z][A-Z0-9_]+(?==)|{1}|false'
 )
 

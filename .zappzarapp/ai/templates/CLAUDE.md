@@ -148,7 +148,7 @@ tests/              → Test files
 | Folder              | Purpose                      | Committed |
 | ------------------- | ---------------------------- | --------- |
 | `.claude/agents/`   | Agent workflow documentation | Yes       |
-| `.claude/commands/` | Slash command definitions    | Yes       |
+| `.claude/skills/`   | Skills (slash commands)      | Yes       |
 | `.claude/sessions/` | Session logs (YYYY/MM/)      | No        |
 | `.ai/`              | Project knowledge files      | Yes       |
 | `.zappzarapp/ai/`   | Boilerplate knowledge        | Yes       |
@@ -165,11 +165,11 @@ make test              → Run all tests
 
 ---
 
-## Slash Commands
+## Skills
 
-Available commands in `.claude/commands/`:
+Available skills in `.claude/skills/`:
 
-| Command      | Purpose                                                    |
+| Skill        | Purpose                                                    |
 | ------------ | ---------------------------------------------------------- |
 | `/status`    | Project overview (Git, Docker, tasks)                      |
 | `/tasks`     | Task management (4-tier: zappzarapp/upstream/repo/private) |

@@ -44,9 +44,10 @@ detection (GitHub Issues, GitLab Issues, or local `.ai/TASKS.md`).
 .claude/
 ├── CLAUDE.md           # Instructions (swapped by make setup)
 ├── agents/             # Agent workflow definitions
-├── commands/           # Slash commands (source of truth)
+├── skills/             # Skills (slash commands, source of truth)
 ├── settings.json       # Shared permissions & hooks
 ├── settings.local.json # Personal overrides (gitignored)
+├── context/            # Project context (gitignored)
 ├── sessions/           # Session logs (gitignored)
 ├── state/              # Persistent state (gitignored)
 ├── cache/              # Temporary data (gitignored)
@@ -164,7 +165,7 @@ When detecting an implementation task:
 
 ### Gemini CLI
 
-Generated from Claude commands via `make ai-commands-sync`.
+Generated from Claude skills via `make ai-commands-sync`.
 
 ```text
 .gemini/
@@ -181,7 +182,7 @@ Rules are synced via `make ai-rules-sync` to:
 
 ## Synchronization
 
-### Commands (Claude ↔ Gemini)
+### Skills (Claude ↔ Gemini)
 
 ```bash
 # Sync to specific tool
@@ -190,6 +191,8 @@ make ai-commands-sync FROM=claude TO=gemini
 # Sync to all supported tools
 make ai-commands-sync FROM=claude
 ```
+
+Converts skills from `.claude/skills/` to Gemini-compatible `.toml` format.
 
 Uses
 [ai-command-converter](https://github.com/Commands-com/ai-command-converter).
@@ -232,19 +235,47 @@ AI_SYNC_FROM=claude
 # AI_SYNC_TO=gemini  # Optional: leave empty for all
 ```
 
-## Slash Commands
+## Skills
 
-Available commands in `.claude/commands/`:
+Available skills in `.claude/skills/`:
 
-| Command       | Purpose                                        |
-| ------------- | ---------------------------------------------- |
-| `/status`     | Project overview (Git, Docker, tasks)          |
-| `/tasks`      | Task management with GitHub/GitLab integration |
-| `/commit`     | Guided commit workflow with quality checks     |
-| `/audit`      | Project audit (quality, security, docs)        |
-| `/learnings`  | View and manage project learnings              |
-| `/sync-check` | Verify config file synchronization             |
-| `/optimize`   | Self-optimization of config, docs, terminology |
+| Skill         | Purpose                                        | Model  |
+| ------------- | ---------------------------------------------- | ------ |
+| `/status`     | Project overview (Git, Docker, tasks)          | haiku  |
+| `/tasks`      | Task management with GitHub/GitLab integration | sonnet |
+| `/commit`     | Guided commit workflow with quality checks     | sonnet |
+| `/audit`      | Project audit (quality, security, docs)        | sonnet |
+| `/learnings`  | View and manage project learnings              | haiku  |
+| `/research`   | Research topics and generate documentation     | sonnet |
+| `/sync-check` | Verify config file synchronization             | haiku  |
+| `/optimize`   | Self-optimization of config, docs, terminology | sonnet |
+| `/worktree`   | Manage git worktrees for parallel development  | sonnet |
+
+### Skill Structure
+
+Skills use YAML frontmatter for metadata:
+
+```yaml
+---
+name: status
+description: Quick project status overview showing git, docker, session info
+model: haiku # haiku (fast), sonnet (balanced), opus (complex)
+context: fork # Inherit conversation context
+allowed-tools: # Explicit tool permissions
+  - Read
+  - Glob
+  - Bash(git:*)
+  - Bash(docker:*)
+argument-hint: '[--git | --docker | --todo | --all]'
+---
+# Skill content follows...
+```
+
+**Model Selection:**
+
+- `haiku`: Quick tasks, simple queries (status, learnings)
+- `sonnet`: Balanced tasks, moderate complexity (tasks, commit, audit)
+- `opus`: Complex planning, architecture decisions (currently unused)
 
 ### Task Management with /tasks
 
@@ -301,7 +332,7 @@ The `/optimize` command analyzes and improves Claude's configuration.
 | 3     | `--terminology` | Find outdated terms across all files      |
 | 4     | `--docs`        | Sync AI-INTEGRATION.md with actual config |
 | 5     | `--learnings`   | Clean up LEARNINGS.md                     |
-| 6     | `--commands`    | Audit slash commands                      |
+| 6     | `--skills`      | Audit skills (slash commands)             |
 | 7     | `--sessions`    | Archive old sessions                      |
 | 8     | `--settings`    | Optimize settings.json                    |
 | 9     | `--all`         | Run all phases                            |
@@ -376,9 +407,9 @@ file swaps when developing zappzarapp itself. See
 
 ## Team Workflow
 
-1. Claude Code is the source of truth for commands
+1. Claude Code is the source of truth for skills (`.claude/skills/`)
 2. Team members using other tools run `make ai-sync FROM=claude` after pulling
-3. CaptainHook can notify when synced commands change (optional)
+3. CaptainHook can notify when synced skills change (optional)
 
 ## Troubleshooting
 
@@ -389,8 +420,8 @@ file swaps when developing zappzarapp itself. See
 3. Check `~/.claude/debug/` for settings loading logs
 4. "Found 0 hook matchers" = hooks format broken
 
-### Commands Not Syncing
+### Skills Not Syncing
 
-1. Verify source files exist in `.claude/commands/`
+1. Verify source files exist in `.claude/skills/`
 2. Check Docker containers are running (`make up`)
 3. Run with verbose output: `VERBOSE=1 make ai-commands-sync FROM=claude`

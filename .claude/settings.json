@@ -184,6 +184,17 @@
         ]
       }
     ],
+    "PreToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "BRANCH=$(git branch --show-current 2>/dev/null); if [[ \"$BRANCH\" == \"develop\" || \"$BRANCH\" == \"main\" || \"$BRANCH\" == \"master\" ]]; then TOOL_INPUT=$(cat); FILE=$(echo \"$TOOL_INPUT\" | jq -r '.file_path // empty' 2>/dev/null); if [[ \"$FILE\" != *\"/.claude/sessions/\"* && \"$FILE\" != *\"/.claude/temp/\"* && \"$FILE\" != *\"/.claude/state/\"* ]]; then echo \"[Branch Check] ⚠️  Working on '$BRANCH' - consider feature branch (see .claude/CLAUDE.md)\"; fi; fi"
+          }
+        ]
+      }
+    ],
     "PostToolUse": [
       {
         "matcher": "Edit",
