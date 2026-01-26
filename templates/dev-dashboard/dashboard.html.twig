@@ -1,53 +1,48 @@
-<?php
-/**
- * @var array<string, mixed> $healthStatus
- * @var array<string, mixed> $systemInfo
- * @var array<string, mixed> $gitStatus
- * @var array<string, mixed> $dbStats
- * @var array<string, mixed> $apiDocsStatus
- */
-?>
+{% extends "dev-dashboard/layout.html.twig" %}
+
+{% block title %}Dashboard{% endblock %}
+
+{% block content %}
 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
     <!-- Health Status Overview -->
     <div class="card col-span-full">
         <div class="flex items-center justify-between">
             <div class="flex items-center space-x-4">
-                <?php
-                $status       = $healthStatus['status'] ?? 'unknown';
-                $statusColors = [
-                    'healthy'   => 'text-green-600 bg-green-100',
-                    'degraded'  => 'text-yellow-600 bg-yellow-100',
-                    'unhealthy' => 'text-red-600 bg-red-100',
-                ];
-                $statusIcons = [
-                    'healthy'   => '✓',
-                    'degraded'  => '⚠',
-                    'unhealthy' => '✗',
-                ];
-                $color = $statusColors[$status] ?? 'text-gray-600 bg-gray-100';
-                $icon  = $statusIcons[$status] ?? '?';
-                ?>
+                {% set status = healthStatus.status|default('unknown') %}
+                {% set statusColors = {
+                    'healthy': 'text-green-600 bg-green-100',
+                    'degraded': 'text-yellow-600 bg-yellow-100',
+                    'unhealthy': 'text-red-600 bg-red-100'
+                } %}
+                {% set statusIcons = {
+                    'healthy': '✓',
+                    'degraded': '⚠',
+                    'unhealthy': '✗'
+                } %}
+                {% set color = statusColors[status]|default('text-gray-600 bg-gray-100') %}
+                {% set icon = statusIcons[status]|default('?') %}
+
                 <div class="flex-shrink-0">
-                    <span class="inline-flex items-center justify-center h-12 w-12 rounded-full <?= $color ?> text-2xl">
-                        <?= $icon ?>
+                    <span class="inline-flex items-center justify-center h-12 w-12 rounded-full {{ color }} text-2xl">
+                        {{ icon }}
                     </span>
                 </div>
                 <div>
                     <p class="text-sm text-gray-500">System Status</p>
-                    <p class="text-2xl font-bold capitalize <?= explode(' ', $color)[0] ?>"><?= $status ?></p>
+                    <p class="text-2xl font-bold capitalize {{ color|split(' ')|first }}">{{ status }}</p>
                 </div>
                 <div class="border-l border-gray-200 pl-4">
                     <p class="text-sm text-gray-500">Services</p>
                     <p class="text-lg font-bold text-gray-900">
-                        <?= $healthStatus['healthy_count'] ?? 0 ?>/<?= ($healthStatus['healthy_count'] ?? 0) + ($healthStatus['unhealthy_count'] ?? 0) ?>
+                        {{ healthStatus.healthy_count|default(0) }}/{{ (healthStatus.healthy_count|default(0)) + (healthStatus.unhealthy_count|default(0)) }}
                     </p>
                 </div>
-                <?php if (($healthStatus['unhealthy_count'] ?? 0) > 0): ?>
+                {% if (healthStatus.unhealthy_count|default(0)) > 0 %}
                 <div class="border-l border-gray-200 pl-4">
                     <p class="text-sm text-gray-500">Issues</p>
-                    <p class="text-lg font-bold text-red-600"><?= $healthStatus['unhealthy_count'] ?></p>
+                    <p class="text-lg font-bold text-red-600">{{ healthStatus.unhealthy_count }}</p>
                 </div>
-                <?php endif; ?>
+                {% endif %}
             </div>
             <a href="/_dev/health" class="btn btn-secondary">Details</a>
         </div>
@@ -62,11 +57,11 @@
         <dl class="space-y-1 text-sm">
             <div class="flex justify-between">
                 <dt class="text-gray-500">PHP</dt>
-                <dd class="font-mono text-gray-900"><?= $systemInfo['php_version'] ?? 'Unknown' ?></dd>
+                <dd class="font-mono text-gray-900">{{ systemInfo.php_version|default('Unknown') }}</dd>
             </div>
             <div class="flex justify-between">
                 <dt class="text-gray-500">Server</dt>
-                <dd class="text-gray-900 text-xs"><?= htmlspecialchars($systemInfo['server_software'] ?? 'Unknown') ?></dd>
+                <dd class="text-gray-900 text-xs">{{ systemInfo.server_software|default('Unknown') }}</dd>
             </div>
         </dl>
     </div>
@@ -76,20 +71,20 @@
             <h3 class="font-semibold text-gray-900">Database</h3>
             <a href="/_dev/database" class="text-xs text-blue-600 hover:text-blue-800">Details</a>
         </div>
-        <?php if ($dbStats['available'] ?? false): ?>
+        {% if dbStats.available|default(false) %}
         <dl class="space-y-1 text-sm">
             <div class="flex justify-between">
                 <dt class="text-gray-500">Type</dt>
-                <dd class="font-medium text-gray-900"><?= strtoupper((string) $dbStats['type']) ?></dd>
+                <dd class="font-medium text-gray-900">{{ dbStats.type|upper }}</dd>
             </div>
             <div class="flex justify-between">
                 <dt class="text-gray-500">Tables</dt>
-                <dd class="font-medium text-gray-900"><?= $dbStats['tables'] ?? 0 ?></dd>
+                <dd class="font-medium text-gray-900">{{ dbStats.tables|default(0) }}</dd>
             </div>
         </dl>
-        <?php else: ?>
-        <p class="text-sm text-gray-500"><?= $dbStats['message'] ?? 'Not connected' ?></p>
-        <?php endif; ?>
+        {% else %}
+        <p class="text-sm text-gray-500">{{ dbStats.message|default('Not connected') }}</p>
+        {% endif %}
     </div>
 
     <div class="card">
@@ -97,20 +92,20 @@
             <h3 class="font-semibold text-gray-900">Git</h3>
             <a href="/_dev/system#git" class="text-xs text-blue-600 hover:text-blue-800">Details</a>
         </div>
-        <?php if ($gitStatus['initialized'] ?? false): ?>
+        {% if gitStatus.initialized|default(false) %}
         <dl class="space-y-1 text-sm">
             <div class="flex justify-between">
                 <dt class="text-gray-500">Branch</dt>
-                <dd class="font-mono text-gray-900"><?= htmlspecialchars($gitStatus['branch'] ?? 'Unknown') ?></dd>
+                <dd class="font-mono text-gray-900">{{ gitStatus.branch|default('Unknown') }}</dd>
             </div>
             <div class="flex justify-between">
                 <dt class="text-gray-500">Commit</dt>
-                <dd class="font-mono text-xs text-gray-700"><?= htmlspecialchars($gitStatus['commit'] ?? '-') ?></dd>
+                <dd class="font-mono text-xs text-gray-700">{{ gitStatus.commit|default('-') }}</dd>
             </div>
         </dl>
-        <?php else: ?>
-        <p class="text-sm text-gray-500"><?= $gitStatus['message'] ?? 'Not available' ?></p>
-        <?php endif; ?>
+        {% else %}
+        <p class="text-sm text-gray-500">{{ gitStatus.message|default('Not available') }}</p>
+        {% endif %}
     </div>
 
     <!-- Quick Actions -->
@@ -136,109 +131,105 @@
             </a>
 
             <!-- PHP API -->
-            <?php
-            $phpStatus    = $apiDocsStatus['php'] ?? [];
-            $phpHasSource = $phpStatus['hasSource'] ?? false;
-            $phpExists    = $phpStatus['exists'] ?? false;
-            $phpOutdated  = $phpStatus['outdated'] ?? false;
-            ?>
-            <?php if ($phpExists): ?>
+            {% set phpStatus = apiDocsStatus.php|default({}) %}
+            {% set phpHasSource = phpStatus.hasSource|default(false) %}
+            {% set phpExists = phpStatus.exists|default(false) %}
+            {% set phpOutdated = phpStatus.outdated|default(false) %}
+
+            {% if phpExists %}
             <a href="/docs/api/php/" class="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition">
-            <?php else: ?>
+            {% else %}
             <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg opacity-60">
-            <?php endif; ?>
-                <span class="text-sm font-medium <?= $phpExists ? 'text-gray-900' : 'text-gray-400' ?>">PHP API</span>
-                <?php if (!$phpHasSource): ?>
+            {% endif %}
+                <span class="text-sm font-medium {% if phpExists %}text-gray-900{% else %}text-gray-400{% endif %}">PHP API</span>
+                {% if not phpHasSource %}
                 <span class="badge badge-gray">No source</span>
-                <?php elseif (!$phpExists): ?>
+                {% elseif not phpExists %}
                 <span class="badge badge-red">Missing</span>
-                <?php elseif ($phpOutdated): ?>
+                {% elseif phpOutdated %}
                 <span class="badge badge-yellow">Outdated</span>
-                <?php else: ?>
+                {% else %}
                 <span class="badge badge-green">Fresh</span>
-                <?php endif; ?>
-            <?php if ($phpExists): ?>
+                {% endif %}
+            {% if phpExists %}
             </a>
-            <?php else: ?>
+            {% else %}
             </div>
-            <?php endif; ?>
+            {% endif %}
 
             <!-- Node Backend API -->
-            <?php
-            $backendStatus    = $apiDocsStatus['node_backend'] ?? [];
-            $backendHasSource = $backendStatus['hasSource'] ?? false;
-            $backendExists    = $backendStatus['exists'] ?? false;
-            $backendOutdated  = $backendStatus['outdated'] ?? false;
-            ?>
-            <?php if ($backendExists): ?>
+            {% set backendStatus = apiDocsStatus.node_backend|default({}) %}
+            {% set backendHasSource = backendStatus.hasSource|default(false) %}
+            {% set backendExists = backendStatus.exists|default(false) %}
+            {% set backendOutdated = backendStatus.outdated|default(false) %}
+
+            {% if backendExists %}
             <a href="/docs/api/node-backend/" class="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition">
-            <?php else: ?>
+            {% else %}
             <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg opacity-60">
-            <?php endif; ?>
-                <span class="text-sm font-medium <?= $backendExists ? 'text-gray-900' : 'text-gray-400' ?>">Backend API</span>
-                <?php if (!$backendHasSource): ?>
+            {% endif %}
+                <span class="text-sm font-medium {% if backendExists %}text-gray-900{% else %}text-gray-400{% endif %}">Backend API</span>
+                {% if not backendHasSource %}
                 <span class="badge badge-gray">No source</span>
-                <?php elseif (!$backendExists): ?>
+                {% elseif not backendExists %}
                 <span class="badge badge-red">Missing</span>
-                <?php elseif ($backendOutdated): ?>
+                {% elseif backendOutdated %}
                 <span class="badge badge-yellow">Outdated</span>
-                <?php else: ?>
+                {% else %}
                 <span class="badge badge-green">Fresh</span>
-                <?php endif; ?>
-            <?php if ($backendExists): ?>
+                {% endif %}
+            {% if backendExists %}
             </a>
-            <?php else: ?>
+            {% else %}
             </div>
-            <?php endif; ?>
+            {% endif %}
 
             <!-- Node Frontend -->
-            <?php
-            $frontendStatus    = $apiDocsStatus['node_frontend'] ?? [];
-            $frontendHasSource = $frontendStatus['hasSource'] ?? false;
-            $frontendExists    = $frontendStatus['exists'] ?? false;
-            $frontendOutdated  = $frontendStatus['outdated'] ?? false;
-            ?>
-            <?php if ($frontendExists): ?>
+            {% set frontendStatus = apiDocsStatus.node_frontend|default({}) %}
+            {% set frontendHasSource = frontendStatus.hasSource|default(false) %}
+            {% set frontendExists = frontendStatus.exists|default(false) %}
+            {% set frontendOutdated = frontendStatus.outdated|default(false) %}
+
+            {% if frontendExists %}
             <a href="/docs/api/node-frontend/" class="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition">
-            <?php else: ?>
+            {% else %}
             <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg opacity-60">
-            <?php endif; ?>
-                <span class="text-sm font-medium <?= $frontendExists ? 'text-gray-900' : 'text-gray-400' ?>">Frontend</span>
-                <?php if (!$frontendHasSource): ?>
+            {% endif %}
+                <span class="text-sm font-medium {% if frontendExists %}text-gray-900{% else %}text-gray-400{% endif %}">Frontend</span>
+                {% if not frontendHasSource %}
                 <span class="badge badge-gray">No source</span>
-                <?php elseif (!$frontendExists): ?>
+                {% elseif not frontendExists %}
                 <span class="badge badge-red">Missing</span>
-                <?php elseif ($frontendOutdated): ?>
+                {% elseif frontendOutdated %}
                 <span class="badge badge-yellow">Outdated</span>
-                <?php else: ?>
+                {% else %}
                 <span class="badge badge-green">Fresh</span>
-                <?php endif; ?>
-            <?php if ($frontendExists): ?>
+                {% endif %}
+            {% if frontendExists %}
             </a>
-            <?php else: ?>
+            {% else %}
             </div>
-            <?php endif; ?>
+            {% endif %}
         </div>
 
-        <?php
-        $phpNeedsRegen      = $phpHasSource && (!$phpExists || $phpOutdated);
-        $backendNeedsRegen  = $backendHasSource && (!$backendExists || $backendOutdated);
-        $frontendNeedsRegen = $frontendHasSource && (!$frontendExists || $frontendOutdated);
-        $nodeNeedsRegen     = $backendNeedsRegen || $frontendNeedsRegen;
-        $multipleNeedRegen  = ($phpNeedsRegen ? 1 : 0) + ($nodeNeedsRegen ? 1 : 0) > 1;
-        ?>
-        <?php if ($phpNeedsRegen || $nodeNeedsRegen): ?>
+        {% set phpNeedsRegen = phpHasSource and (not phpExists or phpOutdated) %}
+        {% set backendNeedsRegen = backendHasSource and (not backendExists or backendOutdated) %}
+        {% set frontendNeedsRegen = frontendHasSource and (not frontendExists or frontendOutdated) %}
+        {% set nodeNeedsRegen = backendNeedsRegen or frontendNeedsRegen %}
+        {% set multipleNeedRegen = (phpNeedsRegen ? 1 : 0) + (nodeNeedsRegen ? 1 : 0) > 1 %}
+
+        {% if phpNeedsRegen or nodeNeedsRegen %}
         <div style="margin-top: 1rem; padding-top: 0.75rem; border-top: 1px solid #e5e7eb; display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem;">
-            <?php if ($phpNeedsRegen): ?>
+            {% if phpNeedsRegen %}
             <button
                 id="btn-regen-php-docs"
-                data-action="regenerate-docs" data-type="php""
+                data-action="regenerate-docs" data-type="php"
                 class="btn btn-secondary text-xs"
             >
                 Regenerate PHP
             </button>
-            <?php endif; ?>
-            <?php if ($nodeNeedsRegen): ?>
+            {% endif %}
+            {% if nodeNeedsRegen %}
             <button
                 id="btn-regen-node-docs"
                 type="button"
@@ -247,8 +238,8 @@
             >
                 Regenerate Node
             </button>
-            <?php endif; ?>
-            <?php if ($multipleNeedRegen): ?>
+            {% endif %}
+            {% if multipleNeedRegen %}
             <button
                 id="btn-regen-all-docs"
                 data-action="regenerate-all-docs"
@@ -256,13 +247,13 @@
             >
                 Regenerate All
             </button>
-            <?php endif; ?>
+            {% endif %}
         </div>
-        <?php endif; ?>
+        {% endif %}
     </div>
 </div>
 
-<script nonce="<?= \DevDashboard\nonce() ?>">
+<script nonce="{{ nonce() }}">
 // Event delegation for data-action clicks (CSP-compliant)
 document.addEventListener('click', (e) => {
     const target = e.target.closest('[data-action]');
@@ -420,3 +411,4 @@ async function regenerateAllDocs() {
     }
 }
 </script>
+{% endblock %}

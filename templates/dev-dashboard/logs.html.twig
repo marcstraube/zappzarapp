@@ -1,28 +1,29 @@
-<?php
-/**
- * @var array<string, mixed> $log_stats
- * @var array<string, array<string, mixed>> $log_sources
- * @var array<int, array<string, string>> $log_commands
- */
+{% extends "dev-dashboard/layout.html.twig" %}
 
-$tabs = [
-    'overview' => 'Overview',
-    'sources'  => 'Sources',
-    'commands' => 'Commands',
-    'tips'     => 'Tips',
-];
-?>
+{% block content %}
+{#
+ # @var array<string, mixed> log_stats
+ # @var array<string, array<string, mixed>> log_sources
+ # @var array<int, array<string, string>> log_commands
+ #}
+
+{% set tabs = {
+    'overview': 'Overview',
+    'sources': 'Sources',
+    'commands': 'Commands',
+    'tips': 'Tips'
+} %}
 
 <!-- Sub-Navigation -->
 <nav class="sub-nav" style="background: white; border: 1px solid #e5e7eb; border-radius: 0.5rem; margin-bottom: 1.5rem; position: sticky; top: 120px; z-index: 50;">
     <div style="display: flex; gap: 0;">
-        <?php foreach ($tabs as $id => $label): ?>
+        {% for id, label in tabs %}
             <a href="#"
-               data-tab="<?= $id ?>"
-               class="sub-nav-link <?= $id === 'overview' ? 'active' : '' ?>"
+               data-tab="{{ id }}"
+               class="sub-nav-link {{ id == 'overview' ? 'active' : '' }}"
                style="display: inline-block; padding: 0.75rem 1rem; border-bottom: 2px solid transparent; color: #6b7280; font-size: 0.875rem; font-weight: 500; text-decoration: none; transition: all 0.2s;"
-            ><?= $label ?></a>
-        <?php endforeach; ?>
+            >{{ label }}</a>
+        {% endfor %}
     </div>
 </nav>
 
@@ -32,15 +33,15 @@ $tabs = [
         <h2 class="text-lg font-semibold text-gray-900 mb-4">Log Statistics</h2>
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div class="text-center p-4 bg-blue-50 rounded-lg">
-                <p class="text-3xl font-bold text-blue-600"><?= $log_stats['application_logs_count'] ?></p>
+                <p class="text-3xl font-bold text-blue-600">{{ log_stats.application_logs_count }}</p>
                 <p class="text-sm text-gray-600 mt-1">Application Log Files</p>
             </div>
             <div class="text-center p-4 bg-green-50 rounded-lg">
-                <p class="text-3xl font-bold text-green-600"><?= $log_stats['total_size_formatted'] ?></p>
+                <p class="text-3xl font-bold text-green-600">{{ log_stats.total_size_formatted }}</p>
                 <p class="text-sm text-gray-600 mt-1">Total Log Size</p>
             </div>
             <div class="text-center p-4 bg-purple-50 rounded-lg">
-                <p class="text-3xl font-bold text-purple-600"><?= count($log_sources) ?></p>
+                <p class="text-3xl font-bold text-purple-600">{{ log_sources|length }}</p>
                 <p class="text-sm text-gray-600 mt-1">Log Sources</p>
             </div>
         </div>
@@ -74,69 +75,69 @@ $tabs = [
     <div class="card">
         <h2 class="text-lg font-semibold text-gray-900 mb-4">Available Log Sources</h2>
         <div class="space-y-4">
-            <?php foreach ($log_sources as $source): ?>
-                <div class="border border-gray-200 rounded-lg p-4 <?= $source['available'] ? '' : 'bg-gray-50 opacity-75' ?>">
+            {% for source in log_sources %}
+                <div class="border border-gray-200 rounded-lg p-4 {{ source.available ? '' : 'bg-gray-50 opacity-75' }}">
                     <div class="flex items-center justify-between mb-2">
-                        <h3 class="font-medium text-gray-900"><?= htmlspecialchars((string) $source['name']) ?></h3>
-                        <span class="badge <?= $source['available'] ? 'badge-green' : 'badge-gray' ?>">
-                            <?= $source['available'] ? '✓ Available' : 'Disabled' ?>
+                        <h3 class="font-medium text-gray-900">{{ source.name }}</h3>
+                        <span class="badge {{ source.available ? 'badge-green' : 'badge-gray' }}">
+                            {{ source.available ? '✓ Available' : 'Disabled' }}
                         </span>
                     </div>
-                    <p class="text-sm text-gray-600 mb-3"><?= htmlspecialchars((string) $source['description']) ?></p>
+                    <p class="text-sm text-gray-600 mb-3">{{ source.description }}</p>
 
-                    <?php if ($source['available']): ?>
-                        <?php if ($source['type'] === 'docker'): ?>
+                    {% if source.available %}
+                        {% if source.type == 'docker' %}
                             <div style="background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 0.375rem; padding: 0.75rem;">
                                 <p style="font-size: 0.75rem; color: #6b7280; margin-bottom: 0.5rem;">View from host terminal:</p>
                                 <div class="flex items-center gap-2">
-                                    <code class="text-xs bg-gray-100 px-3 py-2 rounded text-gray-900 font-mono block overflow-x-auto flex-1"><?= htmlspecialchars((string) $source['command']) ?></code>
-                                    <button type="button" data-action="copy-cmd" data-cmd="<?= htmlspecialchars((string) $source['command']) ?>" class="btn btn-secondary text-xs">Copy</button>
+                                    <code class="text-xs bg-gray-100 px-3 py-2 rounded text-gray-900 font-mono block overflow-x-auto flex-1">{{ source.command }}</code>
+                                    <button type="button" data-action="copy-cmd" data-cmd="{{ source.command }}" class="btn btn-secondary text-xs">Copy</button>
                                 </div>
                             </div>
 
-                            <?php if (isset($source['services'])): ?>
+                            {% if source.services is defined %}
                                 <div style="margin-top: 0.75rem;">
                                     <p style="font-size: 0.75rem; color: #6b7280; margin-bottom: 0.5rem;">Available services:</p>
                                     <div style="display: flex; flex-wrap: wrap; gap: 0.5rem;">
-                                        <?php foreach ($source['services'] as $service): ?>
-                                            <span class="badge badge-blue" style="font-size: 0.75rem;"><?= htmlspecialchars((string) $service) ?></span>
-                                        <?php endforeach; ?>
+                                        {% for service in source.services %}
+                                            <span class="badge badge-blue" style="font-size: 0.75rem;">{{ service }}</span>
+                                        {% endfor %}
                                     </div>
                                 </div>
-                            <?php endif; ?>
-                        <?php elseif ($source['type'] === 'file' && isset($source['files'])): ?>
-                            <?php if (count($source['files']) > 0): ?>
+                            {% endif %}
+                        {% elseif source.type == 'file' and source.files is defined %}
+                            {% if source.files|length > 0 %}
                                 <div style="background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 0.375rem; padding: 0.75rem;">
                                     <p style="font-size: 0.75rem; color: #6b7280; margin-bottom: 0.5rem;">Log files (click to view):</p>
                                     <div style="display: flex; flex-direction: column; gap: 0.25rem;">
-                                        <?php foreach ($source['files'] as $file): ?>
+                                        {% for file in source.files %}
                                             <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.5rem 0.75rem; background: white; border: 1px solid #e5e7eb; border-radius: 0.25rem; transition: all 0.15s;">
                                                 <button
-                                                    data-action="open-log" data-logfile="<?= htmlspecialchars((string) $file['name'], ENT_QUOTES) ?>"
+                                                    data-action="open-log" data-logfile="{{ file.name }}"
                                                     style="font-family: ui-monospace, monospace; font-size: 0.8125rem; color: #2563eb; background: none; border: none; cursor: pointer; text-align: left; padding: 0;"
                                                     onmouseover="this.style.color='#1d4ed8'; this.style.textDecoration='underline';"
                                                     onmouseout="this.style.color='#2563eb'; this.style.textDecoration='none';"
                                                 >
-                                                    <?= htmlspecialchars((string) $file['name']) ?>
+                                                    {{ file.name }}
                                                 </button>
                                                 <span style="font-size: 0.75rem; color: #6b7280; white-space: nowrap; margin-left: 1rem;">
-                                                    <?= number_format($file['size'] / 1024, 1) ?> KB
+                                                    {{ (file.size / 1024)|number_format(1) }} KB
                                                 </span>
                                             </div>
-                                        <?php endforeach; ?>
+                                        {% endfor %}
                                     </div>
                                 </div>
-                            <?php else: ?>
+                            {% else %}
                                 <div class="bg-yellow-50 border border-yellow-200 rounded p-3">
                                     <p class="text-sm text-yellow-800">
-                                        No application log files found in <?= htmlspecialchars((string) $source['path']) ?>
+                                        No application log files found in {{ source.path }}
                                     </p>
                                 </div>
-                            <?php endif; ?>
-                        <?php endif; ?>
-                    <?php endif; ?>
+                            {% endif %}
+                        {% endif %}
+                    {% endif %}
                 </div>
-            <?php endforeach; ?>
+            {% endfor %}
         </div>
     </div>
 </div>
@@ -149,18 +150,18 @@ $tabs = [
             Use these commands from your host terminal to view logs in real-time:
         </p>
         <div class="grid grid-cols-1 gap-3">
-            <?php foreach ($log_commands as $cmd): ?>
+            {% for cmd in log_commands %}
                 <div class="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition">
                     <div class="flex items-start justify-between gap-4">
                         <div style="flex: 1;">
-                            <h3 class="font-medium text-gray-900 mb-1"><?= htmlspecialchars($cmd['label']) ?></h3>
-                            <p class="text-sm text-gray-600 mb-3"><?= htmlspecialchars($cmd['description']) ?></p>
-                            <code class="text-xs bg-gray-100 px-3 py-2 rounded text-gray-900 font-mono block overflow-x-auto"><?= htmlspecialchars($cmd['command']) ?></code>
+                            <h3 class="font-medium text-gray-900 mb-1">{{ cmd.label }}</h3>
+                            <p class="text-sm text-gray-600 mb-3">{{ cmd.description }}</p>
+                            <code class="text-xs bg-gray-100 px-3 py-2 rounded text-gray-900 font-mono block overflow-x-auto">{{ cmd.command }}</code>
                         </div>
-                        <button type="button" data-action="copy-cmd" data-cmd="<?= htmlspecialchars($cmd['command']) ?>" class="btn btn-secondary text-xs" style="flex-shrink: 0;">Copy</button>
+                        <button type="button" data-action="copy-cmd" data-cmd="{{ cmd.command }}" class="btn btn-secondary text-xs" style="flex-shrink: 0;">Copy</button>
                     </div>
                 </div>
-            <?php endforeach; ?>
+            {% endfor %}
         </div>
     </div>
 </div>
@@ -241,7 +242,7 @@ $tabs = [
 .sub-nav-link:hover { color: #374151; border-bottom-color: #d1d5db; }
 </style>
 
-<script nonce="<?= \DevDashboard\nonce() ?>">
+<script nonce="{{ nonce() }}">
 function switchTab(tabId) {
     document.querySelectorAll('.sub-nav-link').forEach(l => l.classList.remove('active'));
     document.querySelector(`.sub-nav-link[data-tab="${tabId}"]`)?.classList.add('active');
@@ -353,3 +354,4 @@ document.addEventListener('keydown', function(e) {
     }
 });
 </script>
+{% endblock %}

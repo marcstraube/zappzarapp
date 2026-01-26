@@ -1,31 +1,25 @@
-<?php
-/**
- * @var array<string, array<string, mixed>> $php_quality
- * @var array<string, array<string, mixed>> $node_quality
- * @var array<string, mixed> $code_stats
- * @var array<string, mixed> $test_coverage
- * @var array<int, array<string, mixed>> $quick_actions
- */
+{% extends "dev-dashboard/layout.html.twig" %}
 
-$tabs = [
-    'php'      => 'PHP Tools',
-    'node'     => 'Node Tools',
-    'stats'    => 'Statistics',
-    'coverage' => 'Coverage',
-    'commands' => 'Commands',
-];
-?>
+{% block content %}
+{# Define tabs array #}
+{% set tabs = {
+    'php': 'PHP Tools',
+    'node': 'Node Tools',
+    'stats': 'Statistics',
+    'coverage': 'Coverage',
+    'commands': 'Commands'
+} %}
 
 <!-- Sub-Navigation -->
 <nav class="sub-nav" style="background: white; border: 1px solid #e5e7eb; border-radius: 0.5rem; margin-bottom: 1.5rem; position: sticky; top: 120px; z-index: 50;">
     <div style="display: flex; gap: 0;">
-        <?php foreach ($tabs as $id => $label): ?>
+        {% for id, label in tabs %}
             <a href="#"
-               data-tab="<?= $id ?>"
-               class="sub-nav-link <?= $id === 'php' ? 'active' : '' ?>"
+               data-tab="{{ id }}"
+               class="sub-nav-link {{ id == 'php' ? 'active' : '' }}"
                style="display: inline-block; padding: 0.75rem 1rem; border-bottom: 2px solid transparent; color: #6b7280; font-size: 0.875rem; font-weight: 500; text-decoration: none; transition: all 0.2s;"
-            ><?= $label ?></a>
-        <?php endforeach; ?>
+            >{{ label }}</a>
+        {% endfor %}
     </div>
 </nav>
 
@@ -38,67 +32,67 @@ $tabs = [
             <div class="border border-gray-200 rounded-lg p-4">
                 <div class="flex items-center justify-between mb-3">
                     <h3 class="font-medium text-gray-900">PHPStan</h3>
-                    <span class="badge <?= $php_quality['phpstan']['enabled'] ? 'badge-green' : 'badge-gray' ?>">
-                        <?= $php_quality['phpstan']['enabled'] ? '✓ Enabled' : 'Disabled' ?>
+                    <span class="badge {{ php_quality.phpstan.enabled ? 'badge-green' : 'badge-gray' }}">
+                        {{ php_quality.phpstan.enabled ? '✓ Enabled' : 'Disabled' }}
                     </span>
                 </div>
-                <?php if ($php_quality['phpstan']['enabled']): ?>
+                {% if php_quality.phpstan.enabled %}
                     <dl class="space-y-1 text-sm">
                         <div class="flex justify-between">
                             <dt class="text-gray-500">Level:</dt>
-                            <dd class="font-medium text-gray-900"><?= $php_quality['phpstan']['level'] ?></dd>
+                            <dd class="font-medium text-gray-900">{{ php_quality.phpstan.level }}</dd>
                         </div>
                         <div class="flex justify-between">
                             <dt class="text-gray-500">Config:</dt>
-                            <dd class="font-mono text-xs text-gray-700"><?= $php_quality['phpstan']['config_file'] ?></dd>
+                            <dd class="font-mono text-xs text-gray-700">{{ php_quality.phpstan.config_file }}</dd>
                         </div>
                     </dl>
-                    <p class="text-xs text-gray-600 mt-2"><?= $php_quality['phpstan']['message'] ?></p>
-                <?php else: ?>
-                    <p class="text-sm text-gray-500"><?= $php_quality['phpstan']['message'] ?></p>
-                <?php endif; ?>
+                    <p class="text-xs text-gray-600 mt-2">{{ php_quality.phpstan.message }}</p>
+                {% else %}
+                    <p class="text-sm text-gray-500">{{ php_quality.phpstan.message }}</p>
+                {% endif %}
             </div>
 
             <!-- PHPMD -->
             <div class="border border-gray-200 rounded-lg p-4">
                 <div class="flex items-center justify-between mb-3">
                     <h3 class="font-medium text-gray-900">PHPMD</h3>
-                    <span class="badge <?= $php_quality['phpmd']['enabled'] ? 'badge-green' : 'badge-gray' ?>">
-                        <?= $php_quality['phpmd']['enabled'] ? '✓ Enabled' : 'Disabled' ?>
+                    <span class="badge {{ php_quality.phpmd.enabled ? 'badge-green' : 'badge-gray' }}">
+                        {{ php_quality.phpmd.enabled ? '✓ Enabled' : 'Disabled' }}
                     </span>
                 </div>
-                <?php if ($php_quality['phpmd']['enabled']): ?>
+                {% if php_quality.phpmd.enabled %}
                     <dl class="space-y-1 text-sm">
                         <div class="flex justify-between">
                             <dt class="text-gray-500">Config:</dt>
-                            <dd class="font-mono text-xs text-gray-700"><?= $php_quality['phpmd']['config_file'] ?></dd>
+                            <dd class="font-mono text-xs text-gray-700">{{ php_quality.phpmd.config_file }}</dd>
                         </div>
                     </dl>
-                    <p class="text-xs text-gray-600 mt-2"><?= $php_quality['phpmd']['message'] ?></p>
-                <?php else: ?>
-                    <p class="text-sm text-gray-500"><?= $php_quality['phpmd']['message'] ?></p>
-                <?php endif; ?>
+                    <p class="text-xs text-gray-600 mt-2">{{ php_quality.phpmd.message }}</p>
+                {% else %}
+                    <p class="text-sm text-gray-500">{{ php_quality.phpmd.message }}</p>
+                {% endif %}
             </div>
 
             <!-- PHP CS Fixer -->
             <div class="border border-gray-200 rounded-lg p-4">
                 <div class="flex items-center justify-between mb-3">
                     <h3 class="font-medium text-gray-900">PHP CS Fixer</h3>
-                    <span class="badge <?= $php_quality['cs_fixer']['enabled'] ? 'badge-green' : 'badge-gray' ?>">
-                        <?= $php_quality['cs_fixer']['enabled'] ? '✓ Enabled' : 'Disabled' ?>
+                    <span class="badge {{ php_quality.cs_fixer.enabled ? 'badge-green' : 'badge-gray' }}">
+                        {{ php_quality.cs_fixer.enabled ? '✓ Enabled' : 'Disabled' }}
                     </span>
                 </div>
-                <?php if ($php_quality['cs_fixer']['enabled']): ?>
+                {% if php_quality.cs_fixer.enabled %}
                     <dl class="space-y-1 text-sm">
                         <div class="flex justify-between">
                             <dt class="text-gray-500">Config:</dt>
-                            <dd class="font-mono text-xs text-gray-700"><?= $php_quality['cs_fixer']['config_file'] ?></dd>
+                            <dd class="font-mono text-xs text-gray-700">{{ php_quality.cs_fixer.config_file }}</dd>
                         </div>
                     </dl>
-                    <p class="text-xs text-gray-600 mt-2"><?= $php_quality['cs_fixer']['message'] ?></p>
-                <?php else: ?>
-                    <p class="text-sm text-gray-500"><?= $php_quality['cs_fixer']['message'] ?></p>
-                <?php endif; ?>
+                    <p class="text-xs text-gray-600 mt-2">{{ php_quality.cs_fixer.message }}</p>
+                {% else %}
+                    <p class="text-sm text-gray-500">{{ php_quality.cs_fixer.message }}</p>
+                {% endif %}
             </div>
         </div>
     </div>
@@ -113,63 +107,63 @@ $tabs = [
             <div class="border border-gray-200 rounded-lg p-4">
                 <div class="flex items-center justify-between mb-3">
                     <h3 class="font-medium text-gray-900">ESLint</h3>
-                    <span class="badge <?= $node_quality['eslint']['enabled'] ? 'badge-green' : 'badge-gray' ?>">
-                        <?= $node_quality['eslint']['enabled'] ? '✓ Enabled' : 'Disabled' ?>
+                    <span class="badge {{ node_quality.eslint.enabled ? 'badge-green' : 'badge-gray' }}">
+                        {{ node_quality.eslint.enabled ? '✓ Enabled' : 'Disabled' }}
                     </span>
                 </div>
-                <?php if ($node_quality['eslint']['enabled']): ?>
+                {% if node_quality.eslint.enabled %}
                     <dl class="space-y-1 text-sm">
                         <div class="flex justify-between">
                             <dt class="text-gray-500">Config:</dt>
-                            <dd class="font-mono text-xs text-gray-700"><?= $node_quality['eslint']['config_file'] ?></dd>
+                            <dd class="font-mono text-xs text-gray-700">{{ node_quality.eslint.config_file }}</dd>
                         </div>
                     </dl>
-                    <p class="text-xs text-gray-600 mt-2"><?= $node_quality['eslint']['message'] ?></p>
-                <?php else: ?>
-                    <p class="text-sm text-gray-500"><?= $node_quality['eslint']['message'] ?></p>
-                <?php endif; ?>
+                    <p class="text-xs text-gray-600 mt-2">{{ node_quality.eslint.message }}</p>
+                {% else %}
+                    <p class="text-sm text-gray-500">{{ node_quality.eslint.message }}</p>
+                {% endif %}
             </div>
 
             <!-- Prettier -->
             <div class="border border-gray-200 rounded-lg p-4">
                 <div class="flex items-center justify-between mb-3">
                     <h3 class="font-medium text-gray-900">Prettier</h3>
-                    <span class="badge <?= $node_quality['prettier']['enabled'] ? 'badge-green' : 'badge-gray' ?>">
-                        <?= $node_quality['prettier']['enabled'] ? '✓ Enabled' : 'Disabled' ?>
+                    <span class="badge {{ node_quality.prettier.enabled ? 'badge-green' : 'badge-gray' }}">
+                        {{ node_quality.prettier.enabled ? '✓ Enabled' : 'Disabled' }}
                     </span>
                 </div>
-                <?php if ($node_quality['prettier']['enabled']): ?>
+                {% if node_quality.prettier.enabled %}
                     <dl class="space-y-1 text-sm">
                         <div class="flex justify-between">
                             <dt class="text-gray-500">Config:</dt>
-                            <dd class="font-mono text-xs text-gray-700"><?= $node_quality['prettier']['config_file'] ?></dd>
+                            <dd class="font-mono text-xs text-gray-700">{{ node_quality.prettier.config_file }}</dd>
                         </div>
                     </dl>
-                    <p class="text-xs text-gray-600 mt-2"><?= $node_quality['prettier']['message'] ?></p>
-                <?php else: ?>
-                    <p class="text-sm text-gray-500"><?= $node_quality['prettier']['message'] ?></p>
-                <?php endif; ?>
+                    <p class="text-xs text-gray-600 mt-2">{{ node_quality.prettier.message }}</p>
+                {% else %}
+                    <p class="text-sm text-gray-500">{{ node_quality.prettier.message }}</p>
+                {% endif %}
             </div>
 
             <!-- TypeScript -->
             <div class="border border-gray-200 rounded-lg p-4">
                 <div class="flex items-center justify-between mb-3">
                     <h3 class="font-medium text-gray-900">TypeScript</h3>
-                    <span class="badge <?= $node_quality['typescript']['enabled'] ? 'badge-green' : 'badge-gray' ?>">
-                        <?= $node_quality['typescript']['enabled'] ? '✓ Enabled' : 'Disabled' ?>
+                    <span class="badge {{ node_quality.typescript.enabled ? 'badge-green' : 'badge-gray' }}">
+                        {{ node_quality.typescript.enabled ? '✓ Enabled' : 'Disabled' }}
                     </span>
                 </div>
-                <?php if ($node_quality['typescript']['enabled']): ?>
+                {% if node_quality.typescript.enabled %}
                     <dl class="space-y-1 text-sm">
                         <div class="flex justify-between">
                             <dt class="text-gray-500">Config:</dt>
-                            <dd class="font-mono text-xs text-gray-700"><?= $node_quality['typescript']['config_file'] ?></dd>
+                            <dd class="font-mono text-xs text-gray-700">{{ node_quality.typescript.config_file }}</dd>
                         </div>
                     </dl>
-                    <p class="text-xs text-gray-600 mt-2"><?= $node_quality['typescript']['message'] ?></p>
-                <?php else: ?>
-                    <p class="text-sm text-gray-500"><?= $node_quality['typescript']['message'] ?></p>
-                <?php endif; ?>
+                    <p class="text-xs text-gray-600 mt-2">{{ node_quality.typescript.message }}</p>
+                {% else %}
+                    <p class="text-sm text-gray-500">{{ node_quality.typescript.message }}</p>
+                {% endif %}
             </div>
         </div>
     </div>
@@ -181,19 +175,19 @@ $tabs = [
         <h2 class="text-lg font-semibold text-gray-900 mb-4">Code Statistics</h2>
         <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
             <div class="text-center p-4 bg-blue-50 rounded-lg">
-                <p class="text-3xl font-bold text-blue-600"><?= $code_stats['files']['php']['count'] ?></p>
+                <p class="text-3xl font-bold text-blue-600">{{ code_stats.files.php.count }}</p>
                 <p class="text-sm text-gray-600 mt-1">PHP Source Files</p>
             </div>
             <div class="text-center p-4 bg-green-50 rounded-lg">
-                <p class="text-3xl font-bold text-green-600"><?= $code_stats['files']['typescript']['count'] ?></p>
+                <p class="text-3xl font-bold text-green-600">{{ code_stats.files.typescript.count }}</p>
                 <p class="text-sm text-gray-600 mt-1">TS/JS Source Files</p>
             </div>
             <div class="text-center p-4 bg-purple-50 rounded-lg">
-                <p class="text-3xl font-bold text-purple-600"><?= $code_stats['files']['tests_php']['count'] ?></p>
+                <p class="text-3xl font-bold text-purple-600">{{ code_stats.files.tests_php.count }}</p>
                 <p class="text-sm text-gray-600 mt-1">PHP Test Files</p>
             </div>
             <div class="text-center p-4 bg-yellow-50 rounded-lg">
-                <p class="text-3xl font-bold text-yellow-600"><?= $code_stats['files']['tests_node']['count'] ?></p>
+                <p class="text-3xl font-bold text-yellow-600">{{ code_stats.files.tests_node.count }}</p>
                 <p class="text-sm text-gray-600 mt-1">Node Test Files</p>
             </div>
         </div>
@@ -201,21 +195,19 @@ $tabs = [
             <div class="flex justify-between items-center">
                 <div>
                     <p class="text-sm text-gray-600">Total Source Files</p>
-                    <p class="text-2xl font-bold text-gray-900"><?= $code_stats['total_source_files'] ?></p>
+                    <p class="text-2xl font-bold text-gray-900">{{ code_stats.total_source_files }}</p>
                 </div>
                 <div>
                     <p class="text-sm text-gray-600">Total Test Files</p>
-                    <p class="text-2xl font-bold text-gray-900"><?= $code_stats['total_test_files'] ?></p>
+                    <p class="text-2xl font-bold text-gray-900">{{ code_stats.total_test_files }}</p>
                 </div>
                 <div>
                     <p class="text-sm text-gray-600">Test Ratio</p>
                     <p class="text-2xl font-bold text-gray-900">
-                        <?php
-                        $ratio = $code_stats['total_source_files'] > 0
-                            ? round(($code_stats['total_test_files'] / $code_stats['total_source_files']) * 100)
-                            : 0;
-                        echo $ratio . '%';
-                        ?>
+                        {% set ratio = code_stats.total_source_files > 0
+                            ? ((code_stats.total_test_files / code_stats.total_source_files) * 100)|round
+                            : 0 %}
+                        {{ ratio }}%
                     </p>
                 </div>
             </div>
@@ -229,169 +221,165 @@ $tabs = [
         <h2 class="text-lg font-semibold text-gray-900 mb-4">Test Coverage</h2>
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <!-- PHP Coverage -->
-            <?php
-            $phpAvailable = $test_coverage['php']['available'] ?? false;
-            $phpOutdated  = $test_coverage['php']['outdated'] ?? false;
-            ?>
+            {% set phpAvailable = test_coverage.php.available ?? false %}
+            {% set phpOutdated = test_coverage.php.outdated ?? false %}
             <div class="border border-gray-200 rounded-lg p-4">
                 <div class="flex items-center justify-between mb-3">
                     <h3 class="font-medium text-gray-900">PHP (PHPUnit)</h3>
-                    <?php if (!$phpAvailable): ?>
+                    {% if not phpAvailable %}
                         <span class="badge badge-gray">Not generated</span>
-                    <?php elseif ($phpOutdated): ?>
+                    {% elseif phpOutdated %}
                         <span class="badge badge-yellow">Outdated</span>
-                    <?php else: ?>
+                    {% else %}
                         <span class="badge badge-green">Fresh</span>
-                    <?php endif; ?>
+                    {% endif %}
                 </div>
 
-                <?php if ($phpAvailable && isset($test_coverage['php']['metrics'])): ?>
-                    <?php $metrics = $test_coverage['php']['metrics']; ?>
+                {% if phpAvailable and test_coverage.php.metrics is defined %}
+                    {% set metrics = test_coverage.php.metrics %}
                     <div class="grid grid-cols-2 gap-2 mb-3 text-sm">
-                        <?php if (isset($metrics['statements'])): ?>
+                        {% if metrics.statements is defined %}
                         <div class="flex justify-between">
                             <span class="text-gray-600">Statements:</span>
-                            <span class="font-semibold <?= $metrics['statements'] >= 80 ? 'text-green-600' : 'text-yellow-600' ?>">
-                                <?= number_format($metrics['statements'], 1) ?>%
+                            <span class="font-semibold {{ metrics.statements >= 80 ? 'text-green-600' : 'text-yellow-600' }}">
+                                {{ metrics.statements|number_format(1) }}%
                             </span>
                         </div>
-                        <?php endif; ?>
+                        {% endif %}
 
-                        <?php if (isset($metrics['branches'])): ?>
+                        {% if metrics.branches is defined %}
                         <div class="flex justify-between">
                             <span class="text-gray-600">Branches:</span>
-                            <span class="font-semibold <?= $metrics['branches'] >= 80 ? 'text-green-600' : 'text-yellow-600' ?>">
-                                <?= number_format($metrics['branches'], 1) ?>%
+                            <span class="font-semibold {{ metrics.branches >= 80 ? 'text-green-600' : 'text-yellow-600' }}">
+                                {{ metrics.branches|number_format(1) }}%
                             </span>
                         </div>
-                        <?php endif; ?>
+                        {% endif %}
 
-                        <?php if (isset($metrics['functions'])): ?>
+                        {% if metrics.functions is defined %}
                         <div class="flex justify-between">
                             <span class="text-gray-600">Functions:</span>
-                            <span class="font-semibold <?= $metrics['functions'] >= 80 ? 'text-green-600' : 'text-yellow-600' ?>">
-                                <?= number_format($metrics['functions'], 1) ?>%
+                            <span class="font-semibold {{ metrics.functions >= 80 ? 'text-green-600' : 'text-yellow-600' }}">
+                                {{ metrics.functions|number_format(1) }}%
                             </span>
                         </div>
-                        <?php endif; ?>
+                        {% endif %}
 
-                        <?php if (isset($metrics['lines'])): ?>
+                        {% if metrics.lines is defined %}
                         <div class="flex justify-between">
                             <span class="text-gray-600">Lines:</span>
-                            <span class="font-semibold <?= $metrics['lines'] >= 80 ? 'text-green-600' : 'text-yellow-600' ?>">
-                                <?= number_format($metrics['lines'], 1) ?>%
+                            <span class="font-semibold {{ metrics.lines >= 80 ? 'text-green-600' : 'text-yellow-600' }}">
+                                {{ metrics.lines|number_format(1) }}%
                             </span>
                         </div>
-                        <?php endif; ?>
+                        {% endif %}
                     </div>
 
-                    <?php if (isset($test_coverage['php']['generated_at'])): ?>
+                    {% if test_coverage.php.generated_at is defined %}
                     <p class="text-xs text-gray-500 mb-2">
-                        Generated <?= $test_coverage['php']['generated_at'] ?>
+                        Generated {{ test_coverage.php.generated_at }}
                     </p>
-                    <?php endif; ?>
-                <?php endif; ?>
+                    {% endif %}
+                {% endif %}
 
                 <div class="flex gap-2">
-                    <?php if ($phpAvailable): ?>
-                        <a href="<?= $test_coverage['php']['report_path'] ?>"
+                    {% if phpAvailable %}
+                        <a href="{{ test_coverage.php.report_path }}"
                            target="_blank"
                            class="btn btn-primary text-sm" style="flex: 1; text-align: center;">
                             View Report
                         </a>
-                    <?php endif; ?>
+                    {% endif %}
                     <button
                         id="btn-coverage-php"
                         type="button"
                         data-action="generate-coverage" data-type="php"
                         class="btn btn-secondary text-sm"
-                        style="<?= $phpAvailable ? '' : 'flex: 1;' ?>"
+                        style="{{ phpAvailable ? '' : 'flex: 1;' }}"
                     >
-                        <?= $phpAvailable ? 'Regenerate' : 'Generate' ?>
+                        {{ phpAvailable ? 'Regenerate' : 'Generate' }}
                     </button>
                 </div>
             </div>
 
             <!-- Node Coverage -->
-            <?php
-            $nodeAvailable = $test_coverage['node']['available'] ?? false;
-            $nodeOutdated  = $test_coverage['node']['outdated'] ?? false;
-            ?>
+            {% set nodeAvailable = test_coverage.node.available ?? false %}
+            {% set nodeOutdated = test_coverage.node.outdated ?? false %}
             <div class="border border-gray-200 rounded-lg p-4">
                 <div class="flex items-center justify-between mb-3">
                     <h3 class="font-medium text-gray-900">Node.js (Vitest)</h3>
-                    <?php if (!$nodeAvailable): ?>
+                    {% if not nodeAvailable %}
                         <span class="badge badge-gray">Not generated</span>
-                    <?php elseif ($nodeOutdated): ?>
+                    {% elseif nodeOutdated %}
                         <span class="badge badge-yellow">Outdated</span>
-                    <?php else: ?>
+                    {% else %}
                         <span class="badge badge-green">Fresh</span>
-                    <?php endif; ?>
+                    {% endif %}
                 </div>
 
-                <?php if ($nodeAvailable && isset($test_coverage['node']['metrics'])): ?>
-                    <?php $metrics = $test_coverage['node']['metrics']; ?>
+                {% if nodeAvailable and test_coverage.node.metrics is defined %}
+                    {% set metrics = test_coverage.node.metrics %}
                     <div class="grid grid-cols-2 gap-2 mb-3 text-sm">
-                        <?php if (isset($metrics['statements'])): ?>
+                        {% if metrics.statements is defined %}
                         <div class="flex justify-between">
                             <span class="text-gray-600">Statements:</span>
-                            <span class="font-semibold <?= $metrics['statements'] >= 80 ? 'text-green-600' : 'text-yellow-600' ?>">
-                                <?= number_format($metrics['statements'], 1) ?>%
+                            <span class="font-semibold {{ metrics.statements >= 80 ? 'text-green-600' : 'text-yellow-600' }}">
+                                {{ metrics.statements|number_format(1) }}%
                             </span>
                         </div>
-                        <?php endif; ?>
+                        {% endif %}
 
-                        <?php if (isset($metrics['branches'])): ?>
+                        {% if metrics.branches is defined %}
                         <div class="flex justify-between">
                             <span class="text-gray-600">Branches:</span>
-                            <span class="font-semibold <?= $metrics['branches'] >= 80 ? 'text-green-600' : 'text-yellow-600' ?>">
-                                <?= number_format($metrics['branches'], 1) ?>%
+                            <span class="font-semibold {{ metrics.branches >= 80 ? 'text-green-600' : 'text-yellow-600' }}">
+                                {{ metrics.branches|number_format(1) }}%
                             </span>
                         </div>
-                        <?php endif; ?>
+                        {% endif %}
 
-                        <?php if (isset($metrics['functions'])): ?>
+                        {% if metrics.functions is defined %}
                         <div class="flex justify-between">
                             <span class="text-gray-600">Functions:</span>
-                            <span class="font-semibold <?= $metrics['functions'] >= 80 ? 'text-green-600' : 'text-yellow-600' ?>">
-                                <?= number_format($metrics['functions'], 1) ?>%
+                            <span class="font-semibold {{ metrics.functions >= 80 ? 'text-green-600' : 'text-yellow-600' }}">
+                                {{ metrics.functions|number_format(1) }}%
                             </span>
                         </div>
-                        <?php endif; ?>
+                        {% endif %}
 
-                        <?php if (isset($metrics['lines'])): ?>
+                        {% if metrics.lines is defined %}
                         <div class="flex justify-between">
                             <span class="text-gray-600">Lines:</span>
-                            <span class="font-semibold <?= $metrics['lines'] >= 80 ? 'text-green-600' : 'text-yellow-600' ?>">
-                                <?= number_format($metrics['lines'], 1) ?>%
+                            <span class="font-semibold {{ metrics.lines >= 80 ? 'text-green-600' : 'text-yellow-600' }}">
+                                {{ metrics.lines|number_format(1) }}%
                             </span>
                         </div>
-                        <?php endif; ?>
+                        {% endif %}
                     </div>
 
-                    <?php if (isset($test_coverage['node']['generated_at'])): ?>
+                    {% if test_coverage.node.generated_at is defined %}
                     <p class="text-xs text-gray-500 mb-2">
-                        Generated <?= $test_coverage['node']['generated_at'] ?>
+                        Generated {{ test_coverage.node.generated_at }}
                     </p>
-                    <?php endif; ?>
-                <?php endif; ?>
+                    {% endif %}
+                {% endif %}
 
                 <div class="flex gap-2">
-                    <?php if ($nodeAvailable): ?>
-                        <a href="<?= $test_coverage['node']['report_path'] ?>"
+                    {% if nodeAvailable %}
+                        <a href="{{ test_coverage.node.report_path }}"
                            target="_blank"
                            class="btn btn-primary text-sm" style="flex: 1; text-align: center;">
                             View Report
                         </a>
-                    <?php endif; ?>
+                    {% endif %}
                     <button
                         id="btn-coverage-node"
                         type="button"
                         data-action="generate-node-coverage"
                         class="btn btn-secondary text-sm"
-                        style="<?= $nodeAvailable ? '' : 'flex: 1;' ?>"
+                        style="{{ nodeAvailable ? '' : 'flex: 1;' }}"
                     >
-                        <?= $nodeAvailable ? 'Regenerate' : 'Generate' ?>
+                        {{ nodeAvailable ? 'Regenerate' : 'Generate' }}
                     </button>
                 </div>
             </div>
@@ -407,20 +395,20 @@ $tabs = [
     <div class="card">
         <h2 class="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h2>
         <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-            <?php foreach ($quick_actions as $action): ?>
+            {% for action in quick_actions %}
                 <div class="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition">
                     <div class="flex items-start justify-between gap-4">
                         <div style="flex: 1;">
-                            <h3 class="font-medium text-gray-900"><?= htmlspecialchars((string) $action['label']) ?></h3>
-                            <p class="text-sm text-gray-600 mt-1"><?= htmlspecialchars((string) $action['description']) ?></p>
+                            <h3 class="font-medium text-gray-900">{{ action.label }}</h3>
+                            <p class="text-sm text-gray-600 mt-1">{{ action.description }}</p>
                             <code class="text-xs bg-gray-100 px-2 py-1 rounded text-gray-900 font-mono block mt-2">
-                                <?= htmlspecialchars((string) $action['command']) ?>
+                                {{ action.command }}
                             </code>
                         </div>
-                        <button type="button" data-action="copy-cmd" data-cmd="<?= htmlspecialchars((string) $action['command']) ?>" class="btn btn-secondary text-xs" style="flex-shrink: 0;">Copy</button>
+                        <button type="button" data-action="copy-cmd" data-cmd="{{ action.command }}" class="btn btn-secondary text-xs" style="flex-shrink: 0;">Copy</button>
                     </div>
                 </div>
-            <?php endforeach; ?>
+            {% endfor %}
         </div>
     </div>
 </div>
@@ -430,7 +418,7 @@ $tabs = [
 .sub-nav-link:hover { color: #374151; border-bottom-color: #d1d5db; }
 </style>
 
-<script nonce="<?= \DevDashboard\nonce() ?>">
+<script nonce="{{ nonce() }}">
 function switchTab(tabId) {
     document.querySelectorAll('.sub-nav-link').forEach(l => l.classList.remove('active'));
     document.querySelector(`.sub-nav-link[data-tab="${tabId}"]`)?.classList.add('active');
@@ -575,3 +563,4 @@ async function generateNodeCoverage() {
     }
 }
 </script>
+{% endblock %}

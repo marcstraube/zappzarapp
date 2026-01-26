@@ -7,6 +7,7 @@ namespace DevDashboard\Controllers;
 use DevDashboard\Response\JsonResponse;
 use DevDashboard\Response\Response;
 use DevDashboard\Services\DocsService;
+use Exception;
 
 /**
  * Documentation Controller
@@ -21,6 +22,8 @@ readonly class DocsController
 
     /**
      * API: Generate PHP documentation (JSON)
+     *
+     * @throws Exception If documentation generation fails
      */
     public function apiGenerateDocs(): Response
     {

@@ -1,30 +1,25 @@
-<?php
-/**
- * @var array<string, mixed> $phpVersion
- * @var bool $showPhpInfo
- * @var array<int, array<string, mixed>> $extensions
- * @var array<string, mixed> $envVars
- * @var array<string, mixed> $gitStatus
- */
+{% extends "dev-dashboard/layout.html.twig" %}
 
-$tabs = [
-    'php'         => 'PHP',
-    'extensions'  => 'PHP Extensions (' . count($extensions) . ')',
-    'environment' => 'Environment',
-    'git'         => 'Git',
-];
-?>
+{% block title %}System Information{% endblock %}
+
+{% block content %}
+{% set tabs = {
+    'php': 'PHP',
+    'extensions': 'PHP Extensions (' ~ extensions|length ~ ')',
+    'environment': 'Environment',
+    'git': 'Git'
+} %}
 
 <!-- Sub-Navigation -->
 <nav class="sub-nav" style="background: white; border: 1px solid #e5e7eb; border-radius: 0.5rem; margin-bottom: 1.5rem; position: sticky; top: 120px; z-index: 50;">
     <div style="display: flex; gap: 0;">
-        <?php foreach ($tabs as $id => $label): ?>
+        {% for id, label in tabs %}
             <a href="#"
-               data-tab="<?= $id ?>"
-               class="sub-nav-link <?= $id === 'php' ? 'active' : '' ?>"
+               data-tab="{{ id }}"
+               class="sub-nav-link {% if id == 'php' %}active{% endif %}"
                style="display: inline-block; padding: 0.75rem 1rem; border-bottom: 2px solid transparent; color: #6b7280; font-size: 0.875rem; font-weight: 500; text-decoration: none; transition: all 0.2s;"
-            ><?= $label ?></a>
-        <?php endforeach; ?>
+            >{{ label }}</a>
+        {% endfor %}
     </div>
 </nav>
 
@@ -35,50 +30,40 @@ $tabs = [
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             <div>
                 <p class="text-sm text-gray-500">Version</p>
-                <p class="text-lg font-medium text-gray-900"><?= $phpVersion['version'] ?? 'Unknown' ?></p>
+                <p class="text-lg font-medium text-gray-900">{{ phpVersion.version|default('Unknown') }}</p>
             </div>
             <div>
                 <p class="text-sm text-gray-500">SAPI</p>
-                <p class="text-lg font-medium text-gray-900"><?= $phpVersion['sapi'] ?? 'Unknown' ?></p>
+                <p class="text-lg font-medium text-gray-900">{{ phpVersion.sapi|default('Unknown') }}</p>
             </div>
             <div>
                 <p class="text-sm text-gray-500">Zend Version</p>
-                <p class="text-lg font-medium text-gray-900"><?= $phpVersion['zend_version'] ?? 'Unknown' ?></p>
+                <p class="text-lg font-medium text-gray-900">{{ phpVersion.zend_version|default('Unknown') }}</p>
             </div>
         </div>
         <div class="mt-4">
-            <?php if ($showPhpInfo): ?>
+            {% if showPhpInfo %}
                 <a href="/_dev/system#php" class="inline-flex items-center px-4 py-2 border border-blue-300 text-sm font-medium rounded text-blue-700 bg-blue-50 hover:bg-blue-100 transition">
                     Hide phpinfo()
                 </a>
-            <?php else: ?>
+            {% else %}
                 <a href="/_dev/system?phpinfo=1#php" class="inline-flex items-center px-4 py-2 border border-blue-300 text-sm font-medium rounded text-blue-700 bg-blue-50 hover:bg-blue-100 transition">
                     View Full phpinfo()
                 </a>
-            <?php endif; ?>
+            {% endif %}
         </div>
     </div>
 
-    <?php if ($showPhpInfo): ?>
+    {% if showPhpInfo %}
     <div class="card" style="margin-top: 1.5rem;">
         <h2 class="text-lg font-semibold text-gray-900 mb-4">Full PHP Info</h2>
         <div class="border border-gray-200 rounded overflow-hidden">
             <div style="max-height: 600px; overflow-y: auto;">
-                <?php ob_start();
-        phpinfo();
-        $phpinfo = ob_get_clean();
-        if ($phpinfo !== false) {
-            $phpinfo = preg_replace('%^.*<body>(.*)</body>.*$%ms', '$1', $phpinfo);
-            if ($phpinfo !== null) {
-                $phpinfo = str_replace('<table', '<table class="w-full text-sm"', $phpinfo);
-                echo $phpinfo;
-            }
-        }
-        ?>
+                {{ phpinfoHtml|raw }}
             </div>
         </div>
     </div>
-    <?php endif; ?>
+    {% endif %}
 </div>
 
 <!-- Tab: Extensions -->
@@ -86,12 +71,12 @@ $tabs = [
     <div class="card">
         <h2 class="text-lg font-semibold text-gray-900 mb-4">Loaded Extensions</h2>
         <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
-            <?php foreach ($extensions as $ext): ?>
+            {% for ext in extensions %}
                 <div class="flex justify-between items-center p-2 bg-gray-50 rounded text-sm">
-                    <span class="font-medium text-gray-700"><?= htmlspecialchars((string) $ext['name']) ?></span>
-                    <span class="text-xs text-gray-500"><?= htmlspecialchars((string) $ext['version']) ?></span>
+                    <span class="font-medium text-gray-700">{{ ext.name }}</span>
+                    <span class="text-xs text-gray-500">{{ ext.version }}</span>
                 </div>
-            <?php endforeach; ?>
+            {% endfor %}
         </div>
     </div>
 </div>
@@ -109,18 +94,18 @@ $tabs = [
                     </tr>
                 </thead>
                 <tbody class="bg-white divide-y divide-gray-200">
-                    <?php foreach ($envVars as $key => $value): ?>
+                    {% for key, value in envVars %}
                     <tr class="hover:bg-gray-50">
-                        <td class="px-4 py-2 text-sm font-mono text-gray-900"><?= htmlspecialchars($key) ?></td>
+                        <td class="px-4 py-2 text-sm font-mono text-gray-900">{{ key }}</td>
                         <td class="px-4 py-2 text-sm font-mono text-gray-700">
-                            <?php if ($value === '********'): ?>
+                            {% if value == '********' %}
                                 <span class="text-gray-400">********</span>
-                            <?php else: ?>
-                                <?= htmlspecialchars((string) $value) ?>
-                            <?php endif; ?>
+                            {% else %}
+                                {{ value }}
+                            {% endif %}
                         </td>
                     </tr>
-                    <?php endforeach; ?>
+                    {% endfor %}
                 </tbody>
             </table>
         </div>
@@ -131,28 +116,28 @@ $tabs = [
 <div id="tab-git" class="tab-panel hidden">
     <div class="card">
         <h2 class="text-lg font-semibold text-gray-900 mb-4">Git Status</h2>
-        <?php if ($gitStatus['initialized'] ?? false): ?>
+        {% if gitStatus.initialized|default(false) %}
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div class="p-4 bg-gray-50 rounded-lg">
                     <p class="text-sm text-gray-500 mb-1">Branch</p>
-                    <p class="text-lg font-mono font-medium text-gray-900"><?= htmlspecialchars($gitStatus['branch'] ?? 'Unknown') ?></p>
+                    <p class="text-lg font-mono font-medium text-gray-900">{{ gitStatus.branch|default('Unknown') }}</p>
                 </div>
                 <div class="p-4 bg-gray-50 rounded-lg">
                     <p class="text-sm text-gray-500 mb-1">Commit</p>
-                    <p class="text-lg font-mono font-medium text-gray-900"><?= htmlspecialchars($gitStatus['commit'] ?? 'Unknown') ?></p>
+                    <p class="text-lg font-mono font-medium text-gray-900">{{ gitStatus.commit|default('Unknown') }}</p>
                 </div>
             </div>
-            <?php if (!empty($gitStatus['status'])): ?>
+            {% if gitStatus.status is defined and gitStatus.status is not empty %}
                 <div class="mt-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
                     <p class="text-sm font-medium text-yellow-900 mb-2">Working Directory Changes</p>
-                    <pre class="text-xs font-mono text-yellow-800 whitespace-pre-wrap"><?= htmlspecialchars($gitStatus['status']) ?></pre>
+                    <pre class="text-xs font-mono text-yellow-800 whitespace-pre-wrap">{{ gitStatus.status }}</pre>
                 </div>
-            <?php endif; ?>
-        <?php else: ?>
+            {% endif %}
+        {% else %}
             <div class="p-4 bg-gray-50 rounded-lg">
-                <p class="text-sm text-gray-500"><?= $gitStatus['message'] ?? 'Git not available' ?></p>
+                <p class="text-sm text-gray-500">{{ gitStatus.message|default('Git not available') }}</p>
             </div>
-        <?php endif; ?>
+        {% endif %}
     </div>
 </div>
 
@@ -161,7 +146,7 @@ $tabs = [
 .sub-nav-link:hover { color: #374151; border-bottom-color: #d1d5db; }
 </style>
 
-<script nonce="<?= \DevDashboard\nonce() ?>">
+<script nonce="{{ nonce() }}">
 function switchTab(tabId) {
     document.querySelectorAll('.sub-nav-link').forEach(l => l.classList.remove('active'));
     document.querySelector(`.sub-nav-link[data-tab="${tabId}"]`)?.classList.add('active');
@@ -184,3 +169,4 @@ if (hash && document.getElementById('tab-' + hash)) {
     switchTab(hash);
 }
 </script>
+{% endblock %}

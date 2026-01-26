@@ -5,17 +5,17 @@ declare(strict_types=1);
 namespace Tests\DevDashboard\Controllers;
 
 use DevDashboard\Controllers\DashboardController;
+use DevDashboard\Infrastructure\TwigService;
 use DevDashboard\Services\DatabaseService;
 use DevDashboard\Services\DocsService;
 use DevDashboard\Services\HealthCheckService;
 use DevDashboard\Services\LogService;
 use DevDashboard\Services\QualityService;
 use DevDashboard\Services\SystemInfoService;
+use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 
-/**
- * @covers \DevDashboard\Controllers\DashboardController
- */
+#[CoversClass(DashboardController::class)]
 class DashboardControllerTest extends TestCase
 {
     protected function setUp(): void
@@ -41,6 +41,10 @@ class DashboardControllerTest extends TestCase
             new LogService(),
             new DatabaseService(),
             new DocsService(),
+            TwigService::createForDevelopment(
+                __DIR__ . '/../../../../templates',
+                __DIR__ . '/../../../../build/cache/twig'
+            ),
         );
     }
 
@@ -48,6 +52,7 @@ class DashboardControllerTest extends TestCase
     {
         $controller = $this->createController();
 
+        /** @noinspection PhpConditionAlreadyCheckedInspection Smoke test to verify constructor succeeds */
         $this->assertInstanceOf(DashboardController::class, $controller);
     }
 

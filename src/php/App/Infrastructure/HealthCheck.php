@@ -22,7 +22,6 @@ use Redis;
  * @SuppressWarnings("PHPMD.ExcessiveClassComplexity")
  * @SuppressWarnings("PHPMD.ExcessiveClassLength")
  * @SuppressWarnings("PHPMD.TooManyMethods")
- * @SuppressWarnings("PHPMD.UnusedPrivateMethod") check* methods called dynamically via $this->$method()
  */
 class HealthCheck
 {
@@ -85,6 +84,18 @@ class HealthCheck
             'enabled' => $this->env['ENABLE_PHP'],
         ];
 
+        $this->checkCoreServices();
+        $this->checkOptionalServices();
+        $this->updateOverallStatus();
+
+        return $this->status;
+    }
+
+    /**
+     * Check core services (Node, Redis, Database)
+     */
+    private function checkCoreServices(): void
+    {
         // Check Node.js Backend
         if ($this->env['ENABLE_NODE']) {
             $this->checkNodeBackend();
@@ -114,32 +125,49 @@ class HealthCheck
                 'enabled' => false,
             ];
         }
+    }
 
-        // Check optional services (alphabetically sorted)
-        $optionalServices = [
-            'ENABLE_ELASTICSEARCH' => 'checkElasticsearch',
-            'ENABLE_MAILPIT'       => 'checkMailpit',
-            'ENABLE_MEILISEARCH'   => 'checkMeilisearch',
-            'ENABLE_MERCURE'       => 'checkMercure',
-            'ENABLE_RABBITMQ'      => 'checkRabbitmq',
-            'ENABLE_SEAWEEDFS'     => 'checkSeaweedfs',
-        ];
-
-        foreach ($optionalServices as $envKey => $method) {
-            if ($this->env[$envKey]) {
-                $this->$method();
-            }
+    /**
+     * Check optional services (alphabetically sorted)
+     */
+    private function checkOptionalServices(): void
+    {
+        if ($this->env['ENABLE_ELASTICSEARCH']) {
+            $this->checkElasticsearch();
         }
 
-        // Set overall status to 'degraded' if any service is down
+        if ($this->env['ENABLE_MAILPIT']) {
+            $this->checkMailpit();
+        }
+
+        if ($this->env['ENABLE_MEILISEARCH']) {
+            $this->checkMeilisearch();
+        }
+
+        if ($this->env['ENABLE_MERCURE']) {
+            $this->checkMercure();
+        }
+
+        if ($this->env['ENABLE_RABBITMQ']) {
+            $this->checkRabbitmq();
+        }
+
+        if ($this->env['ENABLE_SEAWEEDFS']) {
+            $this->checkSeaweedfs();
+        }
+    }
+
+    /**
+     * Update overall status based on individual service statuses
+     */
+    private function updateOverallStatus(): void
+    {
         foreach ($this->status['services'] as $service) {
             if (isset($service['status']) && $service['status'] === 'error') {
                 $this->status['overall_status'] = 'degraded';
                 break;
             }
         }
-
-        return $this->status;
     }
 
     /**
@@ -721,6 +749,7 @@ class HealthCheck
      * Create Redis connection with TLS support
      *
      * @return array{redis: Redis|null, host: string, port: int, useTls: bool, error: string|null}
+     * @throws ErrorException If connection fails and custom error handler catches warnings
      */
     private function createRedisConnection(): array
     {
@@ -745,9 +774,11 @@ class HealthCheck
             } else {
                 $connected = $redis->connect($host, $port, 2);
             }
-        } catch (ErrorException) {
-            // Catch connection warnings/errors and convert to generic error message
-            $errorMsg = 'Could not connect to Redis';
+        }
+        // ErrorException is thrown by custom error handler above when redis->connect() emits a warning
+        /** @noinspection PhpRedundantCatchClauseInspection */
+        catch (ErrorException $errorException) {
+            $errorMsg = 'Could not connect to Redis: ' . $errorException->getMessage();
         } finally {
             // Always restore previous error handler
             restore_error_handler();
@@ -776,12 +807,11 @@ class HealthCheck
      * Check TCP connection to a service
      *
      * @return array<string, mixed>
-     * @SuppressWarnings("PHPMD.UnusedLocalVariable") $errno required by fsockopen signature
      */
     private function checkTcpConnection(string $host, int $port): array
     {
-        $errno  = null;
-        $errstr = null;
+        $errno  = 0;
+        $errstr = '';
         $socket = $this->safeSocketOpen($host, $port, $errno, $errstr, 2);
 
         if ($socket) {
@@ -789,7 +819,12 @@ class HealthCheck
             return ['connected' => true];
         }
 
-        return ['connected' => false, 'error' => $errstr ?: 'Connection failed'];
+        $errorMsg = $errstr ?: 'Connection failed';
+        if ($errno > 0) {
+            $errorMsg .= sprintf(' (errno: %d)', $errno);
+        }
+
+        return ['connected' => false, 'error' => $errorMsg];
     }
 
     /**

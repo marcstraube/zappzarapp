@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace App\Infrastructure;
 
+use App\Security\CspNonceHelper;
+use Random\RandomException;
+
 /**
  * Vite Helper - Dynamically loads Vite assets based on environment
  *
@@ -124,17 +127,23 @@ class ViteHelper
     }
 
     /**
-     * Render script tags for JavaScript
+     * Render script tags for JavaScript with CSP nonce
+     *
+     * @throws RandomException If no suitable random source is available
      */
     public function renderScriptTags(string $entry = 'js/app.js'): string
     {
+        $nonce = $this->getNonce();
+
         if ($this->isDevelopment()) {
             // Development mode: Load Vite Dev Server with HMR
             /** @noinspection HtmlUnknownTarget */
             return sprintf(
-                '<script type="module" src="%s/@vite/client"></script>' . "\n"
-                . '    <script type="module" src="%s/%s"></script>',
+                '<script type="module" nonce="%s" src="%s/@vite/client"></script>' . "\n"
+                . '    <script type="module" nonce="%s" src="%s/%s"></script>',
+                $nonce,
                 $this->viteDevServerUrl,
+                $nonce,
                 $this->viteDevServerUrl,
                 $entry
             );
@@ -148,11 +157,13 @@ class ViteHelper
         }
 
         /** @noinspection HtmlUnknownTarget */
-        return sprintf('<script type="module" src="%s"></script>', $assetUrl);
+        return sprintf('<script type="module" nonce="%s" src="%s"></script>', $nonce, $assetUrl);
     }
 
     /**
-     * Render link tags for CSS
+     * Render link tags for CSS with CSP nonce
+     *
+     * @throws RandomException If no suitable random source is available
      */
     public function renderCssTags(string $entry = 'js/app.js'): string
     {
@@ -168,10 +179,11 @@ class ViteHelper
             return '<!-- No CSS found in manifest -->';
         }
 
-        $tags = [];
+        $nonce = $this->getNonce();
+        $tags  = [];
         foreach ($cssUrls as $url) {
             /** @noinspection HtmlUnknownTarget */
-            $tags[] = sprintf('<link rel="stylesheet" href="%s">', $url);
+            $tags[] = sprintf('<link rel="stylesheet" nonce="%s" href="%s">', $nonce, $url);
         }
 
         return implode("\n    ", $tags);
@@ -187,8 +199,6 @@ class ViteHelper
 
     /**
      * Check if Vite dev server is running (development mode only)
-     *
-     * @SuppressWarnings("PHPMD.UnusedLocalVariable")
      */
     public function isViteDevServerRunning(): bool
     {
@@ -196,31 +206,18 @@ class ViteHelper
             return false;
         }
 
-        // Try to connect to Vite dev server via Node container
-        $errno  = null;
-        $errstr = null;
-        $socket = $this->safeSocketOpen('node', 5173, $errno, $errstr, 1);
-        if ($socket !== false) {
-            fclose($socket);
-
-            return true;
-        }
-
-        return false;
-    }
-
-    /**
-     * Safe wrapper for fsockopen that suppresses warnings without @ operator
-     *
-     * @param int<0, max> $timeout Connection timeout in seconds
-     * @return resource|false Socket resource on success, false on failure
-     */
-    private function safeSocketOpen(string $host, int $port, ?int &$errno, ?string &$errstr, int $timeout = 1): mixed
-    {
+        // Try to connect to Vite dev server via Node container (suppress connection errors)
         set_error_handler(static fn (): bool => true);
 
         try {
-            return fsockopen($host, $port, $errno, $errstr, $timeout);
+            $socket = fsockopen('node', 5173, timeout: 1);
+            if ($socket !== false) {
+                fclose($socket);
+
+                return true;
+            }
+
+            return false;
         } finally {
             restore_error_handler();
         }
@@ -237,5 +234,26 @@ class ViteHelper
 
         // Production mode: check if manifest exists
         return $this->getManifest() !== null;
+    }
+
+    /**
+     * Get CSP nonce for script tags
+     *
+     * @throws RandomException If no suitable random source is available
+     */
+    private function getNonce(): string
+    {
+        // Use nonce function if available (defined in helpers.php)
+        if (function_exists('nonce')) {
+            return nonce();
+        }
+
+        // Fallback to CspNonceHelper if function not available
+        if (class_exists(CspNonceHelper::class)) {
+            return CspNonceHelper::get();
+        }
+
+        // No nonce available (shouldn't happen in production)
+        return '';
     }
 }

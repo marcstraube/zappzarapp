@@ -392,6 +392,50 @@ make build && make up
 </inspection_tool>
 ```
 
+### File-Level Suppressions
+
+**Problem:** File-wide warnings (like "Duplicated Code") don't get suppressed
+when `@noinspection` is placed in the class DocBlock.
+
+**Solution:** Place suppression as single-line comment directly after opening
+PHP tag:
+
+```php
+<?php
+/* @noinspection DuplicatedCode Intentional duplication - App and DevDashboard use separate namespaces */
+
+declare(strict_types=1);
+
+namespace App\Infrastructure;
+
+/**
+ * Class documentation
+ */
+class MyClass { }
+```
+
+**Why this works:**
+
+- File-level suppressions must appear at file start, not before class
+- Single-line comment `/* */` (not DocBlock `/** */`) signals file-level scope
+- Keeps class DocBlock clean for API documentation
+- PHPStorm recognizes this pattern for inspections like DuplicatedCode,
+  UnusedMethod
+
+**Class-level vs File-level:**
+
+```php
+// Class-level (only affects class members)
+/**
+ * @noinspection PhpUnused
+ */
+class MyClass { }
+
+// File-level (affects entire file)
+<?php
+/* @noinspection DuplicatedCode */
+```
+
 ---
 
 ## Claude Workflow
@@ -664,7 +708,106 @@ returns false if file doesn't exist, which would stop `&&` chain otherwise.
 
 ---
 
+## Vite & Frontend Build
+
+### Vite HMR WebSocket Path Configuration
+
+**Key insight:** Vite's `hmr.path` option only affects **client-side**
+connection path, not server-side listening path.
+
+**Configuration:**
+
+```javascript
+// vite.config.js
+server: {
+  hmr: {
+    path: '/vite-hmr-ws',    // Client connects to this path on clientPort
+    clientPort: 8443,        // Port browser should connect to (nginx proxy)
+    protocol: 'wss',         // Use secure WebSocket
+  }
+}
+```
+
+**Server behavior:** Vite's WebSocket server **always listens on root path `/`**
+on its dev server port (5173), regardless of `hmr.path` setting.
+
+**Nginx configuration required:**
+
+```nginx
+location /vite-hmr-ws {
+    proxy_pass http://node:5173/;  # Trailing slash rewrites path to /
+    proxy_http_version 1.1;
+    proxy_set_header Upgrade $http_upgrade;
+    proxy_set_header Connection $connection_upgrade;
+    # ... other headers
+}
+```
+
+**Flow:**
+
+1. Browser connects to: `wss://localhost:8443/vite-hmr-ws?token=...`
+2. Nginx proxies to: `ws://node:5173/?token=...` (path rewritten)
+3. Vite receives connection on root path `/`
+
+**Why custom path:** Avoids conflicts with PHP routing at root path while
+allowing Vite's WebSocket to work on its default path.
+
+### Nginx Proxy Path Rewriting
+
+**Trailing slash in `proxy_pass` triggers path rewriting:**
+
+- `proxy_pass http://upstream` → forwards to `http://upstream/original/path`
+- `proxy_pass http://upstream/` → forwards to `http://upstream/` (path
+  rewritten)
+
+**Example:**
+
+```nginx
+location /vite-hmr-ws {
+    proxy_pass http://node:5173/;  # WITH trailing slash
+}
+# Request: /vite-hmr-ws?token=abc → Proxied to: /?token=abc
+
+location /vite-hmr-ws {
+    proxy_pass http://node:5173;   # WITHOUT trailing slash
+}
+# Request: /vite-hmr-ws?token=abc → Proxied to: /vite-hmr-ws?token=abc
+```
+
+**Use case:** Rewriting custom client paths to backend root paths
+
+### Vite Dynamic Style Injection and CSP
+
+**Problem:** Vite injects CSS dynamically via JavaScript in development mode.
+The dynamically created `<style>` tags cannot have nonces (JavaScript cannot add
+nonces to DOM elements in CSP-protected contexts).
+
+**Symptom:** Styles not loading even with nonces on `<script>` tags
+
+**Solution:** Add `'unsafe-inline'` to `style-src` directive in **development
+CSP only**:
+
+```php
+// Development CSP
+sprintf("style-src 'self' 'nonce-%s' 'unsafe-inline'", $nonce)
+
+// Production CSP (strict)
+sprintf("style-src 'self' 'nonce-%s'", $nonce)
+```
+
+**Why safe in development:**
+
+- Development environment is local only (localhost)
+- Nonces still required for styles in templates
+- Production CSP remains strict without unsafe-inline
+- Vite's build output in production doesn't use dynamic injection
+
+**Alternative considered:** Use `style-src-elem` to separate inline vs external
+styles, but Vite's injection pattern requires unsafe-inline anyway.
+
+---
+
 ## Last Updated
 
-2026-01-25 (added: nginx location priority, pgAdmin CSRF, Adminer plugin, Make
-.env sourcing)
+2026-01-26 (added: Vite HMR WebSocket path, Nginx proxy path rewriting, Vite CSP
+'unsafe-inline')

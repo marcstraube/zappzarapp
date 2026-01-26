@@ -25,9 +25,18 @@ require_once __DIR__ . '/../vendor/autoload.php';
  * Initialize the PSR-11 compatible DI container with auto-wiring support.
  * Configuration is loaded from config/container.php.
  */
-$containerBuilder = new ContainerBuilder();
-$containerBuilder->addDefinitions(__DIR__ . '/../config/container.php');
-$container = $containerBuilder->build();
+try {
+    $containerBuilder = new ContainerBuilder();
+    $containerBuilder->addDefinitions(__DIR__ . '/../config/container.php');
+    $container = $containerBuilder->build();
+} catch (Exception $e) {
+    http_response_code(500);
+    header('Content-Type: application/json');
+    // @phpstan-ignore-next-line - Entry point error handling requires echo/exit
+    echo json_encode(['error' => 'Container initialization failed', 'message' => $e->getMessage()]);
+    // @phpstan-ignore-next-line - Entry point error handling requires echo/exit
+    exit(1);
+}
 
 /**
  * ============================================================================
@@ -39,6 +48,7 @@ $container = $containerBuilder->build();
 $corsMiddleware = new CorsMiddleware();
 if (!$corsMiddleware->handle()) {
     // OPTIONS preflight request handled - exit early
+    // @phpstan-ignore-next-line - CORS preflight requires early exit
     exit;
 }
 
@@ -57,7 +67,7 @@ if (!$corsMiddleware->handle()) {
  * - Git status and Node.js quality tools require DEV volume mounts
  */
 
-$requestPath = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH);
+$requestPath = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?: '/';
 
 // Development Dashboard - Only enabled in development environment
 $isDevelopment = getenv('ENV') === 'development';
@@ -104,7 +114,7 @@ use App\Security\CspNonceHelper;
 
 // 1. Build and send CSP Header (before any output!)
 $cspHeader = CspNonceHelper::buildCspHeader();
-header("Content-Security-Policy: {$cspHeader}");
+header("Content-Security-Policy: $cspHeader");
 
 // 2. Define constant for backwards compatibility
 define('CSP_NONCE', CspNonceHelper::get());
@@ -113,9 +123,21 @@ define('CSP_NONCE', CspNonceHelper::get());
 $router = new Router();
 
 // Controllers (resolved via DI container with auto-wiring)
-$exampleController = $container->get(ExampleController::class);
-$welcomeController = $container->get(WelcomeController::class);
-$statusController  = $container->get(StatusController::class);
+try {
+    /** @var ExampleController $exampleController */
+    $exampleController = $container->get(ExampleController::class);
+    /** @var WelcomeController $welcomeController */
+    $welcomeController = $container->get(WelcomeController::class);
+    /** @var StatusController $statusController */
+    $statusController  = $container->get(StatusController::class);
+} catch (Exception $e) {
+    http_response_code(500);
+    header('Content-Type: application/json');
+    // @phpstan-ignore-next-line - Entry point error handling requires echo/exit
+    echo json_encode(['error' => 'Controller initialization failed', 'message' => $e->getMessage()]);
+    // @phpstan-ignore-next-line - Entry point error handling requires echo/exit
+    exit(1);
+}
 
 // Routes
 $router->get('/', [$welcomeController, 'index']);          // Main landing page

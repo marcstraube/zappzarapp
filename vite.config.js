@@ -72,13 +72,12 @@ export default defineConfig({
     },
 
     // HMR configuration
-    // When accessed via nginx proxy (HTTPS), use clientPort to match the nginx port
-    // Browser connects to wss://localhost:8443, nginx proxies to ws://node:5173
+    // Browser connects via nginx proxy on port 8443 with HTTPS/WSS
+    // Custom path avoids conflict with PHP routing at root path
     hmr: {
-      host: 'localhost',
-      port: 5173,
-      clientPort: 8443, // Port the browser should connect to (nginx proxy)
-      protocol: 'wss', // Use secure WebSocket when behind HTTPS proxy
+      path: '/__vite_hmr__',
+      clientPort: 8443,
+      protocol: 'wss',
     },
 
     // Serve index.html for SPA routing

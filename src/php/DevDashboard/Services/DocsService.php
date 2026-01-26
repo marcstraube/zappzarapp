@@ -29,6 +29,7 @@ readonly class DocsService
      * Get status of all API documentation
      *
      * @return array{available: bool, allFresh: bool, php: array<string, mixed>, node_backend: array<string, mixed>, node_frontend: array<string, mixed>, commands: array<string, string>}
+     * @throws Exception If filesystem access fails
      */
     public function getApiDocsStatus(): array
     {
@@ -188,6 +189,7 @@ readonly class DocsService
      * Generate PHP API documentation
      *
      * @return array{success: bool, message: string, output: string}
+     * @throws Exception If process execution fails
      */
     public function generatePhpDocs(): array
     {
@@ -228,6 +230,7 @@ readonly class DocsService
      * Run a shell command using proc_open (since exec is disabled)
      *
      * @return array{exitCode: int, output: string}
+     * @noinspection DuplicatedCode Intentionally duplicated across services for isolation
      */
     private function runCommand(string $command): array
     {

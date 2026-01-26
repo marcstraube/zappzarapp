@@ -18,6 +18,8 @@ use App\Infrastructure\Cache\CacheInterface;
 use App\Infrastructure\Cache\RedisCache;
 use App\Infrastructure\Session\RedisSession;
 use App\Infrastructure\Session\SessionInterface;
+use App\Infrastructure\TwigService;
+use App\Security\CspNonceHelper;
 
 use function DI\autowire;
 
@@ -27,6 +29,26 @@ return [
 
     // Session: Interface to Redis implementation (uses CacheInterface internally)
     SessionInterface::class => autowire(RedisSession::class),
+
+    // Twig: Template engine with CSP nonce support
+    TwigService::class => function () {
+        $isDevelopment = getenv('ENV') === 'development';
+
+        $service = $isDevelopment
+            ? TwigService::createForDevelopment(
+                __DIR__ . '/../templates',
+                __DIR__ . '/../build/cache/twig'
+            )
+            : TwigService::createForProduction(
+                __DIR__ . '/../templates',
+                __DIR__ . '/../build/cache/twig'
+            );
+
+        // Register CSP nonce function
+        $service->addFunction('nonce', [CspNonceHelper::class, 'get']);
+
+        return $service;
+    },
 
     // Example: Factory definition (uncomment when needed)
     // PDO::class => function () {

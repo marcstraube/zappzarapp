@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace DevDashboard\Controllers;
 
+use DevDashboard\Infrastructure\TwigService;
 use DevDashboard\Response\HtmlResponse;
 use DevDashboard\Response\Response;
 use DevDashboard\Services\DatabaseService;
@@ -12,11 +13,14 @@ use DevDashboard\Services\HealthCheckService;
 use DevDashboard\Services\LogService;
 use DevDashboard\Services\QualityService;
 use DevDashboard\Services\SystemInfoService;
+use Twig\Error\LoaderError;
+use Twig\Error\RuntimeError;
+use Twig\Error\SyntaxError;
 
 /**
  * Development Dashboard Controller
  *
- * Handles all dashboard routes and renders views
+ * Handles all dashboard routes and renders Twig templates
  */
 readonly class DashboardController
 {
@@ -27,10 +31,13 @@ readonly class DashboardController
         private LogService $logService,
         private DatabaseService $databaseService,
         private DocsService $docsService,
+        private TwigService $twig,
     ) {}
 
     /**
      * Dashboard home page with overview
+     *
+     * @noinspection PhpUnhandledExceptionInspection Exceptions propagate to routes.php error handler
      */
     public function index(): Response
     {
@@ -41,6 +48,8 @@ readonly class DashboardController
             'gitStatus'     => $this->systemInfoService->getGitStatus(),
             'dbStats'       => $this->databaseService->getQuickStats(),
             'apiDocsStatus' => $this->docsService->getApiDocsStatus(),
+            'requestUri'    => $_SERVER['REQUEST_URI'] ?? '/',
+            'currentTime'   => date('Y-m-d H:i:s'),
         ];
 
         return $this->render('dashboard', $data);
@@ -48,16 +57,37 @@ readonly class DashboardController
 
     /**
      * System information page (phpinfo, versions, environment)
+     *
+     * @noinspection PhpUnhandledExceptionInspection Exceptions propagate to routes.php error handler
      */
     public function system(): Response
     {
+        $showPhpInfo  = $_GET['phpinfo'] ?? false;
+        $phpinfoHtml  = '';
+
+        // Process phpinfo if requested
+        if ($showPhpInfo) {
+            ob_start();
+            phpinfo(); // @phpstan-ignore ekinoBannedCode.function (Legitimate use in DevDashboard for system info display)
+            $phpinfo = ob_get_clean();
+            if ($phpinfo !== false) {
+                $phpinfo = preg_replace('%^.*<body>(.*)</body>.*$%ms', '$1', $phpinfo);
+                if ($phpinfo !== null) {
+                    $phpinfoHtml = str_replace('<table', '<table class="w-full text-sm"', $phpinfo);
+                }
+            }
+        }
+
         $data = [
             'title'       => 'System Information',
             'phpVersion'  => $this->systemInfoService->getPhpVersion(),
             'extensions'  => $this->systemInfoService->getPhpExtensions(),
             'envVars'     => $this->systemInfoService->getEnvironmentVariables(),
-            'showPhpInfo' => $_GET['phpinfo'] ?? false,
+            'showPhpInfo' => $showPhpInfo,
+            'phpinfoHtml' => $phpinfoHtml,
             'gitStatus'   => $this->systemInfoService->getGitStatus(),
+            'requestUri'  => $_SERVER['REQUEST_URI'] ?? '/',
+            'currentTime' => date('Y-m-d H:i:s'),
         ];
 
         return $this->render('system', $data);
@@ -65,6 +95,8 @@ readonly class DashboardController
 
     /**
      * Health check page (services, connections, ssl)
+     *
+     * @noinspection PhpUnhandledExceptionInspection Exceptions propagate to routes.php error handler
      */
     public function health(): Response
     {
@@ -73,6 +105,8 @@ readonly class DashboardController
             'services'    => $this->healthCheckService->getServices(),
             'connections' => $this->healthCheckService->getConnections(),
             'ssl'         => $this->healthCheckService->getSslInfo(),
+            'requestUri'  => $_SERVER['REQUEST_URI'] ?? '/',
+            'currentTime' => date('Y-m-d H:i:s'),
         ];
 
         return $this->render('health', $data);
@@ -80,6 +114,8 @@ readonly class DashboardController
 
     /**
      * Code quality dashboard
+     *
+     * @noinspection PhpUnhandledExceptionInspection Exceptions propagate to routes.php error handler
      */
     public function quality(): Response
     {
@@ -92,6 +128,8 @@ readonly class DashboardController
             'code_stats'    => $metrics['code_stats'],
             'test_coverage' => $metrics['test_coverage'],
             'quick_actions' => $this->qualityService->getQuickActions(),
+            'requestUri'    => $_SERVER['REQUEST_URI'] ?? '/',
+            'currentTime'   => date('Y-m-d H:i:s'),
         ];
 
         return $this->render('quality', $data);
@@ -99,6 +137,8 @@ readonly class DashboardController
 
     /**
      * Database tools page
+     *
+     * @noinspection PhpUnhandledExceptionInspection Exceptions propagate to routes.php error handler
      */
     public function database(): Response
     {
@@ -110,6 +150,8 @@ readonly class DashboardController
             'commands'         => $this->databaseService->getDatabaseCommands(),
             'db_tools'         => $this->databaseService->getDbToolsStatus(),
             'backup_stats'     => $this->databaseService->getBackupStats(),
+            'requestUri'       => $_SERVER['REQUEST_URI'] ?? '/',
+            'currentTime'      => date('Y-m-d H:i:s'),
         ];
 
         return $this->render('database', $data);
@@ -117,6 +159,8 @@ readonly class DashboardController
 
     /**
      * Logs viewer page
+     *
+     * @noinspection PhpUnhandledExceptionInspection Exceptions propagate to routes.php error handler
      */
     public function logs(): Response
     {
@@ -125,42 +169,25 @@ readonly class DashboardController
             'log_sources'  => $this->logService->getAvailableLogSources(),
             'log_commands' => $this->logService->getLogCommands(),
             'log_stats'    => $this->logService->getLogStatistics(),
+            'requestUri'   => $_SERVER['REQUEST_URI'] ?? '/',
+            'currentTime'  => date('Y-m-d H:i:s'),
         ];
 
         return $this->render('logs', $data);
     }
 
     /**
-     * Render a view with layout
+     * Render a view using Twig
      *
      * @param array<string, mixed> $data
+     * @throws LoaderError If template not found
+     * @throws RuntimeError If error during rendering
+     * @throws SyntaxError If template has syntax errors
      */
     private function render(string $view, array $data = []): Response
     {
-        extract($data);
-        $templateDir = __DIR__ . '/../../../../templates/dev-dashboard';
-        $viewPath    = $templateDir . '/' . $view . '.php';
-        $layoutPath  = $templateDir . '/layout.php';
+        $html = $this->twig->render(sprintf('dev-dashboard/%s.html.twig', $view), $data);
 
-        if (!file_exists($viewPath)) {
-            return new HtmlResponse('View not found: ' . $view, 404);
-        }
-
-        // Start output buffering for content
-        ob_start();
-        include $viewPath;
-        $content = ob_get_clean();
-
-        // Ensure content is string (prevent PHPMD false positive - variable used in layout.php)
-        if ($content === false) {
-            $content = '';
-        }
-
-        // Render with layout
-        ob_start();
-        include $layoutPath;
-        $html = ob_get_clean();
-
-        return new HtmlResponse($html ?: '');
+        return new HtmlResponse($html);
     }
 }

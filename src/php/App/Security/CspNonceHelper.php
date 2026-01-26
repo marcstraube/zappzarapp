@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Security;
 
+use Random\RandomException;
+
 /**
  * CSP Nonce Helper
  *
@@ -20,6 +22,7 @@ final class CspNonceHelper
      * Generate and store nonce for current request
      *
      * @return string Base64-encoded cryptographically secure nonce
+     * @throws RandomException If no suitable random source is available
      */
     public static function generate(): string
     {
@@ -34,6 +37,7 @@ final class CspNonceHelper
      * Get current nonce (generates if not exists)
      *
      * @return string Base64-encoded nonce
+     * @throws RandomException If no suitable random source is available
      */
     public static function get(): string
     {
@@ -47,6 +51,7 @@ final class CspNonceHelper
      * Use buildDevelopmentCspHeader() or buildProductionCspHeader() for explicit control.
      *
      * @return string Complete CSP header value
+     * @throws RandomException If no suitable random source is available
      */
     public static function buildCspHeader(): string
     {
@@ -60,9 +65,11 @@ final class CspNonceHelper
     /**
      * Build development CSP header
      *
-     * Allows unsafe-eval for Vite HMR and WebSocket connections for hot reload.
+     * Allows unsafe-eval for Vite HMR, unsafe-inline for Vite-injected styles,
+     * and WebSocket connections for hot reload.
      *
      * @return string Complete CSP header value
+     * @throws RandomException If no suitable random source is available
      */
     public static function buildDevelopmentCspHeader(): string
     {
@@ -71,7 +78,7 @@ final class CspNonceHelper
         $directives = [
             "default-src 'self'",
             sprintf("script-src 'self' 'nonce-%s' 'strict-dynamic' 'unsafe-eval'", $nonce),
-            sprintf("style-src 'self' 'nonce-%s'", $nonce),
+            "style-src 'self' 'unsafe-inline' 'unsafe-hashes'", // No nonce - allows Vite's dynamic styles and inline style attributes
             "img-src 'self' data:",
             "font-src 'self'",
             "connect-src 'self' wss://localhost:8443 https://localhost:8443",
@@ -89,6 +96,7 @@ final class CspNonceHelper
      * Strict CSP without unsafe-* directives.
      *
      * @return string Complete CSP header value
+     * @throws RandomException If no suitable random source is available
      */
     public static function buildProductionCspHeader(): string
     {

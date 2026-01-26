@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?= $code ?> - <?= htmlspecialchars($title) ?></title>
+    <title>{{ code }} - {{ title }}</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
@@ -66,12 +66,12 @@
 </head>
 <body>
     <div class="container">
-        <div class="error-code"><?= $code ?></div>
-        <h1 class="error-title"><?= htmlspecialchars($title) ?></h1>
-        <p class="error-message"><?= htmlspecialchars($message) ?></p>
-        <?php if ($path !== null): ?>
-        <p class="error-path">Path: <code><?= htmlspecialchars($path) ?></code></p>
-        <?php endif; ?>
+        <div class="error-code">{{ code }}</div>
+        <h1 class="error-title">{{ title }}</h1>
+        <p class="error-message">{{ message }}</p>
+        {% if path is not null %}
+        <p class="error-path">Path: <code>{{ path }}</code></p>
+        {% endif %}
         <a href="/" class="back-link">Back to Home</a>
     </div>
 </body>

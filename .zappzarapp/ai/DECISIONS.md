@@ -20,6 +20,98 @@ Record of significant architectural and design decisions (ADR-style).
 
 ---
 
+## 2026-01-26: Twig Template Engine Adoption
+
+**Status:** Accepted
+
+**Context:** PHP templates used plain PHP with `include` and output buffering.
+This approach has several limitations:
+
+- No auto-escaping (manual `htmlspecialchars()` required, XSS risk)
+- No strict variable checking (typos silently fail)
+- Two-pass rendering for layouts (content → layout buffering)
+- Template logic mixed with presentation
+- No template inheritance (only includes)
+- Hard to test controllers (void return, direct output)
+
+**Decision:** Migrate all 9 PHP templates to Twig 3.x template engine:
+
+- Create separate `TwigService` instances for App and DevDashboard namespaces
+- Register TwigService in DI containers with proper CSP nonce integration
+- Use Twig template inheritance (`extends`/`block`) instead of includes
+- Controllers return `Response` objects instead of void
+- Enable Twig cache in production (`build/cache/twig/`), disable in development
+
+**Consequences:**
+
+**Positive:**
+
+- (+) Auto-escaping by default (XSS protection)
+- (+) Strict variables (errors on undefined, catches typos)
+- (+) Template inheritance (clearer parent-child relationships)
+- (+) Controllers testable (inject mock TwigService)
+- (+) Consistent Response pattern across all controllers
+- (+) Better IDE support (Twig syntax highlighting)
+- (+) Performance improvement in production (compiled templates cached)
+
+**Negative:**
+
+- (-) Additional dependency (Twig library ~500KB)
+- (-) Learning curve for developers unfamiliar with Twig syntax
+- (-) Template cache directory requires write permissions
+
+**Trade-offs accepted:**
+
+- Keep original .php templates for 1 month (rollback safety)
+- Twig cache disabled in development (instant updates, slower page loads)
+
+---
+
+## 2026-01-26: Vite HMR WebSocket Custom Path Routing
+
+**Status:** Accepted
+
+**Context:** Vite HMR requires WebSocket connection for live reloading. Default
+WebSocket path is `/` (root), which conflicts with PHP routing (index.php
+handles all root requests). Previous attempts to use conditional routing based
+on WebSocket headers were complex and unreliable.
+
+**Decision:** Use custom WebSocket path with Nginx path rewriting:
+
+- Configure Vite `hmr.path: '/vite-hmr-ws'` (client connects to custom path)
+- Configure Nginx to proxy `/vite-hmr-ws` to `http://node:5173/` (trailing slash
+  rewrites path)
+- Vite's WebSocket server listens on default root path `/` (no server-side
+  changes needed)
+
+**Consequences:**
+
+**Positive:**
+
+- (+) No conflicts with PHP routing (custom path isolated)
+- (+) Simple Nginx configuration (single location block, no conditionals)
+- (+) Standard Nginx path rewriting pattern (trailing slash)
+- (+) Explicit and maintainable (clear what's happening)
+- (+) Works reliably across browsers and WebSocket clients
+
+**Negative:**
+
+- (-) Non-standard Vite HMR path (developers might be surprised by
+  `/vite-hmr-ws`)
+- (-) Requires understanding of Nginx path rewriting behavior
+
+**Alternatives considered:**
+
+1. Conditional routing at root path based on `Sec-WebSocket-Protocol: vite-hmr`
+   header
+   - Rejected: Complex, unreliable with `if` directive in Nginx
+2. Use Vite's default root path `/` with sub-path for PHP
+   - Rejected: Major architecture change, would break existing URLs
+3. Use port-based routing (different port for WebSocket)
+   - Rejected: Requires opening additional ports, complicates firewall rules
+
+---
+
 ## 2026-01-21: Agent-Workflow Granular Structure
 
 **Status:** Accepted

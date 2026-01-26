@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?= htmlspecialchars($title ?? 'Development Dashboard') ?> | zappzarapp</title>
+    <title>{% block title %}{{ title|default('Development Dashboard') }}{% endblock %} | zappzarapp</title>
     <link rel="icon" type="image/svg+xml" href="/assets/dev-dashboard/favicon.svg">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -280,7 +280,7 @@
                         <span class="env-badge">Development Dashboard</span>
                     </div>
                     <div class="text-sm text-gray-500">
-                        <?= date('Y-m-d H:i:s') ?>
+                        {{ currentTime|default('now'|date('Y-m-d H:i:s')) }}
                     </div>
                 </div>
             </div>
@@ -289,22 +289,22 @@
         <!-- Navigation -->
         <nav>
             <div class="container">
-                <a href="/_dev" class="<?= ($_SERVER['REQUEST_URI'] ?? '') === '/_dev' || ($_SERVER['REQUEST_URI'] ?? '') === '/_dev/' ? 'active' : '' ?>">
+                <a href="/_dev" class="{% if requestUri == '/_dev' or requestUri == '/_dev/' %}active{% endif %}">
                     📊 Dashboard
                 </a>
-                <a href="/_dev/system" class="<?= str_contains($_SERVER['REQUEST_URI'] ?? '', '/_dev/system') ? 'active' : '' ?>">
+                <a href="/_dev/system" class="{% if '/_dev/system' in requestUri %}active{% endif %}">
                     💻 System
                 </a>
-                <a href="/_dev/health" class="<?= str_contains($_SERVER['REQUEST_URI'] ?? '', '/_dev/health') ? 'active' : '' ?>">
+                <a href="/_dev/health" class="{% if '/_dev/health' in requestUri %}active{% endif %}">
                     🏥 Health
                 </a>
-                <a href="/_dev/quality" class="<?= str_contains($_SERVER['REQUEST_URI'] ?? '', '/_dev/quality') ? 'active' : '' ?>">
+                <a href="/_dev/quality" class="{% if '/_dev/quality' in requestUri %}active{% endif %}">
                     ✅ Quality
                 </a>
-                <a href="/_dev/database" class="<?= str_contains($_SERVER['REQUEST_URI'] ?? '', '/_dev/database') ? 'active' : '' ?>">
+                <a href="/_dev/database" class="{% if '/_dev/database' in requestUri %}active{% endif %}">
                     💾 Database
                 </a>
-                <a href="/_dev/logs" class="<?= str_contains($_SERVER['REQUEST_URI'] ?? '', '/_dev/logs') ? 'active' : '' ?>">
+                <a href="/_dev/logs" class="{% if '/_dev/logs' in requestUri %}active{% endif %}">
                     📝 Logs
                 </a>
             </div>
@@ -314,7 +314,7 @@
     <!-- Main Content -->
     <main>
         <div class="container">
-            <?= $content ?? '' ?>
+            {% block content %}{% endblock %}
         </div>
     </main>
 
@@ -322,7 +322,7 @@
     <footer>
         <div class="container">
             <p>
-                ⚡ zappzarapp Development Dashboard • PHP <?= PHP_VERSION ?> •
+                ⚡ zappzarapp Development Dashboard • PHP {{ constant('PHP_VERSION') }} •
                 <a href="/docs/">Documentation</a> •
                 <a href="/">Home</a> •
                 <a href="https://github.com/marcstraube/zappzarapp" target="_blank" rel="noopener">GitHub</a>

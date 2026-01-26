@@ -1,31 +1,19 @@
-<?php
-/**
- * Welcome Page Template
- *
- * This template is rendered by WelcomeController and expects the following variables:
- * @var ViteHelper $vite - Vite asset helper for HMR and production builds
- * @var array $env - Environment configuration from HealthCheck
- * @var array $status - Service health status from HealthCheck
- */
-
-declare(strict_types=1);
-use App\Infrastructure\ViteHelper;
-?>
 <!DOCTYPE html>
 <html lang="de">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>zappzarapp</title>
+    <!--suppress HtmlUnknownTarget -->
     <link rel="icon" type="image/svg+xml" href="/favicon.svg">
 
     <!-- Vite Assets - Dynamically loaded based on ENV -->
-    <?= $vite->renderCssTags('js/app.js') ?>
+    {{ vite.renderCssTags('js/app.js')|raw }}
 
 </head>
 <body>
 <div class="container">
-    <?php if ($vite->isDevelopment() && !$vite->isViteDevServerRunning()): ?>
+    {% if vite.isDevelopment() and not vite.isViteDevServerRunning() %}
     <div class="card" style="background: #fff3cd; border: 2px solid #ffc107; padding: 1rem; margin-bottom: 1rem;">
         <h3 style="color: #856404; margin: 0 0 0.5rem 0;">⚠️ Vite Dev Server Not Running</h3>
         <p style="color: #856404; margin: 0;">
@@ -36,7 +24,7 @@ use App\Infrastructure\ViteHelper;
             or set <code style="background: #f8f9fa; padding: 0.2rem 0.4rem; border-radius: 3px;">ENABLE_NODE=true</code> in your <code>.env</code> file.
         </p>
     </div>
-    <?php endif; ?>
+    {% endif %}
 
     <div class="card text-center">
         <h1>⚡ zappzarapp</h1>
@@ -47,11 +35,11 @@ use App\Infrastructure\ViteHelper;
 
         <div class="card" style="margin-top: 2rem; background: #f0f0f0; padding: 1rem; border-radius: 8px;">
             <h3>Current Environment</h3>
-            <p><strong>ENV:</strong> <?= htmlspecialchars($env['ENV']) ?></p>
-            <p><strong>Mode:</strong> <?= $vite->isDevelopment() ? '🔧 Development (Vite HMR)' : '🚀 Production (Built Assets)' ?></p>
+            <p><strong>ENV:</strong> {{ env.ENV }}</p>
+            <p><strong>Mode:</strong> {% if vite.isDevelopment() %}🔧 Development (Vite HMR){% else %}🚀 Production (Built Assets){% endif %}</p>
             <p><strong>Overall Status:</strong>
-                <span style="color: <?= $status['overall_status'] === 'ok' ? 'green' : 'orange' ?>; font-weight: bold;">
-                    <?= strtoupper($status['overall_status']) ?>
+                <span style="color: {% if status.overall_status == 'ok' %}green{% else %}orange{% endif %}; font-weight: bold;">
+                    {{ status.overall_status|upper }}
                 </span>
             </p>
         </div>
@@ -68,29 +56,29 @@ use App\Infrastructure\ViteHelper;
                 </tr>
             </thead>
             <tbody>
-                <?php foreach ($status['services'] as $serviceName => $service): ?>
+                {% for serviceName, service in status.services %}
                 <tr>
                     <td style="padding: 0.5rem; border: 1px solid #ddd;">
-                        <strong><?= ucfirst(str_replace('-', ' ', $serviceName)) ?></strong>
+                        <strong>{{ serviceName|replace({'-': ' '})|capitalize }}</strong>
                     </td>
                     <td style="padding: 0.5rem; border: 1px solid #ddd;">
-                        <span style="color: <?= $service['status'] === 'ok' ? 'green' : ($service['status'] === 'disabled' ? 'gray' : 'red') ?>; font-weight: bold;">
-                            <?= $service['status'] === 'ok' ? '✅ OK' : ($service['status'] === 'disabled' ? '⚪ Disabled' : '❌ Error') ?>
+                        <span style="color: {% if service.status == 'ok' %}green{% elseif service.status == 'disabled' %}gray{% else %}red{% endif %}; font-weight: bold;">
+                            {% if service.status == 'ok' %}✅ OK{% elseif service.status == 'disabled' %}⚪ Disabled{% else %}❌ Error{% endif %}
                         </span>
                     </td>
                     <td style="padding: 0.5rem; border: 1px solid #ddd; font-size: 0.9em;">
-                        <?php if (isset($service['version'])): ?>
-                            Version: <?= htmlspecialchars($service['version']) ?><br>
-                        <?php endif; ?>
-                        <?php if (isset($service['mode'])): ?>
-                            Mode: <?= htmlspecialchars($service['mode']) ?><br>
-                        <?php endif; ?>
-                        <?php if (isset($service['message'])): ?>
-                            <span style="color: red;"><?= htmlspecialchars($service['message']) ?></span>
-                        <?php endif; ?>
+                        {% if service.version is defined %}
+                            Version: {{ service.version }}<br>
+                        {% endif %}
+                        {% if service.mode is defined %}
+                            Mode: {{ service.mode }}<br>
+                        {% endif %}
+                        {% if service.message is defined %}
+                            <span style="color: red;">{{ service.message }}</span>
+                        {% endif %}
                     </td>
                 </tr>
-                <?php endforeach; ?>
+                {% endfor %}
             </tbody>
         </table>
     </div>
@@ -98,11 +86,11 @@ use App\Infrastructure\ViteHelper;
     <div class="card">
         <h2>⚙️ Active Features</h2>
         <ul style="list-style: none; padding: 0;">
-            <li>🔧 <strong>Environment:</strong> <?= htmlspecialchars($env['ENV']) ?></li>
-            <li>📦 <strong>PHP Service:</strong> <?= $env['ENABLE_PHP'] ? '✅ Enabled' : '❌ Disabled' ?></li>
-            <li>🟢 <strong>Node.js Service:</strong> <?= $env['ENABLE_NODE'] ? '✅ Enabled (' . htmlspecialchars($env['NODE_MODE']) . ')' : '❌ Disabled' ?></li>
-            <li>🔴 <strong>Redis Service:</strong> <?= $env['ENABLE_REDIS'] ? '✅ Enabled' : '❌ Disabled' ?></li>
-            <li>💾 <strong>Database:</strong> <?= $env['ENABLE_DATABASE'] ? '✅ ' . strtoupper($env['DB_TYPE']) : '❌ Disabled' ?></li>
+            <li>🔧 <strong>Environment:</strong> {{ env.ENV }}</li>
+            <li>📦 <strong>PHP Service:</strong> {% if env.ENABLE_PHP %}✅ Enabled{% else %}❌ Disabled{% endif %}</li>
+            <li>🟢 <strong>Node.js Service:</strong> {% if env.ENABLE_NODE %}✅ Enabled ({{ env.NODE_MODE }}){% else %}❌ Disabled{% endif %}</li>
+            <li>🔴 <strong>Redis Service:</strong> {% if env.ENABLE_REDIS %}✅ Enabled{% else %}❌ Disabled{% endif %}</li>
+            <li>💾 <strong>Database:</strong> {% if env.ENABLE_DATABASE %}✅ {{ env.DB_TYPE|upper }}{% else %}❌ Disabled{% endif %}</li>
         </ul>
     </div>
 
@@ -117,9 +105,9 @@ use App\Infrastructure\ViteHelper;
             <li><a href="/ready" style="color: #007bff; text-decoration: none;"><strong>GET /ready</strong></a> - Readiness Probe (K8s) with latency metrics</li>
             <li><a href="/api/health" style="color: #007bff; text-decoration: none;"><strong>GET /api/health</strong></a> - Aggregated PHP + Node health</li>
             <li><a href="/status" style="color: #007bff; text-decoration: none;"><strong>GET /status</strong></a> - Full status overview (all services)</li>
-            <li><a href="/health.php" style="color: #007bff; text-decoration: none;"><strong>GET /health.php</strong></a> - Docker HEALTHCHECK (minimal overhead)</li>
+            <li><!--suppress HtmlUnknownTarget --><a href="/health.php" style="color: #007bff; text-decoration: none;"><strong>GET /health.php</strong></a> - Docker HEALTHCHECK (minimal overhead)</li>
             <!-- Node.js API -->
-            <?php if ($env['ENABLE_NODE'] && in_array($env['NODE_MODE'], ['assets-api', 'api'], true)): ?>
+            {% if env.ENABLE_NODE and env.NODE_MODE in ['assets-api', 'api'] %}
             <li><a href="/api/node/hello" style="color: #007bff; text-decoration: none;"><strong>GET /api/node/hello</strong></a> - Node.js Hello endpoint (?name=)</li>
             <li>
                 <strong>POST /api/node/echo</strong> - Echo request body (JSON)
@@ -128,10 +116,10 @@ use App\Infrastructure\ViteHelper;
                     title="Click to copy curl command"
                     style="cursor: pointer; margin-left: 0.4rem; padding: 0.1rem 0.4rem; font-size: 0.75rem; font-weight: bold; color: #007bff; background: #e7f1ff; border: 1px solid #007bff; border-radius: 4px; user-select: none;"
                 >i</span>
-                <script nonce="<?= nonce() ?>">
+                <script nonce="{{ nonce() }}">
                     document.getElementById('copy-curl-btn').addEventListener('click', function() {
-                        var cmd = "curl -X POST https://localhost:8443/api/node/echo -H 'Content-Type: application/json' -d '{\"hello\": \"world\"}'";
-                        var btn = this;
+                        const cmd = "curl -X POST https://localhost:8443/api/node/echo -H 'Content-Type: application/json' -d '{\"hello\": \"world\"}'";
+                        const btn = this;
                         navigator.clipboard.writeText(cmd).then(function() {
                             btn.textContent = '✓';
                             btn.style.background = '#d4edda';
@@ -147,7 +135,7 @@ use App\Infrastructure\ViteHelper;
                     });
                 </script>
             </li>
-            <?php endif; ?>
+            {% endif %}
             <!-- Development -->
             <li><a href="/_dev" style="color: #007bff; text-decoration: none;"><strong>GET /_dev</strong></a> - Development Dashboard</li>
         </ul>
@@ -157,36 +145,27 @@ use App\Infrastructure\ViteHelper;
         </p>
     </div>
 
-    <?php if ($vite->isDevelopment()): ?>
-    <?php
-    // Check which API docs exist
-    $docsBase             = '/var/www/html/docs/api';
-    $phpDocsExist         = file_exists($docsBase . '/php/index.html');
-    $nodeBackendDocsExist = file_exists($docsBase . '/node-backend/index.html');
-    $hasPhpSource         = is_dir('/var/www/html/src/php');
-    $hasNodeBackendSource = is_dir('/var/www/html/src/node/backend');
-    $docsMissing          = ($hasPhpSource && !$phpDocsExist) || ($hasNodeBackendSource && !$nodeBackendDocsExist);
-    ?>
+    {% if vite.isDevelopment() %}
     <div class="card">
         <h2>📖 Documentation</h2>
-        <?php if ($docsMissing): ?>
+        {% if docsMissing %}
         <div style="background: #fff3cd; border: 1px solid #ffc107; border-radius: 4px; padding: 0.75rem 1rem; margin-bottom: 1rem;">
             <strong style="color: #856404;">⚠️ API documentation not generated.</strong>
             <span style="color: #856404;">Run <code style="background: #f8f9fa; padding: 0.2rem 0.4rem; border-radius: 3px;">make docs</code> to generate.</span>
         </div>
-        <?php endif; ?>
+        {% endif %}
         <p style="margin-bottom: 1rem;">Guides and auto-generated API documentation:</p>
         <ul style="list-style: disc; padding-left: 1.5rem;">
             <li><a href="/docs/" style="color: #007bff; text-decoration: none;"><strong>/docs/</strong></a> - Guides & Documentation (Docsify)</li>
-            <li><a href="/docs/api/php/" style="color: <?= $phpDocsExist ? '#007bff' : '#999' ?>; text-decoration: none;"><strong>/docs/api/php/</strong></a> - PHP API Documentation<?= !$phpDocsExist && $hasPhpSource ? ' <span style="color: #dc3545;">(not generated)</span>' : '' ?></li>
-            <li><a href="/docs/api/node-backend/" style="color: <?= $nodeBackendDocsExist ? '#007bff' : '#999' ?>; text-decoration: none;"><strong>/docs/api/node-backend/</strong></a> - Node.js Backend API<?= !$nodeBackendDocsExist && $hasNodeBackendSource ? ' <span style="color: #dc3545;">(not generated)</span>' : '' ?></li>
+            <li><a href="/docs/api/php/" style="color: {% if phpDocsExist %}#007bff{% else %}#999{% endif %}; text-decoration: none;"><strong>/docs/api/php/</strong></a> - PHP API Documentation{% if not phpDocsExist and hasPhpSource %} <span style="color: #dc3545;">(not generated)</span>{% endif %}</li>
+            <li><a href="/docs/api/node-backend/" style="color: {% if nodeBackendDocsExist %}#007bff{% else %}#999{% endif %}; text-decoration: none;"><strong>/docs/api/node-backend/</strong></a> - Node.js Backend API{% if not nodeBackendDocsExist and hasNodeBackendSource %} <span style="color: #dc3545;">(not generated)</span>{% endif %}</li>
         </ul>
         <p style="margin-top: 1rem; font-size: 0.9em; color: #666;">
             <strong>Generate API Docs:</strong> Run <code>make docs</code> to generate/update API documentation.
             Documentation is only available in development mode.
         </p>
     </div>
-    <?php endif; ?>
+    {% endif %}
 
     <div class="card">
         <h2>📚 Quick Start</h2>
@@ -227,17 +206,17 @@ DB_TYPE=postgres
 NODE_MODE=assets-api</pre>
     </div>
 
-    <?php if ($vite->isDevelopment()): ?>
+    {% if vite.isDevelopment() %}
     <div class="card">
         <h2>🎨 HMR Demo</h2>
         <p>Try editing <code>resources/css/test.scss</code> or <code>resources/js/app.js</code> - changes appear instantly without page reload!</p>
         <button id="test-btn" class="btn">Test Button (Click me!)</button>
     </div>
-    <?php endif; ?>
+    {% endif %}
 </div>
 
 <!-- Vite JavaScript - Loaded last -->
-<?= $vite->renderScriptTags('js/app.js') ?>
+{{ vite.renderScriptTags('js/app.js')|raw }}
 
 </body>
 </html>

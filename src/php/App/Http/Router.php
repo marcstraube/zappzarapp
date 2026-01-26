@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace App\Http;
 
 use App\Http\Response\JsonResponse;
-use App\Http\Response\Response;
 
 /**
  * Simple Router
@@ -15,28 +14,19 @@ use App\Http\Response\Response;
  */
 class Router
 {
-    /** @var array<int, array{method: string, path: string, handler: callable(): Response}> */
+    /** @var array<int, array{method: string, path: string, handler: callable}> */
     private array $routes = [];
 
-    /**
-     * @param callable(): Response $handler
-     */
     public function get(string $path, callable $handler): void
     {
         $this->addRoute('GET', $path, $handler);
     }
 
-    /**
-     * @param callable(): Response $handler
-     */
     public function post(string $path, callable $handler): void
     {
         $this->addRoute('POST', $path, $handler);
     }
 
-    /**
-     * @param callable(): Response $handler
-     */
     private function addRoute(string $method, string $path, callable $handler): void
     {
         $this->routes[] = [

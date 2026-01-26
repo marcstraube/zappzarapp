@@ -4,7 +4,10 @@ declare(strict_types=1);
 
 namespace App\Http\Controller;
 
+use App\Http\Response\HtmlResponse;
+use App\Http\Response\Response;
 use App\Infrastructure\HealthCheck;
+use App\Infrastructure\TwigService;
 use App\Infrastructure\ViteHelper;
 
 /**
@@ -17,24 +20,36 @@ readonly class WelcomeController
     public function __construct(
         private ViteHelper $vite,
         private HealthCheck $health,
+        private TwigService $twig,
     ) {}
 
     /**
-     * Display the welcome page.
-     *
-     * @SuppressWarnings("PHPMD.UnusedLocalVariable") Variables are used in the template
+     * Display the welcome page
      */
-    public function index(): void
+    public function index(): Response
     {
-        $vite   = $this->vite;
-        $health = $this->health;
-        $env    = $health->getEnvironment();
-        $status = $health->checkAll();
+        $env    = $this->health->getEnvironment();
+        $status = $this->health->checkAll();
 
-        // Set header for HTML
-        header('Content-Type: text/html; charset=utf-8');
+        // Check for API documentation (only in development)
+        $docsBase             = '/var/www/html/docs/api';
+        $phpDocsExist         = file_exists($docsBase . '/php/index.html');
+        $nodeBackendDocsExist = file_exists($docsBase . '/node-backend/index.html');
+        $hasPhpSource         = is_dir('/var/www/html/src/php');
+        $hasNodeBackendSource = is_dir('/var/www/html/src/node/backend');
+        $docsMissing          = ($hasPhpSource && !$phpDocsExist) || ($hasNodeBackendSource && !$nodeBackendDocsExist);
 
-        // Render template
-        include __DIR__ . '/../../../../../templates/app/welcome.php';
+        $html = $this->twig->render('app/welcome.html.twig', [
+            'vite'                  => $this->vite,
+            'env'                   => $env,
+            'status'                => $status,
+            'phpDocsExist'          => $phpDocsExist,
+            'nodeBackendDocsExist'  => $nodeBackendDocsExist,
+            'hasPhpSource'          => $hasPhpSource,
+            'hasNodeBackendSource'  => $hasNodeBackendSource,
+            'docsMissing'           => $docsMissing,
+        ]);
+
+        return new HtmlResponse($html);
     }
 }

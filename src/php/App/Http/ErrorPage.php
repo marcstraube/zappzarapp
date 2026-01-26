@@ -6,11 +6,13 @@ namespace App\Http;
 
 use App\Http\Response\HtmlResponse;
 use App\Http\Response\Response;
+use App\Infrastructure\TwigService;
+use App\Security\CspNonceHelper;
 
 /**
  * Dynamic Error Page Renderer
  *
- * Renders styled error pages for browser requests.
+ * Renders styled error pages for browser requests using Twig templates.
  * Can be extended to include session data, logging, suggestions, etc.
  */
 class ErrorPage
@@ -24,8 +26,6 @@ class ErrorPage
         502 => ['title' => 'Bad Gateway', 'message' => 'The server received an invalid response from an upstream server.'],
         503 => ['title' => 'Service Unavailable', 'message' => 'The service is temporarily unavailable. Please try again later.'],
     ];
-
-    private const string TEMPLATE_PATH = __DIR__ . '/../../../../templates/app/error.php';
 
     /**
      * Create an error response.
@@ -83,16 +83,27 @@ class ErrorPage
     }
 
     /**
-     * Render the error template.
+     * Render the error template using Twig.
      *
      * @param array{code: int, title: string, message: string, path: ?string} $data
      */
     private static function renderTemplate(array $data): string
     {
-        extract($data);
-        ob_start();
-        include self::TEMPLATE_PATH;
+        // Instantiate Twig inline (static method, no DI available)
+        $isDevelopment = getenv('ENV') === 'development';
+        $twig          = $isDevelopment
+            ? TwigService::createForDevelopment(
+                __DIR__ . '/../../../../templates',
+                __DIR__ . '/../../../../build/cache/twig'
+            )
+            : TwigService::createForProduction(
+                __DIR__ . '/../../../../templates',
+                __DIR__ . '/../../../../build/cache/twig'
+            );
 
-        return (string) ob_get_clean();
+        // Register CSP nonce function
+        $twig->addFunction('nonce', CspNonceHelper::get(...));
+
+        return $twig->render('app/error.html.twig', $data);
     }
 }
