@@ -82,6 +82,8 @@ if [[ -n "$PROMPT" ]]; then
     TARGET_KEYWORDS+="|container|docker|pipeline|database|schema|migration|cache|queue|job|worker"
     # Testing
     TARGET_KEYWORDS+="|test|spec|mock|fixture|suite"
+    # Documentation
+    TARGET_KEYWORDS+="|documentation|docs|readme|changelog|guide|tutorial|manual|specification|reference"
     # General
     TARGET_KEYWORDS+="|authentication|validation|helper|util|config|hook|command|workflow|pattern|logic|method"
     TARGET_KEYWORDS+="|script|package|dependency|plugin|extension|linter|formatter"
@@ -97,7 +99,17 @@ fi
 if [[ "$IMPL_TASK_DETECTED" == "true" ]]; then
     CURRENT_BRANCH=$(cd "$PROJECT_DIR" && git branch --show-current 2>/dev/null || echo "")
     if [[ "$CURRENT_BRANCH" == "develop" || "$CURRENT_BRANCH" == "main" || "$CURRENT_BRANCH" == "master" ]]; then
-        MESSAGES+=("[Branch Warning] On '$CURRENT_BRANCH' - create feature branch first: git checkout -b fix/<slug> or feature/<slug>")
+        MESSAGES+=("⚠️  STOP - BRANCH CHECK FAILED ⚠️
+
+You are on '$CURRENT_BRANCH' but starting an implementation task.
+
+ACTION REQUIRED BEFORE PROCEEDING:
+1. Create feature branch: git checkout -b feature/<slug>
+   (or: git checkout -b fix/<slug> for bug fixes)
+2. Alternative: /worktree --create feature/<slug>
+
+See: .claude/CLAUDE.md (Feature-Branch Workflow)
+See: .claude/agents/workflow.md:54-85 (Detailed Workflow)")
     fi
 fi
 

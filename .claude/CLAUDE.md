@@ -61,6 +61,33 @@ committed (persistent). In session file, only note "Added learning: <title>".
 
 ---
 
+## Feature-Branch Workflow
+
+**Before starting any implementation task:**
+
+1. **Check current branch**: `git branch --show-current`
+2. **If on develop/main/master → Create feature branch FIRST**:
+
+   ```bash
+   git checkout -b feature/<slug>  # or: fix/<slug>, refactor/<slug>
+   ```
+
+3. **For parallel work**: Use `/worktree --create feature/<slug>`
+
+**Exception:** Trivial tasks (1 file, typo/config/one-liner) can stay on
+develop.
+
+**Why?**
+
+- Isolation: Changes don't affect develop during development
+- Review: User reviews entire feature branch before merge
+- Rollback: Simply delete branch if needed
+- Clean history: One merge per feature
+
+See `.claude/agents/workflow.md:54-85` for detailed workflow.
+
+---
+
 ## Solution Principles
 
 When proposing solutions, prioritize in this order:

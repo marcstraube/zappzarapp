@@ -27,8 +27,8 @@ doc_extractors:
     search_template: "{1}"
     example: "+  redis:" → searches for "redis"
 
-  # Slash commands (uses filename)
-  ".claude/commands/*.md":
+  # Skills (slash commands, uses filename)
+  ".claude/skills/*.md":
     use_filename: true
     search_template: "/{1}"
     example: "status.md" → searches for "/status"
