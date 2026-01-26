@@ -7,7 +7,7 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 // Helper to create fresh module import with custom env
 async function loadDatabaseConfig(
   env: Record<string, string | undefined>
-): Promise<typeof import('@backend/config/database')> {
+): Promise<typeof import('@backend/Shared/Database/DatabaseConfig')> {
   // Clear all DB-related env vars
   delete process.env.DATABASE_URL;
   delete process.env.DB_TYPE;
@@ -29,7 +29,7 @@ async function loadDatabaseConfig(
 
   // Reset module cache and re-import
   vi.resetModules();
-  return await import('@backend/config/database');
+  return await import('@backend/Shared/Database/DatabaseConfig');
 }
 
 describe('Database Configuration', () => {

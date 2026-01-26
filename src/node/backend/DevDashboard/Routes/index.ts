@@ -6,11 +6,11 @@
  */
 
 import { Router } from 'express';
-import { DevDashboardController } from '../controllers/DevDashboardController.js';
-import { CoverageService } from '../services/CoverageService.js';
-import { DocsService } from '../services/DocsService.js';
-import { QualityService } from '../services/QualityService.js';
-import { SystemService } from '../services/SystemService.js';
+import { DevDashboardController } from '../Controllers/DevDashboardController.js';
+import { CoverageService } from '../Services/CoverageService.js';
+import { DocsService } from '../Services/DocsService.js';
+import { QualityService } from '../Services/QualityService.js';
+import { SystemService } from '../Services/SystemService.js';
 
 /**
  * Create the DevDashboard router

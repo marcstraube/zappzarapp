@@ -3,7 +3,7 @@
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { CoverageService } from '@backend/DevDashboard/services/CoverageService';
+import { CoverageService } from '@backend/DevDashboard/Services/CoverageService';
 import * as fs from 'fs';
 
 // Mock fs module

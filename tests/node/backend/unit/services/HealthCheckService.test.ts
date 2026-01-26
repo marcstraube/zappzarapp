@@ -3,7 +3,7 @@
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { HealthCheckService } from '@backend/services/HealthCheckService';
+import { HealthCheckService } from '@backend/Shared/HealthCheck/HealthCheckService';
 import { Pool, PoolClient } from 'pg';
 
 // Mock the redis module

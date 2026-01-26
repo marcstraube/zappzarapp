@@ -6,9 +6,9 @@
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach, type Mock } from 'vitest';
-import { UserRepository, type User } from '@backend/repositories/UserRepository';
-import type { Row } from '@backend/repositories/RepositoryInterface';
-import { NullAuditLogger } from '@backend/services/NullAuditLogger';
+import { UserRepository, type User } from '@backend/Shared/Repository/UserRepository';
+import type { Row } from '@backend/Shared/Repository/RepositoryInterface';
+import { NullAuditLogger } from '@backend/Shared/Audit/NullAuditLogger';
 
 // Mock connection interface
 interface MockConnection {
@@ -70,7 +70,7 @@ const sampleUser: User = {
 };
 
 // Mock the database config module (must be before ConnectionFactory)
-vi.mock('@backend/config/database', () => ({
+vi.mock('@backend/Shared/Database/DatabaseConfig', () => ({
   getDatabaseConfig: vi.fn(() => ({
     type: 'postgres',
     host: 'localhost',
@@ -83,8 +83,8 @@ vi.mock('@backend/config/database', () => ({
 }));
 
 // Mock the ConnectionFactory module
-vi.mock('@backend/db/ConnectionFactory', async () => {
-  const actual = await vi.importActual('@backend/db/ConnectionFactory');
+vi.mock('@backend/Shared/Database/ConnectionFactory', async () => {
+  const actual = await vi.importActual('@backend/Shared/Database/ConnectionFactory');
   return {
     ...actual,
     getConnectionFactory: vi.fn(),
@@ -101,7 +101,7 @@ describe('UserRepository', () => {
     mockConnection = await mockFactory.create();
 
     // Setup the mock to return our factory
-    const { getConnectionFactory } = await import('@backend/db/ConnectionFactory');
+    const { getConnectionFactory } = await import('@backend/Shared/Database/ConnectionFactory');
     vi.mocked(getConnectionFactory).mockReturnValue(mockFactory as never);
   });
 

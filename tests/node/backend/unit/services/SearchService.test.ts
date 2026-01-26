@@ -3,7 +3,7 @@
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { SearchService, type SearchServiceInterface } from '@backend/services/SearchService';
+import { SearchService, type SearchServiceInterface } from '@backend/App/Services/SearchService';
 
 // Use vi.hoisted to define mocks before vi.mock hoisting
 const {
