@@ -69,10 +69,10 @@ committed (persistent). In session file, only note "Added learning: <title>".
 2. **If on develop/main/master → Create feature branch FIRST**:
 
    ```bash
-   git checkout -b feature/<slug>  # or: fix/<slug>, refactor/<slug>
+   git checkout -b <type>/<slug>  # e.g., feature/, fix/, chore/, docs/
    ```
 
-3. **If on feature/fix/refactor branch → Use git worktree for parallel work**:
+3. **If on any other branch → Use git worktree for parallel work**:
 
    ```bash
    # Create worktree for new task

@@ -69,11 +69,21 @@ Merge → Close task (via `/tasks --close`)
 
 ### Branch Naming
 
+Use Conventional Commits types (defined in `commitlint.config.js`):
+
 | Type     | Pattern           | Example                       |
 | -------- | ----------------- | ----------------------------- |
 | Feature  | `feature/<slug>`  | `feature/redis-cache-service` |
 | Fix      | `fix/<slug>`      | `fix/health-check-timeout`    |
 | Refactor | `refactor/<slug>` | `refactor/database-layer`     |
+| Chore    | `chore/<slug>`    | `chore/update-dependencies`   |
+| Docs     | `docs/<slug>`     | `docs/api-documentation`      |
+| Test     | `test/<slug>`     | `test/integration-coverage`   |
+| CI       | `ci/<slug>`       | `ci/github-actions-workflow`  |
+| Perf     | `perf/<slug>`     | `perf/optimize-queries`       |
+| Build    | `build/<slug>`    | `build/webpack-config`        |
+| Style    | `style/<slug>`    | `style/code-formatting`       |
+| Revert   | `revert/<slug>`   | `revert/broken-feature`       |
 
 ### Why Feature Branches?
 
