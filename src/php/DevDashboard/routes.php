@@ -64,3 +64,7 @@ route('GET', '/_dev/api/services', $controller->apiServicesStatus(...));
 route('GET', '/_dev/api/logs', $controller->apiLogContent(...));
 route('POST', '/_dev/api/docs/generate', $docsController->apiGenerateDocs(...));
 route('POST', '/_dev/api/coverage/generate', $controller->apiGenerateCoverage(...));
+route('GET', '/_dev/api/backup/list', $controller->apiListBackups(...));
+route('POST', '/_dev/api/backup/create', $controller->apiCreateBackup(...));
+route('POST', '/_dev/api/backup/restore', $controller->apiRestoreBackup(...));
+route('POST', '/_dev/api/backup/delete', $controller->apiDeleteBackup(...));

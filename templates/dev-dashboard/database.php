@@ -5,11 +5,13 @@
  * @var array<int, array<string, mixed>> $tables
  * @var array<string, mixed> $commands
  * @var array<string, array<string, mixed>> $db_tools
+ * @var array{count: int, totalSize: string, oldestDate: string, newestDate: string} $backup_stats
  */
 
 $tabs = [
     'overview' => 'Overview',
     'tables'   => 'Tables (' . count($tables) . ')',
+    'backups'  => 'Backups (' . $backup_stats['count'] . ')',
     'tools'    => 'Tools',
     'commands' => 'Commands',
     'tips'     => 'Tips',
@@ -133,6 +135,64 @@ $tabs = [
     </div>
 </div>
 
+<!-- Tab: Backups -->
+<div id="tab-backups" class="tab-panel hidden">
+    <!-- Statistics Card -->
+    <div class="card mb-4">
+        <h2 class="text-lg font-semibold text-gray-900 mb-4">Backup Statistics</h2>
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div class="text-center p-4 bg-blue-50 rounded-lg">
+                <p class="text-sm text-gray-600 mb-1">Total Backups</p>
+                <p class="text-2xl font-bold text-blue-600" id="stat-count"><?= $backup_stats['count'] ?></p>
+            </div>
+            <div class="text-center p-4 bg-green-50 rounded-lg">
+                <p class="text-sm text-gray-600 mb-1">Total Size</p>
+                <p class="text-lg font-bold text-green-600" id="stat-size"><?= htmlspecialchars($backup_stats['totalSize']) ?></p>
+            </div>
+            <div class="text-center p-4 bg-purple-50 rounded-lg">
+                <p class="text-sm text-gray-600 mb-1">Newest</p>
+                <p class="text-sm font-bold text-purple-600" id="stat-newest"><?= htmlspecialchars($backup_stats['newestDate']) ?></p>
+            </div>
+            <div class="text-center p-4 bg-yellow-50 rounded-lg">
+                <p class="text-sm text-gray-600 mb-1">Oldest</p>
+                <p class="text-sm font-bold text-yellow-600" id="stat-oldest"><?= htmlspecialchars($backup_stats['oldestDate']) ?></p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Create Backup Card -->
+    <div class="card mb-4">
+        <h2 class="text-lg font-semibold text-gray-900 mb-3">Create Backup</h2>
+        <p class="text-sm text-gray-600 mb-4">Creates encrypted database backup with configurable retention policy.</p>
+
+        <div class="flex items-end gap-3">
+            <div style="flex: 1;">
+                <label for="retention-input" class="text-sm font-medium text-gray-700 mb-1 block">Retention (days)</label>
+                <input type="number" id="retention-input" value="30" min="0" max="365"
+                       class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                       placeholder="Leave empty for default (30 days)">
+                <p class="text-xs text-gray-500 mt-1">0 = keep all backups (no auto-deletion)</p>
+            </div>
+            <button id="btn-create-backup" onclick="createBackup()" class="btn btn-primary" style="flex-shrink: 0;">
+                Create Backup Now
+            </button>
+        </div>
+    </div>
+
+    <!-- Backup List Card -->
+    <div class="card">
+        <div class="flex items-center justify-between mb-4">
+            <h2 class="text-lg font-semibold text-gray-900 mb-0">Available Backups</h2>
+            <button onclick="loadBackups()" class="btn btn-secondary text-xs">Refresh</button>
+        </div>
+        <div id="backup-list">
+            <div class="flex items-center justify-center py-8">
+                <span class="text-gray-500">Loading backups...</span>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- Tab: Database Tools -->
 <div id="tab-tools" class="tab-panel hidden">
     <div class="card bg-purple-50 border border-purple-200">
@@ -245,6 +305,11 @@ function switchTab(tabId) {
     document.getElementById('tab-' + tabId)?.classList.remove('hidden');
 
     history.replaceState(null, '', '#' + tabId);
+
+    // Load backups when backups tab is shown
+    if (tabId === 'backups') {
+        loadBackups();
+    }
 }
 
 document.querySelectorAll('.sub-nav-link').forEach(link => {
@@ -269,4 +334,231 @@ function copyCmd(cmd, btn) {
         setTimeout(() => { btn.textContent = orig; btn.classList.remove('bg-green-100'); }, 1500);
     });
 }
+
+// === BACKUP MANAGEMENT FUNCTIONS ===
+
+// Load backups from API
+async function loadBackups() {
+    try {
+        const response = await fetch('/_dev/api/backup/list');
+        const result = await response.json();
+
+        if (result.success) {
+            updateBackupList(result.backups || []);
+        } else {
+            showNotification('error', 'Failed to load backups');
+        }
+    } catch (error) {
+        showNotification('error', 'Failed to load backups: ' + error.message);
+    }
+}
+
+// Create new backup
+async function createBackup() {
+    const retentionInput = document.getElementById('retention-input');
+    const retention = retentionInput?.value || '';
+    const btn = document.getElementById('btn-create-backup');
+
+    if (!confirm('Create a new database backup? This may take a few moments.')) {
+        return;
+    }
+
+    const originalText = btn.textContent;
+    btn.disabled = true;
+    btn.textContent = 'Creating...';
+
+    try {
+        const url = retention ? `/_dev/api/backup/create?retention=${encodeURIComponent(retention)}` : '/_dev/api/backup/create';
+        const response = await fetch(url, { method: 'POST' });
+        const result = await response.json();
+
+        if (result.success) {
+            showNotification('success', result.message);
+            loadBackups(); // Refresh list
+        } else {
+            showNotification('error', result.message);
+        }
+    } catch (error) {
+        showNotification('error', 'Failed to create backup: ' + error.message);
+    } finally {
+        btn.disabled = false;
+        btn.textContent = originalText;
+    }
+}
+
+// Restore backup
+async function restoreBackup(filename) {
+    const confirmed = confirm(
+        '⚠️ WARNING: This will OVERWRITE the current database!\n\n' +
+        'Restoring: ' + filename + '\n\n' +
+        'This action cannot be undone. Continue?'
+    );
+
+    if (!confirmed) return;
+
+    const btnId = 'btn-restore-' + btoa(filename);
+    const btn = document.getElementById(btnId);
+    const originalText = btn.textContent;
+    btn.disabled = true;
+    btn.textContent = 'Restoring...';
+
+    try {
+        const response = await fetch('/_dev/api/backup/restore', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ filename })
+        });
+
+        const result = await response.json();
+
+        if (result.success) {
+            showNotification('success', result.message);
+        } else {
+            showNotification('error', result.message);
+        }
+    } catch (error) {
+        showNotification('error', 'Failed to restore backup: ' + error.message);
+    } finally {
+        btn.disabled = false;
+        btn.textContent = originalText;
+    }
+}
+
+// Delete backup
+async function deleteBackup(filename) {
+    if (!confirm('Delete backup: ' + filename + '?\n\nThis action cannot be undone.')) {
+        return;
+    }
+
+    try {
+        const response = await fetch('/_dev/api/backup/delete', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ filename })
+        });
+
+        const result = await response.json();
+
+        if (result.success) {
+            showNotification('success', result.message);
+            loadBackups(); // Refresh list
+        } else {
+            showNotification('error', result.message);
+        }
+    } catch (error) {
+        showNotification('error', 'Failed to delete backup: ' + error.message);
+    }
+}
+
+// Update backup list UI
+function updateBackupList(backups) {
+    const container = document.getElementById('backup-list');
+
+    if (!backups || backups.length === 0) {
+        container.innerHTML = '<p class="text-gray-600 text-center py-8">No backups found. Create your first backup above.</p>';
+        updateBackupStats({ count: 0, totalSize: '0 B', oldestDate: 'N/A', newestDate: 'N/A' });
+        return;
+    }
+
+    container.innerHTML = backups.map(backup => {
+        const encryptedBadge = backup.encrypted
+            ? '<span class="badge badge-green ml-2">Encrypted</span>'
+            : '<span class="badge badge-gray ml-2">Unencrypted</span>';
+
+        return `
+            <div class="border border-gray-200 rounded-lg p-4 mb-3 hover:bg-gray-50">
+                <div class="flex items-start justify-between gap-4">
+                    <div style="flex: 1;">
+                        <h3 class="font-medium text-gray-900 mb-1">${escapeHtml(backup.filename)}</h3>
+                        <p class="text-sm text-gray-600">
+                            ${escapeHtml(backup.timestamp)} • ${escapeHtml(backup.size)} • ${escapeHtml(backup.age)}
+                            ${encryptedBadge}
+                        </p>
+                        <p class="text-xs text-gray-500 mt-1">
+                            DB: ${escapeHtml(backup.dbType)} / ${escapeHtml(backup.dbName)}
+                        </p>
+                    </div>
+                    <div class="flex gap-2" style="flex-shrink: 0;">
+                        <button onclick='restoreBackup("${escapeJs(backup.filename)}")'
+                                id="btn-restore-${btoa(backup.filename)}"
+                                class="btn btn-primary text-sm">
+                            Restore
+                        </button>
+                        <button onclick='deleteBackup("${escapeJs(backup.filename)}")'
+                                class="btn btn-danger text-sm">
+                            Delete
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
+    }).join('');
+
+    // Update stats
+    const totalBytes = backups.reduce((sum, b) => sum + (b.sizeBytes || 0), 0);
+    updateBackupStats({
+        count: backups.length,
+        totalSize: formatBytes(totalBytes),
+        oldestDate: backups[backups.length - 1]?.timestamp || 'N/A',
+        newestDate: backups[0]?.timestamp || 'N/A'
+    });
+}
+
+// Update statistics display
+function updateBackupStats(stats) {
+    document.getElementById('stat-count').textContent = stats.count;
+    document.getElementById('stat-size').textContent = stats.totalSize;
+    document.getElementById('stat-newest').textContent = stats.newestDate;
+    document.getElementById('stat-oldest').textContent = stats.oldestDate;
+}
+
+// Show notification
+function showNotification(type, message) {
+    const bgColor = type === 'success' ? '#10b981' : '#ef4444';
+    const notification = document.createElement('div');
+    notification.style.cssText = `
+        position: fixed; top: 80px; right: 20px; z-index: 9999;
+        background: ${bgColor}; color: white;
+        padding: 1rem 1.5rem; border-radius: 0.5rem; box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        max-width: 400px; animation: slideIn 0.3s ease-out;
+    `;
+    notification.textContent = message;
+    document.body.appendChild(notification);
+
+    setTimeout(() => {
+        notification.style.animation = 'slideOut 0.3s ease-out';
+        setTimeout(() => notification.remove(), 300);
+    }, 4000);
+}
+
+// Helper: Escape HTML
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+// Helper: Escape for JS string
+function escapeJs(text) {
+    return text.replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/"/g, '\\"');
+}
+
+// Helper: Format bytes
+function formatBytes(bytes) {
+    const units = ['B', 'KB', 'MB', 'GB', 'TB'];
+    let factor = 0;
+    while (bytes >= 1024 && factor < units.length - 1) {
+        bytes /= 1024;
+        factor++;
+    }
+    return bytes.toFixed(2) + ' ' + units[factor];
+}
+
+// Add CSS animations
+const style = document.createElement('style');
+style.textContent = `
+    @keyframes slideIn { from { transform: translateX(400px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+    @keyframes slideOut { from { transform: translateX(0); opacity: 1; } to { transform: translateX(400px); opacity: 0; } }
+`;
+document.head.appendChild(style);
 </script>
