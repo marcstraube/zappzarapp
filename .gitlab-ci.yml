@@ -399,6 +399,8 @@ build:production:
     - docker tag zappzarapp-node-backend:api zappzarapp-node-backend:latest
     # Disable BuildKit for php/nginx build so they can see the local tagged image
     - DOCKER_BUILDKIT=0 ENV=production docker compose -f compose.yaml -f compose.production.yaml --profile php --profile postgres build php nginx postgres
+    # Stop any existing containers before production test (prevent port/name conflicts)
+    - docker compose down -v || true
     # Test production build using ENV-aware target
     # Tests nginx + app (php/node) + database + activated services
     - ENV=production make test-production
