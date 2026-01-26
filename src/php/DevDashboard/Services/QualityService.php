@@ -14,8 +14,6 @@ use SplFileInfo;
  * Quality Service
  *
  * Aggregates code quality metrics from various tools
- *
- * @SuppressWarnings(PHPMD.CouplingBetweenObjects)
  */
 class QualityService
 {

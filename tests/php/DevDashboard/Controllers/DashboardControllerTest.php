@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Tests\DevDashboard\Controllers;
 
 use DevDashboard\Controllers\DashboardController;
-use DevDashboard\Response\Response;
 use DevDashboard\Services\DatabaseService;
 use DevDashboard\Services\DocsService;
 use DevDashboard\Services\HealthCheckService;
@@ -43,23 +42,6 @@ class DashboardControllerTest extends TestCase
             new DatabaseService(),
             new DocsService(),
         );
-    }
-
-    /**
-     * Helper to get JSON data from a Response object
-     *
-     * @return array<string, mixed>
-     */
-    private function getJsonFromResponse(Response $response): array
-    {
-        ob_start();
-        $response->send();
-        $output = ob_get_clean();
-
-        $this->assertNotFalse($output, 'Output buffer should not be empty');
-        $this->assertJson($output);
-
-        return json_decode($output, true);
     }
 
     public function testControllerCanBeInstantiated(): void

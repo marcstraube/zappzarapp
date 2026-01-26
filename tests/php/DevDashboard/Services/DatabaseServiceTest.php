@@ -7,7 +7,6 @@ namespace Tests\DevDashboard\Services;
 use DevDashboard\Services\DatabaseService;
 use PDO;
 use PHPUnit\Framework\TestCase;
-use ReflectionClass;
 
 /**
  * @covers \DevDashboard\Services\DatabaseService
@@ -54,18 +53,6 @@ class DatabaseServiceTest extends TestCase
         }
 
         parent::tearDown();
-    }
-
-    /**
-     * Helper: Get private/protected method via reflection
-     *
-     * @param array<int, mixed> $args
-     */
-    private function callPrivateMethod(object $object, string $methodName, array $args = []): mixed
-    {
-        $reflection = new ReflectionClass($object);
-        $method     = $reflection->getMethod($methodName);
-        return $method->invokeArgs($object, $args);
     }
 
     // ==================== BASIC SERVICE TESTS ====================

@@ -7,8 +7,6 @@ namespace Tests\DevDashboard\Services;
 use DevDashboard\Services\QualityService;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
-use ReflectionClass;
-use ReflectionMethod;
 
 #[CoversClass(QualityService::class)]
 class QualityServiceTest extends TestCase
@@ -80,12 +78,5 @@ class QualityServiceTest extends TestCase
         $this->assertArrayHasKey('label', $firstAction);
         $this->assertArrayHasKey('command', $firstAction);
         $this->assertArrayHasKey('description', $firstAction);
-    }
-
-    private function getPrivateMethod(string $methodName): ReflectionMethod
-    {
-        $reflection = new ReflectionClass($this->service);
-
-        return $reflection->getMethod($methodName);
     }
 }

@@ -25,7 +25,14 @@ class BackupFileUtils
         }
 
         try {
-            $timestamp = strtotime(str_replace('_', ' ', str_replace('-', ':', $matches[1], 2)));
+            // Convert "2026-01-26_12-30-45" to "2026-01-26 12:30:45"
+            $dateTime = preg_replace('/^(\d{4}-\d{2}-\d{2})_(\d{2})-(\d{2})-(\d{2})$/', '$1 $2:$3:$4', $matches[1]);
+
+            if ($dateTime === null) {
+                return null;
+            }
+
+            $timestamp = strtotime($dateTime);
 
             if ($timestamp === false) {
                 return null;
