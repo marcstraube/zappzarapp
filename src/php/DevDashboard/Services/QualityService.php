@@ -21,11 +21,15 @@ class QualityService
 {
     private readonly string $projectRoot;
     private readonly CoverageParser $coverageParser;
+    private readonly CommandRunner $commandRunner;
 
-    public function __construct(?CoverageParser $coverageParser = null)
-    {
+    public function __construct(
+        ?CoverageParser $coverageParser = null,
+        ?CommandRunner $commandRunner = null,
+    ) {
         $this->projectRoot    = realpath(__DIR__ . '/../../../../') . '/';
         $this->coverageParser = $coverageParser ?? new CoverageParser();
+        $this->commandRunner  = $commandRunner ?? new CommandRunner();
     }
 
     /**
@@ -75,7 +79,7 @@ class QualityService
             'cd /var/www/html && %s php vendor/bin/phpunit --coverage-html build/coverage-php 2>&1',
             $xdebugMode,
         );
-        $result  = $this->runCommand($command);
+        $result  = $this->commandRunner->run($command);
 
         // Check if coverage report was generated (regardless of exit code)
         // Exit code can be non-zero due to risky tests, but coverage is still generated
@@ -103,40 +107,6 @@ class QualityService
             'success' => false,
             'message' => 'PHPUnit coverage failed with exit code ' . $result['exitCode'],
             'output'  => $result['output'],
-        ];
-    }
-
-    /**
-     * Run a shell command using proc_open
-     *
-     * @return array{exitCode: int, output: string}
-     */
-    private function runCommand(string $command): array
-    {
-        $descriptors = [
-            0 => ['pipe', 'r'],
-            1 => ['pipe', 'w'],
-            2 => ['pipe', 'w'],
-        ];
-
-        // @phpstan-ignore ekinoBannedCode.function (DevDashboard is development-only, needs command execution for coverage generation)
-        $process = proc_open($command, $descriptors, $pipes);
-
-        if (!is_resource($process)) {
-            return ['exitCode' => -1, 'output' => 'Failed to start process'];
-        }
-
-        fclose($pipes[0]);
-        $stdout = stream_get_contents($pipes[1]);
-        $stderr = stream_get_contents($pipes[2]);
-        fclose($pipes[1]);
-        fclose($pipes[2]);
-
-        $exitCode = proc_close($process);
-
-        return [
-            'exitCode' => $exitCode,
-            'output'   => ($stdout ?: '') . ($stderr ?: ''),
         ];
     }
 

@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace DevDashboard\Controllers;
 
 use DevDashboard\Response\HtmlResponse;
-use DevDashboard\Response\JsonResponse;
 use DevDashboard\Response\Response;
 use DevDashboard\Services\DatabaseService;
 use DevDashboard\Services\DocsService;
@@ -129,120 +128,6 @@ readonly class DashboardController
         ];
 
         return $this->render('logs', $data);
-    }
-
-    /**
-     * API: Health check endpoint (JSON)
-     */
-    public function apiHealthCheck(): Response
-    {
-        return new JsonResponse($this->healthCheckService->getOverallStatus());
-    }
-
-    /**
-     * API: Services status endpoint (JSON)
-     */
-    public function apiServicesStatus(): Response
-    {
-        return new JsonResponse($this->healthCheckService->getServices());
-    }
-
-    /**
-     * API: Get log file content (JSON)
-     */
-    public function apiLogContent(): Response
-    {
-        $filename = $_GET['file'] ?? '';
-        $lines    = (int) ($_GET['lines'] ?? 100);
-
-        if ($filename === '') {
-            return new JsonResponse(['error' => 'No filename provided'], 400);
-        }
-
-        $result = $this->logService->readLogFile($filename, min($lines, 500));
-
-        return new JsonResponse($result);
-    }
-
-    /**
-     * API: Generate test coverage (JSON)
-     */
-    public function apiGenerateCoverage(): Response
-    {
-        $type = $_GET['type'] ?? 'php';
-
-        if ($type !== 'php') {
-            return new JsonResponse([
-                'success' => false,
-                'message' => 'Only PHP coverage can be generated from dashboard. Run "make test-coverage-node" for Node coverage.',
-            ], 400);
-        }
-
-        $result = $this->qualityService->runPhpCoverage();
-
-        return new JsonResponse($result, $result['success'] ? 200 : 500);
-    }
-
-    /**
-     * API: List database backups (JSON)
-     */
-    public function apiListBackups(): Response
-    {
-        $result = $this->databaseService->listBackups();
-
-        return new JsonResponse($result, 200);
-    }
-
-    /**
-     * API: Create database backup (JSON)
-     */
-    public function apiCreateBackup(): Response
-    {
-        $retention = isset($_GET['retention']) ? (int) $_GET['retention'] : null;
-
-        $result = $this->databaseService->createBackup($retention);
-
-        return new JsonResponse($result, $result['success'] ? 200 : 500);
-    }
-
-    /**
-     * API: Restore database from backup (JSON)
-     */
-    public function apiRestoreBackup(): Response
-    {
-        $requestBody = file_get_contents('php://input');
-        $data        = json_decode($requestBody ?: '{}', true);
-
-        if (!isset($data['filename']) || !is_string($data['filename'])) {
-            return new JsonResponse([
-                'success' => false,
-                'message' => 'Missing required parameter: filename',
-            ], 400);
-        }
-
-        $result = $this->databaseService->restoreBackup($data['filename']);
-
-        return new JsonResponse($result, $result['success'] ? 200 : 500);
-    }
-
-    /**
-     * API: Delete backup file (JSON)
-     */
-    public function apiDeleteBackup(): Response
-    {
-        $requestBody = file_get_contents('php://input');
-        $data        = json_decode($requestBody ?: '{}', true);
-
-        if (!isset($data['filename']) || !is_string($data['filename'])) {
-            return new JsonResponse([
-                'success' => false,
-                'message' => 'Missing required parameter: filename',
-            ], 400);
-        }
-
-        $result = $this->databaseService->deleteBackup($data['filename']);
-
-        return new JsonResponse($result, $result['success'] ? 200 : 500);
     }
 
     /**

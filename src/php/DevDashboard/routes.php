@@ -11,6 +11,7 @@ declare(strict_types=1);
 
 namespace DevDashboard;
 
+use DevDashboard\Controllers\ApiController;
 use DevDashboard\Controllers\DashboardController;
 use DevDashboard\Controllers\DocsController;
 use DevDashboard\Response\Response;
@@ -47,6 +48,7 @@ function route(string $method, string $path, callable $handler): void
 $containerBuilder = new ContainerBuilder();
 $container        = $containerBuilder->build();
 $controller       = $container->get(DashboardController::class);
+$apiController    = $container->get(ApiController::class);
 $docsController   = $container->get(DocsController::class);
 
 // Dashboard routes
@@ -59,12 +61,12 @@ route('GET', '/_dev/database', $controller->database(...));
 route('GET', '/_dev/logs', $controller->logs(...));
 
 // API endpoints for dashboard (JSON responses)
-route('GET', '/_dev/api/health-check', $controller->apiHealthCheck(...));
-route('GET', '/_dev/api/services', $controller->apiServicesStatus(...));
-route('GET', '/_dev/api/logs', $controller->apiLogContent(...));
+route('GET', '/_dev/api/health-check', $apiController->healthCheck(...));
+route('GET', '/_dev/api/services', $apiController->servicesStatus(...));
+route('GET', '/_dev/api/logs', $apiController->logContent(...));
 route('POST', '/_dev/api/docs/generate', $docsController->apiGenerateDocs(...));
-route('POST', '/_dev/api/coverage/generate', $controller->apiGenerateCoverage(...));
-route('GET', '/_dev/api/backup/list', $controller->apiListBackups(...));
-route('POST', '/_dev/api/backup/create', $controller->apiCreateBackup(...));
-route('POST', '/_dev/api/backup/restore', $controller->apiRestoreBackup(...));
-route('POST', '/_dev/api/backup/delete', $controller->apiDeleteBackup(...));
+route('POST', '/_dev/api/coverage/generate', $apiController->generateCoverage(...));
+route('GET', '/_dev/api/backup/list', $apiController->listBackups(...));
+route('POST', '/_dev/api/backup/create', $apiController->createBackup(...));
+route('POST', '/_dev/api/backup/restore', $apiController->restoreBackup(...));
+route('POST', '/_dev/api/backup/delete', $apiController->deleteBackup(...));
