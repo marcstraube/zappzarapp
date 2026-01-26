@@ -120,4 +120,7 @@ FROM runtime AS production
 # Copy project files (mounted at runtime, but can be baked in for CI)
 # Tests are mounted via docker compose or docker run -v
 
-USER bats
+# Run as root to avoid permission issues with mounted volumes in CI
+# In GitHub Actions, the workspace is owned by the runner user (not UID 1000)
+# Running as root ensures tests can create/modify files regardless of host ownership
+# This is safe as the container only executes isolated test validation

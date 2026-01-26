@@ -261,19 +261,15 @@ load 'helpers/setup'
         skip ".env.local.example not present"
     fi
 
-    # Verify required commands are available
-    if ! command -v sed >/dev/null 2>&1; then
-        skip "sed not available"
-    fi
-
-    # Test the make init logic directly (more robust than calling make)
-    # This mimics what the Makefile does
-    sed -e "s/^USER_ID=.*/USER_ID=$(id -u)/" \
-        -e "s/^GROUP_ID=.*/GROUP_ID=$(id -g)/" \
-        .env.local.example > .env.local
+    # Run make init (tests actual user-facing behavior)
+    # Using 'make' directly works in both local and CI environments
+    # as it executes on the host side of the mounted volume
+    run make init
+    assert_success
 
     # Verify .env.local was created
-    [[ -f .env.local ]]
+    run test -f .env.local
+    assert_success
 
     # Verify it contains expected content (USER_ID should be substituted)
     run grep "^USER_ID=" .env.local
