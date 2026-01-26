@@ -192,6 +192,18 @@ See `.zappzarapp/standards/make-targets.md` for container prerequisites and
 package manager usage. Direct package manager commands are blocked via
 `settings.json` deny rules.
 
+**Sandbox Policy:**
+
+- **Work inside project directory only**: All tool operations (Read, Write,
+  Edit, Bash) must stay within project directory (or active worktree)
+- **No access outside project**: Never use tools to read/write `~/.config/`,
+  `/tmp/`, `/usr/local/`, etc.
+- **Temporary files**: Use `./build/tmp/` within project, not system `/tmp`
+- **Why**: Sandbox is enabled in `.claude/settings.json` for security -
+  violations trigger permission prompts
+- **Note**: Global configs (`~/.claude/CLAUDE.md`) are automatically loaded as
+  context - no tool access needed
+
 ## Language
 
 - **English always**: Documentation, code, technical content, task summaries,

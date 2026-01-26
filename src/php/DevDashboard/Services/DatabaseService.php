@@ -384,8 +384,6 @@ readonly class DatabaseService
 
     /**
      * Check if a container is running by attempting to connect to its service
-     *
-     * @SuppressWarnings(PHPMD.ErrorControlOperator)
      */
     private function isContainerRunning(string $service): bool
     {
@@ -400,8 +398,11 @@ readonly class DatabaseService
 
         [$host, $port] = explode(':', $hosts[$service]);
 
-        // Suppress warnings for unavailable services (expected in test/CI environments)
-        $connection = @fsockopen($host, (int) $port, timeout: 1);
+        // Temporarily suppress warnings for network errors (expected when services unavailable)
+        set_error_handler(static fn() => true);
+        $connection = fsockopen($host, (int) $port, timeout: 1);
+        restore_error_handler();
+
         if ($connection !== false) {
             fclose($connection);
 

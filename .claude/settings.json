@@ -43,6 +43,7 @@
       "Bash(chmod:*)",
       "Bash(cp:*)",
       "Bash(dirname:*)",
+      "Bash(du:*)",
       "Bash(file:*)",
       "Bash(ln:*)",
       "Bash(ls:*)",
@@ -56,6 +57,7 @@
       "Bash(tail:*)",
       "Bash(touch:*)",
       "Bash(tree:*)",
+      "Bash(unlink:*)",
 
       "Bash(awk:*)",
       "Bash(cut:*)",
@@ -84,6 +86,7 @@
       "Bash(env:*)",
       "Bash(export:*)",
       "Bash(false:*)",
+      "Bash(getent:*)",
       "Bash(hostname:*)",
       "Bash(id:*)",
       "Bash(printf:*)",
