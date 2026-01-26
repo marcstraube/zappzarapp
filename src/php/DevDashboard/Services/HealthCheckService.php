@@ -424,6 +424,7 @@ class HealthCheckService
                     'port'      => $config->port,
                     'database'  => $config->name,
                     'version'   => 'Unknown',
+                    'tls'       => false,
                 ];
             }
 
@@ -432,12 +433,16 @@ class HealthCheckService
                 $version = 'Unknown';
             }
 
+            // Determine if TLS/SSL is actually in use for this connection
+            $hasTls = $this->checkDatabaseSslInUse($pdo, $config);
+
             return [
                 'connected' => true,
                 'host'      => $config->host,
                 'port'      => $config->port,
                 'database'  => $config->name,
                 'version'   => $version,
+                'tls'       => $hasTls,
             ];
         } catch (PDOException $pdoException) {
             return [
@@ -445,8 +450,42 @@ class HealthCheckService
                 'host'      => $config->host,
                 'port'      => $config->port,
                 'error'     => $pdoException->getMessage(),
+                'tls'       => false,
             ];
         }
+    }
+
+    /**
+     * Check if SSL/TLS is actually being used for the database connection
+     */
+    private function checkDatabaseSslInUse(PDO $pdo, DatabaseConfig $config): bool
+    {
+        try {
+            if ($config->isPostgres()) {
+                // Query pg_stat_ssl to check if SSL is in use for this connection
+                // PDO returns various types for PostgreSQL boolean: bool true, string 't', '1', or int 1
+                $stmt = $pdo->query('SELECT ssl FROM pg_stat_ssl WHERE pid = pg_backend_pid()');
+                if ($stmt !== false) {
+                    $result = $stmt->fetchColumn();
+
+                    // Use filter_var to handle all truthy representations (true, 't', '1', 1, 'true', 'on', 'yes')
+                    return filter_var($result, FILTER_VALIDATE_BOOLEAN);
+                }
+            } elseif ($config->isMariaDb()) {
+                // For MariaDB: check session status variable
+                $stmt = $pdo->query("SHOW SESSION STATUS LIKE 'Ssl_cipher'");
+                if ($stmt !== false) {
+                    $row = $stmt->fetch(PDO::FETCH_ASSOC);
+
+                    return !empty($row['Value']);
+                }
+            }
+        } catch (PDOException) {
+            // If we can't determine SSL status, fall back to config-based detection
+        }
+
+        // Fallback: check if SSL is explicitly configured
+        return $config->hasSsl() || $config->getPostgresSslMode() !== '';
     }
 
     /**
