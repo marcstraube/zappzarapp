@@ -30,8 +30,18 @@ make ssl-ca            # Regenerate CA only (invalidates existing certs!)
 To trust the internal CA in your browser/system:
 
 ```bash
-make ssl-trust-ca      # Shows instructions for your OS
+make ssl-trust-ca      # Auto-detects OS and trusts CA (requires sudo)
+make ssl-trust-ca-help # Show manual instructions for all OSes
 ```
+
+Supported auto-detection:
+
+- **macOS**: Adds to System Keychain
+- **Arch/Manjaro**: Uses `trust anchor`
+- **Debian/Ubuntu**: Uses `update-ca-certificates`
+- **RHEL/Fedora**: Uses `update-ca-trust`
+- **openSUSE**: Uses `update-ca-certificates`
+- **Windows**: Manual import required (see `ssl-trust-ca-help`)
 
 ### View Certificate Information
 
@@ -89,7 +99,8 @@ docker/certs/
 | --------------------- | -------------------------------------------------------- |
 | `ssl-internal`        | Generate CA + all certificates (default for development) |
 | `ssl-ca`              | Generate CA only                                         |
-| `ssl-trust-ca`        | Show instructions to trust CA in system                  |
+| `ssl-trust-ca`        | Auto-detect OS and trust CA in system (requires sudo)    |
+| `ssl-trust-ca-help`   | Show manual instructions to trust CA                     |
 | `ssl-info`            | Show certificate information                             |
 | `ssl-clean`           | Remove all certificates                                  |
 | `ssl-letsencrypt`     | Setup Let's Encrypt (production)                         |

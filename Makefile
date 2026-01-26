@@ -339,7 +339,8 @@ setup: ## Create directories, install dependencies (BOILERPLATE=1 to force file 
 	@echo -e "\033[0;32m║\033[0m   make up          \033[0;34mStart development environment\033[0m         \033[0;32m║\033[0m"
 	@echo -e "\033[0;32m║\033[0m                                                            \033[0;32m║\033[0m"
 	@echo -e "\033[0;32m║\033[0m Optional:                                                  \033[0;32m║\033[0m"
-	@echo -e "\033[0;32m║\033[0m   make ai-sync     \033[0;34mSync config to AI tools\033[0m               \033[0;32m║\033[0m"
+	@echo -e "\033[0;32m║\033[0m   make ssl-trust-ca \033[0;34mTrust CA for browser HTTPS\033[0m            \033[0;32m║\033[0m"
+	@echo -e "\033[0;32m║\033[0m   make ai-sync      \033[0;34mSync config to AI tools\033[0m              \033[0;32m║\033[0m"
 	@echo -e "\033[0;32m╚════════════════════════════════════════════════════════════╝\033[0m"
 
 ide-config: ## Configure all IDE database connections (PHPStorm + VS Code)
@@ -3512,12 +3513,80 @@ ssl-internal: ssl-ca ## Generate internal service certificates (signed by CA)
 	@chmod +x docker/certs/generate-internal.sh
 	@docker/certs/generate-internal.sh
 
-ssl-trust-ca: ## Show instructions to trust internal CA in your system
+ssl-trust-ca: ## Trust internal CA in your system (auto-detects OS, requires sudo)
+	@if [ ! -f docker/certs/ca/ca.crt ]; then \
+		echo -e "\033[0;31mError: CA certificate not found at docker/certs/ca/ca.crt\033[0m"; \
+		echo -e "\033[0;34mRun 'make ssl-internal' first to generate certificates.\033[0m"; \
+		exit 1; \
+	fi
+	@OS_TYPE=""; \
+	DISTRO=""; \
+	if [ "$$(uname)" = "Darwin" ]; then \
+		OS_TYPE="macos"; \
+	elif [ "$$(uname)" = "Linux" ]; then \
+		OS_TYPE="linux"; \
+		if [ -f /etc/os-release ]; then \
+			. /etc/os-release; \
+			case "$$ID" in \
+				arch|manjaro|endeavouros) DISTRO="arch";; \
+				debian|ubuntu|linuxmint|pop) DISTRO="debian";; \
+				fedora|rhel|centos|rocky|alma) DISTRO="rhel";; \
+				opensuse*|sles) DISTRO="suse";; \
+				*) \
+					if [ -f /etc/debian_version ]; then DISTRO="debian"; \
+					elif [ -f /etc/redhat-release ]; then DISTRO="rhel"; \
+					elif command -v trust >/dev/null 2>&1; then DISTRO="arch"; \
+					fi;; \
+			esac; \
+		fi; \
+	fi; \
+	if [ -z "$$OS_TYPE" ] || [ "$$OS_TYPE" = "linux" -a -z "$$DISTRO" ]; then \
+		echo -e "\033[0;33mCould not detect OS automatically.\033[0m"; \
+		$(MAKE) --silent ssl-trust-ca-help; \
+		exit 0; \
+	fi; \
+	echo -e "\033[0;33mTrusting internal CA certificate...\033[0m"; \
+	echo -e "\033[0;34mDetected: $$OS_TYPE $${DISTRO:+($$DISTRO)}\033[0m"; \
+	case "$$OS_TYPE-$$DISTRO" in \
+		macos-) \
+			echo -e "\033[0;34mAdding CA to macOS System Keychain (requires sudo)...\033[0m"; \
+			sudo security add-trusted-cert -d -r trustRoot -k /Library/Keychains/System.keychain docker/certs/ca/ca.crt && \
+			echo -e "\033[0;32m✓ CA trusted in macOS System Keychain\033[0m";; \
+		linux-arch) \
+			echo -e "\033[0;34mAdding CA via p11-kit trust anchor (requires sudo)...\033[0m"; \
+			sudo trust anchor --store docker/certs/ca/ca.crt && \
+			echo -e "\033[0;32m✓ CA trusted via trust anchor\033[0m";; \
+		linux-debian) \
+			echo -e "\033[0;34mAdding CA to Debian/Ubuntu trust store (requires sudo)...\033[0m"; \
+			sudo cp docker/certs/ca/ca.crt /usr/local/share/ca-certificates/zappzarapp-ca.crt && \
+			sudo update-ca-certificates && \
+			echo -e "\033[0;32m✓ CA trusted in system store\033[0m";; \
+		linux-rhel) \
+			echo -e "\033[0;34mAdding CA to RHEL/Fedora trust store (requires sudo)...\033[0m"; \
+			sudo cp docker/certs/ca/ca.crt /etc/pki/ca-trust/source/anchors/zappzarapp-ca.crt && \
+			sudo update-ca-trust && \
+			echo -e "\033[0;32m✓ CA trusted in system store\033[0m";; \
+		linux-suse) \
+			echo -e "\033[0;34mAdding CA to openSUSE trust store (requires sudo)...\033[0m"; \
+			sudo cp docker/certs/ca/ca.crt /etc/pki/trust/anchors/zappzarapp-ca.crt && \
+			sudo update-ca-certificates && \
+			echo -e "\033[0;32m✓ CA trusted in system store\033[0m";; \
+		*) \
+			echo -e "\033[0;33mUnsupported OS/distro combination.\033[0m"; \
+			$(MAKE) --silent ssl-trust-ca-help; \
+			exit 0;; \
+	esac
+	@echo ""
+	@echo -e "\033[0;34mNote: Browser trust may require additional steps:\033[0m"
+	@echo -e "\033[0;34m  - Firefox: Import docker/certs/ca/ca.crt in Settings > Privacy > Certificates\033[0m"
+	@echo -e "\033[0;34m  - Chrome/Edge: Usually trusts system store after restart\033[0m"
+
+ssl-trust-ca-help: ## Show manual instructions to trust internal CA
 	@echo "============================================================================"
 	@echo "To trust the internal CA in your system:"
 	@echo "============================================================================"
 	@echo ""
-	@echo "Linux (Arch):"
+	@echo "Linux (Arch/Manjaro):"
 	@echo "  sudo trust anchor --store docker/certs/ca/ca.crt"
 	@echo ""
 	@echo "Linux (Debian/Ubuntu):"
@@ -3527,6 +3596,10 @@ ssl-trust-ca: ## Show instructions to trust internal CA in your system
 	@echo "Linux (RHEL/Fedora):"
 	@echo "  sudo cp docker/certs/ca/ca.crt /etc/pki/ca-trust/source/anchors/zappzarapp-ca.crt"
 	@echo "  sudo update-ca-trust"
+	@echo ""
+	@echo "Linux (openSUSE):"
+	@echo "  sudo cp docker/certs/ca/ca.crt /etc/pki/trust/anchors/zappzarapp-ca.crt"
+	@echo "  sudo update-ca-certificates"
 	@echo ""
 	@echo "macOS:"
 	@echo "  sudo security add-trusted-cert -d -r trustRoot -k /Library/Keychains/System.keychain docker/certs/ca/ca.crt"
