@@ -140,6 +140,41 @@ teardown_file() {
 }
 
 # =============================================================================
+# Database Tools
+# =============================================================================
+
+@test "[Integration] Adminer is accessible via proxy" {
+    require_service "adminer"
+    run timeout 10 curl -sf --insecure https://localhost:8443/_dev/adminer/
+    assert_success
+    assert_output --partial "Adminer"
+}
+
+@test "[Integration] pgAdmin is accessible via proxy" {
+    require_service "pgadmin"
+    run timeout 10 curl -sf --insecure https://localhost:8443/_dev/pgadmin/
+    assert_success
+}
+
+@test "[Integration] pgcli is available in PHP container" {
+    require_service "php"
+    run docker compose exec -T php which pgcli
+    assert_success
+}
+
+@test "[Integration] mycli is available in PHP container" {
+    require_service "php"
+    run docker compose exec -T php which mycli
+    assert_success
+}
+
+@test "[Integration] litecli is available in PHP container" {
+    require_service "php"
+    run docker compose exec -T php which litecli
+    assert_success
+}
+
+# =============================================================================
 # Health Checks
 # =============================================================================
 

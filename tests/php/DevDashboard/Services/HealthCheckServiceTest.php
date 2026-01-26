@@ -132,24 +132,31 @@ class HealthCheckServiceTest extends TestCase
 
         $this->assertArrayHasKey('exists', $ssl);
         $this->assertIsBool($ssl['exists']);
+        $this->assertArrayHasKey('certificates', $ssl);
+        $this->assertIsArray($ssl['certificates']);
 
         if ($ssl['exists']) {
-            // If certificate exists, verify full structure
-            $this->assertArrayHasKey('valid', $ssl);
-            $this->assertIsBool($ssl['valid']);
+            // If certificates exist, verify structure of each certificate
+            foreach ($ssl['certificates'] as $key => $cert) {
+                $this->assertIsString($key);
+                $this->assertArrayHasKey('name', $cert);
+                $this->assertArrayHasKey('valid', $cert);
+                $this->assertIsString($cert['name']);
+                $this->assertIsBool($cert['valid']);
 
-            if ($ssl['valid']) {
-                $this->assertArrayHasKey('subject', $ssl);
-                $this->assertArrayHasKey('issuer', $ssl);
-                $this->assertArrayHasKey('valid_from', $ssl);
-                $this->assertArrayHasKey('valid_to', $ssl);
-                $this->assertArrayHasKey('days_until_expiry', $ssl);
-                $this->assertArrayHasKey('expires_soon', $ssl);
+                if ($cert['valid']) {
+                    $this->assertArrayHasKey('subject', $cert);
+                    $this->assertArrayHasKey('issuer', $cert);
+                    $this->assertArrayHasKey('valid_from', $cert);
+                    $this->assertArrayHasKey('valid_to', $cert);
+                    $this->assertArrayHasKey('days_until_expiry', $cert);
+                    $this->assertArrayHasKey('expires_soon', $cert);
 
-                $this->assertIsString($ssl['subject']);
-                $this->assertIsString($ssl['issuer']);
-                $this->assertIsNumeric($ssl['days_until_expiry']);
-                $this->assertIsBool($ssl['expires_soon']);
+                    $this->assertIsString($cert['subject']);
+                    $this->assertIsString($cert['issuer']);
+                    $this->assertIsNumeric($cert['days_until_expiry']);
+                    $this->assertIsBool($cert['expires_soon']);
+                }
             }
         }
     }

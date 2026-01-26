@@ -59,7 +59,7 @@ RUN apk add --no-cache \
     rabbitmq-c \
     rabbitmq-c-dev \
     # Compilation and installation of extensions
-    && docker-php-ext-install exif intl opcache zip pdo_pgsql pdo_mysql soap bcmath sockets pcntl \
+    && docker-php-ext-install exif intl opcache zip pdo_pgsql pdo_mysql pdo_sqlite soap bcmath sockets pcntl \
     && docker-php-ext-configure gd \
         --with-freetype \
         --with-jpeg \
@@ -117,6 +117,7 @@ COPY docker/php/conf.d/opcache.ini /usr/local/etc/php/conf.d/
 COPY docker/php/conf.d/pcntl.ini /usr/local/etc/php/conf.d/
 COPY docker/php/conf.d/pdo_mysql.ini /usr/local/etc/php/conf.d/
 COPY docker/php/conf.d/pdo_pgsql.ini /usr/local/etc/php/conf.d/
+COPY docker/php/conf.d/pdo_sqlite.ini /usr/local/etc/php/conf.d/
 COPY docker/php/conf.d/redis.ini /usr/local/etc/php/conf.d/
 COPY docker/php/conf.d/soap.ini /usr/local/etc/php/conf.d/
 COPY docker/php/conf.d/sockets.ini /usr/local/etc/php/conf.d/
@@ -140,9 +141,13 @@ FROM base AS development
 ARG USER_ID=1000
 ARG GROUP_ID=1000
 
-# Install development utilities and build tools
+# Install development utilities, build tools, and database CLI clients
 # hadolint ignore=SC2086 -- $PHPIZE_DEPS must be unquoted for word splitting (multiple packages)
-RUN apk add --no-cache git unzip su-exec $PHPIZE_DEPS linux-headers && \
+RUN apk add --no-cache git unzip su-exec $PHPIZE_DEPS linux-headers \
+    # Database CLI clients (standard)
+    postgresql-client mysql-client sqlite \
+    # Database CLI clients (enhanced with auto-complete)
+    pgcli mycli litecli && \
     if [ "$USER_ID" != "82" ]; then \
         apk add --no-cache --virtual .user-deps shadow && \
         usermod -u $USER_ID www-data && \

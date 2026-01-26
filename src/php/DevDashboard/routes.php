@@ -63,3 +63,4 @@ route('GET', '/_dev/api/health-check', $controller->apiHealthCheck(...));
 route('GET', '/_dev/api/services', $controller->apiServicesStatus(...));
 route('GET', '/_dev/api/logs', $controller->apiLogContent(...));
 route('POST', '/_dev/api/docs/generate', $docsController->apiGenerateDocs(...));
+route('POST', '/_dev/api/coverage/generate', $controller->apiGenerateCoverage(...));

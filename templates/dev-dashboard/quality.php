@@ -6,11 +6,33 @@
  * @var array<string, mixed> $test_coverage
  * @var array<int, array<string, mixed>> $quick_actions
  */
+
+$tabs = [
+    'php'      => 'PHP Tools',
+    'node'     => 'Node Tools',
+    'stats'    => 'Statistics',
+    'coverage' => 'Coverage',
+    'commands' => 'Commands',
+];
 ?>
-<div class="space-y-6">
-    <!-- PHP Quality Tools -->
+
+<!-- Sub-Navigation -->
+<nav class="sub-nav" style="background: white; border: 1px solid #e5e7eb; border-radius: 0.5rem; margin-bottom: 1.5rem; position: sticky; top: 120px; z-index: 50;">
+    <div style="display: flex; gap: 0;">
+        <?php foreach ($tabs as $id => $label): ?>
+            <a href="#"
+               data-tab="<?= $id ?>"
+               class="sub-nav-link <?= $id === 'php' ? 'active' : '' ?>"
+               style="display: inline-block; padding: 0.75rem 1rem; border-bottom: 2px solid transparent; color: #6b7280; font-size: 0.875rem; font-weight: 500; text-decoration: none; transition: all 0.2s;"
+            ><?= $label ?></a>
+        <?php endforeach; ?>
+    </div>
+</nav>
+
+<!-- Tab: PHP Tools -->
+<div id="tab-php" class="tab-panel">
     <div class="card">
-        <h2 class="text-lg font-semibold text-gray-900 mb-4">🐘 PHP Quality Tools</h2>
+        <h2 class="text-lg font-semibold text-gray-900 mb-4">PHP Quality Tools</h2>
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
             <!-- PHPStan -->
             <div class="border border-gray-200 rounded-lg p-4">
@@ -80,10 +102,12 @@
             </div>
         </div>
     </div>
+</div>
 
-    <!-- Node.js Quality Tools -->
+<!-- Tab: Node Tools -->
+<div id="tab-node" class="tab-panel hidden">
     <div class="card">
-        <h2 class="text-lg font-semibold text-gray-900 mb-4">🟢 Node.js Quality Tools</h2>
+        <h2 class="text-lg font-semibold text-gray-900 mb-4">Node.js Quality Tools</h2>
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
             <!-- ESLint -->
             <div class="border border-gray-200 rounded-lg p-4">
@@ -149,10 +173,12 @@
             </div>
         </div>
     </div>
+</div>
 
-    <!-- Code Statistics -->
+<!-- Tab: Statistics -->
+<div id="tab-stats" class="tab-panel hidden">
     <div class="card">
-        <h2 class="text-lg font-semibold text-gray-900 mb-4">📊 Code Statistics</h2>
+        <h2 class="text-lg font-semibold text-gray-900 mb-4">Code Statistics</h2>
         <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
             <div class="text-center p-4 bg-blue-50 rounded-lg">
                 <p class="text-3xl font-bold text-blue-600"><?= $code_stats['files']['php']['count'] ?></p>
@@ -195,66 +221,242 @@
             </div>
         </div>
     </div>
+</div>
 
-    <!-- Test Coverage -->
+<!-- Tab: Coverage -->
+<div id="tab-coverage" class="tab-panel hidden">
     <div class="card">
-        <h2 class="text-lg font-semibold text-gray-900 mb-4">📈 Test Coverage</h2>
+        <h2 class="text-lg font-semibold text-gray-900 mb-4">Test Coverage</h2>
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <!-- PHP Coverage -->
+            <?php
+            $phpAvailable = $test_coverage['php']['available'] ?? false;
+            $phpOutdated  = $test_coverage['php']['outdated'] ?? false;
+            ?>
             <div class="border border-gray-200 rounded-lg p-4">
-                <h3 class="font-medium text-gray-900 mb-3">PHP (PHPUnit)</h3>
-                <?php if ($test_coverage['php']['available']): ?>
-                    <div class="flex items-center space-x-2 mb-3">
-                        <span class="badge badge-green">✓ Report Available</span>
-                    </div>
-                    <a href="<?= $test_coverage['php']['report_path'] ?>"
-                       target="_blank"
-                       class="btn btn-primary btn-block">
-                        View Coverage Report →
-                    </a>
-                <?php else: ?>
-                    <div class="bg-yellow-50 border border-yellow-200 rounded p-3">
-                        <p class="text-sm text-yellow-800 mb-2"><?= $test_coverage['php']['message'] ?></p>
-                        <code class="text-xs bg-yellow-100 px-2 py-1 rounded text-yellow-900">make test-coverage-php</code>
-                    </div>
-                <?php endif; ?>
+                <div class="flex items-center justify-between mb-3">
+                    <h3 class="font-medium text-gray-900">PHP (PHPUnit)</h3>
+                    <?php if (!$phpAvailable): ?>
+                        <span class="badge badge-gray">Not generated</span>
+                    <?php elseif ($phpOutdated): ?>
+                        <span class="badge badge-yellow">Outdated</span>
+                    <?php else: ?>
+                        <span class="badge badge-green">Fresh</span>
+                    <?php endif; ?>
+                </div>
+                <div class="flex gap-2">
+                    <?php if ($phpAvailable): ?>
+                        <a href="<?= $test_coverage['php']['report_path'] ?>"
+                           target="_blank"
+                           class="btn btn-primary text-sm" style="flex: 1; text-align: center;">
+                            View Report
+                        </a>
+                    <?php endif; ?>
+                    <button
+                        id="btn-coverage-php"
+                        type="button"
+                        onclick="generateCoverage('php')"
+                        class="btn btn-secondary text-sm"
+                        style="<?= $phpAvailable ? '' : 'flex: 1;' ?>"
+                    >
+                        <?= $phpAvailable ? 'Regenerate' : 'Generate' ?>
+                    </button>
+                </div>
             </div>
 
             <!-- Node Coverage -->
+            <?php
+            $nodeAvailable = $test_coverage['node']['available'] ?? false;
+            $nodeOutdated  = $test_coverage['node']['outdated'] ?? false;
+            ?>
             <div class="border border-gray-200 rounded-lg p-4">
-                <h3 class="font-medium text-gray-900 mb-3">Node.js (Vitest)</h3>
-                <?php if ($test_coverage['node']['available']): ?>
-                    <div class="flex items-center space-x-2 mb-3">
-                        <span class="badge badge-green">✓ Report Available</span>
-                    </div>
-                    <a href="<?= $test_coverage['node']['report_path'] ?>"
-                       target="_blank"
-                       class="btn btn-primary btn-block">
-                        View Coverage Report →
-                    </a>
-                <?php else: ?>
-                    <div class="bg-yellow-50 border border-yellow-200 rounded p-3">
-                        <p class="text-sm text-yellow-800 mb-2"><?= $test_coverage['node']['message'] ?></p>
-                        <code class="text-xs bg-yellow-100 px-2 py-1 rounded text-yellow-900">make test-coverage-node</code>
-                    </div>
-                <?php endif; ?>
+                <div class="flex items-center justify-between mb-3">
+                    <h3 class="font-medium text-gray-900">Node.js (Vitest)</h3>
+                    <?php if (!$nodeAvailable): ?>
+                        <span class="badge badge-gray">Not generated</span>
+                    <?php elseif ($nodeOutdated): ?>
+                        <span class="badge badge-yellow">Outdated</span>
+                    <?php else: ?>
+                        <span class="badge badge-green">Fresh</span>
+                    <?php endif; ?>
+                </div>
+                <div class="flex gap-2">
+                    <?php if ($nodeAvailable): ?>
+                        <a href="<?= $test_coverage['node']['report_path'] ?>"
+                           target="_blank"
+                           class="btn btn-primary text-sm" style="flex: 1; text-align: center;">
+                            View Report
+                        </a>
+                    <?php endif; ?>
+                    <button
+                        id="btn-coverage-node"
+                        type="button"
+                        onclick="generateNodeCoverage()"
+                        class="btn btn-secondary text-sm"
+                        style="<?= $nodeAvailable ? '' : 'flex: 1;' ?>"
+                    >
+                        <?= $nodeAvailable ? 'Regenerate' : 'Generate' ?>
+                    </button>
+                </div>
             </div>
         </div>
+        <p class="text-xs text-gray-500 mt-3">
+            Note: PHP coverage runs via dashboard. Node coverage requires terminal access.
+        </p>
     </div>
+</div>
 
-    <!-- Quick Actions -->
+<!-- Tab: Commands -->
+<div id="tab-commands" class="tab-panel hidden">
     <div class="card">
-        <h2 class="text-lg font-semibold text-gray-900 mb-4">⚡ Quick Actions</h2>
+        <h2 class="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h2>
         <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
             <?php foreach ($quick_actions as $action): ?>
-                <div class="border border-gray-200 rounded-lg p-4">
-                    <h3 class="font-medium text-gray-900 mb-1"><?= htmlspecialchars((string) $action['label']) ?></h3>
-                    <p class="text-sm text-gray-600 mb-3"><?= htmlspecialchars((string) $action['description']) ?></p>
-                    <code class="text-xs bg-gray-100 px-2 py-1 rounded text-gray-900 font-mono">
-                        <?= htmlspecialchars((string) $action['command']) ?>
-                    </code>
+                <div class="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition">
+                    <div class="flex items-start justify-between gap-4">
+                        <div style="flex: 1;">
+                            <h3 class="font-medium text-gray-900"><?= htmlspecialchars((string) $action['label']) ?></h3>
+                            <p class="text-sm text-gray-600 mt-1"><?= htmlspecialchars((string) $action['description']) ?></p>
+                            <code class="text-xs bg-gray-100 px-2 py-1 rounded text-gray-900 font-mono block mt-2">
+                                <?= htmlspecialchars((string) $action['command']) ?>
+                            </code>
+                        </div>
+                        <button type="button" onclick="copyCmd('<?= htmlspecialchars((string) $action['command']) ?>', this)" class="btn btn-secondary text-xs" style="flex-shrink: 0;">Copy</button>
+                    </div>
                 </div>
             <?php endforeach; ?>
         </div>
     </div>
 </div>
+
+<style>
+.sub-nav-link.active { color: #2563eb !important; border-bottom-color: #2563eb !important; }
+.sub-nav-link:hover { color: #374151; border-bottom-color: #d1d5db; }
+</style>
+
+<script>
+function switchTab(tabId) {
+    document.querySelectorAll('.sub-nav-link').forEach(l => l.classList.remove('active'));
+    document.querySelector(`.sub-nav-link[data-tab="${tabId}"]`)?.classList.add('active');
+
+    document.querySelectorAll('.tab-panel').forEach(p => p.classList.add('hidden'));
+    document.getElementById('tab-' + tabId)?.classList.remove('hidden');
+
+    history.replaceState(null, '', '#' + tabId);
+}
+
+document.querySelectorAll('.sub-nav-link').forEach(link => {
+    link.addEventListener('click', (e) => {
+        e.preventDefault();
+        switchTab(link.dataset.tab);
+    });
+});
+
+const hash = window.location.hash.slice(1);
+if (hash && document.getElementById('tab-' + hash)) {
+    switchTab(hash);
+}
+
+function copyCmd(cmd, btn) {
+    navigator.clipboard.writeText(cmd).then(() => {
+        const orig = btn.textContent;
+        btn.textContent = 'Copied!';
+        btn.classList.add('bg-green-100');
+        setTimeout(() => { btn.textContent = orig; btn.classList.remove('bg-green-100'); }, 1500);
+    });
+}
+
+async function generateCoverage(type) {
+    const btn = document.getElementById('btn-coverage-' + type);
+    if (!btn) return;
+
+    const originalText = btn.textContent;
+    btn.disabled = true;
+    btn.textContent = 'Running tests...';
+
+    try {
+        const response = await fetch('/_dev/api/coverage/generate?type=' + type, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' }
+        });
+
+        const result = await response.json();
+
+        if (result.success) {
+            btn.textContent = 'Done!';
+            btn.classList.remove('btn-secondary');
+            btn.classList.add('btn-success');
+            setTimeout(() => location.reload(), 1000);
+        } else {
+            btn.textContent = 'Failed';
+            btn.classList.remove('btn-secondary');
+            btn.classList.add('btn-danger');
+            alert('Error: ' + result.message + (result.output ? '\n\n' + result.output.slice(0, 500) : ''));
+            setTimeout(() => {
+                btn.textContent = originalText;
+                btn.classList.remove('btn-danger');
+                btn.classList.add('btn-secondary');
+                btn.disabled = false;
+            }, 2000);
+        }
+    } catch (error) {
+        btn.textContent = 'Error';
+        btn.classList.remove('btn-secondary');
+        btn.classList.add('btn-danger');
+        alert('Request failed: ' + error.message);
+        setTimeout(() => {
+            btn.textContent = originalText;
+            btn.classList.remove('btn-danger');
+            btn.classList.add('btn-secondary');
+            btn.disabled = false;
+        }, 2000);
+    }
+}
+
+async function generateNodeCoverage() {
+    const btn = document.getElementById('btn-coverage-node');
+    if (!btn) return;
+
+    const originalText = btn.textContent;
+    btn.disabled = true;
+    btn.textContent = 'Running tests...';
+
+    try {
+        const response = await fetch('/dev-dashboard/node/coverage/generate', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' }
+        });
+
+        const result = await response.json();
+
+        if (result.success) {
+            btn.textContent = 'Done!';
+            btn.classList.remove('btn-secondary');
+            btn.classList.add('btn-success');
+            setTimeout(() => location.reload(), 1000);
+        } else {
+            btn.textContent = 'Failed';
+            btn.classList.remove('btn-secondary');
+            btn.classList.add('btn-danger');
+            alert('Error: ' + result.message + (result.output ? '\n\n' + result.output.slice(0, 500) : ''));
+            setTimeout(() => {
+                btn.textContent = originalText;
+                btn.classList.remove('btn-danger');
+                btn.classList.add('btn-secondary');
+                btn.disabled = false;
+            }, 2000);
+        }
+    } catch (error) {
+        btn.textContent = 'Error';
+        btn.classList.remove('btn-secondary');
+        btn.classList.add('btn-danger');
+        alert('Request failed: ' + error.message);
+        setTimeout(() => {
+            btn.textContent = originalText;
+            btn.classList.remove('btn-danger');
+            btn.classList.add('btn-secondary');
+            btn.disabled = false;
+        }, 2000);
+    }
+}
+</script>

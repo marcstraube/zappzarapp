@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Database Tool Not Running | zappzarapp</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+        }
+        .card {
+            background: white;
+            border-radius: 1rem;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+            padding: 2.5rem;
+            max-width: 500px;
+            text-align: center;
+        }
+        .icon { font-size: 4rem; margin-bottom: 1rem; }
+        h1 { font-size: 1.5rem; color: #1f2937; margin-bottom: 0.5rem; }
+        p { color: #6b7280; margin-bottom: 1.5rem; line-height: 1.6; }
+        .btn {
+            display: inline-block;
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.5rem;
+            font-weight: 600;
+            font-size: 0.9rem;
+            cursor: pointer;
+            border: none;
+            transition: all 0.2s;
+        }
+        .btn-primary {
+            background: #7c3aed;
+            color: white;
+        }
+        .btn-primary:hover { background: #6d28d9; }
+        .btn-secondary {
+            background: #f3f4f6;
+            color: #374151;
+            border: 1px solid #d1d5db;
+        }
+        .btn-secondary:hover { background: #e5e7eb; }
+        .btn-group {
+            display: flex;
+            gap: 0.75rem;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-bottom: 1.5rem;
+        }
+        .command-box {
+            background: #f9fafb;
+            border: 1px solid #e5e7eb;
+            border-radius: 0.5rem;
+            padding: 0.75rem 1rem;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+        }
+        .command-box code {
+            font-family: ui-monospace, monospace;
+            font-size: 0.9rem;
+            color: #7c3aed;
+        }
+        .command-box button {
+            padding: 0.4rem 0.75rem;
+            font-size: 0.75rem;
+        }
+        .links {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            margin-top: 1.5rem;
+            padding-top: 1.5rem;
+            border-top: 1px solid #e5e7eb;
+        }
+        a { color: #7c3aed; text-decoration: none; font-weight: 500; }
+        a:hover { text-decoration: underline; }
+        .tool-name { color: #7c3aed; font-weight: 600; }
+        .hidden { display: none !important; }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <div class="icon">&#128268;</div>
+        <h1><span id="tool-name">Database Tool</span> Not Running</h1>
+        <p>Start the tool to access it:</p>
+
+        <!-- Primary action for specific tool -->
+        <div id="specific-cmd" class="command-box">
+            <code id="specific-cmd-text">make adminer-up</code>
+            <button class="btn btn-secondary" onclick="copyCmd('specific-cmd-text', this)">Copy</button>
+        </div>
+
+        <!-- Start both button -->
+        <div class="btn-group">
+            <button class="btn btn-primary" onclick="copyCmd(null, this, 'make db-tools-up')">
+                Start Both Tools
+            </button>
+        </div>
+
+        <!-- Alternative tool -->
+        <p style="font-size: 0.875rem; margin-bottom: 0.5rem;">Or start the other tool:</p>
+        <div id="alt-cmd" class="command-box">
+            <code id="alt-cmd-text">make pgadmin-up</code>
+            <button class="btn btn-secondary" onclick="copyCmd('alt-cmd-text', this)">Copy</button>
+        </div>
+
+        <div class="links">
+            <a href="/_dev/database#tools">Database Dashboard</a>
+            <a href="/_dev">Dev Dashboard</a>
+        </div>
+    </div>
+
+    <script>
+    // Detect which tool was requested
+    const path = window.location.pathname;
+    const isAdminer = path.includes('adminer');
+    const isPgAdmin = path.includes('pgadmin');
+
+    const toolName = document.getElementById('tool-name');
+    const specificCmd = document.getElementById('specific-cmd-text');
+    const altCmd = document.getElementById('alt-cmd-text');
+
+    if (isAdminer) {
+        toolName.textContent = 'Adminer';
+        specificCmd.textContent = 'make adminer-up';
+        altCmd.textContent = 'make pgadmin-up';
+    } else if (isPgAdmin) {
+        toolName.textContent = 'pgAdmin';
+        specificCmd.textContent = 'make pgadmin-up';
+        altCmd.textContent = 'make adminer-up';
+    }
+
+    function copyCmd(elementId, btn, directCmd) {
+        const cmd = directCmd || document.getElementById(elementId).textContent;
+        navigator.clipboard.writeText(cmd).then(() => {
+            const orig = btn.textContent;
+            btn.textContent = 'Copied!';
+            setTimeout(() => { btn.textContent = orig; }, 1500);
+        });
+    }
+    </script>
+</body>
+</html>

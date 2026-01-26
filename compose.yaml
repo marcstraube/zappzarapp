@@ -218,6 +218,9 @@ services:
       - ENABLE_MAILPIT=${ENABLE_MAILPIT:-false}
       - ENABLE_SEAWEEDFS=${ENABLE_SEAWEEDFS:-false}
       - ENABLE_RABBITMQ=${ENABLE_RABBITMQ:-false}
+      # Database tools (development only)
+      - ENABLE_ADMINER=${ENABLE_ADMINER:-false}
+      - ENABLE_PGADMIN=${ENABLE_PGADMIN:-false}
       # Database (12-Factor: DATABASE_URL takes precedence)
       # Priority: DATABASE_URL > DB_PASSWORD_FILE (secrets) > DB_PASSWORD (env var)
       - DATABASE_URL=${DATABASE_URL:-}
@@ -379,6 +382,26 @@ services:
   # OPTIONAL SERVICES (alphabetically sorted)
   # ═══════════════════════════════════════════════════════════════════════════
 
+  # Adminer - Universal database admin UI (PostgreSQL, MariaDB, SQLite)
+  # Lightweight web-based database management. Access via Nginx proxy.
+  # Usage: ENABLE_ADMINER=true in .env, then 'make up' or 'make adminer-up'
+  # Docs: https://www.adminer.org/
+  adminer:
+    build:
+      context: .
+      dockerfile: docker/adminer/Dockerfile
+    container_name: ${COMPOSE_PROJECT_NAME:-zappzarapp}-adminer
+    restart: unless-stopped
+    profiles: ["adminer"]
+    environment:
+      TZ: ${TZ:-UTC}
+      ADMINER_DESIGN: pepa-linha
+    expose:
+      - "8080"
+    networks:
+      - database
+      - backend
+
   # Elasticsearch - Distributed search and analytics engine
   # Full-featured search with aggregations, analytics, geo-queries.
   # Resource-intensive (min 2GB RAM). Use Meilisearch for simpler use cases.
@@ -524,6 +547,38 @@ services:
       - backend
     # Health check defined in Dockerfile
 
+  # pgAdmin - PostgreSQL web-based admin interface
+  # Full-featured PostgreSQL management with query tool, ERD diagrams.
+  # Pre-configured with PostgreSQL connection. Access via Nginx proxy.
+  # Usage: ENABLE_PGADMIN=true in .env, then 'make up' or 'make pgadmin-up'
+  # Docs: https://www.pgadmin.org/
+  pgadmin:
+    build:
+      context: .
+      dockerfile: docker/pgadmin/Dockerfile
+    container_name: ${COMPOSE_PROJECT_NAME:-zappzarapp}-pgadmin
+    restart: unless-stopped
+    profiles: ["pgadmin"]
+    environment:
+      TZ: ${TZ:-UTC}
+      PGADMIN_DEFAULT_EMAIL: admin@local.dev
+      # Password loaded from secrets via entrypoint wrapper
+      PGADMIN_CONFIG_SERVER_MODE: "False"
+      PGADMIN_CONFIG_MASTER_PASSWORD_REQUIRED: "False"
+      PGADMIN_CONFIG_CHECK_EMAIL_DELIVERABILITY: "False"
+      # Disable CSRF for reverse proxy compatibility (development only)
+      PGADMIN_CONFIG_WTF_CSRF_ENABLED: "False"
+      PGADMIN_CONFIG_ENHANCED_COOKIE_PROTECTION: "False"
+      SCRIPT_NAME: /_dev/pgadmin
+    expose:
+      - "80"
+    volumes:
+      - pgadmin-data:/var/lib/pgadmin
+      - ./secrets:/run/secrets:ro
+    networks:
+      - database
+      - backend
+
   # RabbitMQ - Enterprise message broker
   # Reliable messaging with routing, priorities, acknowledgments, and dead letter queues.
   # Includes management UI for monitoring queues and connections.
@@ -626,6 +681,9 @@ volumes:
   meilisearch-data:
     driver: local
     name: ${COMPOSE_PROJECT_NAME:-zappzarapp}-meilisearch-data
+  pgadmin-data:
+    driver: local
+    name: ${COMPOSE_PROJECT_NAME:-zappzarapp}-pgadmin-data
   mercure-data:
     driver: local
     name: ${COMPOSE_PROJECT_NAME:-zappzarapp}-mercure-data

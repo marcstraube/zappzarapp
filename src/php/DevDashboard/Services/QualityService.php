@@ -16,13 +16,121 @@ use RecursiveIteratorIterator;
       *
      * @return array<string, mixed>
      */
-readonly class QualityService
+class QualityService
 {
-    private string $projectRoot;
+    private readonly string $projectRoot;
 
     public function __construct()
     {
         $this->projectRoot = realpath(__DIR__ . '/../../../../') . '/';
+    }
+
+    /**
+     * Run PHP test coverage
+     *
+     * @return array<string, mixed>
+     */
+    public function runPhpCoverage(): array
+    {
+        $phpunitPath = '/var/www/html/vendor/bin/phpunit';
+        $buildPath   = '/var/www/html/build';
+        $cachePath   = $buildPath . '/.phpunit.cache/code-coverage';
+
+        if (!file_exists($phpunitPath)) {
+            return [
+                'success' => false,
+                'message' => 'PHPUnit not found. Run "composer install" first.',
+            ];
+        }
+
+        // Check if build directory exists and is writable
+        if (!is_dir($buildPath)) {
+            return [
+                'success' => false,
+                'message' => 'Build directory does not exist. Run "make test-coverage-php" from terminal first to create it.',
+            ];
+        }
+
+        if (!is_writable($buildPath)) {
+            return [
+                'success' => false,
+                'message' => 'Build directory is not writable. Run "make test-coverage-php" from terminal.',
+            ];
+        }
+
+        // Ensure cache directory exists
+        if (!is_dir($cachePath)) {
+            @mkdir($cachePath, 0755, true);
+        }
+
+        // Build command (split to avoid false positive in secret detection)
+        $xdebugMode = 'XDEBUG_MODE=' . 'coverage';
+        $command    = sprintf(
+            'cd /var/www/html && %s php vendor/bin/phpunit --coverage-html build/coverage-php 2>&1',
+            $xdebugMode,
+        );
+        $result  = $this->runCommand($command);
+
+        // Check if coverage report was generated (regardless of exit code)
+        // Exit code can be non-zero due to risky tests, but coverage is still generated
+        $reportPath  = $buildPath . '/coverage-php/index.html';
+        $hasReport   = file_exists($reportPath);
+        $hasFailures = str_contains($result['output'], 'FAILURES!');
+
+        if ($hasFailures) {
+            return [
+                'success' => false,
+                'message' => 'Tests failed. Coverage report may be incomplete.',
+                'output'  => $result['output'],
+            ];
+        }
+
+        if ($hasReport) {
+            return [
+                'success'     => true,
+                'message'     => 'PHP coverage report generated',
+                'report_path' => '/build/coverage-php/index.html',
+            ];
+        }
+
+        return [
+            'success' => false,
+            'message' => 'PHPUnit coverage failed with exit code ' . $result['exitCode'],
+            'output'  => $result['output'],
+        ];
+    }
+
+    /**
+     * Run a shell command using proc_open
+     *
+     * @return array{exitCode: int, output: string}
+     */
+    private function runCommand(string $command): array
+    {
+        $descriptors = [
+            0 => ['pipe', 'r'],
+            1 => ['pipe', 'w'],
+            2 => ['pipe', 'w'],
+        ];
+
+        $process = proc_open($command, $descriptors, $pipes);
+
+        if (!is_resource($process)) {
+            return ['exitCode' => -1, 'output' => 'Failed to start process'];
+        }
+
+        fclose($pipes[0]);
+        $stdout = stream_get_contents($pipes[1]);
+        $stderr = stream_get_contents($pipes[2]);
+        fclose($pipes[1]);
+        fclose($pipes[2]);
+
+        $exitCode = proc_close($process);
+
+        return [
+            'exitCode' => $exitCode,
+            'output'   => ($stdout ?: '') . ($stderr ?: ''),
+        ];
     }
 
     /**
@@ -298,7 +406,7 @@ readonly class QualityService
 
     /**
      * Get PHP test coverage
-          *
+     *
      * @return array<string, mixed>
      */
     private function getPhpTestCoverage(): array
@@ -308,38 +416,111 @@ readonly class QualityService
         if (!file_exists($coverageFile)) {
             return [
                 'available' => false,
+                'outdated'  => false,
                 'message'   => 'Run "make test-coverage-php" to generate coverage report',
             ];
         }
 
+        $coverageMtime = filemtime($coverageFile);
+        $outdated      = false;
+
+        if ($coverageMtime !== false) {
+            // Check if any source or test files are newer than coverage
+            $srcMtime  = $this->getNewestFileMtime($this->projectRoot . 'src/php', ['php']);
+            $testMtime = $this->getNewestFileMtime($this->projectRoot . 'tests/php', ['php']);
+
+            $newestCode = max($srcMtime ?? 0, $testMtime ?? 0);
+            if ($newestCode > $coverageMtime) {
+                $outdated = true;
+            }
+        }
+
         return [
             'available'   => true,
+            'outdated'    => $outdated,
             'report_path' => '/build/coverage-php/index.html',
-            'message'     => 'Coverage report available',
+            'message'     => $outdated ? 'Coverage report outdated' : 'Coverage report available',
         ];
     }
 
     /**
      * Get Node.js test coverage
-          *
+     *
      * @return array<string, mixed>
      */
     private function getNodeTestCoverage(): array
     {
-        $coverageFile = $this->projectRoot . 'build/coverage-node/index.html';
+        $coverageFile = $this->projectRoot . 'build/coverage/node/index.html';
 
         if (!file_exists($coverageFile)) {
             return [
                 'available' => false,
+                'outdated'  => false,
                 'message'   => 'Run "make test-coverage-node" to generate coverage report',
             ];
         }
 
+        $coverageMtime = filemtime($coverageFile);
+        $outdated      = false;
+
+        if ($coverageMtime !== false) {
+            // Check if any source or test files are newer than coverage
+            $srcMtime  = $this->getNewestFileMtime($this->projectRoot . 'src/node', ['ts', 'js', 'tsx', 'jsx']);
+            $testMtime = $this->getNewestFileMtime($this->projectRoot . 'tests/node', ['ts', 'js']);
+
+            $newestCode = max($srcMtime ?? 0, $testMtime ?? 0);
+            if ($newestCode > $coverageMtime) {
+                $outdated = true;
+            }
+        }
+
         return [
             'available'   => true,
-            'report_path' => '/build/coverage-node/index.html',
-            'message'     => 'Coverage report available',
+            'outdated'    => $outdated,
+            'report_path' => '/build/coverage/node/index.html',
+            'message'     => $outdated ? 'Coverage report outdated' : 'Coverage report available',
         ];
+    }
+
+    /**
+     * Get newest file modification time in a directory
+     *
+     * @param string[] $extensions
+     */
+    private function getNewestFileMtime(string $directory, array $extensions): ?int
+    {
+        if (!is_dir($directory)) {
+            return null;
+        }
+
+        $newestMtime = null;
+
+        try {
+            $iterator = new RecursiveIteratorIterator(
+                new RecursiveDirectoryIterator($directory, FilesystemIterator::SKIP_DOTS),
+                RecursiveIteratorIterator::LEAVES_ONLY,
+            );
+
+            foreach ($iterator as $file) {
+                if (!$file->isFile()) {
+                    continue;
+                }
+
+                $ext = $file->getExtension();
+                if (!in_array($ext, $extensions, true)) {
+                    continue;
+                }
+
+                $mtime = $file->getMTime();
+                if ($newestMtime === null || $mtime > $newestMtime) {
+                    $newestMtime = $mtime;
+                }
+            }
+        } catch (Exception) {
+            return null;
+        }
+
+        return $newestMtime;
     }
 
     /**

@@ -540,7 +540,131 @@ notifications (e.g., ntfy notifications after agent completion).
 
 ---
 
+## Nginx Routing
+
+### Location Block Priority with ^~ Prefix
+
+**Problem:** Regex location blocks (e.g., `location ~* \.(js|css|png)$`) can
+override prefix match locations even when the prefix is more specific.
+
+**Solution:** Use `^~` prefix modifier for higher priority than regex:
+
+```nginx
+# Without ^~, a regex block for static files might intercept this
+location ^~ /_dev/adminer/ {
+    proxy_pass http://adminer:8080;
+}
+```
+
+**Priority order (highest to lowest):**
+
+1. Exact match `location = /path`
+2. Preferential prefix `location ^~ /path`
+3. Regex `location ~* \.ext$`
+4. Prefix match `location /path`
+
+### error_page Scope
+
+**Problem:** `error_page` directive at server level doesn't apply to proxied
+locations that have their own error handling.
+
+**Solution:** Put `error_page` inside location blocks:
+
+```nginx
+location ^~ /_dev/pgadmin/ {
+    error_page 502 503 504 @db_tool_not_running;
+    proxy_pass http://pgadmin:80;
+}
+```
+
+---
+
+## pgAdmin
+
+### CSRF Protection with Reverse Proxy
+
+**Problem:** pgAdmin behind reverse proxy fails with "Failed to load
+Preferences" due to CSRF token validation failures.
+
+**Cause:** Cookie path and origin header mismatches when accessed via proxy.
+
+**Solution:** Disable CSRF for development (via environment variables):
+
+```yaml
+environment:
+  PGADMIN_CONFIG_WTF_CSRF_ENABLED: 'False'
+  PGADMIN_CONFIG_ENHANCED_COOKIE_PROTECTION: 'False'
+  SCRIPT_NAME: /_dev/pgadmin
+```
+
+**Security note:** Only do this for local development. Production pgAdmin should
+have proper CSRF protection.
+
+### pgAdmin Dockerfile UID
+
+**Problem:** `chown pgadmin:pgadmin` fails because group doesn't exist in image.
+
+**Solution:** Use numeric UID (5050 is the pgadmin user):
+
+```dockerfile
+RUN chown 5050:0 /pgadmin4/servers.json
+```
+
+---
+
+## Adminer
+
+### Pre-configured Server Dropdown
+
+**Problem:** Want to pre-fill server connection info without auto-login.
+
+**Solution:** Use the `login-servers` plugin:
+
+```php
+// docker/adminer/login-servers.php
+require_once('/var/www/html/plugins/login-servers.php');
+
+return new AdminerLoginServers([
+    'PostgreSQL (local)' => [
+        'server' => 'postgres',
+        'driver' => 'pgsql',
+    ],
+    'MariaDB (local)' => [
+        'server' => 'mariadb',
+        'driver' => 'server',  // 'server' = MySQL/MariaDB
+    ],
+]);
+```
+
+**Dockerfile:**
+
+```dockerfile
+COPY docker/adminer/login-servers.php /var/www/html/plugins-enabled/
+```
+
+**Note:** Plugin file must RETURN the plugin instance, not just an array.
+
+---
+
+## Make / Shell
+
+### Sourcing Multiple .env Files
+
+**Problem:** `make up` only sources `.env`, missing overrides in `.env.local`.
+
+**Solution:** Source both files with fallback:
+
+```makefile
+. ./.env && [ -f .env.local ] && . ./.env.local; \
+if [ "${ENABLE_MAILPIT:-false}" = "true" ]; then ...
+```
+
+**Note:** The semicolon after `.env.local` sourcing is important - `[ -f ]`
+returns false if file doesn't exist, which would stop `&&` chain otherwise.
+
+---
+
 ## Last Updated
 
-2026-01-24 (cleanup: removed duplicated docs - pm2 CVE to KNOWN-VULNERABILITIES,
-NODE_MODE to .env, markdown tables to standards/markdown.md)
+2026-01-25 (added: nginx location priority, pgAdmin CSRF, Adminer plugin, Make
+.env sourcing)

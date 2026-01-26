@@ -7,7 +7,7 @@
     <link rel="icon" type="image/svg+xml" href="/assets/dev-dashboard/favicon.svg">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f9fafb; color: #111827; line-height: 1.5; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f9fafb; color: #111827; line-height: 1.5; min-height: 100vh; display: flex; flex-direction: column; }
         .container { max-width: 1280px; margin: 0 auto; padding: 0 1rem; }
 
         /* Sticky Top Bar */
@@ -27,7 +27,7 @@
         nav a.active { color: #2563eb; border-color: #2563eb; }
 
         /* Main */
-        main { padding: 2rem 0; }
+        main { padding: 2rem 0; flex: 1; }
 
         /* Cards */
         .card { background: white; border-radius: 0.5rem; box-shadow: 0 1px 3px rgba(0,0,0,0.1); padding: 1.5rem; margin-bottom: 1.5rem; }
@@ -115,7 +115,7 @@
         table tr:hover { background: #f9fafb; }
 
         /* Footer */
-        footer { background: white; border-top: 1px solid #e5e7eb; margin-top: 3rem; padding: 1rem 0; text-align: center; font-size: 0.875rem; color: #6b7280; }
+        footer { background: white; border-top: 1px solid #e5e7eb; padding: 1rem 0; text-align: center; font-size: 0.875rem; color: #6b7280; margin-top: auto; }
         footer a { color: #2563eb; text-decoration: none; }
         footer a:hover { text-decoration: underline; }
 

@@ -223,3 +223,55 @@ load 'helpers/setup'
     [[ -z "${NODE_MODE:-}" ]]
     [[ -z "${ENABLE_REDIS:-}" ]]
 }
+
+# =============================================================================
+# make init Behavior
+# =============================================================================
+
+@test "make init does not overwrite existing .env.local" {
+    # Skip if .env.local doesn't exist (nothing to protect)
+    if [[ ! -f .env.local ]]; then
+        skip ".env.local not present - cannot test preservation"
+    fi
+
+    # Store checksum of existing .env.local
+    local original_checksum
+    original_checksum=$(md5sum .env.local | cut -d' ' -f1)
+
+    # Run make init
+    run make init
+    assert_success
+
+    # Verify .env.local was not modified
+    local new_checksum
+    new_checksum=$(md5sum .env.local | cut -d' ' -f1)
+
+    [[ "$original_checksum" == "$new_checksum" ]]
+}
+
+@test "make init creates .env.local from template" {
+    # This test requires temporarily removing .env.local
+    # Only run if we can safely backup/restore
+    if [[ -f .env.local ]]; then
+        skip ".env.local exists - skipping creation test to avoid data loss"
+    fi
+
+    # Verify .env.local.example exists
+    if [[ ! -f .env.local.example ]]; then
+        skip ".env.local.example not present"
+    fi
+
+    # Run make init
+    run make init
+    assert_success
+
+    # Verify .env.local was created
+    [[ -f .env.local ]]
+
+    # Verify it contains expected content (USER_ID should be substituted)
+    run grep "^USER_ID=" .env.local
+    assert_success
+
+    # Clean up - remove created file
+    rm -f .env.local
+}

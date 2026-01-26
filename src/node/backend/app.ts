@@ -10,11 +10,11 @@ import pino from 'pino';
 import pinoHttp from 'pino-http';
 import { Pool } from 'pg';
 import { HealthCheckService } from './services/HealthCheckService.js';
+import { createAppRouter } from './App/index.js';
+import { createDevDashboardRouter } from './DevDashboard/index.js';
 
-const NODE_ENV = process.env.NODE_ENV ?? 'production';
 const LOG_LEVEL = process.env.LOG_LEVEL ?? 'info';
 const LOG_FORMAT = process.env.LOG_FORMAT ?? 'json';
-const CORS_ORIGINS = process.env.CORS_ORIGINS ?? '*';
 
 // Configure Pino logger (structured logging)
 export const logger = pino({
@@ -46,6 +46,10 @@ export interface AppOptions {
 }
 
 export function createApp(options: AppOptions = {}): Express {
+  // Read environment at call time to support test overrides
+  const NODE_ENV = process.env.NODE_ENV ?? 'production';
+  const CORS_ORIGINS = process.env.CORS_ORIGINS ?? '*';
+
   const app: Express = express();
   const healthCheckService = new HealthCheckService(options.pool ?? null);
 
@@ -127,25 +131,14 @@ export function createApp(options: AppOptions = {}): Express {
     res.json(result);
   });
 
-  app.get('/api/hello', (req: Request, res: Response): void => {
-    const nameParam = req.query.name;
-    const name = typeof nameParam === 'string' && nameParam.length > 0 ? nameParam : 'World';
-    res.json({
-      message: `Hello, ${name}!`,
-      timestamp: new Date().toISOString(),
-      server: 'Node.js + Express',
-    });
-  });
+  // App API routes
+  app.use('/api', createAppRouter());
 
-  // Echo endpoint (POST only - REST-compliant)
-  // Test with: curl -X POST http://localhost:8080/api/node/echo -H "Content-Type: application/json" -d '{"test": "data"}'
-  app.post('/api/echo', (req: Request, res: Response): void => {
-    const body: unknown = req.body;
-    res.json({
-      echo: body,
-      timestamp: new Date().toISOString(),
-    });
-  });
+  // DevDashboard routes (development only)
+  if (NODE_ENV === 'development') {
+    app.use('/dev-dashboard/node', createDevDashboardRouter());
+    logger.info('DevDashboard routes loaded at /dev-dashboard/node');
+  }
 
   // Test endpoint for error handling (only for testing, not available in production)
   if (NODE_ENV !== 'production') {

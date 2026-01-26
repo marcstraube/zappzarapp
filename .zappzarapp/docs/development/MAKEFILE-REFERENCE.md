@@ -35,17 +35,19 @@ available categories are shown at the end of the output for reference.
 
 In development mode (`ENV=development` or not set), `make up` applies:
 
-| Default            | Condition                   | Purpose         |
-| ------------------ | --------------------------- | --------------- |
-| `NODE_MODE=assets` | NODE_MODE not set or "idle" | Enable Vite HMR |
+| Default                | Condition                   | Purpose                    |
+| ---------------------- | --------------------------- | -------------------------- |
+| `NODE_MODE=assets-api` | NODE_MODE not set or "idle" | Enable Vite HMR + Node API |
 
 **Vite HMR** (Hot Module Replacement) provides instant hot-reload for CSS/JS
-changes without page refresh.
+changes without page refresh. The Express API backend enables the Node.js
+DevDashboard for coverage and documentation generation.
 
 **Override options:**
 
-- `NODE_MODE=assets-api` - Full-stack with Express API backend
-- `ENABLE_NODE=false` - Disable Node completely (no HMR)
+- `NODE_MODE=assets` - Vite HMR only (no Express backend)
+- `NODE_MODE=api` - Express backend only (no Vite HMR)
+- `ENABLE_NODE=false` - Disable Node completely (no HMR, no API)
 
 ## Setup Commands
 

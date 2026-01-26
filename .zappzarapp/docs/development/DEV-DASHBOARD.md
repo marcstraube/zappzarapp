@@ -8,19 +8,26 @@ Docker-based development environment.
 The DevDashboard has minimal dependencies to ensure it works in most
 configurations:
 
-| Service     | Required | Notes                                        |
-| ----------- | -------- | -------------------------------------------- |
-| **Nginx**   | Yes      | Serves the dashboard                         |
-| **PHP-FPM** | Yes      | Runs the dashboard PHP code                  |
-| **php-di**  | Yes      | Dependency injection (auto-wiring)           |
-| Node.js     | No       | Only needed for welcome page (Vite HMR)      |
-| Database    | No       | Dashboard shows connection status if enabled |
-| Redis       | No       | Dashboard shows connection status if enabled |
+| Service     | Required | Notes                                           |
+| ----------- | -------- | ----------------------------------------------- |
+| **Nginx**   | Yes      | Serves the dashboard                            |
+| **PHP-FPM** | Yes      | Runs the dashboard PHP code                     |
+| **php-di**  | Yes      | Dependency injection (auto-wiring)              |
+| Node.js     | No       | Provides Vite HMR + Node DevDashboard API (dev) |
+| Database    | No       | Dashboard shows connection status if enabled    |
+| Redis       | No       | Dashboard shows connection status if enabled    |
 
-**Note:** In development mode, `make up` starts Node with `NODE_MODE=assets` to
-enable **Vite HMR** (instant hot-reload for CSS/JS). The DevDashboard itself is
-self-contained PHP and works without Node. Set `ENABLE_NODE=false` to disable
-Node completely.
+**Note:** In development mode (`ENV=development`, the default), `make up`
+automatically starts Node with `NODE_MODE=assets-api`. This enables both **Vite
+HMR** (instant hot-reload for CSS/JS) and the **Node DevDashboard API**
+(coverage/docs generation). The PHP DevDashboard is self-contained and works
+without Node, but the "Generate Coverage" and "Generate Docs" buttons for
+Node.js require the Node backend to be running.
+
+**To disable Node completely:** Change `ENABLE_NODE=true` to `ENABLE_NODE=false`
+in `.env` (the default `.env` has `ENABLE_NODE=true` at line ~81). This prevents
+the Node container from starting. The PHP DevDashboard continues to work, but
+Node-related features show "copy command" buttons instead.
 
 **Minimal configuration:**
 
@@ -102,6 +109,24 @@ JSON API endpoints for integrations:
 - `/_dev/api/health-check` - Overall health status
 - `/_dev/api/services` - Service status by category (core/data/optional)
 - `/_dev/api/logs?file=<filename>&lines=<n>` - Application log file content
+
+### Node.js DevDashboard API
+
+The Node.js backend provides additional endpoints for coverage and documentation
+generation (development only, requires `NODE_MODE=assets-api`):
+
+| Endpoint                                | Method | Description                |
+| --------------------------------------- | ------ | -------------------------- |
+| `/dev-dashboard/node/status`            | GET    | Overall Node.js status     |
+| `/dev-dashboard/node/system`            | GET    | System information         |
+| `/dev-dashboard/node/quality`           | GET    | Quality metrics (tools)    |
+| `/dev-dashboard/node/coverage/status`   | GET    | Coverage report status     |
+| `/dev-dashboard/node/coverage/generate` | POST   | Generate coverage report   |
+| `/dev-dashboard/node/docs/status`       | GET    | Documentation status       |
+| `/dev-dashboard/node/docs/generate`     | POST   | Generate API documentation |
+
+The PHP DevDashboard's Quality page integrates with these endpoints to provide
+"Generate" buttons for Node.js coverage and documentation.
 
 ## Configuration
 

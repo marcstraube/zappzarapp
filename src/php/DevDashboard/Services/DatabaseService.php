@@ -313,46 +313,93 @@ readonly class DatabaseService
     }
 
     /**
-     * Get useful database commands
-          *
+     * Get useful database commands (using Make targets)
+     *
      * @return array<int, array<string, string>>
      */
     public function getDatabaseCommands(): array
     {
-        $user = $this->config->user;
-        $name = $this->config->name;
-        $pass = $this->config->password;
-
         return [
             [
-                'label'   => 'Connect to Database (CLI)',
-                'command' => $this->config->isPostgres()
-                    ? sprintf('docker compose exec postgres psql -U %s -d %s', $user, $name)
-                    : sprintf('docker compose exec mariadb mysql -u %s -p%s %s', $user, $pass, $name),
+                'label'       => 'Connect to Database (CLI)',
+                'command'     => $this->config->isPostgres() ? 'make postgres-cli' : 'make mariadb-cli',
                 'description' => 'Open interactive database shell',
             ],
             [
-                'label'   => 'List Tables',
-                'command' => $this->config->isPostgres()
-                    ? sprintf('docker compose exec postgres psql -U %s -d %s -c "\\dt"', $user, $name)
-                    : sprintf('docker compose exec mariadb mysql -u %s -p%s %s -e "SHOW TABLES;"', $user, $pass, $name),
-                'description' => 'Show all tables in database',
+                'label'       => 'Connect with Auto-Complete',
+                'command'     => $this->config->isPostgres() ? 'make postgres-cli-enhanced' : 'make mariadb-cli-enhanced',
+                'description' => 'Enhanced CLI with syntax highlighting and auto-complete (pgcli/mycli)',
             ],
             [
-                'label'   => 'Backup Database',
-                'command' => $this->config->isPostgres()
-                    ? sprintf('docker compose exec postgres pg_dump -U %s %s > backup.sql', $user, $name)
-                    : sprintf('docker compose exec mariadb mysqldump -u %s -p%s %s > backup.sql', $user, $pass, $name),
-                'description' => 'Create database backup file',
+                'label'       => 'Backup Database',
+                'command'     => $this->config->isPostgres() ? 'make postgres-dump' : 'make mariadb-dump',
+                'description' => 'Create database backup to backups/ directory',
             ],
             [
-                'label'   => 'Restore Database',
-                'command' => $this->config->isPostgres()
-                    ? sprintf('docker compose exec -T postgres psql -U %s %s < backup.sql', $user, $name)
-                    : sprintf('docker compose exec -T mariadb mysql -u %s -p%s %s < backup.sql', $user, $pass, $name),
+                'label'       => 'Restore Database',
+                'command'     => $this->config->isPostgres() ? 'make postgres-restore' : 'make mariadb-restore',
                 'description' => 'Restore database from backup file',
             ],
+            [
+                'label'       => 'Run Migrations',
+                'command'     => 'make db-migrations',
+                'description' => 'Execute pending database migrations',
+            ],
         ];
+    }
+
+    /**
+     * Get database tools status
+     *
+     * @return array<string, array<string, mixed>>
+     */
+    public function getDbToolsStatus(): array
+    {
+        return [
+            'adminer' => [
+                'enabled'     => $this->isContainerRunning('adminer'),
+                'name'        => 'Adminer',
+                'description' => 'Universal DB admin (PostgreSQL, MariaDB, SQLite)',
+                'url'         => '/_dev/adminer/',
+                'start_cmd'   => 'make adminer-up',
+                'stop_cmd'    => 'make adminer-down',
+            ],
+            'pgadmin' => [
+                'enabled'     => $this->isContainerRunning('pgadmin'),
+                'name'        => 'pgAdmin',
+                'description' => 'Full-featured PostgreSQL management',
+                'url'         => '/_dev/pgadmin/',
+                'start_cmd'   => 'make pgadmin-up',
+                'stop_cmd'    => 'make pgadmin-down',
+                'db_type'     => 'postgres',
+            ],
+        ];
+    }
+
+    /**
+     * Check if a container is running by attempting to connect to its service
+     */
+    private function isContainerRunning(string $service): bool
+    {
+        $hosts = [
+            'adminer' => 'adminer:8080',
+            'pgadmin' => 'pgadmin:80',
+        ];
+
+        if (!isset($hosts[$service])) {
+            return false;
+        }
+
+        [$host, $port] = explode(':', $hosts[$service]);
+
+        $connection = @fsockopen($host, (int) $port, $errno, $errstr, 1);
+        if ($connection) {
+            fclose($connection);
+
+            return true;
+        }
+
+        return false;
     }
 
     /**

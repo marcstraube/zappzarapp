@@ -1,0 +1,27 @@
+# GOSS Tests for adminer container
+# Two-phase testing: dgoss (external) + docker exec (internal)
+#
+# Adminer universal database admin UI
+# Web UI on port 8080
+# Development only - accessed via Nginx proxy at /_dev/adminer/
+
+# ============================================================================
+# PORT TESTS (Internal)
+# ============================================================================
+port:
+  # Web UI port
+  tcp:8080:
+    listening: true
+    ip:
+      - 0.0.0.0
+
+# ============================================================================
+# HTTP TESTS (Internal - localhost)
+# ============================================================================
+http:
+  # Adminer web UI
+  http://localhost:8080/:
+    status: 200
+    timeout: 5000
+    body:
+      - "Adminer"
