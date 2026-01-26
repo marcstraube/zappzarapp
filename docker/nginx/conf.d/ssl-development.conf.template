@@ -54,22 +54,10 @@ server {
     # Security Headers (shared)
     include /etc/nginx/snippets/security-headers.conf;
 
-    # CRITICAL SECURITY NOTE:
-    # The Content-Security-Policy (CSP) below is DEVELOPMENT-OPTIMIZED.
-    # It allows Vite HMR from localhost:5173 for Development.
-    #
-    # !!! FOR PRODUCTION, YOU MUST USE A STRICTER CSP !!!
-    #
-    # Production CSP should:
-    # 1. Remove localhost:5173 from script-src and connect-src
-    # 2. Use Nonce-based CSP (see index.php for implementation)
-    # 3. Remove 'unsafe-inline' and 'unsafe-eval' directives
-    #
-    # Development CSP (current):
-    # Note: 'unsafe-eval' is required for Vite's Hot Module Replacement (HMR)
-    # Note: 'data:' in img-src allows base64 encoded images (e.g., phpinfo logos)
-    # Note: font-src, frame-ancestors, base-uri, form-action added for consistency with production
-    add_header Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://localhost:${NGINX_SSL_PORT}; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self' wss://localhost:${NGINX_SSL_PORT} https://localhost:${NGINX_SSL_PORT}; frame-ancestors 'self'; base-uri 'self'; form-action 'self';" always;
+    # Content-Security-Policy is set dynamically by PHP (public/index.php)
+    # This allows nonce-based CSP with per-request unique nonces
+    # Development: Enforces nonce for inline scripts, allows unsafe-eval for Vite HMR
+    # Production: Strict CSP without unsafe-* directives
 
     # Custom Error Pages (shared)
     include /etc/nginx/snippets/error-pages.conf;
@@ -89,16 +77,27 @@ server {
     # Node.js Frontend Framework Proxy (shared)
     include /etc/nginx/snippets/node-frontend-proxy.conf;
 
+    # Static text files (robots.txt, sitemap.xml) - Cacheable
+    location ~ ^/(robots\.txt|sitemap\.xml)$ {
+        try_files $uri =404;
+        add_header Cache-Control "public, max-age=3600" always;
+        access_log off;
+    }
+
     # Standard Location
     # Fallback configured by entrypoint based on ENABLE_PHP (index.php or index.html)
     location / {
         try_files $uri $uri/ ${TRY_FILES_FALLBACK};
+        # HTML/PHP responses should not be cached by default
+        add_header Cache-Control "no-cache, no-store, must-revalidate, private" always;
     }
 
     # API Endpoints - Stricter Rate Limiting, JSON errors (no HTML error pages)
     location ~ ^/api/ {
         limit_req zone=api burst=10 nodelay;
         try_files $uri /index.php?$query_string;
+        # API responses should not be cached
+        add_header Cache-Control "no-cache, no-store, must-revalidate, private" always;
 
         # Nested PHP handler for API - keeps JSON error responses
         location ~ \.php$ {

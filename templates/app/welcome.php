@@ -128,7 +128,7 @@ use App\Infrastructure\ViteHelper;
                     title="Click to copy curl command"
                     style="cursor: pointer; margin-left: 0.4rem; padding: 0.1rem 0.4rem; font-size: 0.75rem; font-weight: bold; color: #007bff; background: #e7f1ff; border: 1px solid #007bff; border-radius: 4px; user-select: none;"
                 >i</span>
-                <script>
+                <script nonce="<?= nonce() ?>">
                     document.getElementById('copy-curl-btn').addEventListener('click', function() {
                         var cmd = "curl -X POST https://localhost:8443/api/node/echo -H 'Content-Type: application/json' -d '{\"hello\": \"world\"}'";
                         var btn = this;

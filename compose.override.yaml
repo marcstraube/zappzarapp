@@ -293,6 +293,8 @@ services:
     environment:
       - TZ=${TZ:-UTC}
       - ENV=development
+      - COMPOSE_PROJECT_NAME=${COMPOSE_PROJECT_NAME:-zappzarapp}
+      - BACKUP_ENCRYPTION_KEY=${BACKUP_ENCRYPTION_KEY:-}
       - LOG_LEVEL=${LOG_LEVEL:-info}
       - LOG_FORMAT=${LOG_FORMAT:-pretty}
       - CORS_ORIGINS=${CORS_ORIGINS:-*}

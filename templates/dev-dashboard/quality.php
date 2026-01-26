@@ -303,7 +303,7 @@ $tabs = [
                     <button
                         id="btn-coverage-php"
                         type="button"
-                        onclick="generateCoverage('php')"
+                        data-action="generate-coverage" data-type="php"
                         class="btn btn-secondary text-sm"
                         style="<?= $phpAvailable ? '' : 'flex: 1;' ?>"
                     >
@@ -387,7 +387,7 @@ $tabs = [
                     <button
                         id="btn-coverage-node"
                         type="button"
-                        onclick="generateNodeCoverage()"
+                        data-action="generate-node-coverage"
                         class="btn btn-secondary text-sm"
                         style="<?= $nodeAvailable ? '' : 'flex: 1;' ?>"
                     >
@@ -417,7 +417,7 @@ $tabs = [
                                 <?= htmlspecialchars((string) $action['command']) ?>
                             </code>
                         </div>
-                        <button type="button" onclick="copyCmd('<?= htmlspecialchars((string) $action['command']) ?>', this)" class="btn btn-secondary text-xs" style="flex-shrink: 0;">Copy</button>
+                        <button type="button" data-action="copy-cmd" data-cmd="<?= htmlspecialchars((string) $action['command']) ?>" class="btn btn-secondary text-xs" style="flex-shrink: 0;">Copy</button>
                     </div>
                 </div>
             <?php endforeach; ?>
@@ -430,7 +430,7 @@ $tabs = [
 .sub-nav-link:hover { color: #374151; border-bottom-color: #d1d5db; }
 </style>
 
-<script>
+<script nonce="<?= \DevDashboard\nonce() ?>">
 function switchTab(tabId) {
     document.querySelectorAll('.sub-nav-link').forEach(l => l.classList.remove('active'));
     document.querySelector(`.sub-nav-link[data-tab="${tabId}"]`)?.classList.add('active');
@@ -446,6 +446,25 @@ document.querySelectorAll('.sub-nav-link').forEach(link => {
         e.preventDefault();
         switchTab(link.dataset.tab);
     });
+});
+
+// Event delegation for data-action clicks (CSP-compliant)
+document.addEventListener('click', (e) => {
+    const target = e.target.closest('[data-action]');
+    if (!target) return;
+
+    const action = target.dataset.action;
+    switch (action) {
+        case 'copy-cmd':
+            copyCmd(target.dataset.cmd, target);
+            break;
+        case 'generate-coverage':
+            generateCoverage(target.dataset.type);
+            break;
+        case 'generate-node-coverage':
+            generateNodeCoverage();
+            break;
+    }
 });
 
 const hash = window.location.hash.slice(1);

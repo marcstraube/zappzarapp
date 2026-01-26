@@ -151,11 +151,11 @@ $tabs = [
             </div>
             <div class="text-center p-4 bg-purple-50 rounded-lg">
                 <p class="text-sm text-gray-600 mb-1">Newest</p>
-                <p class="text-sm font-bold text-purple-600" id="stat-newest"><?= htmlspecialchars($backup_stats['newestDate']) ?></p>
+                <p class="text-sm font-bold text-purple-600" id="stat-newest"><?= $backup_stats['newestDate'] ? htmlspecialchars($backup_stats['newestDate']) : '-' ?></p>
             </div>
             <div class="text-center p-4 bg-yellow-50 rounded-lg">
                 <p class="text-sm text-gray-600 mb-1">Oldest</p>
-                <p class="text-sm font-bold text-yellow-600" id="stat-oldest"><?= htmlspecialchars($backup_stats['oldestDate']) ?></p>
+                <p class="text-sm font-bold text-yellow-600" id="stat-oldest"><?= $backup_stats['oldestDate'] ? htmlspecialchars($backup_stats['oldestDate']) : '-' ?></p>
             </div>
         </div>
     </div>
@@ -163,7 +163,7 @@ $tabs = [
     <!-- Create Backup Card -->
     <div class="card mb-4">
         <h2 class="text-lg font-semibold text-gray-900 mb-3">Create Backup</h2>
-        <p class="text-sm text-gray-600 mb-4">Creates encrypted database backup with configurable retention policy.</p>
+        <p class="text-sm text-gray-600 mb-4">Creates database backup with optional encryption and configurable retention policy.</p>
 
         <div class="flex items-end gap-3">
             <div style="flex: 1;">
@@ -173,7 +173,14 @@ $tabs = [
                        placeholder="Leave empty for default (30 days)">
                 <p class="text-xs text-gray-500 mt-1">0 = keep all backups (no auto-deletion)</p>
             </div>
-            <button id="btn-create-backup" onclick="createBackup()" class="btn btn-primary" style="flex-shrink: 0;">
+            <div style="flex: 0 0 auto;">
+                <label class="flex items-center gap-2 text-sm font-medium text-gray-700 mb-1 block" style="white-space: nowrap;">
+                    <input type="checkbox" id="encrypt-input" class="rounded border-gray-300 text-blue-600 focus:ring-blue-500">
+                    Encrypt Backup
+                </label>
+                <p class="text-xs text-gray-500">Requires BACKUP_ENCRYPTION_KEY</p>
+            </div>
+            <button id="btn-create-backup" data-action="create-backup" class="btn btn-primary" style="flex-shrink: 0;">
                 Create Backup Now
             </button>
         </div>
@@ -183,7 +190,7 @@ $tabs = [
     <div class="card">
         <div class="flex items-center justify-between mb-4">
             <h2 class="text-lg font-semibold text-gray-900 mb-0">Available Backups</h2>
-            <button onclick="loadBackups()" class="btn btn-secondary text-xs">Refresh</button>
+            <button data-action="load-backups" class="btn btn-secondary text-xs">Refresh</button>
         </div>
         <div id="backup-list">
             <div class="flex items-center justify-center py-8">
@@ -216,9 +223,9 @@ $tabs = [
                     <div class="flex gap-2">
                         <?php if ($tool['enabled']): ?>
                             <a href="<?= htmlspecialchars($tool['url']) ?>" target="_blank" class="btn btn-primary text-sm" style="flex: 1; text-align: center;">Open</a>
-                            <button type="button" onclick="copyCmd('<?= htmlspecialchars($tool['stop_cmd']) ?>', this)" class="btn btn-secondary text-sm">Stop</button>
+                            <button type="button" data-action="copy-cmd" data-cmd="<?= htmlspecialchars($tool['stop_cmd']) ?>" class="btn btn-secondary text-sm">Stop</button>
                         <?php else: ?>
-                            <button type="button" onclick="copyCmd('<?= htmlspecialchars($tool['start_cmd']) ?>', this)" class="btn btn-primary text-sm" style="flex: 1;">Start</button>
+                            <button type="button" data-action="copy-cmd" data-cmd="<?= htmlspecialchars($tool['start_cmd']) ?>" class="btn btn-primary text-sm" style="flex: 1;">Start</button>
                         <?php endif; ?>
                     </div>
 
@@ -232,8 +239,8 @@ $tabs = [
         </div>
 
         <div class="flex gap-2" style="margin-top: 1rem; padding-top: 0.75rem; border-top: 1px solid #e9d5ff;">
-            <button type="button" onclick="copyCmd('make db-tools-up', this)" class="btn btn-secondary text-xs">Start Both</button>
-            <button type="button" onclick="copyCmd('make db-tools-down', this)" class="btn btn-secondary text-xs">Stop Both</button>
+            <button type="button" data-action="copy-cmd" data-cmd="make db-tools-up" class="btn btn-secondary text-xs">Start Both</button>
+            <button type="button" data-action="copy-cmd" data-cmd="make db-tools-down" class="btn btn-secondary text-xs">Stop Both</button>
         </div>
     </div>
 </div>
@@ -251,7 +258,7 @@ $tabs = [
                             <p class="text-sm text-gray-600 mt-1"><?= htmlspecialchars((string) $cmd['description']) ?></p>
                             <code class="text-sm bg-gray-100 px-3 py-2 rounded text-gray-900 font-mono block mt-2"><?= htmlspecialchars((string) $cmd['command']) ?></code>
                         </div>
-                        <button type="button" onclick="copyCmd('<?= htmlspecialchars((string) $cmd['command']) ?>', this)" class="btn btn-secondary text-xs" style="flex-shrink: 0;">Copy</button>
+                        <button type="button" data-action="copy-cmd" data-cmd="<?= htmlspecialchars((string) $cmd['command']) ?>" class="btn btn-secondary text-xs" style="flex-shrink: 0;">Copy</button>
                     </div>
                 </div>
             <?php endforeach; ?>
@@ -267,7 +274,7 @@ $tabs = [
             <p class="text-sm text-blue-800 mb-3">Configure PHPStorm/DataGrip for direct database access:</p>
             <div class="flex items-center gap-2 mb-3">
                 <code class="text-sm font-mono text-blue-900 bg-white px-3 py-2 rounded border border-blue-200">make ide-config</code>
-                <button type="button" onclick="copyCmd('make ide-config', this)" class="btn btn-secondary text-xs">Copy</button>
+                <button type="button" data-action="copy-cmd" data-cmd="make ide-config" class="btn btn-secondary text-xs">Copy</button>
             </div>
             <ul class="text-sm text-blue-800 space-y-1" style="list-style: none; padding: 0;">
                 <li>Host: <code class="bg-blue-100 px-1 rounded">localhost:<?= htmlspecialchars((string) $overview['port']) ?></code></li>
@@ -295,7 +302,7 @@ $tabs = [
 .sub-nav-link:hover { color: #374151; border-bottom-color: #d1d5db; }
 </style>
 
-<script>
+<script nonce="<?= \DevDashboard\nonce() ?>">
 // Tab switching with URL hash persistence
 function switchTab(tabId) {
     document.querySelectorAll('.sub-nav-link').forEach(l => l.classList.remove('active'));
@@ -317,6 +324,31 @@ document.querySelectorAll('.sub-nav-link').forEach(link => {
         e.preventDefault();
         switchTab(link.dataset.tab);
     });
+});
+
+// Event delegation for data-action clicks (CSP-compliant)
+document.addEventListener('click', (e) => {
+    const target = e.target.closest('[data-action]');
+    if (!target) return;
+
+    const action = target.dataset.action;
+    switch (action) {
+        case 'create-backup':
+            createBackup();
+            break;
+        case 'load-backups':
+            loadBackups();
+            break;
+        case 'copy-cmd':
+            copyCmd(target.dataset.cmd, target);
+            break;
+        case 'restore-backup':
+            restoreBackup(target.dataset.filename);
+            break;
+        case 'delete-backup':
+            deleteBackup(target.dataset.filename);
+            break;
+    }
 });
 
 // Restore tab from URL hash on page load
@@ -356,10 +388,16 @@ async function loadBackups() {
 // Create new backup
 async function createBackup() {
     const retentionInput = document.getElementById('retention-input');
+    const encryptInput = document.getElementById('encrypt-input');
     const retention = retentionInput?.value || '';
+    const encrypt = encryptInput?.checked || false;
     const btn = document.getElementById('btn-create-backup');
 
-    if (!confirm('Create a new database backup? This may take a few moments.')) {
+    const confirmMsg = encrypt
+        ? 'Create an encrypted database backup? This may take a few moments.\n\nNote: You will need BACKUP_ENCRYPTION_KEY to restore this backup.'
+        : 'Create an unencrypted database backup? This may take a few moments.';
+
+    if (!confirm(confirmMsg)) {
         return;
     }
 
@@ -368,7 +406,11 @@ async function createBackup() {
     btn.textContent = 'Creating...';
 
     try {
-        const url = retention ? `/_dev/api/backup/create?retention=${encodeURIComponent(retention)}` : '/_dev/api/backup/create';
+        const params = new URLSearchParams();
+        if (retention) params.append('retention', retention);
+        if (encrypt) params.append('encrypt', 'true');
+
+        const url = params.toString() ? `/_dev/api/backup/create?${params.toString()}` : '/_dev/api/backup/create';
         const response = await fetch(url, { method: 'POST' });
         const result = await response.json();
 
@@ -479,12 +521,12 @@ function updateBackupList(backups) {
                         </p>
                     </div>
                     <div class="flex gap-2" style="flex-shrink: 0;">
-                        <button onclick='restoreBackup("${escapeJs(backup.filename)}")'
+                        <button data-action="restore-backup" data-filename="${escapeJs(backup.filename)}"
                                 id="btn-restore-${btoa(backup.filename)}"
                                 class="btn btn-primary text-sm">
                             Restore
                         </button>
-                        <button onclick='deleteBackup("${escapeJs(backup.filename)}")'
+                        <button data-action="delete-backup" data-filename="${escapeJs(backup.filename)}"
                                 class="btn btn-danger text-sm">
                             Delete
                         </button>

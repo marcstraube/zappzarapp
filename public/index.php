@@ -71,55 +71,43 @@ if ($isDevelopment && str_starts_with($requestPath, '/_dev')) {
 
 /**
  * ============================================================================
- * CONTENT SECURITY POLICY (CSP) - NONCE-BASED (OPTIONAL)
+ * CONTENT SECURITY POLICY (CSP) - NONCE-BASED
  * ============================================================================
  *
- * CURRENT STATE:
- * CSP is configured in the nginx SSL config templates:
- * - Development: Relaxed CSP with 'unsafe-inline'/'unsafe-eval' for Vite HMR
- * - Production: Strict CSP without 'unsafe-inline'/'unsafe-eval'
+ * ACTIVE: Nonce-based CSP enabled for maximum security
  *
- * FOR MAXIMUM SECURITY (Nonce-based CSP):
- * 1. REMOVE the static CSP header from Nginx config
- * 2. UNCOMMENT the code below (lines 27-47)
- * 3. Use CSP_NONCE constant in your inline <script> and <style> tags:
- *    <script nonce="<?= CSP_NONCE ?>">...</script>
- *    <style nonce="<?= CSP_NONCE ?>">...</style>
+ * This implementation:
+ * - Enforces nonce for inline scripts/styles in BOTH dev and production
+ * - Development: Allows 'unsafe-eval' for Vite HMR, but enforces nonce for inline scripts
+ * - Production: Strict CSP without unsafe-* directives
+ * - Generates unique cryptographically secure nonce per request
  *
- * BENEFITS:
- * - Blocks XSS attacks by only allowing scripts/styles with valid nonce
- * - 'strict-dynamic' allows dynamically loaded scripts from trusted sources
- * - No need to maintain a whitelist of script sources
+ * USAGE IN TEMPLATES:
+ * Use nonce() helper function in inline <script> and <style> tags:
+ *    <script nonce="<?= nonce() ?>">console.log('test')</script>
+ *    <style nonce="<?= nonce() ?>">body { margin: 0; }</style>
+ *
+ * Backwards compatible constant also available:
+ *    <script nonce="<?= CSP_NONCE ?>">console.log('test')</script>
+ *
+ * DEVELOPMENT:
+ * - HMR works via 'unsafe-eval' (required for Vite)
+ * - Inline scripts still require nonce (same as production)
+ * - Use Browser DevTools to debug CSP violations
  *
  * MORE INFO:
  * https://developer.mozilla.org/en-US/docs/Web/HTTP/CSP
  * https://web.dev/articles/csp
  */
 
-/*
-// 1. Generate Cryptographically Secure Nonce
-$nonce = base64_encode(random_bytes(16));
+use App\Security\CspNonceHelper;
 
-// 2. Build CSP Header
-$csp_directives = [
-    "default-src 'self'",
-    "script-src 'self' 'nonce-{$nonce}' 'strict-dynamic'",
-    "style-src 'self' 'nonce-{$nonce}'",
-    "img-src 'self' data: https:",
-    "font-src 'self'",
-    "connect-src 'self'",
-    "frame-ancestors 'self'",
-    "base-uri 'self'",
-    "form-action 'self'",
-];
-$csp_header = implode('; ', $csp_directives);
+// 1. Build and send CSP Header (before any output!)
+$cspHeader = CspNonceHelper::buildCspHeader();
+header("Content-Security-Policy: {$cspHeader}");
 
-// 3. Send CSP Header (before any output!)
-header("Content-Security-Policy: {$csp_header}");
-
-// 4. Define Constant for Template Access
-define('CSP_NONCE', $nonce);
-*/
+// 2. Define constant for backwards compatibility
+define('CSP_NONCE', CspNonceHelper::get());
 
 // Simple Routing Example
 $router = new Router();

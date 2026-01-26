@@ -65,7 +65,10 @@
         "psr-4": {
             "App\\": "src/php/App/",
             "DevDashboard\\": "src/php/DevDashboard/"
-        }
+        },
+        "files": [
+            "src/php/App/helpers.php"
+        ]
     },
     "autoload-dev": {
         "psr-4": {

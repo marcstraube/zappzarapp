@@ -4,20 +4,30 @@ declare(strict_types=1);
 
 namespace DevDashboard\Services;
 
+use RuntimeException;
+
 /**
  * Database Backup Service
  *
  * Handles database backup creation, restoration, and management
+ *
+ * @SuppressWarnings("PHPMD.ExcessiveClassComplexity")
  */
 class DatabaseBackupService
 {
     private readonly string $backupDir;
 
+    private readonly DatabaseConfig $dbConfig;
+
+    private readonly DatabaseCommandBuilder $commandBuilder;
+
     public function __construct(
         private readonly BackupFileUtils $fileUtils = new BackupFileUtils(),
         private readonly CommandRunner $commandRunner = new CommandRunner(),
     ) {
-        $this->backupDir     = $this->getBackupDirectory();
+        $this->backupDir      = $this->getBackupDirectory();
+        $this->dbConfig       = new DatabaseConfig();
+        $this->commandBuilder = new DatabaseCommandBuilder($this->dbConfig->getType());
     }
 
     /**
@@ -29,8 +39,8 @@ class DatabaseBackupService
     {
         if (!is_dir($this->backupDir)) {
             return [
-                'success' => false,
-                'message' => 'Backup directory does not exist',
+                'success' => true,
+                'message' => 'No backups created yet',
                 'backups' => [],
             ];
         }
@@ -59,9 +69,12 @@ class DatabaseBackupService
     /**
      * Create a new database backup
      *
+     * @param bool $encrypt Whether to encrypt the backup
      * @return array<string, mixed>
+     *
+     * @SuppressWarnings("PHPMD.BooleanArgumentFlag")
      */
-    public function createBackup(?int $retention = null): array
+    public function createBackup(?int $retention = null, bool $encrypt = false): array
     {
         if (!$this->ensureBackupDirectory()) {
             return [
@@ -70,29 +83,19 @@ class DatabaseBackupService
             ];
         }
 
-        $backupFile = $this->generateBackupFilename();
-        $command    = $this->buildBackupCommand($backupFile);
-        $result     = $this->commandRunner->run($command);
-
-        if ($result['exitCode'] !== 0 || !file_exists($backupFile)) {
+        // Build encryption configuration
+        try {
+            $encryption = $encrypt
+                ? BackupEncryption::enabled($this->getEncryptionKey() ?? '')
+                : BackupEncryption::disabled();
+        } catch (RuntimeException) {
             return [
                 'success' => false,
-                'message' => 'Backup creation failed: ' . $result['output'],
+                'message' => 'BACKUP_ENCRYPTION_KEY is not set. Set it in .env or disable encryption.',
             ];
         }
 
-        if ($retention !== null && $retention > 0) {
-            $this->applyRetentionPolicy($retention);
-        }
-
-        $filesize = filesize($backupFile);
-
-        return [
-            'success'  => true,
-            'message'  => 'Backup created successfully',
-            'filename' => basename($backupFile),
-            'size'     => $filesize !== false ? $this->fileUtils->formatBytes($filesize) : 'unknown',
-        ];
+        return $this->executeBackup($encryption, $retention);
     }
 
     /**
@@ -118,7 +121,21 @@ class DatabaseBackupService
             ];
         }
 
-        $command = $this->buildRestoreCommand($backupFile);
+        // Build encryption configuration for restore
+        $isEncrypted = $this->fileUtils->isEncrypted($filename);
+
+        try {
+            $encryption = $isEncrypted
+                ? BackupEncryption::enabled($this->getEncryptionKey() ?? '')
+                : BackupEncryption::disabled();
+        } catch (RuntimeException) {
+            return [
+                'success' => false,
+                'message' => 'Cannot restore encrypted backup: BACKUP_ENCRYPTION_KEY is not set',
+            ];
+        }
+
+        $command = $this->buildRestoreCommand($backupFile, $encryption);
         $result  = $this->commandRunner->run($command);
 
         if ($result['exitCode'] !== 0) {
@@ -181,10 +198,10 @@ class DatabaseBackupService
 
         if (!$result['success']) {
             return [
-                'total'          => 0,
-                'total_size'     => 0,
-                'latest_backup'  => null,
-                'oldest_backup'  => null,
+                'count'          => 0,
+                'totalSize'      => '0 B',
+                'newestDate'     => null,
+                'oldestDate'     => null,
                 'backup_dir'     => $this->backupDir,
                 'backup_enabled' => is_dir($this->backupDir),
             ];
@@ -195,22 +212,24 @@ class DatabaseBackupService
 
         if ($count === 0) {
             return [
-                'total'          => 0,
-                'total_size'     => 0,
-                'latest_backup'  => null,
-                'oldest_backup'  => null,
+                'count'          => 0,
+                'totalSize'      => '0 B',
+                'newestDate'     => null,
+                'oldestDate'     => null,
                 'backup_dir'     => $this->backupDir,
                 'backup_enabled' => true,
             ];
         }
 
         $totalSizeBytes = $this->calculateTotalSize($backups);
+        $newest         = $backups[0] ?? null;
+        $oldest         = $backups[$count - 1] ?? null;
 
         return [
-            'total'          => $count,
-            'total_size'     => $this->fileUtils->formatBytes($totalSizeBytes),
-            'latest_backup'  => $backups[0] ?? null,
-            'oldest_backup'  => $backups[$count - 1] ?? null,
+            'count'          => $count,
+            'totalSize'      => $this->fileUtils->formatBytes($totalSizeBytes),
+            'newestDate'     => $newest['date'] ?? null,
+            'oldestDate'     => $oldest['date'] ?? null,
             'backup_dir'     => $this->backupDir,
             'backup_enabled' => true,
         ];
@@ -245,6 +264,9 @@ class DatabaseBackupService
                 'date'      => date('Y-m-d H:i:s', $metadata['timestamp']),
                 'size'      => $filesize !== false ? $this->fileUtils->formatBytes($filesize) : 'unknown',
                 'age'       => $this->fileUtils->formatAge($metadata['timestamp']),
+                'encrypted' => $metadata['encrypted'],
+                'dbType'    => $metadata['dbType'] ?? 'unknown',
+                'dbName'    => $metadata['dbName'] ?? 'unknown',
             ];
         }
 
@@ -261,42 +283,49 @@ class DatabaseBackupService
 
     /**
      * Generate backup filename with timestamp
+     *
+     * Format: {db_type}_{db_name}_{timestamp}.sql[.gz.enc]
+     * Example: postgres_app_20260126_121634.sql (unencrypted)
+     *          postgres_app_20260126_121634.sql.gz.enc (encrypted)
      */
-    private function generateBackupFilename(): string
+    private function generateBackupFilename(BackupEncryption $encryption): string
     {
-        return $this->backupDir . '/backup_' . date('Y-m-d_H-i-s') . '.sql';
-    }
-
-    /**
-     * Build pg_dump command for backup
-     */
-    private function buildBackupCommand(string $backupFile): string
-    {
-        $containerName = 'postgres';
-        $dbName        = getenv('POSTGRES_DB') ?: 'app_db';
+        $timestamp = date('Ymd_His');
 
         return sprintf(
-            'docker exec %s pg_dump -U postgres %s > %s 2>&1',
-            escapeshellarg($containerName),
-            escapeshellarg($dbName),
-            escapeshellarg($backupFile),
+            '%s/%s_%s_%s%s',
+            $this->backupDir,
+            $this->dbConfig->getType(),
+            $this->dbConfig->getName(),
+            $timestamp,
+            $encryption->getFileExtension()
         );
     }
 
     /**
-     * Build psql command for restore
+     * Build backup command based on database type
      */
-    private function buildRestoreCommand(string $backupFile): string
+    private function buildBackupCommand(string $backupFile, BackupEncryption $encryption): string
     {
-        $containerName = 'postgres';
-        $dbName        = getenv('POSTGRES_DB') ?: 'app_db';
+        return $this->commandBuilder->buildBackupCommand($backupFile, $encryption);
+    }
 
-        return sprintf(
-            'docker exec -i %s psql -U postgres %s < %s 2>&1',
-            escapeshellarg($containerName),
-            escapeshellarg($dbName),
-            escapeshellarg($backupFile),
-        );
+    /**
+     * Build restore command based on database type
+     */
+    private function buildRestoreCommand(string $backupFile, BackupEncryption $encryption): string
+    {
+        return $this->commandBuilder->buildRestoreCommand($backupFile, $encryption);
+    }
+
+    /**
+     * Get encryption key from environment
+     */
+    private function getEncryptionKey(): ?string
+    {
+        $key = getenv('BACKUP_ENCRYPTION_KEY');
+
+        return $key !== false && $key !== '' ? $key : null;
     }
 
     /**
@@ -340,10 +369,71 @@ class DatabaseBackupService
     }
 
     /**
+     * Execute backup creation
+     *
+     * @return array<string, mixed>
+     */
+    private function executeBackup(BackupEncryption $encryption, ?int $retention): array
+    {
+        $backupFile = $this->generateBackupFilename($encryption);
+        $command    = $this->buildBackupCommand($backupFile, $encryption);
+        $result     = $this->commandRunner->run($command);
+
+        if ($result['exitCode'] !== 0 || !file_exists($backupFile)) {
+            return $this->buildBackupErrorResponse($result, $backupFile);
+        }
+
+        if ($retention !== null && $retention > 0) {
+            $this->applyRetentionPolicy($retention);
+        }
+
+        return $this->buildBackupSuccessResponse($backupFile, $encryption);
+    }
+
+    /**
+     * Build error response for failed backup
+     *
+     * @param array<string, mixed> $result
+     * @return array<string, mixed>
+     */
+    private function buildBackupErrorResponse(array $result, string $backupFile): array
+    {
+        $errorDetails = sprintf(
+            'Exit code: %d, File exists: %s, Output: %s',
+            $result['exitCode'],
+            file_exists($backupFile) ? 'yes' : 'no',
+            $result['output']
+        );
+
+        return [
+            'success' => false,
+            'message' => 'Backup creation failed: ' . $errorDetails,
+        ];
+    }
+
+    /**
+     * Build success response for completed backup
+     *
+     * @return array<string, mixed>
+     */
+    private function buildBackupSuccessResponse(string $backupFile, BackupEncryption $encryption): array
+    {
+        $filesize = filesize($backupFile);
+
+        return [
+            'success'   => true,
+            'message'   => 'Backup created successfully',
+            'filename'  => basename($backupFile),
+            'size'      => $filesize !== false ? $this->fileUtils->formatBytes($filesize) : 'unknown',
+            'encrypted' => $encryption->isEnabled(),
+        ];
+    }
+
+    /**
      * Get backup directory path
      */
     private function getBackupDirectory(): string
     {
-        return realpath(__DIR__ . '/../../../../') . '/build/backups';
+        return realpath(__DIR__ . '/../../../../') . '/backups/db';
     }
 }

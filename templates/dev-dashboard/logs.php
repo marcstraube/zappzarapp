@@ -54,7 +54,7 @@ $tabs = [
                 <p class="text-sm text-gray-600 mb-3">View logs from all running containers</p>
                 <div class="flex items-center gap-2">
                     <code class="text-xs bg-gray-100 px-2 py-1 rounded text-gray-900 font-mono flex-1">make logs</code>
-                    <button type="button" onclick="copyCmd('make logs', this)" class="btn btn-secondary text-xs">Copy</button>
+                    <button type="button" data-action="copy-cmd" data-cmd="make logs" class="btn btn-secondary text-xs">Copy</button>
                 </div>
             </div>
             <div class="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition">
@@ -62,7 +62,7 @@ $tabs = [
                 <p class="text-sm text-gray-600 mb-3">Watch logs from a single service in real-time</p>
                 <div class="flex items-center gap-2">
                     <code class="text-xs bg-gray-100 px-2 py-1 rounded text-gray-900 font-mono flex-1">make logs php</code>
-                    <button type="button" onclick="copyCmd('make logs php', this)" class="btn btn-secondary text-xs">Copy</button>
+                    <button type="button" data-action="copy-cmd" data-cmd="make logs php" class="btn btn-secondary text-xs">Copy</button>
                 </div>
             </div>
         </div>
@@ -90,7 +90,7 @@ $tabs = [
                                 <p style="font-size: 0.75rem; color: #6b7280; margin-bottom: 0.5rem;">View from host terminal:</p>
                                 <div class="flex items-center gap-2">
                                     <code class="text-xs bg-gray-100 px-3 py-2 rounded text-gray-900 font-mono block overflow-x-auto flex-1"><?= htmlspecialchars((string) $source['command']) ?></code>
-                                    <button type="button" onclick="copyCmd('<?= htmlspecialchars((string) $source['command']) ?>', this)" class="btn btn-secondary text-xs">Copy</button>
+                                    <button type="button" data-action="copy-cmd" data-cmd="<?= htmlspecialchars((string) $source['command']) ?>" class="btn btn-secondary text-xs">Copy</button>
                                 </div>
                             </div>
 
@@ -112,7 +112,7 @@ $tabs = [
                                         <?php foreach ($source['files'] as $file): ?>
                                             <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.5rem 0.75rem; background: white; border: 1px solid #e5e7eb; border-radius: 0.25rem; transition: all 0.15s;">
                                                 <button
-                                                    onclick="openLogModal('<?= htmlspecialchars((string) $file['name'], ENT_QUOTES) ?>')"
+                                                    data-action="open-log" data-logfile="<?= htmlspecialchars((string) $file['name'], ENT_QUOTES) ?>"
                                                     style="font-family: ui-monospace, monospace; font-size: 0.8125rem; color: #2563eb; background: none; border: none; cursor: pointer; text-align: left; padding: 0;"
                                                     onmouseover="this.style.color='#1d4ed8'; this.style.textDecoration='underline';"
                                                     onmouseout="this.style.color='#2563eb'; this.style.textDecoration='none';"
@@ -157,7 +157,7 @@ $tabs = [
                             <p class="text-sm text-gray-600 mb-3"><?= htmlspecialchars($cmd['description']) ?></p>
                             <code class="text-xs bg-gray-100 px-3 py-2 rounded text-gray-900 font-mono block overflow-x-auto"><?= htmlspecialchars($cmd['command']) ?></code>
                         </div>
-                        <button type="button" onclick="copyCmd('<?= htmlspecialchars($cmd['command']) ?>', this)" class="btn btn-secondary text-xs" style="flex-shrink: 0;">Copy</button>
+                        <button type="button" data-action="copy-cmd" data-cmd="<?= htmlspecialchars($cmd['command']) ?>" class="btn btn-secondary text-xs" style="flex-shrink: 0;">Copy</button>
                     </div>
                 </div>
             <?php endforeach; ?>
@@ -186,7 +186,7 @@ $tabs = [
             </p>
             <div class="flex items-center gap-2">
                 <code class="text-sm bg-green-100 px-3 py-2 rounded text-green-900 font-mono flex-1">make logs</code>
-                <button type="button" onclick="copyCmd('make logs', this)" class="btn btn-secondary text-xs">Copy</button>
+                <button type="button" data-action="copy-cmd" data-cmd="make logs" class="btn btn-secondary text-xs">Copy</button>
             </div>
             <p class="text-xs text-green-700 mt-2">
                 This command shows logs from all services in real-time (equivalent to <code class="bg-green-100 px-1 py-0.5 rounded">docker compose logs -f</code>)
@@ -197,7 +197,7 @@ $tabs = [
 
 <!-- Log Viewer Modal -->
 <div id="logModal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; z-index: 9999;">
-    <div style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.5);" onclick="closeLogModal()"></div>
+    <div style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.5);" data-action="close-log"></div>
 
     <div style="position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 90%; max-width: 1000px; max-height: 90vh; background: white; border-radius: 0.5rem; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25); display: flex; flex-direction: column;">
         <div style="display: flex; align-items: center; justify-content: space-between; padding: 1rem 1.5rem; border-bottom: 1px solid #e5e7eb; background: #f9fafb; border-radius: 0.5rem 0.5rem 0 0;">
@@ -212,10 +212,10 @@ $tabs = [
                     <option value="200">Last 200 lines</option>
                     <option value="500">Last 500 lines</option>
                 </select>
-                <button onclick="refreshLog()" style="padding: 0.5rem; color: #6b7280; background: none; border: none; cursor: pointer;" title="Refresh">
+                <button data-action="refresh-log" style="padding: 0.5rem; color: #6b7280; background: none; border: none; cursor: pointer;" title="Refresh">
                     ↻
                 </button>
-                <button onclick="closeLogModal()" style="padding: 0.5rem; color: #6b7280; background: none; border: none; cursor: pointer; font-size: 1.25rem;" title="Close">
+                <button data-action="close-log" style="padding: 0.5rem; color: #6b7280; background: none; border: none; cursor: pointer; font-size: 1.25rem;" title="Close">
                     ✕
                 </button>
             </div>
@@ -229,7 +229,7 @@ $tabs = [
             <p style="font-size: 0.75rem; color: #6b7280; margin: 0;">
                 Press <kbd style="padding: 0.125rem 0.375rem; background: #e5e7eb; border-radius: 0.25rem; color: #374151;">Esc</kbd> to close
             </p>
-            <button onclick="closeLogModal()" class="btn btn-secondary">
+            <button data-action="close-log" class="btn btn-secondary">
                 Close
             </button>
         </div>
@@ -241,7 +241,7 @@ $tabs = [
 .sub-nav-link:hover { color: #374151; border-bottom-color: #d1d5db; }
 </style>
 
-<script>
+<script nonce="<?= \DevDashboard\nonce() ?>">
 function switchTab(tabId) {
     document.querySelectorAll('.sub-nav-link').forEach(l => l.classList.remove('active'));
     document.querySelector(`.sub-nav-link[data-tab="${tabId}"]`)?.classList.add('active');
@@ -257,6 +257,28 @@ document.querySelectorAll('.sub-nav-link').forEach(link => {
         e.preventDefault();
         switchTab(link.dataset.tab);
     });
+});
+
+// Event delegation for data-action clicks (CSP-compliant)
+document.addEventListener('click', (e) => {
+    const target = e.target.closest('[data-action]');
+    if (!target) return;
+
+    const action = target.dataset.action;
+    switch (action) {
+        case 'copy-cmd':
+            copyCmd(target.dataset.cmd, target);
+            break;
+        case 'open-log':
+            openLogModal(target.dataset.logfile);
+            break;
+        case 'close-log':
+            closeLogModal();
+            break;
+        case 'refresh-log':
+            refreshLog();
+            break;
+    }
 });
 
 const hash = window.location.hash.slice(1);

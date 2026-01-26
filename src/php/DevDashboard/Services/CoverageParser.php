@@ -56,20 +56,20 @@ class CoverageParser
     {
         $metrics = [];
 
-        // Pattern: "Statements : 85.5% ( 123 / 144 )"
-        if (preg_match('/Statements\s*:\s*([0-9.]+)%/', $html, $matches)) {
+        // Vitest HTML format: <span class="strong">78.08% </span><span class="quiet">Statements</span>
+        if (preg_match('/<span[^>]*class="[^"]*strong[^"]*"[^>]*>([0-9.]+)%\s*<\/span>\s*<span[^>]*class="[^"]*quiet[^"]*"[^>]*>Statements<\/span>/i', $html, $matches)) {
             $metrics['statements'] = (float) $matches[1];
         }
 
-        if (preg_match('/Branches\s*:\s*([0-9.]+)%/', $html, $matches)) {
+        if (preg_match('/<span[^>]*class="[^"]*strong[^"]*"[^>]*>([0-9.]+)%\s*<\/span>\s*<span[^>]*class="[^"]*quiet[^"]*"[^>]*>Branches<\/span>/i', $html, $matches)) {
             $metrics['branches'] = (float) $matches[1];
         }
 
-        if (preg_match('/Functions\s*:\s*([0-9.]+)%/', $html, $matches)) {
+        if (preg_match('/<span[^>]*class="[^"]*strong[^"]*"[^>]*>([0-9.]+)%\s*<\/span>\s*<span[^>]*class="[^"]*quiet[^"]*"[^>]*>Functions<\/span>/i', $html, $matches)) {
             $metrics['functions'] = (float) $matches[1];
         }
 
-        if (preg_match('/Lines\s*:\s*([0-9.]+)%/', $html, $matches)) {
+        if (preg_match('/<span[^>]*class="[^"]*strong[^"]*"[^>]*>([0-9.]+)%\s*<\/span>\s*<span[^>]*class="[^"]*quiet[^"]*"[^>]*>Lines<\/span>/i', $html, $matches)) {
             $metrics['lines'] = (float) $matches[1];
         }
 
@@ -85,8 +85,10 @@ class CoverageParser
     {
         $metrics = [];
 
-        // Pattern: <div class="coverage-summary"><strong>85.5%</strong></div>
-        if (preg_match('/<div[^>]*class="coverage[^"]*"[^>]*>.*?([0-9.]+)%/s', $html, $matches)) {
+        // PHPUnit uses progress bars with aria-valuenow attributes
+        // Pattern: <div class="progress-bar" ... aria-valuenow="25.27" ...>
+        // First occurrence is typically the total line coverage
+        if (preg_match('/<div[^>]*class="[^"]*progress-bar[^"]*"[^>]*aria-valuenow="([0-9.]+)"/i', $html, $matches)) {
             $coverage              = (float) $matches[1];
             $metrics['lines']      = $coverage;
             $metrics['statements'] = $coverage;
@@ -111,17 +113,17 @@ class CoverageParser
             ];
         }
 
-        $metrics = $this->parseCoverageMetrics($htmlFile);
-        $mtime   = $this->getNewestFileMtime(
-            $this->projectRoot . 'src/php',
-            ['php'],
-        );
+        $metrics      = $this->parseCoverageMetrics($htmlFile);
+        $reportMtime  = filemtime($htmlFile);
+        $sourceMtime  = $this->getNewestFileMtime($this->projectRoot . 'src/php', ['php']);
+        $isOutdated   = $sourceMtime !== null && $reportMtime !== false && $sourceMtime > $reportMtime;
 
         return [
-            'available' => $metrics !== null,
-            'metrics'   => $metrics,
-            'age'       => $mtime ? $this->formatAge($mtime) : 'unknown',
-            'report'    => '/build/coverage-php/index.html',
+            'available'    => $metrics !== null,
+            'metrics'      => $metrics,
+            'generated_at' => $reportMtime !== false ? $this->formatAge($reportMtime) : 'unknown',
+            'outdated'     => $isOutdated,
+            'report_path'  => '/build/coverage-php/index.html',
         ];
     }
 
@@ -132,7 +134,7 @@ class CoverageParser
      */
     public function getNodeTestCoverage(): array
     {
-        $htmlFile = $this->projectRoot . 'build/coverage-node/index.html';
+        $htmlFile = $this->projectRoot . 'build/coverage/node/index.html';
 
         if (!file_exists($htmlFile)) {
             return [
@@ -141,17 +143,17 @@ class CoverageParser
             ];
         }
 
-        $metrics = $this->parseCoverageMetrics($htmlFile);
-        $mtime   = $this->getNewestFileMtime(
-            $this->projectRoot . 'src/node',
-            ['ts', 'js'],
-        );
+        $metrics      = $this->parseCoverageMetrics($htmlFile);
+        $reportMtime  = filemtime($htmlFile);
+        $sourceMtime  = $this->getNewestFileMtime($this->projectRoot . 'src/node', ['ts', 'js']);
+        $isOutdated   = $sourceMtime !== null && $reportMtime !== false && $sourceMtime > $reportMtime;
 
         return [
-            'available' => $metrics !== null,
-            'metrics'   => $metrics,
-            'age'       => $mtime ? $this->formatAge($mtime) : 'unknown',
-            'report'    => '/build/coverage-node/index.html',
+            'available'    => $metrics !== null,
+            'metrics'      => $metrics,
+            'generated_at' => $reportMtime !== false ? $this->formatAge($reportMtime) : 'unknown',
+            'outdated'     => $isOutdated,
+            'report_path'  => '/build/coverage/node/index.html',
         ];
     }
 

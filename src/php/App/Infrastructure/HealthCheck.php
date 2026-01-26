@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Infrastructure;
 
+use ErrorException;
 use Exception;
 use PDO;
 use Redis;
@@ -729,12 +730,27 @@ class HealthCheck
         $host      = $parsedUrl['host'] ?? 'redis';
         $port      = $parsedUrl['port'] ?? 6379;
 
-        $redis = new Redis();
+        $redis     = new Redis();
+        $connected = false;
+        $errorMsg  = null;
 
-        if ($useTls) {
-            $connected = $redis->connect($host, $port, 2, '', 0, 0, TlsConfig::getRedisStreamOptions());
-        } else {
-            $connected = $redis->connect($host, $port, 2);
+        // Set custom error handler to catch warnings and convert to exceptions
+        set_error_handler(static function (int $errno, string $errstr): bool {
+            throw new ErrorException($errstr, 0, $errno);
+        });
+
+        try {
+            if ($useTls) {
+                $connected = $redis->connect($host, $port, 2, '', 0, 0, TlsConfig::getRedisStreamOptions());
+            } else {
+                $connected = $redis->connect($host, $port, 2);
+            }
+        } catch (ErrorException) {
+            // Catch connection warnings/errors and convert to generic error message
+            $errorMsg = 'Could not connect to Redis';
+        } finally {
+            // Always restore previous error handler
+            restore_error_handler();
         }
 
         if (!$connected) {
@@ -743,7 +759,7 @@ class HealthCheck
                 'host'   => $host,
                 'port'   => $port,
                 'useTls' => $useTls,
-                'error'  => 'Could not connect to Redis',
+                'error'  => $errorMsg ?? 'Could not connect to Redis',
             ];
         }
 

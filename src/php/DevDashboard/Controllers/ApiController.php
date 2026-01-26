@@ -93,8 +93,9 @@ readonly class ApiController
     public function createBackup(): Response
     {
         $retention = isset($_GET['retention']) ? (int) $_GET['retention'] : null;
+        $encrypt   = isset($_GET['encrypt']) && $_GET['encrypt'] === 'true';
 
-        $result = $this->databaseService->createBackup($retention);
+        $result = $this->databaseService->createBackup($retention, $encrypt);
 
         return new JsonResponse($result, $result['success'] ? 200 : 500);
     }

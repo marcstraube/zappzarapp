@@ -232,7 +232,7 @@
             <?php if ($phpNeedsRegen): ?>
             <button
                 id="btn-regen-php-docs"
-                onclick="regenerateDocs('php')"
+                data-action="regenerate-docs" data-type="php""
                 class="btn btn-secondary text-xs"
             >
                 Regenerate PHP
@@ -242,7 +242,7 @@
             <button
                 id="btn-regen-node-docs"
                 type="button"
-                onclick="regenerateNodeDocs()"
+                data-action="regenerate-node-docs"
                 class="btn btn-secondary text-xs"
             >
                 Regenerate Node
@@ -251,7 +251,7 @@
             <?php if ($multipleNeedRegen): ?>
             <button
                 id="btn-regen-all-docs"
-                onclick="regenerateAllDocs()"
+                data-action="regenerate-all-docs"
                 class="btn btn-primary text-xs"
             >
                 Regenerate All
@@ -262,7 +262,29 @@
     </div>
 </div>
 
-<script>
+<script nonce="<?= \DevDashboard\nonce() ?>">
+// Event delegation for data-action clicks (CSP-compliant)
+document.addEventListener('click', (e) => {
+    const target = e.target.closest('[data-action]');
+    if (!target) return;
+
+    const action = target.dataset.action;
+    switch (action) {
+        case 'copy-cmd':
+            copyCmd(target.dataset.cmd, target);
+            break;
+        case 'regenerate-docs':
+            regenerateDocs(target.dataset.type);
+            break;
+        case 'regenerate-node-docs':
+            regenerateNodeDocs();
+            break;
+        case 'regenerate-all-docs':
+            regenerateAllDocs();
+            break;
+    }
+});
+
 function copyCmd(cmd, btn) {
     navigator.clipboard.writeText(cmd).then(() => {
         const orig = btn.textContent;

@@ -17,6 +17,9 @@ use DevDashboard\Controllers\DocsController;
 use DevDashboard\Response\Response;
 use DI\ContainerBuilder;
 
+// Load DevDashboard helper functions
+require_once __DIR__ . '/helpers.php';
+
 // Only enable dashboard in development or when explicitly enabled
 $isProduction     = (getenv('APP_ENV') ?: 'development') === 'production';
 $dashboardEnabled = getenv('ENABLE_DEV_DASHBOARD') !== 'false';

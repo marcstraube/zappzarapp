@@ -223,10 +223,12 @@ class DatabaseService
      * Create a new database backup (delegates to DatabaseBackupService)
      *
      * @return array<string, mixed>
+     *
+     * @SuppressWarnings("PHPMD.BooleanArgumentFlag")
      */
-    public function createBackup(?int $retention = null): array
+    public function createBackup(?int $retention = null, bool $encrypt = false): array
     {
-        return $this->backupService->createBackup($retention);
+        return $this->backupService->createBackup($retention, $encrypt);
     }
 
     /**
