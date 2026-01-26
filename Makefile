@@ -1366,14 +1366,20 @@ test-production: ## Test production build with ENV-configured services (smart, r
 	@echo -e "\033[0;34m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\033[0m"
 	@echo -e "\033[0;34m  Production Test: ENV-aware configuration\033[0m"
 	@echo -e "\033[0;34m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\033[0m"
-	@# Ensure we're in production mode
+	@# Ensure we're in production mode (check ENV variable first, then .env file)
 	@if [ ! -f .env ]; then \
 		echo -e "\033[0;31mError: .env file not found\033[0m"; \
 		exit 1; \
 	fi
-	@. ./.env && if [ "$${ENV:-development}" != "production" ]; then \
-		echo -e "\033[0;31mError: ENV must be 'production' in .env\033[0m"; \
-		echo -e "\033[0;33mCurrent: ENV=$${ENV:-development}\033[0m"; \
+	@# Check ENV: Prefer environment variable (CI context), fall back to .env (local context)
+	@CURRENT_ENV="$${ENV}"; \
+	if [ -z "$$CURRENT_ENV" ]; then \
+		CURRENT_ENV=$$(. ./.env && echo "$${ENV:-development}"); \
+	fi; \
+	if [ "$$CURRENT_ENV" != "production" ]; then \
+		echo -e "\033[0;31mError: ENV must be 'production'\033[0m"; \
+		echo -e "\033[0;33mCurrent: ENV=$$CURRENT_ENV\033[0m"; \
+		echo -e "\033[0;36mHint: Set ENV=production in .env (local) or as environment variable (CI)\033[0m"; \
 		exit 1; \
 	fi
 	@echo ""
@@ -2845,7 +2851,7 @@ rector-fix: ## Apply Rector refactorings automatically
 	@echo -e "\033[0;33mApplying Rector refactorings...\033[0m"
 	@docker compose exec php composer rector-fix
 
-check: cs-check analyse-php phpmd rector-check prettier-check analyse-node lint-node test deps-validate compose-validate lint-md lint-sql lint-docker lint-shell ## Run all checks (CI simulation)
+check: cs-check analyse-php phpmd rector-check prettier-check analyse-node lint-node test deps-validate compose-validate validate-env lint-md lint-sql lint-docker lint-shell ## Run all checks (CI simulation)
 	@echo -e "\033[0;32mAll checks passed!\033[0m"
 
 cs-check: ## Check coding style (dry-run)
@@ -3477,6 +3483,40 @@ compose-validate: ## Validate Docker Compose configuration files
 	@docker compose -f compose.yaml -f compose.ci.yaml config --quiet && \
 		echo -e "\033[0;32m  ✓ compose.yaml + compose.ci.yaml valid\033[0m"
 	@echo -e "\033[0;32m✓ All compose configurations valid\033[0m"
+
+validate-env: ## Validate .env configuration for production readiness
+	@echo -e "\033[0;33mValidating .env configuration...\033[0m"
+	@if [ ! -f .env ]; then \
+		echo -e "\033[0;31m  ✗ .env file not found\033[0m"; \
+		echo -e "\033[0;36m  Hint: Run 'make init' to create .env from .env.example\033[0m"; \
+		exit 1; \
+	fi
+	@echo -e "\033[0;32m  ✓ .env file exists\033[0m"
+	@# Check if .env can be sourced (basic syntax validation)
+	@if ! sh -c '. ./.env' 2>/dev/null; then \
+		echo -e "\033[0;31m  ✗ .env file has syntax errors\033[0m"; \
+		exit 1; \
+	fi
+	@echo -e "\033[0;32m  ✓ .env syntax valid\033[0m"
+	@# Check for required variables
+	@MISSING_VARS=""; \
+	. ./.env; \
+	if [ -z "$$COMPOSE_PROJECT_NAME" ]; then MISSING_VARS="$$MISSING_VARS COMPOSE_PROJECT_NAME"; fi; \
+	if [ -z "$$DB_TYPE" ]; then MISSING_VARS="$$MISSING_VARS DB_TYPE"; fi; \
+	if [ -z "$$DB_HOST" ]; then MISSING_VARS="$$MISSING_VARS DB_HOST"; fi; \
+	if [ -n "$$MISSING_VARS" ]; then \
+		echo -e "\033[0;31m  ✗ Required variables missing:$$MISSING_VARS\033[0m"; \
+		exit 1; \
+	fi
+	@echo -e "\033[0;32m  ✓ Required variables present\033[0m"
+	@# Warn if ENV is not production (non-fatal, just informative)
+	@CURRENT_ENV=$$(. ./.env && echo "$${ENV:-development}"); \
+	if [ "$$CURRENT_ENV" != "production" ]; then \
+		echo -e "\033[0;33m  ⚠ ENV=$$CURRENT_ENV (production builds require ENV=production)\033[0m"; \
+	else \
+		echo -e "\033[0;32m  ✓ ENV=production\033[0m"; \
+	fi
+	@echo -e "\033[0;32m✓ .env configuration valid\033[0m"
 
 ##@ Security
 

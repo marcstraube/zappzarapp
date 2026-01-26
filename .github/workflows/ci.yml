@@ -452,7 +452,7 @@ jobs:
         run: |
           # Use ENV-aware production test (respects .env configuration)
           # Tests nginx + app (php/node) + database + activated services
-          make test-production
+          ENV=production make test-production
 
       - name: Show container status
         if: always()
