@@ -81,6 +81,15 @@
         </properties>
     </rule>
 
+    <rule ref="rulesets/codesize.xml/TooManyPublicMethods">
+        <properties>
+            <!-- Max public methods per class -->
+            <!-- Test classes naturally have many test methods (one per test case) -->
+            <!-- Production code: 10 (default), Test classes: 30 -->
+            <property name="maxmethods" value="30"/>
+        </properties>
+    </rule>
+
     <!-- Design Rules -->
     <rule ref="rulesets/design.xml">
         <!-- Allow exit() for CLI tools -->
