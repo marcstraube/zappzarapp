@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeAll } from 'vitest';
+import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import request from 'supertest';
 import { createApp } from '@backend/app';
 import type { Express } from 'express';
@@ -41,9 +41,16 @@ interface ErrorResponse {
 
 describe('API Integration Tests', () => {
   let app: Express;
+  const originalEnv = process.env;
 
   beforeAll(() => {
+    // Set NODE_ENV to development to test development-specific behavior
+    process.env = { ...originalEnv, NODE_ENV: 'development' };
     app = createApp();
+  });
+
+  afterAll(() => {
+    process.env = originalEnv;
   });
 
   describe('GET /health (liveness)', () => {

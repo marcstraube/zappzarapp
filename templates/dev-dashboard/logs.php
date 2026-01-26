@@ -61,8 +61,8 @@ $tabs = [
                 <h3 class="font-medium text-gray-900 mb-2">Follow Specific Service</h3>
                 <p class="text-sm text-gray-600 mb-3">Watch logs from a single service in real-time</p>
                 <div class="flex items-center gap-2">
-                    <code class="text-xs bg-gray-100 px-2 py-1 rounded text-gray-900 font-mono flex-1">docker compose logs -f php</code>
-                    <button type="button" onclick="copyCmd('docker compose logs -f php', this)" class="btn btn-secondary text-xs">Copy</button>
+                    <code class="text-xs bg-gray-100 px-2 py-1 rounded text-gray-900 font-mono flex-1">make logs php</code>
+                    <button type="button" onclick="copyCmd('make logs php', this)" class="btn btn-secondary text-xs">Copy</button>
                 </div>
             </div>
         </div>

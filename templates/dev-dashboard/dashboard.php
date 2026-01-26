@@ -240,12 +240,12 @@
             <?php endif; ?>
             <?php if ($nodeNeedsRegen): ?>
             <button
+                id="btn-regen-node-docs"
                 type="button"
-                onclick="copyCmd('make docs-node', this)"
+                onclick="regenerateNodeDocs()"
                 class="btn btn-secondary text-xs"
-                title="Node docs require shell access - copy command to run in terminal"
             >
-                Copy: make docs-node
+                Regenerate Node
             </button>
             <?php endif; ?>
             <?php if ($multipleNeedRegen): ?>
@@ -323,6 +323,58 @@ async function regenerateDocs(type, skipReload = false) {
     }
 }
 
+async function regenerateNodeDocs(skipReload = false) {
+    const btn = document.getElementById('btn-regen-node-docs');
+    if (!btn) return false;
+
+    const originalText = btn.textContent;
+    btn.disabled = true;
+    btn.textContent = 'Generating...';
+
+    try {
+        const response = await fetch('/dev-dashboard/node/docs/generate', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' }
+        });
+
+        const result = await response.json();
+
+        if (result.success) {
+            btn.textContent = 'Done!';
+            btn.classList.remove('btn-secondary');
+            btn.classList.add('btn-success');
+            if (!skipReload) {
+                setTimeout(() => location.reload(), 1000);
+            }
+            return true;
+        } else {
+            btn.textContent = 'Failed';
+            btn.classList.remove('btn-secondary');
+            btn.classList.add('btn-danger');
+            alert('Error: ' + result.message + (result.output ? '\n\n' + result.output.slice(0, 500) : ''));
+            setTimeout(() => {
+                btn.textContent = originalText;
+                btn.classList.remove('btn-danger');
+                btn.classList.add('btn-secondary');
+                btn.disabled = false;
+            }, 2000);
+            return false;
+        }
+    } catch (error) {
+        btn.textContent = 'Error';
+        btn.classList.remove('btn-secondary');
+        btn.classList.add('btn-danger');
+        alert('Request failed: ' + error.message);
+        setTimeout(() => {
+            btn.textContent = originalText;
+            btn.classList.remove('btn-danger');
+            btn.classList.add('btn-secondary');
+            btn.disabled = false;
+        }, 2000);
+        return false;
+    }
+}
+
 async function regenerateAllDocs() {
     const btn = document.getElementById('btn-regen-all-docs');
     const originalText = btn.textContent;
@@ -332,14 +384,14 @@ async function regenerateAllDocs() {
     // Regenerate PHP docs (skip auto-reload)
     const phpSuccess = await regenerateDocs('php', true);
 
-    // Copy Node command to clipboard
-    await navigator.clipboard.writeText('make docs-node');
+    // Regenerate Node docs (skip auto-reload)
+    const nodeSuccess = await regenerateNodeDocs(true);
 
-    if (phpSuccess) {
-        btn.textContent = 'Done! Node cmd copied';
+    if (phpSuccess || nodeSuccess) {
+        btn.textContent = 'Done!';
         btn.classList.remove('btn-primary');
         btn.classList.add('btn-success');
-        setTimeout(() => location.reload(), 1500);
+        setTimeout(() => location.reload(), 1000);
     } else {
         btn.textContent = originalText;
         btn.disabled = false;

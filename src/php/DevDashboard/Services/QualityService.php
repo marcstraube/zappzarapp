@@ -450,7 +450,7 @@ class QualityService
      */
     private function getNodeTestCoverage(): array
     {
-        $coverageFile = $this->projectRoot . 'build/coverage-node/index.html';
+        $coverageFile = $this->projectRoot . 'build/coverage/node/index.html';
 
         if (!file_exists($coverageFile)) {
             return [
@@ -477,7 +477,7 @@ class QualityService
         return [
             'available'   => true,
             'outdated'    => $outdated,
-            'report_path' => '/build/coverage-node/index.html',
+            'report_path' => '/build/coverage/node/index.html',
             'message'     => $outdated ? 'Coverage report outdated' : 'Coverage report available',
         ];
     }

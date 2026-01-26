@@ -594,8 +594,8 @@ build: ## Build Docker images (optionally specify service names: make build php 
 					echo -e "\033[0;33m   DevDashboard (/_dev) still works (self-contained PHP).\033[0m"; \
 					echo ""; \
 				elif [ -z "$${NODE_MODE}" ] || [ "$${NODE_MODE}" = "idle" ]; then \
-					export NODE_MODE="assets"; \
-					DEV_INFO=" NODE_MODE=assets"; \
+					export NODE_MODE="assets-api"; \
+					DEV_INFO=" NODE_MODE=assets-api"; \
 				fi; \
 				if [ -n "$$DEV_INFO" ]; then \
 					echo -e "\033[0;36mℹ️  Dev-defaults:$$DEV_INFO (override in .env)\033[0m"; \
@@ -1216,8 +1216,8 @@ up: ## Start containers (optionally specify service names: make up php nginx)
 				echo -e "\033[0;33m   DevDashboard (/_dev) still works (self-contained PHP).\033[0m"; \
 				echo ""; \
 			elif [ -z "$${NODE_MODE}" ] || [ "$${NODE_MODE}" = "idle" ]; then \
-				export NODE_MODE="assets"; \
-				DEV_INFO=" NODE_MODE=assets"; \
+				export NODE_MODE="assets-api"; \
+				DEV_INFO=" NODE_MODE=assets-api"; \
 			fi; \
 			if [ -n "$$DEV_INFO" ]; then \
 				echo -e "\033[0;36mℹ️  Dev-defaults:$$DEV_INFO (override in .env)\033[0m"; \

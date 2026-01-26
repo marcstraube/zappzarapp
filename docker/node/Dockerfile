@@ -1,6 +1,6 @@
 # Node.js Multi-Stage Dockerfile
 
-ARG NODE_VERSION=24.12
+ARG NODE_VERSION=24.13
 ARG ALPINE_VERSION=3.23
 
 # Version Pinning:
@@ -8,7 +8,7 @@ ARG ALPINE_VERSION=3.23
 # - Alpine version pinned for consistency across services
 # - To update: check https://hub.docker.com/_/node/tags
 # - For SHA digest pinning in production, use:
-#   FROM node:24.12-alpine3.23@sha256:<digest>
+#   FROM node:24.13-alpine3.23@sha256:<digest>
 
 # --- 1. BASE STAGE (Shared Foundation) ---
 # Installs pnpm and curl.

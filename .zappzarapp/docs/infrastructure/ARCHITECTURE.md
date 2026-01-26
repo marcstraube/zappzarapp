@@ -28,7 +28,7 @@ architecture, including components, data flows, and design decisions.
 │  │  • Unix Socket Connection │    │  • Vite Dev Server (HMR, port 5173)   │  │
 │  │  • PHP 8.4                │    │  • Express API (port 3000)            │  │
 │  │  • Xdebug Support         │    │  • PM2 Process Manager                │  │
-│  │  • DevDashboard           │    │  • Node 24.12 LTS                     │  │
+│  │  • DevDashboard           │    │  • DevDashboard (dev only)            │  │
 │  └───────────┬───────────────┘    └──────────────┬────────────────────────┘  │
 └──────────────┼───────────────────────────────────┼───────────────────────────┘
                │                                   │
@@ -81,8 +81,8 @@ The boilerplate supports 7 configurable stack presets via `.env`:
 | **Minimal PHP**          | Yes | No   | No       | No    | Simple PHP scripts             |
 | **Custom**               | Mix | Mix  | Mix      | Mix   | Custom configuration           |
 
-**Development Defaults:** `make up` ensures Node starts with minimum `assets`
-mode to enable Vite HMR (Hot Module Replacement).
+**Development Defaults:** `make up` ensures Node starts with `assets-api` mode
+to enable both Vite HMR (Hot Module Replacement) and the Express API backend.
 
 Configuration in `.env`:
 
@@ -263,6 +263,8 @@ zappzarapp/
 ├── src/                      # Application source code
 │   ├── node/                 # Node.js application
 │   │   ├── backend/          # Express API
+│   │   │   ├── App/          # Production application
+│   │   │   └── DevDashboard/ # Development dashboard (dev only)
 │   │   └── frontend/         # SSR Frontend (optional)
 │   └── php/                  # PHP application
 │       ├── App/              # Main application

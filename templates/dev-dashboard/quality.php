@@ -289,13 +289,13 @@ $tabs = [
                         </a>
                     <?php endif; ?>
                     <button
+                        id="btn-coverage-node"
                         type="button"
-                        onclick="copyCmd('make test-coverage-node', this)"
+                        onclick="generateNodeCoverage()"
                         class="btn btn-secondary text-sm"
                         style="<?= $nodeAvailable ? '' : 'flex: 1;' ?>"
-                        title="Node coverage requires shell access"
                     >
-                        Copy: make test-coverage-node
+                        <?= $nodeAvailable ? 'Regenerate' : 'Generate' ?>
                     </button>
                 </div>
             </div>
@@ -376,6 +376,53 @@ async function generateCoverage(type) {
 
     try {
         const response = await fetch('/_dev/api/coverage/generate?type=' + type, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' }
+        });
+
+        const result = await response.json();
+
+        if (result.success) {
+            btn.textContent = 'Done!';
+            btn.classList.remove('btn-secondary');
+            btn.classList.add('btn-success');
+            setTimeout(() => location.reload(), 1000);
+        } else {
+            btn.textContent = 'Failed';
+            btn.classList.remove('btn-secondary');
+            btn.classList.add('btn-danger');
+            alert('Error: ' + result.message + (result.output ? '\n\n' + result.output.slice(0, 500) : ''));
+            setTimeout(() => {
+                btn.textContent = originalText;
+                btn.classList.remove('btn-danger');
+                btn.classList.add('btn-secondary');
+                btn.disabled = false;
+            }, 2000);
+        }
+    } catch (error) {
+        btn.textContent = 'Error';
+        btn.classList.remove('btn-secondary');
+        btn.classList.add('btn-danger');
+        alert('Request failed: ' + error.message);
+        setTimeout(() => {
+            btn.textContent = originalText;
+            btn.classList.remove('btn-danger');
+            btn.classList.add('btn-secondary');
+            btn.disabled = false;
+        }, 2000);
+    }
+}
+
+async function generateNodeCoverage() {
+    const btn = document.getElementById('btn-coverage-node');
+    if (!btn) return;
+
+    const originalText = btn.textContent;
+    btn.disabled = true;
+    btn.textContent = 'Running tests...';
+
+    try {
+        const response = await fetch('/dev-dashboard/node/coverage/generate', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' }
         });
