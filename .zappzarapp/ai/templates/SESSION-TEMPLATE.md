@@ -4,9 +4,10 @@
 
 [One-line description]
 
-## Branch
+## Context
 
-[branch-name]
+- **Worktree**: [worktree-path or "primary"]
+- **Branch**: [branch-name]
 
 ## Changes
 
@@ -28,7 +29,7 @@ Session-specific links, branches, commits:
 
 **Workflow reminders (write immediately, not at session end):**
 
-- Learnings → `.ai/LEARNINGS.md` (or `.zappzarapp/ai/` for boilerplate)
-- Decisions → `.ai/DECISIONS.md`
-- Open Items → `/tasks --add` (GitHub/GitLab Issues)
-- References → `.ai/REFERENCES.md`
+- Learnings -> `.ai/LEARNINGS.md` (or `.zappzarapp/ai/` for boilerplate)
+- Decisions -> `.ai/DECISIONS.md`
+- Open Items -> `/tasks --add` (GitHub/GitLab Issues)
+- References -> `.ai/REFERENCES.md`
