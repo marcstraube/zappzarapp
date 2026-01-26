@@ -16,9 +16,14 @@ Both pipelines provide identical functionality:
 
 - Build all Docker images
 - Run quality checks (PHPStan, PHP-CS-Fixer, PHPMD, Rector, ESLint, Prettier)
-- Execute tests (PHPUnit, Vitest)
+- Execute tests (PHPUnit, Vitest, BATS)
+- Static Analysis Security Testing (SAST with Semgrep)
+- Dependency validation (Composer, package.json)
 - Security audits (Composer, pnpm)
 - Production build verification
+
+**Note:** Both pipelines are synchronized to ensure consistent CI/CD experience
+across platforms.
 
 ## GitLab CI/CD
 
@@ -30,24 +35,30 @@ build → test → quality → security → deploy
 
 ### Jobs Overview
 
-| Stage        | Job                    | Description                                  |
-| ------------ | ---------------------- | -------------------------------------------- |
-| **build**    | `build:php`            | Build PHP container                          |
-| **build**    | `build:node`           | Build Node container                         |
-| **build**    | `build:nginx`          | Build Nginx container                        |
-| **test**     | `php:unit-tests`       | Run PHPUnit tests                            |
-| **test**     | `php:coverage`         | Generate PHP coverage (master/develop only)  |
-| **test**     | `node:tests`           | Run Vitest tests                             |
-| **test**     | `node:coverage`        | Generate Node coverage (master/develop only) |
-| **quality**  | `php:coding-standards` | PHP-CS-Fixer check                           |
-| **quality**  | `php:static-analysis`  | PHPStan Level 5                              |
-| **quality**  | `php:mess-detector`    | PHPMD (allow_failure)                        |
-| **quality**  | `php:rector-check`     | Rector dry-run (allow_failure)               |
-| **quality**  | `node:lint`            | ESLint                                       |
-| **quality**  | `node:format-check`    | Prettier check                               |
-| **quality**  | `node:type-check`      | TypeScript type checking                     |
-| **security** | `dependency-audit`     | Composer + pnpm audit                        |
-| **deploy**   | `build:production`     | Test production build (master/develop only)  |
+| Stage        | Job                     | Description                                  |
+| ------------ | ----------------------- | -------------------------------------------- |
+| **build**    | `build:php`             | Build PHP container                          |
+| **build**    | `build:node`            | Build Node container                         |
+| **build**    | `build:nginx`           | Build Nginx container                        |
+| **test**     | `php:unit-tests`        | Run PHPUnit tests                            |
+| **test**     | `php:coverage`          | Generate PHP coverage (master/develop only)  |
+| **test**     | `node:tests`            | Run Vitest tests                             |
+| **test**     | `node:coverage`         | Generate Node coverage (master/develop only) |
+| **test**     | `bats:quick`            | BATS Makefile validation (dry-run)           |
+| **test**     | `bats:integration`      | BATS integration tests (master/develop/MR)   |
+| **quality**  | `php:coding-standards`  | PHP-CS-Fixer check                           |
+| **quality**  | `php:static-analysis`   | PHPStan Level 5                              |
+| **quality**  | `php:mess-detector`     | PHPMD (allow_failure)                        |
+| **quality**  | `php:rector-check`      | Rector dry-run (allow_failure)               |
+| **quality**  | `php:composer-validate` | Composer.json/lock validation                |
+| **quality**  | `node:lint`             | ESLint                                       |
+| **quality**  | `node:format-check`     | Prettier check                               |
+| **quality**  | `node:type-check`       | TypeScript type checking                     |
+| **quality**  | `node:markdownlint`     | Markdown linting                             |
+| **quality**  | `node:package-validate` | Package.json validation                      |
+| **security** | `sast:semgrep`          | Static analysis (Semgrep)                    |
+| **security** | `dependency-audit`      | Composer + pnpm audit                        |
+| **deploy**   | `build:production`      | Test production build (master/develop only)  |
 
 ### Configuration
 
@@ -76,12 +87,23 @@ The pipeline uses Docker-in-Docker (DinD):
 
 ### Security Scans
 
+**Main Pipeline (every push):**
+
+- SAST Analysis with Semgrep (security-audit, secrets, PHP, TypeScript)
+- Dependency audit (Composer, pnpm)
+
+**Comprehensive Scans (weekly schedule):**
+
 Additional security scans are defined in `.gitlab/security-scan.gitlab-ci.yml`:
 
-- Trivy container scanning
-- Secret detection
+- Trivy container scanning (all images)
+- OWASP ZAP DAST scan (production configuration)
+- Secret detection (Gitleaks)
 - Filesystem scanning
-- Weekly schedule
+- Configuration scanning
+- Weekly schedule (Sunday 2 AM UTC)
+
+See [SECURITY-SCANNING.md](../security/SECURITY-SCANNING.md) for details.
 
 ## GitHub Actions
 
@@ -114,10 +136,13 @@ Additional security scans are defined in `.gitlab/security-scan.gitlab-ci.yml`:
 | ------------------ | ------------------------------------------ | ------- |
 | `php-quality`      | CS-Fixer, PHPStan, PHPMD, Rector, Validate | 15 min  |
 | `php-tests`        | PHPUnit + Coverage (master only)           | 15 min  |
-| `node-quality`     | TypeScript, ESLint, Prettier               | 15 min  |
+| `node-quality`     | TypeScript, ESLint, Prettier, Markdown     | 15 min  |
 | `node-tests`       | Vitest + Coverage (master only)            | 15 min  |
 | `dependency-audit` | Composer + pnpm audit                      | 10 min  |
-| `build-production` | Production build test                      | 20 min  |
+| `sast-scan`        | Semgrep static analysis                    | 15 min  |
+| `bats-quick`       | BATS Makefile validation (dry-run)         | 10 min  |
+| `bats-integration` | BATS integration tests (PR/master/develop) | 30 min  |
+| `build-production` | Production build test (master/develop)     | 20 min  |
 
 ### Triggers
 
