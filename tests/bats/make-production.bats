@@ -62,8 +62,8 @@ teardown_file() {
 
     # Extract health check commands from test-production target
     local postgres_check
-    postgres_check=$(awk '/^test-production:.*##/,/^[a-zA-Z]/ { print }' Makefile | \
-        grep -o "docker compose.*postgres pg_isready" | head -1)
+    postgres_check=$(awk '/^test-production:.*##/,/^test-production-minimal:/ { print }' Makefile | \
+        grep "pg_isready" | head -1)
 
     # Verify it includes production compose files
     if echo "$postgres_check" | grep -q "compose.yaml.*compose.production.yaml"; then
@@ -78,8 +78,8 @@ teardown_file() {
 @test "[Production] Redis health check uses production compose files" {
     # Extract redis health check command
     local redis_check
-    redis_check=$(awk '/^test-production:.*##/,/^[a-zA-Z]/ { print }' Makefile | \
-        grep -o "docker compose.*redis.*redis-cli.*ping" | head -1)
+    redis_check=$(awk '/^test-production:.*##/,/^test-production-minimal:/ { print }' Makefile | \
+        grep "redis-cli.*ping" | head -1)
 
     # Verify it includes production compose files
     if echo "$redis_check" | grep -q "compose.yaml.*compose.production.yaml"; then
@@ -94,8 +94,8 @@ teardown_file() {
 @test "[Production] MariaDB health check uses production compose files" {
     # Extract mariadb health check command
     local mariadb_check
-    mariadb_check=$(awk '/^test-production:.*##/,/^[a-zA-Z]/ { print }' Makefile | \
-        grep -o "docker compose.*mariadb.*mariadb -u app" | head -1)
+    mariadb_check=$(awk '/^test-production:.*##/,/^test-production-minimal:/ { print }' Makefile | \
+        grep "mariadb -u app" | head -1)
 
     # Verify it includes production compose files
     if echo "$mariadb_check" | grep -q "compose.yaml.*compose.production.yaml"; then
@@ -116,8 +116,8 @@ teardown_file() {
 
     # Extract ENV check from test-production target
     local env_check
-    env_check=$(awk '/^test-production:.*##/,/^[a-zA-Z]/ { print }' Makefile | \
-        grep -o "ENV must be 'production'" | head -1)
+    env_check=$(awk '/^test-production:.*##/,/^test-production-minimal:/ { print }' Makefile | \
+        grep "ENV must be 'production'" | head -1)
 
     # Verify the check exists
     if [ -n "$env_check" ]; then
