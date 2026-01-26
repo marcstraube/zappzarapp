@@ -53,6 +53,9 @@ RUN apk add --no-cache \
     # Dependencies for PostgreSQL PDO (Extension)
     postgresql-dev \
     postgresql-libs \
+    # Dependencies for SQLite PDO (Extension)
+    sqlite-dev \
+    sqlite-libs \
     # Dependencies for soap (Extension)
     libxml2-dev \
     # Dependencies for amqp (Extension - RabbitMQ)
@@ -94,6 +97,7 @@ RUN apk add --no-cache \
     icu-libs \
     libzip \
     postgresql-libs \
+    sqlite-libs \
     libxml2 \
     rabbitmq-c \
     tzdata
