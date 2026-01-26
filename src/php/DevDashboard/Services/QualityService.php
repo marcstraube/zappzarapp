@@ -63,8 +63,8 @@ class QualityService
             @mkdir($cachePath, 0755, true);
         }
 
-        // Build command (split to avoid false positive in secret detection)
-        $xdebugMode = 'XDEBUG_MODE=' . 'coverage';
+        // Build command with Xdebug coverage mode
+        $xdebugMode = 'XDEBUG_MODE=coverage';
         $command    = sprintf(
             'cd /var/www/html && %s php vendor/bin/phpunit --coverage-html build/coverage-php 2>&1',
             $xdebugMode,
