@@ -711,6 +711,9 @@ SSL certificate management.
 | Command                    | Description                                                    |
 | -------------------------- | -------------------------------------------------------------- |
 | `make ssl-selfsigned`      | Generate self-signed SSL certificate for development           |
+| `make ssl-internal`        | Generate CA + all certificates (default for development)       |
+| `make ssl-trust-ca`        | Trust internal CA in system (auto-detects OS, requires sudo)   |
+| `make ssl-trust-ca-help`   | Show manual instructions to trust CA for all OSes              |
 | `make ssl-letsencrypt`     | Setup Let's Encrypt SSL certificate (production)               |
 | `make ssl-renew`           | Renew Let's Encrypt certificate and reload all SSL services    |
 | `make ssl-reload-services` | Reload all SSL-dependent services after certificate renewal    |
@@ -721,8 +724,9 @@ SSL certificate management.
 ### SSL Setup Workflow
 
 ```bash
-# Development (self-signed)
-make ssl-selfsigned
+# Development (self-signed with CA)
+make ssl-internal      # Generate CA + certificates
+make ssl-trust-ca      # Trust CA in system (avoids browser warnings)
 make restart
 
 # Production (Let's Encrypt)
@@ -730,6 +734,17 @@ make ssl-letsencrypt  # Follow prompts for domain/email
 make ssl-prod-enable
 ENV=production make build && make up
 ```
+
+### Supported OS for ssl-trust-ca
+
+| OS            | Method                         |
+| ------------- | ------------------------------ |
+| macOS         | System Keychain                |
+| Arch/Manjaro  | `trust anchor`                 |
+| Debian/Ubuntu | `update-ca-certificates`       |
+| RHEL/Fedora   | `update-ca-trust`              |
+| openSUSE      | `update-ca-certificates`       |
+| Windows       | Manual (see ssl-trust-ca-help) |
 
 See [SSL-CERTIFICATES.md](../security/SSL-CERTIFICATES.md) for detailed
 documentation.
