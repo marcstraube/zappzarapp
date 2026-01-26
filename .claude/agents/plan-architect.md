@@ -72,6 +72,16 @@ Every plan MUST address these principles. Document decisions in the plan.
 - **Lazy loading**: Large data sets loaded on demand?
 - **Dependencies**: No unnecessary packages added
 
+### 5. Standards Compliance
+
+Before creating plan:
+
+- **Read assigned standards file**
+  (`.zappzarapp/standards/{php,node,shell,sql}.md`)
+- **Reference in plan**: Cite specific sections for Coder
+  - Example: "See standards: Test Coverage - Security-Critical (95%+)"
+  - Example: "Suppression only if in Allowed table (standards line 36)"
+
 ## Workflow
 
 1. Analyze requirements
@@ -103,6 +113,11 @@ Architecture:
 Performance:
 - [ ] N+1 risk: Yes/No -> Mitigation: ___
 - [ ] Caching needed: Yes/No
+
+Testing & Coverage:
+- [ ] Component classification: [See standards: Test Coverage section]
+- [ ] Target coverage: [From standards table]
+- [ ] Test strategy: ___
 
 Infrastructure (if needed):
 - [ ] Container changes: Rebuild required?

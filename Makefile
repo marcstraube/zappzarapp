@@ -1445,7 +1445,7 @@ test-production: ## Test production build with ENV-configured services (smart, r
 	if [ "$${ENABLE_DATABASE:-true}" = "true" ]; then \
 		if [ "$${DB_TYPE:-postgres}" = "postgres" ]; then \
 			echo -n "   postgres... "; \
-			if timeout 30 sh -c 'until docker compose exec -T postgres pg_isready -U app > /dev/null 2>&1; do sleep 1; done' 2>/dev/null; then \
+			if timeout 30 sh -c 'until ENV=production docker compose -f compose.yaml -f compose.production.yaml exec -T postgres pg_isready -U app > /dev/null 2>&1; do sleep 1; done' 2>/dev/null; then \
 				echo -e "\033[0;32m✓\033[0m"; \
 			else \
 				echo -e "\033[0;31m✗ (timeout)\033[0m"; \
@@ -1453,7 +1453,7 @@ test-production: ## Test production build with ENV-configured services (smart, r
 			fi; \
 		elif [ "$${DB_TYPE}" = "mariadb" ]; then \
 			echo -n "   mariadb... "; \
-			if timeout 30 sh -c 'until docker compose exec -T mariadb mariadb -u app -p$${DB_PASSWORD} -e "SELECT 1" > /dev/null 2>&1; do sleep 1; done' 2>/dev/null; then \
+			if timeout 30 sh -c 'until ENV=production docker compose -f compose.yaml -f compose.production.yaml exec -T mariadb mariadb -u app -p$${DB_PASSWORD} -e "SELECT 1" > /dev/null 2>&1; do sleep 1; done' 2>/dev/null; then \
 				echo -e "\033[0;32m✓\033[0m"; \
 			else \
 				echo -e "\033[0;31m✗ (timeout)\033[0m"; \
@@ -1463,7 +1463,7 @@ test-production: ## Test production build with ENV-configured services (smart, r
 	fi; \
 	if [ "$${ENABLE_REDIS:-true}" = "true" ]; then \
 		echo -n "   redis... "; \
-		if timeout 30 sh -c 'until docker compose exec -T redis redis-cli --tls --insecure ping > /dev/null 2>&1; do sleep 1; done' 2>/dev/null; then \
+		if timeout 30 sh -c 'until ENV=production docker compose -f compose.yaml -f compose.production.yaml exec -T redis redis-cli --tls --insecure ping > /dev/null 2>&1; do sleep 1; done' 2>/dev/null; then \
 			echo -e "\033[0;32m✓\033[0m"; \
 		else \
 			echo -e "\033[0;31m✗ (timeout)\033[0m"; \
@@ -1534,7 +1534,7 @@ test-production-minimal: ## Test production build with minimal services (nginx +
 	fi; \
 	if [ "$${DB_TYPE:-postgres}" = "postgres" ]; then \
 		echo -n "   postgres... "; \
-		if timeout 30 sh -c 'until docker compose exec -T postgres pg_isready -U app > /dev/null 2>&1; do sleep 1; done' 2>/dev/null; then \
+		if timeout 30 sh -c 'until ENV=production docker compose -f compose.yaml -f compose.production.yaml exec -T postgres pg_isready -U app > /dev/null 2>&1; do sleep 1; done' 2>/dev/null; then \
 			echo -e "\033[0;32m✓\033[0m"; \
 		else \
 			echo -e "\033[0;31m✗ (timeout)\033[0m"; \
@@ -1542,7 +1542,7 @@ test-production-minimal: ## Test production build with minimal services (nginx +
 		fi; \
 	elif [ "$${DB_TYPE}" = "mariadb" ]; then \
 		echo -n "   mariadb... "; \
-		if timeout 30 sh -c 'until docker compose exec -T mariadb mariadb -u app -p$${DB_PASSWORD} -e "SELECT 1" > /dev/null 2>&1; do sleep 1; done' 2>/dev/null; then \
+		if timeout 30 sh -c 'until ENV=production docker compose -f compose.yaml -f compose.production.yaml exec -T mariadb mariadb -u app -p$${DB_PASSWORD} -e "SELECT 1" > /dev/null 2>&1; do sleep 1; done' 2>/dev/null; then \
 			echo -e "\033[0;32m✓\033[0m"; \
 		else \
 			echo -e "\033[0;31m✗ (timeout)\033[0m"; \
@@ -1612,14 +1612,14 @@ test-production-full: ## Test production build with ALL services (comprehensive,
 		FAILED=1; \
 	fi; \
 	echo -n "   postgres... "; \
-	if timeout 30 sh -c 'until docker compose exec -T postgres pg_isready -U app > /dev/null 2>&1; do sleep 1; done' 2>/dev/null; then \
+	if timeout 30 sh -c 'until ENV=production docker compose -f compose.yaml -f compose.production.yaml exec -T postgres pg_isready -U app > /dev/null 2>&1; do sleep 1; done' 2>/dev/null; then \
 		echo -e "\033[0;32m✓\033[0m"; \
 	else \
 		echo -e "\033[0;31m✗ (timeout)\033[0m"; \
 		FAILED=1; \
 	fi; \
 	echo -n "   redis... "; \
-	if timeout 30 sh -c 'until docker compose exec -T redis redis-cli --tls --insecure ping > /dev/null 2>&1; do sleep 1; done' 2>/dev/null; then \
+	if timeout 30 sh -c 'until ENV=production docker compose -f compose.yaml -f compose.production.yaml exec -T redis redis-cli --tls --insecure ping > /dev/null 2>&1; do sleep 1; done' 2>/dev/null; then \
 		echo -e "\033[0;32m✓\033[0m"; \
 	else \
 		echo -e "\033[0;31m✗ (timeout)\033[0m"; \

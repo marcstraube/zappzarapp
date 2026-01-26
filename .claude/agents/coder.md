@@ -71,6 +71,41 @@ Main Agent spawns multiple Coder agents in parallel:
 - Status: Complete / Partial / Failed
 - Brief note if issues encountered
 
+## Standards Compliance (CRITICAL)
+
+**Before writing any code, read the assigned standards file.**
+
+### MUST Follow from Standards
+
+When implementing code, the following sections from
+`.zappzarapp/standards/{php,node}.md` are **MANDATORY**:
+
+1. **Suppressions - Allowed/Forbidden** (Tables at top of standards)
+   - Only use suppressions listed in "Allowed" table
+   - If warning not in table → Report to Main Agent (do NOT suppress)
+
+2. **Test Coverage** (Section near end of standards)
+   - Identify component classification (Security/Core/Optional/Dev)
+   - Write tests to meet target coverage for component type
+   - Run `make test-coverage-{php|node}` before reporting completion
+
+3. **Security Rules** (PHPStan/ESLint section)
+   - Never bypass banned functions without explicit justification
+   - Never hardcode credentials
+
+### Implementation Order
+
+```text
+1. Read plan
+2. Read relevant standards file sections (above)
+3. Classify component (for coverage target)
+4. Implement production code + tests together
+5. Verify coverage meets target
+6. Report back
+```
+
+**Tests are part of implementation, not optional afterthought.**
+
 ## Tasks
 
 1. Read plan from Architect

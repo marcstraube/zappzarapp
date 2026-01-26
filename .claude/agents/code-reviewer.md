@@ -97,6 +97,21 @@ make goss-test       # Goss container tests
 - [ ] Health checks don't expose sensitive info
 - [ ] POSIX compliance for shell scripts
 
+## Standards Verification
+
+After running automated checks, verify standards compliance:
+
+**From `.zappzarapp/standards/{php,node}.md`:**
+
+1. **Suppressions**: Check all `@SuppressWarnings` / `eslint-disable`
+   - Compare against "Suppressions - Allowed" table
+   - Flag any not in allowed list
+
+2. **Test Coverage**: Run coverage and compare
+   - See "Test Coverage" section in standards for targets
+   - Verify component meets its classification target
+   - Flag if overall coverage decreased
+
 ## Workflow
 
 ```text
@@ -108,9 +123,13 @@ make goss-test       # Goss container tests
    v
 3. Tests
    v
-4. Config Sync (if config files changed)
+4. Coverage Check (make test-coverage-{php|node})
    v
-5. Evaluate results
+5. Standards Verification (suppressions, coverage targets)
+   v
+6. Config Sync (if config files changed)
+   v
+7. Evaluate results
 ```
 
 ## Severity Filter
@@ -144,7 +163,7 @@ make goss-test       # Goss container tests
 
 - [Warning 1]: [Reason for ignoring]
 
-### Security Baseline
+### Security & Quality Baseline
 
 | Check                      | Status                      |
 | -------------------------- | --------------------------- |
@@ -152,6 +171,8 @@ make goss-test       # Goss container tests
 | SQL parameterization       | OK Verified                 |
 | Output encoding            | OK Verified                 |
 | Suppressions reviewed      | ! 1 suppression (justified) |
+| Coverage target met        | OK Security: 97% (95%+)     |
+| Coverage vs baseline       | OK +2% (no decrease)        |
 ```
 
 ## Escalation
