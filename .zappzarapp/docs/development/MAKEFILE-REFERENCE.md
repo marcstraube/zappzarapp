@@ -22,14 +22,15 @@ available categories are shown at the end of the output for reference.
 
 ## Quick Reference
 
-| Task             | Command      |
-| ---------------- | ------------ |
-| First-time setup | `make setup` |
-| Start containers | `make up`    |
-| Stop containers  | `make down`  |
-| Run all tests    | `make test`  |
-| Run all checks   | `make check` |
-| View logs        | `make logs`  |
+| Task                  | Command                |
+| --------------------- | ---------------------- |
+| First-time setup      | `make setup`           |
+| Start containers      | `make up`              |
+| Stop containers       | `make down`            |
+| Run all tests         | `make test`            |
+| Run all checks        | `make check`           |
+| Test production build | `make test-production` |
+| View logs             | `make logs`            |
 
 ## Development Mode Defaults
 
@@ -401,6 +402,68 @@ make k8s-logs zappzarapp-php-xxxxx
 # Remove deployment
 make k8s-remove
 ```
+
+### Production Testing
+
+Test production builds with different service configurations. These targets
+start containers in production mode and run health checks to validate
+functionality.
+
+| Command                        | Description                                                |
+| ------------------------------ | ---------------------------------------------------------- |
+| `make test-production`         | Test with ENV-configured services (smart, respects `.env`) |
+| `make test-production-minimal` | Test with minimal services (nginx + app + db only)         |
+| `make test-production-full`    | Test with ALL services (comprehensive, ignores `.env`)     |
+
+**test-production (Recommended):**
+
+Tests production build with services activated based on `.env` configuration:
+
+- Always: nginx
+- Conditional: php, node, database, redis, etc. (based on `ENABLE_*` flags)
+- Health checks: nginx HTTP, database connectivity, redis connectivity
+- Use case: CI/CD default, tests realistic production config (~1min)
+
+**test-production-minimal (Fast):**
+
+Tests only core services:
+
+- nginx + php/node + database
+- No optional services (redis, elasticsearch, etc.)
+- Health checks: nginx HTTP, database connectivity
+- Use case: Quick validation, fast feedback for PRs (~30s)
+
+**test-production-full (Comprehensive):**
+
+Tests ALL available services regardless of ENABLE\_\* settings:
+
+- All core services (nginx, php, node, node-backend)
+- All data services (postgres, mariadb, redis)
+- All optional services (elasticsearch, meilisearch, mercure, rabbitmq,
+  seaweedfs)
+- Extended health checks with longer timeouts
+- Use case: Pre-release validation, nightly builds (~3min)
+
+**Examples:**
+
+```bash
+# Smart test (respects .env)
+make test-production
+
+# Quick test for PR
+make test-production-minimal
+
+# Comprehensive test before release
+make test-production-full
+```
+
+**Requirements:**
+
+- `ENV=production` must be set in `.env`
+- Production images must be built first (`ENV=production make build`)
+- Services must be stopped before running tests
+
+See [DEPLOYMENT.md](../infrastructure/DEPLOYMENT.md) for detailed documentation.
 
 ### Package Managers
 
@@ -854,6 +917,20 @@ make restart           # Restart containers
 ```bash
 XDEBUG_MODE=develop,debug make restart  # Enable Xdebug
 make test-php-debug                      # Run tests with debugger
+```
+
+### Testing Production Build
+
+```bash
+# Before release: Test production configuration
+ENV=production make build
+make test-production
+
+# Quick smoke test
+make test-production-minimal
+
+# Comprehensive pre-release validation
+make test-production-full
 ```
 
 ### Performance Issues
