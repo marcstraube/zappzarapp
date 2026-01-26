@@ -266,7 +266,8 @@ load 'helpers/setup'
     assert_success
 
     # Verify .env.local was created
-    [[ -f .env.local ]]
+    run test -f .env.local
+    assert_success
 
     # Verify it contains expected content (USER_ID should be substituted)
     run grep "^USER_ID=" .env.local

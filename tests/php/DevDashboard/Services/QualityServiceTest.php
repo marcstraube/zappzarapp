@@ -34,6 +34,7 @@ class QualityServiceTest extends TestCase
         if (is_dir($this->tempDir)) {
             $this->removeDirectory($this->tempDir);
         }
+
         parent::tearDown();
     }
 
@@ -48,6 +49,7 @@ class QualityServiceTest extends TestCase
             $path = $dir . '/' . $file;
             is_dir($path) ? $this->removeDirectory($path) : unlink($path);
         }
+
         rmdir($dir);
     }
 
@@ -251,8 +253,7 @@ HTML;
     private function getPrivateMethod(string $methodName): ReflectionMethod
     {
         $reflection = new ReflectionClass($this->service);
-        $method     = $reflection->getMethod($methodName);
 
-        return $method;
+        return $reflection->getMethod($methodName);
     }
 }

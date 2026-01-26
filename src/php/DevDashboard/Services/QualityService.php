@@ -8,6 +8,7 @@ use Exception;
 use FilesystemIterator;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
+use SplFileInfo;
 
 /**
  * Quality Service
@@ -59,8 +60,11 @@ class QualityService
         }
 
         // Ensure cache directory exists
-        if (!is_dir($cachePath)) {
-            @mkdir($cachePath, 0755, true);
+        if (!is_dir($cachePath) && !mkdir($cachePath, 0755, true) && !is_dir($cachePath)) {
+            return [
+                'success' => false,
+                'message' => 'Failed to create cache directory: ' . $cachePath,
+            ];
         }
 
         // Build command with Xdebug coverage mode
@@ -354,9 +358,9 @@ class QualityService
 
     /**
      * Count files in a directory
-          *
+     *
      * @param array<int, string> $extensions
-     * @return array<string, mixed>
+     * @return array{count: int, exists: bool, error?: string}
      */
     private function countFiles(string $directory, array $extensions): array
     {
@@ -374,6 +378,7 @@ class QualityService
                 RecursiveIteratorIterator::SELF_FIRST
             );
 
+            /** @var SplFileInfo $file */
             foreach ($iterator as $file) {
                 if ($file->isFile()) {
                     $extension = $file->getExtension();
@@ -425,11 +430,11 @@ class QualityService
         $metrics = $this->parseNodeCoverageFormat($html);
 
         // Try PHPUnit format if Node format not found
-        if (empty($metrics)) {
+        if ($metrics === []) {
             $metrics = $this->parsePhpUnitCoverageFormat($html);
         }
 
-        return empty($metrics) ? null : $metrics;
+        return $metrics === [] ? null : $metrics;
     }
 
     /**
@@ -495,10 +500,12 @@ class QualityService
         if ($diff < 60) {
             return 'just now';
         }
+
         if ($diff < 3600) {
             $minutes = floor($diff / 60);
             return $minutes . ' minute' . ($minutes > 1 ? 's' : '') . ' ago';
         }
+
         if ($diff < 86400) {
             $hours = floor($diff / 3600);
             return $hours . ' hour' . ($hours > 1 ? 's' : '') . ' ago';
@@ -621,6 +628,7 @@ class QualityService
                 RecursiveIteratorIterator::LEAVES_ONLY,
             );
 
+            /** @var SplFileInfo $file */
             foreach ($iterator as $file) {
                 if (!$file->isFile()) {
                     continue;
@@ -632,7 +640,7 @@ class QualityService
                 }
 
                 $mtime = $file->getMTime();
-                if ($newestMtime === null || $mtime > $newestMtime) {
+                if ($mtime !== false && ($newestMtime === null || $mtime > $newestMtime)) {
                     $newestMtime = $mtime;
                 }
             }

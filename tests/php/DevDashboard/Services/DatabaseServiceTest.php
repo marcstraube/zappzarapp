@@ -16,6 +16,7 @@ use ReflectionClass;
 class DatabaseServiceTest extends TestCase
 {
     private DatabaseService $service;
+
     private string $testBackupDir;
 
     protected function setUp(): void
@@ -28,6 +29,7 @@ class DatabaseServiceTest extends TestCase
         if (!getenv('DB_PASSWORD') && !getenv('DB_PASSWORD_FILE')) {
             putenv('DB_PASSWORD=test_password');
         }
+
         if (!getenv('DATABASE_URL')) {
             putenv('DATABASE_URL=postgres://test:test@localhost:5432/test');
         }
@@ -43,7 +45,11 @@ class DatabaseServiceTest extends TestCase
     {
         // Clean up test backup directory
         if (is_dir($this->testBackupDir)) {
-            array_map('unlink', glob($this->testBackupDir . '/*'));
+            $files = glob($this->testBackupDir . '/*');
+            if ($files !== false) {
+                array_map(unlink(...), $files);
+            }
+
             rmdir($this->testBackupDir);
         }
 
@@ -51,23 +57,14 @@ class DatabaseServiceTest extends TestCase
     }
 
     /**
-     * Helper: Create a test backup file in temp directory
-     */
-    private function createTestBackupFile(string $filename, int $sizeBytes = 1024): string
-    {
-        $path = $this->testBackupDir . '/' . $filename;
-        file_put_contents($path, str_repeat('x', $sizeBytes));
-        return $path;
-    }
-
-    /**
      * Helper: Get private/protected method via reflection
+     *
+     * @param array<int, mixed> $args
      */
-    private function callPrivateMethod(object $object, string $methodName, array $args = [])
+    private function callPrivateMethod(object $object, string $methodName, array $args = []): mixed
     {
         $reflection = new ReflectionClass($object);
         $method     = $reflection->getMethod($methodName);
-        $method->setAccessible(true);
         return $method->invokeArgs($object, $args);
     }
 
@@ -78,7 +75,7 @@ class DatabaseServiceTest extends TestCase
         $connection = $this->service->getConnection();
 
         // May be null if database is not available in test environment
-        if ($connection !== null) {
+        if ($connection instanceof PDO) {
             $this->assertInstanceOf(PDO::class, $connection);
         } else {
             $this->assertNull($connection);
@@ -210,7 +207,7 @@ class DatabaseServiceTest extends TestCase
 
         foreach ($invalidFilenames as $filename) {
             $result = $this->callPrivateMethod($this->service, 'parseBackupFilename', [$filename]);
-            $this->assertNull($result, "Expected null for invalid filename: $filename");
+            $this->assertNull($result, 'Expected null for invalid filename: ' . $filename);
         }
     }
 
@@ -226,7 +223,7 @@ class DatabaseServiceTest extends TestCase
 
         foreach ($validFilenames as $filename) {
             $result = $this->callPrivateMethod($this->service, 'validateBackupFilename', [$filename]);
-            $this->assertTrue($result, "Expected true for valid filename: $filename");
+            $this->assertTrue($result, 'Expected true for valid filename: ' . $filename);
         }
     }
 
@@ -242,7 +239,7 @@ class DatabaseServiceTest extends TestCase
 
         foreach ($maliciousFilenames as $filename) {
             $result = $this->callPrivateMethod($this->service, 'validateBackupFilename', [$filename]);
-            $this->assertFalse($result, "Expected false for malicious filename: $filename");
+            $this->assertFalse($result, 'Expected false for malicious filename: ' . $filename);
         }
     }
 
@@ -257,7 +254,7 @@ class DatabaseServiceTest extends TestCase
 
         foreach ($invalidFilenames as $filename) {
             $result = $this->callPrivateMethod($this->service, 'validateBackupFilename', [$filename]);
-            $this->assertFalse($result, "Expected false for invalid filename: $filename");
+            $this->assertFalse($result, 'Expected false for invalid filename: ' . $filename);
         }
     }
 
@@ -418,11 +415,11 @@ class DatabaseServiceTest extends TestCase
         foreach ($attackVectors as $vector) {
             // Test restore
             $result = $this->service->restoreBackup($vector);
-            $this->assertFalse($result['success'], "Restore should block: $vector");
+            $this->assertFalse($result['success'], 'Restore should block: ' . $vector);
 
             // Test delete
             $result = $this->service->deleteBackup($vector);
-            $this->assertFalse($result['success'], "Delete should block: $vector");
+            $this->assertFalse($result['success'], 'Delete should block: ' . $vector);
         }
     }
 
@@ -439,7 +436,7 @@ class DatabaseServiceTest extends TestCase
         foreach ($attackFilenames as $filename) {
             // Validation should reject these patterns
             $result = $this->callPrivateMethod($this->service, 'validateBackupFilename', [$filename]);
-            $this->assertFalse($result, "Should reject command injection: $filename");
+            $this->assertFalse($result, 'Should reject command injection: ' . $filename);
         }
     }
 }

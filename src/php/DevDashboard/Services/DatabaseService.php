@@ -398,8 +398,8 @@ readonly class DatabaseService
 
         [$host, $port] = explode(':', $hosts[$service]);
 
-        $connection = @fsockopen($host, (int) $port, $errno, $errstr, 1);
-        if ($connection) {
+        $connection = fsockopen($host, (int) $port, timeout: 1);
+        if ($connection !== false) {
             fclose($connection);
 
             return true;
@@ -486,9 +486,7 @@ readonly class DatabaseService
         }
 
         // Sort by timestamp descending (newest first)
-        usort($backups, function ($a, $b) {
-            return strcmp($b['timestamp'], $a['timestamp']);
-        });
+        usort($backups, fn(array $a, array $b): int => strcmp($b['timestamp'], $a['timestamp']));
 
         return ['success' => true, 'backups' => $backups];
     }
@@ -497,7 +495,7 @@ readonly class DatabaseService
      * Create database backup
      *
      * @param int|null $retention Retention days (null = use default)
-     * @return array{success: bool, message: string, output?: string, backup?: array<string, mixed>}
+     * @return array{success: bool, message: string, output?: string, backup?: array{filename: string}|null}
      */
     public function createBackup(?int $retention = null): array
     {
@@ -525,11 +523,13 @@ readonly class DatabaseService
                 $backupFile = $matches[1];
             }
 
+            $backup = $backupFile ? ['filename' => $backupFile] : null;
+
             return [
                 'success' => true,
                 'message' => 'Backup created successfully',
                 'output'  => $result['output'],
-                'backup'  => $backupFile ? ['filename' => $backupFile] : null,
+                'backup'  => $backup,
             ];
         }
 
@@ -653,12 +653,13 @@ readonly class DatabaseService
 
         $backups    = $result['backups'];
         $totalBytes = array_sum(array_column($backups, 'sizeBytes'));
+        $lastIndex  = count($backups) - 1;
 
         return [
             'count'      => count($backups),
             'totalSize'  => $this->formatBytes($totalBytes),
-            'oldestDate' => end($backups)['timestamp'] ?? 'N/A',
-            'newestDate' => $backups[0]['timestamp'] ?? 'N/A',
+            'oldestDate' => $backups[$lastIndex]['timestamp'],
+            'newestDate' => $backups[0]['timestamp'],
         ];
     }
 
@@ -715,7 +716,7 @@ readonly class DatabaseService
             'dbType'    => $matches[1],
             'dbName'    => $matches[2],
             'timestamp' => $timestamp ? $timestamp->format('Y-m-d H:i:s') : $matches[3],
-            'encrypted' => isset($matches[4]) && $matches[4] === '.enc',
+            'encrypted' => isset($matches[4]),
         ];
     }
 
@@ -747,7 +748,7 @@ readonly class DatabaseService
     private function formatBytes(int $bytes): string
     {
         $units  = ['B', 'KB', 'MB', 'GB', 'TB'];
-        $factor = floor((strlen((string) $bytes) - 1) / 3);
+        $factor = (int) floor((strlen((string) $bytes) - 1) / 3);
 
         return sprintf('%.2f %s', $bytes / (1024 ** $factor), $units[$factor]);
     }
