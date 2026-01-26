@@ -6,7 +6,8 @@ set -e
 
 # Load pgAdmin password from secrets file if exists
 if [ -f "/run/secrets/pgadmin_password.txt" ]; then
-    export PGADMIN_DEFAULT_PASSWORD="$(cat /run/secrets/pgadmin_password.txt)"
+    PGADMIN_DEFAULT_PASSWORD="$(cat /run/secrets/pgadmin_password.txt)"
+    export PGADMIN_DEFAULT_PASSWORD
 fi
 
 # Execute the original entrypoint

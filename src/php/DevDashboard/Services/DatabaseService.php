@@ -16,6 +16,7 @@ use PDOException;
 class DatabaseService
 {
     private readonly DatabaseConfig $config;
+
     private readonly DatabaseMetricsService $metricsService;
 
     public function __construct(
