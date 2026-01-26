@@ -8,6 +8,7 @@ use Exception;
 use FilesystemIterator;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
+use SplFileInfo;
 
 /**
  * Quality Service
@@ -357,9 +358,9 @@ class QualityService
 
     /**
      * Count files in a directory
-          *
+     *
      * @param array<int, string> $extensions
-     * @return array<string, mixed>
+     * @return array{count: int, exists: bool, error?: string}
      */
     private function countFiles(string $directory, array $extensions): array
     {
@@ -377,6 +378,7 @@ class QualityService
                 RecursiveIteratorIterator::SELF_FIRST
             );
 
+            /** @var SplFileInfo $file */
             foreach ($iterator as $file) {
                 if ($file->isFile()) {
                     $extension = $file->getExtension();
@@ -624,6 +626,7 @@ class QualityService
                 RecursiveIteratorIterator::LEAVES_ONLY,
             );
 
+            /** @var SplFileInfo $file */
             foreach ($iterator as $file) {
                 if (!$file->isFile()) {
                     continue;
@@ -635,7 +638,7 @@ class QualityService
                 }
 
                 $mtime = $file->getMTime();
-                if ($newestMtime === null || $mtime > $newestMtime) {
+                if ($mtime !== false && ($newestMtime === null || $mtime > $newestMtime)) {
                     $newestMtime = $mtime;
                 }
             }

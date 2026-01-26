@@ -43,7 +43,10 @@ class DatabaseServiceTest extends TestCase
     {
         // Clean up test backup directory
         if (is_dir($this->testBackupDir)) {
-            array_map('unlink', glob($this->testBackupDir . '/*'));
+            $files = glob($this->testBackupDir . '/*');
+            if ($files !== false) {
+                array_map('unlink', $files);
+            }
             rmdir($this->testBackupDir);
         }
 
@@ -51,19 +54,11 @@ class DatabaseServiceTest extends TestCase
     }
 
     /**
-     * Helper: Create a test backup file in temp directory
-     */
-    private function createTestBackupFile(string $filename, int $sizeBytes = 1024): string
-    {
-        $path = $this->testBackupDir . '/' . $filename;
-        file_put_contents($path, str_repeat('x', $sizeBytes));
-        return $path;
-    }
-
-    /**
      * Helper: Get private/protected method via reflection
+     *
+     * @param array<int, mixed> $args
      */
-    private function callPrivateMethod(object $object, string $methodName, array $args = [])
+    private function callPrivateMethod(object $object, string $methodName, array $args = []): mixed
     {
         $reflection = new ReflectionClass($object);
         $method     = $reflection->getMethod($methodName);
