@@ -1360,6 +1360,287 @@ k8s-logs: ## Show Kubernetes logs: make k8s-logs [pod]
 		kubectl get pods -n "$$NAMESPACE" --no-headers -o custom-columns=":metadata.name" 2>/dev/null; \
 	fi
 
+##@ Production Testing
+
+test-production: ## Test production build with ENV-configured services (smart, respects .env)
+	@echo -e "\033[0;34m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\033[0m"
+	@echo -e "\033[0;34m  Production Test: ENV-aware configuration\033[0m"
+	@echo -e "\033[0;34m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\033[0m"
+	@# Ensure we're in production mode
+	@if [ ! -f .env ]; then \
+		echo -e "\033[0;31mError: .env file not found\033[0m"; \
+		exit 1; \
+	fi
+	@. ./.env && if [ "$${ENV:-development}" != "production" ]; then \
+		echo -e "\033[0;31mError: ENV must be 'production' in .env\033[0m"; \
+		echo -e "\033[0;33mCurrent: ENV=$${ENV:-development}\033[0m"; \
+		exit 1; \
+	fi
+	@echo ""
+	@echo -e "\033[0;36mℹ️  Services activated based on .env configuration:\033[0m"
+	@. ./.env && \
+	echo -e "   \033[0;32m✓\033[0m nginx (always)" && \
+	if [ "$${ENABLE_PHP:-true}" = "true" ]; then echo -e "   \033[0;32m✓\033[0m php"; fi && \
+	if [ "$${ENABLE_NODE:-true}" = "true" ]; then \
+		case "$${NODE_MODE:-assets-api}" in \
+			assets|idle|framework) echo -e "   \033[0;32m✓\033[0m node (NODE_MODE=$${NODE_MODE})";; \
+			api) echo -e "   \033[0;32m✓\033[0m node-backend (NODE_MODE=$${NODE_MODE})";; \
+			assets-api|framework-api) echo -e "   \033[0;32m✓\033[0m node + node-backend (NODE_MODE=$${NODE_MODE})";; \
+		esac; \
+	fi && \
+	if [ "$${ENABLE_DATABASE:-true}" = "true" ]; then echo -e "   \033[0;32m✓\033[0m $${DB_TYPE:-postgres} (database)"; fi && \
+	if [ "$${ENABLE_REDIS:-true}" = "true" ]; then echo -e "   \033[0;32m✓\033[0m redis"; fi && \
+	if [ "$${ENABLE_MERCURE:-false}" = "true" ]; then echo -e "   \033[0;32m✓\033[0m mercure"; fi && \
+	if [ "$${ENABLE_MEILISEARCH:-false}" = "true" ]; then echo -e "   \033[0;32m✓\033[0m meilisearch"; fi && \
+	if [ "$${ENABLE_ELASTICSEARCH:-false}" = "true" ]; then echo -e "   \033[0;32m✓\033[0m elasticsearch"; fi && \
+	if [ "$${ENABLE_SEAWEEDFS:-false}" = "true" ]; then echo -e "   \033[0;32m✓\033[0m seaweedfs"; fi && \
+	if [ "$${ENABLE_RABBITMQ:-false}" = "true" ]; then echo -e "   \033[0;32m✓\033[0m rabbitmq"; fi
+	@echo ""
+	@# Build profile list (same logic as 'make up')
+	@. ./.env && \
+	PROFILES=""; \
+	if [ "$${ENABLE_DATABASE:-true}" = "true" ]; then \
+		PROFILES="$$PROFILES --profile $${DB_TYPE:-postgres}"; \
+	fi; \
+	if [ "$${ENABLE_PHP:-true}" = "true" ]; then PROFILES="$$PROFILES --profile php"; fi; \
+	if [ "$${ENABLE_NODE:-true}" = "true" ]; then \
+		case "$${NODE_MODE:-assets-api}" in \
+			assets|idle) PROFILES="$$PROFILES --profile node" ;; \
+			api) PROFILES="$$PROFILES --profile node-backend" ;; \
+			assets-api) PROFILES="$$PROFILES --profile node --profile node-backend" ;; \
+			framework) PROFILES="$$PROFILES --profile node" ;; \
+			framework-api) PROFILES="$$PROFILES --profile node --profile node-backend" ;; \
+			*) PROFILES="$$PROFILES --profile node" ;; \
+		esac; \
+	fi; \
+	if [ "$${ENABLE_REDIS:-true}" = "true" ]; then PROFILES="$$PROFILES --profile redis"; fi; \
+	if [ "$${ENABLE_MERCURE:-false}" = "true" ]; then PROFILES="$$PROFILES --profile mercure"; fi; \
+	if [ "$${ENABLE_MEILISEARCH:-false}" = "true" ]; then PROFILES="$$PROFILES --profile meilisearch"; fi; \
+	if [ "$${ENABLE_ELASTICSEARCH:-false}" = "true" ]; then PROFILES="$$PROFILES --profile elasticsearch"; fi; \
+	if [ "$${ENABLE_SEAWEEDFS:-false}" = "true" ]; then PROFILES="$$PROFILES --profile seaweedfs"; fi; \
+	if [ "$${ENABLE_RABBITMQ:-false}" = "true" ]; then PROFILES="$$PROFILES --profile rabbitmq"; fi; \
+	echo -e "\033[0;33m▶ Starting services...\033[0m"; \
+	ENV=production $(DC) -f compose.yaml -f compose.production.yaml $$PROFILES up -d; \
+	echo -e "\033[0;32m✓ Services started\033[0m"; \
+	echo ""; \
+	echo -e "\033[0;33m▶ Waiting for services to be ready...\033[0m"; \
+	sleep 10; \
+	echo -e "\033[0;32m✓ Initial wait completed\033[0m"; \
+	echo ""; \
+	echo -e "\033[0;33m▶ Running health checks...\033[0m"; \
+	FAILED=0; \
+	echo -n "   nginx... "; \
+	if timeout 30 sh -c 'until curl -sf http://localhost:8080/health > /dev/null 2>&1; do sleep 1; done' 2>/dev/null; then \
+		echo -e "\033[0;32m✓\033[0m"; \
+	else \
+		echo -e "\033[0;31m✗ (timeout)\033[0m"; \
+		FAILED=1; \
+	fi; \
+	if [ "$${ENABLE_DATABASE:-true}" = "true" ]; then \
+		if [ "$${DB_TYPE:-postgres}" = "postgres" ]; then \
+			echo -n "   postgres... "; \
+			if timeout 30 sh -c 'until docker compose exec -T postgres pg_isready -U app > /dev/null 2>&1; do sleep 1; done' 2>/dev/null; then \
+				echo -e "\033[0;32m✓\033[0m"; \
+			else \
+				echo -e "\033[0;31m✗ (timeout)\033[0m"; \
+				FAILED=1; \
+			fi; \
+		elif [ "$${DB_TYPE}" = "mariadb" ]; then \
+			echo -n "   mariadb... "; \
+			if timeout 30 sh -c 'until docker compose exec -T mariadb mariadb -u app -p$${DB_PASSWORD} -e "SELECT 1" > /dev/null 2>&1; do sleep 1; done' 2>/dev/null; then \
+				echo -e "\033[0;32m✓\033[0m"; \
+			else \
+				echo -e "\033[0;31m✗ (timeout)\033[0m"; \
+				FAILED=1; \
+			fi; \
+		fi; \
+	fi; \
+	if [ "$${ENABLE_REDIS:-true}" = "true" ]; then \
+		echo -n "   redis... "; \
+		if timeout 30 sh -c 'until docker compose exec -T redis redis-cli --tls --insecure ping > /dev/null 2>&1; do sleep 1; done' 2>/dev/null; then \
+			echo -e "\033[0;32m✓\033[0m"; \
+		else \
+			echo -e "\033[0;31m✗ (timeout)\033[0m"; \
+			FAILED=1; \
+		fi; \
+	fi; \
+	echo ""; \
+	if [ $$FAILED -eq 0 ]; then \
+		echo -e "\033[0;32m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\033[0m"; \
+		echo -e "\033[0;32m  ✓ Production test passed\033[0m"; \
+		echo -e "\033[0;32m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\033[0m"; \
+	else \
+		echo -e "\033[0;31m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\033[0m"; \
+		echo -e "\033[0;31m  ✗ Production test failed\033[0m"; \
+		echo -e "\033[0;31m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\033[0m"; \
+		echo ""; \
+		echo -e "\033[0;33m▶ Container logs:\033[0m"; \
+		$(DC) logs --tail=50; \
+		exit 1; \
+	fi
+
+test-production-minimal: ## Test production build with minimal services (nginx + app + db only)
+	@echo -e "\033[0;34m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\033[0m"
+	@echo -e "\033[0;34m  Production Test: Minimal (Core Services)\033[0m"
+	@echo -e "\033[0;34m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\033[0m"
+	@if [ ! -f .env ]; then \
+		echo -e "\033[0;31mError: .env file not found\033[0m"; \
+		exit 1; \
+	fi
+	@echo ""
+	@echo -e "\033[0;36mℹ️  Starting minimal core services:\033[0m"
+	@. ./.env && \
+	echo -e "   \033[0;32m✓\033[0m nginx" && \
+	if [ "$${ENABLE_PHP:-true}" = "true" ]; then echo -e "   \033[0;32m✓\033[0m php"; fi && \
+	if [ "$${ENABLE_NODE:-true}" = "true" ]; then \
+		case "$${NODE_MODE:-assets-api}" in \
+			api) echo -e "   \033[0;32m✓\033[0m node-backend";; \
+			*) echo -e "   \033[0;32m✓\033[0m node";; \
+		esac; \
+	fi && \
+	echo -e "   \033[0;32m✓\033[0m $${DB_TYPE:-postgres} (database)"
+	@echo ""
+	@. ./.env && \
+	PROFILES="--profile $${DB_TYPE:-postgres}"; \
+	if [ "$${ENABLE_PHP:-true}" = "true" ]; then PROFILES="$$PROFILES --profile php"; fi; \
+	if [ "$${ENABLE_NODE:-true}" = "true" ]; then \
+		case "$${NODE_MODE:-assets-api}" in \
+			api) PROFILES="$$PROFILES --profile node-backend" ;; \
+			*) PROFILES="$$PROFILES --profile node" ;; \
+		esac; \
+	fi; \
+	echo -e "\033[0;33m▶ Starting services...\033[0m"; \
+	ENV=production $(DC) -f compose.yaml -f compose.production.yaml $$PROFILES up -d; \
+	echo -e "\033[0;32m✓ Services started\033[0m"; \
+	echo ""; \
+	echo -e "\033[0;33m▶ Waiting for services to be ready...\033[0m"; \
+	sleep 10; \
+	echo -e "\033[0;32m✓ Initial wait completed\033[0m"; \
+	echo ""; \
+	echo -e "\033[0;33m▶ Running health checks...\033[0m"; \
+	FAILED=0; \
+	echo -n "   nginx... "; \
+	if timeout 30 sh -c 'until curl -sf http://localhost:8080/health > /dev/null 2>&1; do sleep 1; done' 2>/dev/null; then \
+		echo -e "\033[0;32m✓\033[0m"; \
+	else \
+		echo -e "\033[0;31m✗ (timeout)\033[0m"; \
+		FAILED=1; \
+	fi; \
+	if [ "$${DB_TYPE:-postgres}" = "postgres" ]; then \
+		echo -n "   postgres... "; \
+		if timeout 30 sh -c 'until docker compose exec -T postgres pg_isready -U app > /dev/null 2>&1; do sleep 1; done' 2>/dev/null; then \
+			echo -e "\033[0;32m✓\033[0m"; \
+		else \
+			echo -e "\033[0;31m✗ (timeout)\033[0m"; \
+			FAILED=1; \
+		fi; \
+	elif [ "$${DB_TYPE}" = "mariadb" ]; then \
+		echo -n "   mariadb... "; \
+		if timeout 30 sh -c 'until docker compose exec -T mariadb mariadb -u app -p$${DB_PASSWORD} -e "SELECT 1" > /dev/null 2>&1; do sleep 1; done' 2>/dev/null; then \
+			echo -e "\033[0;32m✓\033[0m"; \
+		else \
+			echo -e "\033[0;31m✗ (timeout)\033[0m"; \
+			FAILED=1; \
+		fi; \
+	fi; \
+	echo ""; \
+	if [ $$FAILED -eq 0 ]; then \
+		echo -e "\033[0;32m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\033[0m"; \
+		echo -e "\033[0;32m  ✓ Minimal production test passed\033[0m"; \
+		echo -e "\033[0;32m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\033[0m"; \
+	else \
+		echo -e "\033[0;31m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\033[0m"; \
+		echo -e "\033[0;31m  ✗ Minimal production test failed\033[0m"; \
+		echo -e "\033[0;31m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\033[0m"; \
+		echo ""; \
+		echo -e "\033[0;33m▶ Container logs:\033[0m"; \
+		$(DC) logs --tail=50; \
+		exit 1; \
+	fi
+
+test-production-full: ## Test production build with ALL services (comprehensive, ignores ENABLE_*)
+	@echo -e "\033[0;34m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\033[0m"
+	@echo -e "\033[0;34m  Production Test: Full (All Services)\033[0m"
+	@echo -e "\033[0;34m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\033[0m"
+	@echo ""
+	@echo -e "\033[0;36mℹ️  Starting ALL available services:\033[0m"
+	@echo -e "   \033[0;32m✓\033[0m nginx"
+	@echo -e "   \033[0;32m✓\033[0m php"
+	@echo -e "   \033[0;32m✓\033[0m node + node-backend"
+	@echo -e "   \033[0;32m✓\033[0m postgres"
+	@echo -e "   \033[0;32m✓\033[0m mariadb"
+	@echo -e "   \033[0;32m✓\033[0m redis"
+	@echo -e "   \033[0;32m✓\033[0m elasticsearch"
+	@echo -e "   \033[0;32m✓\033[0m meilisearch"
+	@echo -e "   \033[0;32m✓\033[0m mercure"
+	@echo -e "   \033[0;32m✓\033[0m rabbitmq"
+	@echo -e "   \033[0;32m✓\033[0m seaweedfs"
+	@echo ""
+	@echo -e "\033[0;33m▶ Starting services...\033[0m"
+	@ENV=production $(DC) -f compose.yaml -f compose.production.yaml \
+		--profile php \
+		--profile node \
+		--profile node-backend \
+		--profile postgres \
+		--profile mariadb \
+		--profile redis \
+		--profile elasticsearch \
+		--profile meilisearch \
+		--profile mercure \
+		--profile rabbitmq \
+		--profile seaweedfs \
+		up -d
+	@echo -e "\033[0;32m✓ Services started\033[0m"
+	@echo ""
+	@echo -e "\033[0;33m▶ Waiting for services to be ready (this may take a while)...\033[0m"
+	@sleep 20
+	@echo -e "\033[0;32m✓ Initial wait completed\033[0m"
+	@echo ""
+	@echo -e "\033[0;33m▶ Running health checks...\033[0m"
+	@FAILED=0; \
+	echo -n "   nginx... "; \
+	if timeout 30 sh -c 'until curl -sf http://localhost:8080/health > /dev/null 2>&1; do sleep 1; done' 2>/dev/null; then \
+		echo -e "\033[0;32m✓\033[0m"; \
+	else \
+		echo -e "\033[0;31m✗ (timeout)\033[0m"; \
+		FAILED=1; \
+	fi; \
+	echo -n "   postgres... "; \
+	if timeout 30 sh -c 'until docker compose exec -T postgres pg_isready -U app > /dev/null 2>&1; do sleep 1; done' 2>/dev/null; then \
+		echo -e "\033[0;32m✓\033[0m"; \
+	else \
+		echo -e "\033[0;31m✗ (timeout)\033[0m"; \
+		FAILED=1; \
+	fi; \
+	echo -n "   redis... "; \
+	if timeout 30 sh -c 'until docker compose exec -T redis redis-cli --tls --insecure ping > /dev/null 2>&1; do sleep 1; done' 2>/dev/null; then \
+		echo -e "\033[0;32m✓\033[0m"; \
+	else \
+		echo -e "\033[0;31m✗ (timeout)\033[0m"; \
+		FAILED=1; \
+	fi; \
+	echo -n "   elasticsearch... "; \
+	if timeout 60 sh -c 'until curl -sf http://localhost:9200/_cluster/health > /dev/null 2>&1; do sleep 2; done' 2>/dev/null; then \
+		echo -e "\033[0;32m✓\033[0m"; \
+	else \
+		echo -e "\033[0;33m⚠ (timeout, may not be critical)\033[0m"; \
+	fi; \
+	echo ""; \
+	if [ $$FAILED -eq 0 ]; then \
+		echo -e "\033[0;32m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\033[0m"; \
+		echo -e "\033[0;32m  ✓ Full production test passed\033[0m"; \
+		echo -e "\033[0;32m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\033[0m"; \
+	else \
+		echo -e "\033[0;31m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\033[0m"; \
+		echo -e "\033[0;31m  ✗ Full production test failed\033[0m"; \
+		echo -e "\033[0;31m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\033[0m"; \
+		echo ""; \
+		echo -e "\033[0;33m▶ Container logs:\033[0m"; \
+		$(DC) logs --tail=50; \
+		exit 1; \
+	fi
+
+
 ##@ Node.js Development
 
 node-dev-full: ## Start full-stack development (Vite + Node.js backend with PM2)

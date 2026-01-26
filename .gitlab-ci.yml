@@ -398,13 +398,15 @@ build:production:
     - docker compose -f compose.yaml -f compose.production.yaml --profile node-backend build node-backend
     - docker tag zappzarapp-node-backend:api zappzarapp-node-backend:latest
     # Disable BuildKit for php/nginx build so they can see the local tagged image
-    - DOCKER_BUILDKIT=0 ENV=production docker compose -f compose.yaml -f compose.production.yaml build php nginx
-    # Start and test
-    - ENV=production docker compose -f compose.yaml -f compose.production.yaml up -d
-    - sleep 10
-    - docker compose ps
-    - docker compose logs
-    - curl -f http://localhost:8080/health || exit 1
+    - DOCKER_BUILDKIT=0 ENV=production docker compose -f compose.yaml -f compose.production.yaml --profile php --profile postgres build php nginx postgres
+    # Test production build using ENV-aware target
+    # Tests nginx + app (php/node) + database + activated services
+    - make test-production
+  after_script:
+    - docker compose ps || true
+    - docker compose logs --tail=100 || true
+    - docker compose down -v || true
+    - docker system prune -f || true
   artifacts:
     when: on_success
     expire_in: 7 days
