@@ -244,6 +244,54 @@ $tabs = [
                         <span class="badge badge-green">Fresh</span>
                     <?php endif; ?>
                 </div>
+
+                <?php if ($phpAvailable && isset($test_coverage['php']['metrics'])): ?>
+                    <?php $metrics = $test_coverage['php']['metrics']; ?>
+                    <div class="grid grid-cols-2 gap-2 mb-3 text-sm">
+                        <?php if (isset($metrics['statements'])): ?>
+                        <div class="flex justify-between">
+                            <span class="text-gray-600">Statements:</span>
+                            <span class="font-semibold <?= $metrics['statements'] >= 80 ? 'text-green-600' : 'text-yellow-600' ?>">
+                                <?= number_format($metrics['statements'], 1) ?>%
+                            </span>
+                        </div>
+                        <?php endif; ?>
+
+                        <?php if (isset($metrics['branches'])): ?>
+                        <div class="flex justify-between">
+                            <span class="text-gray-600">Branches:</span>
+                            <span class="font-semibold <?= $metrics['branches'] >= 80 ? 'text-green-600' : 'text-yellow-600' ?>">
+                                <?= number_format($metrics['branches'], 1) ?>%
+                            </span>
+                        </div>
+                        <?php endif; ?>
+
+                        <?php if (isset($metrics['functions'])): ?>
+                        <div class="flex justify-between">
+                            <span class="text-gray-600">Functions:</span>
+                            <span class="font-semibold <?= $metrics['functions'] >= 80 ? 'text-green-600' : 'text-yellow-600' ?>">
+                                <?= number_format($metrics['functions'], 1) ?>%
+                            </span>
+                        </div>
+                        <?php endif; ?>
+
+                        <?php if (isset($metrics['lines'])): ?>
+                        <div class="flex justify-between">
+                            <span class="text-gray-600">Lines:</span>
+                            <span class="font-semibold <?= $metrics['lines'] >= 80 ? 'text-green-600' : 'text-yellow-600' ?>">
+                                <?= number_format($metrics['lines'], 1) ?>%
+                            </span>
+                        </div>
+                        <?php endif; ?>
+                    </div>
+
+                    <?php if (isset($test_coverage['php']['generated_at'])): ?>
+                    <p class="text-xs text-gray-500 mb-2">
+                        Generated <?= $test_coverage['php']['generated_at'] ?>
+                    </p>
+                    <?php endif; ?>
+                <?php endif; ?>
+
                 <div class="flex gap-2">
                     <?php if ($phpAvailable): ?>
                         <a href="<?= $test_coverage['php']['report_path'] ?>"
@@ -280,6 +328,54 @@ $tabs = [
                         <span class="badge badge-green">Fresh</span>
                     <?php endif; ?>
                 </div>
+
+                <?php if ($nodeAvailable && isset($test_coverage['node']['metrics'])): ?>
+                    <?php $metrics = $test_coverage['node']['metrics']; ?>
+                    <div class="grid grid-cols-2 gap-2 mb-3 text-sm">
+                        <?php if (isset($metrics['statements'])): ?>
+                        <div class="flex justify-between">
+                            <span class="text-gray-600">Statements:</span>
+                            <span class="font-semibold <?= $metrics['statements'] >= 80 ? 'text-green-600' : 'text-yellow-600' ?>">
+                                <?= number_format($metrics['statements'], 1) ?>%
+                            </span>
+                        </div>
+                        <?php endif; ?>
+
+                        <?php if (isset($metrics['branches'])): ?>
+                        <div class="flex justify-between">
+                            <span class="text-gray-600">Branches:</span>
+                            <span class="font-semibold <?= $metrics['branches'] >= 80 ? 'text-green-600' : 'text-yellow-600' ?>">
+                                <?= number_format($metrics['branches'], 1) ?>%
+                            </span>
+                        </div>
+                        <?php endif; ?>
+
+                        <?php if (isset($metrics['functions'])): ?>
+                        <div class="flex justify-between">
+                            <span class="text-gray-600">Functions:</span>
+                            <span class="font-semibold <?= $metrics['functions'] >= 80 ? 'text-green-600' : 'text-yellow-600' ?>">
+                                <?= number_format($metrics['functions'], 1) ?>%
+                            </span>
+                        </div>
+                        <?php endif; ?>
+
+                        <?php if (isset($metrics['lines'])): ?>
+                        <div class="flex justify-between">
+                            <span class="text-gray-600">Lines:</span>
+                            <span class="font-semibold <?= $metrics['lines'] >= 80 ? 'text-green-600' : 'text-yellow-600' ?>">
+                                <?= number_format($metrics['lines'], 1) ?>%
+                            </span>
+                        </div>
+                        <?php endif; ?>
+                    </div>
+
+                    <?php if (isset($test_coverage['node']['generated_at'])): ?>
+                    <p class="text-xs text-gray-500 mb-2">
+                        Generated <?= $test_coverage['node']['generated_at'] ?>
+                    </p>
+                    <?php endif; ?>
+                <?php endif; ?>
+
                 <div class="flex gap-2">
                     <?php if ($nodeAvailable): ?>
                         <a href="<?= $test_coverage['node']['report_path'] ?>"

@@ -406,6 +406,109 @@ class QualityService
     }
 
     /**
+     * Parse coverage metrics from HTML report
+     *
+     * @return array<string, float>|null
+     */
+    private function parseCoverageMetrics(string $htmlFile): ?array
+    {
+        if (!file_exists($htmlFile)) {
+            return null;
+        }
+
+        $html = file_get_contents($htmlFile);
+        if ($html === false) {
+            return null;
+        }
+
+        // Try Node.js/Vitest format first
+        $metrics = $this->parseNodeCoverageFormat($html);
+
+        // Try PHPUnit format if Node format not found
+        if (empty($metrics)) {
+            $metrics = $this->parsePhpUnitCoverageFormat($html);
+        }
+
+        return empty($metrics) ? null : $metrics;
+    }
+
+    /**
+     * Parse Node.js/Vitest coverage format
+     *
+     * @return array<string, float>
+     */
+    private function parseNodeCoverageFormat(string $html): array
+    {
+        $metrics = [];
+        $types   = ['Statements', 'Branches', 'Functions', 'Lines'];
+
+        foreach ($types as $type) {
+            $pattern = '/<span class="strong">([0-9.]+)%\s*<\/span>\s*<span class="quiet">' . $type . '<\/span>/i';
+            if (preg_match($pattern, $html, $matches)) {
+                $metrics[strtolower($type)] = (float) $matches[1];
+            }
+        }
+
+        return $metrics;
+    }
+
+    /**
+     * Parse PHPUnit coverage format
+     *
+     * @return array<string, float>
+     */
+    private function parsePhpUnitCoverageFormat(string $html): array
+    {
+        $metrics = [];
+
+        // Find the Total row and extract all percentage values
+        if (!preg_match('/<td[^>]*>Total<\/td>(.*?)<\/tr>/s', $html, $rowMatch)) {
+            return $metrics;
+        }
+
+        // Extract all percentages from this row
+        preg_match_all('/<div[^>]*>([0-9.]+)%<\/div>/', $rowMatch[1], $percentMatches);
+
+        if (empty($percentMatches[1])) {
+            return $metrics;
+        }
+
+        // First percentage: Lines
+        $metrics['lines']      = (float) $percentMatches[1][0];
+        $metrics['statements'] = (float) $percentMatches[1][0]; // Use Lines as Statements
+
+        // Second percentage: Functions/Methods
+        if (isset($percentMatches[1][1])) {
+            $metrics['functions'] = (float) $percentMatches[1][1];
+        }
+
+        return $metrics;
+    }
+
+    /**
+     * Format timestamp as human-readable age
+     */
+    private function formatAge(int $timestamp): string
+    {
+        $diff = time() - $timestamp;
+
+        if ($diff < 60) {
+            return 'just now';
+        }
+        if ($diff < 3600) {
+            $minutes = floor($diff / 60);
+            return $minutes . ' minute' . ($minutes > 1 ? 's' : '') . ' ago';
+        }
+        if ($diff < 86400) {
+            $hours = floor($diff / 3600);
+            return $hours . ' hour' . ($hours > 1 ? 's' : '') . ' ago';
+        }
+
+        $days = floor($diff / 86400);
+        return $days . ' day' . ($days > 1 ? 's' : '') . ' ago';
+    }
+
+    /**
      * Get PHP test coverage
      *
      * @return array<string, mixed>
@@ -436,11 +539,19 @@ class QualityService
             }
         }
 
+        // Parse coverage metrics
+        $metrics = $this->parseCoverageMetrics($coverageFile);
+
+        // Format timestamp
+        $generatedAt = $coverageMtime !== false ? $this->formatAge($coverageMtime) : null;
+
         return [
-            'available'   => true,
-            'outdated'    => $outdated,
-            'report_path' => '/build/coverage-php/index.html',
-            'message'     => $outdated ? 'Coverage report outdated' : 'Coverage report available',
+            'available'    => true,
+            'outdated'     => $outdated,
+            'report_path'  => '/build/coverage-php/index.html',
+            'message'      => $outdated ? 'Coverage report outdated' : 'Coverage report available',
+            'metrics'      => $metrics,
+            'generated_at' => $generatedAt,
         ];
     }
 
@@ -475,11 +586,19 @@ class QualityService
             }
         }
 
+        // Parse coverage metrics
+        $metrics = $this->parseCoverageMetrics($coverageFile);
+
+        // Format timestamp
+        $generatedAt = $coverageMtime !== false ? $this->formatAge($coverageMtime) : null;
+
         return [
-            'available'   => true,
-            'outdated'    => $outdated,
-            'report_path' => '/build/coverage/node/index.html',
-            'message'     => $outdated ? 'Coverage report outdated' : 'Coverage report available',
+            'available'    => true,
+            'outdated'     => $outdated,
+            'report_path'  => '/build/coverage/node/index.html',
+            'message'      => $outdated ? 'Coverage report outdated' : 'Coverage report available',
+            'metrics'      => $metrics,
+            'generated_at' => $generatedAt,
         ];
     }
 
