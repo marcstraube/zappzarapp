@@ -16,15 +16,13 @@ use PDOException;
 class DatabaseService
 {
     private readonly DatabaseConfig $config;
-    private readonly DatabaseBackupService $backupService;
     private readonly DatabaseMetricsService $metricsService;
 
     public function __construct(
-        ?DatabaseBackupService $backupService = null,
+        private readonly DatabaseBackupService $backupService = new DatabaseBackupService(),
         ?DatabaseMetricsService $metricsService = null,
     ) {
         $this->config         = new DatabaseConfig();
-        $this->backupService  = $backupService ?? new DatabaseBackupService();
         $this->metricsService = $metricsService ?? new DatabaseMetricsService($this->config);
     }
 
@@ -343,7 +341,7 @@ class DatabaseService
         [$host, $port] = explode(':', $hosts[$service]);
 
         // Temporarily suppress warnings for network errors (expected when services unavailable)
-        set_error_handler(static fn() => true);
+        set_error_handler(static fn(): true => true);
         $connection = fsockopen($host, (int) $port, timeout: 1);
         restore_error_handler();
 

@@ -12,16 +12,12 @@ namespace DevDashboard\Services;
 class DatabaseBackupService
 {
     private readonly string $backupDir;
-    private readonly BackupFileUtils $fileUtils;
-    private readonly CommandRunner $commandRunner;
 
     public function __construct(
-        ?BackupFileUtils $fileUtils = null,
-        ?CommandRunner $commandRunner = null,
+        private readonly BackupFileUtils $fileUtils = new BackupFileUtils(),
+        private readonly CommandRunner $commandRunner = new CommandRunner(),
     ) {
         $this->backupDir     = $this->getBackupDirectory();
-        $this->fileUtils     = $fileUtils ?? new BackupFileUtils();
-        $this->commandRunner = $commandRunner ?? new CommandRunner();
     }
 
     /**
@@ -52,7 +48,7 @@ class DatabaseBackupService
         $backups = $this->collectBackupFiles($files);
 
         // Sort by timestamp descending (newest first)
-        usort($backups, fn($a, $b) => $b['timestamp'] <=> $a['timestamp']);
+        usort($backups, fn(array $a, array $b): int => $b['timestamp'] <=> $a['timestamp']);
 
         return [
             'success' => true,
@@ -95,7 +91,7 @@ class DatabaseBackupService
             'success'  => true,
             'message'  => 'Backup created successfully',
             'filename' => basename($backupFile),
-            'size'     => $filesize !== false ? $this->fileUtils->formatBytes((int) $filesize) : 'unknown',
+            'size'     => $filesize !== false ? $this->fileUtils->formatBytes($filesize) : 'unknown',
         ];
     }
 
@@ -247,7 +243,7 @@ class DatabaseBackupService
                 'filename'  => $file,
                 'timestamp' => $metadata['timestamp'],
                 'date'      => date('Y-m-d H:i:s', $metadata['timestamp']),
-                'size'      => $filesize !== false ? $this->fileUtils->formatBytes((int) $filesize) : 'unknown',
+                'size'      => $filesize !== false ? $this->fileUtils->formatBytes($filesize) : 'unknown',
                 'age'       => $this->fileUtils->formatAge($metadata['timestamp']),
             ];
         }
@@ -335,7 +331,7 @@ class DatabaseBackupService
             if (file_exists($filepath)) {
                 $size = filesize($filepath);
                 if ($size !== false) {
-                    $totalSizeBytes += (int) $size;
+                    $totalSizeBytes += $size;
                 }
             }
         }

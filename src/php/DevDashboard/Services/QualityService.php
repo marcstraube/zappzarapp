@@ -18,16 +18,12 @@ use SplFileInfo;
 class QualityService
 {
     private readonly string $projectRoot;
-    private readonly CoverageParser $coverageParser;
-    private readonly CommandRunner $commandRunner;
 
     public function __construct(
-        ?CoverageParser $coverageParser = null,
-        ?CommandRunner $commandRunner = null,
+        private readonly CoverageParser $coverageParser = new CoverageParser(),
+        private readonly CommandRunner $commandRunner = new CommandRunner(),
     ) {
         $this->projectRoot    = realpath(__DIR__ . '/../../../../') . '/';
-        $this->coverageParser = $coverageParser ?? new CoverageParser();
-        $this->commandRunner  = $commandRunner ?? new CommandRunner();
     }
 
     /**

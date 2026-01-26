@@ -60,12 +60,15 @@ class CoverageParser
         if (preg_match('/Statements\s*:\s*([0-9.]+)%/', $html, $matches)) {
             $metrics['statements'] = (float) $matches[1];
         }
+
         if (preg_match('/Branches\s*:\s*([0-9.]+)%/', $html, $matches)) {
             $metrics['branches'] = (float) $matches[1];
         }
+
         if (preg_match('/Functions\s*:\s*([0-9.]+)%/', $html, $matches)) {
             $metrics['functions'] = (float) $matches[1];
         }
+
         if (preg_match('/Lines\s*:\s*([0-9.]+)%/', $html, $matches)) {
             $metrics['lines'] = (float) $matches[1];
         }
