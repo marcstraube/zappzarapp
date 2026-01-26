@@ -76,7 +76,7 @@ class CspNonceHelperTest extends TestCase
         $nonce = CspNonceHelper::get();
         $csp   = CspNonceHelper::buildDevelopmentCspHeader();
 
-        $this->assertStringContainsString("'nonce-{$nonce}'", $csp);
+        $this->assertStringContainsString(sprintf("'nonce-%s'", $nonce), $csp);
         $this->assertStringContainsString("script-src", $csp);
     }
 
@@ -142,7 +142,7 @@ class CspNonceHelperTest extends TestCase
         $nonce = CspNonceHelper::get();
         $csp   = CspNonceHelper::buildProductionCspHeader();
 
-        $this->assertStringContainsString("'nonce-{$nonce}'", $csp);
+        $this->assertStringContainsString(sprintf("'nonce-%s'", $nonce), $csp);
         $this->assertStringContainsString("script-src", $csp);
     }
 
@@ -151,7 +151,7 @@ class CspNonceHelperTest extends TestCase
         $nonce = CspNonceHelper::get();
         $csp   = CspNonceHelper::buildProductionCspHeader();
 
-        $this->assertStringContainsString("'nonce-{$nonce}'", $csp);
+        $this->assertStringContainsString(sprintf("'nonce-%s'", $nonce), $csp);
         $this->assertStringContainsString("style-src", $csp);
     }
 
