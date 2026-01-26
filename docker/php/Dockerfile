@@ -53,16 +53,13 @@ RUN apk add --no-cache \
     # Dependencies for PostgreSQL PDO (Extension)
     postgresql-dev \
     postgresql-libs \
-    # Dependencies for SQLite PDO (Extension)
-    sqlite-dev \
-    sqlite-libs \
     # Dependencies for soap (Extension)
     libxml2-dev \
     # Dependencies for amqp (Extension - RabbitMQ)
     rabbitmq-c \
     rabbitmq-c-dev \
     # Compilation and installation of extensions
-    && docker-php-ext-install exif intl opcache zip pdo_pgsql pdo_mysql pdo_sqlite soap bcmath sockets pcntl \
+    && docker-php-ext-install exif intl opcache zip pdo_pgsql pdo_mysql soap bcmath sockets pcntl \
     && docker-php-ext-configure gd \
         --with-freetype \
         --with-jpeg \
@@ -97,7 +94,6 @@ RUN apk add --no-cache \
     icu-libs \
     libzip \
     postgresql-libs \
-    sqlite-libs \
     libxml2 \
     rabbitmq-c \
     tzdata
@@ -121,7 +117,6 @@ COPY docker/php/conf.d/opcache.ini /usr/local/etc/php/conf.d/
 COPY docker/php/conf.d/pcntl.ini /usr/local/etc/php/conf.d/
 COPY docker/php/conf.d/pdo_mysql.ini /usr/local/etc/php/conf.d/
 COPY docker/php/conf.d/pdo_pgsql.ini /usr/local/etc/php/conf.d/
-COPY docker/php/conf.d/pdo_sqlite.ini /usr/local/etc/php/conf.d/
 COPY docker/php/conf.d/redis.ini /usr/local/etc/php/conf.d/
 COPY docker/php/conf.d/soap.ini /usr/local/etc/php/conf.d/
 COPY docker/php/conf.d/sockets.ini /usr/local/etc/php/conf.d/
