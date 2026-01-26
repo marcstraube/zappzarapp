@@ -199,6 +199,15 @@
             "command": "BRANCH=$(git branch --show-current 2>/dev/null); if [[ \"$BRANCH\" =~ ^(feature|fix|refactor)/ ]]; then TOOL_INPUT=$(cat); FILE=$(echo \"$TOOL_INPUT\" | jq -r '.file_path // empty' 2>/dev/null); if [[ \"$FILE\" != *\"/.claude/sessions/\"* && \"$FILE\" != *\"/.claude/temp/\"* && \"$FILE\" != *\"/.claude/state/\"* ]]; then echo \"[Worktree] 💡 On branch '$BRANCH' - for parallel work use git worktree:\"; echo \"   git worktree add ../zappzarapp-wt-<name> -b <branch> develop\"; echo \"   cd ../zappzarapp-wt-<name>\"; fi; fi"
           }
         ]
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "TOOL_INPUT=$(cat); CMD=$(echo \"$TOOL_INPUT\" | jq -r '.command // empty' 2>/dev/null); if echo \"$CMD\" | grep -qE 'git\\s+(checkout|switch)'; then WORKTREES=$(git worktree list 2>/dev/null | wc -l); if [[ $WORKTREES -gt 1 ]]; then echo \"[WORKTREE PROTECTION] ❌ Cannot change branch in main directory - active worktrees detected:\"; git worktree list; echo \"\"; echo \"⚠️  Work in your worktree, not in main directory!\"; echo \"   Each worktree is isolated - changing branches here breaks parallel work.\"; exit 1; fi; fi"
+          }
+        ]
       }
     ],
     "PostToolUse": [
