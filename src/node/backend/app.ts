@@ -9,7 +9,7 @@ import express, { Express, Request, Response, NextFunction } from 'express';
 import pino from 'pino';
 import pinoHttp from 'pino-http';
 import { Pool } from 'pg';
-import { HealthCheckService } from './services/HealthCheckService.js';
+import { HealthCheckService } from './Shared/HealthCheck/HealthCheckService.js';
 import { createAppRouter } from './App/index.js';
 import { createDevDashboardRouter } from './DevDashboard/index.js';
 

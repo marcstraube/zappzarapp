@@ -19,8 +19,8 @@ import {
   ConnectionFactory,
   getConnectionFactory,
   type ExtendedDatabaseConnection,
-} from '../db/ConnectionFactory';
-import type { AuditLoggerInterface } from '../services/AuditLoggerInterface';
+} from '../Database/ConnectionFactory';
+import type { AuditLoggerInterface } from '../Audit/AuditLoggerInterface';
 import { existsSync, readFileSync } from 'fs';
 
 /**

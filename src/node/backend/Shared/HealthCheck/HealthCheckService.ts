@@ -31,7 +31,7 @@ import { Pool } from 'pg';
 import { createClient, RedisClientType } from 'redis';
 import * as http from 'http';
 import * as https from 'https';
-import { getHttpsTlsOptions, getTlsSocketOptions } from '../utils/tls';
+import { getHttpsTlsOptions, getTlsSocketOptions } from '../TlsConfig';
 
 // Service check result
 export interface ServiceCheckResult {

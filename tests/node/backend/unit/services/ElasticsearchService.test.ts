@@ -6,7 +6,7 @@
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { ElasticsearchService } from '@backend/services/ElasticsearchService';
+import { ElasticsearchService } from '@backend/App/Services/ElasticsearchService';
 
 // Mock fetch globally
 const mockFetch = vi.fn();

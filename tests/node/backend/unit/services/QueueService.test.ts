@@ -7,7 +7,7 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { QueueService, type QueueServiceInterface } from '@backend/services/QueueService';
+import { QueueService, type QueueServiceInterface } from '@backend/App/Services/QueueService';
 
 describe('QueueService', () => {
   describe('constructor', () => {

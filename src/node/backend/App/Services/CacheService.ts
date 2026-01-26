@@ -37,7 +37,7 @@
  */
 
 import { createClient, RedisClientType } from 'redis';
-import { getTlsSocketOptions } from '../utils/tls';
+import { getTlsSocketOptions } from '../../Shared/TlsConfig';
 
 /**
  * Cache Service Interface

@@ -3,7 +3,7 @@
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach, type Mock } from 'vitest';
-import { AuditLogger } from '@backend/services/AuditLogger';
+import { AuditLogger } from '@backend/Shared/Audit/AuditLogger';
 import type { Pool, QueryResult } from 'pg';
 import * as fs from 'node:fs/promises';
 

@@ -7,8 +7,8 @@ import {
   SessionService,
   type SessionData,
   type SessionServiceInterface,
-} from '@backend/services/SessionService';
-import type { CacheServiceInterface } from '@backend/services/CacheService';
+} from '@backend/App/Services/SessionService';
+import type { CacheServiceInterface } from '@backend/App/Services/CacheService';
 
 /**
  * Create a mock CacheService
