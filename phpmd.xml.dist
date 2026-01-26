@@ -84,9 +84,11 @@
     <rule ref="rulesets/codesize.xml/TooManyPublicMethods">
         <properties>
             <!-- Max public methods per class -->
-            <!-- Test classes naturally have many test methods (one per test case) -->
-            <!-- Production code: 10 (default), Test classes: 30 -->
-            <property name="maxmethods" value="30"/>
+            <!-- Raised from default 10 to 20 for practical test coverage -->
+            <!-- Sweet spot: enforces focused classes without being too restrictive -->
+            <!-- >20 methods indicates class should be split for better organization -->
+            <!-- Example: Split by feature area (Nonce, Development, Production, Environment) -->
+            <property name="maxmethods" value="20"/>
         </properties>
     </rule>
 

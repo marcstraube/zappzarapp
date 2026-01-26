@@ -103,6 +103,12 @@
         "description": "Run Rector code modernization check (PHP 8.3 compatibility)"
       },
       {
+        "action": "./docker/hooks/hook-runner.sh php vendor/bin/phpmd src,tests text phpmd.xml.dist",
+        "options": [],
+        "type": "cli",
+        "description": "Run PHPMD code quality analysis (complexity, design, naming)"
+      },
+      {
         "action": "./docker/hooks/hook-runner.sh php vendor/bin/phpunit",
         "options": [],
         "type": "cli",
