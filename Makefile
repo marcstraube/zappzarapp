@@ -331,6 +331,21 @@ setup: ## Create directories, install dependencies (BOILERPLATE=1 to force file 
 		echo -e "\033[0;34mSkipping Docker-dependent steps (CI_TEST=1)...\033[0m"; \
 	fi
 
+	# Optional: Trust internal CA for browser HTTPS (requires sudo)
+	# Skip in CI mode (non-interactive) and when CA cert doesn't exist
+	@if [ "$${CI_TEST:-}" != "1" ] && [ -f docker/certs/ca/ca.crt ]; then \
+		echo ""; \
+		echo -e "\033[0;33mTrust internal CA for browser HTTPS? (avoids certificate warnings)\033[0m"; \
+		echo -e "\033[0;34mThis requires sudo and modifies your system's certificate store.\033[0m"; \
+		read -p "Trust CA now? [y/N]: " trust_ca; \
+		case "$$trust_ca" in \
+			y|Y|yes|Yes|YES) \
+				$(MAKE) ssl-trust-ca || echo -e "\033[0;33m⚠ CA trust failed - you can run 'make ssl-trust-ca' manually later\033[0m";; \
+			*) \
+				echo -e "\033[0;34mSkipped. Run 'make ssl-trust-ca' later to trust the CA.\033[0m";; \
+		esac; \
+	fi
+
 	@echo ""
 	@echo -e "\033[0;32m╔════════════════════════════════════════════════════════════╗\033[0m"
 	@echo -e "\033[0;32m║ Setup complete!                                            ║\033[0m"
@@ -339,8 +354,7 @@ setup: ## Create directories, install dependencies (BOILERPLATE=1 to force file 
 	@echo -e "\033[0;32m║\033[0m   make up          \033[0;34mStart development environment\033[0m         \033[0;32m║\033[0m"
 	@echo -e "\033[0;32m║\033[0m                                                            \033[0;32m║\033[0m"
 	@echo -e "\033[0;32m║\033[0m Optional:                                                  \033[0;32m║\033[0m"
-	@echo -e "\033[0;32m║\033[0m   make ssl-trust-ca \033[0;34mTrust CA for browser HTTPS\033[0m            \033[0;32m║\033[0m"
-	@echo -e "\033[0;32m║\033[0m   make ai-sync      \033[0;34mSync config to AI tools\033[0m              \033[0;32m║\033[0m"
+	@echo -e "\033[0;32m║\033[0m   make ai-sync     \033[0;34mSync config to AI tools\033[0m               \033[0;32m║\033[0m"
 	@echo -e "\033[0;32m╚════════════════════════════════════════════════════════════╝\033[0m"
 
 ide-config: ## Configure all IDE database connections (PHPStorm + VS Code)
