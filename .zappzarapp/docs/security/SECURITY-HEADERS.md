@@ -15,15 +15,16 @@ web vulnerabilities. Headers are configured at two levels:
 Applied to all responses via
 `include /etc/nginx/snippets/security-headers.conf`:
 
-| Header                         | Value                                      | Purpose                       |
-| ------------------------------ | ------------------------------------------ | ----------------------------- |
-| `X-Frame-Options`              | `SAMEORIGIN`                               | Prevents clickjacking         |
-| `X-Content-Type-Options`       | `nosniff`                                  | Prevents MIME-type sniffing   |
-| `X-XSS-Protection`             | `1; mode=block`                            | XSS filter (legacy browsers)  |
-| `Referrer-Policy`              | `strict-origin-when-cross-origin`          | Controls referrer information |
-| `Permissions-Policy`           | `geolocation=(), microphone=(), camera=()` | Restricts browser features    |
-| `Cross-Origin-Opener-Policy`   | `same-origin`                              | Spectre mitigation            |
-| `Cross-Origin-Resource-Policy` | `same-site`                                | Controls resource embedding   |
+| Header                         | Value                                      | Purpose                         |
+| ------------------------------ | ------------------------------------------ | ------------------------------- |
+| `X-Frame-Options`              | `SAMEORIGIN`                               | Prevents clickjacking           |
+| `X-Content-Type-Options`       | `nosniff`                                  | Prevents MIME-type sniffing     |
+| `X-XSS-Protection`             | `1; mode=block`                            | XSS filter (legacy browsers)    |
+| `Referrer-Policy`              | `strict-origin-when-cross-origin`          | Controls referrer information   |
+| `Permissions-Policy`           | `geolocation=(), microphone=(), camera=()` | Restricts browser features      |
+| `Cross-Origin-Opener-Policy`   | `same-origin`                              | Spectre mitigation              |
+| `Cross-Origin-Resource-Policy` | `same-origin`                              | Prevents cross-origin embedding |
+| `Cross-Origin-Embedder-Policy` | `require-corp`                             | Enforces CORP for resources     |
 
 ### Content Security Policy (CSP)
 
@@ -99,16 +100,22 @@ Custom error pages (`docker/nginx/errors/`):
 
 The following findings from OWASP ZAP have been addressed:
 
-| Finding                        | Status | Solution                           |
-| ------------------------------ | ------ | ---------------------------------- |
-| Application Error Disclosure   | ✅     | Error handling configured          |
-| CSP: No default-src            | ✅     | `default-src 'self'` present       |
-| CSP: script-src unsafe-eval    | ✅     | Removed in production              |
-| CSP: script-src unsafe-inline  | ✅     | Removed in production              |
-| CSP: style-src unsafe-inline   | ⚠️     | Acceptable for styling flexibility |
-| Missing COOP header            | ✅     | Added `Cross-Origin-Opener-Policy` |
-| Sec-Fetch-\* headers missing   | N/A    | Browser request headers            |
-| Storable and Cacheable Content | N/A    | Expected behavior                  |
+| Finding                                       | Status | Solution                                            |
+| --------------------------------------------- | ------ | --------------------------------------------------- |
+| Application Error Disclosure                  | ✅     | Error handling configured                           |
+| CSP: No default-src                           | ✅     | `default-src 'self'` present                        |
+| CSP: script-src unsafe-eval                   | ✅     | Removed in production, required for Vite HMR in dev |
+| CSP: script-src unsafe-inline                 | ✅     | Removed in production, nonce-based                  |
+| CSP: style-src unsafe-inline                  | ✅     | Removed in production, required for Vite in dev     |
+| CSP: style-src unsafe-hashes                  | ✅     | Removed from all environments                       |
+| Insufficient Site Isolation (CORP: same-site) | ✅     | Changed to `same-origin`                            |
+| Missing COOP header                           | ✅     | Added `Cross-Origin-Opener-Policy: same-origin`     |
+| Missing COEP header                           | ✅     | Added `Cross-Origin-Embedder-Policy: require-corp`  |
+| Sec-Fetch-\* headers missing                  | N/A    | Browser request headers (not server-controlled)     |
+| Storable and Cacheable Content                | N/A    | Expected behavior                                   |
+
+**Note:** ZAP scans run against production configuration (`ENV=production`) to
+validate strict security headers.
 
 ## Files
 

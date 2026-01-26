@@ -128,6 +128,17 @@ php:rector-check:
     - docker compose exec -T php composer rector-check
   allow_failure: true
 
+php:composer-validate:
+  <<: *docker-setup
+  stage: quality
+  dependencies:
+    - build:php
+  script:
+    - docker compose up -d php
+    - sleep 5
+    - docker compose exec -T php composer install --no-progress --no-interaction
+    - docker compose exec -T php composer validate
+
 # ============================================================================
 # PHP TESTS
 # ============================================================================
@@ -215,6 +226,17 @@ node:markdownlint:
     - sleep 5
     - docker compose exec -T node pnpm install
     - docker compose exec -T node pnpm run lint:md
+
+node:package-validate:
+  <<: *docker-setup
+  stage: quality
+  dependencies:
+    - build:node
+  script:
+    - docker compose up -d node
+    - sleep 5
+    - docker compose exec -T node pnpm install
+    - docker compose exec -T node pnpm run quality
 
 # ============================================================================
 # NODE.JS TESTS
@@ -307,6 +329,35 @@ bats:integration:
   timeout: 30m
 
 # ============================================================================
+# SAST ANALYSIS (Semgrep)
+# ============================================================================
+sast:semgrep:
+  image: python:3.12-alpine
+  stage: security
+  before_script:
+    - apk add --no-cache git
+    - pip install semgrep
+  script:
+    - |
+      semgrep scan \
+        --config p/security-audit \
+        --config p/secrets \
+        --config p/php \
+        --config p/typescript \
+        --json \
+        --output semgrep-report.json \
+        --error \
+        . || true
+  artifacts:
+    reports:
+      sast: semgrep-report.json
+    paths:
+      - semgrep-report.json
+    when: always
+    expire_in: 30 days
+  allow_failure: true
+
+# ============================================================================
 # DEPENDENCY AUDIT
 # ============================================================================
 # Note: Comprehensive security scans (Trivy, secrets, filesystem) are defined
@@ -347,13 +398,15 @@ build:production:
     - docker compose -f compose.yaml -f compose.production.yaml --profile node-backend build node-backend
     - docker tag zappzarapp-node-backend:api zappzarapp-node-backend:latest
     # Disable BuildKit for php/nginx build so they can see the local tagged image
-    - DOCKER_BUILDKIT=0 ENV=production docker compose -f compose.yaml -f compose.production.yaml build php nginx
-    # Start and test
-    - ENV=production docker compose -f compose.yaml -f compose.production.yaml up -d
-    - sleep 10
-    - docker compose ps
-    - docker compose logs
-    - curl -f http://localhost:8080/health || exit 1
+    - DOCKER_BUILDKIT=0 ENV=production docker compose -f compose.yaml -f compose.production.yaml --profile php --profile postgres build php nginx postgres
+    # Test production build using ENV-aware target
+    # Tests nginx + app (php/node) + database + activated services
+    - make test-production
+  after_script:
+    - docker compose ps || true
+    - docker compose logs --tail=100 || true
+    - docker compose down -v || true
+    - docker system prune -f || true
   artifacts:
     when: on_success
     expire_in: 7 days

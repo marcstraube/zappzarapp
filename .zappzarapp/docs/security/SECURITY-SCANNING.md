@@ -21,10 +21,10 @@ vulnerabilities in:
 This project provides security scanning workflows for both GitHub Actions and
 GitLab CI/CD.
 
-| Platform | Main Pipeline              | Security Scan                         |
-| -------- | -------------------------- | ------------------------------------- |
-| GitHub   | `.github/workflows/ci.yml` | `.github/workflows/security-scan.yml` |
-| GitLab   | `.gitlab-ci.yml`           | `.gitlab/security-scan.gitlab-ci.yml` |
+| Platform | Main Pipeline              | Security Scan                         | ZAP Scan                         |
+| -------- | -------------------------- | ------------------------------------- | -------------------------------- |
+| GitHub   | `.github/workflows/ci.yml` | `.github/workflows/security-scan.yml` | `.github/workflows/zap-scan.yml` |
+| GitLab   | `.gitlab-ci.yml`           | `.gitlab/security-scan.gitlab-ci.yml` | Included in security-scan        |
 
 ---
 
@@ -378,25 +378,78 @@ updates:
 
 ---
 
-## Optional: OWASP ZAP
+## OWASP ZAP DAST Scan
 
-For dynamic application security testing (DAST):
+Dynamic Application Security Testing (DAST) is performed using OWASP ZAP to
+identify runtime security issues like CSP violations, missing headers, and
+authentication flaws.
+
+### GitHub Workflow
+
+**Location:** `.github/workflows/zap-scan.yml`
+
+**Triggers:**
+
+- Push to `develop` branch
+- Weekly schedule (Sunday 3 AM UTC, after Trivy scans)
+- Manual via `workflow_dispatch`
+
+**Key Configuration:**
+
+- Runs against **production environment** (`ENV=production`)
+- Tests strict CSP without unsafe-eval/unsafe-inline
+- Uses `.zap/rules.tsv` for custom rules
+- Generates HTML and JSON reports (retained 30 days)
+
+### GitLab CI Pipeline
+
+**Location:** `.gitlab/security-scan.gitlab-ci.yml`
+
+**Integration:** The ZAP scan is part of the comprehensive security scan
+pipeline:
 
 ```yaml
-# Add to security-scan.yml
-dast-scan:
-  name: OWASP ZAP Scan
-  runs-on: ubuntu-latest
-  steps:
-    - name: Start application
-      run: docker compose up -d
+scan:zap:
+  stage: scan
+  needs:
+    - build:images
+  variables:
+    ENV: production # Test production configuration
+```
 
-    - name: OWASP ZAP Baseline Scan
-      uses: zaproxy/action-baseline@v0.10.0
-      with:
-        target: 'http://localhost:8080'
-        rules_file_name: '.zap/rules.tsv'
-        allow_issue_writing: false
+**Viewing Results:**
+
+- Job artifacts contain `zap-report.html` and `zap-report.json`
+- Security summary includes ZAP scan status
+
+### Local ZAP Scan
+
+Run ZAP scan locally:
+
+```bash
+# Start application in production mode
+ENV=production make up
+
+# Run ZAP baseline scan
+docker run --rm --network host \
+  -v $(pwd):/zap/wrk:rw \
+  -t ghcr.io/zaproxy/zaproxy:stable \
+  zap-baseline.py \
+  -t http://localhost:8080 \
+  -r zap-report.html \
+  -J zap-report.json \
+  -c .zap/rules.tsv \
+  -a -j
+```
+
+### Custom Rules
+
+Configure scan rules in `.zap/rules.tsv`:
+
+```tsv
+# Format: rule_id action reason
+# Actions: IGNORE, WARN, FAIL
+10055 WARN CSP findings tracked separately
 ```
 
 ---

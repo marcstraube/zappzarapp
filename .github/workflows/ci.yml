@@ -423,6 +423,10 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
+      - name: Build goss utility image (dependency)
+        run: |
+          DOCKER_BUILDKIT=0 docker build -t zappzarapp-goss:latest -f docker/goss/Dockerfile .
+
       - name: Initialize environment
         run: |
           make init
@@ -442,20 +446,22 @@ jobs:
           docker compose -f compose.yaml -f compose.production.yaml --profile node-backend build node-backend
           docker tag zappzarapp-node-backend:api zappzarapp-node-backend:latest
           # Disable BuildKit for php/nginx build so they can see the local tagged image
-          DOCKER_BUILDKIT=0 ENV=production docker compose -f compose.yaml -f compose.production.yaml build php nginx
+          DOCKER_BUILDKIT=0 ENV=production docker compose -f compose.yaml -f compose.production.yaml --profile php --profile postgres build php nginx postgres
 
-      - name: Test production startup
+      - name: Test production build
         run: |
-          ENV=production docker compose -f compose.yaml -f compose.production.yaml up -d
-          sleep 10
+          # Use ENV-aware production test (respects .env configuration)
+          # Tests nginx + app (php/node) + database + activated services
+          make test-production
+
+      - name: Show container status
+        if: always()
+        run: |
           docker compose ps
-          docker compose logs
-
-      - name: Health check
-        run: |
-          curl -f http://localhost:8080/health || exit 1
+          docker compose logs --tail=100
 
       - name: Cleanup
+        if: always()
         uses: ./.github/actions/docker-cleanup
 
   # ============================================================================

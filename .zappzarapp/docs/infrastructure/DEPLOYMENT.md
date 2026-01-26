@@ -16,9 +16,14 @@ Both pipelines provide identical functionality:
 
 - Build all Docker images
 - Run quality checks (PHPStan, PHP-CS-Fixer, PHPMD, Rector, ESLint, Prettier)
-- Execute tests (PHPUnit, Vitest)
+- Execute tests (PHPUnit, Vitest, BATS)
+- Static Analysis Security Testing (SAST with Semgrep)
+- Dependency validation (Composer, package.json)
 - Security audits (Composer, pnpm)
 - Production build verification
+
+**Note:** Both pipelines are synchronized to ensure consistent CI/CD experience
+across platforms.
 
 ## GitLab CI/CD
 
@@ -30,24 +35,30 @@ build → test → quality → security → deploy
 
 ### Jobs Overview
 
-| Stage        | Job                    | Description                                  |
-| ------------ | ---------------------- | -------------------------------------------- |
-| **build**    | `build:php`            | Build PHP container                          |
-| **build**    | `build:node`           | Build Node container                         |
-| **build**    | `build:nginx`          | Build Nginx container                        |
-| **test**     | `php:unit-tests`       | Run PHPUnit tests                            |
-| **test**     | `php:coverage`         | Generate PHP coverage (master/develop only)  |
-| **test**     | `node:tests`           | Run Vitest tests                             |
-| **test**     | `node:coverage`        | Generate Node coverage (master/develop only) |
-| **quality**  | `php:coding-standards` | PHP-CS-Fixer check                           |
-| **quality**  | `php:static-analysis`  | PHPStan Level 5                              |
-| **quality**  | `php:mess-detector`    | PHPMD (allow_failure)                        |
-| **quality**  | `php:rector-check`     | Rector dry-run (allow_failure)               |
-| **quality**  | `node:lint`            | ESLint                                       |
-| **quality**  | `node:format-check`    | Prettier check                               |
-| **quality**  | `node:type-check`      | TypeScript type checking                     |
-| **security** | `dependency-audit`     | Composer + pnpm audit                        |
-| **deploy**   | `build:production`     | Test production build (master/develop only)  |
+| Stage        | Job                     | Description                                  |
+| ------------ | ----------------------- | -------------------------------------------- |
+| **build**    | `build:php`             | Build PHP container                          |
+| **build**    | `build:node`            | Build Node container                         |
+| **build**    | `build:nginx`           | Build Nginx container                        |
+| **test**     | `php:unit-tests`        | Run PHPUnit tests                            |
+| **test**     | `php:coverage`          | Generate PHP coverage (master/develop only)  |
+| **test**     | `node:tests`            | Run Vitest tests                             |
+| **test**     | `node:coverage`         | Generate Node coverage (master/develop only) |
+| **test**     | `bats:quick`            | BATS Makefile validation (dry-run)           |
+| **test**     | `bats:integration`      | BATS integration tests (master/develop/MR)   |
+| **quality**  | `php:coding-standards`  | PHP-CS-Fixer check                           |
+| **quality**  | `php:static-analysis`   | PHPStan Level 5                              |
+| **quality**  | `php:mess-detector`     | PHPMD (allow_failure)                        |
+| **quality**  | `php:rector-check`      | Rector dry-run (allow_failure)               |
+| **quality**  | `php:composer-validate` | Composer.json/lock validation                |
+| **quality**  | `node:lint`             | ESLint                                       |
+| **quality**  | `node:format-check`     | Prettier check                               |
+| **quality**  | `node:type-check`       | TypeScript type checking                     |
+| **quality**  | `node:markdownlint`     | Markdown linting                             |
+| **quality**  | `node:package-validate` | Package.json validation                      |
+| **security** | `sast:semgrep`          | Static analysis (Semgrep)                    |
+| **security** | `dependency-audit`      | Composer + pnpm audit                        |
+| **deploy**   | `build:production`      | Test production build (master/develop only)  |
 
 ### Configuration
 
@@ -76,12 +87,23 @@ The pipeline uses Docker-in-Docker (DinD):
 
 ### Security Scans
 
+**Main Pipeline (every push):**
+
+- SAST Analysis with Semgrep (security-audit, secrets, PHP, TypeScript)
+- Dependency audit (Composer, pnpm)
+
+**Comprehensive Scans (weekly schedule):**
+
 Additional security scans are defined in `.gitlab/security-scan.gitlab-ci.yml`:
 
-- Trivy container scanning
-- Secret detection
+- Trivy container scanning (all images)
+- OWASP ZAP DAST scan (production configuration)
+- Secret detection (Gitleaks)
 - Filesystem scanning
-- Weekly schedule
+- Configuration scanning
+- Weekly schedule (Sunday 2 AM UTC)
+
+See [SECURITY-SCANNING.md](../security/SECURITY-SCANNING.md) for details.
 
 ## GitHub Actions
 
@@ -114,10 +136,13 @@ Additional security scans are defined in `.gitlab/security-scan.gitlab-ci.yml`:
 | ------------------ | ------------------------------------------ | ------- |
 | `php-quality`      | CS-Fixer, PHPStan, PHPMD, Rector, Validate | 15 min  |
 | `php-tests`        | PHPUnit + Coverage (master only)           | 15 min  |
-| `node-quality`     | TypeScript, ESLint, Prettier               | 15 min  |
+| `node-quality`     | TypeScript, ESLint, Prettier, Markdown     | 15 min  |
 | `node-tests`       | Vitest + Coverage (master only)            | 15 min  |
 | `dependency-audit` | Composer + pnpm audit                      | 10 min  |
-| `build-production` | Production build test                      | 20 min  |
+| `sast-scan`        | Semgrep static analysis                    | 15 min  |
+| `bats-quick`       | BATS Makefile validation (dry-run)         | 10 min  |
+| `bats-integration` | BATS integration tests (PR/master/develop) | 30 min  |
+| `build-production` | Production build test (master/develop)     | 20 min  |
 
 ### Triggers
 
@@ -182,6 +207,42 @@ Additional security scans in `.github/workflows/security-scan.yml`:
 - Trivy container scanning
 - Weekly schedule
 
+### Production Testing
+
+The CI/CD pipelines use intelligent production testing that respects `.env`
+configuration:
+
+**GitHub Actions:**
+
+```yaml
+- name: Test production build
+  run: make test-production
+```
+
+**GitLab CI:**
+
+```yaml
+script:
+  - make test-production
+```
+
+**Available test targets:**
+
+| Target                         | Description                          | Services                  |
+| ------------------------------ | ------------------------------------ | ------------------------- |
+| `make test-production`         | ENV-aware (respects .env ENABLE\_\*) | Core + activated services |
+| `make test-production-minimal` | Core only                            | nginx + app + db          |
+| `make test-production-full`    | All services (comprehensive)         | Everything                |
+
+**Health checks included:**
+
+- nginx HTTP endpoint
+- Database connectivity (postgres/mariadb)
+- Redis connectivity (if enabled)
+- Application health endpoint
+
+See [Production Testing](#production-testing-1) section below for details.
+
 ## Local CI Simulation
 
 Test the CI pipeline locally before pushing:
@@ -197,10 +258,119 @@ make phpmd         # PHPMD
 make rector-check  # Rector
 make test          # All tests
 
-# Production build test
+# Production build test (ENV-aware, respects .env)
 ENV=production make build
+make test-production
+
+# Or manually test specific configuration
 ENV=production docker compose -f compose.yaml -f compose.production.yaml up -d
 curl http://localhost:8080/health
+```
+
+## Production Testing
+
+The project includes three production test targets for different scenarios:
+
+### make test-production (Smart, Recommended)
+
+Tests production build with services activated based on `.env` configuration:
+
+```bash
+make test-production
+```
+
+**What it tests:**
+
+- Always: nginx
+- Conditional based on `.env`:
+  - `ENABLE_PHP=true` → php
+  - `ENABLE_NODE=true` → node/node-backend (based on NODE_MODE)
+  - `DB_TYPE=postgres` → postgres
+  - `ENABLE_REDIS=true` → redis
+  - `ENABLE_ELASTICSEARCH=true` → elasticsearch
+  - etc.
+
+**Health checks:**
+
+- nginx HTTP endpoint (`/health`)
+- Database connectivity (`pg_isready` or mariadb ping)
+- Redis connectivity (`redis-cli ping`)
+
+**Use case:** Default for CI/CD, tests realistic production configuration
+
+### make test-production-minimal (Fast)
+
+Tests minimal core services only:
+
+```bash
+make test-production-minimal
+```
+
+**What it tests:**
+
+- nginx
+- php OR node (whichever is enabled)
+- Database (postgres or mariadb based on DB_TYPE)
+
+**Health checks:**
+
+- nginx HTTP endpoint
+- Database connectivity
+
+**Use case:** Quick validation, CI for every commit/PR (~30 seconds)
+
+### make test-production-full (Comprehensive)
+
+Tests ALL available services regardless of ENABLE\_\* settings:
+
+```bash
+make test-production-full
+```
+
+**What it tests:**
+
+- All core services (nginx, php, node, node-backend)
+- All data services (postgres, mariadb, redis)
+- All optional services (elasticsearch, meilisearch, mercure, rabbitmq,
+  seaweedfs)
+
+**Health checks:**
+
+- All critical services
+- Extended timeouts for heavy services
+
+**Use case:** Pre-release validation, nightly builds (~3 minutes)
+
+### CI/CD Integration
+
+**Current implementation:**
+
+| Platform | Strategy               | Target            |
+| -------- | ---------------------- | ----------------- |
+| GitHub   | Push to master/develop | `test-production` |
+| GitLab   | Push to master/develop | `test-production` |
+
+**Alternative strategies:**
+
+```yaml
+# GitHub: Conditional based on branch
+- name: Test production
+  run: |
+    if [ "${{ github.ref }}" = "refs/heads/master" ]; then
+      make test-production-full
+    else
+      make test-production
+    fi
+
+# GitLab: Separate jobs
+test:production:default:
+  script: make test-production
+  only: [develop, merge_requests]
+
+test:production:comprehensive:
+  script: make test-production-full
+  only: [master]
+  when: manual
 ```
 
 ## Deployment Strategies
