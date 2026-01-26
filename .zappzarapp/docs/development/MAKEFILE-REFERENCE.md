@@ -525,19 +525,20 @@ Code quality, testing, and validation commands.
 
 ### Combined Checks
 
-| Command                 | Description                                                                                                                                                |
-| ----------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `make check`            | Run ALL checks (cs-check, analyse, phpmd, rector-check, prettier-check, type-check, lint-node, test, deps-validate, compose-validate, lint-md, lint-shell) |
-| `make test`             | Run all tests (PHP + Node.js)                                                                                                                              |
-| `make test-coverage`    | Generate coverage reports for PHP and Node.js                                                                                                              |
-| `make deps-validate`    | Validate dependency lockfiles (composer.lock, pnpm-lock.yaml)                                                                                              |
-| `make compose-validate` | Validate Docker Compose configuration files                                                                                                                |
+| Command                 | Description                                                                                                                                                      |
+| ----------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `make check`            | Run ALL checks (cs-check, analyse-php, phpmd, rector-check, prettier-check, analyse-node, lint-node, test, deps-validate, compose-validate, lint-md, lint-shell) |
+| `make test`             | Run all tests (PHP + Node.js)                                                                                                                                    |
+| `make test-coverage`    | Generate coverage reports for PHP and Node.js                                                                                                                    |
+| `make deps-validate`    | Validate dependency lockfiles (composer.lock, pnpm-lock.yaml)                                                                                                    |
+| `make compose-validate` | Validate Docker Compose configuration files                                                                                                                      |
 
 ### PHP Quality Tools
 
 | Command             | Description                                             |
 | ------------------- | ------------------------------------------------------- |
-| `make analyse`      | Run PHPStan static analysis                             |
+| `make analyse`      | Run static analysis (PHP + Node)                        |
+| `make analyse-php`  | Run PHPStan static analysis                             |
 | `make phpmd`        | Run PHPMD (PHP Mess Detector) for code quality analysis |
 | `make cs-check`     | Check coding style (dry-run)                            |
 | `make cs-fix`       | Fix coding style automatically                          |
@@ -550,7 +551,7 @@ Code quality, testing, and validation commands.
 
 | Command               | Description                                      |
 | --------------------- | ------------------------------------------------ |
-| `make type-check`     | Run TypeScript type checking (static analysis)   |
+| `make analyse-node`   | Run TypeScript type checking (static analysis)   |
 | `make lint-node`      | Run ESLint on TypeScript/JavaScript files        |
 | `make lint-node-fix`  | Fix ESLint issues automatically                  |
 | `make prettier-check` | Check formatting with Prettier (TS/JS, Markdown) |

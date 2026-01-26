@@ -99,8 +99,8 @@ Run the full quality check suite:
 make check
 ```
 
-This runs: `cs-check`, `analyse`, `phpmd`, `rector-check`, `prettier-check`,
-`type-check`, `lint-node`, `test`, `validate`, `lint-md`
+This runs: `cs-check`, `analyse-php`, `phpmd`, `rector-check`, `prettier-check`,
+`analyse-node`, `lint-node`, `test`, `validate`, `lint-md`
 
 ### Commit Messages
 

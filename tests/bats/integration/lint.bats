@@ -37,10 +37,18 @@ teardown_file() {
     assert_success
 }
 
-@test "[Integration] make analyse (PHPStan) runs successfully" {
+@test "[Integration] make analyse runs successfully" {
     require_php
+    require_node
     require_dependencies
     run timeout 120 make analyse
+    assert_success
+}
+
+@test "[Integration] make analyse-php (PHPStan) runs successfully" {
+    require_php
+    require_dependencies
+    run timeout 120 make analyse-php
     assert_success
 }
 
@@ -70,10 +78,10 @@ teardown_file() {
     assert_success
 }
 
-@test "[Integration] make type-check runs successfully" {
+@test "[Integration] make analyse-node runs successfully" {
     require_node
     require_dependencies
-    run timeout 120 make type-check
+    run timeout 120 make analyse-node
     assert_success
 }
 

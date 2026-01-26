@@ -716,7 +716,7 @@
     {
       "label": "Quality: TypeScript Type Check",
       "type": "shell",
-      "command": "make type-check",
+      "command": "make analyse-node",
       "problemMatcher": [],
       "group": { "kind": "test", "isDefault": false },
       "presentation": { "reveal": "always", "panel": "shared" }
