@@ -1,8 +1,16 @@
 ---
+name: learnings
 description: View, search, and aggregate project learnings
+model: haiku
 context: fork
-allowed-tools: Read, Glob, Grep, Edit, Write, Bash(date:*)
-argument-hint: [--search <term> | --add | --sync | --category <name>]
+allowed-tools:
+  - Read
+  - Glob
+  - Grep
+  - Edit
+  - Write
+  - Bash(date:*)
+argument-hint: '[--search <term> | --add | --sync | --category <name>]'
 ---
 
 # Learnings Management
@@ -13,8 +21,8 @@ Manage the central knowledge base of project-specific learnings.
 
 **Target path (in priority order):**
 
-1. `.ai/LEARNINGS.md` — project-specific (if file exists)
-2. `.zappzarapp/ai/LEARNINGS.md` — fallback (boilerplate)
+1. `.ai/LEARNINGS.md` - project-specific (if file exists)
+2. `.zappzarapp/ai/LEARNINGS.md` - fallback (boilerplate)
 
 All operations below use this resolved path.
 
@@ -69,7 +77,7 @@ Output format:
 
 ```text
 Search Results for "secrets"
-════════════════════════════
+============================
 
 LEARNINGS.md:
   Line 15: Docker Compose ignores `mode`, `uid`, `gid` for secrets
@@ -115,7 +123,7 @@ Output:
 
 ```text
 Syncing Learnings from Sessions
-═══════════════════════════════
+===============================
 
 Scanning 5 session files...
 

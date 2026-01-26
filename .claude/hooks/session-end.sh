@@ -7,14 +7,14 @@ set -euo pipefail
 PROJECT_DIR="${CLAUDE_PROJECT_DIR:-.}"
 SESSION_BASE="${PROJECT_DIR}/.claude/sessions"
 
-# Find pending sessions
-PENDING=$(find "${SESSION_BASE}" -name "session-*-pending.md" -type f 2>/dev/null | head -5)
+# Find pending sessions (using nested path pattern)
+PENDING=$(find "${SESSION_BASE}" -path "*/[0-9][0-9][0-9][0-9]/[0-9][0-9]/session-*-pending.md" -type f 2>/dev/null | head -5)
 
 # Build reminder message
 REMINDERS=()
 
 if [[ -n "${PENDING}" ]]; then
-    REMINDERS+=("Pending session(s) not renamed - update with task slug")
+    REMINDERS+=("Pending session(s) not named - update title in session file")
 fi
 
 REMINDERS+=("Update session Summary if work was done")

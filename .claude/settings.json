@@ -198,7 +198,7 @@
           },
           {
             "type": "command",
-            "command": "TOOL_INPUT=$(cat); if echo \"$TOOL_INPUT\" | grep -qE '\\.claude/commands/.*\\.md'; then echo '[Hook] Claude command updated. Sync to other AI tools with: make ai-commands-sync FROM=claude'; fi"
+            "command": "TOOL_INPUT=$(cat); if echo \"$TOOL_INPUT\" | grep -qE '\\.claude/skills/.*\\.md'; then echo '[Hook] Claude skill updated.'; fi"
           },
           {
             "type": "command",

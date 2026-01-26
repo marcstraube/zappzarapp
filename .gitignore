@@ -107,7 +107,7 @@ Thumbs.db
 .claude/*
 !.claude/CLAUDE.md
 !.claude/agents/
-!.claude/commands/
+!.claude/skills/
 !.claude/context/
 !.claude/hooks/
 !.claude/settings.json

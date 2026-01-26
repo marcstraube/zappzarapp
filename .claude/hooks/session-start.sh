@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
-# Session Start Hook - Creates placeholder session file
+# Session Start Hook - Creates session file with auto-slug
 # Called by Claude Code on SessionStart event
 #
-# Creates: .claude/sessions/YYYY/MM/session-YYYY-MM-DD-HHMM-pending.md
-# Claude should rename to proper slug after understanding the task
+# Creates: .claude/sessions/YYYY/MM/session-YYYY-MM-DD-HHMM-<slug>.md
+# Auto-derives slug from branch name or changed files
 
 set -euo pipefail
 
@@ -26,11 +26,46 @@ YEAR=$(date +%Y)
 MONTH=$(date +%m)
 TIMESTAMP=$(date +%Y-%m-%d-%H%M)
 
-# Session directory and file paths
+# Session directory
 SESSION_DIR="${SESSION_BASE}/${YEAR}/${MONTH}"
-SESSION_FILE="${SESSION_DIR}/session-${TIMESTAMP}-pending.md"
 
-# Check if pending session already exists (avoid duplicates within same minute)
+# Auto-derive slug from branch name
+derive_slug() {
+    local branch slug
+
+    branch=$(cd "$PROJECT_DIR" && git branch --show-current 2>/dev/null || echo "")
+    slug="pending"
+
+    if [[ -n "$branch" ]]; then
+        # feature/foo-bar -> foo-bar, fix/baz -> baz
+        slug=$(echo "$branch" | sed -E 's#^(feature|feat|fix|refactor|chore|docs|hotfix)/##' | tr '/' '-' | tr '[:upper:]' '[:lower:]')
+    fi
+
+    # Fallback if on develop/main/master or slug is empty
+    if [[ "$slug" =~ ^(develop|main|master|pending)$ || -z "$slug" ]]; then
+        # Try to derive from recent changes
+        local changed_files
+        changed_files=$(cd "$PROJECT_DIR" && git diff --name-only HEAD 2>/dev/null | head -1)
+        if [[ -n "$changed_files" ]]; then
+            # Extract meaningful directory or file name
+            local dir_name
+            dir_name=$(dirname "$changed_files" | sed 's#.*/##' | tr '[:upper:]' '[:lower:]')
+            if [[ -n "$dir_name" && "$dir_name" != "." ]]; then
+                slug="$dir_name"
+            fi
+        fi
+    fi
+
+    # Final fallback
+    [[ -z "$slug" || "$slug" == "." ]] && slug="pending"
+
+    echo "$slug"
+}
+
+SLUG=$(derive_slug)
+SESSION_FILE="${SESSION_DIR}/session-${TIMESTAMP}-${SLUG}.md"
+
+# Check if session already exists for this timestamp (avoid duplicates within same minute)
 if ls "${SESSION_DIR}/session-${TIMESTAMP}-"*.md 2>/dev/null | head -1 | grep -q .; then
     # Session for this timestamp already exists, skip creation
     exit 0
@@ -39,19 +74,22 @@ fi
 # Create session directory if needed
 mkdir -p "${SESSION_DIR}"
 
+# Get current branch
+BRANCH=$(cd "${PROJECT_DIR}" && git branch --show-current 2>/dev/null || echo "unknown")
+
 # Check for template
 if [[ ! -f "${SESSION_TEMPLATE_PATH}" ]]; then
     # Fallback: create minimal session file
     cat > "${SESSION_FILE}" << EOF
-# Session ${TIMESTAMP}-pending: [Title]
+# Session ${TIMESTAMP}-${SLUG}: [Title]
 
 ## Goal
 
-[Pending - update after understanding task]
+[Update after understanding task]
 
 ## Branch
 
-$(cd "${PROJECT_DIR}" && git branch --show-current 2>/dev/null || echo "unknown")
+${BRANCH}
 
 ## Changes
 
@@ -64,9 +102,8 @@ $(cd "${PROJECT_DIR}" && git branch --show-current 2>/dev/null || echo "unknown"
 EOF
 else
     # Use template and substitute placeholders
-    BRANCH=$(cd "${PROJECT_DIR}" && git branch --show-current 2>/dev/null || echo "unknown")
-    sed -e "s/YYYY-MM-DD-HHMM-<task-slug>/${TIMESTAMP}-pending/" \
-        -e "s/\[Title\]/[Pending]/" \
+    sed -e "s/YYYY-MM-DD-HHMM-<task-slug>/${TIMESTAMP}-${SLUG}/" \
+        -e "s/\[Title\]/[Title]/" \
         -e "s/\[branch-name\]/${BRANCH}/" \
         -e "s/\[One-line description\]/[Update after understanding task]/" \
         "${SESSION_TEMPLATE_PATH}" > "${SESSION_FILE}"
@@ -75,8 +112,9 @@ fi
 # Output for Claude context (JSON format for hooks)
 cat << EOF
 {
-  "message": "[SessionStart] Created placeholder session: ${SESSION_FILE}\n\nAfter understanding the task, rename with: mv '${SESSION_FILE}' '${SESSION_DIR}/session-${TIMESTAMP}-<slug>.md'",
+  "message": "[SessionStart] Created session: ${SESSION_FILE##*/}",
   "session_file": "${SESSION_FILE}",
-  "timestamp": "${TIMESTAMP}"
+  "timestamp": "${TIMESTAMP}",
+  "slug": "${SLUG}"
 }
 EOF

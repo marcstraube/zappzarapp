@@ -1,8 +1,20 @@
 ---
-description: Guided commit workflow with quality checks and conventional commit format
+name: commit
+description:
+  Guided commit workflow with quality checks and conventional commit format
+model: sonnet
 context: fork
-allowed-tools: Read, Write, Edit, Grep, Glob, Bash(make:*), Bash(git:*), Bash(date:*), AskUserQuestion
-argument-hint: [--skip-checks] [--amend]
+allowed-tools:
+  - Read
+  - Write
+  - Edit
+  - Grep
+  - Glob
+  - Bash(make:*)
+  - Bash(git:*)
+  - Bash(date:*)
+  - AskUserQuestion
+argument-hint: '[--skip-checks] [--amend]'
 ---
 
 # Commit
@@ -32,16 +44,16 @@ This command supports the feature-branch workflow defined in
 
 ```text
 Feature-Branch (development)     Main Branch (stable)
-─────────────────────────────    ────────────────────
-Commit 1: PHP part               │
-Commit 2: Node part              │
-Commit 3: Tests                  │
-         ↓                       │
-User reviews branch              │
-         ↓                       │
-Merge ──────────────────────────→│ Clean history
-         ↓                       │
-Task closed                      │
+-----------------------------    --------------------
+Commit 1: PHP part               |
+Commit 2: Node part              |
+Commit 3: Tests                  |
+         v                       |
+User reviews branch              |
+         v                       |
+Merge -----------------------------> Clean history
+         v                       |
+Task closed                      |
 ```
 
 **Key rules:**
@@ -93,7 +105,7 @@ Categorize changes:
 - `Makefile`
 
 ```text
-⚠️  Config files changed. Run `/sync-check` to verify synchronization.
+! Config files changed. Run `/sync-check` to verify synchronization.
 ```
 
 ### Step 3: Quality Checks (unless --skip-checks)
@@ -173,9 +185,9 @@ Rules:
 
 Present the draft commit message and ask:
 
-1. "Use this message?" → Proceed
-2. "Edit message?" → Let user provide custom message
-3. "Abort?" → Cancel commit
+1. "Use this message?" -> Proceed
+2. "Edit message?" -> Let user provide custom message
+3. "Abort?" -> Cancel commit
 
 ### Step 8: Changelog Update
 
@@ -221,13 +233,13 @@ NOT on intermediate commits on the feature branch.
 
 **On Feature-Branch commits:**
 
-- CHANGELOG: ✅ Add entry per commit
-- Task: ❌ Do NOT close (task not complete yet)
+- CHANGELOG: OK Add entry per commit
+- Task: X Do NOT close (task not complete yet)
 
 **On Merge to main (after user approval):**
 
 - CHANGELOG: Already contains entries from feature branch
-- Task: ✅ Close via `/tasks --close <id>`
+- Task: OK Close via `/tasks --close <id>`
 
 **Detection (at merge time):**
 
@@ -238,7 +250,7 @@ NOT on intermediate commits on the feature branch.
 **If task detected:**
 
 - If certain: Close task via `/tasks --close <id>`
-- If uncertain: Ask "Schließt dieser Merge den Task **'{task name}'** ab?"
+- If uncertain: Ask "Does this merge close the task **'{task name}'**?"
 
 **Important:** Closed tasks are removed/closed, not marked as "Completed".
 Changelog = single source of truth.
@@ -284,24 +296,24 @@ git status
 Display summary:
 
 ```text
-╔════════════════════════════════════════════════════════════╗
-║ Commit Complete                                            ║
-╠════════════════════════════════════════════════════════════╣
-║ Commit:    abc1234 fix(docker): resolve hook issue         ║
-║ Changelog: Entry added under "Fixed"                       ║
-║ Task:      "Pre-Commit Hook Container Dependency" closed   ║
-╚════════════════════════════════════════════════════════════╝
++============================================================+
+| Commit Complete                                            |
++============================================================+
+| Commit:    abc1234 fix(docker): resolve hook issue         |
+| Changelog: Entry added under "Fixed"                       |
+| Task:      "Pre-Commit Hook Container Dependency" closed   |
++============================================================+
 ```
 
 Without task:
 
 ```text
-╔════════════════════════════════════════════════════════════╗
-║ Commit Complete                                            ║
-╠════════════════════════════════════════════════════════════╣
-║ Commit:    c434359 feat(claude): add /optimize command     ║
-║ Changelog: Entry added under "Features"                    ║
-╚════════════════════════════════════════════════════════════╝
++============================================================+
+| Commit Complete                                            |
++============================================================+
+| Commit:    c434359 feat(claude): add /optimize command     |
+| Changelog: Entry added under "Features"                    |
++============================================================+
 ```
 
 ## Files to Exclude
@@ -309,8 +321,7 @@ Without task:
 Never commit these files:
 
 - Lock files: `composer.lock`, `pnpm-lock.yaml`
-- Claude state: `.claude/*` (except `.claude/commands/`,
-  `.claude/settings.json`)
+- Claude state: `.claude/*` (except `.claude/skills/`, `.claude/settings.json`)
 - Environment: `.env` (only `.env.example` should be committed)
 - IDE personal settings: `.idea/workspace.xml`, `.vscode/settings.json`
 

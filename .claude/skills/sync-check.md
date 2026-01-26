@@ -1,9 +1,18 @@
 ---
+name: sync-check
 description: Check synchronization between related configuration files
+model: haiku
 context: fork
-allowed-tools: Read, Grep, Glob, Bash(make:*), Bash(git:*), Bash(diff:*),
-  Bash(ls:*), AskUserQuestion
-argument-hint: [--fix] [--category <name>]
+allowed-tools:
+  - Read
+  - Grep
+  - Glob
+  - Bash(make:*)
+  - Bash(git:*)
+  - Bash(diff:*)
+  - Bash(ls:*)
+  - AskUserQuestion
+argument-hint: '[--fix] [--category <name>]'
 ---
 
 # Sync Check
@@ -171,13 +180,13 @@ For each issue found:
 
 ```text
 [WARN] docker/compose: Service 'mercure' in compose.yaml missing from compose.production.yaml
-  → Add mercure service to compose.production.yaml or mark as dev-only
+  -> Add mercure service to compose.production.yaml or mark as dev-only
 
 [WARN] env: Variable 'NEW_FEATURE_FLAG' in .env missing from .env.example
-  → Add NEW_FEATURE_FLAG to .env.example with documentation
+  -> Add NEW_FEATURE_FLAG to .env.example with documentation
 
 [INFO] ide/vscode: New Makefile target 'build-assets' not in tasks.json
-  → Run: Add task for 'build-assets' target
+  -> Run: Add task for 'build-assets' target
 ```
 
 Severity levels:
@@ -256,7 +265,7 @@ grep -E '^[A-Z_]+=' .env | grep -oE '^[A-Z_]+'
 
 This command is designed to be quick (<30 seconds). For deeper analysis:
 
-- Use `/quality-audit` for comprehensive config parity checks
+- Use `/audit` for comprehensive config parity checks
 - Use `/docs-review` to verify documentation matches configs
 
 ## Notes

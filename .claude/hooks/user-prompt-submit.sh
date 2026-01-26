@@ -3,10 +3,10 @@
 # Called by Claude Code on UserPromptSubmit event
 #
 # On new session:
-# 1. Detects context continuation → shows previous session
-# 2. Detects implementation tasks → reminds about workflow
+# 1. Detects context continuation -> shows previous session
+# 2. Detects implementation tasks -> reminds about workflow
 # 3. Warns if on main branch during implementation task
-# 4. Reminds about stale pending session files
+# 4. Reminds if session file is still pending
 
 set -euo pipefail
 
@@ -50,7 +50,9 @@ MESSAGES=()
 # --- Detection 1: Context Continuation ---
 if [[ -n "$TRANSCRIPT_PATH" && -f "$TRANSCRIPT_PATH" ]]; then
     if head -100 "$TRANSCRIPT_PATH" | grep -qiE "(continued from a previous conversation|context.*(overflow|compress|compact)|ran out of context)"; then
-        RECENT_SESSIONS=$(find "${SESSION_BASE}" -name "session-*.md" ! -name "*-pending.md" -type f -mmin -120 2>/dev/null | xargs ls -1t 2>/dev/null | head -3)
+        # Fixed: Use -path pattern for nested YYYY/MM structure
+        RECENT_SESSIONS=$(find "${SESSION_BASE}" -path "*/[0-9][0-9][0-9][0-9]/[0-9][0-9]/session-*.md" \
+            ! -name "*-pending.md" -type f -mmin -120 2>/dev/null | xargs ls -1t 2>/dev/null | head -3)
 
         if [[ -n "$RECENT_SESSIONS" ]]; then
             LATEST=$(echo "$RECENT_SESSIONS" | head -1)
@@ -64,6 +66,7 @@ fi
 
 # --- Detection 2: Implementation Task ---
 # Check if prompt contains implementation keywords (language-agnostic tech terms)
+IMPL_TASK_DETECTED=false
 if [[ -n "$PROMPT" ]]; then
     # Action keywords (verbs indicating implementation work)
     ACTION_KEYWORDS="implement|add|create|build|refactor|migrate|upgrade|fix|update|change|modify|extend|integrate|write"
@@ -91,7 +94,7 @@ fi
 
 # --- Detection 3: Wrong Branch for Implementation ---
 # Warn if implementation task detected and on a protected branch
-if [[ "${IMPL_TASK_DETECTED:-false}" == "true" ]]; then
+if [[ "$IMPL_TASK_DETECTED" == "true" ]]; then
     CURRENT_BRANCH=$(cd "$PROJECT_DIR" && git branch --show-current 2>/dev/null || echo "")
     if [[ "$CURRENT_BRANCH" == "develop" || "$CURRENT_BRANCH" == "main" || "$CURRENT_BRANCH" == "master" ]]; then
         MESSAGES+=("[Branch Warning] On '$CURRENT_BRANCH' - create feature branch first: git checkout -b fix/<slug> or feature/<slug>")
@@ -99,11 +102,12 @@ if [[ "${IMPL_TASK_DETECTED:-false}" == "true" ]]; then
 fi
 
 # --- Detection 4: Stale Pending Session ---
-# Remind if session file is still pending after 5 minutes
-PENDING_SESSION=$(find "${SESSION_BASE}" -name "session-*-pending.md" -mmin +5 -type f 2>/dev/null | head -1)
+# Remind if any session file is still pending after 5 minutes
+# Use nested path pattern for YYYY/MM structure
+PENDING_SESSION=$(find "${SESSION_BASE}" -path "*/[0-9][0-9][0-9][0-9]/[0-9][0-9]/session-*-pending.md" -mmin +5 -type f 2>/dev/null | head -1)
 if [[ -n "$PENDING_SESSION" ]]; then
     PENDING_NAME=$(basename "$PENDING_SESSION")
-    MESSAGES+=("[Session Reminder] '$PENDING_NAME' still pending - rename with task slug and update Changes table")
+    MESSAGES+=("[Session Reminder] '$PENDING_NAME' still pending - update title and Changes table")
 fi
 
 # --- Detection 5: Change Watch ---

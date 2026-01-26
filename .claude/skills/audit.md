@@ -1,10 +1,27 @@
 ---
+name: audit
 description: Project audit (quality, security, docs) with incremental tracking
+model: sonnet
 context: fork
 allowed-tools:
-  Read, Write, Edit, Grep, Glob, Bash(make:*), Bash(find:*), Bash(grep:*),
-  Bash(diff:*), Bash(git:*), Bash(ls:*), Bash(cat:*), Bash(head:*), Bash(wc:*),
-  Bash(docker:*), Bash(docker compose:*), Bash(test:*), AskUserQuestion
+  - Read
+  - Write
+  - Edit
+  - Grep
+  - Glob
+  - Bash(make:*)
+  - Bash(find:*)
+  - Bash(grep:*)
+  - Bash(diff:*)
+  - Bash(git:*)
+  - Bash(ls:*)
+  - Bash(cat:*)
+  - Bash(head:*)
+  - Bash(wc:*)
+  - Bash(docker:*)
+  - Bash(docker compose:*)
+  - Bash(test:*)
+  - AskUserQuestion
 argument-hint: '[--quick | --full] [--quality | --security | --docs]'
 ---
 
@@ -99,14 +116,14 @@ Progress and baseline tracking in `.claude/state/audit-state.json`:
 
    IF no baseline found (first run)
    THEN
-      → Prompt: "No previous audit found. Run full audit first?"
-      → Or: Use reasonable default (last 50 commits, or HEAD~50)
+      -> Prompt: "No previous audit found. Run full audit first?"
+      -> Or: Use reasonable default (last 50 commits, or HEAD~50)
 
 3. Get changed files:
    git diff <baseline>..HEAD --name-only
 
 4. If no changes:
-   → "No changes since last audit. Nothing to check."
+   -> "No changes since last audit. Nothing to check."
 ```
 
 ## Quick-Audit Workflow
@@ -168,22 +185,22 @@ make lint-md          # Markdownlint
 
 ```text
 Quick Audit Results
-═══════════════════════════════════════════════
+===============================================
 Baseline: abc1234 (2026-01-15, last quick-audit)
 Changes:  12 files since baseline
 Areas:    quality, security
 
 Quality (8 files):
-  ✓ PHPStan: 0 errors
-  ✓ ESLint: 0 errors
-  ! CS-Check: 2 warnings (auto-fixable)
+  OK PHPStan: 0 errors
+  OK ESLint: 0 errors
+  !  CS-Check: 2 warnings (auto-fixable)
 
 Security (4 files):
-  ✓ No hardcoded secrets
-  ✓ Docker config OK
+  OK No hardcoded secrets
+  OK Docker config OK
 
 Result: PASS (2 warnings)
-═══════════════════════════════════════════════
+===============================================
 ```
 
 Update `last_quick_audit` in state file.
@@ -256,150 +273,10 @@ make lint-md              # Markdownlint
 
 ### Phase 4: Synthesis
 
-Generate comprehensive report:
-
-```text
-Full Audit Report
-═══════════════════════════════════════════════
-Date:   2026-01-20
-Commit: def5678
-Branch: main
-
-Summary:
-┌──────────┬────────┬────────┬────────┬────────┐
-│ Area     │ [CRIT] │ [WARN] │ [INFO] │ Status │
-├──────────┼────────┼────────┼────────┼────────┤
-│ Quality  │ 0      │ 3      │ 5      │ PASS   │
-│ Security │ 0      │ 1      │ 2      │ PASS   │
-│ Docs     │ 0      │ 5      │ 8      │ WARN   │
-├──────────┼────────┼────────┼────────┼────────┤
-│ Total    │ 0      │ 9      │ 15     │ PASS   │
-└──────────┴────────┴────────┴────────┴────────┘
-
-Critical Issues: None
-
-Warnings requiring attention:
-1. [Quality] src/php/App/Service/X.php - unused import
-2. [Security] compose.yaml - container runs as root
-3. [Docs] .zappzarapp/docs/API.md - broken link to removed file
-...
-
-Next quick-audit baseline: def5678
-═══════════════════════════════════════════════
-```
-
-Save report to `.claude/reports/audit-YYYY-MM-DD-<commit>.md`
+Generate comprehensive report and save to
+`.claude/reports/audit-YYYY-MM-DD-<commit>.md`
 
 Update `last_full_audit` in state file.
-
-## Report File Format
-
-`.claude/reports/audit-YYYY-MM-DD-<short-commit>.md`:
-
-```markdown
-# Audit Report
-
-**Date**: YYYY-MM-DD HH:MM **Mode**: Full / Quick **Commit**: <full commit hash>
-**Branch**: <branch name> **Baseline**: <baseline commit> (Quick-Audit only)
-
-## Summary
-
-| Area     | Critical | Warnings | Info | Status |
-| -------- | -------- | -------- | ---- | ------ |
-| Quality  | X        | X        | X    | OK     |
-| Security | X        | X        | X    | OK     |
-| Docs     | X        | X        | X    | WARN   |
-
-## Critical Issues
-
-None / List...
-
-## Warnings
-
-### Quality
-
-- [File:Line] Description
-
-### Security
-
-- [File:Line] Description
-
-### Documentation
-
-- [File:Line] Description
-
-## Informational
-
-<collapsed or brief list>
-
-## Files Checked
-
-- X PHP files
-- X Node files
-- X Docker files
-- X Documentation files
-
-## Next Steps
-
-1. Fix critical issues immediately
-2. Address warnings before next release
-3. Next quick-audit will use baseline: <commit>
-```
-
-## Edge Cases
-
-### No Previous Audit
-
-```text
-No previous audit found in state file.
-
-Options:
-○ Run full audit now (Recommended)
-○ Set current commit as baseline (skip initial audit)
-○ Cancel
-```
-
-### State File Corrupted
-
-```text
-State file invalid or corrupted.
-Backing up to state/audit-state.json.bak
-Starting fresh full audit.
-```
-
-### Baseline Commit Not Found
-
-If baseline commit no longer exists (rebased, force-pushed):
-
-```text
-Baseline commit abc1234 not found in history.
-Falling back to last full audit commit.
-```
-
-### No Changes Detected
-
-```text
-No changes since last audit (baseline: abc1234).
-
-Options:
-○ Run full audit anyway
-○ Skip (nothing to check)
-```
-
-## Integration with Agent Workflow
-
-This command can be used:
-
-1. **Standalone**: Manual audit at any time
-2. **As task**: "Run security audit" → Agent workflow
-3. **Pre-release**: `/audit --full` before version bump
-4. **CI/CD**: Quick-audit on every PR
-
-## State File Location
-
-- Path: `.claude/state/audit-state.json`
-- Gitignored: Yes (personal/machine-specific)
-- Survives: Context resets, session changes
 
 ## Notes
 

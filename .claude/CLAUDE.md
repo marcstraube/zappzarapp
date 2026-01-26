@@ -6,19 +6,23 @@
 
 **Hooks handle session lifecycle automatically:**
 
-| Hook               | Action                                                    |
-| ------------------ | --------------------------------------------------------- |
-| `SessionStart`     | Creates `.claude/sessions/YYYY/MM/session-...-pending.md` |
-| `UserPromptSubmit` | Detects context continuation, shows previous session      |
-| `SessionEnd`       | Reminds about Summary, Learnings, Decisions               |
-| `PreCompact`       | Reminds before context compaction                         |
+| Hook               | Action                                                   |
+| ------------------ | -------------------------------------------------------- |
+| `SessionStart`     | Creates `.claude/sessions/YYYY/MM/session-...-<slug>.md` |
+| `UserPromptSubmit` | Detects context continuation, shows previous session     |
+| `SessionEnd`       | Reminds about Summary, Learnings, Decisions              |
+| `PreCompact`       | Reminds before context compaction                        |
+
+**Session naming is automatic:**
+
+- Slug is derived from branch name (e.g., `feature/add-auth` -> `add-auth`)
+- Falls back to changed file directory if on develop/main/master
+- Falls back to `pending` only if no context available
 
 **Your tasks:**
 
-1. **After understanding the task:** Rename pending →
-   `session-...-<task-slug>.md`
-2. **Fresh conversation:** Brief user on previous session, ask what to work on
-3. **Context continuation:** Hook shows previous session — read and continue it
+1. **Fresh conversation:** Brief user on previous session, ask what to work on
+2. **Context continuation:** Hook shows previous session - read and continue it
 
 ## Session Log Updates
 
@@ -61,12 +65,12 @@ committed (persistent). In session file, only note "Added learning: <title>".
 
 When proposing solutions, prioritize in this order:
 
-1. **Security** – No compromises on security (input validation, secrets
+1. **Security** - No compromises on security (input validation, secrets
    handling, OWASP compliance)
-2. **Architecture** – Clean separation, SOLID principles, maintainability,
+2. **Architecture** - Clean separation, SOLID principles, maintainability,
    testability
-3. **Performance** – Efficient solutions, no unnecessary dependencies
-4. **Simplicity** – Only after 1-3 are satisfied, choose the simplest approach
+3. **Performance** - Efficient solutions, no unnecessary dependencies
+4. **Simplicity** - Only after 1-3 are satisfied, choose the simplest approach
 
 In practice this means:
 
@@ -84,7 +88,7 @@ In practice this means:
 
 Different files have different layer support:
 
-**Note:** Task management is handled via `/tasks` command with 4-tier model:
+**Note:** Task management is handled via `/tasks` skill with 4-tier model:
 
 | Flag           | Target                 | Use Case                     |
 | -------------- | ---------------------- | ---------------------------- |
@@ -93,14 +97,14 @@ Different files have different layer support:
 | `--zappzarapp` | marcstraube/zappzarapp | Boilerplate feature requests |
 | `--private`    | ~/.local/share/        | Personal, offline tasks      |
 
-**LEARNINGS, DECISIONS, REFERENCES — 2 Layer:**
+**LEARNINGS, DECISIONS, REFERENCES - 2 Layer:**
 
 | Priority | Path              | Condition                 |
 | -------- | ----------------- | ------------------------- |
 | 1        | `.ai/`            | `.ai/LEARNINGS.md` exists |
 | 2        | `.zappzarapp/ai/` | fallback                  |
 
-**CHANGELOG — Root level:**
+**CHANGELOG - Root level:**
 
 | File                       | Purpose                                     |
 | -------------------------- | ------------------------------------------- |
@@ -128,18 +132,18 @@ Key: `.claude/` (tooling), `.ai/` (knowledge), `.zappzarapp/` (boilerplate),
 ## Key Make Targets
 
 ```bash
-make up / make down    → Start/stop containers
-make check             → All quality checks
-make test              → Run all tests
-make fresh             → Rebuild everything
+make up / make down    -> Start/stop containers
+make check             -> All quality checks
+make test              -> Run all tests
+make fresh             -> Rebuild everything
 ```
 
 For all lint/test/fix targets: See `.zappzarapp/standards/make-targets.md`
 
-## Slash Commands
+## Skills
 
-Commands in `.claude/commands/`: `/status`, `/tasks`, `/commit`, `/audit`,
-`/learnings`, `/research`, `/optimize`
+Skills in `.claude/skills/`: `/status`, `/tasks`, `/commit`, `/audit`,
+`/learnings`, `/research`, `/optimize`, `/worktree`
 
 ## Git & Commits
 
