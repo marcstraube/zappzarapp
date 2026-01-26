@@ -113,6 +113,7 @@ class QualityService
             2 => ['pipe', 'w'],
         ];
 
+        // @phpstan-ignore ekinoBannedCode.function (DevDashboard is development-only, needs command execution for coverage generation)
         $process = proc_open($command, $descriptors, $pipes);
 
         if (!is_resource($process)) {
