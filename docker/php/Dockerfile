@@ -151,13 +151,18 @@ RUN apk add --no-cache git unzip su-exec $PHPIZE_DEPS linux-headers \
     # Database CLI clients (standard)
     postgresql-client mysql-client sqlite \
     # Database CLI clients (enhanced with auto-complete)
-    pgcli mycli litecli && \
+    pgcli mycli litecli \
+    # Docker CLI for backup script (uses host docker socket)
+    docker-cli docker-cli-compose && \
     if [ "$USER_ID" != "82" ]; then \
         apk add --no-cache --virtual .user-deps shadow && \
         usermod -u $USER_ID www-data && \
         groupmod -g $GROUP_ID www-data && \
         apk del .user-deps; \
     fi && \
+    # Add docker group and add www-data to it (for docker socket access)
+    addgroup -g 973 docker 2>/dev/null || true && \
+    addgroup www-data docker && \
     chown -R www-data:www-data /var/log/app /var/log/php /home/www-data
 
 # Install Composer (only in development)

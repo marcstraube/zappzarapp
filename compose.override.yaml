@@ -252,6 +252,16 @@ services:
       # SSL Certificates (for Health Check Dashboard)
       - ./docker/certs:/var/www/html/docker/certs:ro
 
+      # Docker Scripts (for DevDashboard backup functionality)
+      - ./docker/scripts:/var/www/html/docker/scripts:ro
+      - ./backups:/var/www/html/backups
+
+      # Environment file (for backup script configuration)
+      - ./.env:/var/www/html/.env:ro
+
+      # Docker socket (for backup script to exec into database containers)
+      - /var/run/docker.sock:/var/run/docker.sock
+
       # Runtime Data (Read-Write)
       - ${STORAGE_DIR:-./storage}:/var/www/html/storage
 
