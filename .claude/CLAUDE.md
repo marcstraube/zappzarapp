@@ -72,7 +72,16 @@ committed (persistent). In session file, only note "Added learning: <title>".
    git checkout -b feature/<slug>  # or: fix/<slug>, refactor/<slug>
    ```
 
-3. **For parallel work**: Use `/worktree --create feature/<slug>`
+3. **If on feature/fix/refactor branch → Use git worktree for parallel work**:
+
+   ```bash
+   # Create worktree for new task
+   git worktree add ../zappzarapp-wt-<name> -b <branch> develop
+   cd ../zappzarapp-wt-<name>
+   # Work in isolated environment
+   ```
+
+   Note: PreToolUse hook will remind you automatically when appropriate.
 
 **Exception:** Trivial tasks (1 file, typo/config/one-liner) can stay on
 develop.
