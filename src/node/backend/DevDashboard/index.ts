@@ -5,9 +5,9 @@
  * Only loaded when NODE_ENV=development.
  */
 
-export { createDevDashboardRouter } from './routes/index.js';
-export { DevDashboardController } from './controllers/DevDashboardController.js';
-export { CoverageService } from './services/CoverageService.js';
-export { DocsService } from './services/DocsService.js';
-export { QualityService } from './services/QualityService.js';
-export { SystemService } from './services/SystemService.js';
+export { createDevDashboardRouter } from './Routes/index.js';
+export { DevDashboardController } from './Controllers/DevDashboardController.js';
+export { CoverageService } from './Services/CoverageService.js';
+export { DocsService } from './Services/DocsService.js';
+export { QualityService } from './Services/QualityService.js';
+export { SystemService } from './Services/SystemService.js';

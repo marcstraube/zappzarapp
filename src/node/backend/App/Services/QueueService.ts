@@ -42,7 +42,7 @@
  */
 
 import * as amqp from 'amqplib';
-import { loadCredential } from '../../Shared/credentials';
+import { loadCredential } from '../../Shared/Config/credentials';
 
 /**
  * Queue Service Interface

@@ -6,13 +6,13 @@
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import type { Request, Response } from 'express';
-import { DevDashboardController } from '@backend/DevDashboard/controllers/DevDashboardController';
+import { DevDashboardController } from '@backend/DevDashboard/Controllers/DevDashboardController';
 import type {
   CoverageServiceInterface,
   DocsServiceInterface,
   QualityServiceInterface,
   SystemServiceInterface,
-} from '@backend/DevDashboard/services/CoverageService';
+} from '@backend/DevDashboard/Services/CoverageService';
 
 // Mock services
 const createMockCoverageService = (): CoverageServiceInterface => ({

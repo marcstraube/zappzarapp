@@ -22,7 +22,7 @@ describe('Credentials Loading', () => {
 
   describe('Module Exports', () => {
     it('should export loadCredential function', async () => {
-      const module = await import('@backend/Shared/credentials');
+      const module = await import('@backend/Shared/Config/credentials');
       expect(module.loadCredential).toBeDefined();
       expect(typeof module.loadCredential).toBe('function');
     });
@@ -31,7 +31,7 @@ describe('Credentials Loading', () => {
   describe('Environment Variable Fallback', () => {
     it('should fall back to environment variable when specified', async () => {
       process.env.TEST_VAR = 'env_value';
-      const { loadCredential } = await import('@backend/Shared/credentials');
+      const { loadCredential } = await import('@backend/Shared/Config/credentials');
 
       const value = loadCredential('nonexistent_file', 'TEST_VAR');
 
@@ -41,7 +41,7 @@ describe('Credentials Loading', () => {
 
     it('should use default value when neither file nor env exists', async () => {
       delete process.env.TEST_VAR;
-      const { loadCredential } = await import('@backend/Shared/credentials');
+      const { loadCredential } = await import('@backend/Shared/Config/credentials');
 
       const value = loadCredential('nonexistent', 'TEST_VAR', 'default_value');
 
@@ -50,7 +50,7 @@ describe('Credentials Loading', () => {
 
     it('should return empty string when no fallbacks available', async () => {
       delete process.env.TEST_VAR;
-      const { loadCredential } = await import('@backend/Shared/credentials');
+      const { loadCredential } = await import('@backend/Shared/Config/credentials');
 
       const value = loadCredential('nonexistent', 'TEST_VAR');
 
@@ -75,7 +75,7 @@ describe('Credentials Loading', () => {
   describe('Real-World Use Cases', () => {
     it('should load API key from environment in CI', async () => {
       process.env.API_KEY = 'ci_api_key_xyz';
-      const { loadCredential } = await import('@backend/Shared/credentials');
+      const { loadCredential } = await import('@backend/Shared/Config/credentials');
 
       const apiKey = loadCredential('api_key', 'API_KEY');
 
@@ -83,7 +83,7 @@ describe('Credentials Loading', () => {
     });
 
     it('should use defaults for optional credentials', async () => {
-      const { loadCredential } = await import('@backend/Shared/credentials');
+      const { loadCredential } = await import('@backend/Shared/Config/credentials');
 
       const apiKey = loadCredential('optional_api_key', 'OPTIONAL_API_KEY', 'default_key');
 
@@ -92,7 +92,7 @@ describe('Credentials Loading', () => {
 
     it('should handle empty environment variables', async () => {
       process.env.EMPTY_VAR = '';
-      const { loadCredential } = await import('@backend/Shared/credentials');
+      const { loadCredential } = await import('@backend/Shared/Config/credentials');
 
       const value = loadCredential('test', 'EMPTY_VAR', 'default');
 
@@ -160,7 +160,7 @@ describe('Credentials Loading', () => {
   describe('Error Resilience', () => {
     it('should handle undefined environment variables gracefully', async () => {
       delete process.env.UNDEFINED_VAR;
-      const { loadCredential } = await import('@backend/Shared/credentials');
+      const { loadCredential } = await import('@backend/Shared/Config/credentials');
 
       const value = loadCredential('test', 'UNDEFINED_VAR', 'default');
 
@@ -168,7 +168,7 @@ describe('Credentials Loading', () => {
     });
 
     it('should not throw errors for missing credentials with defaults', async () => {
-      const { loadCredential } = await import('@backend/Shared/credentials');
+      const { loadCredential } = await import('@backend/Shared/Config/credentials');
 
       expect(() => {
         loadCredential('missing', 'MISSING_VAR', 'default');

@@ -4,7 +4,7 @@ import {
   getCaPath,
   getTlsSocketOptions,
   getHttpsTlsOptions,
-} from '@backend/Shared/TlsConfig';
+} from '@backend/Shared/Config/TlsConfig';
 
 describe('TLS Configuration', () => {
   const originalEnv = process.env;

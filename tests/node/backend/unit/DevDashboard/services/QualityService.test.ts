@@ -3,7 +3,7 @@
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { QualityService } from '@backend/DevDashboard/services/QualityService';
+import { QualityService } from '@backend/DevDashboard/Services/QualityService';
 import * as fs from 'fs';
 
 // Mock fs module
