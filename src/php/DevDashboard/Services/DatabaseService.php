@@ -486,9 +486,7 @@ readonly class DatabaseService
         }
 
         // Sort by timestamp descending (newest first)
-        usort($backups, function ($a, $b) {
-            return strcmp($b['timestamp'], $a['timestamp']);
-        });
+        usort($backups, fn(array $a, array $b) => strcmp((string) $b['timestamp'], (string) $a['timestamp']));
 
         return ['success' => true, 'backups' => $backups];
     }

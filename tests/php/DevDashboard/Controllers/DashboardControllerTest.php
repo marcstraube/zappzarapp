@@ -29,6 +29,7 @@ class DashboardControllerTest extends TestCase
         if (!getenv('DB_PASSWORD') && !getenv('DB_PASSWORD_FILE')) {
             putenv('DB_PASSWORD=test_password');
         }
+
         if (!getenv('DATABASE_URL')) {
             putenv('DATABASE_URL=postgres://test:test@localhost:5432/test');
         }
@@ -232,7 +233,6 @@ class DashboardControllerTest extends TestCase
         $response   = $controller->apiListBackups();
         $reflection = new ReflectionClass($response);
         $property   = $reflection->getProperty('status');
-        $property->setAccessible(true);
         $this->assertEquals(200, $property->getValue($response));
 
         // Create backup (may succeed or fail depending on environment)

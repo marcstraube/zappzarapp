@@ -187,6 +187,31 @@ only.
 When in doubt: If `make check` passes, the code is compliant. IDE warnings are
 advisory.
 
+## Test Coverage
+
+Target coverage thresholds for quality assurance:
+
+| Metric              | Target   |
+| ------------------- | -------- |
+| **Overall**         | **70%**  |
+| Security-Critical   | **95%+** |
+| Core Infrastructure | **85%+** |
+| Optional Services   | **60%+** |
+| Dev Tools           | **50%+** |
+
+**Component Classification:**
+
+- **Security-Critical**: Auth, encryption, input validation, session management
+- **Core Infrastructure**: Database layer, HTTP clients, error handling, logging
+- **Optional Services**: Search, cache, queues, email (graceful degradation)
+- **Dev Tools**: DevDashboard, debug utilities, test helpers
+
+**Enforcement:**
+
+- Overall target checked by CI (warning if below 70%)
+- Security-critical components reviewed manually
+- New code should not decrease existing coverage
+
 ## Documentation
 
 - **PHPDoc**: Only when type hint is insufficient (`@param` for arrays with

@@ -430,11 +430,11 @@ class QualityService
         $metrics = $this->parseNodeCoverageFormat($html);
 
         // Try PHPUnit format if Node format not found
-        if (empty($metrics)) {
+        if ($metrics === []) {
             $metrics = $this->parsePhpUnitCoverageFormat($html);
         }
 
-        return empty($metrics) ? null : $metrics;
+        return $metrics === [] ? null : $metrics;
     }
 
     /**
@@ -500,10 +500,12 @@ class QualityService
         if ($diff < 60) {
             return 'just now';
         }
+
         if ($diff < 3600) {
             $minutes = floor($diff / 60);
             return $minutes . ' minute' . ($minutes > 1 ? 's' : '') . ' ago';
         }
+
         if ($diff < 86400) {
             $hours = floor($diff / 3600);
             return $hours . ' hour' . ($hours > 1 ? 's' : '') . ' ago';
