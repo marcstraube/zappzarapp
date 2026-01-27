@@ -23,6 +23,18 @@ elif [ -f /tmp/certs/server.crt ] && [ -f /tmp/certs/server.key ]; then
     SSL_CERT="/tmp/certs/server.crt"
     SSL_KEY="/tmp/certs/server.key"
     echo "[entrypoint] Found SSL certificates at /tmp/certs/server.{crt,key}"
+else
+    # Check if /tmp/certs exists but is empty or has wrong structure
+    if [ -d /tmp/certs ]; then
+        echo "[entrypoint] WARNING: /tmp/certs exists but no valid certificates found"
+        echo "[entrypoint] Expected: /tmp/certs/cert.{crt,key} or /tmp/certs/server.{crt,key}"
+        echo "[entrypoint] Found files in /tmp/certs:"
+        ls -la /tmp/certs/ 2>/dev/null || echo "  (directory is empty or not accessible)"
+    else
+        echo "[entrypoint] INFO: No /tmp/certs directory found (SSL certificates not mounted)"
+    fi
+    echo "[entrypoint] MariaDB will start WITHOUT SSL support"
+    echo "[entrypoint] For production: ensure compose.production.yaml mounts ./docker/certs/internal:/tmp/certs:ro"
 fi
 
 if [ -n "$SSL_CERT" ] && [ -n "$SSL_KEY" ]; then
