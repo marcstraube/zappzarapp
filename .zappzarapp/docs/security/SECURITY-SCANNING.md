@@ -595,6 +595,36 @@ repository:
 ZAP_SCAN_MODE=full  # or "normal"
 ```
 
+#### Expected Scan Results
+
+Some ZAP warnings are expected and acceptable in this configuration:
+
+##### 90005 - Sec-Fetch-Dest Header is Missing
+
+- **Status:** Expected (ZAP limitation, not a security issue)
+- **Reason:** `Sec-Fetch-*` headers are client-side browser features sent by
+  modern browsers, not server-controlled
+- **Why it appears:** ZAP scans without a real browser and therefore doesn't
+  send these headers
+- **Action:** No action needed
+
+##### 10049 - Storable and Cacheable Content
+
+This warning should **not** appear for HTTP→HTTPS 301 redirects, as nginx
+includes explicit `Cache-Control: public, max-age=31536000, immutable` headers.
+301 redirects are intentionally cacheable for performance (RFC 7231).
+
+**If this warning appears, investigate:**
+
+- ❌ API endpoints (should never be cached without explicit intent)
+- ❌ User-specific pages (profile, admin, dashboard)
+- ❌ Pages with sensitive data
+
+**Safe to ignore:**
+
+- ✅ Static redirects (HTTP→HTTPS 301)
+- ✅ Static resources (images, CSS, JS - already have cache headers)
+
 #### When to Run ZAP Scans
 
 | Scenario          | Command                  | Frequency     |
