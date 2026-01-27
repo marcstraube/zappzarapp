@@ -5,10 +5,10 @@
  */
 
 import { Request, Response } from 'express';
-import { CoverageService, CoverageResult, CoverageStatus } from '../services/CoverageService.js';
-import { DocsService, DocsResult, DocsStatus } from '../services/DocsService.js';
-import { QualityService, QualityMetrics } from '../services/QualityService.js';
-import { SystemService, NodeInfo } from '../services/SystemService.js';
+import { CoverageService, CoverageResult, CoverageStatus } from '../Services/CoverageService.js';
+import { DocsService, DocsResult, DocsStatus } from '../Services/DocsService.js';
+import { QualityService, QualityMetrics } from '../Services/QualityService.js';
+import { SystemService, NodeInfo } from '../Services/SystemService.js';
 
 interface StatusResponse {
   timestamp: string;

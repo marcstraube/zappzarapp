@@ -74,7 +74,7 @@ describe('MyFunction', () => {
 
 ### Service Tests
 
-Place service tests in `tests/node/backend/unit/services/`. Example:
+Place service tests in `tests/node/backend/unit/Services/`. Example:
 
 ```typescript
 import { describe, it, expect, beforeEach } from 'vitest';

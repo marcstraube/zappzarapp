@@ -7,66 +7,105 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import type { Request, Response } from 'express';
 import { DevDashboardController } from '@backend/DevDashboard/Controllers/DevDashboardController';
-import type {
-  CoverageServiceInterface,
-  DocsServiceInterface,
-  QualityServiceInterface,
-  SystemServiceInterface,
+import {
+  CoverageService,
+  type CoverageStatus,
+  type CoverageResult,
 } from '@backend/DevDashboard/Services/CoverageService';
+import {
+  DocsService,
+  type DocsStatus,
+  type DocsResult,
+} from '@backend/DevDashboard/Services/DocsService';
+import { QualityService, type QualityMetrics } from '@backend/DevDashboard/Services/QualityService';
+import { SystemService, type NodeInfo } from '@backend/DevDashboard/Services/SystemService';
 
-// Mock services
-const createMockCoverageService = (): CoverageServiceInterface => ({
-  getCoverageStatus: vi.fn().mockReturnValue({
-    exists: true,
-    lastGenerated: new Date('2024-01-01T00:00:00Z'),
-    reportPath: 'build/coverage/node/index.html',
-    thresholds: { lines: 80, functions: 80, branches: 80, statements: 80 },
-  }),
-  runCoverage: vi.fn().mockResolvedValue({
-    success: true,
-    message: 'Coverage generated',
-    reportPath: 'build/coverage/node/index.html',
-  }),
-});
+// Mock services using vi.mocked to create type-safe mocks
+const createMockCoverageService = (): CoverageService => {
+  const mock = {
+    getCoverageStatus: vi.fn<[], CoverageStatus>().mockReturnValue({
+      available: true,
+      outdated: false,
+      reportPath: 'build/coverage/node/index.html',
+      message: 'Coverage report is available',
+    }),
+    runCoverage: vi.fn<[], Promise<CoverageResult>>().mockResolvedValue({
+      success: true,
+      message: 'Coverage generated',
+      reportPath: 'build/coverage/node/index.html',
+    }),
+  };
+  return mock as unknown as CoverageService;
+};
 
-const createMockDocsService = (): DocsServiceInterface => ({
-  getDocsStatus: vi.fn().mockReturnValue({
-    exists: true,
-    lastGenerated: new Date('2024-01-01T00:00:00Z'),
-    reportPath: 'build/docs/index.html',
-  }),
-  generateDocs: vi.fn().mockResolvedValue({
-    success: true,
-    message: 'Docs generated',
-    reportPath: 'build/docs/index.html',
-  }),
-});
+const createMockDocsService = (): DocsService => {
+  const mock = {
+    getDocsStatus: vi.fn<[], DocsStatus>().mockReturnValue({
+      available: true,
+      outdated: false,
+      reportPath: 'docs/api/node-backend/index.html',
+      message: 'Documentation is available',
+    }),
+    generateDocs: vi.fn<[], Promise<DocsResult>>().mockResolvedValue({
+      success: true,
+      message: 'Docs generated',
+      reportPath: 'docs/api/node-backend/index.html',
+    }),
+  };
+  return mock as unknown as DocsService;
+};
 
-const createMockQualityService = (): QualityServiceInterface => ({
-  getNodeQualityMetrics: vi.fn().mockReturnValue({
-    eslint: { available: true, command: 'pnpm lint' },
-    prettier: { available: true, command: 'pnpm format:check' },
-    typescript: { available: true, command: 'pnpm typecheck' },
-    vitest: { available: true, command: 'pnpm test' },
-  }),
-});
+const createMockQualityService = (): QualityService => {
+  const mock = {
+    getNodeQualityMetrics: vi.fn<[], QualityMetrics>().mockReturnValue({
+      eslint: {
+        enabled: true,
+        configFile: 'eslint.config.js',
+        status: 'configured',
+        message: 'ESLint is configured',
+      },
+      prettier: {
+        enabled: true,
+        configFile: '.prettierrc',
+        status: 'configured',
+        message: 'Prettier is configured',
+      },
+      typescript: {
+        enabled: true,
+        configFile: 'tsconfig.json',
+        status: 'configured',
+        message: 'TypeScript is configured',
+      },
+      vitest: {
+        enabled: true,
+        configFile: 'vitest.config.ts',
+        status: 'configured',
+        message: 'Vitest is configured',
+      },
+    }),
+  };
+  return mock as unknown as QualityService;
+};
 
-const createMockSystemService = (): SystemServiceInterface => ({
-  getNodeInfo: vi.fn().mockReturnValue({
-    nodeVersion: 'v20.11.0',
-    npmVersion: '10.0.0',
-    pnpmVersion: '8.0.0',
-    environment: 'test',
-    uptime: 12345,
-    memoryUsage: { heapUsed: 50, heapTotal: 100, external: 5, rss: 150 },
-    packageInfo: {
-      dependencies: 10,
-      devDependencies: 20,
-      name: 'test',
-      version: '1.0.0',
-    },
-  }),
-});
+const createMockSystemService = (): SystemService => {
+  const mock = {
+    getNodeInfo: vi.fn<[], NodeInfo>().mockReturnValue({
+      nodeVersion: 'v20.11.0',
+      npmVersion: '10.0.0',
+      pnpmVersion: '8.0.0',
+      environment: 'test',
+      uptime: 12345,
+      memoryUsage: { heapUsed: 50, heapTotal: 100, external: 5, rss: 150 },
+      packageInfo: {
+        dependencies: 10,
+        devDependencies: 20,
+        name: 'test',
+        version: '1.0.0',
+      },
+    }),
+  };
+  return mock as unknown as SystemService;
+};
 
 // Mock request and response
 const createMockRequest = (overrides = {}): Partial<Request> => ({
@@ -85,10 +124,10 @@ const createMockResponse = (): Partial<Response> => {
 
 describe('DevDashboard Controller', () => {
   let controller: DevDashboardController;
-  let mockCoverageService: CoverageServiceInterface;
-  let mockDocsService: DocsServiceInterface;
-  let mockQualityService: QualityServiceInterface;
-  let mockSystemService: SystemServiceInterface;
+  let mockCoverageService: CoverageService;
+  let mockDocsService: DocsService;
+  let mockQualityService: QualityService;
+  let mockSystemService: SystemService;
 
   beforeEach(() => {
     mockCoverageService = createMockCoverageService();
@@ -113,11 +152,10 @@ describe('DevDashboard Controller', () => {
 
       expect(res.json).toHaveBeenCalledWith(
         expect.objectContaining({
-          status: 'ok',
           timestamp: expect.any(String),
-          node: expect.any(Object),
-          runtime: expect.any(Object),
+          system: expect.any(Object),
           coverage: expect.any(Object),
+          docs: expect.any(Object),
           quality: expect.any(Object),
         })
       );
@@ -129,8 +167,9 @@ describe('DevDashboard Controller', () => {
 
       controller.getStatus(req, res);
 
-      const call = (res.json as ReturnType<typeof vi.fn>).mock.calls[0][0];
-      expect(call.system).toHaveProperty('nodeVersion');
+      const jsonFn = res.json as ReturnType<typeof vi.fn>;
+      const call = jsonFn.mock.calls[0]?.[0];
+      expect(call?.system).toHaveProperty('nodeVersion');
       expect(mockSystemService.getNodeInfo).toHaveBeenCalled();
     });
 
@@ -140,9 +179,10 @@ describe('DevDashboard Controller', () => {
 
       controller.getStatus(req, res);
 
-      const call = (res.json as ReturnType<typeof vi.fn>).mock.calls[0][0];
-      expect(call.system).toHaveProperty('uptime');
-      expect(call.system).toHaveProperty('memoryUsage');
+      const jsonFn = res.json as ReturnType<typeof vi.fn>;
+      const call = jsonFn.mock.calls[0]?.[0];
+      expect(call?.system).toHaveProperty('uptime');
+      expect(call?.system).toHaveProperty('memoryUsage');
       expect(mockSystemService.getNodeInfo).toHaveBeenCalled();
     });
   });
@@ -156,8 +196,11 @@ describe('DevDashboard Controller', () => {
 
       expect(res.json).toHaveBeenCalledWith(
         expect.objectContaining({
-          nodeVersion: expect.any(String),
-          uptime: expect.any(Number),
+          timestamp: expect.any(String),
+          info: expect.objectContaining({
+            nodeVersion: expect.any(String),
+            uptime: expect.any(Number),
+          }),
         })
       );
     });
@@ -181,10 +224,13 @@ describe('DevDashboard Controller', () => {
 
       expect(res.json).toHaveBeenCalledWith(
         expect.objectContaining({
-          eslint: expect.any(Object),
-          prettier: expect.any(Object),
-          typescript: expect.any(Object),
-          vitest: expect.any(Object),
+          timestamp: expect.any(String),
+          metrics: expect.objectContaining({
+            eslint: expect.any(Object),
+            prettier: expect.any(Object),
+            typescript: expect.any(Object),
+            vitest: expect.any(Object),
+          }),
         })
       );
     });
@@ -208,7 +254,8 @@ describe('DevDashboard Controller', () => {
 
       expect(res.json).toHaveBeenCalledWith(
         expect.objectContaining({
-          exists: expect.any(Boolean),
+          timestamp: expect.any(String),
+          available: expect.any(Boolean),
           reportPath: expect.any(String),
         })
       );
@@ -250,7 +297,7 @@ describe('DevDashboard Controller', () => {
 
     it('should handle generation errors', async () => {
       mockCoverageService.runCoverage = vi
-        .fn()
+        .fn<[], Promise<CoverageResult>>()
         .mockResolvedValue({ success: false, message: 'Generation failed' });
 
       const req = createMockRequest() as Request;
@@ -276,7 +323,8 @@ describe('DevDashboard Controller', () => {
 
       expect(res.json).toHaveBeenCalledWith(
         expect.objectContaining({
-          exists: expect.any(Boolean),
+          timestamp: expect.any(String),
+          available: expect.any(Boolean),
           reportPath: expect.any(String),
         })
       );
@@ -318,7 +366,7 @@ describe('DevDashboard Controller', () => {
 
     it('should handle generation errors', async () => {
       mockDocsService.generateDocs = vi
-        .fn()
+        .fn<[], Promise<DocsResult>>()
         .mockResolvedValue({ success: false, message: 'Generation failed' });
 
       const req = createMockRequest() as Request;
@@ -342,7 +390,8 @@ describe('DevDashboard Controller', () => {
 
       controller.getStatus(req, res);
 
-      const call = (res.json as ReturnType<typeof vi.fn>).mock.calls[0][0];
+      const jsonFn = res.json as ReturnType<typeof vi.fn>;
+      const call = jsonFn.mock.calls[0]?.[0];
       expect(call).toHaveProperty('timestamp');
       expect(call).toHaveProperty('system');
       expect(call).toHaveProperty('coverage');

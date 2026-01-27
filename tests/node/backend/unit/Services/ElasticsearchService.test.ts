@@ -118,7 +118,7 @@ describe('ElasticsearchService', () => {
         expect.stringContaining('/_search'),
         expect.objectContaining({
           method: 'GET',
-          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+
           body: expect.stringContaining('"size":10'),
         })
       );
@@ -324,7 +324,6 @@ describe('ElasticsearchService', () => {
       expect(mockFetch).toHaveBeenCalledWith(
         expect.stringContaining('/new-index'),
         expect.objectContaining({
-          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
           body: expect.stringContaining('"mappings"'),
         })
       );

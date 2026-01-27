@@ -279,7 +279,6 @@ describe('StorageService', () => {
       expect(mockFetch).toHaveBeenCalledWith(
         expect.any(String),
         expect.objectContaining({
-          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
           headers: expect.objectContaining({
             'x-amz-copy-source': '/mybucket/source.txt',
           }),
