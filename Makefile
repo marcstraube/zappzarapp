@@ -3792,7 +3792,7 @@ security-zap-start: ## Start services in production mode for ZAP scanning (respe
 	if [ "$${ENABLE_ELASTICSEARCH:-false}" = "true" ]; then PROFILES="$$PROFILES --profile elasticsearch"; fi; \
 	if [ "$${ENABLE_SEAWEEDFS:-false}" = "true" ]; then PROFILES="$$PROFILES --profile seaweedfs"; fi; \
 	$(DC) -f compose.yaml -f compose.production.yaml $$PROFILES down || true
-	@echo -e "\033[0;33mStarting services in production mode...\033[0m"
+	@echo -e "\033[0;33mStarting services in production mode (forcing container recreation for template processing)...\033[0m"
 	@$(LOAD_ENV); \
 	PROFILES=""; \
 	if [ "$${ENABLE_PHP:-true}" = "true" ]; then PROFILES="$$PROFILES --profile php"; fi; \
@@ -3812,7 +3812,7 @@ security-zap-start: ## Start services in production mode for ZAP scanning (respe
 	if [ "$${ENABLE_MEILISEARCH:-false}" = "true" ]; then PROFILES="$$PROFILES --profile meilisearch"; fi; \
 	if [ "$${ENABLE_ELASTICSEARCH:-false}" = "true" ]; then PROFILES="$$PROFILES --profile elasticsearch"; fi; \
 	if [ "$${ENABLE_SEAWEEDFS:-false}" = "true" ]; then PROFILES="$$PROFILES --profile seaweedfs"; fi; \
-	ENV=production $(DC) -f compose.yaml -f compose.production.yaml $$PROFILES up -d --build
+	ENV=production $(DC) -f compose.yaml -f compose.production.yaml $$PROFILES up -d --build --force-recreate
 	@echo -e "\033[0;33mWaiting for services to be ready...\033[0m"
 	@sleep 10
 	@echo -e "\033[0;32m✓ Services ready for ZAP scan\033[0m"
@@ -3823,11 +3823,11 @@ security-zap-full-start: ## Start ALL services for comprehensive ZAP scanning (i
 	@$(LOAD_ENV); \
 	PROFILES="--profile php --profile $${DB_TYPE:-postgres} --profile redis --profile node --profile node-backend --profile mercure --profile meilisearch --profile elasticsearch --profile seaweedfs"; \
 	$(DC) -f compose.yaml -f compose.production.yaml $$PROFILES down || true
-	@echo -e "\033[0;33mStarting ALL services in production mode for comprehensive scan...\033[0m"
+	@echo -e "\033[0;33mStarting ALL services in production mode for comprehensive scan (forcing container recreation)...\033[0m"
 	@echo -e "\033[0;36mℹ️  Full mode: Testing maximum attack surface (all Node.js services: frontend + backend API)\033[0m"
 	@$(LOAD_ENV); \
 	PROFILES="--profile php --profile $${DB_TYPE:-postgres} --profile redis --profile node --profile node-backend --profile mercure --profile meilisearch --profile elasticsearch --profile seaweedfs"; \
-	ENV=production $(DC) -f compose.yaml -f compose.production.yaml $$PROFILES up -d --build
+	ENV=production $(DC) -f compose.yaml -f compose.production.yaml $$PROFILES up -d --build --force-recreate
 	@echo -e "\033[0;33mWaiting for services to be ready...\033[0m"
 	@sleep 15
 	@echo -e "\033[0;32m✓ All services ready for comprehensive ZAP scan\033[0m"
