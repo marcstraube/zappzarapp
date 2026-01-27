@@ -3771,8 +3771,26 @@ security-audit-node: ## Scan Node.js dependencies for known vulnerabilities
 	@$(DC) run --rm -T dev-tools pnpm audit
 
 security-zap-start: ## Start services in production mode for ZAP scanning
-	@echo -e "\033[0;33mRestarting services in production mode...\033[0m"
-	@ENV=production $(MAKE) restart
+	@echo -e "\033[0;33mStopping any running containers...\033[0m"
+	@$(LOAD_ENV); \
+	PROFILES="--profile php"; \
+	if [ "$${ENABLE_DATABASE:-true}" = "true" ]; then \
+		PROFILES="$$PROFILES --profile $${DB_TYPE:-postgres}"; \
+	fi; \
+	if [ "$${ENABLE_REDIS:-true}" = "true" ]; then \
+		PROFILES="$$PROFILES --profile redis"; \
+	fi; \
+	$(DC) -f compose.yaml -f compose.production.yaml $$PROFILES down || true
+	@echo -e "\033[0;33mStarting services in production mode...\033[0m"
+	@$(LOAD_ENV); \
+	PROFILES="--profile php"; \
+	if [ "$${ENABLE_DATABASE:-true}" = "true" ]; then \
+		PROFILES="$$PROFILES --profile $${DB_TYPE:-postgres}"; \
+	fi; \
+	if [ "$${ENABLE_REDIS:-true}" = "true" ]; then \
+		PROFILES="$$PROFILES --profile redis"; \
+	fi; \
+	ENV=production $(DC) -f compose.yaml -f compose.production.yaml $$PROFILES up -d
 	@echo -e "\033[0;33mWaiting for services to be ready...\033[0m"
 	@sleep 10
 	@echo -e "\033[0;32m✓ Services ready for ZAP scan\033[0m"
@@ -3782,19 +3800,14 @@ security-zap-scan: ## Run ZAP scan (requires running services)
 	@echo -e "\033[0;33mChecking if services are running...\033[0m"
 	@if ! docker compose ps | grep -q "Up"; then \
 		echo -e "\033[0;31mError: No services running\033[0m"; \
-		echo -e "\033[0;33mRun: ENV=production make up  (or make security-zap-start)\033[0m"; \
+		echo -e "\033[0;33mRun: make security-zap-start\033[0m"; \
 		exit 1; \
 	fi
-	@# Check ENV: prioritize shell/make variable over .env file
-	@if [ -n "$$ENV" ]; then \
-		CURRENT_ENV=$$ENV; \
-	else \
-		$(LOAD_ENV); \
-		CURRENT_ENV=$${ENV:-development}; \
-	fi; \
-	if [ "$$CURRENT_ENV" != "production" ]; then \
-		echo -e "\033[0;33m⚠️  WARNING: Services appear to be running in $$CURRENT_ENV mode\033[0m"; \
-		echo -e "\033[0;33m   For accurate results, restart with: ENV=production make up\033[0m"; \
+	@# Check ENV from running PHP container (most reliable)
+	@CONTAINER_ENV=$$(docker compose exec -T php printenv ENV 2>/dev/null | tr -d '\r\n' || echo "unknown"); \
+	if [ "$$CONTAINER_ENV" != "production" ]; then \
+		echo -e "\033[0;33m⚠️  WARNING: PHP container is running in $$CONTAINER_ENV mode\033[0m"; \
+		echo -e "\033[0;33m   For accurate CSP testing, restart with: make security-zap-start\033[0m"; \
 		read -p "Continue anyway? [y/N] " -n 1 -r; \
 		echo; \
 		if [[ ! $$REPLY =~ ^[Yy]$$ ]]; then \
