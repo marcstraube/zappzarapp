@@ -3814,8 +3814,10 @@ security-zap-start: ## Start services in production mode for ZAP scanning (respe
 	if [ "$${ENABLE_SEAWEEDFS:-false}" = "true" ]; then PROFILES="$$PROFILES --profile seaweedfs"; fi; \
 	NODE_BACKEND_TARGET="$${NODE_BACKEND_TARGET:-api}"; \
 	echo -e "\033[0;34mBuilding node-backend image first (NODE_BACKEND_TARGET=$$NODE_BACKEND_TARGET)...\033[0m" && \
-	ENV=production $(DC) -f compose.yaml -f compose.production.yaml $$PROFILES build node-backend 2>/dev/null || true && \
-	docker tag $${COMPOSE_PROJECT_NAME:-zappzarapp}-node-backend:$$NODE_BACKEND_TARGET zappzarapp-node-backend:latest 2>/dev/null || true && \
+	ENV=production $(DC) -f compose.yaml -f compose.production.yaml $$PROFILES build node-backend && \
+	echo -e "\033[0;34mTagging node-backend image as :latest for nginx COPY...\033[0m" && \
+	docker tag $${COMPOSE_PROJECT_NAME:-zappzarapp}-node-backend:$$NODE_BACKEND_TARGET zappzarapp-node-backend:latest && \
+	echo -e "\033[0;32m✓ node-backend image tagged successfully\033[0m" && \
 	echo -e "\033[0;34mStarting all services...\033[0m" && \
 	ENV=production $(DC) -f compose.yaml -f compose.production.yaml $$PROFILES up -d --build --force-recreate
 	@echo -e "\033[0;33mWaiting for services to be ready...\033[0m"
@@ -3834,8 +3836,10 @@ security-zap-full-start: ## Start ALL services for comprehensive ZAP scanning (i
 	PROFILES="--profile php --profile $${DB_TYPE:-postgres} --profile redis --profile node --profile node-backend --profile mercure --profile meilisearch --profile elasticsearch --profile seaweedfs"; \
 	NODE_BACKEND_TARGET="$${NODE_BACKEND_TARGET:-api}"; \
 	echo -e "\033[0;34mBuilding node-backend image first (NODE_BACKEND_TARGET=$$NODE_BACKEND_TARGET)...\033[0m" && \
-	ENV=production $(DC) -f compose.yaml -f compose.production.yaml $$PROFILES build node-backend 2>/dev/null || true && \
-	docker tag $${COMPOSE_PROJECT_NAME:-zappzarapp}-node-backend:$$NODE_BACKEND_TARGET zappzarapp-node-backend:latest 2>/dev/null || true && \
+	ENV=production $(DC) -f compose.yaml -f compose.production.yaml $$PROFILES build node-backend && \
+	echo -e "\033[0;34mTagging node-backend image as :latest for nginx COPY...\033[0m" && \
+	docker tag $${COMPOSE_PROJECT_NAME:-zappzarapp}-node-backend:$$NODE_BACKEND_TARGET zappzarapp-node-backend:latest && \
+	echo -e "\033[0;32m✓ node-backend image tagged successfully\033[0m" && \
 	echo -e "\033[0;34mStarting all services...\033[0m" && \
 	ENV=production $(DC) -f compose.yaml -f compose.production.yaml $$PROFILES up -d --build --force-recreate
 	@echo -e "\033[0;33mWaiting for services to be ready...\033[0m"
