@@ -164,34 +164,33 @@ teardown_file() {
 }
 
 @test "[Production] Database SSL certificates are correctly mapped in compose.production.yaml" {
-    # Extract postgres volume mounts
-    local postgres_volumes
-    postgres_volumes=$(docker compose -f compose.yaml -f compose.production.yaml config | \
-        awk '/^  postgres:/,/^  [a-z]/ {print}' | \
-        grep "docker/certs" || true)
+    # Extract postgres volume configuration (need --profile to include service in config)
+    local postgres_config
+    postgres_config=$(docker compose --profile postgres -f compose.yaml -f compose.production.yaml config 2>/dev/null | \
+        grep -A200 "postgres:" || true)
 
-    # Verify it mounts internal certs, not root certs directory
-    if echo "$postgres_volumes" | grep -q "docker/certs/internal:/tmp/certs"; then
-        true  # Success
+    # Verify it mounts internal certs to /tmp/certs
+    # Config format is multi-line YAML with source: and target: on separate lines
+    if echo "$postgres_config" | grep -A1 "docker/certs/internal" | grep -q "target: /tmp/certs"; then
+        true  # Success - internal certs mounted to /tmp/certs
     else
-        echo "# postgres volumes: $postgres_volumes" >&3
-        echo "# Expected: Should mount ./docker/certs/internal:/tmp/certs:ro" >&3
+        echo "# postgres config did not contain expected volume mount" >&3
+        echo "# Expected: docker/certs/internal mounted to /tmp/certs" >&3
         echo "# This ensures entrypoint.sh finds certs at /tmp/certs/cert.{crt,key}" >&3
         false
     fi
 
-    # Extract mariadb volume mounts
-    local mariadb_volumes
-    mariadb_volumes=$(docker compose -f compose.yaml -f compose.production.yaml config | \
-        awk '/^  mariadb:/,/^  [a-z]/ {print}' | \
-        grep "docker/certs" || true)
+    # Extract mariadb volume configuration (need --profile to include service in config)
+    local mariadb_config
+    mariadb_config=$(docker compose --profile mariadb -f compose.yaml -f compose.production.yaml config 2>/dev/null | \
+        grep -A200 "mariadb:" || true)
 
-    # Verify it mounts internal certs
-    if echo "$mariadb_volumes" | grep -q "docker/certs/internal:/tmp/certs"; then
-        true  # Success
+    # Verify it mounts internal certs to /tmp/certs
+    if echo "$mariadb_config" | grep -A1 "docker/certs/internal" | grep -q "target: /tmp/certs"; then
+        true  # Success - internal certs mounted to /tmp/certs
     else
-        echo "# mariadb volumes: $mariadb_volumes" >&3
-        echo "# Expected: Should mount ./docker/certs/internal:/tmp/certs:ro" >&3
+        echo "# mariadb config did not contain expected volume mount" >&3
+        echo "# Expected: docker/certs/internal mounted to /tmp/certs" >&3
         false
     fi
 }
@@ -257,10 +256,10 @@ teardown_file() {
 }
 
 @test "[Production] PostgreSQL enforces minimum TLS version" {
-    # Verify PostgreSQL is configured with ssl_min_protocol_version
+    # Verify PostgreSQL is configured with ssl_min_protocol_version (need --profile)
     local postgres_command
-    postgres_command=$(docker compose -f compose.yaml -f compose.production.yaml config | \
-        awk '/container_name: zappzarapp-postgres/,/logging:/ {print}' | \
+    postgres_command=$(docker compose --profile postgres -f compose.yaml -f compose.production.yaml config 2>/dev/null | \
+        grep -A100 "postgres:" | \
         grep "ssl_min_protocol_version" || echo "")
 
     if [ -n "$postgres_command" ]; then
@@ -280,10 +279,10 @@ teardown_file() {
 }
 
 @test "[Production] MariaDB enforces secure transport" {
-    # Verify MariaDB has --require-secure-transport=ON
+    # Verify MariaDB has --require-secure-transport=ON (need --profile)
     local mariadb_command
-    mariadb_command=$(docker compose -f compose.yaml -f compose.production.yaml config | \
-        awk '/container_name: zappzarapp-mariadb/,/logging:/ {print}' | \
+    mariadb_command=$(docker compose --profile mariadb -f compose.yaml -f compose.production.yaml config 2>/dev/null | \
+        grep -A100 "mariadb:" | \
         grep "require-secure-transport" || echo "")
 
     if [ -n "$mariadb_command" ]; then
