@@ -39,11 +39,13 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+      # Note: Docker Buildx is NOT used for ZAP scans to ensure images are loaded
+      # into the local Docker daemon (docker-container driver keeps images in cache).
+      # The default docker builder (docker-buildkit) loads images automatically.
 
       - name: Build goss utility image (dependency)
         run: |
+          # Use legacy builder for goss (GOSS validation requires image in daemon)
           DOCKER_BUILDKIT=0 docker build -t zappzarapp-goss:latest -f docker/goss/Dockerfile .
 
       - name: Initialize environment
