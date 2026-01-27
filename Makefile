@@ -3812,6 +3812,11 @@ security-zap-start: ## Start services in production mode for ZAP scanning (respe
 	if [ "$${ENABLE_MEILISEARCH:-false}" = "true" ]; then PROFILES="$$PROFILES --profile meilisearch"; fi; \
 	if [ "$${ENABLE_ELASTICSEARCH:-false}" = "true" ]; then PROFILES="$$PROFILES --profile elasticsearch"; fi; \
 	if [ "$${ENABLE_SEAWEEDFS:-false}" = "true" ]; then PROFILES="$$PROFILES --profile seaweedfs"; fi; \
+	NODE_BACKEND_TARGET="$${NODE_BACKEND_TARGET:-api}"; \
+	echo -e "\033[0;34mBuilding node-backend image first (NODE_BACKEND_TARGET=$$NODE_BACKEND_TARGET)...\033[0m" && \
+	ENV=production $(DC) -f compose.yaml -f compose.production.yaml $$PROFILES build node-backend 2>/dev/null || true && \
+	docker tag $${COMPOSE_PROJECT_NAME:-zappzarapp}-node-backend:$$NODE_BACKEND_TARGET zappzarapp-node-backend:latest 2>/dev/null || true && \
+	echo -e "\033[0;34mStarting all services...\033[0m" && \
 	ENV=production $(DC) -f compose.yaml -f compose.production.yaml $$PROFILES up -d --build --force-recreate
 	@echo -e "\033[0;33mWaiting for services to be ready...\033[0m"
 	@sleep 10
@@ -3827,6 +3832,11 @@ security-zap-full-start: ## Start ALL services for comprehensive ZAP scanning (i
 	@echo -e "\033[0;36mℹ️  Full mode: Testing maximum attack surface (all Node.js services: frontend + backend API)\033[0m"
 	@$(LOAD_ENV); \
 	PROFILES="--profile php --profile $${DB_TYPE:-postgres} --profile redis --profile node --profile node-backend --profile mercure --profile meilisearch --profile elasticsearch --profile seaweedfs"; \
+	NODE_BACKEND_TARGET="$${NODE_BACKEND_TARGET:-api}"; \
+	echo -e "\033[0;34mBuilding node-backend image first (NODE_BACKEND_TARGET=$$NODE_BACKEND_TARGET)...\033[0m" && \
+	ENV=production $(DC) -f compose.yaml -f compose.production.yaml $$PROFILES build node-backend 2>/dev/null || true && \
+	docker tag $${COMPOSE_PROJECT_NAME:-zappzarapp}-node-backend:$$NODE_BACKEND_TARGET zappzarapp-node-backend:latest 2>/dev/null || true && \
+	echo -e "\033[0;34mStarting all services...\033[0m" && \
 	ENV=production $(DC) -f compose.yaml -f compose.production.yaml $$PROFILES up -d --build --force-recreate
 	@echo -e "\033[0;33mWaiting for services to be ready...\033[0m"
 	@sleep 15
