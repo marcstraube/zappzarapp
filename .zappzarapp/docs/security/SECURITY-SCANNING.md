@@ -691,32 +691,6 @@ Configure scan rules in `.zap/rules.tsv`:
 10055 WARN CSP findings tracked separately
 ```
 
-### Troubleshooting
-
-#### Docker Buildx in CI/CD
-
-**Important:** ZAP scans use the **default docker builder**, not Docker Buildx.
-
-**Why?**
-
-Docker Buildx with `driver: docker-container` stores images in an isolated
-BuildKit cache. When nginx needs to
-`COPY --from=zappzarapp-node-backend:latest`, it cannot find the image because
-it's not in the Docker daemon.
-
-**For custom CI/CD workflows:**
-
-If you need Buildx features (multi-platform builds, etc.), use the `--load`
-flag:
-
-```yaml
-# Load image into Docker daemon for cross-image COPY
-- name: Build with Buildx
-  run: docker buildx build --load -t image:tag .
-```
-
-**GitLab CI:** Uses `docker:24-dind` by default (standard builder, no issue).
-
 ---
 
 ## Compliance Notes
