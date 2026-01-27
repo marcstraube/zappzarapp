@@ -1,90 +1,92 @@
 {
-    "name": "marcstraube/zappzarapp",
-    "version": "1.0.0",
-    "description": "A professional web development stack that gets you coding in minutes - zappzarapp!",
-    "type": "project",
-    "license": "MIT",
-    "homepage": "https://github.com/marcstraube/zappzarapp",
-    "authors": [
-        {
-            "name": "Marc Straube",
-            "email": "email@marcstraube.de",
-            "homepage": "https://github.com/marcstraube"
-        }
-    ],
-    "support": {
-        "issues": "https://github.com/marcstraube/zappzarapp/issues",
-        "source": "https://github.com/marcstraube/zappzarapp"
-    },
-    "require": {
-        "php": "^8.4",
-        "ext-ctype": "*",
-        "ext-curl": "*",
-        "ext-iconv": "*",
-        "ext-json": "*",
-        "ext-openssl": "*",
-        "ext-pdo": "*",
-        "ext-redis": "*",
-        "ext-simplexml": "*",
-        "meilisearch/meilisearch-php": "^1.16",
-        "monolog/monolog": "^3.9",
-        "php-amqplib/php-amqplib": "^3.7",
-        "php-di/php-di": "^7.1",
-        "twig/twig": "^3.0"
-    },
-    "require-dev": {
-        "captainhook/captainhook": "^5.27",
-        "ekino/phpstan-banned-code": "^3.0",
-        "fakerphp/faker": "^1.24",
-        "friendsofphp/php-cs-fixer": "^3.91",
-        "phpmd/phpmd": "^2.15",
-        "phpstan/phpstan": "^2.1",
-        "phpunit/phpunit": "^12.4",
-        "rector/rector": "^2.3",
-        "roave/security-advisories": "dev-latest",
-        "symfony/var-dumper": "^8.0"
-    },
-    "config": {
-        "platform": {
-            "php": "8.4",
-            "ext-exif": "1",
-            "ext-gd": "1",
-            "ext-gmagick": "1",
-            "ext-intl": "1",
-            "ext-opcache": "1",
-            "ext-zip": "1"
-        },
-        "allow-plugins": {
-            "php-http/discovery": true
-        },
-        "platform-check": true,
-        "optimize-autoloader": true,
-        "preferred-install": "dist",
-        "sort-packages": true
-    },
-    "autoload": {
-        "psr-4": {
-            "App\\": "src/php/App/",
-            "DevDashboard\\": "src/php/DevDashboard/"
-        },
-        "files": [
-            "src/php/App/helpers.php"
-        ]
-    },
-    "autoload-dev": {
-        "psr-4": {
-            "Tests\\App\\": "tests/php/App/",
-            "Tests\\DevDashboard\\": "tests/php/DevDashboard/"
-        }
-    },
-    "scripts": {
-        "test": "@php vendor/bin/phpunit",
-        "analyse": "@php vendor/bin/phpstan analyse",
-        "phpmd": "@php vendor/bin/phpmd src/php,tests/php text phpmd.xml.dist",
-        "cs-fix": "@php vendor/bin/php-cs-fixer fix",
-        "cs-check": "@php vendor/bin/php-cs-fixer fix --dry-run --diff",
-        "docs": "@php tools/phpdoc.phar --config=phpdoc.xml",
-        "rector-check": "@php vendor/bin/rector process --dry-run",
-        "rector-fix": "@php vendor/bin/rector process"
+  "name": "marcstraube/zappzarapp",
+  "version": "1.0.0",
+  "description": "A professional web development stack that gets you coding in minutes - zappzarapp!",
+  "type": "project",
+  "license": "MIT",
+  "homepage": "https://github.com/marcstraube/zappzarapp",
+  "authors": [
+    {
+      "name": "Marc Straube",
+      "email": "email@marcstraube.de",
+      "homepage": "https://github.com/marcstraube"
     }
+  ],
+  "support": {
+    "issues": "https://github.com/marcstraube/zappzarapp/issues",
+    "source": "https://github.com/marcstraube/zappzarapp"
+  },
+  "require": {
+    "php": "^8.4",
+    "ext-ctype": "*",
+    "ext-curl": "*",
+    "ext-iconv": "*",
+    "ext-json": "*",
+    "ext-openssl": "*",
+    "ext-pdo": "*",
+    "ext-redis": "*",
+    "ext-simplexml": "*",
+    "meilisearch/meilisearch-php": "^1.16",
+    "monolog/monolog": "^3.9",
+    "php-amqplib/php-amqplib": "^3.7",
+    "php-di/php-di": "^7.1",
+    "twig/twig": "^3.0"
+  },
+  "require-dev": {
+    "captainhook/captainhook": "^5.27",
+    "ekino/phpstan-banned-code": "^3.0",
+    "fakerphp/faker": "^1.24",
+    "friendsofphp/php-cs-fixer": "^3.91",
+    "phpmd/phpmd": "^2.15",
+    "phpstan/phpstan": "^2.1",
+    "phpunit/phpunit": "^12.4",
+    "rector/rector": "^2.3",
+    "roave/security-advisories": "dev-latest",
+    "symfony/var-dumper": "^8.0"
+  },
+  "config": {
+    "platform": {
+      "php": "8.4",
+      "ext-exif": "1",
+      "ext-gd": "1",
+      "ext-gmagick": "1",
+      "ext-intl": "1",
+      "ext-opcache": "1",
+      "ext-zip": "1"
+    },
+    "allow-plugins": {
+      "php-http/discovery": true
+    },
+    "platform-check": true,
+    "optimize-autoloader": true,
+    "preferred-install": "dist",
+    "sort-packages": true
+  },
+  "autoload": {
+    "psr-4": {
+      "App\\": "src/php/App/",
+      "DevDashboard\\": "src/php/DevDashboard/",
+      "DevToolbar\\": "src/php/DevToolbar/"
+    },
+    "files": [
+      "src/php/App/helpers.php"
+    ]
+  },
+  "autoload-dev": {
+    "psr-4": {
+      "Tests\\App\\": "tests/php/App/",
+      "Tests\\DevDashboard\\": "tests/php/DevDashboard/",
+      "Tests\\DevToolbar\\": "tests/php/DevToolbar/"
+    }
+  },
+  "scripts": {
+    "test": "@php vendor/bin/phpunit",
+    "analyse": "@php vendor/bin/phpstan analyse",
+    "phpmd": "@php vendor/bin/phpmd src/php,tests/php text phpmd.xml.dist",
+    "cs-fix": "@php vendor/bin/php-cs-fixer fix",
+    "cs-check": "@php vendor/bin/php-cs-fixer fix --dry-run --diff",
+    "docs": "@php tools/phpdoc.phar --config=phpdoc.xml",
+    "rector-check": "@php vendor/bin/rector process --dry-run",
+    "rector-fix": "@php vendor/bin/rector process"
+  }
 }

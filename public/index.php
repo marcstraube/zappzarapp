@@ -21,6 +21,28 @@ require_once __DIR__ . '/../vendor/autoload.php';
 
 /**
  * ============================================================================
+ * DEVELOPER TOOLBAR (DEV-ONLY)
+ * ============================================================================
+ * Start output buffering and initialize the Developer Toolbar.
+ * The toolbar provides real-time debugging information including:
+ * - Request execution time and memory usage
+ * - Database queries with performance metrics
+ * - Log messages from Monolog
+ * - Exceptions (both handled and unhandled)
+ *
+ * Security: Only enabled in development (disabled in production, CLI, AJAX)
+ */
+if (DevToolbar\Guard\DevToolbarGuard::isEnabled()) {
+    ob_start();
+    $toolbar = DevToolbar\DevToolbar::getInstance();
+    $toolbar->boot();
+
+    // Register shutdown handler to inject toolbar HTML before </body>
+    register_shutdown_function([$toolbar, 'render']);
+}
+
+/**
+ * ============================================================================
  * DEPENDENCY INJECTION CONTAINER
  * ============================================================================
  * Initialize the PSR-11 compatible DI container with auto-wiring support.
