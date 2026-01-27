@@ -396,8 +396,8 @@ authentication flaws.
 
 **Key Configuration:**
 
-- Uses `make security-zap-start` for environment setup (all `ENABLE_*=true`
-  services)
+- Uses `make security-zap-start` for environment setup (respects `ENABLE_*` and
+  `NODE_MODE` from `.env`)
 - Uses `zaproxy/action-baseline@v0.14.0` for scanning (GitHub-optimized)
 - Uses `make security-zap-stop` for cleanup
 - Runs against production configuration (strict CSP without
@@ -455,20 +455,47 @@ strict CSP headers without `unsafe-eval` and `unsafe-inline`.
 #### Quick Scan (All-in-One)
 
 ```bash
-# Full lifecycle: start -> scan -> stop (always uses production mode)
-make security-zap-full
-# or
+# Standard scan: respects .env configuration
 make security-zap
+
+# Comprehensive scan: tests ALL services (ignores .env ENABLE_* flags)
+make security-zap-full
 ```
 
-**Note:** No need to specify `ENV=production` - it's hardcoded in the targets to
-ensure production CSP is always tested.
+**Which to use?**
+
+- **Project development**: `make security-zap` (tests your configured stack)
+- **Before boilerplate release**: `make security-zap-full` (validates all
+  services with maximum attack surface)
+- **Custom projects**: Usually `make security-zap` is sufficient
+
+**Note:** Full mode always tests **both** Node.js services (frontend + backend
+API) regardless of your `NODE_MODE` setting, ensuring complete platform security
+validation.
+
+**Note:** No need to specify `ENV=production` - it's automatically set by the
+targets to ensure production CSP is always tested.
 
 #### Manual Workflow
 
+**Standard mode (.env configuration):**
+
 ```bash
-# 1. Start services in production mode (clean state with correct ENV)
+# 1. Start services based on .env ENABLE_* flags
 make security-zap-start
+
+# 2. Run scan (can be repeated without restarting)
+make security-zap-scan
+
+# 3. Stop services when done
+make security-zap-stop
+```
+
+**Full mode (all services):**
+
+```bash
+# 1. Start ALL services (ignores .env ENABLE_* flags)
+make security-zap-full-start
 
 # 2. Run scan (can be repeated without restarting)
 make security-zap-scan
@@ -484,17 +511,119 @@ make security-zap-stop
 - This ensures PHP container receives correct ENV for strict CSP headers
 - Reads `ENABLE_*` flags from `.env` to determine which services to start
 
-**Services Started:**
+**Scan Modes:**
 
-- **Always:** nginx (frontend), PHP (backend)
-- **Default:** Database (postgres/mariadb), Redis (cache/sessions)
-- **Optional:** Only if `ENABLE_*=true` in `.env`:
-  - Mercure (real-time features)
-  - Meilisearch/Elasticsearch (search features)
-  - SeaweedFS (file upload/download features)
+**`security-zap` (Standard):**
 
-**Not tested:** RabbitMQ (backend-only), Mailpit (dev-only), Adminer/pgAdmin
-(dev-only)
+- Respects `.env` ENABLE\_\* configuration
+- Tests only services you have enabled
+- Use Case: Project development, custom stack testing
+
+**`security-zap-full` (Comprehensive):**
+
+- Tests ALL available services regardless of `.env`
+- Forces: PHP, Database, Redis, **both Node.js services** (frontend + backend
+  API), Mercure, Meilisearch, Elasticsearch, SeaweedFS
+- Use Case: Boilerplate releases, platform security validation
+- **Maximum attack surface**: Always tests both Node.js profiles for complete
+  coverage
+
+**Services Started (by mode):**
+
+| Service           | Normal Mode (`.env`)   | Full Mode (forced)                            |
+| ----------------- | ---------------------- | --------------------------------------------- |
+| **nginx**         | Always (no profile)    | Always (no profile)                           |
+| **PHP**           | `ENABLE_PHP=true`      | Always                                        |
+| **Database**      | `ENABLE_DATABASE`      | Always (via DB_TYPE, one of postgres/mariadb) |
+| **Redis**         | `ENABLE_REDIS=true`    | Always                                        |
+| **Node.js**       | `ENABLE_NODE=true`     | **Always (both node + node-backend)**         |
+| **Mercure**       | `ENABLE_MERCURE`       | Always                                        |
+| **Meilisearch**   | `ENABLE_MEILISEARCH`   | Always                                        |
+| **Elasticsearch** | `ENABLE_ELASTICSEARCH` | Always                                        |
+| **SeaweedFS**     | `ENABLE_SEAWEEDFS`     | Always                                        |
+| RabbitMQ/Mailpit  | Never (not in scope)   | Never                                         |
+
+**Node.js Profile Selection:**
+
+**Normal Mode:** Determined by `NODE_MODE` from `.env`:
+
+- `assets|idle` → `--profile node` (Vite dev server)
+- `api` → `--profile node-backend` (Express API only)
+- `assets-api` → `--profile node --profile node-backend` (both, default)
+- `framework` → `--profile node` (framework server)
+- `framework-api` → `--profile node --profile node-backend` (framework + API)
+
+**Full Mode:** Always `--profile node --profile node-backend` (maximum coverage,
+ignores NODE_MODE)
+
+**Node.js API Coverage:**
+
+By default (`NODE_MODE=assets-api`), ZAP scans both PHP and Node.js APIs:
+
+- PHP Backend: `/`, `/api/*`, `/status`, `/ready`, `/health`
+- Node Backend: `/api/node/*` (proxied via nginx to node-backend:3000)
+- Frontend Framework: If `NODE_MODE=framework` or `framework-api`
+
+#### CI/CD Scan Mode Selection
+
+ZAP scans in CI/CD automatically select the appropriate mode based on the
+repository:
+
+**GitHub Actions & GitLab CI:**
+
+| Repository             | Branch         | Trigger  | Mode       | Rationale                           |
+| ---------------------- | -------------- | -------- | ---------- | ----------------------------------- |
+| marcstraube/zappzarapp | develop/master | push     | **full**   | Boilerplate → test all services     |
+| marcstraube/zappzarapp | develop/master | schedule | **full**   | Weekly comprehensive validation     |
+| marcstraube/zappzarapp | feature/\*     | push     | normal     | Feature dev → .env config           |
+| fork/custom-project    | any            | any      | **normal** | Projects use their configured stack |
+| any                    | any            | manual   | selectable | Override via workflow input         |
+
+**Benefits:**
+
+- ✅ Boilerplate maintainers test all services comprehensively
+- ✅ Fork projects only test their enabled stack (faster, relevant)
+- ✅ No manual configuration needed (auto-detects repository)
+- ✅ Manual override available via workflow dispatch
+
+**Manual Override:**
+
+```bash
+# GitHub: Actions → ZAP Scan → Run workflow → Select "full" or "normal"
+
+# GitLab: CI/CD → Run Pipeline → Add variable:
+ZAP_SCAN_MODE=full  # or "normal"
+```
+
+#### Expected Scan Results
+
+Some ZAP warnings are expected and acceptable in this configuration:
+
+##### 90005 - Sec-Fetch-Dest Header is Missing
+
+- **Status:** Expected (ZAP limitation, not a security issue)
+- **Reason:** `Sec-Fetch-*` headers are client-side browser features sent by
+  modern browsers, not server-controlled
+- **Why it appears:** ZAP scans without a real browser and therefore doesn't
+  send these headers
+- **Action:** No action needed
+
+##### 10049 - Storable and Cacheable Content
+
+This warning should **not** appear for HTTP→HTTPS 301 redirects, as nginx
+includes explicit `Cache-Control: public, max-age=31536000, immutable` headers.
+301 redirects are intentionally cacheable for performance (RFC 7231).
+
+**If this warning appears, investigate:**
+
+- ❌ API endpoints (should never be cached without explicit intent)
+- ❌ User-specific pages (profile, admin, dashboard)
+- ❌ Pages with sensitive data
+
+**Safe to ignore:**
+
+- ✅ Static redirects (HTTP→HTTPS 301)
+- ✅ Static resources (images, CSS, JS - already have cache headers)
 
 #### When to Run ZAP Scans
 

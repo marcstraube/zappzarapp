@@ -148,6 +148,8 @@ services:
     tmpfs:
       # Owned by www-data (uid 82) - no root needed
       - /tmp:mode=0770,uid=82,gid=82,size=1G
+      # Twig template cache (read-only filesystem requires tmpfs for cache writes)
+      - /var/www/html/build/cache:mode=0770,uid=82,gid=82,size=256M
     security_opt:
       - no-new-privileges:true
     cap_drop:

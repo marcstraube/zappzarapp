@@ -203,14 +203,51 @@ scan:zap:
   stage: scan
   needs:
     - build:images
+  variables:
+    ZAP_SCAN_MODE: ""  # Empty = auto-detect, or set "normal"/"full" for manual override
   before_script:
-    - apk add --no-cache docker-compose curl bash make
+    - apk add --no-cache docker-compose curl bash make git
     - make init
     - make secrets
     - make ssl-internal
   script:
-    # Start application with production configuration
-    - make security-zap-start
+    # Determine if this is the upstream zappzarapp boilerplate repository
+    - |
+      REMOTE_URL=$(git remote get-url origin 2>/dev/null || echo "")
+      if [[ "$REMOTE_URL" =~ marcstraube/zappzarapp ]] || \
+         [[ "$CI_PROJECT_PATH" == "marcstraube/zappzarapp" ]]; then
+        IS_UPSTREAM="true"
+      else
+        IS_UPSTREAM="false"
+      fi
+
+    # Determine scan mode
+    - |
+      if [[ -n "$ZAP_SCAN_MODE" ]]; then
+        SCAN_MODE="$ZAP_SCAN_MODE"  # Manual override
+      elif [[ "$IS_UPSTREAM" == "true" ]] && \
+           ([[ "$CI_COMMIT_BRANCH" == "develop" ]] || \
+            [[ "$CI_COMMIT_BRANCH" == "master" ]] || \
+            [[ "$CI_PIPELINE_SOURCE" == "schedule" ]]); then
+        SCAN_MODE="full"  # Upstream boilerplate: comprehensive testing
+      else
+        SCAN_MODE="normal"  # Forks/projects: respect .env
+      fi
+
+    - echo "Repository: $CI_PROJECT_PATH"
+    - echo "Is upstream: $IS_UPSTREAM"
+    - echo "Scan mode: $SCAN_MODE"
+
+    # Start application with appropriate configuration
+    - |
+      if [[ "$SCAN_MODE" == "full" ]]; then
+        echo "Starting all services for comprehensive scan..."
+        make security-zap-full-start
+      else
+        echo "Starting services based on .env configuration..."
+        make security-zap-start
+      fi
+
     # Run ZAP baseline scan
     - make security-zap-scan
   after_script:

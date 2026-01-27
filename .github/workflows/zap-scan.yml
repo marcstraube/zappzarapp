@@ -7,6 +7,15 @@ on:
     # Weekly on Sunday at 3 AM (after security-scan at 2 AM)
     - cron: '0 3 * * 0'
   workflow_dispatch:
+    inputs:
+      scan_mode:
+        description: 'Scan mode (normal: respects .env, full: all services)'
+        required: true
+        default: 'normal'
+        type: choice
+        options:
+          - normal
+          - full
 
 env:
   COMPOSE_PROJECT_NAME: zappzarapp-zap
@@ -43,8 +52,42 @@ jobs:
           make secrets
           make ssl-internal
 
-      - name: Start application in production mode
-        run: make security-zap-start
+      - name: Determine scan type
+        id: scan-type
+        run: |
+          # Check if this is the upstream zappzarapp boilerplate
+          if [[ "${{ github.repository }}" == "marcstraube/zappzarapp" ]]; then
+            IS_UPSTREAM="true"
+          else
+            IS_UPSTREAM="false"
+          fi
+
+          # Determine scan mode
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            MODE="${{ inputs.scan_mode }}"
+          elif [[ "$IS_UPSTREAM" == "true" ]] && \
+               ([[ "${{ github.ref }}" == "refs/heads/develop" ]] || \
+                [[ "${{ github.ref }}" == "refs/heads/master" ]]); then
+            MODE="full"  # Upstream boilerplate: comprehensive testing
+          else
+            MODE="normal"  # Forks/projects: respect .env
+          fi
+
+          if [[ "$MODE" == "full" ]]; then
+            echo "target=security-zap-full-start" >> $GITHUB_OUTPUT
+            echo "description=Comprehensive (all services)" >> $GITHUB_OUTPUT
+          else
+            echo "target=security-zap-start" >> $GITHUB_OUTPUT
+            echo "description=Standard (.env config)" >> $GITHUB_OUTPUT
+          fi
+
+          echo "mode=$MODE" >> $GITHUB_OUTPUT
+          echo "Repository: ${{ github.repository }}"
+          echo "Is upstream: $IS_UPSTREAM"
+          echo "Scan mode: $MODE"
+
+      - name: Start application (${{ steps.scan-type.outputs.description }})
+        run: make ${{ steps.scan-type.outputs.target }}
 
       - name: Run ZAP baseline scan
         uses: zaproxy/action-baseline@v0.14.0
@@ -76,6 +119,7 @@ jobs:
           echo "# OWASP ZAP Baseline Scan" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "**Target:** http://localhost:8080" >> $GITHUB_STEP_SUMMARY
+          echo "**Scan Mode:** ${{ steps.scan-type.outputs.mode }} (${{ steps.scan-type.outputs.description }})" >> $GITHUB_STEP_SUMMARY
           echo "**Environment:** Production (strict CSP, no unsafe-eval/unsafe-inline)" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "See artifacts for detailed HTML and JSON reports." >> $GITHUB_STEP_SUMMARY

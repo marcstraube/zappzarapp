@@ -35,7 +35,9 @@ server {
     }
 
     # Redirect all other traffic to HTTPS
+    # Cache-Control: 301 redirects are cacheable for performance (1 year)
     location / {
+        add_header Cache-Control "public, max-age=31536000, immutable" always;
         return 301 https://$host:${NGINX_SSL_PORT}$request_uri;
     }
 }

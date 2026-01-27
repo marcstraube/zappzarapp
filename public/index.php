@@ -11,6 +11,7 @@ declare(strict_types=1);
 use App\Http\Controller\ExampleController;
 use App\Http\Controller\StatusController;
 use App\Http\Controller\WelcomeController;
+use App\Http\ExceptionHandler;
 use App\Http\Middleware\CorsMiddleware;
 use App\Http\Router;
 use DI\ContainerBuilder;
@@ -119,6 +120,26 @@ header("Content-Security-Policy: $cspHeader");
 // 2. Define constant for backwards compatibility
 define('CSP_NONCE', CspNonceHelper::get());
 
+/**
+ * ============================================================================
+ * GLOBAL EXCEPTION HANDLER
+ * ============================================================================
+ * Register a global exception and error handler to catch:
+ * - Uncaught exceptions
+ * - Fatal errors (parse errors, out of memory, etc.)
+ * - PHP warnings/notices converted to exceptions
+ *
+ * This prevents information disclosure (CWE-550) by:
+ * - Hiding stack traces and internal details in production
+ * - Logging all errors server-side
+ * - Showing user-friendly error pages
+ *
+ * Security: This fixes the "Application Error Disclosure" vulnerability
+ * detected by OWASP ZAP scan.
+ */
+$exceptionHandler = new ExceptionHandler();
+$exceptionHandler->register();
+
 // Simple Routing Example
 $router = new Router();
 
@@ -131,11 +152,9 @@ try {
     /** @var StatusController $statusController */
     $statusController  = $container->get(StatusController::class);
 } catch (Exception $e) {
-    http_response_code(500);
-    header('Content-Type: application/json');
-    // @phpstan-ignore-next-line - Entry point error handling requires echo/exit
-    echo json_encode(['error' => 'Controller initialization failed', 'message' => $e->getMessage()]);
-    // @phpstan-ignore-next-line - Entry point error handling requires echo/exit
+    // Use exception handler for consistent error handling
+    $exceptionHandler->handle($e);
+    // @phpstan-ignore-next-line - Entry point error handling requires exit
     exit(1);
 }
 
@@ -148,5 +167,11 @@ $router->get('/ready', [$statusController, 'ready']);      // Readiness probe (K
 $router->get('/status', [$statusController, 'index']);     // Full status overview
 $router->get('/api/health', [$exampleController, 'health']); // Aggregated PHP + Node health
 
-// Dispatch
-$router->dispatch();
+// Dispatch - Wrapped in exception handler for security (CWE-550)
+try {
+    $router->dispatch();
+} catch (Throwable $e) {
+    $exceptionHandler->handle($e);
+    // @phpstan-ignore-next-line - Entry point error handling requires exit
+    exit(1);
+}

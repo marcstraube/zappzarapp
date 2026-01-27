@@ -3770,34 +3770,67 @@ security-audit-node: ## Scan Node.js dependencies for known vulnerabilities
 	@echo -e "\033[0;33mScanning Node.js dependencies with pnpm audit...\033[0m"
 	@$(DC) run --rm -T dev-tools pnpm audit
 
-security-zap-start: ## Start services in production mode for ZAP scanning
+security-zap-start: ## Start services in production mode for ZAP scanning (respects .env ENABLE_* flags)
 	@echo -e "\033[0;33mStopping any running containers...\033[0m"
 	@$(LOAD_ENV); \
-	PROFILES="--profile php"; \
-	if [ "$${ENABLE_DATABASE:-true}" = "true" ]; then \
-		PROFILES="$$PROFILES --profile $${DB_TYPE:-postgres}"; \
-	fi; \
+	PROFILES=""; \
+	if [ "$${ENABLE_PHP:-true}" = "true" ]; then PROFILES="$$PROFILES --profile php"; fi; \
+	if [ "$${ENABLE_DATABASE:-true}" = "true" ]; then PROFILES="$$PROFILES --profile $${DB_TYPE:-postgres}"; fi; \
 	if [ "$${ENABLE_REDIS:-true}" = "true" ]; then PROFILES="$$PROFILES --profile redis"; fi; \
+	if [ "$${ENABLE_NODE:-true}" = "true" ]; then \
+		case "$${NODE_MODE:-assets-api}" in \
+			assets|idle) PROFILES="$$PROFILES --profile node" ;; \
+			api) PROFILES="$$PROFILES --profile node-backend" ;; \
+			assets-api) PROFILES="$$PROFILES --profile node --profile node-backend" ;; \
+			framework) PROFILES="$$PROFILES --profile node" ;; \
+			framework-api) PROFILES="$$PROFILES --profile node --profile node-backend" ;; \
+			*) PROFILES="$$PROFILES --profile node-backend" ;; \
+		esac; \
+	fi; \
 	if [ "$${ENABLE_MERCURE:-false}" = "true" ]; then PROFILES="$$PROFILES --profile mercure"; fi; \
 	if [ "$${ENABLE_MEILISEARCH:-false}" = "true" ]; then PROFILES="$$PROFILES --profile meilisearch"; fi; \
 	if [ "$${ENABLE_ELASTICSEARCH:-false}" = "true" ]; then PROFILES="$$PROFILES --profile elasticsearch"; fi; \
 	if [ "$${ENABLE_SEAWEEDFS:-false}" = "true" ]; then PROFILES="$$PROFILES --profile seaweedfs"; fi; \
 	$(DC) -f compose.yaml -f compose.production.yaml $$PROFILES down || true
-	@echo -e "\033[0;33mStarting services in production mode...\033[0m"
+	@echo -e "\033[0;33mStarting services in production mode (forcing container recreation for template processing)...\033[0m"
 	@$(LOAD_ENV); \
-	PROFILES="--profile php"; \
-	if [ "$${ENABLE_DATABASE:-true}" = "true" ]; then \
-		PROFILES="$$PROFILES --profile $${DB_TYPE:-postgres}"; \
-	fi; \
+	PROFILES=""; \
+	if [ "$${ENABLE_PHP:-true}" = "true" ]; then PROFILES="$$PROFILES --profile php"; fi; \
+	if [ "$${ENABLE_DATABASE:-true}" = "true" ]; then PROFILES="$$PROFILES --profile $${DB_TYPE:-postgres}"; fi; \
 	if [ "$${ENABLE_REDIS:-true}" = "true" ]; then PROFILES="$$PROFILES --profile redis"; fi; \
+	if [ "$${ENABLE_NODE:-true}" = "true" ]; then \
+		case "$${NODE_MODE:-assets-api}" in \
+			assets|idle) PROFILES="$$PROFILES --profile node" ;; \
+			api) PROFILES="$$PROFILES --profile node-backend" ;; \
+			assets-api) PROFILES="$$PROFILES --profile node --profile node-backend" ;; \
+			framework) PROFILES="$$PROFILES --profile node" ;; \
+			framework-api) PROFILES="$$PROFILES --profile node --profile node-backend" ;; \
+			*) PROFILES="$$PROFILES --profile node-backend" ;; \
+		esac; \
+	fi; \
 	if [ "$${ENABLE_MERCURE:-false}" = "true" ]; then PROFILES="$$PROFILES --profile mercure"; fi; \
 	if [ "$${ENABLE_MEILISEARCH:-false}" = "true" ]; then PROFILES="$$PROFILES --profile meilisearch"; fi; \
 	if [ "$${ENABLE_ELASTICSEARCH:-false}" = "true" ]; then PROFILES="$$PROFILES --profile elasticsearch"; fi; \
 	if [ "$${ENABLE_SEAWEEDFS:-false}" = "true" ]; then PROFILES="$$PROFILES --profile seaweedfs"; fi; \
-	ENV=production $(DC) -f compose.yaml -f compose.production.yaml $$PROFILES up -d
+	ENV=production $(DC) -f compose.yaml -f compose.production.yaml $$PROFILES up -d --build --force-recreate
 	@echo -e "\033[0;33mWaiting for services to be ready...\033[0m"
 	@sleep 10
 	@echo -e "\033[0;32m✓ Services ready for ZAP scan\033[0m"
+	@echo -e "\033[0;36mℹ️  Run: make security-zap-scan\033[0m"
+
+security-zap-full-start: ## Start ALL services for comprehensive ZAP scanning (ignores .env, forces all ENABLE_*)
+	@echo -e "\033[0;33mStopping any running containers...\033[0m"
+	@$(LOAD_ENV); \
+	PROFILES="--profile php --profile $${DB_TYPE:-postgres} --profile redis --profile node --profile node-backend --profile mercure --profile meilisearch --profile elasticsearch --profile seaweedfs"; \
+	$(DC) -f compose.yaml -f compose.production.yaml $$PROFILES down || true
+	@echo -e "\033[0;33mStarting ALL services in production mode for comprehensive scan (forcing container recreation)...\033[0m"
+	@echo -e "\033[0;36mℹ️  Full mode: Testing maximum attack surface (all Node.js services: frontend + backend API)\033[0m"
+	@$(LOAD_ENV); \
+	PROFILES="--profile php --profile $${DB_TYPE:-postgres} --profile redis --profile node --profile node-backend --profile mercure --profile meilisearch --profile elasticsearch --profile seaweedfs"; \
+	ENV=production $(DC) -f compose.yaml -f compose.production.yaml $$PROFILES up -d --build --force-recreate
+	@echo -e "\033[0;33mWaiting for services to be ready...\033[0m"
+	@sleep 15
+	@echo -e "\033[0;32m✓ All services ready for comprehensive ZAP scan\033[0m"
 	@echo -e "\033[0;36mℹ️  Run: make security-zap-scan\033[0m"
 
 security-zap-scan: ## Run ZAP scan (requires running services)
@@ -3842,15 +3875,21 @@ security-zap-stop: ## Stop services after ZAP scanning
 	@ENV=production $(MAKE) down
 	@echo -e "\033[0;32m✓ Services stopped\033[0m"
 
-security-zap-full: ## Full ZAP scan lifecycle (start -> scan -> stop)
+security-zap: ## ZAP scan lifecycle respecting .env (start -> scan -> stop)
 	@echo -e "\033[0;34m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\033[0m"
-	@echo -e "\033[0;34m  OWASP ZAP Security Scan - Full Cycle\033[0m"
+	@echo -e "\033[0;34m  OWASP ZAP Security Scan (.env config)\033[0m"
 	@echo -e "\033[0;34m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\033[0m"
 	@$(MAKE) security-zap-start
 	@$(MAKE) security-zap-scan
 	@$(MAKE) security-zap-stop
 
-security-zap: security-zap-full ## Alias for security-zap-full (default ZAP scan)
+security-zap-full: ## Comprehensive ZAP scan of ALL services (start-full -> scan -> stop)
+	@echo -e "\033[0;34m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\033[0m"
+	@echo -e "\033[0;34m  OWASP ZAP Security Scan - COMPREHENSIVE (all services)\033[0m"
+	@echo -e "\033[0;34m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\033[0m"
+	@$(MAKE) security-zap-full-start
+	@$(MAKE) security-zap-scan
+	@$(MAKE) security-zap-stop
 
 ##@ Documentation
 

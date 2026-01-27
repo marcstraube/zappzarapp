@@ -756,14 +756,48 @@ Security scanning and secrets management.
 
 ### Security Scanning
 
-| Command                    | Description                                              |
-| -------------------------- | -------------------------------------------------------- |
-| `make security-scan`       | Scan Docker images for vulnerabilities                   |
-| `make security-config`     | Check Dockerfiles for misconfigurations                  |
-| `make security-deps`       | Scan Composer dependencies for known vulnerabilities     |
-| `make security-sbom`       | Generate a Software Bill of Materials (SBOM) using Trivy |
-| `make security-audit-node` | Scan Node.js dependencies for known vulnerabilities      |
-| `make falco-run`           | Start Falco for Runtime Security Monitoring              |
+| Command                        | Description                                                  |
+| ------------------------------ | ------------------------------------------------------------ |
+| `make security-scan`           | Scan Docker images for vulnerabilities                       |
+| `make security-config`         | Check Dockerfiles for misconfigurations                      |
+| `make security-deps`           | Scan Composer dependencies for known vulnerabilities         |
+| `make security-sbom`           | Generate a Software Bill of Materials (SBOM) using Trivy     |
+| `make security-audit-node`     | Scan Node.js dependencies for known vulnerabilities          |
+| `make falco-run`               | Start Falco for Runtime Security Monitoring                  |
+| `make security-zap`            | Run OWASP ZAP DAST scan (respects .env, full lifecycle)      |
+| `make security-zap-full`       | Run comprehensive ZAP scan (all services, ignores .env)      |
+| `make security-zap-start`      | Start services for ZAP scan (respects .env ENABLE\_\* flags) |
+| `make security-zap-full-start` | Start ALL services for comprehensive ZAP scan (ignores .env) |
+| `make security-zap-scan`       | Run ZAP scan (requires running services)                     |
+| `make security-zap-stop`       | Stop services after ZAP scan                                 |
+
+#### ZAP Scan Modes
+
+**`security-zap` (Standard):**
+
+- Respects `.env` ENABLE\_\* configuration
+- Tests only enabled services
+- Use for: Project development, custom stack testing
+
+**`security-zap-full` (Comprehensive):**
+
+- Forces ALL services (ignores `.env`)
+- Tests maximum attack surface
+- Use for: Boilerplate releases, platform validation
+
+**Manual workflow:**
+
+```bash
+# Start services
+make security-zap-start          # Standard (.env config)
+make security-zap-full-start     # Comprehensive (all services)
+
+# Run scan (can repeat without restart)
+make security-zap-scan
+
+# Stop services
+make security-zap-stop
+```
 
 See [SECURITY-SCANNING.md](../security/SECURITY-SCANNING.md) for detailed
 security documentation.
