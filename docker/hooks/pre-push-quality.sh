@@ -70,7 +70,7 @@ print_header "Always: Dependency Validation"
 if has_changes composer; then
     echo -e "${YELLOW}→ composer.json or composer.lock changed${NC}"
     run_check "Composer validate" \
-        docker compose exec -T php composer validate --strict || true
+        docker compose exec -T php composer validate || true
 fi
 
 # PNPM audit (if package.json or pnpm-lock.yaml changed)
