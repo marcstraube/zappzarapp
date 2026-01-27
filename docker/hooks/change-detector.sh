@@ -54,7 +54,7 @@ get_changed_files() {
     local files=""
 
     # Try: since last push to remote
-    files=$(git diff --name-only HEAD@{push}...HEAD 2>/dev/null || true)
+    files=$(git diff --name-only 'HEAD@{push}'...HEAD 2>/dev/null || true)
 
     # Fallback: against remote branch
     if [[ -z "$files" ]]; then

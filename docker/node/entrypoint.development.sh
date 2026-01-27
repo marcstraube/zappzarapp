@@ -71,7 +71,7 @@ echo "[entrypoint.development] Starting Node.js container..."
 echo "[entrypoint.development] NODE_MODE: ${NODE_MODE:-idle}"
 
 # CORS Configuration Warning
-if [ "$CORS_ORIGINS" = "*" ]; then
+if [ "${CORS_ORIGINS:-}" = "*" ]; then
     echo "[entrypoint.development] WARNING: CORS_ORIGINS is set to wildcard (*)" >&2
     echo "[entrypoint.development] Wildcard origin allows requests from ANY domain (development mode)" >&2
     echo "[entrypoint.development] Credentials header disabled for browser compatibility" >&2

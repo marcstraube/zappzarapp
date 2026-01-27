@@ -2,6 +2,14 @@
 #
 # Build-time tests: Files, commands, configuration
 # Runtime tests: Processes, ports, connections (see runtime-tests.sh)
+#
+# Security Note:
+# - Build-time tests validate image structure (files, binaries, basic config)
+# - Runtime security tests MUST be in runtime-tests.sh (require running DB):
+#   * Database connectivity and authentication
+#   * User privilege checks (CREATEDB, SUPERUSER, etc.)
+#   * SSL/TLS enforcement
+#   * Password policies and role permissions
 
 # ============================================================================
 # FILE TESTS (Build-time)
@@ -44,15 +52,3 @@ command:
   which psql:
     exit-status: 0
     timeout: 5000
-
-  # Database exists (runtime test)
-  psql -U {{.Env.DB_USER}} -d {{.Env.DB_NAME}} -c "SELECT 1":
-    exit-status: 0
-    timeout: 5000
-
-  # User does NOT have CREATEDB privilege (security check)
-  psql -U {{.Env.DB_USER}} -d postgres -tAc "SELECT rolcreatedb FROM pg_roles WHERE rolname='{{.Env.DB_USER}}'":
-    exit-status: 0
-    timeout: 5000
-    stdout:
-      - "f"

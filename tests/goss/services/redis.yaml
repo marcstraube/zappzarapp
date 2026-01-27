@@ -21,7 +21,7 @@ command:
     exit-status: 0
     timeout: 5000
     stdout:
-      - "/Redis server v=7\\./"
+      - "/Redis server v=8\\./"
 
   # redis-cli is available
   which redis-cli:
