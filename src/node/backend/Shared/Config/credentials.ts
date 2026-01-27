@@ -16,10 +16,14 @@ import { existsSync, readFileSync } from 'fs';
  *
  * @param secretName - Name of the Docker secret file (without path)
  * @param envName - Name of the environment variable
- * @param defaultValue - Default value if neither secret nor env var is found
+ * @param defaultValue - Default value if neither secret nor env var is found (defaults to empty string)
  * @returns The credential value
  */
-export function loadCredential(secretName: string, envName: string, defaultValue: string): string {
+export function loadCredential(
+  secretName: string,
+  envName: string,
+  defaultValue: string = ''
+): string {
   // Try Docker secret first (with .txt extension)
   const secretPathTxt = `/tmp/secrets/${secretName}.txt`;
   if (existsSync(secretPathTxt)) {

@@ -4,7 +4,7 @@
  * Coverage target: ~70% of app.ts (105 lines)
  */
 
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import request from 'supertest';
 import { createApp } from '@backend/app';
 import type { Express } from 'express';
@@ -69,9 +69,7 @@ describe('Express App Factory', () => {
   describe('CORS Configuration', () => {
     it('should allow wildcard origin by default', async () => {
       app = createApp();
-      const response = await request(app)
-        .get('/health')
-        .set('Origin', 'https://example.com');
+      const response = await request(app).get('/health').set('Origin', 'https://example.com');
 
       expect(response.headers['access-control-allow-origin']).toBe('*');
     });
@@ -80,9 +78,7 @@ describe('Express App Factory', () => {
       process.env.CORS_ORIGINS = 'https://example.com,https://app.example.com';
       app = createApp();
 
-      const response = await request(app)
-        .get('/health')
-        .set('Origin', 'https://example.com');
+      const response = await request(app).get('/health').set('Origin', 'https://example.com');
 
       expect(response.headers['access-control-allow-origin']).toBe('https://example.com');
     });
@@ -91,9 +87,7 @@ describe('Express App Factory', () => {
       process.env.CORS_ORIGINS = 'https://example.com';
       app = createApp();
 
-      const response = await request(app)
-        .get('/health')
-        .set('Origin', 'https://evil.com');
+      const response = await request(app).get('/health').set('Origin', 'https://evil.com');
 
       expect(response.headers['access-control-allow-origin']).toBeUndefined();
     });
@@ -176,8 +170,9 @@ describe('Express App Factory', () => {
       const response = await request(app).get('/status');
 
       expect(response.status).toBe(200);
-      expect(response.body).toHaveProperty('status');
-      expect(response.body).toHaveProperty('checks');
+      expect(response.body).toHaveProperty('timestamp');
+      expect(response.body).toHaveProperty('environment');
+      expect(response.body).toHaveProperty('services');
     });
   });
 
@@ -261,7 +256,7 @@ describe('Express App Factory', () => {
       expect(response.body.error).toBe('Test error message');
     });
 
-    it('should hide error details in production mode', async () => {
+    it('should hide error details in production mode', () => {
       process.env.NODE_ENV = 'production';
       app = createApp();
 
@@ -277,9 +272,7 @@ describe('Express App Factory', () => {
       app = createApp();
 
       // Production mode means no DevDashboard
-      request(app)
-        .get('/dev-dashboard/node/status')
-        .expect(404);
+      request(app).get('/dev-dashboard/node/status').expect(404);
     });
 
     it('should respect NODE_ENV=development', () => {

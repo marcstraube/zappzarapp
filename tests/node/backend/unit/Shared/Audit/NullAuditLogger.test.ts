@@ -4,9 +4,12 @@
  * Coverage target: 100% of NullAuditLogger.ts (75 lines)
  */
 
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
 import { NullAuditLogger } from '@backend/Shared/Audit/NullAuditLogger';
-import type { AuditLoggerInterface, AuditLogEntry } from '@backend/Shared/Audit/AuditLoggerInterface';
+import type {
+  AuditLoggerInterface,
+  AuditLogEntry,
+} from '@backend/Shared/Audit/AuditLoggerInterface';
 
 describe('NullAuditLogger (Null Object Pattern)', () => {
   let logger: AuditLoggerInterface;
@@ -126,9 +129,7 @@ describe('NullAuditLogger (Null Object Pattern)', () => {
     });
 
     it('should handle user deletion', async () => {
-      await expect(
-        logger.logAdmin('admin.user.delete', 1, 'user', 456)
-      ).resolves.toBeUndefined();
+      await expect(logger.logAdmin('admin.user.delete', 1, 'user', 456)).resolves.toBeUndefined();
     });
 
     it('should accept numeric entity IDs', async () => {

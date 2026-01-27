@@ -291,14 +291,15 @@ export class ConnectionFactory {
    * Close the connection pool
    */
   async close(): Promise<void> {
-    if (this.pool === null) {
+    const poolToClose = this.injectedPool ?? this.pool;
+    if (poolToClose === null) {
       return;
     }
 
     if (this.dbType === 'postgres') {
-      await (this.pool as PgPool).end();
+      await (poolToClose as PgPool).end();
     } else {
-      await (this.pool as MySqlPool).end();
+      await (poolToClose as MySqlPool).end();
     }
 
     this.pool = null;

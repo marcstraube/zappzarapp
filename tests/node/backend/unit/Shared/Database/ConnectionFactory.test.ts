@@ -141,10 +141,9 @@ describe('ConnectionFactory', () => {
       await connection.execute('INSERT INTO users (name) VALUES ($1)', ['Test']);
 
       const mockClient = await mockPool.connect();
-      expect(mockClient.query).toHaveBeenCalledWith(
-        'INSERT INTO users (name) VALUES ($1)',
-        ['Test']
-      );
+      expect(mockClient.query).toHaveBeenCalledWith('INSERT INTO users (name) VALUES ($1)', [
+        'Test',
+      ]);
     });
   });
 
@@ -284,7 +283,7 @@ describe('ConnectionFactory', () => {
       const factory = new ConnectionFactory({ dbType: 'postgres', pool: mockPool });
 
       const connection = await factory.create();
-      connection.release();
+      connection.release?.();
 
       const mockClient = await mockPool.connect();
       expect(mockClient.release).toHaveBeenCalled();
@@ -295,7 +294,7 @@ describe('ConnectionFactory', () => {
       const factory = new ConnectionFactory({ dbType: 'mysql', pool: mockPool });
 
       const connection = await factory.create();
-      connection.release();
+      connection.release?.();
 
       const mockConn = await mockPool.getConnection();
       expect(mockConn.release).toHaveBeenCalled();
@@ -307,7 +306,7 @@ describe('ConnectionFactory', () => {
 
       const connection = await factory.create();
       await connection.beginTransaction();
-      connection.release();
+      connection.release?.();
 
       const mockClient = await mockPool.connect();
       // Should attempt rollback before release
@@ -320,7 +319,7 @@ describe('ConnectionFactory', () => {
 
       const connection = await factory.create();
       await connection.beginTransaction();
-      connection.release();
+      connection.release?.();
 
       const mockConn = await mockPool.getConnection();
       expect(mockConn.rollback).toHaveBeenCalled();
@@ -385,7 +384,7 @@ describe('ConnectionFactory', () => {
 
       const factory = new ConnectionFactory({
         dbType: 'postgres',
-        pool: failingPool as any,
+        pool: failingPool as unknown as import('pg').Pool,
       });
 
       await expect(factory.create()).rejects.toThrow('Connection failed');
@@ -394,9 +393,12 @@ describe('ConnectionFactory', () => {
     it('should handle pool closure errors gracefully', async () => {
       const failingPool = {
         end: vi.fn().mockRejectedValue(new Error('Close failed')),
-      } as any;
+      };
 
-      const factory = new ConnectionFactory({ dbType: 'postgres', pool: failingPool });
+      const factory = new ConnectionFactory({
+        dbType: 'postgres',
+        pool: failingPool as unknown as import('pg').Pool,
+      });
 
       await expect(factory.close()).rejects.toThrow('Close failed');
     });
