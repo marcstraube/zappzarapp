@@ -15,9 +15,17 @@ ARG ALPINE_VERSION=3.22
 
 FROM redis:${REDIS_VERSION}-alpine${ALPINE_VERSION} AS base
 
+# Copy entrypoint script for SSL certificate validation
+COPY docker/redis/entrypoint.sh /usr/local/bin/entrypoint.sh
+RUN chmod +x /usr/local/bin/entrypoint.sh
+
 # Copy health check script that handles both dev and prod cert paths
 COPY docker/redis/healthcheck.sh /usr/local/bin/healthcheck.sh
 RUN chmod +x /usr/local/bin/healthcheck.sh
+
+# Use custom entrypoint that validates SSL before starting redis-server
+ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
+CMD ["redis-server"]
 
 # Health check with TLS support (script handles dev/prod cert paths)
 HEALTHCHECK --interval=10s --timeout=3s --start-period=5s --retries=3 \

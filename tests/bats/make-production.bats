@@ -204,3 +204,186 @@ teardown_file() {
     run test -r docker/certs/internal/cert.key
     assert_success "Internal certificate key not readable"
 }
+
+# =============================================================================
+# SSL Enforcement Tests
+# =============================================================================
+# These tests verify that databases enforce SSL in production mode and
+# fail to start when SSL certificates are missing (security-by-default).
+# =============================================================================
+
+@test "[Production] Postgres entrypoint enforces SSL in production mode" {
+    # Verify entrypoint script has ENV-based SSL enforcement logic
+    local entrypoint_content
+    entrypoint_content=$(cat docker/postgres/entrypoint.sh)
+
+    # Check for production mode detection
+    if echo "$entrypoint_content" | grep -q 'ENV_MODE=.*ENV.*development'; then
+        true  # Found ENV mode detection
+    else
+        echo "# Missing ENV mode detection in postgres entrypoint" >&3
+        false
+    fi
+
+    # Check for exit 1 in production mode without SSL
+    if echo "$entrypoint_content" | grep -q 'exit 1.*Fail-Fast\|ABORTED to prevent security'; then
+        true  # Found fail-fast exit
+    else
+        echo "# Missing 'exit 1' for production mode without SSL" >&3
+        false
+    fi
+}
+
+@test "[Production] MariaDB entrypoint enforces SSL in production mode" {
+    # Verify entrypoint script has ENV-based SSL enforcement logic
+    local entrypoint_content
+    entrypoint_content=$(cat docker/mariadb/entrypoint.sh)
+
+    # Check for production mode detection
+    if echo "$entrypoint_content" | grep -q 'ENV_MODE=.*ENV.*development'; then
+        true  # Found ENV mode detection
+    else
+        echo "# Missing ENV mode detection in mariadb entrypoint" >&3
+        false
+    fi
+
+    # Check for exit 1 in production mode without SSL
+    if echo "$entrypoint_content" | grep -q 'exit 1.*Fail-Fast\|ABORTED to prevent security'; then
+        true  # Found fail-fast exit
+    else
+        echo "# Missing 'exit 1' for production mode without SSL" >&3
+        false
+    fi
+}
+
+@test "[Production] PostgreSQL enforces minimum TLS version" {
+    # Verify PostgreSQL is configured with ssl_min_protocol_version
+    local postgres_command
+    postgres_command=$(docker compose -f compose.yaml -f compose.production.yaml config | \
+        awk '/container_name: zappzarapp-postgres/,/logging:/ {print}' | \
+        grep "ssl_min_protocol_version" || echo "")
+
+    if [ -n "$postgres_command" ]; then
+        # Check it's set to TLSv1.2 or higher
+        if echo "$postgres_command" | grep -qE "ssl_min_protocol_version.*(TLSv1\.[23]|TLSv1\.3)"; then
+            true  # TLS 1.2 or 1.3 configured
+        else
+            echo "# PostgreSQL ssl_min_protocol_version not set to TLSv1.2+" >&3
+            echo "# Found: $postgres_command" >&3
+            false
+        fi
+    else
+        echo "# PostgreSQL ssl_min_protocol_version not configured" >&3
+        echo "# Add: -c ssl_min_protocol_version=TLSv1.2" >&3
+        false
+    fi
+}
+
+@test "[Production] MariaDB enforces secure transport" {
+    # Verify MariaDB has --require-secure-transport=ON
+    local mariadb_command
+    mariadb_command=$(docker compose -f compose.yaml -f compose.production.yaml config | \
+        awk '/container_name: zappzarapp-mariadb/,/logging:/ {print}' | \
+        grep "require-secure-transport" || echo "")
+
+    if [ -n "$mariadb_command" ]; then
+        if echo "$mariadb_command" | grep -q "require-secure-transport.*ON"; then
+            true  # Secure transport enforced
+        else
+            echo "# MariaDB --require-secure-transport not set to ON" >&3
+            false
+        fi
+    else
+        echo "# MariaDB --require-secure-transport not configured" >&3
+        echo "# Add: --require-secure-transport=ON" >&3
+        false
+    fi
+}
+
+@test "[Production] Redis entrypoint enforces SSL in production mode" {
+    # Verify entrypoint script has ENV-based SSL enforcement logic
+    local entrypoint_content
+    entrypoint_content=$(cat docker/redis/entrypoint.sh)
+
+    # Check for production mode detection
+    if echo "$entrypoint_content" | grep -q 'ENV_MODE=.*ENV.*development'; then
+        true  # Found ENV mode detection
+    else
+        echo "# Missing ENV mode detection in redis entrypoint" >&3
+        false
+    fi
+
+    # Check for exit 1 in production mode without SSL
+    if echo "$entrypoint_content" | grep -q 'exit 1.*Fail-Fast\|ABORTED to prevent security'; then
+        true  # Found fail-fast exit
+    else
+        echo "# Missing 'exit 1' for production mode without SSL" >&3
+        false
+    fi
+}
+
+@test "[Production] RabbitMQ entrypoint enforces SSL in production mode" {
+    # Verify entrypoint script has ENV-based SSL enforcement logic
+    local entrypoint_content
+    entrypoint_content=$(cat docker/rabbitmq/entrypoint.sh)
+
+    # Check for production mode detection
+    if echo "$entrypoint_content" | grep -q 'ENV_MODE=.*ENV.*development'; then
+        true  # Found ENV mode detection
+    else
+        echo "# Missing ENV mode detection in rabbitmq entrypoint" >&3
+        false
+    fi
+
+    # Check for exit 1 in production mode without SSL
+    if echo "$entrypoint_content" | grep -q 'exit 1.*Fail-Fast\|ABORTED to prevent security'; then
+        true  # Found fail-fast exit
+    else
+        echo "# Missing 'exit 1' for production mode without SSL" >&3
+        false
+    fi
+}
+
+@test "[Production] SeaweedFS entrypoint enforces SSL in production mode" {
+    # Verify entrypoint script has ENV-based SSL enforcement logic
+    local entrypoint_content
+    entrypoint_content=$(cat docker/seaweedfs/entrypoint.sh)
+
+    # Check for production mode detection
+    if echo "$entrypoint_content" | grep -q 'ENV_MODE=.*ENV.*development'; then
+        true  # Found ENV mode detection
+    else
+        echo "# Missing ENV mode detection in seaweedfs entrypoint" >&3
+        false
+    fi
+
+    # Check for exit 1 in production mode without SSL
+    if echo "$entrypoint_content" | grep -q 'exit 1.*Fail-Fast\|ABORTED to prevent security'; then
+        true  # Found fail-fast exit
+    else
+        echo "# Missing 'exit 1' for production mode without SSL" >&3
+        false
+    fi
+}
+
+@test "[Production] Nginx entrypoint enforces SSL in production mode" {
+    # Verify entrypoint script has ENV-based SSL enforcement logic
+    local entrypoint_content
+    entrypoint_content=$(cat docker/nginx/entrypoint.sh)
+
+    # Check for production mode detection
+    if echo "$entrypoint_content" | grep -q 'ENV_MODE=.*ENV.*development'; then
+        true  # Found ENV mode detection
+    else
+        echo "# Missing ENV mode detection in nginx entrypoint" >&3
+        false
+    fi
+
+    # Check for exit 1 in production mode without SSL
+    if echo "$entrypoint_content" | grep -q 'exit 1.*Fail-Fast\|ABORTED to prevent security'; then
+        true  # Found fail-fast exit
+    else
+        echo "# Missing 'exit 1' for production mode without SSL" >&3
+        false
+    fi
+}

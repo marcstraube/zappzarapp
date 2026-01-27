@@ -58,18 +58,58 @@ chmod 600 /etc/seaweedfs/config/s3.json
 # ─────────────────────────────────────────────────────────────────────────────
 
 TLS_ARGS=""
+SSL_CERT="/etc/ssl/certs/cert.crt"
+SSL_KEY="/etc/ssl/private/cert.key"
 
 # Copy TLS certificates if mounted
-if [ -f "/etc/ssl/certs/cert.crt" ] && [ -f "/etc/ssl/private/cert.key" ]; then
-    cp /etc/ssl/certs/cert.crt /etc/seaweedfs/certs/s3.crt
-    cp /etc/ssl/private/cert.key /etc/seaweedfs/certs/s3.key
+if [ -f "$SSL_CERT" ] && [ -f "$SSL_KEY" ]; then
+    cp "$SSL_CERT" /etc/seaweedfs/certs/s3.crt
+    cp "$SSL_KEY" /etc/seaweedfs/certs/s3.key
     chown 1000:1000 /etc/seaweedfs/certs/s3.crt /etc/seaweedfs/certs/s3.key
     chmod 644 /etc/seaweedfs/certs/s3.crt
     chmod 600 /etc/seaweedfs/certs/s3.key
 
     # Add TLS arguments for S3 endpoint
     TLS_ARGS="-s3.cert.file=/etc/seaweedfs/certs/s3.crt -s3.key.file=/etc/seaweedfs/certs/s3.key"
-    echo "TLS enabled for S3 API"
+    echo "[entrypoint] INFO: SSL certificates found - SeaweedFS S3 API will use TLS encryption"
+    echo "[entrypoint] Certificate: $SSL_CERT"
+    echo "[entrypoint] Key: $SSL_KEY"
+else
+    # No SSL certificates found - behavior depends on environment
+    ENV_MODE="${ENV:-development}"
+
+    # Diagnostic information about what was found
+    echo "[entrypoint] WARNING: SSL certificates not found"
+    echo "[entrypoint] Expected: /etc/ssl/certs/cert.crt and /etc/ssl/private/cert.key"
+    if [ -d "/etc/ssl/certs" ]; then
+        echo "[entrypoint] Found files in /etc/ssl/certs:"
+        ls -la /etc/ssl/certs/ 2>/dev/null | head -5 || echo "  (directory is empty or not accessible)"
+    fi
+    if [ -d "/etc/ssl/private" ]; then
+        echo "[entrypoint] Found files in /etc/ssl/private:"
+        ls -la /etc/ssl/private/ 2>/dev/null | head -5 || echo "  (directory is empty or not accessible)"
+    fi
+
+    # Environment-specific behavior: Fail-Fast in production, warn in development
+    if [ "$ENV_MODE" = "production" ]; then
+        # PRODUCTION: SSL is MANDATORY for security compliance
+        echo "[entrypoint] FATAL: SSL certificates are required in production mode"
+        echo "[entrypoint] SeaweedFS REQUIRES encrypted connections in production environments"
+        echo "[entrypoint] Security policy: Object storage must not transmit data unencrypted"
+        echo "[entrypoint]"
+        echo "[entrypoint] Fix: Ensure SSL certificates are properly mounted:"
+        echo "[entrypoint]   1. Run: make ssl-internal"
+        echo "[entrypoint]   2. Verify compose.production.yaml mounts: ./docker/certs/internal/cert.{crt,key}"
+        echo "[entrypoint]   3. Ensure files exist: docker/certs/internal/cert.{crt,key}"
+        echo "[entrypoint]"
+        echo "[entrypoint] Container startup ABORTED to prevent security violation."
+        exit 1  # Fail-Fast: Do not start SeaweedFS without SSL in production
+    else
+        # DEVELOPMENT: Warn but allow (local development flexibility)
+        echo "[entrypoint] WARNING: SeaweedFS will start WITHOUT SSL support (development mode)"
+        echo "[entrypoint] This is acceptable for local development but NOT for production"
+        echo "[entrypoint] To test with SSL locally: run 'make ssl-internal'"
+    fi
 fi
 
 # ─────────────────────────────────────────────────────────────────────────────
