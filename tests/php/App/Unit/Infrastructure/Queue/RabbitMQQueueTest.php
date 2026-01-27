@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Tests\Unit\Infrastructure\Queue;
+namespace Tests\App\Unit\Infrastructure\Queue;
 
 use App\Infrastructure\Queue\RabbitMQConfig;
 use App\Infrastructure\Queue\RabbitMQQueue;

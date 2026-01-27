@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Tests\Unit;
+namespace Tests\App\Unit;
 
 use App\Utils\Calculator;
 use DivisionByZeroError;

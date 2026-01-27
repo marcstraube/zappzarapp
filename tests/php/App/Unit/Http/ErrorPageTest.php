@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Tests\Unit\Http;
+namespace Tests\App\Unit\Http;
 
 use App\Http\ErrorPage;
 use PHPUnit\Framework\Attributes\DataProvider;

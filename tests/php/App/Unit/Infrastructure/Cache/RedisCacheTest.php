@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Tests\Unit\Infrastructure\Cache;
+namespace Tests\App\Unit\Infrastructure\Cache;
 
 use App\Infrastructure\Cache\RedisCache;
 use PHPUnit\Framework\Attributes\CoversClass;

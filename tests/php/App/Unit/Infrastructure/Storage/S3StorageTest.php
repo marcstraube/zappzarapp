@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Tests\Unit\Infrastructure\Storage;
+namespace Tests\App\Unit\Infrastructure\Storage;
 
 use App\Infrastructure\Storage\S3Storage;
 use PHPUnit\Framework\Attributes\CoversClass;

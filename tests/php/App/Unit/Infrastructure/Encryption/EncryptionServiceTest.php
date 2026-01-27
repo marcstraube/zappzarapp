@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Tests\Unit\Infrastructure\Encryption;
+namespace Tests\App\Unit\Infrastructure\Encryption;
 
 use App\Infrastructure\Encryption\EncryptionService;
 use PHPUnit\Framework\Attributes\CoversClass;

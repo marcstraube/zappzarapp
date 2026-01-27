@@ -6,13 +6,14 @@ namespace Tests\App\Unit\Http;
 
 use App\Http\ExceptionHandler;
 use Exception;
+use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
+use Psr\Log\NullLogger;
 
 /**
  * Test the global exception handler.
- *
- * @coversDefaultClass \App\Http\ExceptionHandler
  */
+#[CoversClass(ExceptionHandler::class)]
 class ExceptionHandlerTest extends TestCase
 {
     private string $originalEnv;
@@ -27,30 +28,23 @@ class ExceptionHandlerTest extends TestCase
     protected function tearDown(): void
     {
         // Restore original ENV value
-        putenv("ENV={$this->originalEnv}");
+        putenv('ENV=' . $this->originalEnv);
         parent::tearDown();
     }
 
-    /**
-     * @covers ::__construct
-     * @covers ::handle
-     * @covers ::sendJsonError
-     * @covers ::getProductionErrorData
-     * @covers ::logException
-     */
     public function testProductionModeHidesExceptionDetails(): void
     {
         putenv('ENV=production');
         $_SERVER['HTTP_ACCEPT'] = 'application/json';
 
-        $handler   = new ExceptionHandler();
+        $handler   = new ExceptionHandler(new NullLogger());
         $exception = new Exception('Sensitive database error: password123');
 
         ob_start();
         $handler->handle($exception);
+        // ob_get_clean() returns string|false, but with ob_start() it's always string
+        /** @var string $output */
         $output = ob_get_clean();
-        $this->assertIsString($output);
-        $this->assertIsString($output);
 
         // Verify sensitive information is NOT exposed
         $this->assertStringNotContainsString('password123', $output);
@@ -66,25 +60,19 @@ class ExceptionHandlerTest extends TestCase
         $this->assertSame('An unexpected error occurred. Please try again later.', $data['message']);
     }
 
-    /**
-     * @covers ::__construct
-     * @covers ::handle
-     * @covers ::sendJsonError
-     * @covers ::getDevelopmentErrorData
-     * @covers ::logException
-     */
     public function testDevelopmentModeShowsExceptionDetails(): void
     {
         putenv('ENV=development');
         $_SERVER['HTTP_ACCEPT'] = 'application/json';
 
-        $handler   = new ExceptionHandler();
+        $handler   = new ExceptionHandler(new NullLogger());
         $exception = new Exception('Database connection failed');
 
         ob_start();
         $handler->handle($exception);
+        // ob_get_clean() returns string|false, but with ob_start() it's always string
+        /** @var string $output */
         $output = ob_get_clean();
-        $this->assertIsString($output);
 
         // Verify detailed information IS exposed in development
         $data = json_decode($output, true);
@@ -102,25 +90,19 @@ class ExceptionHandlerTest extends TestCase
         $this->assertIsString($data['trace']);
     }
 
-    /**
-     * @covers ::__construct
-     * @covers ::handle
-     * @covers ::sendHtmlError
-     * @covers ::getProductionErrorData
-     * @covers ::logException
-     */
     public function testProductionModeHtmlResponse(): void
     {
         putenv('ENV=production');
         $_SERVER['HTTP_ACCEPT'] = 'text/html';
 
-        $handler   = new ExceptionHandler();
+        $handler   = new ExceptionHandler(new NullLogger());
         $exception = new Exception('Internal error with sensitive data');
 
         ob_start();
         $handler->handle($exception);
+        // ob_get_clean() returns string|false, but with ob_start() it's always string
+        /** @var string $output */
         $output = ob_get_clean();
-        $this->assertIsString($output);
 
         // Verify HTML response
         $this->assertStringContainsString('<!DOCTYPE html>', $output);
@@ -130,25 +112,19 @@ class ExceptionHandlerTest extends TestCase
         $this->assertStringNotContainsString('sensitive data', $output);
     }
 
-    /**
-     * @covers ::__construct
-     * @covers ::handle
-     * @covers ::sendHtmlError
-     * @covers ::renderDevelopmentError
-     * @covers ::logException
-     */
     public function testDevelopmentModeHtmlResponse(): void
     {
         putenv('ENV=development');
         $_SERVER['HTTP_ACCEPT'] = 'text/html';
 
-        $handler   = new ExceptionHandler();
+        $handler   = new ExceptionHandler(new NullLogger());
         $exception = new Exception('Test error for debugging');
 
         ob_start();
         $handler->handle($exception);
+        // ob_get_clean() returns string|false, but with ob_start() it's always string
+        /** @var string $output */
         $output = ob_get_clean();
-        $this->assertIsString($output);
 
         // Verify HTML response with exception details
         $this->assertStringContainsString('<!DOCTYPE html>', $output);
@@ -158,59 +134,43 @@ class ExceptionHandlerTest extends TestCase
         $this->assertStringContainsString('Stack Trace', $output);
     }
 
-    /**
-     * @covers ::__construct
-     * @covers ::handle
-     * @covers ::sendJsonError
-     * @covers ::logException
-     */
     public function testContentNegotiationDefaultsToJson(): void
     {
         putenv('ENV=production');
         unset($_SERVER['HTTP_ACCEPT']);
 
-        $handler   = new ExceptionHandler();
+        $handler   = new ExceptionHandler(new NullLogger());
         $exception = new Exception('Test exception');
 
         ob_start();
         $handler->handle($exception);
+        // ob_get_clean() returns string|false, but with ob_start() it's always string
+        /** @var string $output */
         $output = ob_get_clean();
-        $this->assertIsString($output);
 
         // When no Accept header is present, should default to HTML
         // (as per the handle() logic checking for json in Accept header)
         $this->assertStringContainsString('<!DOCTYPE html>', $output);
     }
 
-    /**
-     * @covers ::__construct
-     * @covers ::handle
-     * @covers ::logException
-     */
-    public function testExceptionLoggingWithoutLogger(): void
+    public function testExceptionHandlingWithNullLogger(): void
     {
         putenv('ENV=production');
         $_SERVER['HTTP_ACCEPT'] = 'application/json';
 
-        // Test with no logger (falls back to error_log)
-        $handler   = new ExceptionHandler();
-        $exception = new Exception('Test for logging');
-
-        // Capture error_log output
-        $errorLogCalled = false;
-        set_error_handler(function () use (&$errorLogCalled) {
-            $errorLogCalled = true;
-
-            return false; // Let default handler continue
-        });
+        $handler   = new ExceptionHandler(new NullLogger());
+        $exception = new Exception('Test exception');
 
         ob_start();
         $handler->handle($exception);
-        ob_get_clean();
-        restore_error_handler();
+        // ob_get_clean() returns string|false, but with ob_start() it's always string
+        /** @var string $output */
+        $output = ob_get_clean();
 
-        // Note: We can't easily verify error_log calls in unit tests,
-        // but we can verify the handler doesn't crash without a logger
-        $this->assertTrue(true, 'Handler executed without crashing');
+        // Verify the handler executes successfully with NullLogger
+        $data = json_decode($output, true);
+        $this->assertIsArray($data);
+        $this->assertArrayHasKey('error', $data);
+        $this->assertSame('Internal Server Error', $data['error']);
     }
 }

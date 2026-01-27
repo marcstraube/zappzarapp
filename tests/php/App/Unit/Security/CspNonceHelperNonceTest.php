@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Tests\Unit\Security;
+namespace Tests\App\Unit\Security;
 
 use App\Security\CspNonceHelper;
 use PHPUnit\Framework\TestCase;

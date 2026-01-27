@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Tests\Unit\Infrastructure;
+namespace Tests\App\Unit\Infrastructure;
 
 use App\Infrastructure\TlsConfig;
 use PHPUnit\Framework\TestCase;

@@ -4,7 +4,7 @@
 
 declare(strict_types=1);
 
-namespace App\Tests\Unit\Infrastructure\Database;
+namespace Tests\App\Unit\Infrastructure\Database;
 
 use App\Infrastructure\Audit\AuditLoggerInterface;
 use App\Infrastructure\Audit\NullAuditLogger;

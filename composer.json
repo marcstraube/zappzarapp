@@ -73,7 +73,7 @@
     },
     "autoload-dev": {
         "psr-4": {
-            "App\\Tests\\": "tests/php/App/",
+            "Tests\\App\\": "tests/php/App/",
             "Tests\\DevDashboard\\": "tests/php/DevDashboard/"
         }
     },

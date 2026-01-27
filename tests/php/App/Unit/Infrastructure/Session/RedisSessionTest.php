@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Tests\Unit\Infrastructure\Session;
+namespace Tests\App\Unit\Infrastructure\Session;
 
 use App\Infrastructure\Cache\CacheInterface;
 use App\Infrastructure\Session\RedisSession;

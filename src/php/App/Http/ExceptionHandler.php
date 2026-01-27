@@ -21,13 +21,11 @@ use Throwable;
  */
 class ExceptionHandler
 {
-    private bool $isDevelopment;
-    private ?LoggerInterface $logger;
+    private readonly bool $isDevelopment;
 
-    public function __construct(?LoggerInterface $logger = null)
+    public function __construct(private readonly ?LoggerInterface $logger = null)
     {
         $this->isDevelopment = getenv('ENV') === 'development';
-        $this->logger        = $logger;
     }
 
     /**
@@ -41,7 +39,7 @@ class ExceptionHandler
     public function register(): void
     {
         // Catch uncaught exceptions
-        set_exception_handler([$this, 'handle']);
+        set_exception_handler($this->handle(...));
 
         // Catch fatal errors during shutdown
         register_shutdown_function([$this, 'handleShutdown']);
@@ -49,7 +47,7 @@ class ExceptionHandler
         // Convert PHP errors to ErrorException (to be caught by exception handler)
         set_error_handler(function (int $severity, string $message, string $file, int $line): bool {
             // Don't throw exception if error reporting is disabled
-            if (!(error_reporting() & $severity)) {
+            if ((error_reporting() & $severity) === 0) {
                 return false;
             }
 
@@ -102,7 +100,7 @@ class ExceptionHandler
 
         // Content negotiation: JSON for API clients, HTML for browsers
         $acceptHeader = $_SERVER['HTTP_ACCEPT'] ?? '';
-        $wantsJson    = str_contains($acceptHeader, 'application/json');
+        $wantsJson    = str_contains((string) $acceptHeader, 'application/json');
 
         if ($wantsJson) {
             $this->sendJsonError($exception);
@@ -162,7 +160,7 @@ class ExceptionHandler
         return [
             'error'     => 'Internal Server Error',
             'message'   => $exception->getMessage(),
-            'exception' => get_class($exception),
+            'exception' => $exception::class,
             'file'      => $exception->getFile(),
             'line'      => $exception->getLine(),
             'trace'     => $exception->getTraceAsString(),
@@ -178,7 +176,7 @@ class ExceptionHandler
         header('Content-Type: text/html; charset=utf-8');
 
         // Escape data for HTML output
-        $class   = htmlspecialchars(get_class($exception), ENT_QUOTES, 'UTF-8');
+        $class   = htmlspecialchars($exception::class, ENT_QUOTES, 'UTF-8');
         $message = htmlspecialchars($exception->getMessage(), ENT_QUOTES, 'UTF-8');
         $file    = htmlspecialchars($exception->getFile(), ENT_QUOTES, 'UTF-8');
         $line    = $exception->getLine();
@@ -227,11 +225,11 @@ HTML;
      */
     private function logException(Throwable $exception): void
     {
-        if ($this->logger === null) {
+        if (!$this->logger instanceof LoggerInterface) {
             // Fallback to error_log if no PSR-3 logger available
             error_log(sprintf(
                 '[EXCEPTION] %s: %s in %s:%d',
-                get_class($exception),
+                $exception::class,
                 $exception->getMessage(),
                 $exception->getFile(),
                 $exception->getLine()
@@ -239,7 +237,7 @@ HTML;
             error_log('Stack trace: ' . $exception->getTraceAsString());
         } else {
             $this->logger->error('Uncaught exception', [
-                'exception' => get_class($exception),
+                'exception' => $exception::class,
                 'message'   => $exception->getMessage(),
                 'file'      => $exception->getFile(),
                 'line'      => $exception->getLine(),

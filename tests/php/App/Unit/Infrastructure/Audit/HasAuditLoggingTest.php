@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Tests\Unit\Infrastructure\Audit;
+namespace Tests\App\Unit\Infrastructure\Audit;
 
 use App\Infrastructure\Audit\AuditLoggerInterface;
 use App\Infrastructure\Audit\HasAuditLogging;

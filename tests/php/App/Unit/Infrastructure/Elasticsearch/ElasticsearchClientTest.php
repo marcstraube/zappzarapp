@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Tests\Unit\Infrastructure\Elasticsearch;
+namespace Tests\App\Unit\Infrastructure\Elasticsearch;
 
 use App\Infrastructure\Elasticsearch\ElasticsearchClient;
 use PHPUnit\Framework\Attributes\CoversClass;
