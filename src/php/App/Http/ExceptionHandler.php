@@ -19,11 +19,11 @@ use Throwable;
  * Security: Prevents information disclosure (CWE-550) by hiding stack traces
  * and internal details from end users in production environments.
  */
-class ExceptionHandler
+readonly class ExceptionHandler
 {
-    private readonly bool $isDevelopment;
+    private bool $isDevelopment;
 
-    public function __construct(private readonly ?LoggerInterface $logger = null)
+    public function __construct(private ?LoggerInterface $logger = null)
     {
         $this->isDevelopment = getenv('ENV') === 'development';
     }
@@ -189,7 +189,7 @@ class ExceptionHandler
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Exception: {$class}</title>
+    <title>Exception: $class</title>
     <style>
         body { font-family: monospace; margin: 20px; background: #1e1e1e; color: #d4d4d4; }
         .error-box { background: #252526; border-left: 4px solid #f48771; padding: 20px; margin-bottom: 20px; }
@@ -203,14 +203,14 @@ class ExceptionHandler
 <body>
     <div class="error-box">
         <h1>⚠️ Uncaught Exception</h1>
-        <p><span class="label">Type:</span> {$class}</p>
-        <p><span class="label">Message:</span> {$message}</p>
-        <p><span class="label">File:</span> {$file}</p>
-        <p><span class="label">Line:</span> {$line}</p>
+        <p><span class="label">Type:</span> $class</p>
+        <p><span class="label">Message:</span> $message</p>
+        <p><span class="label">File:</span> $file</p>
+        <p><span class="label">Line:</span> $line</p>
     </div>
     <div class="trace">
         <h2 style="margin-top: 0; color: #9cdcfe;">Stack Trace</h2>
-        <pre>{$trace}</pre>
+        <pre>$trace</pre>
     </div>
     <p style="color: #858585; font-size: 12px; margin-top: 20px;">
         💡 This detailed error is only shown in development mode (ENV=development)
