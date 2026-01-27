@@ -46,42 +46,8 @@ jobs:
           make secrets
           make ssl-internal
 
-      - name: Build application images
-        run: |
-          # Create empty lockfiles for Dockerfile COPY
-          [ -f composer.lock ] || echo '{}' > composer.lock
-          [ -f pnpm-lock.yaml ] || touch pnpm-lock.yaml
-
-          # Build node-backend first for nginx COPY --from dependency
-          DOCKER_BUILDKIT=0 docker compose --profile node-backend build node-backend || true
-          docker tag ${{ env.COMPOSE_PROJECT_NAME }}-node-backend:api ${{ env.COMPOSE_PROJECT_NAME }}-node-backend:latest 2>/dev/null || true
-
-          # Build remaining images
-          DOCKER_BUILDKIT=0 docker compose --profile postgres build php node nginx postgres
-
-      - name: Start application
-        run: |
-          docker compose --profile postgres up -d php node nginx postgres
-          sleep 10
-
-      - name: Install dependencies
-        run: |
-          docker compose exec -T php composer install --no-progress --no-interaction
-          docker compose exec -T node pnpm install
-
-      - name: Wait for application to be healthy
-        run: |
-          echo "Waiting for application health check..."
-          timeout 120 sh -c '
-            until curl -sf http://localhost:8080/health > /dev/null 2>&1; do
-              echo "Waiting for http://localhost:8080/health..."
-              sleep 5
-            done
-          '
-          echo "Application is healthy"
-
-      - name: Create ZAP rules directory
-        run: mkdir -p .zap
+      - name: Start application in production mode
+        run: make security-zap-start
 
       - name: Run ZAP baseline scan
         uses: zaproxy/action-baseline@v0.14.0
@@ -117,6 +83,6 @@ jobs:
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "See artifacts for detailed HTML and JSON reports." >> $GITHUB_STEP_SUMMARY
 
-      - name: Cleanup
+      - name: Stop application
         if: always()
-        run: docker compose down -v || true
+        run: make security-zap-stop

@@ -207,38 +207,19 @@ scan:zap:
     # IMPORTANT: Run ZAP against PRODUCTION configuration
     # This ensures we test strict CSP without unsafe-eval/unsafe-inline
     ENV: production
+  before_script:
+    - apk add --no-cache docker-compose curl bash make
+    - make init
+    - make secrets
+    - make ssl-internal
   script:
     # Start application with production configuration
-    - ENV=production docker compose --profile postgres up -d php node nginx postgres
-    - sleep 10
-    # Install dependencies
-    - docker compose exec -T php composer install --no-progress --no-interaction
-    - docker compose exec -T node pnpm install --frozen-lockfile
-    # Wait for application health
-    - |
-      echo "Waiting for application health check..."
-      timeout 120 sh -c '
-        until curl -sf http://localhost:8080/health > /dev/null 2>&1; do
-          echo "Waiting for http://localhost:8080/health..."
-          sleep 5
-        done
-      '
-      echo "Application is healthy"
-    # Create ZAP rules directory
-    - mkdir -p .zap
-    # Run ZAP baseline scan using Docker
-    - |
-      docker run --rm --network host \
-        -v $(pwd):/zap/wrk:rw \
-        -t ghcr.io/zaproxy/zaproxy:stable \
-        zap-baseline.py \
-        -t http://localhost:8080 \
-        -r zap-report.html \
-        -J zap-report.json \
-        -c .zap/rules.tsv \
-        -a -j || true
+    - make security-zap-start
+    # Run ZAP baseline scan
+    - make security-zap-scan
   after_script:
-    - docker compose down -v
+    # Cleanup (runs always, even on failure)
+    - make security-zap-stop || true
   artifacts:
     paths:
       - zap-report.html

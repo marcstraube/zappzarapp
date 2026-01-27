@@ -498,6 +498,31 @@ load 'helpers/setup'
     assert_success
 }
 
+@test "make security-zap-start --dry-run validates" {
+    run make -n security-zap-start
+    assert_success
+}
+
+@test "make security-zap-scan --dry-run validates" {
+    run make -n security-zap-scan
+    assert_success
+}
+
+@test "make security-zap-stop --dry-run validates" {
+    run make -n security-zap-stop
+    assert_success
+}
+
+@test "make security-zap-full --dry-run validates" {
+    run make -n security-zap-full
+    assert_success
+}
+
+@test "make security-zap --dry-run validates" {
+    run make -n security-zap
+    assert_success
+}
+
 @test "make falco-run --dry-run validates" {
     run make -n falco-run
     assert_success

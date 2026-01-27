@@ -3770,6 +3770,71 @@ security-audit-node: ## Scan Node.js dependencies for known vulnerabilities
 	@echo -e "\033[0;33mScanning Node.js dependencies with pnpm audit...\033[0m"
 	@$(DC) run --rm -T dev-tools pnpm audit
 
+security-zap-start: ## Start services in production mode for ZAP scanning
+	@echo -e "\033[0;33mStarting services in production mode...\033[0m"
+	@ENV=production $(MAKE) up
+	@echo -e "\033[0;33mWaiting for services to be ready...\033[0m"
+	@sleep 10
+	@echo -e "\033[0;32m✓ Services ready for ZAP scan\033[0m"
+	@echo -e "\033[0;36mℹ️  Run: make security-zap-scan\033[0m"
+
+security-zap-scan: ## Run ZAP scan (requires running services)
+	@echo -e "\033[0;33mChecking if services are running...\033[0m"
+	@if ! docker compose ps | grep -q "Up"; then \
+		echo -e "\033[0;31mError: No services running\033[0m"; \
+		echo -e "\033[0;33mRun: ENV=production make up  (or make security-zap-start)\033[0m"; \
+		exit 1; \
+	fi
+	@# Check ENV: prioritize shell/make variable over .env file
+	@if [ -n "$$ENV" ]; then \
+		CURRENT_ENV=$$ENV; \
+	else \
+		$(LOAD_ENV); \
+		CURRENT_ENV=$${ENV:-development}; \
+	fi; \
+	if [ "$$CURRENT_ENV" != "production" ]; then \
+		echo -e "\033[0;33m⚠️  WARNING: Services appear to be running in $$CURRENT_ENV mode\033[0m"; \
+		echo -e "\033[0;33m   For accurate results, restart with: ENV=production make up\033[0m"; \
+		read -p "Continue anyway? [y/N] " -n 1 -r; \
+		echo; \
+		if [[ ! $$REPLY =~ ^[Yy]$$ ]]; then \
+			exit 1; \
+		fi; \
+	fi
+	@if [ ! -f .zap/rules.tsv ]; then \
+		echo -e "\033[0;33m⚠️  .zap/rules.tsv not found, using default rules\033[0m"; \
+		ZAP_CONFIG=""; \
+	else \
+		ZAP_CONFIG="-c .zap/rules.tsv"; \
+	fi; \
+	echo -e "\033[0;33mRunning ZAP baseline scan...\033[0m"; \
+	docker run --rm --network host \
+		-v $(PWD):/zap/wrk:rw \
+		-t ghcr.io/zaproxy/zaproxy:stable \
+		zap-baseline.py \
+		-t http://localhost:8080 \
+		-r zap-report.html \
+		-J zap-report.json \
+		$$ZAP_CONFIG \
+		-a -j || true
+	@echo -e "\033[0;32m✓ ZAP scan complete\033[0m"
+	@echo -e "\033[0;36mReport: zap-report.html\033[0m"
+
+security-zap-stop: ## Stop services after ZAP scanning
+	@echo -e "\033[0;33mStopping services...\033[0m"
+	@ENV=production $(MAKE) down
+	@echo -e "\033[0;32m✓ Services stopped\033[0m"
+
+security-zap-full: ## Full ZAP scan lifecycle (start -> scan -> stop)
+	@echo -e "\033[0;34m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\033[0m"
+	@echo -e "\033[0;34m  OWASP ZAP Security Scan - Full Cycle\033[0m"
+	@echo -e "\033[0;34m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\033[0m"
+	@ENV=$${ENV:-production} $(MAKE) security-zap-start
+	@ENV=$${ENV:-production} $(MAKE) security-zap-scan
+	@ENV=$${ENV:-production} $(MAKE) security-zap-stop
+
+security-zap: security-zap-full ## Alias for security-zap-full (default ZAP scan)
+
 ##@ Documentation
 
 PHPDOC_VERSION := 3.9.1

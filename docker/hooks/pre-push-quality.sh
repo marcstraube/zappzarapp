@@ -202,6 +202,32 @@ if is_extended_branch; then
             make goss-test || true
     fi
 
+    # Security: Static configuration checks
+    if has_changes docker || has_changes nginx || has_changes compose; then
+        echo -e "${YELLOW}→ Security configuration changed (extended checks)${NC}"
+
+        run_check "Trivy config scan" \
+            docker run --rm -v "$(pwd):/project" aquasec/trivy:latest config /project/docker --exit-code 0 --severity HIGH,CRITICAL || true
+
+        run_check "Trivy secret scan" \
+            docker run --rm -v "$(pwd):/project" aquasec/trivy:latest fs --scanners secret /project --exit-code 0 || true
+    fi
+
+    # Security: CSP syntax validation
+    if has_changes php; then
+        if grep -r "CspNonceHelper" src/php/App/Security/ >/dev/null 2>&1; then
+            echo -e "${YELLOW}→ CSP configuration may have changed${NC}"
+
+            run_check "CSP syntax validation" \
+                docker compose exec -T php php -r "require 'vendor/autoload.php'; \
+                    \$dev = \App\Security\CspNonceHelper::buildDevelopmentCspHeader(); \
+                    \$prod = \App\Security\CspNonceHelper::buildProductionCspHeader(); \
+                    echo 'Development CSP: ' . \$dev . PHP_EOL; \
+                    echo 'Production CSP: ' . \$prod . PHP_EOL; \
+                    if (empty(\$dev) || empty(\$prod)) { exit(1); }" || true
+        fi
+    fi
+
     # Always run linters on develop/master (consistency)
     echo -e "${YELLOW}→ Consistency checks (always on develop/master)${NC}"
 

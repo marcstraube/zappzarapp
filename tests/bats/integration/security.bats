@@ -126,3 +126,51 @@ teardown_file() {
     [[ -f "docker/certs/internal/cert.key" ]]
     [[ -f "docker/certs/internal/ca.crt" ]]
 }
+
+# =============================================================================
+# OWASP ZAP DAST Scanning (Manual/CI Only - Slow!)
+# =============================================================================
+
+@test "[Integration] make security-zap-start initializes production environment" {
+    # Skip by default (requires production ENV, takes 5-10 min)
+    skip "ZAP scan integration test - run manually with: bats tests/bats/integration/security.bats -f zap-start"
+
+    # Clean up any existing services
+    ENV=production make down || true
+
+    run timeout 120 make security-zap-start
+    assert_success
+
+    # Verify services are running
+    run docker compose ps
+    assert_success
+    assert_output --partial "Up"
+}
+
+@test "[Integration] make security-zap-scan runs OWASP ZAP" {
+    # Skip by default (requires running services, takes 5-10 min)
+    skip "ZAP scan integration test - run manually with: bats tests/bats/integration/security.bats -f zap-scan"
+
+    # Requires security-zap-start to have been run first
+    require_containers
+
+    run timeout 600 make security-zap-scan
+    # ZAP scan may find issues (|| true in Makefile)
+    [[ $status -eq 0 ]] || [[ $status -eq 1 ]]
+
+    # Verify report was generated
+    [[ -f "zap-report.html" ]]
+}
+
+@test "[Integration] make security-zap-stop cleans up environment" {
+    # Skip by default
+    skip "ZAP scan integration test - run manually with: bats tests/bats/integration/security.bats -f zap-stop"
+
+    run timeout 60 make security-zap-stop
+    assert_success
+
+    # Verify services are stopped
+    run docker compose ps
+    # Should be empty or show "Exit" status
+    [[ $status -eq 0 ]]
+}

@@ -396,25 +396,45 @@ authentication flaws.
 
 **Key Configuration:**
 
+- Uses `make security-zap-start` for environment setup
+- Uses `zaproxy/action-baseline@v0.14.0` for scanning (GitHub-optimized)
+- Uses `make security-zap-stop` for cleanup
 - Runs against **production environment** (`ENV=production`)
 - Tests strict CSP without unsafe-eval/unsafe-inline
 - Uses `.zap/rules.tsv` for custom rules
 - Generates HTML and JSON reports (retained 30 days)
+
+**Implementation:**
+
+```yaml
+- name: Start application in production mode
+  run: make security-zap-start
+
+- name: Run ZAP baseline scan
+  uses: zaproxy/action-baseline@v0.14.0
+
+- name: Stop application
+  if: always()
+  run: make security-zap-stop
+```
 
 ### GitLab CI Pipeline
 
 **Location:** `.gitlab/security-scan.gitlab-ci.yml`
 
 **Integration:** The ZAP scan is part of the comprehensive security scan
-pipeline:
+pipeline and uses Make targets for consistency with local development:
 
 ```yaml
 scan:zap:
   stage: scan
-  needs:
-    - build:images
   variables:
     ENV: production # Test production configuration
+  script:
+    - make security-zap-start # Setup
+    - make security-zap-scan # Scan
+  after_script:
+    - make security-zap-stop # Cleanup (runs always)
 ```
 
 **Viewing Results:**
@@ -422,25 +442,63 @@ scan:zap:
 - Job artifacts contain `zap-report.html` and `zap-report.json`
 - Security summary includes ZAP scan status
 
+**Benefits of Make-Target Integration:**
+
+- ✅ DRY: No code duplication between local/CI environments
+- ✅ Consistency: Identical behavior locally and in CI/CD
+- ✅ Maintainability: Changes only needed in Makefile
+
 ### Local ZAP Scan
 
-Run ZAP scan locally:
+**IMPORTANT:** Always run ZAP scans against **production configuration** to test
+strict CSP headers without `unsafe-eval` and `unsafe-inline`.
+
+#### Quick Scan (All-in-One)
 
 ```bash
-# Start application in production mode
-ENV=production make up
-
-# Run ZAP baseline scan
-docker run --rm --network host \
-  -v $(pwd):/zap/wrk:rw \
-  -t ghcr.io/zaproxy/zaproxy:stable \
-  zap-baseline.py \
-  -t http://localhost:8080 \
-  -r zap-report.html \
-  -J zap-report.json \
-  -c .zap/rules.tsv \
-  -a -j
+# Full lifecycle: start -> scan -> stop
+make security-zap-full
+# or
+make security-zap
 ```
+
+#### Manual Workflow (Services Stay Running)
+
+```bash
+# 1. Start services in production mode
+make security-zap-start
+
+# 2. Run scan (can be repeated)
+make security-zap-scan
+
+# 3. Stop services when done
+make security-zap-stop
+```
+
+#### When to Run ZAP Scans
+
+| Scenario          | Command                  | Frequency     |
+| ----------------- | ------------------------ | ------------- |
+| Pre-push (local)  | ❌ Not recommended       | -             |
+| Before PR review  | `make security-zap-full` | As needed     |
+| After CSP changes | `make security-zap-scan` | After changes |
+| CI on develop     | ✅ Automatic (GitHub)    | Every push    |
+| Scheduled         | ✅ Automatic (GitHub)    | Weekly        |
+| Pre-release       | `make security-zap-full` | Every release |
+
+**Why not in pre-push?**
+
+- Runtime: 5-10 minutes (too slow for pre-push)
+- Requires production environment restart (disrupts workflow)
+- Better suited for CI/CD automation
+- Pre-push focuses on fast code-level checks
+
+**Instead, pre-push runs:**
+
+- Static security config scans (Trivy)
+- CSP syntax validation
+- Secret detection
+- Fast SAST checks
 
 ### Custom Rules
 
