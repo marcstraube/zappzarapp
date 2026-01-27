@@ -91,40 +91,10 @@
         "description": "Verify dependencies are installed (auto-install if missing)"
       },
       {
-        "action": "./docker/hooks/hook-runner.sh php vendor/bin/phpstan analyse --configuration=phpstan.neon --memory-limit=1G",
+        "action": "./docker/hooks/pre-push-quality.sh",
         "options": [],
         "type": "cli",
-        "description": "Run PHPStan static analysis (Level 5) before pushing to remote"
-      },
-      {
-        "action": "./docker/hooks/hook-runner.sh php vendor/bin/rector process --dry-run",
-        "options": [],
-        "type": "cli",
-        "description": "Run Rector code modernization check (PHP 8.3 compatibility)"
-      },
-      {
-        "action": "./docker/hooks/hook-runner.sh php vendor/bin/phpmd src,tests text phpmd.xml.dist",
-        "options": [],
-        "type": "cli",
-        "description": "Run PHPMD code quality analysis (complexity, design, naming)"
-      },
-      {
-        "action": "./docker/hooks/hook-runner.sh php vendor/bin/phpunit",
-        "options": [],
-        "type": "cli",
-        "description": "Run PHPUnit tests (PHP unit & integration tests)"
-      },
-      {
-        "action": "./docker/hooks/hook-runner.sh dev-tools pnpm run type-check",
-        "options": [],
-        "type": "cli",
-        "description": "Run TypeScript type checking (static analysis)"
-      },
-      {
-        "action": "./docker/hooks/hook-runner.sh dev-tools pnpm test",
-        "options": [],
-        "type": "cli",
-        "description": "Run Vitest tests (Node.js unit & integration tests)"
+        "description": "Run quality checks (type-based, branch-aware): Fast checks on feature branches (~1-3 min), comprehensive checks on develop/master (~5-15 min). Change detection ensures only relevant tools run. See docker/hooks/pre-push-quality.sh for details."
       }
     ]
   },
