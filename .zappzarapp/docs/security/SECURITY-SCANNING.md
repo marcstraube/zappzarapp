@@ -455,11 +455,14 @@ strict CSP headers without `unsafe-eval` and `unsafe-inline`.
 #### Quick Scan (All-in-One)
 
 ```bash
-# Full lifecycle: start -> scan -> stop
+# Full lifecycle: start -> scan -> stop (always uses production mode)
 make security-zap-full
 # or
 make security-zap
 ```
+
+**Note:** No need to specify `ENV=production` - it's hardcoded in the targets to
+ensure production CSP is always tested.
 
 #### Manual Workflow
 
