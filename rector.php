@@ -23,8 +23,8 @@ return static function (RectorConfig $rectorConfig): void {
         SetList::DEAD_CODE,
         SetList::TYPE_DECLARATION,
 
-        // Optional: Coding Style (if not covered by PHP-CS-Fixer completely)
-        SetList::CODING_STYLE,
+        // CODING_STYLE removed: conflicts with PHPStorm inspections and other linters
+        // (PHP-CS-Fixer, PHPStan). Focus on code quality and type safety instead.
     ]);
 
     // Skip files using PHP 8.4 property hooks with asymmetric visibility
@@ -32,7 +32,6 @@ return static function (RectorConfig $rectorConfig): void {
     // We skip the entire file rather than specific rules, as multiple rules conflict
     $rectorConfig->skip([
         __DIR__ . '/tests/php/App/Unit/Infrastructure/Database/DatabaseConfigStub.php',
-        // If the above doesn't work, try fnmatch pattern
         '*/DatabaseConfigStub.php',
     ]);
 

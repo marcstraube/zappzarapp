@@ -5,7 +5,7 @@
     <inspection_tool class="GrazieInspection" enabled="true" level="GRAMMAR_ERROR" enabled_by_default="true">
       <scope name="Source and Tests" level="GRAMMAR_ERROR" enabled="false" />
     </inspection_tool>
-        <inspection_tool class="LanguageDetectionInspection" enabled="true" level="WARNING" enabled_by_default="true">
+    <inspection_tool class="LanguageDetectionInspection" enabled="true" level="WARNING" enabled_by_default="true">
       <scope name="Source and Tests" level="WARNING" enabled="false" />
     </inspection_tool>
     <inspection_tool class="MarkdownIncorrectTableFormatting" enabled="false" level="WEAK WARNING" enabled_by_default="false" />
@@ -14,6 +14,7 @@
     <inspection_tool class="MessDetectorValidationInspection" enabled="true" level="WEAK WARNING" enabled_by_default="true" />
     <inspection_tool class="PhpCSFixerValidationInspection" enabled="true" level="WEAK WARNING" enabled_by_default="true" />
     <inspection_tool class="PhpStanGlobal" enabled="true" level="WEAK WARNING" enabled_by_default="true" />
+    <inspection_tool class="PhpUnnecessaryCurlyVarSyntaxInspection" enabled="false" level="WEAK WARNING" enabled_by_default="false" />
     <inspection_tool class="PhpVariableUsedOnlyInClosureInspection" enabled="true" level="WEAK WARNING" enabled_by_default="true">
       <scope name="Tests" level="INFORMATION" enabled="false" />
     </inspection_tool>
