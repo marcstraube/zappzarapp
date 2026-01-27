@@ -237,13 +237,19 @@ COPY --from=zappzarapp-node-backend:latest --chown=www-data:www-data /app/public
 RUN composer dump-autoload --optimize --no-dev --classmap-authoritative && \
     rm -rf /usr/bin/composer /home/www-data/.composer /tmp/* && \
     apk del .composer-deps && \
-    # Permission hardening
+    # Create writable directories BEFORE permission hardening
+    mkdir -p /var/www/html/storage && \
+    mkdir -p /var/www/html/build/cache/twig && \
+    # Permission hardening - set base to root:root read-only
     chown -R root:root /var/www/html && \
     chmod -R 555 /var/www/html && \
-    mkdir -p /var/www/html/storage && \
+    # Make storage writable for www-data
     chown -R www-data:www-data /var/www/html/storage && \
     chmod 770 /var/www/html/storage && \
     find /var/www/html/storage -type f -exec chmod 660 {} \; 2>/dev/null || true && \
+    # Make build/cache writable for www-data (Twig templates)
+    chown -R www-data:www-data /var/www/html/build && \
+    chmod -R 770 /var/www/html/build && \
     # Prepare socket directory for unprivileged operation
     mkdir -p /var/run/php-fpm && \
     chown www-data:www-data /var/run/php-fpm
@@ -281,13 +287,19 @@ FROM production-base AS production-framework
 RUN composer dump-autoload --optimize --no-dev --classmap-authoritative && \
     rm -rf /usr/bin/composer /home/www-data/.composer /tmp/* && \
     apk del .composer-deps && \
-    # Permission hardening
+    # Create writable directories BEFORE permission hardening
+    mkdir -p /var/www/html/storage && \
+    mkdir -p /var/www/html/build/cache/twig && \
+    # Permission hardening - set base to root:root read-only
     chown -R root:root /var/www/html && \
     chmod -R 555 /var/www/html && \
-    mkdir -p /var/www/html/storage && \
+    # Make storage writable for www-data
     chown -R www-data:www-data /var/www/html/storage && \
     chmod 770 /var/www/html/storage && \
     find /var/www/html/storage -type f -exec chmod 660 {} \; 2>/dev/null || true && \
+    # Make build/cache writable for www-data (Twig templates)
+    chown -R www-data:www-data /var/www/html/build && \
+    chmod -R 770 /var/www/html/build && \
     # Prepare socket directory for unprivileged operation
     mkdir -p /var/run/php-fpm && \
     chown www-data:www-data /var/run/php-fpm

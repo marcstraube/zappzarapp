@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http;
 
 use App\Http\Response\JsonResponse;
+use ErrorException;
 use Psr\Log\LoggerInterface;
 use Throwable;
 
@@ -27,6 +28,58 @@ class ExceptionHandler
     {
         $this->isDevelopment = getenv('ENV') === 'development';
         $this->logger        = $logger;
+    }
+
+    /**
+     * Register this handler as the global exception and error handler.
+     *
+     * This method should be called early in the application bootstrap to catch:
+     * - Uncaught exceptions (via set_exception_handler)
+     * - Fatal errors (via register_shutdown_function)
+     * - PHP errors converted to exceptions (via set_error_handler)
+     */
+    public function register(): void
+    {
+        // Catch uncaught exceptions
+        set_exception_handler([$this, 'handle']);
+
+        // Catch fatal errors during shutdown
+        register_shutdown_function([$this, 'handleShutdown']);
+
+        // Convert PHP errors to ErrorException (to be caught by exception handler)
+        set_error_handler(function (int $severity, string $message, string $file, int $line): bool {
+            // Don't throw exception if error reporting is disabled
+            if (!(error_reporting() & $severity)) {
+                return false;
+            }
+
+            throw new ErrorException($message, 0, $severity, $file, $line);
+        });
+    }
+
+    /**
+     * Handle fatal errors during shutdown.
+     *
+     * This catches errors that occur too late for the exception handler,
+     * such as parse errors, out of memory errors, etc.
+     */
+    public function handleShutdown(): void
+    {
+        $error = error_get_last();
+
+        // Check if this was a fatal error
+        if ($error !== null && in_array($error['type'], [E_ERROR, E_PARSE, E_CORE_ERROR, E_COMPILE_ERROR], true)) {
+            // Create an exception-like error for consistent handling
+            $exception = new ErrorException(
+                $error['message'],
+                0,
+                $error['type'],
+                $error['file'],
+                $error['line']
+            );
+
+            $this->handle($exception);
+        }
     }
 
     /**

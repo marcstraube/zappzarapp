@@ -3794,7 +3794,7 @@ security-zap-start: ## Start services in production mode for ZAP scanning
 	if [ "$${ENABLE_MEILISEARCH:-false}" = "true" ]; then PROFILES="$$PROFILES --profile meilisearch"; fi; \
 	if [ "$${ENABLE_ELASTICSEARCH:-false}" = "true" ]; then PROFILES="$$PROFILES --profile elasticsearch"; fi; \
 	if [ "$${ENABLE_SEAWEEDFS:-false}" = "true" ]; then PROFILES="$$PROFILES --profile seaweedfs"; fi; \
-	ENV=production $(DC) -f compose.yaml -f compose.production.yaml $$PROFILES up -d
+	ENV=production $(DC) -f compose.yaml -f compose.production.yaml $$PROFILES up -d --build
 	@echo -e "\033[0;33mWaiting for services to be ready...\033[0m"
 	@sleep 10
 	@echo -e "\033[0;32m✓ Services ready for ZAP scan\033[0m"

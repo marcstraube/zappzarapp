@@ -124,16 +124,21 @@ define('CSP_NONCE', CspNonceHelper::get());
  * ============================================================================
  * GLOBAL EXCEPTION HANDLER
  * ============================================================================
- * Register a global exception handler to catch all uncaught exceptions.
+ * Register a global exception and error handler to catch:
+ * - Uncaught exceptions
+ * - Fatal errors (parse errors, out of memory, etc.)
+ * - PHP warnings/notices converted to exceptions
+ *
  * This prevents information disclosure (CWE-550) by:
  * - Hiding stack traces and internal details in production
- * - Logging all exceptions server-side
+ * - Logging all errors server-side
  * - Showing user-friendly error pages
  *
  * Security: This fixes the "Application Error Disclosure" vulnerability
  * detected by OWASP ZAP scan.
  */
 $exceptionHandler = new ExceptionHandler();
+$exceptionHandler->register();
 
 // Simple Routing Example
 $router = new Router();
