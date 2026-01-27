@@ -186,11 +186,15 @@ test_php() {
         return
     fi
 
-    # Test PHP endpoint via nginx
-    if curl -sf -k --max-time $TIMEOUT "https://localhost:${NGINX_SSL_PORT}/health.php" 2>/dev/null | grep -q "ok"; then
-        log_pass "php: health.php responds with 'ok'"
+    # Test PHP endpoint via nginx (requires nginx container)
+    if ! is_container_running nginx; then
+        log_skip "php: health.php test requires nginx (not running)"
     else
-        log_fail "php: health.php not responding correctly"
+        if curl -sf -k --max-time $TIMEOUT "https://localhost:${NGINX_SSL_PORT}/health.php" 2>/dev/null | grep -q "ok"; then
+            log_pass "php: health.php responds with 'ok'"
+        else
+            log_fail "php: health.php not responding correctly"
+        fi
     fi
 
     # Test PHP-FPM ping via docker exec
