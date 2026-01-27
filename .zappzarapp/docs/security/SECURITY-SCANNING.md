@@ -455,20 +455,43 @@ strict CSP headers without `unsafe-eval` and `unsafe-inline`.
 #### Quick Scan (All-in-One)
 
 ```bash
-# Full lifecycle: start -> scan -> stop (always uses production mode)
-make security-zap-full
-# or
+# Standard scan: respects .env configuration
 make security-zap
+
+# Comprehensive scan: tests ALL services (ignores .env ENABLE_* flags)
+make security-zap-full
 ```
 
-**Note:** No need to specify `ENV=production` - it's hardcoded in the targets to
-ensure production CSP is always tested.
+**Which to use?**
+
+- **Project development**: `make security-zap` (tests your configured stack)
+- **Before boilerplate release**: `make security-zap-full` (validates all
+  services)
+- **Custom projects**: Usually `make security-zap` is sufficient
+
+**Note:** No need to specify `ENV=production` - it's automatically set by the
+targets to ensure production CSP is always tested.
 
 #### Manual Workflow
 
+**Standard mode (.env configuration):**
+
 ```bash
-# 1. Start services in production mode (clean state with correct ENV)
+# 1. Start services based on .env ENABLE_* flags
 make security-zap-start
+
+# 2. Run scan (can be repeated without restarting)
+make security-zap-scan
+
+# 3. Stop services when done
+make security-zap-stop
+```
+
+**Full mode (all services):**
+
+```bash
+# 1. Start ALL services (ignores .env ENABLE_* flags)
+make security-zap-full-start
 
 # 2. Run scan (can be repeated without restarting)
 make security-zap-scan
@@ -484,26 +507,45 @@ make security-zap-stop
 - This ensures PHP container receives correct ENV for strict CSP headers
 - Reads `ENABLE_*` flags from `.env` to determine which services to start
 
-**Services Started:**
+**Scan Modes:**
 
-- **Always:** nginx (reverse proxy, no profile)
-- **Default (enabled in `.env`):**
-  - PHP backend (`ENABLE_PHP=true`)
-  - Node.js services (`ENABLE_NODE=true`) - determined by `NODE_MODE`:
-    - `assets` → Vite dev server (--profile node)
-    - `api` → Express API backend (--profile node-backend)
-    - `assets-api` → Both Vite + Express API (default)
-    - `framework` → Framework server (--profile node)
-    - `framework-api` → Framework + Express API
-    - `idle` → Node container without services
-  - Database (`ENABLE_DATABASE=true`) - postgres or mariadb via `DB_TYPE`
-  - Redis (`ENABLE_REDIS=true`) - cache and sessions
-- **Optional (disabled by default, enable via `.env`):**
-  - Mercure (`ENABLE_MERCURE=true`) - real-time features
-  - Meilisearch (`ENABLE_MEILISEARCH=true`) - search
-  - Elasticsearch (`ENABLE_ELASTICSEARCH=true`) - search
-  - SeaweedFS (`ENABLE_SEAWEEDFS=true`) - file storage
-- **Not included:** RabbitMQ, Mailpit, Adminer, pgAdmin (not in scan scope)
+**`security-zap` (Standard):**
+
+- Respects `.env` ENABLE\_\* configuration
+- Tests only services you have enabled
+- Use Case: Project development, custom stack testing
+
+**`security-zap-full` (Comprehensive):**
+
+- Tests ALL available services regardless of `.env`
+- Forces: PHP, Node, Database, Redis, Mercure, Meilisearch, Elasticsearch,
+  SeaweedFS
+- Use Case: Boilerplate releases, platform security validation
+
+**Services Started (by mode):**
+
+| Service           | Normal Mode (`.env`)   | Full Mode (forced)     |
+| ----------------- | ---------------------- | ---------------------- |
+| **nginx**         | Always (no profile)    | Always (no profile)    |
+| **PHP**           | `ENABLE_PHP=true`      | Always                 |
+| **Database**      | `ENABLE_DATABASE`      | Always (via DB_TYPE)   |
+| **Redis**         | `ENABLE_REDIS=true`    | Always                 |
+| **Node.js**       | `ENABLE_NODE=true`     | Always (via NODE_MODE) |
+| **Mercure**       | `ENABLE_MERCURE`       | Always                 |
+| **Meilisearch**   | `ENABLE_MEILISEARCH`   | Always                 |
+| **Elasticsearch** | `ENABLE_ELASTICSEARCH` | Always                 |
+| **SeaweedFS**     | `ENABLE_SEAWEEDFS`     | Always                 |
+| RabbitMQ/Mailpit  | Never (not in scope)   | Never                  |
+
+**Node.js Profile Selection (both modes):**
+
+Determined by `NODE_MODE` from `.env`:
+
+- `assets|idle` → `--profile node` (Vite dev server)
+- `api` → `--profile node-backend` (Express API only)
+- `assets-api` → `--profile node --profile node-backend` (both, default)
+- `framework` → `--profile node` (framework server)
+- `framework-api` → `--profile node --profile node-backend` (framework + API)
 
 **Node.js API Coverage:**
 
@@ -512,6 +554,37 @@ By default (`NODE_MODE=assets-api`), ZAP scans both PHP and Node.js APIs:
 - PHP Backend: `/`, `/api/*`, `/status`, `/ready`, `/health`
 - Node Backend: `/api/node/*` (proxied via nginx to node-backend:3000)
 - Frontend Framework: If `NODE_MODE=framework` or `framework-api`
+
+#### CI/CD Scan Mode Selection
+
+ZAP scans in CI/CD automatically select the appropriate mode based on the
+repository:
+
+**GitHub Actions & GitLab CI:**
+
+| Repository             | Branch         | Trigger  | Mode       | Rationale                           |
+| ---------------------- | -------------- | -------- | ---------- | ----------------------------------- |
+| marcstraube/zappzarapp | develop/master | push     | **full**   | Boilerplate → test all services     |
+| marcstraube/zappzarapp | develop/master | schedule | **full**   | Weekly comprehensive validation     |
+| marcstraube/zappzarapp | feature/\*     | push     | normal     | Feature dev → .env config           |
+| fork/custom-project    | any            | any      | **normal** | Projects use their configured stack |
+| any                    | any            | manual   | selectable | Override via workflow input         |
+
+**Benefits:**
+
+- ✅ Boilerplate maintainers test all services comprehensively
+- ✅ Fork projects only test their enabled stack (faster, relevant)
+- ✅ No manual configuration needed (auto-detects repository)
+- ✅ Manual override available via workflow dispatch
+
+**Manual Override:**
+
+```bash
+# GitHub: Actions → ZAP Scan → Run workflow → Select "full" or "normal"
+
+# GitLab: CI/CD → Run Pipeline → Add variable:
+ZAP_SCAN_MODE=full  # or "normal"
+```
 
 #### When to Run ZAP Scans
 
