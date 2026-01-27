@@ -3770,14 +3770,22 @@ security-audit-node: ## Scan Node.js dependencies for known vulnerabilities
 	@echo -e "\033[0;33mScanning Node.js dependencies with pnpm audit...\033[0m"
 	@$(DC) run --rm -T dev-tools pnpm audit
 
-security-zap-start: ## Start services in production mode for ZAP scanning
+security-zap-start: ## Start services in production mode for ZAP scanning (respects NODE_MODE for API coverage)
 	@echo -e "\033[0;33mStopping any running containers...\033[0m"
 	@$(LOAD_ENV); \
 	PROFILES="--profile php"; \
-	if [ "$${ENABLE_DATABASE:-true}" = "true" ]; then \
-		PROFILES="$$PROFILES --profile $${DB_TYPE:-postgres}"; \
-	fi; \
+	if [ "$${ENABLE_DATABASE:-true}" = "true" ]; then PROFILES="$$PROFILES --profile $${DB_TYPE:-postgres}"; fi; \
 	if [ "$${ENABLE_REDIS:-true}" = "true" ]; then PROFILES="$$PROFILES --profile redis"; fi; \
+	if [ "$${ENABLE_NODE:-true}" = "true" ]; then \
+		case "$${NODE_MODE:-assets-api}" in \
+			assets|idle) PROFILES="$$PROFILES --profile node" ;; \
+			api) PROFILES="$$PROFILES --profile node-backend" ;; \
+			assets-api) PROFILES="$$PROFILES --profile node --profile node-backend" ;; \
+			framework) PROFILES="$$PROFILES --profile node" ;; \
+			framework-api) PROFILES="$$PROFILES --profile node --profile node-backend" ;; \
+			*) PROFILES="$$PROFILES --profile node-backend" ;; \
+		esac; \
+	fi; \
 	if [ "$${ENABLE_MERCURE:-false}" = "true" ]; then PROFILES="$$PROFILES --profile mercure"; fi; \
 	if [ "$${ENABLE_MEILISEARCH:-false}" = "true" ]; then PROFILES="$$PROFILES --profile meilisearch"; fi; \
 	if [ "$${ENABLE_ELASTICSEARCH:-false}" = "true" ]; then PROFILES="$$PROFILES --profile elasticsearch"; fi; \
@@ -3786,10 +3794,18 @@ security-zap-start: ## Start services in production mode for ZAP scanning
 	@echo -e "\033[0;33mStarting services in production mode...\033[0m"
 	@$(LOAD_ENV); \
 	PROFILES="--profile php"; \
-	if [ "$${ENABLE_DATABASE:-true}" = "true" ]; then \
-		PROFILES="$$PROFILES --profile $${DB_TYPE:-postgres}"; \
-	fi; \
+	if [ "$${ENABLE_DATABASE:-true}" = "true" ]; then PROFILES="$$PROFILES --profile $${DB_TYPE:-postgres}"; fi; \
 	if [ "$${ENABLE_REDIS:-true}" = "true" ]; then PROFILES="$$PROFILES --profile redis"; fi; \
+	if [ "$${ENABLE_NODE:-true}" = "true" ]; then \
+		case "$${NODE_MODE:-assets-api}" in \
+			assets|idle) PROFILES="$$PROFILES --profile node" ;; \
+			api) PROFILES="$$PROFILES --profile node-backend" ;; \
+			assets-api) PROFILES="$$PROFILES --profile node --profile node-backend" ;; \
+			framework) PROFILES="$$PROFILES --profile node" ;; \
+			framework-api) PROFILES="$$PROFILES --profile node --profile node-backend" ;; \
+			*) PROFILES="$$PROFILES --profile node-backend" ;; \
+		esac; \
+	fi; \
 	if [ "$${ENABLE_MERCURE:-false}" = "true" ]; then PROFILES="$$PROFILES --profile mercure"; fi; \
 	if [ "$${ENABLE_MEILISEARCH:-false}" = "true" ]; then PROFILES="$$PROFILES --profile meilisearch"; fi; \
 	if [ "$${ENABLE_ELASTICSEARCH:-false}" = "true" ]; then PROFILES="$$PROFILES --profile elasticsearch"; fi; \

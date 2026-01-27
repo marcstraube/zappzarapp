@@ -396,8 +396,8 @@ authentication flaws.
 
 **Key Configuration:**
 
-- Uses `make security-zap-start` for environment setup (all `ENABLE_*=true`
-  services)
+- Uses `make security-zap-start` for environment setup (respects `ENABLE_*` and
+  `NODE_MODE` from `.env`)
 - Uses `zaproxy/action-baseline@v0.14.0` for scanning (GitHub-optimized)
 - Uses `make security-zap-stop` for cleanup
 - Runs against production configuration (strict CSP without
@@ -486,15 +486,32 @@ make security-zap-stop
 
 **Services Started:**
 
-- **Always:** nginx (frontend), PHP (backend)
-- **Default:** Database (postgres/mariadb), Redis (cache/sessions)
-- **Optional:** Only if `ENABLE_*=true` in `.env`:
-  - Mercure (real-time features)
-  - Meilisearch/Elasticsearch (search features)
-  - SeaweedFS (file upload/download features)
+- **Always:** nginx (reverse proxy, no profile)
+- **Default (enabled in `.env`):**
+  - PHP backend (`ENABLE_PHP=true`)
+  - Node.js services (`ENABLE_NODE=true`) - determined by `NODE_MODE`:
+    - `assets` → Vite dev server (--profile node)
+    - `api` → Express API backend (--profile node-backend)
+    - `assets-api` → Both Vite + Express API (default)
+    - `framework` → Framework server (--profile node)
+    - `framework-api` → Framework + Express API
+    - `idle` → Node container without services
+  - Database (`ENABLE_DATABASE=true`) - postgres or mariadb via `DB_TYPE`
+  - Redis (`ENABLE_REDIS=true`) - cache and sessions
+- **Optional (disabled by default, enable via `.env`):**
+  - Mercure (`ENABLE_MERCURE=true`) - real-time features
+  - Meilisearch (`ENABLE_MEILISEARCH=true`) - search
+  - Elasticsearch (`ENABLE_ELASTICSEARCH=true`) - search
+  - SeaweedFS (`ENABLE_SEAWEEDFS=true`) - file storage
+- **Not included:** RabbitMQ, Mailpit, Adminer, pgAdmin (not in scan scope)
 
-**Not tested:** RabbitMQ (backend-only), Mailpit (dev-only), Adminer/pgAdmin
-(dev-only)
+**Node.js API Coverage:**
+
+By default (`NODE_MODE=assets-api`), ZAP scans both PHP and Node.js APIs:
+
+- PHP Backend: `/`, `/api/*`, `/status`, `/ready`, `/health`
+- Node Backend: `/api/node/*` (proxied via nginx to node-backend:3000)
+- Frontend Framework: If `NODE_MODE=framework` or `framework-api`
 
 #### When to Run ZAP Scans
 
