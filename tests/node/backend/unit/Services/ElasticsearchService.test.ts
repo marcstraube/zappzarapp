@@ -114,14 +114,14 @@ describe('ElasticsearchService', () => {
       const service = new ElasticsearchService({ url: 'http://localhost:9200' });
       await service.search('test-index', { match_all: {} }, { size: 10, from: 5 });
 
-      expect(mockFetch).toHaveBeenCalledWith(
-        expect.stringContaining('/_search'),
-        expect.objectContaining({
-          method: 'GET',
+      const calls = mockFetch.mock.calls as Array<[string, RequestInit]>;
+      const [url, options] = calls[0] as [string, RequestInit];
 
-          body: expect.stringContaining('"size":10'),
-        })
-      );
+      expect(url).toContain('/_search');
+      expect(options.method).toBe('GET');
+      expect(typeof options.body).toBe('string');
+      expect(options.body as string).toContain('"size":10');
+      expect(options.body as string).toContain('"from":5');
     });
   });
 
@@ -321,12 +321,17 @@ describe('ElasticsearchService', () => {
         { number_of_shards: 1 }
       );
 
-      expect(mockFetch).toHaveBeenCalledWith(
-        expect.stringContaining('/new-index'),
-        expect.objectContaining({
-          body: expect.stringContaining('"mappings"'),
-        })
-      );
+      const calls = mockFetch.mock.calls as Array<[string, RequestInit]>;
+      const [url, options] = calls[0] as [string, RequestInit];
+
+      expect(url).toContain('/new-index');
+      expect(typeof options.body).toBe('string');
+
+      const body = options.body as string;
+      expect(body).toContain('"mappings"');
+      expect(body).toContain('"properties"');
+      expect(body).toContain('"settings"');
+      expect(body).toContain('"number_of_shards":1');
     });
   });
 

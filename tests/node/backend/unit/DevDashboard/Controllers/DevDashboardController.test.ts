@@ -150,15 +150,41 @@ describe('DevDashboard Controller', () => {
 
       controller.getStatus(req, res);
 
-      expect(res.json).toHaveBeenCalledWith(
-        expect.objectContaining({
-          timestamp: expect.any(String),
-          system: expect.any(Object),
-          coverage: expect.any(Object),
-          docs: expect.any(Object),
-          quality: expect.any(Object),
-        })
-      );
+      const jsonFn = res.json as ReturnType<typeof vi.fn>;
+      const response = jsonFn.mock.calls[0]?.[0] as Record<string, unknown>;
+
+      // Verify structure
+      expect(response).toHaveProperty('timestamp');
+      expect(response).toHaveProperty('system');
+      expect(response).toHaveProperty('coverage');
+      expect(response).toHaveProperty('docs');
+      expect(response).toHaveProperty('quality');
+
+      // Verify timestamp is valid ISO string
+      expect(typeof response.timestamp).toBe('string');
+      expect(new Date(response.timestamp as string).toISOString()).toBe(response.timestamp);
+
+      // Verify system data matches mock
+      const system = response.system as Record<string, unknown>;
+      expect(system).toHaveProperty('nodeVersion', 'v20.11.0');
+      expect(system).toHaveProperty('environment', 'test');
+
+      // Verify coverage data matches mock
+      const coverage = response.coverage as Record<string, unknown>;
+      expect(coverage).toHaveProperty('available', true);
+      expect(coverage).toHaveProperty('reportPath', 'build/coverage/node/index.html');
+
+      // Verify docs data matches mock
+      const docs = response.docs as Record<string, unknown>;
+      expect(docs).toHaveProperty('available', true);
+      expect(docs).toHaveProperty('reportPath', 'docs/api/node-backend/index.html');
+
+      // Verify quality data matches mock
+      const quality = response.quality as Record<string, unknown>;
+      expect(quality).toHaveProperty('eslint');
+      expect(quality).toHaveProperty('prettier');
+      expect(quality).toHaveProperty('typescript');
+      expect(quality).toHaveProperty('vitest');
     });
 
     it('should include node version information', () => {
@@ -168,8 +194,10 @@ describe('DevDashboard Controller', () => {
       controller.getStatus(req, res);
 
       const jsonFn = res.json as ReturnType<typeof vi.fn>;
-      const call = jsonFn.mock.calls[0]?.[0];
-      expect(call?.system).toHaveProperty('nodeVersion');
+      const response = jsonFn.mock.calls[0]?.[0] as Record<string, unknown>;
+      const system = response.system as Record<string, unknown>;
+
+      expect(system.nodeVersion).toBe('v20.11.0');
       expect(mockSystemService.getNodeInfo).toHaveBeenCalled();
     });
 
@@ -180,9 +208,11 @@ describe('DevDashboard Controller', () => {
       controller.getStatus(req, res);
 
       const jsonFn = res.json as ReturnType<typeof vi.fn>;
-      const call = jsonFn.mock.calls[0]?.[0];
-      expect(call?.system).toHaveProperty('uptime');
-      expect(call?.system).toHaveProperty('memoryUsage');
+      const response = jsonFn.mock.calls[0]?.[0] as Record<string, unknown>;
+      const system = response.system as Record<string, unknown>;
+
+      expect(system.uptime).toBe(12345);
+      expect(system.memoryUsage).toEqual({ heapUsed: 50, heapTotal: 100, external: 5, rss: 150 });
       expect(mockSystemService.getNodeInfo).toHaveBeenCalled();
     });
   });
@@ -194,15 +224,18 @@ describe('DevDashboard Controller', () => {
 
       controller.getSystem(req, res);
 
-      expect(res.json).toHaveBeenCalledWith(
-        expect.objectContaining({
-          timestamp: expect.any(String),
-          info: expect.objectContaining({
-            nodeVersion: expect.any(String),
-            uptime: expect.any(Number),
-          }),
-        })
-      );
+      const jsonFn = res.json as ReturnType<typeof vi.fn>;
+      const response = jsonFn.mock.calls[0]?.[0] as Record<string, unknown>;
+
+      expect(response).toHaveProperty('timestamp');
+      expect(typeof response.timestamp).toBe('string');
+      expect(new Date(response.timestamp as string).toISOString()).toBe(response.timestamp);
+
+      const info = response.info as Record<string, unknown>;
+      expect(info.nodeVersion).toBe('v20.11.0');
+      expect(info.uptime).toBe(12345);
+      expect(info.environment).toBe('test');
+      expect(info.memoryUsage).toEqual({ heapUsed: 50, heapTotal: 100, external: 5, rss: 150 });
     });
 
     it('should call system service method', () => {
@@ -222,17 +255,30 @@ describe('DevDashboard Controller', () => {
 
       controller.getQuality(req, res);
 
-      expect(res.json).toHaveBeenCalledWith(
-        expect.objectContaining({
-          timestamp: expect.any(String),
-          metrics: expect.objectContaining({
-            eslint: expect.any(Object),
-            prettier: expect.any(Object),
-            typescript: expect.any(Object),
-            vitest: expect.any(Object),
-          }),
-        })
-      );
+      const jsonFn = res.json as ReturnType<typeof vi.fn>;
+      const response = jsonFn.mock.calls[0]?.[0] as Record<string, unknown>;
+
+      expect(response).toHaveProperty('timestamp');
+      expect(typeof response.timestamp).toBe('string');
+      expect(new Date(response.timestamp as string).toISOString()).toBe(response.timestamp);
+
+      const metrics = response.metrics as Record<string, unknown>;
+      expect(metrics).toHaveProperty('eslint');
+      expect(metrics).toHaveProperty('prettier');
+      expect(metrics).toHaveProperty('typescript');
+      expect(metrics).toHaveProperty('vitest');
+
+      // Verify eslint config details
+      const eslint = metrics.eslint as Record<string, unknown>;
+      expect(eslint.enabled).toBe(true);
+      expect(eslint.configFile).toBe('eslint.config.js');
+      expect(eslint.status).toBe('configured');
+
+      // Verify prettier config details
+      const prettier = metrics.prettier as Record<string, unknown>;
+      expect(prettier.enabled).toBe(true);
+      expect(prettier.configFile).toBe('.prettierrc');
+      expect(prettier.status).toBe('configured');
     });
 
     it('should call quality service', () => {
@@ -252,13 +298,17 @@ describe('DevDashboard Controller', () => {
 
       controller.getCoverageStatus(req, res);
 
-      expect(res.json).toHaveBeenCalledWith(
-        expect.objectContaining({
-          timestamp: expect.any(String),
-          available: expect.any(Boolean),
-          reportPath: expect.any(String),
-        })
-      );
+      const jsonFn = res.json as ReturnType<typeof vi.fn>;
+      const response = jsonFn.mock.calls[0]?.[0] as Record<string, unknown>;
+
+      expect(response).toHaveProperty('timestamp');
+      expect(typeof response.timestamp).toBe('string');
+      expect(new Date(response.timestamp as string).toISOString()).toBe(response.timestamp);
+
+      expect(response.available).toBe(true);
+      expect(response.outdated).toBe(false);
+      expect(response.reportPath).toBe('build/coverage/node/index.html');
+      expect(response.message).toBe('Coverage report is available');
     });
 
     it('should call coverage service', () => {
@@ -278,12 +328,12 @@ describe('DevDashboard Controller', () => {
 
       await controller.generateCoverage(req, res);
 
-      expect(res.json).toHaveBeenCalledWith(
-        expect.objectContaining({
-          success: true,
-          message: expect.any(String),
-        })
-      );
+      const jsonFn = res.json as ReturnType<typeof vi.fn>;
+      const response = jsonFn.mock.calls[0]?.[0] as Record<string, unknown>;
+
+      expect(response.success).toBe(true);
+      expect(response.message).toBe('Coverage generated');
+      expect(response.reportPath).toBe('build/coverage/node/index.html');
     });
 
     it('should call coverage service generate method', async () => {
@@ -305,12 +355,11 @@ describe('DevDashboard Controller', () => {
 
       await controller.generateCoverage(req, res);
 
-      expect(res.json).toHaveBeenCalledWith(
-        expect.objectContaining({
-          success: false,
-          message: 'Generation failed',
-        })
-      );
+      const jsonFn = res.json as ReturnType<typeof vi.fn>;
+      const response = jsonFn.mock.calls[0]?.[0] as Record<string, unknown>;
+
+      expect(response.success).toBe(false);
+      expect(response.message).toBe('Generation failed');
     });
   });
 
@@ -321,13 +370,17 @@ describe('DevDashboard Controller', () => {
 
       controller.getDocsStatus(req, res);
 
-      expect(res.json).toHaveBeenCalledWith(
-        expect.objectContaining({
-          timestamp: expect.any(String),
-          available: expect.any(Boolean),
-          reportPath: expect.any(String),
-        })
-      );
+      const jsonFn = res.json as ReturnType<typeof vi.fn>;
+      const response = jsonFn.mock.calls[0]?.[0] as Record<string, unknown>;
+
+      expect(response).toHaveProperty('timestamp');
+      expect(typeof response.timestamp).toBe('string');
+      expect(new Date(response.timestamp as string).toISOString()).toBe(response.timestamp);
+
+      expect(response.available).toBe(true);
+      expect(response.outdated).toBe(false);
+      expect(response.reportPath).toBe('docs/api/node-backend/index.html');
+      expect(response.message).toBe('Documentation is available');
     });
 
     it('should call docs service', () => {
@@ -347,12 +400,12 @@ describe('DevDashboard Controller', () => {
 
       await controller.generateDocs(req, res);
 
-      expect(res.json).toHaveBeenCalledWith(
-        expect.objectContaining({
-          success: true,
-          message: expect.any(String),
-        })
-      );
+      const jsonFn = res.json as ReturnType<typeof vi.fn>;
+      const response = jsonFn.mock.calls[0]?.[0] as Record<string, unknown>;
+
+      expect(response.success).toBe(true);
+      expect(response.message).toBe('Docs generated');
+      expect(response.reportPath).toBe('docs/api/node-backend/index.html');
     });
 
     it('should call docs service generate method', async () => {
@@ -374,12 +427,11 @@ describe('DevDashboard Controller', () => {
 
       await controller.generateDocs(req, res);
 
-      expect(res.json).toHaveBeenCalledWith(
-        expect.objectContaining({
-          success: false,
-          message: 'Generation failed',
-        })
-      );
+      const jsonFn = res.json as ReturnType<typeof vi.fn>;
+      const response = jsonFn.mock.calls[0]?.[0] as Record<string, unknown>;
+
+      expect(response.success).toBe(false);
+      expect(response.message).toBe('Generation failed');
     });
   });
 
@@ -391,12 +443,20 @@ describe('DevDashboard Controller', () => {
       controller.getStatus(req, res);
 
       const jsonFn = res.json as ReturnType<typeof vi.fn>;
-      const call = jsonFn.mock.calls[0]?.[0];
-      expect(call).toHaveProperty('timestamp');
-      expect(call).toHaveProperty('system');
-      expect(call).toHaveProperty('coverage');
-      expect(call).toHaveProperty('docs');
-      expect(call).toHaveProperty('quality');
+      const response = jsonFn.mock.calls[0]?.[0] as Record<string, unknown>;
+
+      expect(response).toHaveProperty('timestamp');
+      expect(response).toHaveProperty('system');
+      expect(response).toHaveProperty('coverage');
+      expect(response).toHaveProperty('docs');
+      expect(response).toHaveProperty('quality');
+
+      // Verify each section has expected structure
+      expect(typeof response.timestamp).toBe('string');
+      expect(typeof response.system).toBe('object');
+      expect(typeof response.coverage).toBe('object');
+      expect(typeof response.docs).toBe('object');
+      expect(typeof response.quality).toBe('object');
     });
   });
 });

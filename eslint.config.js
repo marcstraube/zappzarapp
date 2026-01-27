@@ -113,6 +113,17 @@ export default [
   // Test files - relax some rules that don't work well with mocks
   {
     files: ['tests/**/*.ts', '**/*.test.ts', '**/*.spec.ts'],
+    languageOptions: {
+      parser: tsParser,
+      parserOptions: {
+        ecmaVersion: 2022,
+        sourceType: 'module',
+        project: './tsconfig.json',
+      },
+    },
+    plugins: {
+      '@typescript-eslint': tsPlugin,
+    },
     rules: {
       // vi.mocked() returns unbound methods by design
       '@typescript-eslint/unbound-method': 'off',

@@ -68,6 +68,7 @@ describe('Express App Factory', () => {
 
   describe('CORS Configuration', () => {
     it('should allow wildcard origin by default', async () => {
+      delete process.env.CORS_ORIGINS; // Ensure it's truly unset
       app = createApp();
       const response = await request(app).get('/health').set('Origin', 'https://example.com');
 
@@ -253,7 +254,10 @@ describe('Express App Factory', () => {
       const response = await request(app).get('/test-error');
 
       expect(response.status).toBe(500);
-      expect(response.body.error).toBe('Test error message');
+
+      const body = response.body as { error: string; timestamp: string };
+      expect(body.error).toBe('Test error message');
+      expect(body).toHaveProperty('timestamp');
     });
 
     it('should hide error details in production mode', () => {

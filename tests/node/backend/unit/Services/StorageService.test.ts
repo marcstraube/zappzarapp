@@ -276,14 +276,15 @@ describe('StorageService', () => {
       });
       await service.copy('source.txt', 'dest.txt');
 
-      expect(mockFetch).toHaveBeenCalledWith(
-        expect.any(String),
-        expect.objectContaining({
-          headers: expect.objectContaining({
-            'x-amz-copy-source': '/mybucket/source.txt',
-          }),
-        })
-      );
+      const calls = mockFetch.mock.calls as Array<[string, RequestInit]>;
+      const [url, options] = calls[0] as [string, RequestInit];
+
+      expect(typeof url).toBe('string');
+      expect(url).toContain('dest.txt');
+      expect(options.method).toBe('PUT');
+
+      const headers = options.headers as Record<string, string>;
+      expect(headers['x-amz-copy-source']).toBe('/mybucket/source.txt');
     });
   });
 
