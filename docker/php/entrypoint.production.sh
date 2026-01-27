@@ -22,10 +22,14 @@ fi
 
 # CORS Configuration Warning
 if [ "$CORS_ORIGINS" = "*" ]; then
-    echo "⚠️⚠️⚠️  CRITICAL SECURITY WARNING  ⚠️⚠️⚠️" >&2
-    echo "CORS_ORIGINS is set to wildcard (*) in production!" >&2
-    echo "This is a severe security risk. Set specific origins immediately." >&2
-    echo "⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️" >&2
+    echo "[entrypoint] CRITICAL: CORS_ORIGINS is set to wildcard (*) in production" >&2
+    echo "[entrypoint] PHP allows cross-origin requests from ANY domain" >&2
+    echo "[entrypoint] Security policy: Must restrict origins in production environments" >&2
+    echo "[entrypoint]" >&2
+    echo "[entrypoint] Fix: Update .env.production with specific origins:" >&2
+    echo "[entrypoint]   CORS_ORIGINS=https://yourdomain.com,https://api.yourdomain.com" >&2
+    echo "[entrypoint]" >&2
+    echo "[entrypoint] Container will start WITH insecure CORS configuration (WARNING only)." >&2
 fi
 
 exec "$@"

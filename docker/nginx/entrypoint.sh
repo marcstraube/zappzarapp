@@ -8,6 +8,59 @@ set -e
 # Default values if not set
 export NGINX_SSL_PORT=${NGINX_SSL_PORT:-8443}
 
+# =============================================================================
+# SSL Certificate Validation
+# =============================================================================
+# Nginx TLS Configuration:
+# - Certificates mounted at: /etc/nginx/certs/cert.{crt,key}
+# - Production: SSL is MANDATORY (exit 1 if missing)
+# - Development: SSL is optional (warn if missing)
+# =============================================================================
+
+SSL_CERT="/etc/nginx/certs/cert.crt"
+SSL_KEY="/etc/nginx/certs/cert.key"
+
+# Check if both certificate files exist
+if [ -f "$SSL_CERT" ] && [ -f "$SSL_KEY" ]; then
+    echo "[entrypoint] INFO: SSL certificates found - Nginx will use HTTPS"
+    echo "[entrypoint] Certificate: $SSL_CERT"
+    echo "[entrypoint] Key: $SSL_KEY"
+else
+    # No SSL certificates found - behavior depends on environment
+    ENV_MODE="${ENV:-development}"
+
+    # Diagnostic information about what was found
+    if [ -d /etc/nginx/certs ]; then
+        echo "[entrypoint] WARNING: /etc/nginx/certs exists but no valid certificates found"
+        echo "[entrypoint] Expected: /etc/nginx/certs/cert.{crt,key}"
+        echo "[entrypoint] Found files in /etc/nginx/certs:"
+        ls -la /etc/nginx/certs/ 2>/dev/null || echo "  (directory is empty or not accessible)"
+    else
+        echo "[entrypoint] INFO: No /etc/nginx/certs directory found (SSL certificates not mounted)"
+    fi
+
+    # Environment-specific behavior: Fail-Fast in production, warn in development
+    if [ "$ENV_MODE" = "production" ]; then
+        # PRODUCTION: SSL is MANDATORY for security compliance
+        echo "[entrypoint] FATAL: SSL certificates are required in production mode"
+        echo "[entrypoint] Nginx REQUIRES HTTPS in production environments"
+        echo "[entrypoint] Security policy: Web server must not serve traffic unencrypted"
+        echo "[entrypoint]"
+        echo "[entrypoint] Fix: Ensure SSL certificates are properly mounted:"
+        echo "[entrypoint]   1. Run: make ssl-internal"
+        echo "[entrypoint]   2. Verify compose.production.yaml mounts: ./docker/certs/nginx/cert.{crt,key}:/etc/nginx/certs/"
+        echo "[entrypoint]   3. Ensure files exist: docker/certs/nginx/cert.{crt,key}"
+        echo "[entrypoint]"
+        echo "[entrypoint] Container startup ABORTED to prevent security violation."
+        exit 1  # Fail-Fast: Do not start Nginx without SSL in production
+    else
+        # DEVELOPMENT: Warn but allow (local development flexibility)
+        echo "[entrypoint] WARNING: Nginx will start WITHOUT SSL support (development mode)"
+        echo "[entrypoint] This is acceptable for local development but NOT for production"
+        echo "[entrypoint] To test with SSL locally: run 'make ssl-internal'"
+    fi
+fi
+
 # Configure index directive and try_files fallback based on ENABLE_PHP
 # When PHP is disabled, serve static index.html instead of routing to PHP
 mkdir -p /run/nginx/snippets
