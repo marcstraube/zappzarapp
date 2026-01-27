@@ -3777,9 +3777,11 @@ security-zap-start: ## Start services in production mode for ZAP scanning
 	if [ "$${ENABLE_DATABASE:-true}" = "true" ]; then \
 		PROFILES="$$PROFILES --profile $${DB_TYPE:-postgres}"; \
 	fi; \
-	if [ "$${ENABLE_REDIS:-true}" = "true" ]; then \
-		PROFILES="$$PROFILES --profile redis"; \
-	fi; \
+	if [ "$${ENABLE_REDIS:-true}" = "true" ]; then PROFILES="$$PROFILES --profile redis"; fi; \
+	if [ "$${ENABLE_MERCURE:-false}" = "true" ]; then PROFILES="$$PROFILES --profile mercure"; fi; \
+	if [ "$${ENABLE_MEILISEARCH:-false}" = "true" ]; then PROFILES="$$PROFILES --profile meilisearch"; fi; \
+	if [ "$${ENABLE_ELASTICSEARCH:-false}" = "true" ]; then PROFILES="$$PROFILES --profile elasticsearch"; fi; \
+	if [ "$${ENABLE_SEAWEEDFS:-false}" = "true" ]; then PROFILES="$$PROFILES --profile seaweedfs"; fi; \
 	$(DC) -f compose.yaml -f compose.production.yaml $$PROFILES down || true
 	@echo -e "\033[0;33mStarting services in production mode...\033[0m"
 	@$(LOAD_ENV); \
@@ -3787,9 +3789,11 @@ security-zap-start: ## Start services in production mode for ZAP scanning
 	if [ "$${ENABLE_DATABASE:-true}" = "true" ]; then \
 		PROFILES="$$PROFILES --profile $${DB_TYPE:-postgres}"; \
 	fi; \
-	if [ "$${ENABLE_REDIS:-true}" = "true" ]; then \
-		PROFILES="$$PROFILES --profile redis"; \
-	fi; \
+	if [ "$${ENABLE_REDIS:-true}" = "true" ]; then PROFILES="$$PROFILES --profile redis"; fi; \
+	if [ "$${ENABLE_MERCURE:-false}" = "true" ]; then PROFILES="$$PROFILES --profile mercure"; fi; \
+	if [ "$${ENABLE_MEILISEARCH:-false}" = "true" ]; then PROFILES="$$PROFILES --profile meilisearch"; fi; \
+	if [ "$${ENABLE_ELASTICSEARCH:-false}" = "true" ]; then PROFILES="$$PROFILES --profile elasticsearch"; fi; \
+	if [ "$${ENABLE_SEAWEEDFS:-false}" = "true" ]; then PROFILES="$$PROFILES --profile seaweedfs"; fi; \
 	ENV=production $(DC) -f compose.yaml -f compose.production.yaml $$PROFILES up -d
 	@echo -e "\033[0;33mWaiting for services to be ready...\033[0m"
 	@sleep 10

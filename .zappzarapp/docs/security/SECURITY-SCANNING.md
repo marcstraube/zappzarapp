@@ -396,7 +396,8 @@ authentication flaws.
 
 **Key Configuration:**
 
-- Uses `make security-zap-start` for environment setup
+- Uses `make security-zap-start` for environment setup (all `ENABLE_*=true`
+  services)
 - Uses `zaproxy/action-baseline@v0.14.0` for scanning (GitHub-optimized)
 - Uses `make security-zap-stop` for cleanup
 - Runs against **production environment** (`ENV=production`)
@@ -465,7 +466,7 @@ make security-zap
 #### Manual Workflow
 
 ```bash
-# 1. Restart services in production mode (ensures clean state)
+# 1. Start services in production mode (clean state with correct ENV)
 make security-zap-start
 
 # 2. Run scan (can be repeated without restarting)
@@ -475,9 +476,24 @@ make security-zap-scan
 make security-zap-stop
 ```
 
-**Note:** `security-zap-start` uses `make restart` internally to ensure
-containers are recreated with production environment variables. This is critical
-for proper CSP configuration in the PHP container.
+**How it works:**
+
+- `security-zap-start` uses `docker compose -f compose.production.yaml` directly
+- Sets `ENV=production` explicitly before starting containers
+- This ensures PHP container receives correct ENV for strict CSP headers
+- Reads `ENABLE_*` flags from `.env` to determine which services to start
+
+**Services Started:**
+
+- **Always:** nginx (frontend), PHP (backend)
+- **Default:** Database (postgres/mariadb), Redis (cache/sessions)
+- **Optional:** Only if `ENABLE_*=true` in `.env`:
+  - Mercure (real-time features)
+  - Meilisearch/Elasticsearch (search features)
+  - SeaweedFS (file upload/download features)
+
+**Not tested:** RabbitMQ (backend-only), Mailpit (dev-only), Adminer/pgAdmin
+(dev-only)
 
 #### When to Run ZAP Scans
 
@@ -503,6 +519,37 @@ for proper CSP configuration in the PHP container.
 - CSP syntax validation
 - Secret detection
 - Fast SAST checks
+
+#### Production ENV Propagation
+
+**Why `compose.production.yaml` is used directly:**
+
+Docker Compose reads `.env` by default and **overrides shell environment
+variables**. This means `ENV=production make up` would still start containers
+with `ENV=development` (from `.env` file).
+
+**Solution:**
+
+```makefile
+# Direct docker compose invocation with production config
+ENV=production docker compose -f compose.yaml -f compose.production.yaml up -d
+```
+
+**Verification:**
+
+```bash
+# Check ENV in PHP container (should show "production")
+docker compose exec php printenv ENV
+
+# Check CSP header (should NOT contain unsafe-eval or unsafe-inline)
+curl -skI https://localhost:8443 | grep -i content-security-policy
+```
+
+**Critical for:**
+
+- `CspNonceHelper::buildCspHeader()` detects production mode via `getenv('ENV')`
+- Production CSP: nonce-based, no `unsafe-eval`, no `unsafe-inline`
+- Development CSP: allows `unsafe-eval` for Vite HMR
 
 ### Custom Rules
 
