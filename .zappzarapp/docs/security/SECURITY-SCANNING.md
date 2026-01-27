@@ -466,8 +466,12 @@ make security-zap-full
 
 - **Project development**: `make security-zap` (tests your configured stack)
 - **Before boilerplate release**: `make security-zap-full` (validates all
-  services)
+  services with maximum attack surface)
 - **Custom projects**: Usually `make security-zap` is sufficient
+
+**Note:** Full mode always tests **both** Node.js services (frontend + backend
+API) regardless of your `NODE_MODE` setting, ensuring complete platform security
+validation.
 
 **Note:** No need to specify `ENV=production` - it's automatically set by the
 targets to ensure production CSP is always tested.
@@ -518,34 +522,39 @@ make security-zap-stop
 **`security-zap-full` (Comprehensive):**
 
 - Tests ALL available services regardless of `.env`
-- Forces: PHP, Node, Database, Redis, Mercure, Meilisearch, Elasticsearch,
-  SeaweedFS
+- Forces: PHP, Database, Redis, **both Node.js services** (frontend + backend
+  API), Mercure, Meilisearch, Elasticsearch, SeaweedFS
 - Use Case: Boilerplate releases, platform security validation
+- **Maximum attack surface**: Always tests both Node.js profiles for complete
+  coverage
 
 **Services Started (by mode):**
 
-| Service           | Normal Mode (`.env`)   | Full Mode (forced)     |
-| ----------------- | ---------------------- | ---------------------- |
-| **nginx**         | Always (no profile)    | Always (no profile)    |
-| **PHP**           | `ENABLE_PHP=true`      | Always                 |
-| **Database**      | `ENABLE_DATABASE`      | Always (via DB_TYPE)   |
-| **Redis**         | `ENABLE_REDIS=true`    | Always                 |
-| **Node.js**       | `ENABLE_NODE=true`     | Always (via NODE_MODE) |
-| **Mercure**       | `ENABLE_MERCURE`       | Always                 |
-| **Meilisearch**   | `ENABLE_MEILISEARCH`   | Always                 |
-| **Elasticsearch** | `ENABLE_ELASTICSEARCH` | Always                 |
-| **SeaweedFS**     | `ENABLE_SEAWEEDFS`     | Always                 |
-| RabbitMQ/Mailpit  | Never (not in scope)   | Never                  |
+| Service           | Normal Mode (`.env`)   | Full Mode (forced)                            |
+| ----------------- | ---------------------- | --------------------------------------------- |
+| **nginx**         | Always (no profile)    | Always (no profile)                           |
+| **PHP**           | `ENABLE_PHP=true`      | Always                                        |
+| **Database**      | `ENABLE_DATABASE`      | Always (via DB_TYPE, one of postgres/mariadb) |
+| **Redis**         | `ENABLE_REDIS=true`    | Always                                        |
+| **Node.js**       | `ENABLE_NODE=true`     | **Always (both node + node-backend)**         |
+| **Mercure**       | `ENABLE_MERCURE`       | Always                                        |
+| **Meilisearch**   | `ENABLE_MEILISEARCH`   | Always                                        |
+| **Elasticsearch** | `ENABLE_ELASTICSEARCH` | Always                                        |
+| **SeaweedFS**     | `ENABLE_SEAWEEDFS`     | Always                                        |
+| RabbitMQ/Mailpit  | Never (not in scope)   | Never                                         |
 
-**Node.js Profile Selection (both modes):**
+**Node.js Profile Selection:**
 
-Determined by `NODE_MODE` from `.env`:
+**Normal Mode:** Determined by `NODE_MODE` from `.env`:
 
 - `assets|idle` → `--profile node` (Vite dev server)
 - `api` → `--profile node-backend` (Express API only)
 - `assets-api` → `--profile node --profile node-backend` (both, default)
 - `framework` → `--profile node` (framework server)
 - `framework-api` → `--profile node --profile node-backend` (framework + API)
+
+**Full Mode:** Always `--profile node --profile node-backend` (maximum coverage,
+ignores NODE_MODE)
 
 **Node.js API Coverage:**
 

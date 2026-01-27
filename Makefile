@@ -3821,29 +3821,12 @@ security-zap-start: ## Start services in production mode for ZAP scanning (respe
 security-zap-full-start: ## Start ALL services for comprehensive ZAP scanning (ignores .env, forces all ENABLE_*)
 	@echo -e "\033[0;33mStopping any running containers...\033[0m"
 	@$(LOAD_ENV); \
-	PROFILES="--profile php --profile $${DB_TYPE:-postgres} --profile redis"; \
-	case "$${NODE_MODE:-assets-api}" in \
-		assets|idle) PROFILES="$$PROFILES --profile node" ;; \
-		api) PROFILES="$$PROFILES --profile node-backend" ;; \
-		assets-api) PROFILES="$$PROFILES --profile node --profile node-backend" ;; \
-		framework) PROFILES="$$PROFILES --profile node" ;; \
-		framework-api) PROFILES="$$PROFILES --profile node --profile node-backend" ;; \
-		*) PROFILES="$$PROFILES --profile node-backend" ;; \
-	esac; \
-	PROFILES="$$PROFILES --profile mercure --profile meilisearch --profile elasticsearch --profile seaweedfs"; \
+	PROFILES="--profile php --profile $${DB_TYPE:-postgres} --profile redis --profile node --profile node-backend --profile mercure --profile meilisearch --profile elasticsearch --profile seaweedfs"; \
 	$(DC) -f compose.yaml -f compose.production.yaml $$PROFILES down || true
 	@echo -e "\033[0;33mStarting ALL services in production mode for comprehensive scan...\033[0m"
+	@echo -e "\033[0;36mℹ️  Full mode: Testing maximum attack surface (all Node.js services: frontend + backend API)\033[0m"
 	@$(LOAD_ENV); \
-	PROFILES="--profile php --profile $${DB_TYPE:-postgres} --profile redis"; \
-	case "$${NODE_MODE:-assets-api}" in \
-		assets|idle) PROFILES="$$PROFILES --profile node" ;; \
-		api) PROFILES="$$PROFILES --profile node-backend" ;; \
-		assets-api) PROFILES="$$PROFILES --profile node --profile node-backend" ;; \
-		framework) PROFILES="$$PROFILES --profile node" ;; \
-		framework-api) PROFILES="$$PROFILES --profile node --profile node-backend" ;; \
-		*) PROFILES="$$PROFILES --profile node-backend" ;; \
-	esac; \
-	PROFILES="$$PROFILES --profile mercure --profile meilisearch --profile elasticsearch --profile seaweedfs"; \
+	PROFILES="--profile php --profile $${DB_TYPE:-postgres} --profile redis --profile node --profile node-backend --profile mercure --profile meilisearch --profile elasticsearch --profile seaweedfs"; \
 	ENV=production $(DC) -f compose.yaml -f compose.production.yaml $$PROFILES up -d --build
 	@echo -e "\033[0;33mWaiting for services to be ready...\033[0m"
 	@sleep 15
