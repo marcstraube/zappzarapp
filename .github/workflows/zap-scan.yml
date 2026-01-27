@@ -12,9 +12,6 @@ env:
   COMPOSE_PROJECT_NAME: zappzarapp-zap
   # Use CI-specific compose file (no lockfile bind mounts)
   COMPOSE_FILE: compose.yaml:compose.ci.yaml
-  # IMPORTANT: Run ZAP scan against PRODUCTION configuration
-  # This ensures we test the strict CSP without unsafe-eval/unsafe-inline
-  ENV: production
 
 permissions:
   contents: read
@@ -79,7 +76,7 @@ jobs:
           echo "# OWASP ZAP Baseline Scan" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "**Target:** http://localhost:8080" >> $GITHUB_STEP_SUMMARY
-          echo "**Environment:** Production (ENV=production)" >> $GITHUB_STEP_SUMMARY
+          echo "**Environment:** Production (strict CSP, no unsafe-eval/unsafe-inline)" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "See artifacts for detailed HTML and JSON reports." >> $GITHUB_STEP_SUMMARY
 

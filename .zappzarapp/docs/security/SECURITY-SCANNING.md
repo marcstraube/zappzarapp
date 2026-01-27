@@ -400,8 +400,8 @@ authentication flaws.
   services)
 - Uses `zaproxy/action-baseline@v0.14.0` for scanning (GitHub-optimized)
 - Uses `make security-zap-stop` for cleanup
-- Runs against **production environment** (`ENV=production`)
-- Tests strict CSP without unsafe-eval/unsafe-inline
+- Runs against production configuration (strict CSP without
+  unsafe-eval/unsafe-inline)
 - Uses `.zap/rules.tsv` for custom rules
 - Generates HTML and JSON reports (retained 30 days)
 
@@ -429,10 +429,8 @@ pipeline and uses Make targets for consistency with local development:
 ```yaml
 scan:zap:
   stage: scan
-  variables:
-    ENV: production # Test production configuration
   script:
-    - make security-zap-start # Setup
+    - make security-zap-start # Setup (uses production config)
     - make security-zap-scan # Scan
   after_script:
     - make security-zap-stop # Cleanup (runs always)

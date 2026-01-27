@@ -3846,9 +3846,9 @@ security-zap-full: ## Full ZAP scan lifecycle (start -> scan -> stop)
 	@echo -e "\033[0;34m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\033[0m"
 	@echo -e "\033[0;34m  OWASP ZAP Security Scan - Full Cycle\033[0m"
 	@echo -e "\033[0;34m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\033[0m"
-	@ENV=$${ENV:-production} $(MAKE) security-zap-start
-	@ENV=$${ENV:-production} $(MAKE) security-zap-scan
-	@ENV=$${ENV:-production} $(MAKE) security-zap-stop
+	@$(MAKE) security-zap-start
+	@$(MAKE) security-zap-scan
+	@$(MAKE) security-zap-stop
 
 security-zap: security-zap-full ## Alias for security-zap-full (default ZAP scan)
 
