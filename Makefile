@@ -3771,8 +3771,8 @@ security-audit-node: ## Scan Node.js dependencies for known vulnerabilities
 	@$(DC) run --rm -T dev-tools pnpm audit
 
 security-zap-start: ## Start services in production mode for ZAP scanning
-	@echo -e "\033[0;33mStarting services in production mode...\033[0m"
-	@ENV=production $(MAKE) up
+	@echo -e "\033[0;33mRestarting services in production mode...\033[0m"
+	@ENV=production $(MAKE) restart
 	@echo -e "\033[0;33mWaiting for services to be ready...\033[0m"
 	@sleep 10
 	@echo -e "\033[0;32m✓ Services ready for ZAP scan\033[0m"

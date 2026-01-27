@@ -462,18 +462,22 @@ make security-zap-full
 make security-zap
 ```
 
-#### Manual Workflow (Services Stay Running)
+#### Manual Workflow
 
 ```bash
-# 1. Start services in production mode
+# 1. Restart services in production mode (ensures clean state)
 make security-zap-start
 
-# 2. Run scan (can be repeated)
+# 2. Run scan (can be repeated without restarting)
 make security-zap-scan
 
 # 3. Stop services when done
 make security-zap-stop
 ```
+
+**Note:** `security-zap-start` uses `make restart` internally to ensure
+containers are recreated with production environment variables. This is critical
+for proper CSP configuration in the PHP container.
 
 #### When to Run ZAP Scans
 
