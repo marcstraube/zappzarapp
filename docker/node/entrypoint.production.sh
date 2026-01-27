@@ -23,5 +23,13 @@ if [ -d "/run/secrets" ]; then
     fi
 fi
 
+# CORS Configuration Warning
+if [ "$CORS_ORIGINS" = "*" ]; then
+    echo "⚠️⚠️⚠️  CRITICAL SECURITY WARNING  ⚠️⚠️⚠️" >&2
+    echo "CORS_ORIGINS is set to wildcard (*) in production!" >&2
+    echo "This is a severe security risk. Set specific origins immediately." >&2
+    echo "⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️" >&2
+fi
+
 # Execute the command
 exec "$@"

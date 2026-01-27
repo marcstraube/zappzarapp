@@ -3681,8 +3681,17 @@ check-cors: ## Show current CORS configuration
 	else \
 		echo -e "\033[0;32m  ✓ .env has restrictive CORS_ORIGINS (secure default)\033[0m"; \
 	fi
+	@if [ -f .env.local ] && grep -q "^CORS_ORIGINS=\*" .env.local 2>/dev/null; then \
+		echo -e "\033[0;33m  ℹ️  INFO: .env.local uses CORS_ORIGINS=* (development override)\033[0m"; \
+	fi
 	@if [ -f .env.production ] && grep -q "^CORS_ORIGINS=\*" .env.production 2>/dev/null; then \
-		echo -e "\033[0;31m  ⚠️  DANGER: .env.production uses CORS_ORIGINS=* (NEVER use in production!)\033[0m"; \
+		echo -e "\033[0;31m  ❌ CRITICAL: .env.production uses CORS_ORIGINS=* (NEVER use in production!)\033[0m"; \
+		echo -e "\033[0;31m  This is a severe security risk. Deployment blocked.\033[0m"; \
+		exit 1; \
+	else \
+		if [ -f .env.production ]; then \
+			echo -e "\033[0;32m  ✓ .env.production has restrictive CORS_ORIGINS (secure)\033[0m"; \
+		fi \
 	fi
 	@echo ""
 	@echo -e "\033[0;36mDocumentation:\033[0m .zappzarapp/docs/security/CORS.md"

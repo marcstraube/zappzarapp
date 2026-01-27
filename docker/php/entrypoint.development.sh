@@ -37,6 +37,18 @@ fi
 # Skip dependency check if PHP_SKIP_DEPENDENCY_CHECK=1 (used in CI for docker compose exec)
 if [ "$1" = "php-fpm" ]; then
     echo "[entrypoint.development] Starting PHP-FPM service..."
+
+    # CORS Configuration Warning
+    if [ "$CORS_ORIGINS" = "*" ]; then
+        echo "⚠️  [CORS WARNING] Wildcard origin (*) configured - credentials disabled" >&2
+        if [ "${APP_ENV:-development}" = "production" ]; then
+            echo "⚠️⚠️⚠️  CRITICAL SECURITY WARNING  ⚠️⚠️⚠️" >&2
+            echo "CORS_ORIGINS is set to wildcard (*) in production!" >&2
+            echo "This is a severe security risk. Set specific origins." >&2
+            echo "⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️" >&2
+        fi
+    fi
+
     if [ "${PHP_SKIP_DEPENDENCY_CHECK:-0}" != "1" ]; then
         if [ ! -d "/var/www/html/vendor" ] || [ ! -f "/var/www/html/vendor/autoload.php" ]; then
             echo "[entrypoint.development] ERROR: Composer dependencies not installed!"

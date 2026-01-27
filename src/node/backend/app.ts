@@ -53,6 +53,29 @@ export function createApp(options: AppOptions = {}): Express {
   const app: Express = express();
   const healthCheckService = new HealthCheckService(options.pool ?? null);
 
+  // CORS Configuration Warnings
+  if (CORS_ORIGINS === '*') {
+    logger.warn(
+      {
+        corsOrigins: CORS_ORIGINS,
+        credentials: 'disabled-for-wildcard',
+        environment: NODE_ENV,
+      },
+      'CORS configured with wildcard (*) - credentials disabled for browser compatibility'
+    );
+
+    if (NODE_ENV === 'production') {
+      logger.error(
+        {
+          corsOrigins: CORS_ORIGINS,
+          environment: NODE_ENV,
+          severity: 'CRITICAL',
+        },
+        '⚠️  SECURITY RISK: CORS_ORIGINS=* in production! Set specific origins immediately.'
+      );
+    }
+  }
+
   // HTTP request logging middleware
   app.use(
     pinoHttp({
@@ -93,7 +116,12 @@ export function createApp(options: AppOptions = {}): Express {
 
     res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
     res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-    res.header('Access-Control-Allow-Credentials', 'true');
+
+    // Credentials: Always in production, conditional in development
+    // Wildcard (*) + credentials = browser rejection, so we disable credentials for wildcard
+    if (NODE_ENV === 'production' || CORS_ORIGINS !== '*') {
+      res.header('Access-Control-Allow-Credentials', 'true');
+    }
 
     if (req.method === 'OPTIONS') {
       res.sendStatus(200);

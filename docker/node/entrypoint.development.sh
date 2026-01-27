@@ -70,6 +70,17 @@ fi
 echo "[entrypoint.development] Starting Node.js container..."
 echo "[entrypoint.development] NODE_MODE: ${NODE_MODE:-idle}"
 
+# CORS Configuration Warning
+if [ "$CORS_ORIGINS" = "*" ]; then
+    echo "⚠️  [CORS WARNING] Wildcard origin (*) configured - credentials disabled" >&2
+    if [ "${NODE_ENV:-development}" = "production" ]; then
+        echo "⚠️⚠️⚠️  CRITICAL SECURITY WARNING  ⚠️⚠️⚠️" >&2
+        echo "CORS_ORIGINS is set to wildcard (*) in production!" >&2
+        echo "This is a severe security risk. Set specific origins." >&2
+        echo "⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️" >&2
+    fi
+fi
+
 # Helper function: check if dependencies are installed
 check_dependencies() {
     if [ ! -d "/app/node_modules" ] || [ -z "$(ls -A /app/node_modules 2>/dev/null)" ]; then

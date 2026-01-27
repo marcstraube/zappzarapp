@@ -22,6 +22,15 @@ final readonly class CorsMiddleware
     public function __construct(?string $allowedOrigins = null)
     {
         $this->allowedOrigins = $allowedOrigins ?? (getenv('CORS_ORIGINS') ?: '');
+
+        // CORS Configuration Warnings
+        if ($this->allowedOrigins === '*') {
+            error_log('[CORS WARNING] Wildcard origin (*) configured - credentials disabled for browser compatibility');
+
+            if (getenv('APP_ENV') === 'production') {
+                error_log('[CORS CRITICAL] ⚠️  SECURITY RISK: CORS_ORIGINS=* in production! Set specific origins immediately.');
+            }
+        }
     }
 
     /**
@@ -44,7 +53,14 @@ final readonly class CorsMiddleware
             header('Access-Control-Allow-Origin: ' . $allowOrigin);
             header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS');
             header('Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-With');
-            header('Access-Control-Allow-Credentials: true');
+
+            // Credentials: Always in production, conditional in development
+            // Wildcard (*) + credentials = browser rejection, so we disable credentials for wildcard
+            $appEnv = getenv('APP_ENV') ?: 'development';
+            if ($appEnv === 'production' || $this->allowedOrigins !== '*') {
+                header('Access-Control-Allow-Credentials: true');
+            }
+
             header('Access-Control-Max-Age: 3600');
         }
 

@@ -433,6 +433,16 @@ jobs:
           make secrets
           make ssl-internal
 
+      - name: Verify CORS Configuration (Security)
+        run: |
+          if [ -f .env.production ] && grep -q "^CORS_ORIGINS=\*" .env.production; then
+            echo "❌ CRITICAL: CORS_ORIGINS=* found in .env.production"
+            echo "This is a severe security risk in production."
+            echo "Set specific allowed origins instead of wildcard."
+            exit 1
+          fi
+          echo "✓ CORS configuration validated"
+
       - name: Build production images
         run: |
           # Create empty lockfiles for production build (Dockerfile COPY needs them)

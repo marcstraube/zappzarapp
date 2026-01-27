@@ -107,6 +107,39 @@ describe('Express App Factory', () => {
       expect(response.headers['access-control-allow-methods']).toContain('GET');
       expect(response.headers['access-control-allow-methods']).toContain('POST');
     });
+
+    it('should NOT set credentials header with wildcard origin in development', async () => {
+      process.env.NODE_ENV = 'development';
+      process.env.CORS_ORIGINS = '*';
+      app = createApp();
+
+      const response = await request(app).get('/health').set('Origin', 'https://example.com');
+
+      expect(response.headers['access-control-allow-origin']).toBe('*');
+      expect(response.headers['access-control-allow-credentials']).toBeUndefined();
+    });
+
+    it('should set credentials header with wildcard origin in production', async () => {
+      process.env.NODE_ENV = 'production';
+      process.env.CORS_ORIGINS = '*';
+      app = createApp();
+
+      const response = await request(app).get('/health').set('Origin', 'https://example.com');
+
+      expect(response.headers['access-control-allow-origin']).toBe('*');
+      expect(response.headers['access-control-allow-credentials']).toBe('true');
+    });
+
+    it('should always set credentials header with specific origins', async () => {
+      process.env.NODE_ENV = 'development';
+      process.env.CORS_ORIGINS = 'https://example.com';
+      app = createApp();
+
+      const response = await request(app).get('/health').set('Origin', 'https://example.com');
+
+      expect(response.headers['access-control-allow-origin']).toBe('https://example.com');
+      expect(response.headers['access-control-allow-credentials']).toBe('true');
+    });
   });
 
   describe('Security Headers', () => {
