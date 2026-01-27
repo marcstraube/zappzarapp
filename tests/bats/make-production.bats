@@ -137,3 +137,70 @@ teardown_file() {
     run docker compose -f compose.yaml -f compose.production.yaml config --quiet
     assert_success
 }
+
+# =============================================================================
+# SSL Certificate Validation
+# =============================================================================
+# These tests verify that SSL certificates are properly configured before
+# attempting to start production containers. Catches issues early in local dev.
+# =============================================================================
+
+@test "[Production] SSL internal certificates exist" {
+    # Verify internal SSL certificates are generated (required for database SSL)
+    run test -f docker/certs/internal/cert.crt
+    assert_success "Internal certificate not found. Run: make ssl-internal"
+
+    run test -f docker/certs/internal/cert.key
+    assert_success "Internal certificate key not found. Run: make ssl-internal"
+}
+
+@test "[Production] SSL nginx certificates exist" {
+    # Verify nginx SSL certificates are generated
+    run test -f docker/certs/nginx/cert.crt
+    assert_success "Nginx certificate not found. Run: make ssl-internal"
+
+    run test -f docker/certs/nginx/cert.key
+    assert_success "Nginx certificate key not found. Run: make ssl-internal"
+}
+
+@test "[Production] Database SSL certificates are correctly mapped in compose.production.yaml" {
+    # Extract postgres volume mounts
+    local postgres_volumes
+    postgres_volumes=$(docker compose -f compose.yaml -f compose.production.yaml config | \
+        awk '/^  postgres:/,/^  [a-z]/ {print}' | \
+        grep "docker/certs" || true)
+
+    # Verify it mounts internal certs, not root certs directory
+    if echo "$postgres_volumes" | grep -q "docker/certs/internal:/tmp/certs"; then
+        true  # Success
+    else
+        echo "# postgres volumes: $postgres_volumes" >&3
+        echo "# Expected: Should mount ./docker/certs/internal:/tmp/certs:ro" >&3
+        echo "# This ensures entrypoint.sh finds certs at /tmp/certs/cert.{crt,key}" >&3
+        false
+    fi
+
+    # Extract mariadb volume mounts
+    local mariadb_volumes
+    mariadb_volumes=$(docker compose -f compose.yaml -f compose.production.yaml config | \
+        awk '/^  mariadb:/,/^  [a-z]/ {print}' | \
+        grep "docker/certs" || true)
+
+    # Verify it mounts internal certs
+    if echo "$mariadb_volumes" | grep -q "docker/certs/internal:/tmp/certs"; then
+        true  # Success
+    else
+        echo "# mariadb volumes: $mariadb_volumes" >&3
+        echo "# Expected: Should mount ./docker/certs/internal:/tmp/certs:ro" >&3
+        false
+    fi
+}
+
+@test "[Production] Internal certificates are readable" {
+    # Verify file permissions allow reading
+    run test -r docker/certs/internal/cert.crt
+    assert_success "Internal certificate not readable"
+
+    run test -r docker/certs/internal/cert.key
+    assert_success "Internal certificate key not readable"
+}

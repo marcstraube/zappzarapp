@@ -196,7 +196,7 @@ services:
       # Secrets (bind mount)
       - ./secrets:/run/secrets:ro
       # SSL certificates (mounted to /tmp/certs, entrypoint copies with correct ownership)
-      - ./docker/certs:/tmp/certs:ro
+      - ./docker/certs/internal:/tmp/certs:ro
     command: >
       --innodb-buffer-pool-size=256M
       --max-connections=100
@@ -247,7 +247,7 @@ services:
       # Secrets (bind mount)
       - ./secrets:/run/secrets:ro
       # SSL certificates (mounted to /tmp/certs, entrypoint copies with correct ownership)
-      - ./docker/certs:/tmp/certs:ro
+      - ./docker/certs/internal:/tmp/certs:ro
     command: >
       postgres
       -c shared_buffers=256MB
