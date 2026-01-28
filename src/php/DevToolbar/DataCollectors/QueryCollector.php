@@ -13,6 +13,7 @@ namespace DevToolbar\DataCollectors;
 class QueryCollector implements CollectorInterface
 {
     private static ?self $instance = null;
+    /** @var array<int, array<string, mixed>> */
     private array $queries = [];
     private bool $collecting = false;
 

@@ -11,6 +11,7 @@ namespace DevToolbar\DataCollectors;
  */
 class HttpClientCollector implements CollectorInterface
 {
+    /** @var array<int, array<string, mixed>> */
     private array $requests = [];
     private bool $collecting = false;
 
@@ -105,17 +106,20 @@ class HttpClientCollector implements CollectorInterface
         }
 
         $start = hrtime(true);
-        $result = @file_get_contents($url, ...$args);
+        $result = file_get_contents($url, ...$args);
         $time = (hrtime(true) - $start) / 1_000_000; // Convert to milliseconds
 
-        $status = $this->parseHttpStatus($http_response_header ?? []);
+        // $http_response_header is set by file_get_contents() in the calling scope
+        /** @var array<int, string> $responseHeaders */
+        $responseHeaders = $http_response_header;
+        $status = $this->parseHttpStatus($responseHeaders);
 
         $this->trackRequest(
             'GET',
             $url,
             $time,
             $status,
-            $http_response_header ?? [],
+            $responseHeaders,
             $result
         );
 

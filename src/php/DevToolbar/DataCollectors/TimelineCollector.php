@@ -11,6 +11,7 @@ namespace DevToolbar\DataCollectors;
  */
 class TimelineCollector implements CollectorInterface
 {
+    /** @var array<string, array<string, mixed>> */
     private array $events = [];
     private float $requestStart;
     private bool $collecting = false;
@@ -125,7 +126,7 @@ class TimelineCollector implements CollectorInterface
 
         // Update the start event with duration
         $this->events[$startKey]['duration'] = round($duration, 2);
-        $this->events[$startKey]['label'] = rtrim($this->events[$startKey]['label'], ' Start') ?? $this->events[$startKey]['label'];
+        $this->events[$startKey]['label'] = rtrim($this->events[$startKey]['label'], ' Start');
     }
 
     /**

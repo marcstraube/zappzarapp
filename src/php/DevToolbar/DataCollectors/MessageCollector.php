@@ -14,6 +14,7 @@ use Monolog\LogRecord;
  */
 class MessageCollector extends AbstractProcessingHandler implements CollectorInterface
 {
+    /** @var array<int, array<string, mixed>> */
     private array $messages = [];
     private bool $collecting = false;
 

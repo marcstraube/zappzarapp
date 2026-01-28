@@ -85,8 +85,8 @@ class DataInjectionRenderer implements RendererInterface
     private function extractMetadata(string $requestId): array
     {
         // Get request data from collector
-        $requestData = $this->collectors['request']?->getData() ?? [];
-        $queryData = $this->collectors['queries']?->getData() ?? [];
+        $requestData = isset($this->collectors['request']) ? $this->collectors['request']->getData() : [];
+        $queryData = isset($this->collectors['queries']) ? $this->collectors['queries']->getData() : [];
 
         return [
             'id' => $requestId,

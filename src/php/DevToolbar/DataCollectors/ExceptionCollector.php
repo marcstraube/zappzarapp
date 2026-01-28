@@ -14,6 +14,7 @@ use Throwable;
 class ExceptionCollector implements CollectorInterface
 {
     private static ?self $instance = null;
+    /** @var array<int, array<string, mixed>> */
     private array $exceptions = [];
     private bool $collecting = false;
 
@@ -45,6 +46,7 @@ class ExceptionCollector implements CollectorInterface
      * @param Throwable $exception
      * @param bool $handled Whether exception was caught/handled
      * @return void
+     * @SuppressWarnings(PHPMD.BooleanArgumentFlag)
      */
     public function trackException(Throwable $exception, bool $handled = true): void
     {

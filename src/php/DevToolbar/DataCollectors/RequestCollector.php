@@ -20,6 +20,7 @@ class RequestCollector implements CollectorInterface
         'credit_card', 'cvv', 'ssn',
     ];
 
+    /** @var array<string, mixed> */
     private array $data = [];
     private float $startTime;
     private int $startMemory;

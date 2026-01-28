@@ -34,7 +34,13 @@ class DevToolbarGuard
             return false;
         }
 
-        // Layer 4: Optional - Skip for AJAX requests
+        // Layer 4: Skip for DevToolbar internal AJAX requests (Phase 2.1)
+        // These requests should not be tracked/stored
+        if (isset($_GET['dev_toolbar_action'])) {
+            return false;
+        }
+
+        // Layer 5: Optional - Skip for other AJAX requests
         if (self::isAjaxRequest()) {
             return false;
         }

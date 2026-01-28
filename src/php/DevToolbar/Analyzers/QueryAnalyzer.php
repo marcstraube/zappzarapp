@@ -74,17 +74,17 @@ class QueryAnalyzer
     private static function normalizeQuery(string $sql): string
     {
         // Replace numbers with ?
-        $sql = preg_replace('/\b\d+\b/', '?', $sql);
+        $sql = (string)preg_replace('/\b\d+\b/', '?', $sql);
 
         // Replace quoted strings with ?
-        $sql = preg_replace("/'[^']*'/", '?', $sql);
-        $sql = preg_replace('/"[^"]*"/', '?', $sql);
+        $sql = (string)preg_replace("/'[^']*'/", '?', $sql);
+        $sql = (string)preg_replace('/"[^"]*"/', '?', $sql);
 
         // Replace IN clauses with placeholder
-        $sql = preg_replace('/IN\s*\([^)]*\)/i', 'IN (?)', $sql);
+        $sql = (string)preg_replace('/IN\s*\([^)]*\)/i', 'IN (?)', $sql);
 
         // Normalize whitespace
-        $sql = preg_replace('/\s+/', ' ', $sql);
+        $sql = (string)preg_replace('/\s+/', ' ', $sql);
 
         return trim(strtoupper($sql));
     }
@@ -258,12 +258,14 @@ class QueryAnalyzer
         $totalTime = array_sum(array_column($queries, 'time'));
         $count = count($queries);
 
+        $times = array_column($queries, 'time');
+
         return [
             'total_count' => $count,
             'total_time' => round($totalTime, 2),
             'avg_time' => $count > 0 ? round($totalTime / $count, 2) : 0,
-            'slowest' => $count > 0 ? max(array_column($queries, 'time')) : 0,
-            'fastest' => $count > 0 ? min(array_column($queries, 'time')) : 0,
+            'slowest' => !empty($times) ? max($times) : 0,
+            'fastest' => !empty($times) ? min($times) : 0,
         ];
     }
 }

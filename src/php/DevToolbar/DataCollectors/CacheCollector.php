@@ -11,6 +11,7 @@ namespace DevToolbar\DataCollectors;
  */
 class CacheCollector implements CollectorInterface
 {
+    /** @var array<int, array<string, mixed>> */
     private array $operations = [];
     private int $hits = 0;
     private int $misses = 0;
@@ -71,6 +72,7 @@ class CacheCollector implements CollectorInterface
      * @param bool $hit Whether operation was a cache hit (for get operations)
      * @param int|null $ttl TTL in seconds (for set operations)
      * @return void
+     * @SuppressWarnings(PHPMD.BooleanArgumentFlag)
      */
     public function trackOperation(
         string $type,
@@ -115,6 +117,7 @@ class CacheCollector implements CollectorInterface
      * @param \Redis|object $redis Redis instance
      * @param string $key Cache key
      * @return mixed Cached value or false
+     * @phpstan-param \Redis $redis
      */
     public function wrapRedisGet($redis, string $key): mixed
     {
@@ -148,6 +151,7 @@ class CacheCollector implements CollectorInterface
      * @param mixed $value Value to cache
      * @param int|null $ttl TTL in seconds
      * @return bool Success status
+     * @phpstan-param \Redis $redis
      */
     public function wrapRedisSet($redis, string $key, mixed $value, ?int $ttl = null): bool
     {
@@ -177,6 +181,7 @@ class CacheCollector implements CollectorInterface
      * @param \Redis|object $redis Redis instance
      * @param string|array<string> $key Cache key(s)
      * @return int Number of keys deleted
+     * @phpstan-param \Redis $redis
      */
     public function wrapRedisDelete($redis, string|array $key): int
     {
@@ -244,8 +249,11 @@ class CacheCollector implements CollectorInterface
         }
 
         // Try to unserialize if serialized
-        if (is_string($value) && @unserialize($value) !== false) {
-            $value = unserialize($value);
+        if (is_string($value)) {
+            $unserialized = unserialize($value);
+            if ($unserialized !== false) {
+                $value = $unserialized;
+            }
         }
 
         if (is_string($value)) {
@@ -260,7 +268,7 @@ class CacheCollector implements CollectorInterface
         }
 
         if (is_array($value)) {
-            foreach ($value as $key => $val) {
+            foreach (array_keys($value) as $key) {
                 if (in_array(strtolower((string)$key), ['password', 'token', 'secret', 'api_key'])) {
                     $value[$key] = '[FILTERED]';
                 }

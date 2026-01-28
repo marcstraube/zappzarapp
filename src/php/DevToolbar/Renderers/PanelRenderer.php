@@ -306,7 +306,7 @@ class PanelRenderer implements RendererInterface
             $queryClass = $timeClass;
 
             $sql = htmlspecialchars($query['sql'] ?? '');
-            $bindings = json_encode($query['bindings'] ?? [], JSON_PRETTY_PRINT);
+            $bindings = json_encode($query['bindings'] ?? [], JSON_PRETTY_PRINT) ?: '[]';
 
             $html .= sprintf(
                 '<div class="dev-toolbar-query %s">
@@ -655,14 +655,12 @@ class PanelRenderer implements RendererInterface
      */
     private function renderHistoryTab(array $data): string
     {
-        $requests = $data['requests'] ?? [];
-        $stats = $data['statistics'] ?? [];
         $trends = $data['trends'] ?? [];
 
         return $this->renderHistoryFilters()
-            . $this->renderHistoryStatistics($stats)
+            . $this->renderHistoryStatistics()
             . $this->renderHistoryTrends($trends)
-            . $this->renderHistoryRequestList($requests)
+            . $this->renderHistoryRequestList()
             . $this->renderHistoryExport();
     }
 
@@ -714,10 +712,9 @@ class PanelRenderer implements RendererInterface
     /**
      * Render history statistics (placeholder for client-side rendering)
      *
-     * @param array<string, mixed> $stats
      * @return string HTML
      */
-    private function renderHistoryStatistics(array $stats): string
+    private function renderHistoryStatistics(): string
     {
         // Render placeholder - JavaScript will populate from localStorage
         $html = '<div class="dev-toolbar-section">
@@ -820,10 +817,9 @@ class PanelRenderer implements RendererInterface
     /**
      * Render history request list
      *
-     * @param array<string, array<string, mixed>> $requests
      * @return string HTML
      */
-    private function renderHistoryRequestList(array $requests): string
+    private function renderHistoryRequestList(): string
     {
         // Render placeholder - JavaScript will populate from localStorage
         $html = '<div class="dev-toolbar-section">

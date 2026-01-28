@@ -100,7 +100,7 @@ class RequestStore
             $toRemove = $currentCount - $maxRequests;
             $removed = 0;
 
-            foreach ($requests as $id => $request) {
+            foreach (array_keys($requests) as $id) {
                 if ($removed >= $toRemove) {
                     break;
                 }
@@ -207,14 +207,15 @@ class RequestStore
         $totalMemory = array_sum(array_column($requests, 'memory'));
         $totalQueries = array_sum(array_column($requests, 'query_count'));
         $count = count($requests);
+        $times = array_column($requests, 'time');
 
         return [
             'total_requests' => $count,
             'avg_time' => round($totalTime / $count, 2),
             'avg_memory' => round($totalMemory / $count / 1024 / 1024, 2), // MB
             'avg_queries' => round($totalQueries / $count, 1),
-            'slowest_time' => max(array_column($requests, 'time')),
-            'fastest_time' => min(array_column($requests, 'time')),
+            'slowest_time' => !empty($times) ? max($times) : 0,
+            'fastest_time' => !empty($times) ? min($times) : 0,
         ];
     }
 
@@ -232,7 +233,7 @@ class RequestStore
         if (isset($filters['method'])) {
             $requests = array_filter(
                 $requests,
-                fn($r) => strtoupper($r['method']) === strtoupper($filters['method'])
+                fn($req) => strtoupper($req['method']) === strtoupper($filters['method'])
             );
         }
 
@@ -241,7 +242,7 @@ class RequestStore
             $statusPrefix = substr($filters['status'], 0, 1); // e.g., '2' for 2xx
             $requests = array_filter(
                 $requests,
-                fn($r) => str_starts_with((string)$r['status'], $statusPrefix)
+                fn($req) => str_starts_with((string)$req['status'], $statusPrefix)
             );
         }
 
@@ -249,7 +250,7 @@ class RequestStore
         if (isset($filters['uri']) && $filters['uri'] !== '') {
             $requests = array_filter(
                 $requests,
-                fn($r) => str_contains($r['uri'], $filters['uri'])
+                fn($req) => str_contains($req['uri'], $filters['uri'])
             );
         }
 
@@ -257,7 +258,7 @@ class RequestStore
         if (isset($filters['min_time'])) {
             $requests = array_filter(
                 $requests,
-                fn($r) => $r['time'] >= $filters['min_time']
+                fn($req) => $req['time'] >= $filters['min_time']
             );
         }
 
@@ -401,7 +402,7 @@ class RequestStore
     private static function ensureSessionStarted(): void
     {
         if (session_status() === PHP_SESSION_NONE) {
-            @session_start();
+            session_start();
         }
     }
 }
