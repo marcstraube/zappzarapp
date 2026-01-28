@@ -345,6 +345,7 @@
         isViewingHistoricalRequest: false,
         currentHistoricalRequestId: null, // Track which historical request is currently displayed
         currentRequestData: null, // Store initial request data for restoration
+        originalBadgeCounts: null, // Store original badge counts for restoration
 
         init() {
             console.log('[DevToolbar] Initializing...');
@@ -376,8 +377,12 @@
                 }))
             );
 
-            // Store current request data for restoration
+            // Store current request data and badge counts for restoration
             this.storeCurrentRequestData();
+            if (window.__DEV_TOOLBAR_DATA__ && window.__DEV_TOOLBAR_DATA__.metadata) {
+                this.originalBadgeCounts = window.__DEV_TOOLBAR_DATA__.metadata.badge_counts;
+                console.log('[DevToolbar] Stored original badge counts:', this.originalBadgeCounts);
+            }
 
             // Update badge with count from localStorage
             this.updateRequestBadge();
@@ -993,6 +998,11 @@
                     this.isViewingHistoricalRequest = true;
                     this.currentHistoricalRequestId = requestId;
 
+                    // Update tab badges with historical request counts
+                    if (requestData.metadata && requestData.metadata.badge_counts) {
+                        this.updateTabBadges(requestData.metadata.badge_counts);
+                    }
+
                     // Re-populate dropdown to update highlighting
                     this.populateRequestSwitcher();
 
@@ -1102,6 +1112,11 @@
                 this.currentHistoricalRequestId = null;
                 this.historyTabInitialized = false;
 
+                // Restore original badge counts
+                if (this.originalBadgeCounts) {
+                    this.updateTabBadges(this.originalBadgeCounts);
+                }
+
                 // Re-populate dropdown to update highlighting
                 this.populateRequestSwitcher();
 
@@ -1144,6 +1159,54 @@
             } else {
                 console.warn('[Badge] HISTORY badge element not found');
             }
+        },
+
+        /**
+         * Update all tab badges based on badge counts
+         *
+         * @param {Object} badgeCounts - Badge counts for each tab (e.g., {queries: 5, exceptions: 2})
+         */
+        updateTabBadges(badgeCounts) {
+            if (!badgeCounts) {
+                console.warn('[Badge] No badge counts provided');
+                return;
+            }
+
+            console.log('[Badge] Updating tab badges with counts:', badgeCounts);
+
+            for (const [tabName, count] of Object.entries(badgeCounts)) {
+                const tab = document.querySelector(`.dev-toolbar-panel-tab[data-tab="${tabName}"]`);
+                if (!tab) continue;
+
+                let badge = tab.querySelector('.dev-toolbar-panel-tab-badge');
+
+                // Special handling for history tab - always has badge
+                if (tabName === 'history') {
+                    if (!badge) {
+                        badge = document.createElement('span');
+                        badge.className = 'dev-toolbar-panel-tab-badge';
+                        tab.appendChild(badge);
+                    }
+                    // History badge is updated separately by updateRequestBadge()
+                    continue;
+                }
+
+                // For other tabs: show badge if count > 0, hide if count === 0
+                if (count > 0) {
+                    if (!badge) {
+                        badge = document.createElement('span');
+                        badge.className = 'dev-toolbar-panel-tab-badge';
+                        tab.appendChild(badge);
+                    }
+                    badge.textContent = count;
+                    badge.style.display = '';
+                } else if (badge) {
+                    // Hide badge if count is 0
+                    badge.style.display = 'none';
+                }
+            }
+
+            console.log('[Badge] Tab badges updated');
         },
 
         /**

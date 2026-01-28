@@ -88,6 +88,13 @@ class DataInjectionRenderer implements RendererInterface
         $requestData = isset($this->collectors['request']) ? $this->collectors['request']->getData() : [];
         $queryData = isset($this->collectors['queries']) ? $this->collectors['queries']->getData() : [];
 
+        // Collect badge counts for all tabs
+        $badgeCounts = [];
+        foreach ($this->collectors as $name => $collector) {
+            $data = $collector->getData();
+            $badgeCounts[$name] = $data['count'] ?? 0;
+        }
+
         return [
             'id' => $requestId,
             'method' => $requestData['method'] ?? 'GET',
@@ -97,6 +104,7 @@ class DataInjectionRenderer implements RendererInterface
             'memory' => $requestData['memory_peak'] ?? 0,
             'query_count' => $queryData['count'] ?? 0,
             'timestamp' => time(),
+            'badge_counts' => $badgeCounts,
         ];
     }
 
