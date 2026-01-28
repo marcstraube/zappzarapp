@@ -998,16 +998,14 @@
                     this.isViewingHistoricalRequest = true;
                     this.currentHistoricalRequestId = requestId;
 
-                    // Update tab badges with historical request counts
-                    if (requestData.metadata && requestData.metadata.badge_counts) {
-                        this.updateTabBadges(requestData.metadata.badge_counts);
-                    }
-
                     // Re-populate dropdown to update highlighting
                     this.populateRequestSwitcher();
 
                     // Reset history tab initialization flag (so it can be re-initialized)
                     this.historyTabInitialized = false;
+
+                    // Store badge counts for later update
+                    const badgeCounts = requestData.metadata?.badge_counts;
 
                     // Wait for DOM to update before re-attaching listeners and activating tab
                     setTimeout(() => {
@@ -1017,6 +1015,11 @@
                         // Restore the active tab (re-activate it to show correct pane)
                         console.log('Restoring tab:', currentTab);
                         this.setActiveTab(currentTab);
+
+                        // Update tab badges AFTER listeners are attached and tab is active
+                        if (badgeCounts) {
+                            this.updateTabBadges(badgeCounts);
+                        }
 
                         // Show success feedback
                         console.log('[localStorage] Successfully loaded historical request');
@@ -1112,18 +1115,22 @@
                 this.currentHistoricalRequestId = null;
                 this.historyTabInitialized = false;
 
-                // Restore original badge counts
-                if (this.originalBadgeCounts) {
-                    this.updateTabBadges(this.originalBadgeCounts);
-                }
-
                 // Re-populate dropdown to update highlighting
                 this.populateRequestSwitcher();
+
+                // Store badge counts for later update
+                const originalBadges = this.originalBadgeCounts;
 
                 // Re-attach listeners and restore tab
                 setTimeout(() => {
                     this.attachTabEventListeners();
                     this.setActiveTab(currentTab);
+
+                    // Restore original badge counts AFTER listeners are attached and tab is active
+                    if (originalBadges) {
+                        this.updateTabBadges(originalBadges);
+                    }
+
                     this.showNotification('Returned to current request', 'success');
                 }, 50);
 
