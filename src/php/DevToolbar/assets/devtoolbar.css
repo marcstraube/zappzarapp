@@ -988,6 +988,67 @@
     flex-wrap: wrap;
 }
 
+/* Compact Xdebug Status for REQUEST Tab Toolbar */
+.dev-toolbar-request-controls {
+    position: sticky;
+    top: -16px; /* Compensate parent padding */
+    z-index: 10;
+    background: #f9fafb;
+    padding: 12px 16px;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    border-bottom: 1px solid #e5e7eb;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.dev-toolbar-request-status {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.dev-toolbar-request-actions {
+    display: flex;
+    gap: 8px;
+    margin-left: auto;
+    flex-shrink: 0;
+}
+
+.dev-toolbar-xdebug-compact {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.875rem;
+    font-weight: 500;
+}
+
+.dev-toolbar-xdebug-compact .dev-toolbar-xdebug-indicator {
+    font-size: 0.875rem;
+    line-height: 1;
+}
+
+.dev-toolbar-xdebug-compact-active {
+    color: #166534;
+}
+
+.dev-toolbar-xdebug-compact-active .dev-toolbar-xdebug-indicator {
+    color: #22c55e;
+}
+
+.dev-toolbar-xdebug-compact-inactive {
+    color: #6b7280;
+}
+
+.dev-toolbar-xdebug-compact-inactive .dev-toolbar-xdebug-indicator {
+    color: #9ca3af;
+}
+
+.dev-toolbar-xdebug-compact-disabled {
+    color: #9ca3af;
+}
+
 /* ===================================
    REQUEST SWITCHER STYLES
    =================================== */

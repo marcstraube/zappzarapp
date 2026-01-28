@@ -39,7 +39,62 @@ class RequestPanelRenderer extends AbstractPanelRenderer
         $time = $data['execution_time'] ?? 0;
         $memory = $data['memory_peak'] ?? 0;
 
-        $html = sprintf(
+        // Xdebug status and controls - compact toolbar
+        $xdebugEnabled = extension_loaded('xdebug');
+        $xdebugActive = isset($_COOKIE['XDEBUG_SESSION']);
+        $xdebugSessionName = $_COOKIE['XDEBUG_SESSION'] ?? '';
+
+        $html = '<div class="dev-toolbar-request-controls">';
+        $html .= '<div class="dev-toolbar-request-status">';
+
+        if ($xdebugEnabled) {
+            $statusClass = $xdebugActive ? 'active' : 'inactive';
+            $statusText = $xdebugActive ? "Xdebug: {$xdebugSessionName}" : 'Xdebug: Off';
+            $statusIcon = $xdebugActive ? '●' : '○';
+
+            $html .= sprintf(
+                '<div class="dev-toolbar-xdebug-compact dev-toolbar-xdebug-compact-%s">
+                    <span class="dev-toolbar-xdebug-indicator">%s</span>
+                    <span class="dev-toolbar-xdebug-label">%s</span>
+                </div>',
+                $statusClass,
+                $statusIcon,
+                $this->escapeHtml($statusText)
+            );
+        } else {
+            $html .= '<div class="dev-toolbar-xdebug-compact dev-toolbar-xdebug-compact-disabled">
+                <span class="dev-toolbar-xdebug-label">Xdebug: Not Installed</span>
+            </div>';
+        }
+
+        $html .= '</div>'; // .dev-toolbar-request-status
+
+        $html .= '<div class="dev-toolbar-request-actions">';
+
+        if ($xdebugEnabled) {
+            if ($xdebugActive) {
+                $html .= '<button class="dev-toolbar-btn dev-toolbar-btn-secondary" data-action="xdebug-disable" title="Disable Xdebug step debugging">
+                    ⏹ Disable
+                </button>';
+            } else {
+                $html .= '<button class="dev-toolbar-btn dev-toolbar-btn-secondary" data-action="xdebug-enable" data-ide="PHPSTORM" title="Enable Xdebug for PhpStorm">
+                    ▶ PhpStorm
+                </button>';
+                $html .= '<button class="dev-toolbar-btn dev-toolbar-btn-secondary" data-action="xdebug-enable" data-ide="VSCODE" title="Enable Xdebug for VSCode">
+                    ▶ VSCode
+                </button>';
+            }
+        }
+
+        $html .= '<button class="dev-toolbar-btn dev-toolbar-btn-secondary" data-action="export-current" title="Export current request as JSON">
+            ⬇ Export
+        </button>';
+
+        $html .= '</div>'; // .dev-toolbar-request-actions
+        $html .= '</div>'; // .dev-toolbar-request-controls
+
+        // Current Request section
+        $html .= sprintf(
             '<div class="dev-toolbar-section">
                 <div class="dev-toolbar-section-title">Current Request</div>
                 <table class="dev-toolbar-kv-table">
@@ -73,58 +128,6 @@ class RequestPanelRenderer extends AbstractPanelRenderer
 
             $html .= '</table></div>';
         }
-
-        // Xdebug debugging controls
-        $xdebugEnabled = extension_loaded('xdebug');
-        $xdebugActive = isset($_COOKIE['XDEBUG_SESSION']);
-        $xdebugSessionName = $_COOKIE['XDEBUG_SESSION'] ?? '';
-
-        $html .= '<div class="dev-toolbar-section">';
-        $html .= '<div class="dev-toolbar-section-title">Xdebug Step Debugging</div>';
-
-        if ($xdebugEnabled) {
-            $statusClass = $xdebugActive ? 'active' : 'inactive';
-            $statusText = $xdebugActive ? "Active (IDE Key: {$xdebugSessionName})" : 'Inactive';
-            $statusIcon = $xdebugActive ? '●' : '○';
-
-            $html .= sprintf(
-                '<div class="dev-toolbar-xdebug-status dev-toolbar-xdebug-status-%s">
-                    <span class="dev-toolbar-xdebug-indicator">%s</span>
-                    <span>%s</span>
-                </div>',
-                $statusClass,
-                $statusIcon,
-                $this->escapeHtml($statusText)
-            );
-
-            if ($xdebugActive) {
-                $html .= '<button class="dev-toolbar-btn dev-toolbar-btn-secondary" data-action="xdebug-disable">
-                    ⏹ Disable Debugging
-                </button>';
-            } else {
-                $html .= '<div class="dev-toolbar-xdebug-ide-select">
-                    <button class="dev-toolbar-btn dev-toolbar-btn-secondary" data-action="xdebug-enable" data-ide="PHPSTORM">
-                        ▶ Enable for PhpStorm
-                    </button>
-                    <button class="dev-toolbar-btn dev-toolbar-btn-secondary" data-action="xdebug-enable" data-ide="VSCODE">
-                        ▶ Enable for VSCode
-                    </button>
-                </div>';
-            }
-        } else {
-            $html .= '<p style="color: #6b7280; font-size: 0.875rem;">
-                Xdebug extension not installed. Install via <code>pecl install xdebug</code>
-            </p>';
-        }
-
-        $html .= '</div>';
-
-        // Export button for current request
-        $html .= '<div class="dev-toolbar-section">
-            <button class="dev-toolbar-export-btn" data-action="export-current">
-                ⬇ Export Current Request
-            </button>
-        </div>';
 
         return $html;
     }
