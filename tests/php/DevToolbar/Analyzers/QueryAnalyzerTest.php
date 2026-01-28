@@ -12,6 +12,13 @@ use PHPUnit\Framework\TestCase;
  */
 class QueryAnalyzerTest extends TestCase
 {
+    private QueryAnalyzer $analyzer;
+
+    protected function setUp(): void
+    {
+        $this->analyzer = new QueryAnalyzer();
+    }
+
     public function testDetectsNPlusOnePattern(): void
     {
         $queries = [
@@ -20,7 +27,7 @@ class QueryAnalyzerTest extends TestCase
             ['sql' => 'SELECT * FROM posts WHERE user_id = 3', 'time' => 12],
         ];
 
-        $nPlusOnes = QueryAnalyzer::detectNPlusOne($queries);
+        $nPlusOnes = $this->analyzer->detectNPlusOne($queries);
 
         $this->assertCount(1, $nPlusOnes);
         $this->assertEquals(3, $nPlusOnes[0]['count']);
@@ -35,7 +42,7 @@ class QueryAnalyzerTest extends TestCase
             ['sql' => 'SELECT * FROM posts WHERE id = 1', 'time' => 11],
         ];
 
-        $nPlusOnes = QueryAnalyzer::detectNPlusOne($queries);
+        $nPlusOnes = $this->analyzer->detectNPlusOne($queries);
 
         $this->assertCount(0, $nPlusOnes);
     }
@@ -47,7 +54,7 @@ class QueryAnalyzerTest extends TestCase
             ['sql' => 'SELECT * FROM users WHERE id = 2', 'time' => 10],
         ];
 
-        $nPlusOnes = QueryAnalyzer::detectNPlusOne($queries);
+        $nPlusOnes = $this->analyzer->detectNPlusOne($queries);
 
         // Only 2 occurrences, not flagged
         $this->assertCount(0, $nPlusOnes);
@@ -61,7 +68,7 @@ class QueryAnalyzerTest extends TestCase
             ['sql' => "SELECT * FROM users WHERE id = 3 AND name = 'Bob'", 'time' => 10],
         ];
 
-        $nPlusOnes = QueryAnalyzer::detectNPlusOne($queries);
+        $nPlusOnes = $this->analyzer->detectNPlusOne($queries);
 
         // Should detect as N+1 despite different values
         $this->assertCount(1, $nPlusOnes);
@@ -82,7 +89,7 @@ class QueryAnalyzerTest extends TestCase
             ['sql' => 'SELECT * FROM posts WHERE user_id = 3', 'time' => 50],
         ];
 
-        $nPlusOnes = QueryAnalyzer::detectNPlusOne($queries);
+        $nPlusOnes = $this->analyzer->detectNPlusOne($queries);
 
         $this->assertCount(2, $nPlusOnes);
 
@@ -112,7 +119,7 @@ class QueryAnalyzerTest extends TestCase
             ],
         ];
 
-        $nPlusOnes = QueryAnalyzer::detectNPlusOne($queries);
+        $nPlusOnes = $this->analyzer->detectNPlusOne($queries);
 
         $this->assertCount(1, $nPlusOnes);
         $this->assertEquals('UserRepository.php:45', $nPlusOnes[0]['location']);
@@ -126,7 +133,7 @@ class QueryAnalyzerTest extends TestCase
             ['sql' => 'SELECT * FROM posts WHERE user_id = 3', 'time' => 10],
         ];
 
-        $nPlusOnes = QueryAnalyzer::detectNPlusOne($queries);
+        $nPlusOnes = $this->analyzer->detectNPlusOne($queries);
 
         $this->assertCount(1, $nPlusOnes);
         $this->assertArrayHasKey('suggestion', $nPlusOnes[0]);
@@ -141,7 +148,7 @@ class QueryAnalyzerTest extends TestCase
             ['sql' => 'SELECT * FROM posts', 'time' => 50],
         ];
 
-        $slowQueries = QueryAnalyzer::detectSlowQueries($queries, 100);
+        $slowQueries = $this->analyzer->detectSlowQueries($queries, 100);
 
         $this->assertCount(1, $slowQueries);
         $this->assertEquals('SELECT * FROM users', $slowQueries[0]['sql']);
@@ -156,7 +163,7 @@ class QueryAnalyzerTest extends TestCase
             ['sql' => 'SELECT 3', 'time' => 300],
         ];
 
-        $slowQueries = QueryAnalyzer::detectSlowQueries($queries, 100);
+        $slowQueries = $this->analyzer->detectSlowQueries($queries, 100);
 
         $this->assertCount(3, $slowQueries);
         $this->assertEquals(500, $slowQueries[0]['time']); // Slowest first
@@ -171,7 +178,7 @@ class QueryAnalyzerTest extends TestCase
             ['sql' => 'SELECT name FROM posts WHERE title LIKE "%test%"', 'time' => 200], // LIKE
         ];
 
-        $slowQueries = QueryAnalyzer::detectSlowQueries($queries, 100);
+        $slowQueries = $this->analyzer->detectSlowQueries($queries, 100);
 
         $this->assertCount(2, $slowQueries);
 
@@ -190,7 +197,7 @@ class QueryAnalyzerTest extends TestCase
             ['sql' => 'SELECT 3', 'time' => 30],
         ];
 
-        $stats = QueryAnalyzer::getStatistics($queries);
+        $stats = $this->analyzer->getStatistics($queries);
 
         $this->assertEquals(3, $stats['total_count']);
         $this->assertEquals(60, $stats['total_time']);
@@ -201,7 +208,7 @@ class QueryAnalyzerTest extends TestCase
 
     public function testGetStatisticsWithEmptyQueries(): void
     {
-        $stats = QueryAnalyzer::getStatistics([]);
+        $stats = $this->analyzer->getStatistics([]);
 
         $this->assertEquals(0, $stats['total_count']);
         $this->assertEquals(0, $stats['total_time']);

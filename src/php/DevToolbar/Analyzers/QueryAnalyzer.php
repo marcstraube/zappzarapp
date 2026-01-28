@@ -19,7 +19,7 @@ class QueryAnalyzer
      * @param array<int, array<string, mixed>> $queries List of executed queries
      * @return array<int, array<string, mixed>> Detected N+1 patterns
      */
-    public static function detectNPlusOne(array $queries): array
+    public function detectNPlusOne(array $queries): array
     {
         $patterns = [];
         $nPlusOnes = [];
@@ -185,7 +185,7 @@ class QueryAnalyzer
      * @param float $threshold Threshold in milliseconds
      * @return array<int, array<string, mixed>> Slow queries
      */
-    public static function detectSlowQueries(array $queries, float $threshold = 100.0): array
+    public function detectSlowQueries(array $queries, float $threshold = 100.0): array
     {
         $slowQueries = [];
 
@@ -253,7 +253,7 @@ class QueryAnalyzer
      * @param array<int, array<string, mixed>> $queries List of executed queries
      * @return array<string, mixed> Query statistics
      */
-    public static function getStatistics(array $queries): array
+    public function getStatistics(array $queries): array
     {
         $totalTime = array_sum(array_column($queries, 'time'));
         $count = count($queries);

@@ -269,7 +269,8 @@ class PanelRenderer implements RendererInterface
         );
 
         // Check for N+1 queries
-        $nPlusOnes = QueryAnalyzer::detectNPlusOne($queries);
+        $analyzer = new QueryAnalyzer();
+        $nPlusOnes = $analyzer->detectNPlusOne($queries);
         if (!empty($nPlusOnes)) {
             $html .= '<div class="dev-toolbar-section">';
             $html .= sprintf(
