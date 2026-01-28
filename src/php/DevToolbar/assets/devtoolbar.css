@@ -1013,10 +1013,11 @@
     background: #f3f4f6;
 }
 
-.dev-toolbar-request-switcher-item.current {
-    background: #dbeafe;
+.dev-toolbar-request-switcher-item.active {
+    background: rgba(34, 197, 94, 0.1);
+    border-left: 3px solid #22c55e;
+    padding-left: 9px; /* Compensate border */
     font-weight: 600;
-    color: var(--color-primary);
 }
 
 .dev-toolbar-request-icon {

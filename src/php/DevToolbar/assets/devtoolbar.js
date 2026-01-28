@@ -343,6 +343,7 @@
         historyTabInitialized: false,
         isLoadingRequest: false,
         isViewingHistoricalRequest: false,
+        currentHistoricalRequestId: null, // Track which historical request is currently displayed
         currentRequestData: null, // Store initial request data for restoration
 
         init() {
@@ -990,6 +991,7 @@
 
                     // Mark that we're viewing a historical request
                     this.isViewingHistoricalRequest = true;
+                    this.currentHistoricalRequestId = requestId;
 
                     // Reset history tab initialization flag (so it can be re-initialized)
                     this.historyTabInitialized = false;
@@ -1094,6 +1096,7 @@
 
                 // Reset flags
                 this.isViewingHistoricalRequest = false;
+                this.currentHistoricalRequestId = null;
                 this.historyTabInitialized = false;
 
                 // Re-attach listeners and restore tab
@@ -1152,8 +1155,9 @@
             // Build dropdown HTML
             let html = '';
 
-            // Current request (highlighted)
-            html += `<div class="dev-toolbar-request-switcher-item current">
+            // Current request (highlighted if active)
+            const isCurrentActive = !this.isViewingHistoricalRequest;
+            html += `<div class="dev-toolbar-request-switcher-item ${isCurrentActive ? 'active' : ''}">
                 <span class="dev-toolbar-request-icon">●</span>
                 <span class="dev-toolbar-request-label">Current Request</span>
             </div>`;
@@ -1167,8 +1171,9 @@
 
                 recentRequests.forEach(request => {
                     const statusIcon = this.getStatusIcon(request.status);
+                    const isActive = this.currentHistoricalRequestId === request.id;
 
-                    html += `<div class="dev-toolbar-request-switcher-item"
+                    html += `<div class="dev-toolbar-request-switcher-item ${isActive ? 'active' : ''}"
                                  data-request-id="${this.escapeHtml(request.id)}">
                             <span class="dev-toolbar-request-icon">${statusIcon}</span>
                             <span class="dev-toolbar-request-method">${this.escapeHtml(request.method)}</span>
