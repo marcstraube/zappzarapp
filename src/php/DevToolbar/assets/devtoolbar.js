@@ -839,7 +839,7 @@
                             <span class="dev-toolbar-history-method">${this.escapeHtml(request.method)}</span>
                             <span class="dev-toolbar-history-uri">${this.escapeHtml(request.uri)}</span>
                             <span class="dev-toolbar-history-time-ago">${timeAgo}</span>
-                            <button class="dev-toolbar-history-export"
+                            <button class="dev-toolbar-history-item-export"
                                     data-request-id="${this.escapeHtml(request.id)}"
                                     title="Export this request">⬇</button>
                         </div>
@@ -1409,7 +1409,7 @@
          */
         attachHistoryExportListeners() {
             // Remove old listeners to prevent duplicates
-            const exportButtons = document.querySelectorAll('.dev-toolbar-history-export');
+            const exportButtons = document.querySelectorAll('.dev-toolbar-history-item-export');
             exportButtons.forEach(btn => {
                 // Clone node to remove old listeners
                 const newBtn = btn.cloneNode(true);
