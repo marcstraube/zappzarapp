@@ -924,7 +924,7 @@
                     return;
                 }
 
-                if (item.classList.contains('current')) {
+                if (item.dataset.action === 'current') {
                     switcher.classList.remove('open');
 
                     // Check if we're currently viewing a historical request
@@ -1163,7 +1163,7 @@
 
             // Current request (highlighted if active)
             const isCurrentActive = !this.isViewingHistoricalRequest;
-            html += `<div class="dev-toolbar-request-switcher-item ${isCurrentActive ? 'active' : ''}">
+            html += `<div class="dev-toolbar-request-switcher-item ${isCurrentActive ? 'active' : ''}" data-action="current">
                 <span class="dev-toolbar-request-icon">●</span>
                 <span class="dev-toolbar-request-label">Current Request</span>
             </div>`;
