@@ -158,35 +158,26 @@ class HistoryPanelRenderer extends AbstractPanelRenderer
     }
 
     /**
-     * Render response time trends with ASCII sparklines
+     * Render response time trends placeholder (client-side populated)
      *
-     * Generates visual sparkline charts using Unicode block characters (▁▂▃▄▅▆▇█)
-     * to show response time trends over recent requests.
+     * Creates placeholder container with empty sparkline.
+     * JavaScript loads request history from localStorage and generates
+     * sparkline visualization using Unicode block characters (▁▂▃▄▅▆▇█).
      *
-     * Returns empty string if no trend data is available.
+     * The section is hidden by JavaScript if no data is available.
      *
-     * @param array<string, mixed> $trends Trend data with 'time' array
-     * @return string HTML for trends section (empty if no data)
+     * @param array<string, mixed> $trends Trend data (unused, for backwards compatibility)
+     * @return string HTML for trends section placeholder
      */
     private function renderTrends(array $trends): string
     {
-        $times = $trends['time'] ?? [];
-
-        if (empty($times)) {
-            return '';
-        }
-
-        $sparkline = $this->generateSparkline($times);
-
-        return sprintf(
-            '<div class="dev-toolbar-section">
+        // Always render placeholder - JavaScript will populate from localStorage
+        return '<div class="dev-toolbar-section" id="dev-toolbar-history-trends-section">
                 <div class="dev-toolbar-section-title">Response Time Trend</div>
                 <div class="dev-toolbar-history-trend">
-                    <div class="dev-toolbar-history-sparkline">%s</div>
+                    <div class="dev-toolbar-history-sparkline"></div>
                 </div>
-            </div>',
-            $sparkline
-        );
+            </div>';
     }
 
     /**

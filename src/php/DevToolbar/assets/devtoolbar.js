@@ -1358,18 +1358,22 @@
          * @param {Array<Object>} metaArray - Request metadata
          */
         renderTrends(metaArray) {
-            const trendContainer = document.querySelector('.dev-toolbar-history-trend');
-            if (!trendContainer) {
-                console.warn('[HISTORY Tab] Trend container not found');
+            const trendSection = document.getElementById('dev-toolbar-history-trends-section');
+            if (!trendSection) {
+                console.warn('[HISTORY Tab] Trend section not found');
+                return;
+            }
+
+            const sparklineEl = trendSection.querySelector('.dev-toolbar-history-sparkline');
+            if (!sparklineEl) {
+                console.warn('[HISTORY Tab] Sparkline element not found');
                 return;
             }
 
             if (metaArray.length === 0) {
                 // Hide trend section if no data
-                const trendSection = trendContainer.closest('.dev-toolbar-section');
-                if (trendSection) {
-                    trendSection.style.display = 'none';
-                }
+                trendSection.style.display = 'none';
+                console.log('[HISTORY Tab] No data available, hiding trends');
                 return;
             }
 
@@ -1380,18 +1384,12 @@
             const sparkline = this.generateSparkline(timeValues);
 
             // Update sparkline display
-            const sparklineEl = trendContainer.querySelector('.dev-toolbar-history-sparkline');
-            if (sparklineEl) {
-                sparklineEl.textContent = sparkline;
-            }
+            sparklineEl.textContent = sparkline;
 
             // Show trend section
-            const trendSection = trendContainer.closest('.dev-toolbar-section');
-            if (trendSection) {
-                trendSection.style.display = '';
-            }
+            trendSection.style.display = '';
 
-            console.log('[HISTORY Tab] Rendered sparkline for', timeValues.length, 'requests');
+            console.log('[HISTORY Tab] Rendered sparkline for', timeValues.length, 'requests:', sparkline);
         },
 
         /**

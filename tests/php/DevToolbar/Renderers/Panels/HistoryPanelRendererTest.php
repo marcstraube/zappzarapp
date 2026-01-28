@@ -44,8 +44,9 @@ class HistoryPanelRendererTest extends TestCase
         $this->assertStringContainsString('Request History', $output);
         $this->assertStringContainsString('Actions', $output);
 
-        // Should NOT contain trends section when no trend data
-        $this->assertStringNotContainsString('Response Time Trend', $output);
+        // Should contain trends section placeholder (JavaScript will hide if no data)
+        $this->assertStringContainsString('Response Time Trend', $output);
+        $this->assertStringContainsString('dev-toolbar-history-trends-section', $output);
     }
 
     public function testRenderTabWithTrendData(): void
@@ -58,12 +59,13 @@ class HistoryPanelRendererTest extends TestCase
 
         $output = $this->renderer->renderTab($data);
 
-        // Should contain trends section with sparkline
+        // Should contain trends section placeholder (JavaScript will populate)
         $this->assertStringContainsString('Response Time Trend', $output);
         $this->assertStringContainsString('dev-toolbar-history-sparkline', $output);
+        $this->assertStringContainsString('dev-toolbar-history-trends-section', $output);
 
-        // Should contain sparkline characters (Unicode block elements)
-        $this->assertMatchesRegularExpression('/[▁▂▃▄▅▆▇█]+/', $output);
+        // Sparkline element should be empty (JavaScript will populate)
+        $this->assertMatchesRegularExpression('/<div class="dev-toolbar-history-sparkline"><\/div>/', $output);
     }
 
     public function testRenderFilters(): void
@@ -141,9 +143,10 @@ class HistoryPanelRendererTest extends TestCase
 
         $output = $this->renderer->renderTab($data);
 
-        // Should NOT render trends section when trends array is empty
-        $this->assertStringNotContainsString('Response Time Trend', $output);
-        $this->assertStringNotContainsString('dev-toolbar-history-sparkline', $output);
+        // Should render trends placeholder (JavaScript will populate/hide)
+        $this->assertStringContainsString('Response Time Trend', $output);
+        $this->assertStringContainsString('dev-toolbar-history-sparkline', $output);
+        $this->assertStringContainsString('dev-toolbar-history-trends-section', $output);
     }
 
     public function testRenderTrendsWithEmptyTimeArray(): void
@@ -156,8 +159,9 @@ class HistoryPanelRendererTest extends TestCase
 
         $output = $this->renderer->renderTab($data);
 
-        // Should NOT render trends section when time array is empty
-        $this->assertStringNotContainsString('Response Time Trend', $output);
+        // Should render trends placeholder (JavaScript will hide if no data)
+        $this->assertStringContainsString('Response Time Trend', $output);
+        $this->assertStringContainsString('dev-toolbar-history-trends-section', $output);
     }
 
     public function testRenderTrendsWithSingleValue(): void
@@ -170,11 +174,10 @@ class HistoryPanelRendererTest extends TestCase
 
         $output = $this->renderer->renderTab($data);
 
-        // Should render trends section
+        // Should render trends placeholder (JavaScript will populate)
         $this->assertStringContainsString('Response Time Trend', $output);
-
-        // Single value should generate single tick (middle height since range is 0)
-        $this->assertMatchesRegularExpression('/[▁▂▃▄▅▆▇█]/', $output);
+        $this->assertStringContainsString('dev-toolbar-history-trends-section', $output);
+        $this->assertMatchesRegularExpression('/<div class="dev-toolbar-history-sparkline"><\/div>/', $output);
     }
 
     public function testRenderTrendsWithMultipleValues(): void
@@ -187,11 +190,10 @@ class HistoryPanelRendererTest extends TestCase
 
         $output = $this->renderer->renderTab($data);
 
-        // Should render trends section with sparkline
+        // Should render trends placeholder (JavaScript will populate)
         $this->assertStringContainsString('Response Time Trend', $output);
-
-        // Should contain multiple sparkline characters
-        $this->assertMatchesRegularExpression('/[▁▂▃▄▅▆▇█]{5}/', $output);
+        $this->assertStringContainsString('dev-toolbar-history-trends-section', $output);
+        $this->assertMatchesRegularExpression('/<div class="dev-toolbar-history-sparkline"><\/div>/', $output);
     }
 
     public function testRenderTrendsWithIdenticalValues(): void
@@ -204,8 +206,10 @@ class HistoryPanelRendererTest extends TestCase
 
         $output = $this->renderer->renderTab($data);
 
-        // All identical values should produce middle tick (▄) repeated
-        $this->assertStringContainsString('▄▄▄▄', $output);
+        // Should render trends placeholder (JavaScript will populate)
+        $this->assertStringContainsString('Response Time Trend', $output);
+        $this->assertStringContainsString('dev-toolbar-history-trends-section', $output);
+        $this->assertMatchesRegularExpression('/<div class="dev-toolbar-history-sparkline"><\/div>/', $output);
     }
 
     public function testRenderRequestListPlaceholder(): void
@@ -255,8 +259,11 @@ class HistoryPanelRendererTest extends TestCase
 
         $output = $this->renderer->renderTab($data);
 
-        // Should not render trends section at all
-        $this->assertStringNotContainsString('Response Time Trend', $output);
+        // Should render trends placeholder (JavaScript will hide if no data)
+        $this->assertStringContainsString('Response Time Trend', $output);
+        $this->assertStringContainsString('dev-toolbar-history-trends-section', $output);
+        // Sparkline element should be empty (no characters)
+        $this->assertMatchesRegularExpression('/<div class="dev-toolbar-history-sparkline"><\/div>/', $output);
     }
 
     public function testSparklineGenerationWithAscendingValues(): void
@@ -269,10 +276,10 @@ class HistoryPanelRendererTest extends TestCase
 
         $output = $this->renderer->renderTab($data);
 
-        // Should contain sparkline with ascending pattern
-        // Each value should map to progressively higher ticks
-        $this->assertMatchesRegularExpression('/[▁▂▃▄▅▆▇█]{5}/', $output);
+        // Should render trends placeholder (JavaScript will populate sparkline)
         $this->assertStringContainsString('Response Time Trend', $output);
+        $this->assertStringContainsString('dev-toolbar-history-trends-section', $output);
+        $this->assertMatchesRegularExpression('/<div class="dev-toolbar-history-sparkline"><\/div>/', $output);
     }
 
     public function testSparklineGenerationWithDescendingValues(): void
@@ -285,8 +292,9 @@ class HistoryPanelRendererTest extends TestCase
 
         $output = $this->renderer->renderTab($data);
 
-        // Should contain sparkline with descending pattern
-        $this->assertMatchesRegularExpression('/[▁▂▃▄▅▆▇█]{5}/', $output);
+        // Should render trends placeholder (JavaScript will populate sparkline)
+        $this->assertStringContainsString('dev-toolbar-history-trends-section', $output);
+        $this->assertMatchesRegularExpression('/<div class="dev-toolbar-history-sparkline"><\/div>/', $output);
     }
 
     public function testSparklineGenerationWithFloatingPointValues(): void
@@ -299,8 +307,9 @@ class HistoryPanelRendererTest extends TestCase
 
         $output = $this->renderer->renderTab($data);
 
-        // Should handle floating point values correctly
-        $this->assertMatchesRegularExpression('/[▁▂▃▄▅▆▇█]{4}/', $output);
+        // Should render trends placeholder (JavaScript will handle floating point)
+        $this->assertStringContainsString('dev-toolbar-history-trends-section', $output);
+        $this->assertMatchesRegularExpression('/<div class="dev-toolbar-history-sparkline"><\/div>/', $output);
     }
 
     public function testSparklineGenerationWithMixedValues(): void
@@ -313,8 +322,9 @@ class HistoryPanelRendererTest extends TestCase
 
         $output = $this->renderer->renderTab($data);
 
-        // Should create varied sparkline pattern
-        $this->assertMatchesRegularExpression('/[▁▂▃▄▅▆▇█]{5}/', $output);
+        // Should render trends placeholder (JavaScript will create varied pattern)
+        $this->assertStringContainsString('dev-toolbar-history-trends-section', $output);
+        $this->assertMatchesRegularExpression('/<div class="dev-toolbar-history-sparkline"><\/div>/', $output);
     }
 
     public function testSparklineGenerationWithExtremeValues(): void
@@ -327,13 +337,9 @@ class HistoryPanelRendererTest extends TestCase
 
         $output = $this->renderer->renderTab($data);
 
-        // Should normalize extreme ranges properly
-        // Min (1.0) should be lowest tick, Max (1500.0) should be highest tick
-        $this->assertMatchesRegularExpression('/[▁▂▃▄▅▆▇█]{5}/', $output);
-
-        // Should contain both low and high ticks
-        $this->assertMatchesRegularExpression('/▁/', $output); // Lowest value
-        $this->assertMatchesRegularExpression('/█/', $output); // Highest value
+        // Should render trends placeholder (JavaScript will normalize ranges)
+        $this->assertStringContainsString('dev-toolbar-history-trends-section', $output);
+        $this->assertMatchesRegularExpression('/<div class="dev-toolbar-history-sparkline"><\/div>/', $output);
     }
 
     public function testSparklineGenerationWithTwoIdenticalValues(): void
@@ -346,8 +352,9 @@ class HistoryPanelRendererTest extends TestCase
 
         $output = $this->renderer->renderTab($data);
 
-        // Two identical values should produce middle ticks (range is 0)
-        $this->assertStringContainsString('▄▄', $output);
+        // Should render trends placeholder (JavaScript will handle identical values)
+        $this->assertStringContainsString('dev-toolbar-history-trends-section', $output);
+        $this->assertMatchesRegularExpression('/<div class="dev-toolbar-history-sparkline"><\/div>/', $output);
     }
 
     public function testCompleteTabStructure(): void
@@ -388,10 +395,10 @@ class HistoryPanelRendererTest extends TestCase
 
         $output = $this->renderer->renderTab($data);
 
-        // Should render filters and stats but no trends
+        // Should render all sections including trends placeholder
         $this->assertStringContainsString('dev-toolbar-history-filters', $output);
         $this->assertStringContainsString('Statistics', $output);
-        $this->assertStringNotContainsString('Response Time Trend', $output);
+        $this->assertStringContainsString('Response Time Trend', $output);
     }
 
     public function testDataStructureWithNullValues(): void
@@ -402,8 +409,9 @@ class HistoryPanelRendererTest extends TestCase
 
         $output = $this->renderer->renderTab($data);
 
-        // Should handle null trends gracefully (no trends section)
-        $this->assertStringNotContainsString('Response Time Trend', $output);
+        // Should handle null trends gracefully (render placeholder)
+        $this->assertStringContainsString('Response Time Trend', $output);
+        $this->assertStringContainsString('dev-toolbar-history-trends-section', $output);
     }
 
     public function testAllSectionsUseCorrectCssClasses(): void
@@ -431,6 +439,7 @@ class HistoryPanelRendererTest extends TestCase
     public function testSparklineNormalizationLogic(): void
     {
         // Test specific normalization: values should map to 0-7 tick index
+        // NOTE: Sparkline is now generated client-side by JavaScript
         $data = [
             'trends' => [
                 'time' => [0.0, 12.5, 25.0, 37.5, 50.0, 62.5, 75.0, 87.5, 100.0],
@@ -439,20 +448,11 @@ class HistoryPanelRendererTest extends TestCase
 
         $output = $this->renderer->renderTab($data);
 
-        // Should contain sparkline with 9 characters
-        $this->assertMatchesRegularExpression('/[▁▂▃▄▅▆▇█]{9}/', $output);
+        // Should render trends placeholder (JavaScript will handle normalization)
+        $this->assertStringContainsString('Response Time Trend', $output);
+        $this->assertStringContainsString('dev-toolbar-history-trends-section', $output);
 
-        // First should be lowest (▁), last should be highest (█)
-        $sparklineMatch = [];
-        preg_match('/<div class="dev-toolbar-history-sparkline">([▁▂▃▄▅▆▇█]+)<\/div>/', $output, $sparklineMatch);
-
-        $this->assertNotEmpty($sparklineMatch);
-        $sparkline = $sparklineMatch[1];
-
-        // First character should be ▁ (min value)
-        $this->assertSame('▁', mb_substr($sparkline, 0, 1));
-
-        // Last character should be █ (max value)
-        $this->assertSame('█', mb_substr($sparkline, -1, 1));
+        // Sparkline element should be empty (JavaScript populates it)
+        $this->assertMatchesRegularExpression('/<div class="dev-toolbar-history-sparkline"><\/div>/', $output);
     }
 }
