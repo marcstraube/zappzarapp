@@ -242,25 +242,33 @@ Agent A (Architect)
     ↓
 ┌───────┬───────┬───────┬───────┐  (parallel if independent)
 ↓       ↓       ↓       ↓       │
-B1      B2      B3      B4      │
-(PHP)   (Node)  (Infra) (SQL)   │
+C1      C2      C3      C4      │
+(PHP)   (Node)  (SQL)   (Infra) │
 └───────┴───────┴───────┴───────┘
     ↓
-┌───────┬───────┬───────┬───────┬───────┬───────┬───────┬───────┐
-↓       ↓       ↓       ↓       ↓       ↓       ↓       ↓       │
-C1      C2      C3      C4      [C5]    [C6]    [S]     D       │  (parallel)
-(PHP)   (Node)  (SQL)   (MD)    (Cfg)   (Infra) (Sec)   (Docs)  │
-└───────┴───────┴───────┴───────┴───────┴───────┴───────┴───────┘
+┌───────┬───────┬───────┐
+↓       ↓       ↓       │  (parallel)
+R       [S]     D       │
+(Review)(Sec)   (Docs)  │
+└───────┴───────┴───────┘
     ↓
 Main Agent
-├── Collects C + D + S reports
+├── Collects R + D + S reports
 ├── Intermediate commits on feature branch
 ├── Informs user: "Branch ready for review"
 └── After approval: Merge + close task
 ```
 
-**B3 Infrastructure includes:** Shell scripts, Dockerfiles, Compose files,
-Makefile, BATS/Goss tests
+**Agent Mapping:**
+
+- **A** = plan-architect (analyzes, plans)
+- **C1** = coder-php (PHP application code)
+- **C2** = coder-node (Node/TypeScript code)
+- **C3** = coder-sql (SQL migrations, schemas)
+- **C4** = coder-infra (Shell, Docker, Make, BATS/Goss tests)
+- **R** = reviewer (unified code review for all languages)
+- **D** = docs-auditor (documentation sync)
+- **[S]** = security-auditor (conditional, see below)
 
 **[S] Security Agent:** Runs conditionally based on scope and affected files.
 See "Security Agent Triggering" section below.
@@ -321,13 +329,13 @@ Trigger Security Agent if changed files match these patterns:
 
 ### Coordination
 
-- Spawns agents in correct order
-- Decides on parallelization (B1/B2/B3/B4, C1/C2/C3/C4/C5/C6/S, D)
-- C5 (Config Sync) only runs if config files changed
-- C6 (Infrastructure) only runs if infra files changed (docker/, tests/bats/,
-  Makefile)
-- S (Security) only runs if security-relevant (see "Security Agent Triggering")
-- Collects results
+- Spawns agents in correct order: A → [C1, C2, C3, C4 parallel] → [R, S, D parallel]
+- Decides on parallelization:
+  - Coders (C1-C4) run in parallel if independent
+  - Reviewer (R) reviews all changed code (PHP, Node, SQL, Infra)
+  - Security (S) only runs if security-relevant (see "Security Agent Triggering")
+  - Docs (D) runs in parallel with R and S
+- Collects results from all agents
 - **Important:** Subagents are coordinated subprocesses, not separate contexts
 
 ### Session File (centralized)
@@ -370,7 +378,7 @@ layer (tasks are managed via `/tasks` command).
 ### Retry Limits & Escalation
 
 ```text
-Agent B/C/D: Max 2 attempts
+Agent C/R/D: Max 2 attempts
         ↓
 Still errors?
         ↓
@@ -452,22 +460,22 @@ single source of truth for completed work.
 ### Commit Workflow on Feature Branch
 
 ```text
-B4 (SQL) done + C3 (SQL Review) OK  ← (if schema changes needed)
+C3 (SQL Coder) done + R (Reviewer) OK  ← (if schema changes needed)
     ↓
 Commit: "feat(sql): add redis session tables"
 CHANGELOG: Entry under "Features"
     ↓
-B3 (Infra) done + C6 (Infra Review) OK  ← (if infra changes needed)
+C4 (Infra Coder) done + R (Reviewer) OK  ← (if infra changes needed)
     ↓
 Commit: "feat(docker): add redis container config"
 CHANGELOG: Entry under "Features"
     ↓
-B1 (PHP) done + C1 (PHP Review) OK
+C1 (PHP Coder) done + R (Reviewer) OK
     ↓
 Commit: "feat(php): add redis cache service"
 CHANGELOG: Entry under "Features"
     ↓
-B2 (Node) done + C2 (Node Review) OK
+C2 (Node Coder) done + R (Reviewer) OK
     ↓
 Commit: "feat(node): add redis cache service"
 CHANGELOG: Entry under "Features"

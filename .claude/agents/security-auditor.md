@@ -1,15 +1,9 @@
 ---
 name: security-auditor
-description:
-  Security analysis. Default sonnet, use opus for critical scope or payment/auth
-  systems.
-tools:
-  - Read
-  - Grep
-  - Glob
-  - Bash(git:*)
+description: "Security analysis. Default sonnet, use opus for critical scope or payment/auth systems."
+tools: Read, Grep, Glob, Bash(git:*)
 model: sonnet
-permissionMode: default
+color: red
 ---
 
 <!--

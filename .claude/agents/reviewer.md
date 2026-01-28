@@ -1,19 +1,14 @@
 ---
-name: code-reviewer
-description: Reviews code for quality and standards. Use after code changes.
-tools:
-  - Read
-  - Grep
-  - Glob
-  - Bash(make:*)
-  - Bash(git:*)
+name: reviewer
+description: "Reviews code for quality and standards. Use after code changes."
+tools: Read, Grep, Glob, Bash(make:*), Bash(git:*)
 model: sonnet
-permissionMode: default
+color: green
 ---
 
-# Code Reviewer Agent
+# Reviewer Agent
 
-Reviews code changes for quality, standards compliance, and best practices.
+Reviews code changes for quality, standards compliance, and best practices across all languages.
 
 ## When to Use
 
@@ -26,7 +21,9 @@ Use this agent after code changes are made, particularly for:
 
 ## Review Scope
 
-### PHP Code (C1)
+The Reviewer agent reviews all code changes regardless of language. It identifies which languages were modified and runs the appropriate checks for each.
+
+### PHP Code
 
 **Automated Checks:**
 
@@ -45,7 +42,7 @@ make cs-check        # PHP-CS-Fixer check
 - [ ] SOLID principles followed
 - [ ] Dependency injection used
 
-### Node/TypeScript Code (C2)
+### Node/TypeScript Code
 
 **Automated Checks:**
 
@@ -63,7 +60,7 @@ make type-check      # TypeScript validation
 - [ ] Type safety maintained
 - [ ] Async/await patterns correct
 
-### SQL Code (C3)
+### SQL Code
 
 **Automated Checks:**
 
@@ -79,7 +76,7 @@ make lint-sql        # SQLFluff check
 - [ ] Indexes on frequently queried columns
 - [ ] Sensitive columns encrypted or hashed
 
-### Infrastructure Code (C6)
+### Infrastructure Code
 
 **Automated Checks:**
 

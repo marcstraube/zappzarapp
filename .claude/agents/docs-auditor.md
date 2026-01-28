@@ -1,12 +1,9 @@
 ---
 name: docs-auditor
-description: Checks documentation matches code. Use after implementation.
-tools:
-  - Read
-  - Grep
-  - Glob
+description: "Checks documentation matches code. Use after implementation."
+tools: Read, Grep, Glob
 model: haiku
-permissionMode: default
+color: yellow
 ---
 
 # Documentation Auditor Agent

@@ -1,15 +1,9 @@
 ---
 name: plan-architect
-description:
-  Creates implementation plans. Default sonnet, use opus for Large scope tasks.
-tools:
-  - Read
-  - Grep
-  - Glob
-  - Bash(git:*)
-  - WebSearch
+description: "Creates implementation plans. Default sonnet, use opus for Large scope tasks."
+tools: Read, Grep, Glob, Bash(git:*), WebSearch
 model: sonnet
-permissionMode: default
+color: purple
 ---
 
 <!--
