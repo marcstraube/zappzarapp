@@ -6,6 +6,7 @@ namespace DevToolbar\Middleware;
 
 use DevToolbar\DataCollectors\CollectorInterface;
 use DevToolbar\Renderers\AssetsRenderer;
+use DevToolbar\Renderers\DataInjectionRenderer;
 use DevToolbar\Renderers\MiniBarRenderer;
 use DevToolbar\Renderers\PanelRenderer;
 
@@ -59,11 +60,13 @@ class DevToolbarMiddleware
         $miniBarRenderer = new MiniBarRenderer($this->collectors);
         $panelRenderer = new PanelRenderer($this->collectors);
         $assetsRenderer = new AssetsRenderer();
+        $dataInjectionRenderer = new DataInjectionRenderer($this->collectors);
 
         $miniBar = $miniBarRenderer->render();
         $panel = $panelRenderer->render();
         $assets = $assetsRenderer->render();
+        $dataScript = $dataInjectionRenderer->render();
 
-        return $miniBar . $panel . $assets;
+        return $miniBar . $panel . $assets . $dataScript;
     }
 }

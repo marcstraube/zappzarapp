@@ -11,8 +11,23 @@ namespace DevToolbar\Storage;
  */
 class RequestStore
 {
-    private const MAX_REQUESTS = 20;
     private const SESSION_KEY = 'dev_toolbar_requests';
+    private const FULL_DATA_KEY = 'dev_toolbar_full_data';
+    private const MAX_FULL_DATA = 5; // Only keep full data for last 5 requests
+
+    /**
+     * Get maximum number of requests to store
+     *
+     * @return int Maximum requests (1-100, default: 20)
+     */
+    public static function getMaxRequests(): int
+    {
+        $envValue = getenv('DEV_TOOLBAR_MAX_REQUESTS');
+        if ($envValue !== false && is_numeric($envValue)) {
+            return max(1, min(50, (int)$envValue)); // Clamp 1-50 (reduced from 100)
+        }
+        return 10; // Default reduced from 20 to prevent memory issues
+    }
 
     /**
      * Store request data
@@ -28,28 +43,86 @@ class RequestStore
         if (!isset($_SESSION[self::SESSION_KEY])) {
             $_SESSION[self::SESSION_KEY] = [];
         }
+        if (!isset($_SESSION[self::FULL_DATA_KEY])) {
+            $_SESSION[self::FULL_DATA_KEY] = [];
+        }
 
+        $beforeCount = count($_SESSION[self::SESSION_KEY]);
+        error_log(sprintf(
+            'DevToolbar: Storing request %s (current count: %d)',
+            substr($requestId, 0, 20),
+            $beforeCount
+        ));
+
+        // Store lightweight metadata for all requests (for list/stats)
         $_SESSION[self::SESSION_KEY][$requestId] = [
             'id' => $requestId,
             'method' => $data['request']['method'] ?? 'GET',
             'uri' => $data['request']['uri'] ?? '/',
             'status' => $data['request']['status_code'] ?? 200,
             'time' => $data['request']['execution_time'] ?? 0,
-            'memory' => ($data['request']['memory_peak'] ?? 0) * 1024 * 1024, // Convert MB to bytes
+            'memory' => ($data['request']['memory_peak'] ?? 0) * 1024 * 1024,
             'query_count' => count($data['queries']['queries'] ?? []),
             'http_count' => $data['http']['count'] ?? 0,
             'cache_count' => $data['cache']['count'] ?? 0,
             'timestamp' => time(),
-            'data' => $data, // Full collector data for detailed view
         ];
 
-        // Keep only last N requests
-        if (count($_SESSION[self::SESSION_KEY]) > self::MAX_REQUESTS) {
-            // Remove oldest request
-            $keys = array_keys($_SESSION[self::SESSION_KEY]);
-            $oldestKey = $keys[0];
-            unset($_SESSION[self::SESSION_KEY][$oldestKey]);
+        // Store full data only for recent requests (for AJAX switching)
+        $_SESSION[self::FULL_DATA_KEY][$requestId] = [
+            'id' => $requestId,
+            'timestamp' => time(),
+            'data' => $data,
+        ];
+
+        // Keep only last N full data entries
+        if (count($_SESSION[self::FULL_DATA_KEY]) > self::MAX_FULL_DATA) {
+            $fullData = $_SESSION[self::FULL_DATA_KEY];
+            uasort($fullData, fn($a, $b) => $b['timestamp'] <=> $a['timestamp']); // Newest first
+            $_SESSION[self::FULL_DATA_KEY] = array_slice($fullData, 0, self::MAX_FULL_DATA, true);
+
+            error_log(sprintf(
+                'DevToolbar: Trimmed full data to %d entries',
+                count($_SESSION[self::FULL_DATA_KEY])
+            ));
         }
+
+        // Remove oldest metadata if we exceed the limit
+        $maxRequests = self::getMaxRequests();
+        $currentCount = count($_SESSION[self::SESSION_KEY]);
+
+        if ($currentCount > $maxRequests) {
+            // Sort by timestamp to find oldest
+            $requests = $_SESSION[self::SESSION_KEY];
+            uasort($requests, fn($a, $b) => $a['timestamp'] <=> $b['timestamp']);
+
+            // Remove oldest requests until we're at the limit
+            $toRemove = $currentCount - $maxRequests;
+            $removed = 0;
+
+            foreach ($requests as $id => $request) {
+                if ($removed >= $toRemove) {
+                    break;
+                }
+                unset($_SESSION[self::SESSION_KEY][$id]);
+                // Also remove from full data if exists
+                unset($_SESSION[self::FULL_DATA_KEY][$id]);
+                $removed++;
+            }
+
+            error_log(sprintf(
+                'DevToolbar: Removed %d old request(s), now storing %d/%d',
+                $removed,
+                count($_SESSION[self::SESSION_KEY]),
+                $maxRequests
+            ));
+        }
+
+        error_log(sprintf(
+            'DevToolbar: Stored successfully (metadata: %d, full data: %d)',
+            count($_SESSION[self::SESSION_KEY]),
+            count($_SESSION[self::FULL_DATA_KEY])
+        ));
     }
 
     /**
@@ -79,7 +152,24 @@ class RequestStore
     {
         self::ensureSessionStarted();
 
-        return $_SESSION[self::SESSION_KEY][$requestId] ?? null;
+        $metadata = $_SESSION[self::SESSION_KEY][$requestId] ?? null;
+        if (!$metadata) {
+            return null;
+        }
+
+        // Try to get full data if available
+        $fullDataEntry = $_SESSION[self::FULL_DATA_KEY][$requestId] ?? null;
+        if ($fullDataEntry && isset($fullDataEntry['data'])) {
+            // Merge metadata with full data
+            return array_merge($metadata, ['data' => $fullDataEntry['data']]);
+        }
+
+        // Full data not available (too old), return null to indicate AJAX won't work
+        error_log(sprintf(
+            'DevToolbar: Full data not available for request %s (too old)',
+            substr($requestId, 0, 20)
+        ));
+        return null;
     }
 
     /**
@@ -92,6 +182,7 @@ class RequestStore
         self::ensureSessionStarted();
 
         unset($_SESSION[self::SESSION_KEY]);
+        unset($_SESSION[self::FULL_DATA_KEY]);
     }
 
     /**
@@ -252,6 +343,54 @@ class RequestStore
         } else {
             return ['color' => 'red', 'icon' => '🔴'];
         }
+    }
+
+    /**
+     * Get all requests for migration to localStorage
+     *
+     * Returns all stored requests with their full data for one-time migration.
+     * This method is used when migrating from session storage to localStorage.
+     *
+     * @return array<int, array<string, mixed>> Array of requests with id, metadata, and data
+     */
+    public static function getAllForMigration(): array
+    {
+        self::ensureSessionStarted();
+
+        $metadata = $_SESSION[self::SESSION_KEY] ?? [];
+        $fullData = $_SESSION[self::FULL_DATA_KEY] ?? [];
+
+        if (empty($metadata)) {
+            return [];
+        }
+
+        $migrationData = [];
+
+        // Sort by timestamp (newest first)
+        uasort($metadata, fn($a, $b) => $b['timestamp'] <=> $a['timestamp']);
+
+        foreach ($metadata as $requestId => $meta) {
+            // Check if full data is available
+            $fullDataEntry = $fullData[$requestId] ?? null;
+
+            if (!$fullDataEntry || !isset($fullDataEntry['data'])) {
+                // Skip requests without full data (can't migrate)
+                continue;
+            }
+
+            $migrationData[] = [
+                'id' => $requestId,
+                'metadata' => $meta,
+                'data' => $fullDataEntry['data'], // Full collector data
+            ];
+
+            // Limit migration to 20 most recent requests (matching MAX_FULL_DATA for localStorage)
+            if (count($migrationData) >= 20) {
+                break;
+            }
+        }
+
+        return $migrationData;
     }
 
     /**

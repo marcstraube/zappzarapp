@@ -12,6 +12,7 @@ use DevToolbar\DataCollectors\RequestCollector;
 use DevToolbar\DataCollectors\HttpClientCollector;
 use DevToolbar\DataCollectors\CacheCollector;
 use DevToolbar\DataCollectors\TimelineCollector;
+use DevToolbar\DataCollectors\HistoryCollector;
 use DevToolbar\Guard\DevToolbarGuard;
 use DevToolbar\Middleware\DevToolbarMiddleware;
 use DevToolbar\Storage\RequestStore;
@@ -123,6 +124,9 @@ class DevToolbar
         $this->collectors['http'] = new HttpClientCollector();
         $this->collectors['cache'] = new CacheCollector();
         $this->collectors['timeline'] = new TimelineCollector();
+
+        // Phase 2.1: History Tab
+        $this->collectors['history'] = new HistoryCollector();
     }
 
     /**
@@ -148,20 +152,16 @@ class DevToolbar
     /**
      * Store request data in session for history
      *
+     * NOTE: This method is deprecated and no longer stores data in session.
+     * Request data is now injected via DataInjectionRenderer for localStorage storage.
+     *
      * @return void
+     * @deprecated No longer needed with localStorage implementation
      */
     private function storeRequestData(): void
     {
-        $requestId = RequestStore::generateId();
-
-        // Collect all data from collectors
-        $data = [];
-        foreach ($this->collectors as $key => $collector) {
-            $data[$key] = $collector->getData();
-        }
-
-        // Store in session
-        RequestStore::store($requestId, $data);
+        // No-op: Data is now injected via DataInjectionRenderer for localStorage storage
+        // This method is kept for backward compatibility but does nothing
     }
 
     /**

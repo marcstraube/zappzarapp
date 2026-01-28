@@ -21,7 +21,7 @@ require_once __DIR__ . '/../vendor/autoload.php';
 
 /**
  * ============================================================================
- * DEVELOPER TOOLBAR (DEV-ONLY)
+ * DEVELOPER TOOLBAR (DEV-ONLY) - INITIALIZATION
  * ============================================================================
  * Start output buffering and initialize the Developer Toolbar.
  * The toolbar provides real-time debugging information including:
@@ -31,6 +31,10 @@ require_once __DIR__ . '/../vendor/autoload.php';
  * - Exceptions (both handled and unhandled)
  *
  * Security: Only enabled in development (disabled in production, CLI, AJAX)
+ *
+ * Note: DevToolbar is initialized early, but CSP nonce is set later after
+ * CspNonceHelper generates it (see below after CSP header setup).
+ * AJAX requests for DevToolbar actions are handled above and exit early.
  */
 if (DevToolbar\Guard\DevToolbarGuard::isEnabled()) {
     ob_start();
@@ -141,6 +145,11 @@ header("Content-Security-Policy: $cspHeader");
 
 // 2. Define constant for backwards compatibility
 define('CSP_NONCE', CspNonceHelper::get());
+
+// 3. Share nonce with DevToolbar (if enabled)
+if (DevToolbar\Guard\DevToolbarGuard::isEnabled() && isset($toolbar)) {
+    $toolbar->setNonce(CspNonceHelper::get());
+}
 
 /**
  * ============================================================================

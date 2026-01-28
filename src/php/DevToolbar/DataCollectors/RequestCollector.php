@@ -61,7 +61,10 @@ class RequestCollector implements CollectorInterface
      */
     public function getData(): array
     {
-        return $this->data;
+        // No badge needed - there's always exactly 1 current request
+        return array_merge($this->data, [
+            'count' => 0, // 0 = no badge rendered
+        ]);
     }
 
     public function getName(): string

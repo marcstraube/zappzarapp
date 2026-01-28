@@ -7,6 +7,7 @@ namespace DevToolbar\Renderers;
 use DevToolbar\DataCollectors\CollectorInterface;
 use DevToolbar\Analyzers\QueryAnalyzer;
 use DevToolbar\Analyzers\PerformanceAnalyzer;
+use DevToolbar\Storage\RequestStore;
 
 /**
  * Renders expandable panel with tabs
@@ -29,10 +30,12 @@ class PanelRenderer implements RendererInterface
         $tabs = $this->renderTabs();
         $alerts = $this->renderAlerts();
         $content = $this->renderTabContents();
+        $requestSwitcher = $this->renderRequestSwitcher();
 
         return sprintf(
             '<div class="dev-toolbar-panel">
                 <div class="dev-toolbar-panel-header">
+                    %s
                     %s
                     <button class="dev-toolbar-panel-maximize" title="Maximize/Restore">⛶</button>
                     <button class="dev-toolbar-panel-close" title="Close">▼</button>
@@ -43,6 +46,7 @@ class PanelRenderer implements RendererInterface
                 </div>
             </div>',
             $tabs,
+            $requestSwitcher,
             $alerts,
             $content
         );
@@ -117,22 +121,35 @@ class PanelRenderer implements RendererInterface
     private function renderTabs(): string
     {
         $tabs = '';
+        $tabs .= '<!-- DevToolbar: Rendering tabs -->' . "\n";
 
         foreach ($this->collectors as $name => $collector) {
             $data = $collector->getData();
             $count = $data['count'] ?? 0;
             $label = strtoupper($name);
 
+            // Always render badge for history tab (JavaScript will update it)
+            // For other tabs, only render if count > 0
+            if ($name === 'history') {
+                $badge = '<span class="dev-toolbar-panel-tab-badge">0</span>';
+                $tabs .= "<!-- Tab: $name, Count: $count, Badge: ALWAYS RENDERED -->\n";
+            } else {
+                $badge = $count > 0 ? sprintf('<span class="dev-toolbar-panel-tab-badge">%d</span>', $count) : '';
+                $badgeStatus = $count > 0 ? "RENDERED (count=$count)" : "SKIPPED (count=0)";
+                $tabs .= "<!-- Tab: $name, Count: $count, Badge: $badgeStatus -->\n";
+            }
+
             $tabs .= sprintf(
                 '<button class="dev-toolbar-panel-tab" data-tab="%s">
-                    %s<span class="dev-toolbar-panel-tab-badge">%d</span>
+                    %s%s
                 </button>',
                 $name,
                 $label,
-                $count
+                $badge
             );
         }
 
+        $tabs .= '<!-- DevToolbar: Tabs rendered -->' . "\n";
         return $tabs;
     }
 
@@ -155,6 +172,7 @@ class PanelRenderer implements RendererInterface
                 'http' => $this->renderHttpTab($data),
                 'cache' => $this->renderCacheTab($data),
                 'timeline' => $this->renderTimelineTab($data),
+                'history' => $this->renderHistoryTab($data),
                 default => '<p>No data</p>',
             };
 
@@ -217,84 +235,12 @@ class PanelRenderer implements RendererInterface
             $html .= '</table></div>';
         }
 
-        // Render Request History
-        $html .= $this->renderRequestHistory();
-
-        return $html;
-    }
-
-    /**
-     * Render Request History section
-     *
-     * @return string HTML
-     */
-    private function renderRequestHistory(): string
-    {
-        $requests = \DevToolbar\Storage\RequestStore::getAll();
-
-        if (empty($requests)) {
-            return '<div class="dev-toolbar-section">
-                <div class="dev-toolbar-section-title">Request History</div>
-                <p>No request history yet. Reload the page to see requests.</p>
-            </div>';
-        }
-
-        $stats = \DevToolbar\Storage\RequestStore::getStatistics();
-
-        $html = '<div class="dev-toolbar-section">
-            <div class="dev-toolbar-section-title">Request History (' . $stats['total_requests'] . ' requests)</div>
-            <div class="dev-toolbar-request-history-stats">
-                <div><strong>Avg Time:</strong> ' . round($stats['avg_time'], 2) . 'ms</div>
-                <div><strong>Avg Memory:</strong> ' . round($stats['avg_memory'], 2) . 'MB</div>
-                <div><strong>Avg Queries:</strong> ' . round($stats['avg_queries'], 1) . '</div>
-                <div><strong>Slowest:</strong> ' . round($stats['slowest_time'], 2) . 'ms</div>
-                <div><strong>Fastest:</strong> ' . round($stats['fastest_time'], 2) . 'ms</div>
-            </div>
-        </div>';
-
+        // Export button for current request
         $html .= '<div class="dev-toolbar-section">
-            <div class="dev-toolbar-section-title">Recent Requests:</div>
-            <div class="dev-toolbar-request-history-list">';
-
-        foreach ($requests as $request) {
-            $statusDisplay = \DevToolbar\Storage\RequestStore::getStatusDisplay($request['status']);
-            $icon = $statusDisplay['icon'];
-            $timeAgo = \DevToolbar\Storage\RequestStore::timeAgo($request['timestamp']);
-
-            // Determine performance class
-            $perfClass = '';
-            if ($request['time'] > 1000) {
-                $perfClass = 'slow';
-            } elseif ($request['time'] > 500) {
-                $perfClass = 'warning';
-            }
-
-            $html .= sprintf(
-                '<div class="dev-toolbar-request-history-item %s">
-                    <div class="dev-toolbar-request-history-header">
-                        %s <strong>%s</strong> <span class="dev-toolbar-request-uri">%s</span>
-                        <span class="dev-toolbar-request-time-ago">%s</span>
-                    </div>
-                    <div class="dev-toolbar-request-history-meta">
-                        <span>%d</span> •
-                        <span>%.2fms</span> •
-                        <span>%.2fMB</span> •
-                        <span>%d queries</span>
-                    </div>
-                </div>',
-                $perfClass,
-                $icon,
-                htmlspecialchars($request['method']),
-                htmlspecialchars($request['uri']),
-                $timeAgo,
-                $request['status'],
-                $request['time'],
-                $request['memory'] / 1024 / 1024,
-                $request['query_count']
-            );
-        }
-
-        $html .= '</div></div>';
+            <button class="dev-toolbar-export-btn" data-action="export-current">
+                ⬇ Export Current Request
+            </button>
+        </div>';
 
         return $html;
     }
@@ -699,5 +645,255 @@ class PanelRenderer implements RendererInterface
         $empty = 20 - $filled;
 
         return str_repeat('█', $filled) . str_repeat('░', $empty);
+    }
+
+    /**
+     * Render HISTORY tab content
+     *
+     * @param array<string, mixed> $data
+     * @return string HTML
+     */
+    private function renderHistoryTab(array $data): string
+    {
+        $requests = $data['requests'] ?? [];
+        $stats = $data['statistics'] ?? [];
+        $trends = $data['trends'] ?? [];
+
+        return $this->renderHistoryFilters()
+            . $this->renderHistoryStatistics($stats)
+            . $this->renderHistoryTrends($trends)
+            . $this->renderHistoryRequestList($requests)
+            . $this->renderHistoryExport();
+    }
+
+    /**
+     * Render history filters
+     *
+     * @return string HTML
+     */
+    private function renderHistoryFilters(): string
+    {
+        return '<div class="dev-toolbar-history-filters">
+            <div class="dev-toolbar-history-filter-controls">
+                <div class="dev-toolbar-filter-group">
+                    <label for="history-filter-method">Method</label>
+                    <select id="history-filter-method" class="dev-toolbar-filter-select">
+                        <option value="">All Methods</option>
+                        <option value="GET">GET</option>
+                        <option value="POST">POST</option>
+                        <option value="PUT">PUT</option>
+                        <option value="DELETE">DELETE</option>
+                        <option value="PATCH">PATCH</option>
+                    </select>
+                </div>
+                <div class="dev-toolbar-filter-group">
+                    <label for="history-filter-status">Status</label>
+                    <select id="history-filter-status" class="dev-toolbar-filter-select">
+                        <option value="">All Status</option>
+                        <option value="2">2xx Success</option>
+                        <option value="3">3xx Redirect</option>
+                        <option value="4">4xx Client Error</option>
+                        <option value="5">5xx Server Error</option>
+                    </select>
+                </div>
+                <div class="dev-toolbar-filter-group">
+                    <label for="history-filter-uri">URI Contains</label>
+                    <input type="text" id="history-filter-uri" class="dev-toolbar-filter-input" placeholder="Search URI...">
+                </div>
+                <div class="dev-toolbar-filter-group">
+                    <label for="history-filter-min-time">Min Time (ms)</label>
+                    <input type="number" id="history-filter-min-time" class="dev-toolbar-filter-input" placeholder="0" min="0" step="10">
+                </div>
+                <div class="dev-toolbar-filter-group">
+                    <button id="history-filter-reset" class="dev-toolbar-btn dev-toolbar-btn-secondary">Reset Filters</button>
+                </div>
+            </div>
+        </div>';
+    }
+
+    /**
+     * Render history statistics (placeholder for client-side rendering)
+     *
+     * @param array<string, mixed> $stats
+     * @return string HTML
+     */
+    private function renderHistoryStatistics(array $stats): string
+    {
+        // Render placeholder - JavaScript will populate from localStorage
+        $html = '<div class="dev-toolbar-section">
+            <div class="dev-toolbar-section-title">Statistics</div>
+            <div class="dev-toolbar-history-stats-grid" id="dev-toolbar-history-stats-grid">';
+
+        $html .= '<div class="dev-toolbar-history-stat-card">
+                <div class="dev-toolbar-history-stat-label">Total Requests</div>
+                <div class="dev-toolbar-history-stat-value" data-history-stat="total">0</div>
+            </div>';
+
+        $html .= '<div class="dev-toolbar-history-stat-card">
+                <div class="dev-toolbar-history-stat-label">Avg Time</div>
+                <div class="dev-toolbar-history-stat-value" data-history-stat="avg_time">0ms</div>
+            </div>';
+
+        $html .= '<div class="dev-toolbar-history-stat-card">
+                <div class="dev-toolbar-history-stat-label">Avg Memory</div>
+                <div class="dev-toolbar-history-stat-value" data-history-stat="avg_memory">0MB</div>
+            </div>';
+
+        $html .= '<div class="dev-toolbar-history-stat-card">
+                <div class="dev-toolbar-history-stat-label">Avg Queries</div>
+                <div class="dev-toolbar-history-stat-value" data-history-stat="avg_queries">0</div>
+            </div>';
+
+        $html .= '<div class="dev-toolbar-history-stat-card">
+                <div class="dev-toolbar-history-stat-label">Fastest</div>
+                <div class="dev-toolbar-history-stat-value fast" data-history-stat="fastest">0ms</div>
+            </div>';
+
+        $html .= '<div class="dev-toolbar-history-stat-card">
+                <div class="dev-toolbar-history-stat-label">Slowest</div>
+                <div class="dev-toolbar-history-stat-value slow" data-history-stat="slowest">0ms</div>
+            </div>';
+
+        $html .= '</div></div>';
+
+        return $html;
+    }
+
+    /**
+     * Render history trends (ASCII sparkline)
+     *
+     * @param array<string, mixed> $trends
+     * @return string HTML
+     */
+    private function renderHistoryTrends(array $trends): string
+    {
+        $times = $trends['time'] ?? [];
+
+        if (empty($times)) {
+            return '';
+        }
+
+        $sparkline = $this->generateSparkline($times);
+
+        return sprintf(
+            '<div class="dev-toolbar-section">
+                <div class="dev-toolbar-section-title">Response Time Trend</div>
+                <div class="dev-toolbar-history-trend">
+                    <div class="dev-toolbar-history-sparkline">%s</div>
+                </div>
+            </div>',
+            $sparkline
+        );
+    }
+
+    /**
+     * Generate ASCII sparkline from values
+     *
+     * @param array<int|float> $values
+     * @return string Sparkline characters
+     */
+    private function generateSparkline(array $values): string
+    {
+        if (empty($values)) {
+            return '';
+        }
+
+        $ticks = ['▁', '▂', '▃', '▄', '▅', '▆', '▇', '█'];
+        $min = min($values);
+        $max = max($values);
+        $range = $max - $min;
+
+        if ($range == 0) {
+            return str_repeat($ticks[3], count($values)); // All middle
+        }
+
+        $sparkline = '';
+        foreach ($values as $value) {
+            $normalized = ($value - $min) / $range;
+            $index = min(7, (int)($normalized * 8));
+            $sparkline .= $ticks[$index];
+        }
+
+        return $sparkline;
+    }
+
+    /**
+     * Render history request list
+     *
+     * @param array<string, array<string, mixed>> $requests
+     * @return string HTML
+     */
+    private function renderHistoryRequestList(array $requests): string
+    {
+        // Render placeholder - JavaScript will populate from localStorage
+        $html = '<div class="dev-toolbar-section">
+            <div class="dev-toolbar-section-title" id="history-list-title">Request History (<span id="history-list-count">0</span>)</div>
+            <div class="dev-toolbar-history-request-list" id="history-request-list-container">
+                <p style="color: #888;">Loading history from localStorage...</p>
+            </div>
+        </div>';
+
+        return $html;
+    }
+
+    /**
+     * Render history export controls
+     *
+     * @return string HTML
+     */
+    private function renderHistoryExport(): string
+    {
+        return '<div class="dev-toolbar-section">
+            <div class="dev-toolbar-section-title">Actions</div>
+            <div class="dev-toolbar-history-export">
+                <button id="history-export-json" class="dev-toolbar-btn dev-toolbar-btn-primary">📥 Export JSON</button>
+                <button id="history-export-csv" class="dev-toolbar-btn dev-toolbar-btn-primary">📊 Export CSV</button>
+                <button id="history-clear" class="dev-toolbar-btn dev-toolbar-btn-danger">🗑️ Clear History</button>
+            </div>
+        </div>';
+    }
+
+    /**
+     * Render request switcher dropdown
+     *
+     * @return string HTML
+     */
+    private function renderRequestSwitcher(): string
+    {
+        $currentRequestId = $this->getCurrentRequestId();
+
+        // With localStorage migration, dropdown is populated client-side by JavaScript
+        // Only render the container structure - JavaScript will populate from localStorage
+        $html = '<div class="dev-toolbar-request-switcher">';
+        $html .= sprintf(
+            '<button class="dev-toolbar-request-switcher-toggle" data-current="%s">
+                <span class="dev-toolbar-request-switcher-label">Request</span>
+                <span class="dev-toolbar-request-switcher-arrow">▼</span>
+            </button>',
+            htmlspecialchars($currentRequestId)
+        );
+
+        // Empty dropdown - JavaScript will populate via StorageManager
+        $html .= '<div class="dev-toolbar-request-switcher-dropdown"></div>';
+
+        $html .= '</div>';
+
+        return $html;
+    }
+
+    /**
+     * Get current request ID
+     *
+     * @return string Request ID
+     */
+    private function getCurrentRequestId(): string
+    {
+        // Try to get from stored requests (if this is a reload)
+        $storedRequests = RequestStore::getAll();
+        if (!empty($storedRequests)) {
+            return array_key_first($storedRequests);
+        }
+
+        return 'current';
     }
 }
