@@ -40,9 +40,9 @@ class HistoryPanelRendererTest extends TestCase
 
         // Should contain all main sections even with empty data
         $this->assertStringContainsString('dev-toolbar-history-filters', $output);
+        $this->assertStringContainsString('dev-toolbar-history-actions', $output);
         $this->assertStringContainsString('Statistics', $output);
         $this->assertStringContainsString('Request History', $output);
-        $this->assertStringContainsString('Actions', $output);
 
         // Should contain trends section placeholder (JavaScript will hide if no data)
         $this->assertStringContainsString('Response Time Trend', $output);
@@ -233,19 +233,18 @@ class HistoryPanelRendererTest extends TestCase
     {
         $output = $this->renderer->renderTab([]);
 
-        // Actions section
-        $this->assertStringContainsString('Actions', $output);
-        $this->assertStringContainsString('dev-toolbar-history-export', $output);
+        // Action buttons (now in filter bar)
+        $this->assertStringContainsString('dev-toolbar-history-actions', $output);
 
         // Export buttons
         $this->assertStringContainsString('history-export-json', $output);
-        $this->assertStringContainsString('Export JSON', $output);
+        $this->assertStringContainsString('JSON', $output);
         $this->assertStringContainsString('history-export-csv', $output);
-        $this->assertStringContainsString('Export CSV', $output);
+        $this->assertStringContainsString('CSV', $output);
 
         // Clear button
         $this->assertStringContainsString('history-clear', $output);
-        $this->assertStringContainsString('Clear History', $output);
+        $this->assertStringContainsString('Clear', $output);
         $this->assertStringContainsString('dev-toolbar-btn-danger', $output);
     }
 
@@ -369,23 +368,26 @@ class HistoryPanelRendererTest extends TestCase
 
         // Verify all major sections are present in correct order
         $filterPos = strpos($output, 'dev-toolbar-history-filters');
+        $actionsPos = strpos($output, 'dev-toolbar-history-actions');
         $statsPos = strpos($output, 'Statistics');
         $trendsPos = strpos($output, 'Response Time Trend');
         $listPos = strpos($output, 'Request History');
-        $actionsPos = strpos($output, 'Actions');
 
         // Ensure all sections exist
         $this->assertNotFalse($filterPos);
+        $this->assertNotFalse($actionsPos);
         $this->assertNotFalse($statsPos);
         $this->assertNotFalse($trendsPos);
         $this->assertNotFalse($listPos);
-        $this->assertNotFalse($actionsPos);
 
         // Ensure sections appear in correct order
+        // Actions are inside Filters
         $this->assertLessThan($statsPos, $filterPos, 'Filters should come before Statistics');
         $this->assertLessThan($trendsPos, $statsPos, 'Statistics should come before Trends');
         $this->assertLessThan($listPos, $trendsPos, 'Trends should come before Request List');
-        $this->assertLessThan($actionsPos, $listPos, 'Request List should come before Actions');
+
+        // Actions are within Filters div, so they come after filter controls but before Statistics section
+        $this->assertGreaterThan($filterPos, $actionsPos, 'Actions should be inside Filters');
     }
 
     public function testDataStructureWithMissingKeys(): void

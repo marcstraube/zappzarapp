@@ -33,8 +33,7 @@ class HistoryPanelRenderer extends AbstractPanelRenderer
         return $this->renderFilters()
             . $this->renderStatistics()
             . $this->renderTrends($trends)
-            . $this->renderRequestList()
-            . $this->renderExport();
+            . $this->renderRequestList();
     }
 
     /**
@@ -48,18 +47,15 @@ class HistoryPanelRenderer extends AbstractPanelRenderer
     }
 
     /**
-     * Render history filter controls
+     * Render history filter controls and action buttons
      *
-     * Provides UI controls for filtering request history:
-     * - Method filter (GET, POST, PUT, DELETE, PATCH)
-     * - Status code filter (2xx, 3xx, 4xx, 5xx)
-     * - URI search filter
-     * - Minimum execution time filter
-     * - Reset filters button
+     * Provides sticky toolbar with:
+     * - Left: Filter controls (Method, Status, URI, Min Time, Reset)
+     * - Right: Action buttons (Export JSON, Export CSV, Clear History)
      *
-     * JavaScript handles the actual filtering logic.
+     * JavaScript handles filtering logic and button actions.
      *
-     * @return string HTML for filter controls
+     * @return string HTML for filter controls and actions
      */
     private function renderFilters(): string
     {
@@ -97,6 +93,11 @@ class HistoryPanelRenderer extends AbstractPanelRenderer
                 <div class="dev-toolbar-filter-group">
                     <button id="history-filter-reset" class="dev-toolbar-btn dev-toolbar-btn-secondary">Reset Filters</button>
                 </div>
+            </div>
+            <div class="dev-toolbar-history-actions">
+                <button id="history-export-json" class="dev-toolbar-btn dev-toolbar-btn-primary" title="Export all requests as JSON">📥 JSON</button>
+                <button id="history-export-csv" class="dev-toolbar-btn dev-toolbar-btn-primary" title="Export summary as CSV">📊 CSV</button>
+                <button id="history-clear" class="dev-toolbar-btn dev-toolbar-btn-danger" title="Clear all history">🗑️ Clear</button>
             </div>
         </div>';
     }
@@ -207,30 +208,6 @@ class HistoryPanelRenderer extends AbstractPanelRenderer
         </div>';
 
         return $html;
-    }
-
-    /**
-     * Render export and action controls
-     *
-     * Provides buttons for:
-     * - Export JSON: Download complete request history as JSON file
-     * - Export CSV: Download request summary as CSV spreadsheet
-     * - Clear History: Delete all stored request history from localStorage
-     *
-     * JavaScript handles the export logic and localStorage management.
-     *
-     * @return string HTML for export controls
-     */
-    private function renderExport(): string
-    {
-        return '<div class="dev-toolbar-section">
-            <div class="dev-toolbar-section-title">Actions</div>
-            <div class="dev-toolbar-history-export">
-                <button id="history-export-json" class="dev-toolbar-btn dev-toolbar-btn-primary">📥 Export JSON</button>
-                <button id="history-export-csv" class="dev-toolbar-btn dev-toolbar-btn-primary">📊 Export CSV</button>
-                <button id="history-clear" class="dev-toolbar-btn dev-toolbar-btn-danger">🗑️ Clear History</button>
-            </div>
-        </div>';
     }
 
     /**

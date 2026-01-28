@@ -704,10 +704,17 @@
    =================================== */
 
 .dev-toolbar-history-filters {
+    position: sticky;
+    top: 0;
+    z-index: 10;
     background: #f9fafb;
     padding: 16px;
     border-radius: var(--radius-md);
     margin-bottom: 24px;
+    display: flex;
+    align-items: flex-end;
+    gap: 16px;
+    flex-wrap: wrap;
 }
 
 .dev-toolbar-history-filter-controls {
@@ -715,6 +722,15 @@
     grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
     gap: 12px;
     align-items: end;
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+.dev-toolbar-history-actions {
+    display: flex;
+    gap: 8px;
+    margin-left: auto;
+    flex-shrink: 0;
 }
 
 .dev-toolbar-filter-group {
@@ -868,12 +884,6 @@
 
 .dev-toolbar-history-meta-item {
     display: inline-block;
-}
-
-.dev-toolbar-history-export {
-    display: flex;
-    gap: 12px;
-    margin-top: 16px;
 }
 
 .dev-toolbar-btn {
