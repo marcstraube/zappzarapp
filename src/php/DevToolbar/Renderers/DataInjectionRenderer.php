@@ -8,7 +8,6 @@ use DevToolbar\DataCollectors\CollectorInterface;
 use DevToolbar\Security\NonceHelper;
 use DevToolbar\Storage\RequestStore;
 use ReflectionClass;
-use ReflectionMethod;
 
 /**
  * Injects DevToolbar data as JavaScript for localStorage storage
@@ -111,7 +110,7 @@ class DataInjectionRenderer implements RendererInterface
     /**
      * Render all tab contents as key-value pairs
      *
-     * Uses reflection to call PanelRenderer's private rendering methods.
+     * Uses reflection to access PanelRenderer's panel renderers and call renderTab().
      *
      * @return array<string, string> Tab name => HTML content
      */
@@ -120,17 +119,18 @@ class DataInjectionRenderer implements RendererInterface
         $tabs = [];
         $reflection = new ReflectionClass($this->panelRenderer);
 
+        // Access private $panelRenderers property
+        $panelRenderersProperty = $reflection->getProperty('panelRenderers');
+        $panelRenderersProperty->setAccessible(true);
+        $panelRenderers = $panelRenderersProperty->getValue($this->panelRenderer);
+
         foreach ($this->collectors as $name => $collector) {
             $data = $collector->getData();
+            $renderer = $panelRenderers[$name] ?? null;
 
-            // Match tab rendering methods from PanelRenderer
-            $methodName = 'render' . ucfirst($name) . 'Tab';
-
-            try {
-                $method = $reflection->getMethod($methodName);
-                $method->setAccessible(true);
-                $tabs[$name] = $method->invoke($this->panelRenderer, $data);
-            } catch (\ReflectionException $e) {
+            if ($renderer) {
+                $tabs[$name] = $renderer->renderTab($data);
+            } else {
                 // Fallback for tabs without dedicated render methods
                 $tabs[$name] = '<p>No data available</p>';
             }
@@ -163,6 +163,11 @@ class DataInjectionRenderer implements RendererInterface
         $migrationData = [];
         $reflection = new ReflectionClass($this->panelRenderer);
 
+        // Access private $panelRenderers property
+        $panelRenderersProperty = $reflection->getProperty('panelRenderers');
+        $panelRenderersProperty->setAccessible(true);
+        $panelRenderers = $panelRenderersProperty->getValue($this->panelRenderer);
+
         foreach ($migrationRequests as $request) {
             $requestId = $request['id'];
             $metadata = $request['metadata'];
@@ -172,13 +177,11 @@ class DataInjectionRenderer implements RendererInterface
             $tabs = [];
 
             foreach ($collectorData as $collectorName => $data) {
-                $methodName = 'render' . ucfirst($collectorName) . 'Tab';
+                $renderer = $panelRenderers[$collectorName] ?? null;
 
-                try {
-                    $method = $reflection->getMethod($methodName);
-                    $method->setAccessible(true);
-                    $tabs[$collectorName] = $method->invoke($this->panelRenderer, $data);
-                } catch (\ReflectionException $e) {
+                if ($renderer) {
+                    $tabs[$collectorName] = $renderer->renderTab($data);
+                } else {
                     $tabs[$collectorName] = '<p>No data available</p>';
                 }
             }
