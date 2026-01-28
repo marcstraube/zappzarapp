@@ -910,13 +910,26 @@
 }
 
 .dev-toolbar-btn-secondary {
-    background: #6b7280;
-    color: white;
+    background: #f3f4f6;
+    color: #4b5563;
+    border: 1px solid #e5e7eb;
 }
 
 .dev-toolbar-btn-secondary:hover {
-    background: #4b5563;
+    background: #e5e7eb;
+    border-color: #d1d5db;
     transform: translateY(-1px);
+    box-shadow: 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+.dev-toolbar-btn-danger-subtle {
+    color: #dc2626;
+}
+
+.dev-toolbar-btn-danger-subtle:hover {
+    background: #fee2e2;
+    border-color: #fecaca;
+    color: #b91c1c;
 }
 
 .dev-toolbar-btn-danger {
