@@ -869,10 +869,19 @@
     flex: 1;
 }
 
-.dev-toolbar-history-time-ago {
+.dev-toolbar-history-time-ago,
+.dev-toolbar-request-time-ago {
     font-size: 0.75rem;
     color: #6b7280;
     margin-left: auto;
+    cursor: help;
+    border-bottom: 1px dotted #d1d5db;
+}
+
+.dev-toolbar-history-time-ago:hover,
+.dev-toolbar-request-time-ago:hover {
+    color: #374151;
+    border-bottom-color: #9ca3af;
 }
 
 .dev-toolbar-history-item-meta {

@@ -882,6 +882,7 @@
             metaArray.forEach(request => {
                 const statusIcon = this.getStatusIcon(request.status);
                 const timeAgo = this.timeAgo(request.timestamp);
+                const fullTimestamp = this.formatTimestamp(request.timestamp);
 
                 // Performance class
                 let perfClass = '';
@@ -901,7 +902,7 @@
                             <span class="dev-toolbar-history-icon">${statusIcon}</span>
                             <span class="dev-toolbar-history-method">${this.escapeHtml(request.method)}</span>
                             <span class="dev-toolbar-history-uri">${this.escapeHtml(request.uri)}</span>
-                            <span class="dev-toolbar-history-time-ago">${timeAgo}</span>
+                            <span class="dev-toolbar-history-time-ago" title="${fullTimestamp}">${timeAgo}</span>
                             <button class="dev-toolbar-history-item-export"
                                     data-request-id="${this.escapeHtml(request.id)}"
                                     title="Export this request">⬇</button>
@@ -1394,6 +1395,7 @@
             recentRequests.forEach(request => {
                 const statusIcon = this.getStatusIcon(request.status);
                 const timeAgo = this.timeAgo(request.timestamp);
+                const fullTimestamp = this.formatTimestamp(request.timestamp);
 
                 // Determine performance class
                 let perfClass = '';
@@ -1407,7 +1409,7 @@
                     <div class="dev-toolbar-request-history-header">
                         ${statusIcon} <strong>${this.escapeHtml(request.method)}</strong>
                         <span class="dev-toolbar-request-uri">${this.escapeHtml(request.uri)}</span>
-                        <span class="dev-toolbar-request-time-ago">${timeAgo}</span>
+                        <span class="dev-toolbar-request-time-ago" title="${fullTimestamp}">${timeAgo}</span>
                     </div>
                     <div class="dev-toolbar-request-history-meta">
                         <span>${request.status}</span> •
@@ -1543,6 +1545,26 @@
             if (seconds < 3600) return `${Math.floor(seconds / 60)}m ago`;
             if (seconds < 86400) return `${Math.floor(seconds / 3600)}h ago`;
             return `${Math.floor(seconds / 86400)}d ago`;
+        },
+
+        /**
+         * Format timestamp as readable date/time string
+         *
+         * @param {number} timestamp Unix timestamp (seconds)
+         * @return {string} Formatted date/time
+         */
+        formatTimestamp(timestamp) {
+            const date = new Date(timestamp * 1000);
+
+            // Format: "2026-01-28 15:42:35"
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            const hours = String(date.getHours()).padStart(2, '0');
+            const minutes = String(date.getMinutes()).padStart(2, '0');
+            const seconds = String(date.getSeconds()).padStart(2, '0');
+
+            return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
         },
 
         /**
