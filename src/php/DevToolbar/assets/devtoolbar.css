@@ -709,12 +709,13 @@
     z-index: 10;
     background: #f9fafb;
     padding: 16px;
-    border-radius: var(--radius-md);
     margin-bottom: 24px;
     display: flex;
     align-items: flex-end;
     gap: 16px;
     flex-wrap: wrap;
+    border-bottom: 1px solid #e5e7eb;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
 }
 
 .dev-toolbar-history-filter-controls {
