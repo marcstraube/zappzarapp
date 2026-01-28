@@ -2835,32 +2835,32 @@ renovate: ## Run Renovate dependency scanner
 
 analyse: analyse-php analyse-node  ## Run static analysis (PHP + Node)
 
-analyse-php: ## Run PHPStan static analysis
+analyse-php: ## Run PHPStan static analysis (ARGS="path/to/dir" for specific paths)
 	@echo -e "\033[0;33mRunning PHPStan...\033[0m"
-	@docker compose exec php composer analyse
+	@docker compose exec php composer analyse -- $(ARGS)
 
 phpmd: ## Run PHPMD (PHP Mess Detector) for code quality analysis
 	@echo -e "\033[0;33mRunning PHPMD (Mess Detector)...\033[0m"
 	@docker compose exec php php -d error_reporting=24575 vendor/bin/phpmd src/php,tests/php text phpmd.xml.dist --exclude '*DatabaseConfig*'
 
-rector-check: ## Run Rector for automated refactoring analysis (dry-run)
+rector-check: ## Run Rector for automated refactoring analysis (ARGS="path/to/dir" for specific paths)
 	@echo -e "\033[0;33mRunning Rector analysis (dry-run)...\033[0m"
-	@docker compose exec php composer rector-check
+	@docker compose exec php composer rector-check -- $(ARGS)
 
-rector-fix: ## Apply Rector refactorings automatically
+rector-fix: ## Apply Rector refactorings automatically (ARGS="path/to/dir" for specific paths)
 	@echo -e "\033[0;33mApplying Rector refactorings...\033[0m"
-	@docker compose exec php composer rector-fix
+	@docker compose exec php composer rector-fix -- $(ARGS)
 
 check: cs-check analyse-php phpmd rector-check prettier-check analyse-node lint-node test deps-validate compose-validate validate-env lint-md lint-sql lint-docker lint-shell ## Run all checks (CI simulation)
 	@echo -e "\033[0;32mAll checks passed!\033[0m"
 
-cs-check: ## Check coding style (dry-run)
+cs-check: ## Check coding style (ARGS="path/to/file.php" for specific files)
 	@echo -e "\033[0;33mChecking Coding Style...\033[0m"
-	@docker compose exec php composer cs-check
+	@docker compose exec php composer cs-check -- $(ARGS)
 
-cs-fix: ## Fix coding style automatically (uses composer alias)
+cs-fix: ## Fix coding style automatically (ARGS="path/to/file.php" for specific files)
 	@echo -e "\033[0;33mFixing Coding Style...\033[0m"
-	@docker compose exec php composer cs-fix
+	@docker compose exec php composer cs-fix -- $(ARGS)
 
 cs-fix-all: ## Fix coding style aggressively on all files (uses config from .php-cs-fixer.dist.php)
 	@echo -e "\033[0;33mFixing Coding Style aggressively on all files...\033[0m"
@@ -2937,14 +2937,14 @@ lint-sql-fix: ## Fix SQL style issues automatically
 	fi
 	@echo -e "\033[0;32mSQL files fixed!\033[0m"
 
-lint-node: ## Run ESLint on TypeScript/JavaScript files
+lint-node: ## Run ESLint on TypeScript/JavaScript files (ARGS="path/to/file.ts" for specific files)
 	@echo -e "\033[0;33mRunning ESLint...\033[0m"
-	@$(DC) run --rm -T dev-tools pnpm run lint
+	@$(DC) run --rm -T dev-tools pnpm run lint -- $(ARGS)
 	@echo -e "\033[0;32mESLint check completed!\033[0m"
 
-lint-node-fix: ## Fix ESLint issues automatically
+lint-node-fix: ## Fix ESLint issues automatically (ARGS="path/to/file.ts" for specific files)
 	@echo -e "\033[0;33mFixing ESLint issues...\033[0m"
-	@$(DC) run --rm -T dev-tools pnpm run lint:fix
+	@$(DC) run --rm -T dev-tools pnpm run lint:fix -- $(ARGS)
 	@echo -e "\033[0;32mESLint issues fixed!\033[0m"
 
 lint-shell: ## Lint shell scripts with ShellCheck
@@ -2959,19 +2959,19 @@ lint-shell: ## Lint shell scripts with ShellCheck
 	fi
 	@echo -e "\033[0;32mShellCheck completed!\033[0m"
 
-analyse-node: ## Run TypeScript type checking (static analysis)
+analyse-node: ## Run TypeScript type checking (ARGS="path/to/file.ts" for specific files)
 	@echo -e "\033[0;33mRunning TypeScript type check...\033[0m"
-	@$(DC) run --rm -T dev-tools pnpm run type-check
+	@$(DC) run --rm -T dev-tools pnpm run type-check -- $(ARGS)
 	@echo -e "\033[0;32mTypeScript check completed!\033[0m"
 
-prettier-check: ## Check code formatting with Prettier
+prettier-check: ## Check code formatting with Prettier (ARGS="path/to/file.ts" for specific files)
 	@echo -e "\033[0;33mChecking code formatting (Prettier)...\033[0m"
-	@$(DC) run --rm -T dev-tools pnpm run format:check
+	@$(DC) run --rm -T dev-tools pnpm run format:check -- $(ARGS)
 	@echo -e "\033[0;32mPrettier check completed!\033[0m"
 
-prettier-fix: ## Fix code formatting with Prettier
+prettier-fix: ## Fix code formatting with Prettier (ARGS="path/to/file.ts" for specific files)
 	@echo -e "\033[0;33mFixing code formatting (Prettier)...\033[0m"
-	@$(DC) run --rm -T dev-tools pnpm run format
+	@$(DC) run --rm -T dev-tools pnpm run format -- $(ARGS)
 	@echo -e "\033[0;32mPrettier formatting applied!\033[0m"
 
 outdated: ## Check for outdated Composer dependencies
@@ -3039,12 +3039,12 @@ test-coverage: ## Generate coverage reports for PHP and Node.js - continues even
 	echo -e "\033[0;32m  Result: PASSED - All coverage reports generated\033[0m"; \
 	echo "════════════════════════════════════════════════════════════"
 
-test-php: ## Run PHPUnit tests
+test-php: ## Run PHPUnit tests (ARGS="--filter testName" for specific tests)
 	@echo -e "\033[0;33mRunning PHPUnit tests...\033[0m"
 	@if docker compose ps -q php 2>/dev/null | grep -q .; then \
-		docker compose exec php composer test; \
+		docker compose exec php composer test -- $(ARGS); \
 	else \
-		docker compose run --rm php composer test; \
+		docker compose run --rm php composer test -- $(ARGS); \
 	fi
 
 test-php-debug: ## Run PHPUnit tests with Xdebug enabled
@@ -3055,26 +3055,26 @@ test-php-debug: ## Run PHPUnit tests with Xdebug enabled
 		docker compose run --rm php sh -c 'XDEBUG_MODE=develop,debug composer test'; \
 	fi
 
-test-coverage-php: ## Generate PHPUnit coverage report (HTML in build/coverage/php)
+test-coverage-php: ## Generate PHPUnit coverage report (ARGS="--filter testName" for specific tests)
 	@echo -e "\033[0;33mRunning PHPUnit with coverage report...\033[0m"
 	@if docker compose ps -q php 2>/dev/null | grep -q .; then \
-		docker compose exec php sh -c 'XDEBUG_MODE=coverage vendor/bin/phpunit --coverage-html build/coverage/php --coverage-clover build/coverage/php/clover.xml'; \
+		docker compose exec php sh -c 'XDEBUG_MODE=coverage vendor/bin/phpunit --coverage-html build/coverage/php --coverage-clover build/coverage/php/clover.xml $(ARGS)'; \
 	else \
-		docker compose run --rm php sh -c 'XDEBUG_MODE=coverage vendor/bin/phpunit --coverage-html build/coverage/php --coverage-clover build/coverage/php/clover.xml'; \
+		docker compose run --rm php sh -c 'XDEBUG_MODE=coverage vendor/bin/phpunit --coverage-html build/coverage/php --coverage-clover build/coverage/php/clover.xml $(ARGS)'; \
 	fi
 	@echo -e "\033[0;32mPHP coverage report generated in build/coverage/php/index.html!\033[0m"
 
-test-node: ## Run Vitest tests
+test-node: ## Run Vitest tests (ARGS="path/to/test.ts" for specific tests)
 	@echo -e "\033[0;33mRunning Vitest tests...\033[0m"
-	@$(DC) run --rm -T dev-tools pnpm test
+	@$(DC) run --rm -T dev-tools pnpm test -- $(ARGS)
 
 test-node-watch: ## Run Vitest in watch mode (interactive)
 	@echo -e "\033[0;33mRunning Vitest in watch mode...\033[0m"
 	@$(DC) run --rm dev-tools pnpm test:watch
 
-test-coverage-node: ## Generate Vitest coverage report (HTML in build/coverage/node)
+test-coverage-node: ## Generate Vitest coverage report (ARGS="path/to/test.ts" for specific tests)
 	@echo -e "\033[0;33mRunning Vitest with coverage report...\033[0m"
-	@$(DC) run --rm -T dev-tools pnpm test:coverage
+	@$(DC) run --rm -T dev-tools pnpm test:coverage -- $(ARGS)
 	@echo -e "\033[0;32mNode.js coverage report generated in build/coverage/node/index.html!\033[0m"
 
 ##@ GOSS Container Tests
