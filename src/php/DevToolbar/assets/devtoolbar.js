@@ -993,6 +993,9 @@
                     this.isViewingHistoricalRequest = true;
                     this.currentHistoricalRequestId = requestId;
 
+                    // Re-populate dropdown to update highlighting
+                    this.populateRequestSwitcher();
+
                     // Reset history tab initialization flag (so it can be re-initialized)
                     this.historyTabInitialized = false;
 
@@ -1098,6 +1101,9 @@
                 this.isViewingHistoricalRequest = false;
                 this.currentHistoricalRequestId = null;
                 this.historyTabInitialized = false;
+
+                // Re-populate dropdown to update highlighting
+                this.populateRequestSwitcher();
 
                 // Re-attach listeners and restore tab
                 setTimeout(() => {
