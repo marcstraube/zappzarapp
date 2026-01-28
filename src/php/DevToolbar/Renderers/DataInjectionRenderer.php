@@ -60,6 +60,17 @@ class DataInjectionRenderer implements RendererInterface
             $json
         );
 
+        // Inject Xdebug configuration (live state, not historical)
+        $xdebugConfig = [
+            'enabled' => extension_loaded('xdebug'),
+        ];
+        $xdebugJson = json_encode($xdebugConfig, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT);
+        $scripts .= sprintf(
+            '<script nonce="%s">window.__XDEBUG_CONFIG__ = %s;</script>',
+            htmlspecialchars($nonce, ENT_QUOTES, 'UTF-8'),
+            $xdebugJson
+        );
+
         // Check if migration is needed (session data exists and not yet migrated)
         $migrationData = $this->getMigrationData();
         if (!empty($migrationData)) {

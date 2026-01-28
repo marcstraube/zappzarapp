@@ -545,6 +545,84 @@
             }, 1500);
         },
 
+        /**
+         * Render Xdebug controls dynamically based on current state
+         *
+         * This ensures that Xdebug status always reflects the CURRENT state,
+         * even when viewing historical requests with stored tab content.
+         */
+        renderXdebugControls() {
+            const container = document.getElementById('dev-toolbar-request-controls-container');
+            if (!container) {
+                return; // Container not found (not on REQUEST tab)
+            }
+
+            // Get Xdebug configuration from server-injected data
+            const xdebugConfig = window.__XDEBUG_CONFIG__ || { enabled: false };
+            const xdebugEnabled = xdebugConfig.enabled;
+
+            // Check current cookie status
+            const cookies = document.cookie.split(';').reduce((acc, cookie) => {
+                const [key, value] = cookie.trim().split('=');
+                acc[key] = value;
+                return acc;
+            }, {});
+
+            const xdebugActive = 'XDEBUG_SESSION' in cookies;
+            const xdebugSessionName = cookies['XDEBUG_SESSION'] || '';
+
+            // Build HTML
+            let html = '<div class="dev-toolbar-request-status">';
+
+            if (xdebugEnabled) {
+                const statusClass = xdebugActive ? 'active' : 'inactive';
+                const statusText = xdebugActive ? `Xdebug: ${xdebugSessionName}` : 'Xdebug: Off';
+                const statusIcon = xdebugActive ? '●' : '○';
+
+                html += `<div class="dev-toolbar-xdebug-compact dev-toolbar-xdebug-compact-${statusClass}">
+                    <span class="dev-toolbar-xdebug-indicator">${statusIcon}</span>
+                    <span class="dev-toolbar-xdebug-label">${this.escapeHtml(statusText)}</span>
+                </div>`;
+            } else {
+                html += `<div class="dev-toolbar-xdebug-compact dev-toolbar-xdebug-compact-disabled">
+                    <span class="dev-toolbar-xdebug-label">Xdebug: Not Installed</span>
+                </div>`;
+            }
+
+            html += '</div>'; // .dev-toolbar-request-status
+
+            html += '<div class="dev-toolbar-request-actions">';
+
+            if (xdebugEnabled) {
+                if (xdebugActive) {
+                    html += `<button class="dev-toolbar-btn dev-toolbar-btn-secondary" data-action="xdebug-disable" title="Disable Xdebug step debugging">
+                        ⏹ Disable
+                    </button>`;
+                } else {
+                    html += `<button class="dev-toolbar-btn dev-toolbar-btn-secondary" data-action="xdebug-enable" data-ide="PHPSTORM" title="Enable Xdebug for PhpStorm">
+                        ▶ PhpStorm
+                    </button>`;
+                    html += `<button class="dev-toolbar-btn dev-toolbar-btn-secondary" data-action="xdebug-enable" data-ide="VSCODE" title="Enable Xdebug for VSCode">
+                        ▶ VSCode
+                    </button>`;
+                }
+            }
+
+            html += `<button class="dev-toolbar-btn dev-toolbar-btn-secondary" data-action="export-current" title="Export current request as JSON">
+                ⬇ Export
+            </button>`;
+
+            html += '</div>'; // .dev-toolbar-request-actions
+
+            // Inject HTML
+            container.innerHTML = html;
+
+            // Re-attach event listeners
+            this.attachXdebugHandlers();
+
+            console.log('[Xdebug] Controls rendered, status:', xdebugActive ? 'active' : 'inactive');
+        },
+
         togglePanel() {
             if (this.panel.classList.contains('open')) {
                 this.closePanel();
@@ -667,7 +745,11 @@
                 console.error('Warning: No pane activated for tab:', tabName);
             }
 
-            // REQUEST tab has no dynamic content anymore (history removed)
+            // Render Xdebug controls when REQUEST tab becomes active
+            // This ensures controls always show current state, not historical
+            if (tabName === 'request') {
+                setTimeout(() => this.renderXdebugControls(), 50);
+            }
 
             // Initialize HISTORY tab when it becomes active
             if (tabName === 'history') {
@@ -1117,8 +1199,9 @@
                 });
             });
 
-            // Re-attach Xdebug handlers (may have been replaced with historical data)
-            this.attachXdebugHandlers();
+            // Re-render Xdebug controls with current state (historical data may have stale state)
+            // Then re-attach event handlers
+            this.renderXdebugControls();
         },
 
         showNotification(message, type = 'info') {
