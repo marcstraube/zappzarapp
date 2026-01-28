@@ -435,6 +435,9 @@
 
             // Attach alert dismiss handlers
             this.attachAlertHandlers();
+
+            // Attach Xdebug debugging controls
+            this.attachXdebugHandlers();
         },
 
         /**
@@ -496,6 +499,50 @@
                     }
                 });
             });
+        },
+
+        attachXdebugHandlers() {
+            // Handle Xdebug enable buttons
+            document.querySelectorAll('[data-action="xdebug-enable"]').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const ide = e.target.dataset.ide || 'PHPSTORM';
+                    this.enableXdebug(ide);
+                });
+            });
+
+            // Handle Xdebug disable button
+            const disableBtn = document.querySelector('[data-action="xdebug-disable"]');
+            if (disableBtn) {
+                disableBtn.addEventListener('click', () => {
+                    this.disableXdebug();
+                });
+            }
+        },
+
+        enableXdebug(ideKey) {
+            // Set XDEBUG_SESSION cookie
+            document.cookie = `XDEBUG_SESSION=${ideKey}; path=/; max-age=3600`;
+
+            console.log(`[Xdebug] Enabled with IDE key: ${ideKey}`);
+            this.showNotification(`Xdebug enabled for ${ideKey}. Reload page to activate.`, 'success');
+
+            // Reload page to reflect new state
+            setTimeout(() => {
+                location.reload();
+            }, 1500);
+        },
+
+        disableXdebug() {
+            // Remove XDEBUG_SESSION cookie
+            document.cookie = 'XDEBUG_SESSION=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+
+            console.log('[Xdebug] Disabled');
+            this.showNotification('Xdebug disabled', 'success');
+
+            // Reload page to reflect new state
+            setTimeout(() => {
+                location.reload();
+            }, 1500);
         },
 
         togglePanel() {
@@ -1068,6 +1115,9 @@
                     this.setActiveTab(newTab.dataset.tab);
                 });
             });
+
+            // Re-attach Xdebug handlers (may have been replaced with historical data)
+            this.attachXdebugHandlers();
         },
 
         showNotification(message, type = 'info') {

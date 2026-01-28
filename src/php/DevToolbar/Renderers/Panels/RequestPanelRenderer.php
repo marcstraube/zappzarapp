@@ -74,6 +74,51 @@ class RequestPanelRenderer extends AbstractPanelRenderer
             $html .= '</table></div>';
         }
 
+        // Xdebug debugging controls
+        $xdebugEnabled = extension_loaded('xdebug');
+        $xdebugActive = isset($_COOKIE['XDEBUG_SESSION']);
+        $xdebugSessionName = $_COOKIE['XDEBUG_SESSION'] ?? '';
+
+        $html .= '<div class="dev-toolbar-section">';
+        $html .= '<div class="dev-toolbar-section-title">Xdebug Step Debugging</div>';
+
+        if ($xdebugEnabled) {
+            $statusClass = $xdebugActive ? 'active' : 'inactive';
+            $statusText = $xdebugActive ? "Active (IDE Key: {$xdebugSessionName})" : 'Inactive';
+            $statusIcon = $xdebugActive ? '●' : '○';
+
+            $html .= sprintf(
+                '<div class="dev-toolbar-xdebug-status dev-toolbar-xdebug-status-%s">
+                    <span class="dev-toolbar-xdebug-indicator">%s</span>
+                    <span>%s</span>
+                </div>',
+                $statusClass,
+                $statusIcon,
+                $this->escapeHtml($statusText)
+            );
+
+            if ($xdebugActive) {
+                $html .= '<button class="dev-toolbar-btn dev-toolbar-btn-secondary" data-action="xdebug-disable">
+                    ⏹ Disable Debugging
+                </button>';
+            } else {
+                $html .= '<div class="dev-toolbar-xdebug-ide-select">
+                    <button class="dev-toolbar-btn dev-toolbar-btn-secondary" data-action="xdebug-enable" data-ide="PHPSTORM">
+                        ▶ Enable for PhpStorm
+                    </button>
+                    <button class="dev-toolbar-btn dev-toolbar-btn-secondary" data-action="xdebug-enable" data-ide="VSCODE">
+                        ▶ Enable for VSCode
+                    </button>
+                </div>';
+            }
+        } else {
+            $html .= '<p style="color: #6b7280; font-size: 0.875rem;">
+                Xdebug extension not installed. Install via <code>pecl install xdebug</code>
+            </p>';
+        }
+
+        $html .= '</div>';
+
         // Export button for current request
         $html .= '<div class="dev-toolbar-section">
             <button class="dev-toolbar-export-btn" data-action="export-current">

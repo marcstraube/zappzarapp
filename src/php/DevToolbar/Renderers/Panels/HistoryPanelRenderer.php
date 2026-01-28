@@ -95,9 +95,9 @@ class HistoryPanelRenderer extends AbstractPanelRenderer
                 </div>
             </div>
             <div class="dev-toolbar-history-actions">
-                <button id="history-export-json" class="dev-toolbar-btn dev-toolbar-btn-secondary" title="Export all requests as JSON">↓ JSON</button>
-                <button id="history-export-csv" class="dev-toolbar-btn dev-toolbar-btn-secondary" title="Export summary as CSV">↓ CSV</button>
-                <button id="history-clear" class="dev-toolbar-btn dev-toolbar-btn-secondary dev-toolbar-btn-danger-subtle" title="Clear all history">× Clear</button>
+                <button id="history-export-json" class="dev-toolbar-btn dev-toolbar-btn-secondary" title="Export all requests as JSON">{ } JSON</button>
+                <button id="history-export-csv" class="dev-toolbar-btn dev-toolbar-btn-secondary" title="Export summary as CSV">⊞ CSV</button>
+                <button id="history-clear" class="dev-toolbar-btn dev-toolbar-btn-secondary dev-toolbar-btn-danger-subtle" title="Clear all history">⌫ Clear</button>
             </div>
         </div>';
     }
