@@ -351,6 +351,13 @@
             // Initialize storage FIRST - migrate and store current request
             StorageManager.init();
 
+            // Restore last active tab from localStorage
+            const savedTab = localStorage.getItem('devtoolbar_active_tab');
+            if (savedTab) {
+                this.currentTab = savedTab;
+                console.log('[DevToolbar] Restored active tab:', savedTab);
+            }
+
             this.miniBar = document.querySelector('.dev-toolbar-mini');
             this.panel = document.querySelector('.dev-toolbar-panel');
 
@@ -568,6 +575,9 @@
         setActiveTab(tabName) {
             this.currentTab = tabName;
             console.log('Setting active tab:', tabName);
+
+            // Save to localStorage for persistence across reloads
+            localStorage.setItem('devtoolbar_active_tab', tabName);
 
             // Update tab buttons
             const tabButtons = document.querySelectorAll('.dev-toolbar-panel-tab');
