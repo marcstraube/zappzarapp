@@ -799,6 +799,9 @@
                 countEl.textContent = metaArray.length;
             }
 
+            // Render response time trends (sparkline)
+            this.renderTrends(metaArray);
+
             // Render request list
             const listContainer = document.getElementById('history-request-list-container');
             if (!listContainer) {
@@ -1313,6 +1316,82 @@
                 slowest_time: slowest,
                 fastest_time: fastest === Infinity ? 0 : fastest
             };
+        },
+
+        /**
+         * Generate ASCII sparkline from numeric values
+         *
+         * Creates a visual representation using Unicode block characters (▁▂▃▄▅▆▇█)
+         * that scales proportionally to the value range.
+         *
+         * @param {Array<number>} values - Numeric values to visualize
+         * @returns {string} Sparkline string (empty if input is empty)
+         */
+        generateSparkline(values) {
+            if (!values || values.length === 0) {
+                return '';
+            }
+
+            const ticks = ['▁', '▂', '▃', '▄', '▅', '▆', '▇', '█'];
+            const min = Math.min(...values);
+            const max = Math.max(...values);
+            const range = max - min;
+
+            // If all values are equal, use middle tick
+            if (range === 0) {
+                return ticks[3].repeat(values.length);
+            }
+
+            let sparkline = '';
+            values.forEach(value => {
+                const normalized = (value - min) / range;
+                const index = Math.min(7, Math.floor(normalized * 8));
+                sparkline += ticks[index];
+            });
+
+            return sparkline;
+        },
+
+        /**
+         * Render response time trends with sparkline
+         *
+         * @param {Array<Object>} metaArray - Request metadata
+         */
+        renderTrends(metaArray) {
+            const trendContainer = document.querySelector('.dev-toolbar-history-trend');
+            if (!trendContainer) {
+                console.warn('[HISTORY Tab] Trend container not found');
+                return;
+            }
+
+            if (metaArray.length === 0) {
+                // Hide trend section if no data
+                const trendSection = trendContainer.closest('.dev-toolbar-section');
+                if (trendSection) {
+                    trendSection.style.display = 'none';
+                }
+                return;
+            }
+
+            // Extract time values (limit to last 50 for readability)
+            const timeValues = metaArray.slice(-50).map(req => req.time);
+
+            // Generate sparkline
+            const sparkline = this.generateSparkline(timeValues);
+
+            // Update sparkline display
+            const sparklineEl = trendContainer.querySelector('.dev-toolbar-history-sparkline');
+            if (sparklineEl) {
+                sparklineEl.textContent = sparkline;
+            }
+
+            // Show trend section
+            const trendSection = trendContainer.closest('.dev-toolbar-section');
+            if (trendSection) {
+                trendSection.style.display = '';
+            }
+
+            console.log('[HISTORY Tab] Rendered sparkline for', timeValues.length, 'requests');
         },
 
         /**
