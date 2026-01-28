@@ -709,7 +709,7 @@
     z-index: 10;
     background: #f9fafb;
     padding: 16px;
-    margin-bottom: 24px;
+    margin: -16px -16px 24px -16px; /* Negative margins to compensate parent padding */
     display: flex;
     align-items: flex-end;
     gap: 16px;
