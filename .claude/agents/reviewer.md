@@ -28,10 +28,13 @@ The Reviewer agent reviews all code changes regardless of language. It identifie
 **Automated Checks:**
 
 ```bash
-make cs-fix          # Auto-fix style issues
+make cs-fix          # Auto-fix style issues (auto-run by hook after Edit/Write)
 make analyse         # PHPStan analysis
 make phpmd           # Mess Detector
 make cs-check        # PHP-CS-Fixer check
+
+# Targeted analysis (for single file review)
+make analyse ARGS="src/php/App"
 ```
 
 **Manual Review Focus:**
@@ -47,10 +50,13 @@ make cs-check        # PHP-CS-Fixer check
 **Automated Checks:**
 
 ```bash
-make prettier-fix    # Auto-fix formatting
+make prettier-fix    # Auto-fix formatting (auto-run by hook after Edit/Write)
 make lint-node-fix   # Auto-fix lint issues
 make lint-node       # ESLint check
 make type-check      # TypeScript validation
+
+# Targeted linting (for single file review)
+make lint-node ARGS="src/node/**/*.ts"
 ```
 
 **Manual Review Focus:**

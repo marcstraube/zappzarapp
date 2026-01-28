@@ -53,10 +53,14 @@ Implements PHP application code according to Architect's plan.
 ## Quality Checks
 
 ```bash
-make cs-fix          # Auto-fix style issues
+make cs-fix          # Auto-fix style issues (auto-run by hook after Edit/Write)
 make analyse         # PHPStan analysis
 make test-php        # Run PHPUnit tests
 make test-coverage-php  # Verify coverage targets
+
+# Fast iteration (tests/analysis only)
+make test-php ARGS="--filter ServiceTest"
+make analyse ARGS="src/php/App"
 ```
 
 ## On Unexpected Problem

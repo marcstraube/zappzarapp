@@ -53,11 +53,15 @@ Implements Node/TypeScript code according to Architect's plan.
 ## Quality Checks
 
 ```bash
-make prettier-fix     # Auto-fix formatting
+make prettier-fix     # Auto-fix formatting (auto-run by hook after Edit/Write)
 make lint-node-fix    # Auto-fix lint issues
 make type-check       # TypeScript validation
 make test-node        # Run Jest tests
 make test-coverage-node  # Verify coverage targets
+
+# Fast iteration (tests/linting only)
+make lint-node ARGS="src/node/services/**/*.ts"
+make test-node ARGS="tests/unit/foo.test.ts"
 ```
 
 ## On Unexpected Problem
