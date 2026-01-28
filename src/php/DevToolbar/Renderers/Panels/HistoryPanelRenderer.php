@@ -1,0 +1,284 @@
+<?php
+
+declare(strict_types=1);
+
+namespace DevToolbar\Renderers\Panels;
+
+/**
+ * Renders the History panel with request tracking and trends
+ *
+ * The History panel provides:
+ * - Request filtering controls (method, status, URI, min time)
+ * - Statistics overview (total, averages, min/max)
+ * - Response time trends (ASCII sparklines)
+ * - Request history list
+ * - Export and clear controls
+ *
+ * Note: Most rendering happens CLIENT-SIDE via localStorage and JavaScript.
+ * This renderer creates PLACEHOLDERS that JavaScript populates dynamically.
+ * Only the trends are server-rendered from available data.
+ */
+class HistoryPanelRenderer extends AbstractPanelRenderer
+{
+    /**
+     * Render the History tab content
+     *
+     * @param array<string, mixed> $data History data including trends
+     * @return string HTML content for History tab
+     */
+    public function renderTab(array $data): string
+    {
+        $trends = $data['trends'] ?? [];
+
+        return $this->renderFilters()
+            . $this->renderStatistics()
+            . $this->renderTrends($trends)
+            . $this->renderRequestList()
+            . $this->renderExport();
+    }
+
+    /**
+     * Get the panel name identifier
+     *
+     * @return string Panel name ('history')
+     */
+    public function getPanelName(): string
+    {
+        return 'history';
+    }
+
+    /**
+     * Render history filter controls
+     *
+     * Provides UI controls for filtering request history:
+     * - Method filter (GET, POST, PUT, DELETE, PATCH)
+     * - Status code filter (2xx, 3xx, 4xx, 5xx)
+     * - URI search filter
+     * - Minimum execution time filter
+     * - Reset filters button
+     *
+     * JavaScript handles the actual filtering logic.
+     *
+     * @return string HTML for filter controls
+     */
+    private function renderFilters(): string
+    {
+        return '<div class="dev-toolbar-history-filters">
+            <div class="dev-toolbar-history-filter-controls">
+                <div class="dev-toolbar-filter-group">
+                    <label for="history-filter-method">Method</label>
+                    <select id="history-filter-method" class="dev-toolbar-filter-select">
+                        <option value="">All Methods</option>
+                        <option value="GET">GET</option>
+                        <option value="POST">POST</option>
+                        <option value="PUT">PUT</option>
+                        <option value="DELETE">DELETE</option>
+                        <option value="PATCH">PATCH</option>
+                    </select>
+                </div>
+                <div class="dev-toolbar-filter-group">
+                    <label for="history-filter-status">Status</label>
+                    <select id="history-filter-status" class="dev-toolbar-filter-select">
+                        <option value="">All Status</option>
+                        <option value="2">2xx Success</option>
+                        <option value="3">3xx Redirect</option>
+                        <option value="4">4xx Client Error</option>
+                        <option value="5">5xx Server Error</option>
+                    </select>
+                </div>
+                <div class="dev-toolbar-filter-group">
+                    <label for="history-filter-uri">URI Contains</label>
+                    <input type="text" id="history-filter-uri" class="dev-toolbar-filter-input" placeholder="Search URI...">
+                </div>
+                <div class="dev-toolbar-filter-group">
+                    <label for="history-filter-min-time">Min Time (ms)</label>
+                    <input type="number" id="history-filter-min-time" class="dev-toolbar-filter-input" placeholder="0" min="0" step="10">
+                </div>
+                <div class="dev-toolbar-filter-group">
+                    <button id="history-filter-reset" class="dev-toolbar-btn dev-toolbar-btn-secondary">Reset Filters</button>
+                </div>
+            </div>
+        </div>';
+    }
+
+    /**
+     * Render statistics placeholder (client-side populated)
+     *
+     * Creates placeholder stat cards with data-history-stat attributes.
+     * JavaScript reads request history from localStorage and calculates:
+     * - Total request count
+     * - Average execution time
+     * - Average memory usage
+     * - Average query count
+     * - Fastest request time
+     * - Slowest request time
+     *
+     * @return string HTML for statistics section with placeholders
+     */
+    private function renderStatistics(): string
+    {
+        // Render placeholder - JavaScript will populate from localStorage
+        $html = '<div class="dev-toolbar-section">
+            <div class="dev-toolbar-section-title">Statistics</div>
+            <div class="dev-toolbar-history-stats-grid" id="dev-toolbar-history-stats-grid">';
+
+        $html .= '<div class="dev-toolbar-history-stat-card">
+                <div class="dev-toolbar-history-stat-label">Total Requests</div>
+                <div class="dev-toolbar-history-stat-value" data-history-stat="total">0</div>
+            </div>';
+
+        $html .= '<div class="dev-toolbar-history-stat-card">
+                <div class="dev-toolbar-history-stat-label">Avg Time</div>
+                <div class="dev-toolbar-history-stat-value" data-history-stat="avg_time">0ms</div>
+            </div>';
+
+        $html .= '<div class="dev-toolbar-history-stat-card">
+                <div class="dev-toolbar-history-stat-label">Avg Memory</div>
+                <div class="dev-toolbar-history-stat-value" data-history-stat="avg_memory">0MB</div>
+            </div>';
+
+        $html .= '<div class="dev-toolbar-history-stat-card">
+                <div class="dev-toolbar-history-stat-label">Avg Queries</div>
+                <div class="dev-toolbar-history-stat-value" data-history-stat="avg_queries">0</div>
+            </div>';
+
+        $html .= '<div class="dev-toolbar-history-stat-card">
+                <div class="dev-toolbar-history-stat-label">Fastest</div>
+                <div class="dev-toolbar-history-stat-value fast" data-history-stat="fastest">0ms</div>
+            </div>';
+
+        $html .= '<div class="dev-toolbar-history-stat-card">
+                <div class="dev-toolbar-history-stat-label">Slowest</div>
+                <div class="dev-toolbar-history-stat-value slow" data-history-stat="slowest">0ms</div>
+            </div>';
+
+        $html .= '</div></div>';
+
+        return $html;
+    }
+
+    /**
+     * Render response time trends with ASCII sparklines
+     *
+     * Generates visual sparkline charts using Unicode block characters (▁▂▃▄▅▆▇█)
+     * to show response time trends over recent requests.
+     *
+     * Returns empty string if no trend data is available.
+     *
+     * @param array<string, mixed> $trends Trend data with 'time' array
+     * @return string HTML for trends section (empty if no data)
+     */
+    private function renderTrends(array $trends): string
+    {
+        $times = $trends['time'] ?? [];
+
+        if (empty($times)) {
+            return '';
+        }
+
+        $sparkline = $this->generateSparkline($times);
+
+        return sprintf(
+            '<div class="dev-toolbar-section">
+                <div class="dev-toolbar-section-title">Response Time Trend</div>
+                <div class="dev-toolbar-history-trend">
+                    <div class="dev-toolbar-history-sparkline">%s</div>
+                </div>
+            </div>',
+            $sparkline
+        );
+    }
+
+    /**
+     * Render request list placeholder (client-side populated)
+     *
+     * Creates a placeholder container with loading message.
+     * JavaScript loads request history from localStorage and dynamically
+     * generates the request list with details for each historical request.
+     *
+     * The list includes:
+     * - Request ID for switching between stored requests
+     * - Method, URI, status code
+     * - Execution time, memory usage
+     * - Query count, cache operations
+     * - Timestamp
+     *
+     * @return string HTML for request list placeholder
+     */
+    private function renderRequestList(): string
+    {
+        // Render placeholder - JavaScript will populate from localStorage
+        $html = '<div class="dev-toolbar-section">
+            <div class="dev-toolbar-section-title" id="history-list-title">Request History (<span id="history-list-count">0</span>)</div>
+            <div class="dev-toolbar-history-request-list" id="history-request-list-container">
+                <p style="color: #888;">Loading history from localStorage...</p>
+            </div>
+        </div>';
+
+        return $html;
+    }
+
+    /**
+     * Render export and action controls
+     *
+     * Provides buttons for:
+     * - Export JSON: Download complete request history as JSON file
+     * - Export CSV: Download request summary as CSV spreadsheet
+     * - Clear History: Delete all stored request history from localStorage
+     *
+     * JavaScript handles the export logic and localStorage management.
+     *
+     * @return string HTML for export controls
+     */
+    private function renderExport(): string
+    {
+        return '<div class="dev-toolbar-section">
+            <div class="dev-toolbar-section-title">Actions</div>
+            <div class="dev-toolbar-history-export">
+                <button id="history-export-json" class="dev-toolbar-btn dev-toolbar-btn-primary">📥 Export JSON</button>
+                <button id="history-export-csv" class="dev-toolbar-btn dev-toolbar-btn-primary">📊 Export CSV</button>
+                <button id="history-clear" class="dev-toolbar-btn dev-toolbar-btn-danger">🗑️ Clear History</button>
+            </div>
+        </div>';
+    }
+
+    /**
+     * Generate ASCII sparkline from numeric values
+     *
+     * Creates a visual representation using Unicode block characters (▁▂▃▄▅▆▇█)
+     * that scales proportionally to the value range.
+     *
+     * Algorithm:
+     * 1. Find min/max values to determine range
+     * 2. Normalize each value to 0-1 scale
+     * 3. Map to appropriate tick character (0-7 index)
+     * 4. Handle edge case: if all values are equal, use middle tick
+     *
+     * @param array<int|float> $values Numeric values to visualize
+     * @return string Sparkline string (empty if input is empty)
+     */
+    private function generateSparkline(array $values): string
+    {
+        if (empty($values)) {
+            return '';
+        }
+
+        $ticks = ['▁', '▂', '▃', '▄', '▅', '▆', '▇', '█'];
+        $min = min($values);
+        $max = max($values);
+        $range = $max - $min;
+
+        if ($range == 0) {
+            return str_repeat($ticks[3], count($values)); // All middle
+        }
+
+        $sparkline = '';
+        foreach ($values as $value) {
+            $normalized = ($value - $min) / $range;
+            $index = min(7, (int)($normalized * 8));
+            $sparkline .= $ticks[$index];
+        }
+
+        return $sparkline;
+    }
+}
