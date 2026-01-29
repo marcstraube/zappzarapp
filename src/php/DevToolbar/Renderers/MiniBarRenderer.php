@@ -30,7 +30,7 @@ class MiniBarRenderer implements RendererInterface
         $time = $requestData['execution_time'] ?? 0;
         $memory = $requestData['memory_peak'] ?? 0;
         $queryCount = $queriesData['count'] ?? 0;
-        $env = getenv('APP_ENV') ?: 'dev';
+        $env = getenv('ENV') ?: 'dev';
 
         $envClass = match ($env) {
             'staging' => 'staging',
