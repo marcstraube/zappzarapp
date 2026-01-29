@@ -120,7 +120,7 @@ class HttpClientCollector implements CollectorInterface
             $url,
             $time,
             $status,
-            $responseHeaders,
+            $this->parseHeaders($responseHeaders),
             $result
         );
 
@@ -177,6 +177,32 @@ class HttpClientCollector implements CollectorInterface
         }
 
         return 0;
+    }
+
+    /**
+     * Parse response headers from array to associative array
+     *
+     * @param array<int, string> $headers Raw response headers
+     * @return array<string, mixed> Parsed headers
+     */
+    private function parseHeaders(array $headers): array
+    {
+        $parsed = [];
+
+        foreach ($headers as $header) {
+            // Skip status line
+            if (str_starts_with($header, 'HTTP/')) {
+                continue;
+            }
+
+            // Parse "Name: Value" format
+            if (str_contains($header, ':')) {
+                [$name, $value] = explode(':', $header, 2);
+                $parsed[trim($name)] = trim($value);
+            }
+        }
+
+        return $parsed;
     }
 
     /**

@@ -52,6 +52,8 @@ class MiniBarRenderer implements RendererInterface
 
     /**
      * Get display labels based on configured types from cookies
+     *
+     * @param array<string, mixed> $requestData
      */
     private function getDisplayLabels(array $requestData): string
     {
@@ -93,6 +95,7 @@ class MiniBarRenderer implements RendererInterface
     private function getGitBranch(): ?string
     {
         try {
+            // @phpstan-ignore-line - DevToolbar legitimately uses shell_exec to read git branch in dev environment
             $branch = trim((string) shell_exec('git branch --show-current 2>/dev/null'));
             return $branch !== '' ? $branch : null;
         } catch (Throwable $e) {
@@ -102,6 +105,8 @@ class MiniBarRenderer implements RendererInterface
 
     /**
      * Get branch colors from cookie or defaults
+     *
+     * @return array<string, string>
      */
     private function getBranchColors(): array
     {
@@ -131,6 +136,8 @@ class MiniBarRenderer implements RendererInterface
 
     /**
      * Format branch display with color coding
+     *
+     * @param array<string, string> $colors
      */
     private function formatBranch(string $branch, array $colors): string
     {
@@ -150,7 +157,7 @@ class MiniBarRenderer implements RendererInterface
         $color = $colors[$type] ?? $colors['default'] ?? '#10b981';
 
         // Strip prefix for brevity
-        $displayName = preg_replace('/^(feature|feat|fix|hotfix|chore)\//', '', $branch);
+        $displayName = preg_replace('/^(feature|feat|fix|hotfix|chore)\//', '', $branch) ?? $branch;
 
         return sprintf(
             '<span style="color: %s">%s</span>',

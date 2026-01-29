@@ -73,7 +73,6 @@ class CacheCollector implements CollectorInterface
      * @param bool $hit Whether operation was a cache hit (for get operations)
      * @param int|null $ttl TTL in seconds (for set operations)
      * @return void
-     * @SuppressWarnings(PHPMD.BooleanArgumentFlag)
      */
     public function trackOperation(
         string $type,
@@ -299,19 +298,22 @@ class CacheCollector implements CollectorInterface
         }
 
         // Filter sensitive patterns
-        $value = preg_replace('/("password"\s*:\s*)"[^"]*"/', '$1"[FILTERED]"', $value);
-        $value = preg_replace('/("token"\s*:\s*)"[^"]*"/', '$1"[FILTERED]"', $value);
+        $value = preg_replace('/("password"\s*:\s*)"[^"]*"/', '$1"[FILTERED]"', $value) ?? $value;
+        $value = preg_replace('/("token"\s*:\s*)"[^"]*"/', '$1"[FILTERED]"', $value) ?? $value;
 
         return $value;
     }
 
     /**
      * Filter sensitive data from array values
+     *
+     * @param array<string, mixed> $value
+     * @return array<string, mixed>
      */
     private function filterArray(array $value): array
     {
         foreach (array_keys($value) as $key) {
-            if (in_array(strtolower((string)$key), ['password', 'token', 'secret', 'api_key'])) {
+            if (in_array(strtolower((string)$key), ['password', 'token', 'secret', 'api_key'], true)) {
                 $value[$key] = '[FILTERED]';
             }
         }

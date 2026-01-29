@@ -133,6 +133,7 @@ class DataInjectionRenderer implements RendererInterface
     private function getGitBranch(): ?string
     {
         try {
+            // @phpstan-ignore-line - DevToolbar legitimately uses shell_exec to read git branch in dev environment
             $branch = trim((string) shell_exec('git branch --show-current 2>/dev/null'));
             return $branch !== '' ? $branch : null;
         } catch (Throwable $e) {
@@ -145,6 +146,8 @@ class DataInjectionRenderer implements RendererInterface
      *
      * Client-side can override these colors via cookie (set from localStorage).
      * These defaults match DEFAULT_BRANCH_COLORS in StorageConfig.ts.
+     *
+     * @return array<string, string>
      */
     private function getBranchColors(): array
     {

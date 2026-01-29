@@ -165,7 +165,6 @@ class HistoryPanelRenderer extends AbstractPanelRenderer
      *
      * The section is hidden by JavaScript if no data is available.
      *
-     * @param array<string, mixed> $trends Trend data (unused, for backwards compatibility)
      * @return string HTML for trends section placeholder
      */
     private function renderTrends(): string

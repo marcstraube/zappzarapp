@@ -100,6 +100,7 @@ class DevToolbar
         $middleware     = new DevToolbarMiddleware($this->collectors);
         $modifiedOutput = $middleware->inject($output);
 
+        // @phpstan-ignore-line - DevToolbar render() legitimately uses echo in shutdown handler
         echo $modifiedOutput;
     }
 
