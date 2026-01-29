@@ -1,0 +1,7 @@
+{
+  "version": 3,
+  "sources": ["../../../node/backend/DevToolbar/index.ts"],
+  "sourcesContent": ["/**\n * DevToolbar Browser Entry Point\n *\n * Main entry point for the browser bundle. Will be implemented in Phase 5.\n */\n\nimport type { DevToolbarWindow } from './types/index.js';\n\n// Placeholder - will be implemented in Phase 5\nconsole.log('[DevToolbar] Module loaded (placeholder)');\n\n// Ensure window types are available\ndeclare const window: DevToolbarWindow;\n\nexport {};\n"],
+  "mappings": ";;;;AASA,UAAQ,IAAI,0CAA0C;",
+  "names": []
+}
