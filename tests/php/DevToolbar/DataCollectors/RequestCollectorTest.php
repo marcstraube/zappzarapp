@@ -20,20 +20,20 @@ class RequestCollectorTest extends TestCase
         $this->collector = new RequestCollector();
 
         // Set up basic request environment
-        $_SERVER['REQUEST_METHOD'] = 'GET';
-        $_SERVER['REQUEST_URI'] = '/test';
+        $_SERVER['REQUEST_METHOD']  = 'GET';
+        $_SERVER['REQUEST_URI']     = '/test';
         $_SERVER['SERVER_PROTOCOL'] = 'HTTP/1.1';
-        $_GET = [];
-        $_POST = [];
-        $_COOKIE = [];
+        $_GET                       = [];
+        $_POST                      = [];
+        $_COOKIE                    = [];
     }
 
     protected function tearDown(): void
     {
         parent::tearDown();
         // Clean up globals
-        $_GET = [];
-        $_POST = [];
+        $_GET    = [];
+        $_POST   = [];
         $_COOKIE = [];
     }
 
@@ -54,10 +54,10 @@ class RequestCollectorTest extends TestCase
     public function testFiltersSensitivePostData(): void
     {
         $_POST = [
-            'username' => 'john',
-            'password' => 'secret123',
+            'username'  => 'john',
+            'password'  => 'secret123',
             'api_token' => 'abc123',
-            'email' => 'john@example.com',
+            'email'     => 'john@example.com',
         ];
 
         $this->collector->start();
@@ -75,7 +75,7 @@ class RequestCollectorTest extends TestCase
     {
         $testData = [
             'user' => [
-                'name' => 'John',
+                'name'     => 'John',
                 'password' => 'secret',
             ],
             'api_key' => 'xyz789',

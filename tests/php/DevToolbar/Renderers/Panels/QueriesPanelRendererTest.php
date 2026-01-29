@@ -56,8 +56,8 @@ class QueriesPanelRendererTest extends TestCase
         $data = [
             'queries' => [
                 [
-                    'sql' => 'SELECT * FROM users WHERE id = 1',
-                    'time' => 15.5,
+                    'sql'      => 'SELECT * FROM users WHERE id = 1',
+                    'time'     => 15.5,
                     'bindings' => [],
                 ],
             ],
@@ -101,8 +101,8 @@ class QueriesPanelRendererTest extends TestCase
         $data = [
             'queries' => [
                 [
-                    'sql' => 'SELECT * FROM users WHERE id = ? AND name = ?',
-                    'time' => 12.3,
+                    'sql'      => 'SELECT * FROM users WHERE id = ? AND name = ?',
+                    'time'     => 12.3,
                     'bindings' => [1, 'John'],
                 ],
             ],
@@ -122,12 +122,12 @@ class QueriesPanelRendererTest extends TestCase
         $data = [
             'queries' => [
                 [
-                    'sql' => 'INSERT INTO users',
-                    'time' => 5.0,
+                    'sql'      => 'INSERT INTO users',
+                    'time'     => 5.0,
                     'bindings' => [
-                        'name' => 'Alice',
+                        'name'  => 'Alice',
                         'email' => 'alice@example.com',
-                        'age' => 30,
+                        'age'   => 30,
                     ],
                 ],
             ],
@@ -149,18 +149,18 @@ class QueriesPanelRendererTest extends TestCase
         $data = [
             'queries' => [
                 [
-                    'sql' => 'SELECT * FROM posts WHERE user_id = 1',
-                    'time' => 10.0,
+                    'sql'       => 'SELECT * FROM posts WHERE user_id = 1',
+                    'time'      => 10.0,
                     'backtrace' => [['file' => '/path/to/UserController.php', 'line' => 45]],
                 ],
                 [
-                    'sql' => 'SELECT * FROM posts WHERE user_id = 2',
-                    'time' => 10.0,
+                    'sql'       => 'SELECT * FROM posts WHERE user_id = 2',
+                    'time'      => 10.0,
                     'backtrace' => [['file' => '/path/to/UserController.php', 'line' => 45]],
                 ],
                 [
-                    'sql' => 'SELECT * FROM posts WHERE user_id = 3',
-                    'time' => 10.0,
+                    'sql'       => 'SELECT * FROM posts WHERE user_id = 3',
+                    'time'      => 10.0,
                     'backtrace' => [['file' => '/path/to/UserController.php', 'line' => 45]],
                 ],
             ],
@@ -267,8 +267,8 @@ class QueriesPanelRendererTest extends TestCase
         $data = [
             'queries' => [
                 [
-                    'sql' => 'SELECT * FROM users WHERE name = "<script>alert(1)</script>"',
-                    'time' => 10.0,
+                    'sql'      => 'SELECT * FROM users WHERE name = "<script>alert(1)</script>"',
+                    'time'     => 10.0,
                     'bindings' => [],
                 ],
             ],
@@ -286,8 +286,8 @@ class QueriesPanelRendererTest extends TestCase
         $data = [
             'queries' => [
                 [
-                    'sql' => 'INSERT INTO users',
-                    'time' => 5.0,
+                    'sql'      => 'INSERT INTO users',
+                    'time'     => 5.0,
                     'bindings' => ['name' => '<script>alert(1)</script>'],
                 ],
             ],
@@ -341,18 +341,18 @@ class QueriesPanelRendererTest extends TestCase
         $data = [
             'queries' => [
                 [
-                    'sql' => 'SELECT * FROM users',
-                    'time' => 10.0,
-                    'bindings' => [],
+                    'sql'       => 'SELECT * FROM users',
+                    'time'      => 10.0,
+                    'bindings'  => [],
                     'backtrace' => [
                         [
-                            'file' => '/path/to/UserController.php',
-                            'line' => 45,
+                            'file'     => '/path/to/UserController.php',
+                            'line'     => 45,
                             'function' => 'getUsers',
                         ],
                         [
-                            'file' => '/path/to/Router.php',
-                            'line' => 100,
+                            'file'     => '/path/to/Router.php',
+                            'line'     => 100,
                             'function' => 'dispatch',
                         ],
                     ],
@@ -375,9 +375,9 @@ class QueriesPanelRendererTest extends TestCase
         $data = [
             'queries' => [
                 [
-                    'sql' => 'SELECT * FROM users',
-                    'time' => 10.0,
-                    'bindings' => [],
+                    'sql'       => 'SELECT * FROM users',
+                    'time'      => 10.0,
+                    'bindings'  => [],
                     'backtrace' => [],
                 ],
             ],
@@ -506,7 +506,7 @@ class QueriesPanelRendererTest extends TestCase
     public function testRenderTabWithZeroQueries(): void
     {
         $data = [
-            'queries' => [],
+            'queries'    => [],
             'total_time' => 0.0,
         ];
 

@@ -1,13 +1,26 @@
 /* DevToolbar - Generated browser bundle - DO NOT EDIT MANUALLY */
-"use strict";
+'use strict';
 (() => {
   // DevToolbar/storage/StorageConfig.ts
   var MAX_METADATA = 50;
   var MAX_FULL_DATA = 20;
   var MIN_SAFE_ENTRIES = 5;
-  var CONFIG_KEY = "devToolbar.config";
-  var META_KEY = "devToolbar.meta";
-  var DATA_PREFIX = "devToolbar.req_";
+  var CONFIG_KEY = 'devToolbar.config';
+  var META_KEY = 'devToolbar.meta';
+  var DATA_PREFIX = 'devToolbar.req_';
+  var DEFAULT_MINIBAR_LABELS = ['branding'];
+  var DEFAULT_BRANCH_COLORS = {
+    feat: '#3b82f6',
+    // Blue
+    fix: '#f59e0b',
+    // Orange
+    hotfix: '#ef4444',
+    // Red
+    chore: '#6b7280',
+    // Gray
+    default: '#10b981',
+    // Green
+  };
 
   // DevToolbar/storage/StorageManager.ts
   var StorageManagerClass = class {
@@ -15,7 +28,7 @@
       this.useMemoryFallback = false;
       this.memoryStore = {
         meta: [],
-        requests: {}
+        requests: {},
       };
     }
     /**
@@ -23,7 +36,7 @@
      */
     init() {
       if (!this.isLocalStorageAvailable()) {
-        console.warn("[DevToolbar] localStorage unavailable, using in-memory storage");
+        console.warn('[DevToolbar] localStorage unavailable, using in-memory storage');
         this.useMemoryFallback = true;
       }
       this.handleMigration();
@@ -39,8 +52,8 @@
      */
     isLocalStorageAvailable() {
       try {
-        const testKey = "__devToolbarTest__";
-        localStorage.setItem(testKey, "1");
+        const testKey = '__devToolbarTest__';
+        localStorage.setItem(testKey, '1');
         localStorage.removeItem(testKey);
         return true;
       } catch (e) {
@@ -58,11 +71,15 @@
       }
       const win = window;
       if (win.__DEV_TOOLBAR_MIGRATION__ && Array.isArray(win.__DEV_TOOLBAR_MIGRATION__)) {
-        console.log("[DevToolbar] Migrating", win.__DEV_TOOLBAR_MIGRATION__.length, "requests from session");
+        console.log(
+          '[DevToolbar] Migrating',
+          win.__DEV_TOOLBAR_MIGRATION__.length,
+          'requests from session'
+        );
         win.__DEV_TOOLBAR_MIGRATION__.forEach((request) => {
           this.storeRequest(request.id, request.metadata, request.tabs, request.raw_data);
         });
-        console.log("[DevToolbar] Migration completed");
+        console.log('[DevToolbar] Migration completed');
       }
       config.migrated = true;
       this.setConfig(config);
@@ -76,11 +93,16 @@
      * @param rawData Optional structured collector data for export
      */
     storeRequest(id, metadata, tabs, rawData) {
-      console.log("[StorageManager] Storing request:", id, "useMemoryFallback:", this.useMemoryFallback);
+      console.log(
+        '[StorageManager] Storing request:',
+        id,
+        'useMemoryFallback:',
+        this.useMemoryFallback
+      );
       try {
         if (this.useMemoryFallback) {
           this.storeInMemory(id, metadata, tabs, rawData);
-          console.log("[StorageManager] Stored in memory, total:", this.memoryStore.meta.length);
+          console.log('[StorageManager] Stored in memory, total:', this.memoryStore.meta.length);
           return;
         }
         const metaArray = this.getMetadata();
@@ -93,8 +115,8 @@
         localStorage.setItem(DATA_PREFIX + id, JSON.stringify(fullData));
         this.enforceQuotaLimits();
       } catch (e) {
-        if (e.name === "QuotaExceededError") {
-          console.warn("[DevToolbar] Quota exceeded, evicting oldest entries");
+        if (e.name === 'QuotaExceededError') {
+          console.warn('[DevToolbar] Quota exceeded, evicting oldest entries');
           this.evictOldest();
           try {
             const metaArray = this.getMetadata();
@@ -105,10 +127,10 @@
             localStorage.setItem(META_KEY, JSON.stringify(metaArray));
             localStorage.setItem(DATA_PREFIX + id, JSON.stringify({ id, metadata, tabs }));
           } catch (retryError) {
-            console.error("[DevToolbar] Failed to store after eviction:", retryError);
+            console.error('[DevToolbar] Failed to store after eviction:', retryError);
           }
         } else {
-          console.error("[DevToolbar] Storage error:", e);
+          console.error('[DevToolbar] Storage error:', e);
         }
       }
     }
@@ -143,7 +165,7 @@
         const data = localStorage.getItem(DATA_PREFIX + id);
         return data ? JSON.parse(data) : null;
       } catch (e) {
-        console.error("[DevToolbar] Failed to retrieve request:", e);
+        console.error('[DevToolbar] Failed to retrieve request:', e);
         return null;
       }
     }
@@ -160,7 +182,7 @@
         const data = localStorage.getItem(META_KEY);
         return data ? JSON.parse(data) : [];
       } catch (e) {
-        console.error("[DevToolbar] Failed to retrieve metadata:", e);
+        console.error('[DevToolbar] Failed to retrieve metadata:', e);
         return [];
       }
     }
@@ -187,11 +209,11 @@
         try {
           localStorage.removeItem(key);
         } catch (e) {
-          console.error("[DevToolbar] Failed to remove key:", key, e);
+          console.error('[DevToolbar] Failed to remove key:', key, e);
         }
       });
       if (keysToDelete.length > 0) {
-        console.log("[DevToolbar] Evicted", keysToDelete.length, "old request entries");
+        console.log('[DevToolbar] Evicted', keysToDelete.length, 'old request entries');
       }
     }
     /**
@@ -221,13 +243,22 @@
         try {
           localStorage.removeItem(key);
         } catch (e) {
-          console.error("[DevToolbar] Failed to remove key during eviction:", key, e);
+          console.error('[DevToolbar] Failed to remove key during eviction:', key, e);
         }
       });
-      console.log("[DevToolbar] Emergency eviction: removed", keysToDelete.length, "entries");
+      console.log('[DevToolbar] Emergency eviction: removed', keysToDelete.length, 'entries');
     }
     /**
-     * Clear all DevToolbar data
+     * Clear history data only (preserve settings and UI state)
+     *
+     * Removes:
+     * - devToolbar.meta (metadata array)
+     * - devToolbar.req_* (request data)
+     *
+     * Preserves:
+     * - devToolbar.config (settings including minibarLabel, branchColors)
+     * - devtoolbar_active_tab (current tab state)
+     * - xdebug cookie (stored in document.cookie, not localStorage)
      */
     clear() {
       if (this.useMemoryFallback) {
@@ -235,17 +266,18 @@
         return;
       }
       try {
+        localStorage.removeItem(META_KEY);
         const keysToDelete = [];
         for (let i = 0; i < localStorage.length; i++) {
           const key = localStorage.key(i);
-          if (key && (key.startsWith("devToolbar.") || key.startsWith(DATA_PREFIX))) {
+          if (key && key.startsWith(DATA_PREFIX)) {
             keysToDelete.push(key);
           }
         }
         keysToDelete.forEach((key) => localStorage.removeItem(key));
-        console.log("[DevToolbar] Cleared all data");
+        console.log('[DevToolbar] Cleared history data, preserved settings');
       } catch (e) {
-        console.error("[DevToolbar] Failed to clear data:", e);
+        console.error('[DevToolbar] Failed to clear data:', e);
       }
     }
     /**
@@ -272,8 +304,36 @@
       try {
         localStorage.setItem(CONFIG_KEY, JSON.stringify(config));
       } catch (e) {
-        console.error("[DevToolbar] Failed to save config:", e);
+        console.error('[DevToolbar] Failed to save config:', e);
       }
+    }
+    /**
+     * Get active minibar labels
+     */
+    getMinibarLabels() {
+      const config = this.getConfig();
+      return config.minibarLabels ?? DEFAULT_MINIBAR_LABELS;
+    }
+    /**
+     * Set active minibar labels
+     */
+    setMinibarLabels(labels) {
+      const config = this.getConfig();
+      this.setConfig({ ...config, minibarLabels: labels });
+    }
+    /**
+     * Get branch color configuration
+     */
+    getBranchColors() {
+      const config = this.getConfig();
+      return config.branchColors ?? DEFAULT_BRANCH_COLORS;
+    }
+    /**
+     * Set branch color configuration
+     */
+    setBranchColors(colors) {
+      const config = this.getConfig();
+      this.setConfig({ ...config, branchColors: colors });
     }
   };
   var StorageManager = new StorageManagerClass();
@@ -281,8 +341,8 @@
   // DevToolbar/ui/TabManager.ts
   var TabManager = class {
     constructor() {
-      this.currentTab = "request";
-      this.STORAGE_KEY = "devtoolbar_active_tab";
+      this.currentTab = 'request';
+      this.STORAGE_KEY = 'devtoolbar_active_tab';
     }
     /**
      * Initialize tab manager with optional saved tab
@@ -291,7 +351,7 @@
       const savedTab = localStorage.getItem(this.STORAGE_KEY);
       if (savedTab) {
         this.currentTab = savedTab;
-        console.log("[DevToolbar] Restored active tab:", savedTab);
+        console.log('[DevToolbar] Restored active tab:', savedTab);
       }
     }
     /**
@@ -308,12 +368,12 @@
      */
     setActiveTab(tabName, onActivate) {
       this.currentTab = tabName;
-      console.log("[TabManager] Setting active tab:", tabName);
+      console.log('[TabManager] Setting active tab:', tabName);
       localStorage.setItem(this.STORAGE_KEY, tabName);
       this.updateTabButtons(tabName);
       const activated = this.updateTabPanes(tabName);
       if (!activated) {
-        console.error("[TabManager] Warning: No pane activated for tab:", tabName);
+        console.error('[TabManager] Warning: No pane activated for tab:', tabName);
       }
       if (onActivate) {
         onActivate(tabName);
@@ -323,15 +383,15 @@
      * Update tab button active states
      */
     updateTabButtons(activeTabName) {
-      const tabButtons = document.querySelectorAll(".dev-toolbar-panel-tab");
-      console.log("[TabManager] Found tab buttons:", tabButtons.length);
+      const tabButtons = document.querySelectorAll('.dev-toolbar-panel-tab');
+      console.log('[TabManager] Found tab buttons:', tabButtons.length);
       tabButtons.forEach((tab) => {
         const tabElement = tab;
         if (tabElement.dataset.tab === activeTabName) {
-          tabElement.classList.add("active");
-          console.log("[TabManager] Activated tab button:", activeTabName);
+          tabElement.classList.add('active');
+          console.log('[TabManager] Activated tab button:', activeTabName);
         } else {
-          tabElement.classList.remove("active");
+          tabElement.classList.remove('active');
         }
       });
     }
@@ -341,18 +401,18 @@
      * @returns True if a pane was activated
      */
     updateTabPanes(activeTabName) {
-      const panes = document.querySelectorAll(".dev-toolbar-panel-tab-pane");
-      console.log("[TabManager] Found panes:", panes.length);
+      const panes = document.querySelectorAll('.dev-toolbar-panel-tab-pane');
+      console.log('[TabManager] Found panes:', panes.length);
       let activatedPane = false;
       panes.forEach((pane) => {
         const paneElement = pane;
         const paneTab = paneElement.dataset.tab;
         if (paneTab === activeTabName) {
-          paneElement.classList.add("active");
+          paneElement.classList.add('active');
           activatedPane = true;
-          console.log("[TabManager] \u2713 Activated pane for", activeTabName);
+          console.log('[TabManager] \u2713 Activated pane for', activeTabName);
         } else {
-          paneElement.classList.remove("active");
+          paneElement.classList.remove('active');
         }
       });
       return activatedPane;
@@ -366,7 +426,7 @@
       if (!badgeCounts) {
         return;
       }
-      console.log("[TabManager] Updating badge counts:", badgeCounts);
+      console.log('[TabManager] Updating badge counts:', badgeCounts);
       Object.entries(badgeCounts).forEach(([tabName, count]) => {
         const badge = document.querySelector(
           `.dev-toolbar-panel-tab[data-tab="${tabName}"] .dev-toolbar-panel-tab-badge`
@@ -388,9 +448,9 @@
       );
       if (historyBadge) {
         historyBadge.textContent = String(count);
-        console.log("[TabManager] HISTORY badge updated to:", count);
+        console.log('[TabManager] HISTORY badge updated to:', count);
       } else {
-        console.warn("[TabManager] HISTORY badge element not found");
+        console.warn('[TabManager] HISTORY badge element not found');
       }
     }
   };
@@ -406,25 +466,25 @@
   function formatTimestamp(timestamp) {
     const date = new Date(timestamp * 1e3);
     const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, "0");
-    const day = String(date.getDate()).padStart(2, "0");
-    const hours = String(date.getHours()).padStart(2, "0");
-    const minutes = String(date.getMinutes()).padStart(2, "0");
-    const seconds = String(date.getSeconds()).padStart(2, "0");
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    const hours = String(date.getHours()).padStart(2, '0');
+    const minutes = String(date.getMinutes()).padStart(2, '0');
+    const seconds = String(date.getSeconds()).padStart(2, '0');
     return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
   }
   function generateSparkline(values) {
     if (!values || values.length === 0) {
-      return "";
+      return '';
     }
-    const ticks = ["\u2581", "\u2582", "\u2583", "\u2584", "\u2585", "\u2586", "\u2587", "\u2588"];
+    const ticks = ['\u2581', '\u2582', '\u2583', '\u2584', '\u2585', '\u2586', '\u2587', '\u2588'];
     const min = Math.min(...values);
     const max = Math.max(...values);
     const range = max - min;
     if (range === 0) {
       return ticks[3].repeat(values.length);
     }
-    let sparkline = "";
+    let sparkline = '';
     values.forEach((value) => {
       const normalized = (value - min) / range;
       const index = Math.min(7, Math.floor(normalized * 8));
@@ -448,46 +508,46 @@
      * @param onRequestLoad - Callback when request is loaded (for tab re-initialization)
      */
     init(onRequestLoad) {
-      const switcher = document.querySelector(".dev-toolbar-request-switcher");
+      const switcher = document.querySelector('.dev-toolbar-request-switcher');
       if (!switcher) return;
-      const toggle = switcher.querySelector(".dev-toolbar-request-switcher-toggle");
-      const dropdown = switcher.querySelector(".dev-toolbar-request-switcher-dropdown");
+      const toggle = switcher.querySelector('.dev-toolbar-request-switcher-toggle');
+      const dropdown = switcher.querySelector('.dev-toolbar-request-switcher-dropdown');
       this.storeCurrentRequestData();
-      if (typeof window !== "undefined" && "window" in globalThis) {
+      if (typeof window !== 'undefined' && 'window' in globalThis) {
         const win = window;
         if (win.__DEV_TOOLBAR_DATA__ && win.__DEV_TOOLBAR_DATA__.metadata) {
           this.originalBadgeCounts = win.__DEV_TOOLBAR_DATA__.metadata.badge_counts;
-          console.log("[RequestSwitcher] Stored original badge counts:", this.originalBadgeCounts);
+          console.log('[RequestSwitcher] Stored original badge counts:', this.originalBadgeCounts);
         }
       }
       this.populateSwitcher();
-      toggle?.addEventListener("click", (e) => {
+      toggle?.addEventListener('click', (e) => {
         e.stopPropagation();
-        switcher.classList.toggle("open");
+        switcher.classList.toggle('open');
       });
-      document.addEventListener("click", (e) => {
+      document.addEventListener('click', (e) => {
         if (!switcher.contains(e.target)) {
-          switcher.classList.remove("open");
+          switcher.classList.remove('open');
         }
       });
-      dropdown?.addEventListener("click", (e) => {
-        const item = e.target.closest(".dev-toolbar-request-switcher-item");
+      dropdown?.addEventListener('click', (e) => {
+        const item = e.target.closest('.dev-toolbar-request-switcher-item');
         if (!item) return;
-        console.log("[RequestSwitcher] Item clicked:", item.dataset);
-        if (item.dataset.action === "view-history") {
-          console.log("[RequestSwitcher] Opening HISTORY tab");
+        console.log('[RequestSwitcher] Item clicked:', item.dataset);
+        if (item.dataset.action === 'view-history') {
+          console.log('[RequestSwitcher] Opening HISTORY tab');
           if (onRequestLoad) {
-            onRequestLoad("history");
+            onRequestLoad('history');
           }
-          switcher.classList.remove("open");
+          switcher.classList.remove('open');
           return;
         }
-        if (item.dataset.action === "current") {
-          switcher.classList.remove("open");
+        if (item.dataset.action === 'current') {
+          switcher.classList.remove('open');
           if (this.isViewingHistoricalRequest) {
             this.restoreCurrentRequest(onRequestLoad);
           } else {
-            console.log("[RequestSwitcher] Already viewing current request");
+            console.log('[RequestSwitcher] Already viewing current request');
           }
           return;
         }
@@ -496,7 +556,7 @@
           this.loadHistoricalRequest(requestId, onRequestLoad);
         }
       });
-      console.log("[RequestSwitcher] Initialized");
+      console.log('[RequestSwitcher] Initialized');
     }
     /**
      * Check if currently viewing a historical request
@@ -514,13 +574,13 @@
      * Populate switcher dropdown from localStorage
      */
     populateSwitcher() {
-      const dropdown = document.querySelector(".dev-toolbar-request-switcher-dropdown");
+      const dropdown = document.querySelector('.dev-toolbar-request-switcher-dropdown');
       if (!dropdown) return;
       const metaArray = StorageManager.getMetadata();
-      console.log("[RequestSwitcher] Populating with", metaArray.length, "requests");
-      let html = "";
+      console.log('[RequestSwitcher] Populating with', metaArray.length, 'requests');
+      let html = '';
       const isCurrentActive = !this.isViewingHistoricalRequest;
-      html += `<div class="dev-toolbar-request-switcher-item ${isCurrentActive ? "active" : ""}" data-action="current">
+      html += `<div class="dev-toolbar-request-switcher-item ${isCurrentActive ? 'active' : ''}" data-action="current">
             <span class="dev-toolbar-request-switcher-item-indicator">\u25CF</span>
             <span class="dev-toolbar-request-switcher-item-label">Current Request</span>
         </div>`;
@@ -528,10 +588,11 @@
       if (recentRequests.length > 0) {
         html += '<div class="dev-toolbar-request-switcher-separator">Recent</div>';
         recentRequests.forEach((meta) => {
-          const isActive = this.isViewingHistoricalRequest && this.currentHistoricalRequestId === meta.id;
+          const isActive =
+            this.isViewingHistoricalRequest && this.currentHistoricalRequestId === meta.id;
           const statusClass = this.getStatusClass(meta.status);
           const time = timeAgo(meta.timestamp);
-          html += `<div class="dev-toolbar-request-switcher-item ${isActive ? "active" : ""}" data-request-id="${meta.id}">
+          html += `<div class="dev-toolbar-request-switcher-item ${isActive ? 'active' : ''}" data-request-id="${meta.id}">
                     <span class="dev-toolbar-request-switcher-item-method">${meta.method}</span>
                     <span class="dev-toolbar-request-switcher-item-status status-${statusClass}">${meta.status}</span>
                     <span class="dev-toolbar-request-switcher-item-uri" title="${this.escapeHtml(meta.uri)}">${this.escapeHtml(meta.uri)}</span>
@@ -555,22 +616,22 @@
      */
     async loadHistoricalRequest(requestId, onRequestLoad) {
       if (this.isLoadingRequest) {
-        console.log("[RequestSwitcher] Already loading a request, ignoring");
+        console.log('[RequestSwitcher] Already loading a request, ignoring');
         return;
       }
       this.isLoadingRequest = true;
-      const switcher = document.querySelector(".dev-toolbar-request-switcher");
-      switcher?.classList.add("loading");
-      console.log("[RequestSwitcher] Loading historical request:", requestId);
+      const switcher = document.querySelector('.dev-toolbar-request-switcher');
+      switcher?.classList.add('loading');
+      console.log('[RequestSwitcher] Loading historical request:', requestId);
       try {
         const requestData = StorageManager.getRequest(requestId);
         if (!requestData) {
-          throw new Error("Request not found in localStorage");
+          throw new Error('Request not found in localStorage');
         }
         const tabsHtml = this.buildTabsHTML(requestData);
-        const contentContainer = document.querySelector(".dev-toolbar-panel-content");
+        const contentContainer = document.querySelector('.dev-toolbar-panel-content');
         if (!contentContainer) {
-          throw new Error("Content container not found");
+          throw new Error('Content container not found');
         }
         contentContainer.innerHTML = tabsHtml;
         this.isViewingHistoricalRequest = true;
@@ -580,21 +641,21 @@
         if (onRequestLoad) {
           onRequestLoad(requestId);
         }
-        console.log("[RequestSwitcher] Successfully loaded historical request");
+        console.log('[RequestSwitcher] Successfully loaded historical request');
       } catch (error) {
-        console.error("[RequestSwitcher] Failed to load request:", error);
+        console.error('[RequestSwitcher] Failed to load request:', error);
       } finally {
         this.isLoadingRequest = false;
-        switcher?.classList.remove("loading");
-        switcher?.classList.remove("open");
+        switcher?.classList.remove('loading');
+        switcher?.classList.remove('open');
       }
     }
     /**
      * Restore current request
      */
     restoreCurrentRequest(onRequestLoad) {
-      console.log("[RequestSwitcher] Restoring current request");
-      const contentContainer = document.querySelector(".dev-toolbar-panel-content");
+      console.log('[RequestSwitcher] Restoring current request');
+      const contentContainer = document.querySelector('.dev-toolbar-panel-content');
       if (!contentContainer || !this.currentRequestData) {
         return;
       }
@@ -602,17 +663,17 @@
       this.isViewingHistoricalRequest = false;
       this.currentHistoricalRequestId = null;
       this.populateSwitcher();
-      this.updateSwitcherLabel("current", false);
+      this.updateSwitcherLabel('current', false);
       if (onRequestLoad) {
-        onRequestLoad("current");
+        onRequestLoad('current');
       }
-      console.log("[RequestSwitcher] Restored current request");
+      console.log('[RequestSwitcher] Restored current request');
     }
     /**
      * Store current request data for restoration
      */
     storeCurrentRequestData() {
-      const contentContainer = document.querySelector(".dev-toolbar-panel-content");
+      const contentContainer = document.querySelector('.dev-toolbar-panel-content');
       if (contentContainer) {
         this.currentRequestData = contentContainer.innerHTML;
       }
@@ -621,7 +682,7 @@
      * Build tabs HTML from request data
      */
     buildTabsHTML(requestData) {
-      let html = "";
+      let html = '';
       for (const [tabName, content] of Object.entries(requestData.tabs)) {
         html += `<div class="dev-toolbar-panel-tab-pane" data-tab="${tabName}">${content}</div>`;
       }
@@ -631,36 +692,36 @@
      * Update switcher label
      */
     updateSwitcherLabel(requestId, isHistorical) {
-      const switcher = document.querySelector(".dev-toolbar-request-switcher");
-      const toggle = switcher?.querySelector(".dev-toolbar-request-switcher-toggle");
+      const switcher = document.querySelector('.dev-toolbar-request-switcher');
+      const toggle = switcher?.querySelector('.dev-toolbar-request-switcher-toggle');
       if (!toggle) return;
       toggle.dataset.current = requestId;
-      const label = toggle.querySelector(".dev-toolbar-request-switcher-label");
+      const label = toggle.querySelector('.dev-toolbar-request-switcher-label');
       if (label) {
-        label.textContent = isHistorical ? "Request (Historical)" : "Request";
-        label.style.color = isHistorical ? "#f59e0b" : "";
+        label.textContent = isHistorical ? 'Request (Historical)' : 'Request';
+        label.style.color = isHistorical ? '#f59e0b' : '';
       }
     }
     /**
      * Get status class for status code
      */
     getStatusClass(status) {
-      if (status >= 200 && status < 300) return "success";
-      if (status >= 300 && status < 400) return "redirect";
-      if (status >= 400 && status < 500) return "client-error";
-      if (status >= 500) return "server-error";
-      return "unknown";
+      if (status >= 200 && status < 300) return 'success';
+      if (status >= 300 && status < 400) return 'redirect';
+      if (status >= 400 && status < 500) return 'client-error';
+      if (status >= 500) return 'server-error';
+      return 'unknown';
     }
     /**
      * Escape HTML
      */
     escapeHtml(text) {
       const map = {
-        "&": "&amp;",
-        "<": "&lt;",
-        ">": "&gt;",
-        '"': "&quot;",
-        "'": "&#039;"
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#039;',
       };
       return text.replace(/[&<>"']/g, (char) => map[char] || char);
     }
@@ -675,7 +736,7 @@
   // DevToolbar/ui/XdebugControls.ts
   var XdebugControls = class {
     constructor() {
-      this.CONTAINER_ID = "dev-toolbar-request-controls-container";
+      this.CONTAINER_ID = 'dev-toolbar-request-controls-container';
     }
     /**
      * Render Xdebug controls based on current state
@@ -692,38 +753,38 @@
       const { xdebugActive, xdebugSessionName } = this.getXdebugStatus();
       const html = this.buildControlsHTML(xdebugEnabled, xdebugActive, xdebugSessionName);
       container.innerHTML = html;
-      console.log("[Xdebug] Controls rendered, status:", xdebugActive ? "active" : "inactive");
+      console.log('[Xdebug] Controls rendered, status:', xdebugActive ? 'active' : 'inactive');
     }
     /**
      * Get Xdebug configuration from window global
      */
     getXdebugConfig() {
-      if (typeof window !== "undefined" && "window" in globalThis) {
+      if (typeof window !== 'undefined' && 'window' in globalThis) {
         const win = window;
-        return win.__XDEBUG_CONFIG__ || { enabled: false, mode: "off" };
+        return win.__XDEBUG_CONFIG__ || { enabled: false, mode: 'off' };
       }
-      return { enabled: false, mode: "off" };
+      return { enabled: false, mode: 'off' };
     }
     /**
      * Get Xdebug session status from cookies
      */
     getXdebugStatus() {
       const cookies = this.parseCookies();
-      const xdebugActive = "XDEBUG_SESSION" in cookies;
-      const xdebugSessionName = cookies["XDEBUG_SESSION"] || "";
+      const xdebugActive = 'XDEBUG_SESSION' in cookies;
+      const xdebugSessionName = cookies['XDEBUG_SESSION'] || '';
       return { xdebugActive, xdebugSessionName };
     }
     /**
      * Parse document.cookie into key-value pairs
      */
     parseCookies() {
-      if (typeof document === "undefined") {
+      if (typeof document === 'undefined') {
         return {};
       }
-      return document.cookie.split(";").reduce((acc, cookie) => {
-        const [key, value] = cookie.trim().split("=");
+      return document.cookie.split(';').reduce((acc, cookie) => {
+        const [key, value] = cookie.trim().split('=');
         if (key) {
-          acc[key] = value || "";
+          acc[key] = value || '';
         }
         return acc;
       }, {});
@@ -734,9 +795,9 @@
     buildControlsHTML(xdebugEnabled, xdebugActive, xdebugSessionName) {
       let html = '<div class="dev-toolbar-request-status">';
       if (xdebugEnabled) {
-        const statusClass = xdebugActive ? "active" : "inactive";
-        const statusText = xdebugActive ? `Xdebug: ${xdebugSessionName}` : "Xdebug: Off";
-        const statusIcon = xdebugActive ? "\u25CF" : "\u25CB";
+        const statusClass = xdebugActive ? 'active' : 'inactive';
+        const statusText = xdebugActive ? `Xdebug: ${xdebugSessionName}` : 'Xdebug: Off';
+        const statusIcon = xdebugActive ? '\u25CF' : '\u25CB';
         html += `<div class="dev-toolbar-xdebug-compact dev-toolbar-xdebug-compact-${statusClass}">
                 <span class="dev-toolbar-xdebug-indicator">${statusIcon}</span>
                 <span class="dev-toolbar-xdebug-label">${this.escapeHtml(statusText)}</span>
@@ -746,7 +807,7 @@
                 <span class="dev-toolbar-xdebug-label">Xdebug: Not Installed</span>
             </div>`;
       }
-      html += "</div>";
+      html += '</div>';
       html += '<div class="dev-toolbar-request-actions">';
       if (xdebugEnabled) {
         if (xdebugActive) {
@@ -765,7 +826,7 @@
       html += `<button class="dev-toolbar-btn dev-toolbar-btn-secondary" data-action="export-current" title="Export current request as JSON">
             \u2B07 Export
         </button>`;
-      html += "</div>";
+      html += '</div>';
       return html;
     }
     /**
@@ -773,11 +834,11 @@
      */
     escapeHtml(text) {
       const map = {
-        "&": "&amp;",
-        "<": "&lt;",
-        ">": "&gt;",
-        '"': "&quot;",
-        "'": "&#039;"
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#039;',
       };
       return text.replace(/[&<>"']/g, (char) => map[char] || char);
     }
@@ -796,8 +857,8 @@
      * Disable Xdebug debugging
      */
     disableXdebug() {
-      console.log("[Xdebug] Disabling Xdebug");
-      document.cookie = "XDEBUG_SESSION=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+      console.log('[Xdebug] Disabling Xdebug');
+      document.cookie = 'XDEBUG_SESSION=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
       this.render();
       window.location.reload();
     }
@@ -812,47 +873,200 @@
     }
     const { badge_counts, ...exportMetadata } = requestData.metadata;
     return {
-      toolbar_version: "2.1.0",
-      export_time: (/* @__PURE__ */ new Date()).toISOString(),
+      toolbar_version: '2.1.0',
+      export_time: /* @__PURE__ */ new Date().toISOString(),
       request_id: requestId,
       metadata: exportMetadata,
-      data: requestData.raw_data
+      data: requestData.raw_data,
     };
   }
   function downloadJson(content, filename) {
-    const json = typeof content === "string" ? content : JSON.stringify(content, null, 2);
-    const blob = new Blob([json], { type: "application/json" });
+    const json = typeof content === 'string' ? content : JSON.stringify(content, null, 2);
+    const blob = new Blob([json], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
+    const a = document.createElement('a');
     a.href = url;
     a.download = filename;
     a.click();
     URL.revokeObjectURL(url);
   }
-  function downloadFile(content, filename, mimeType = "application/json") {
+  function downloadFile(content, filename, mimeType = 'application/json') {
     const blob = new Blob([content], { type: mimeType });
     const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
+    const a = document.createElement('a');
     a.href = url;
     a.download = filename;
     a.click();
     URL.revokeObjectURL(url);
   }
 
+  // DevToolbar/ui/ClearHistoryDialog.ts
+  var ClearHistoryDialog = class {
+    constructor() {
+      this.modal = null;
+      this.isOpen = false;
+      this.onConfirm = null;
+    }
+    /**
+     * Open dialog with confirmation callback
+     */
+    open(onConfirm) {
+      if (this.isOpen) {
+        return;
+      }
+      this.onConfirm = onConfirm;
+      this.createModal();
+      this.showModal();
+      this.attachModalHandlers();
+      this.isOpen = true;
+    }
+    /**
+     * Close dialog
+     */
+    close() {
+      if (!this.isOpen) {
+        return;
+      }
+      this.hideModal();
+      this.removeModal();
+      this.isOpen = false;
+      this.onConfirm = null;
+    }
+    /**
+     * Create modal HTML structure
+     */
+    createModal() {
+      const modalHTML = `
+            <div class="dev-toolbar-modal-overlay" id="dev-toolbar-clear-history-overlay">
+                <div class="dev-toolbar-modal dev-toolbar-clear-history-modal">
+                    <div class="dev-toolbar-modal-header">
+                        <div style="display: flex; align-items: center; gap: 12px;">
+                            <span style="font-size: 1.5rem;">\u{1F5D1}\uFE0F</span>
+                            <h3>Clear Request History</h3>
+                        </div>
+                        <button class="dev-toolbar-modal-close" title="Close">\xD7</button>
+                    </div>
+
+                    <div class="dev-toolbar-modal-content">
+                        <!-- Warning -->
+                        <div class="dev-toolbar-clear-warning">
+                            <strong>\u26A0\uFE0F Warning:</strong> This action cannot be undone.
+                        </div>
+
+                        <!-- What will be deleted -->
+                        <div class="dev-toolbar-clear-section">
+                            <h4>Will be deleted:</h4>
+                            <ul class="dev-toolbar-clear-list">
+                                <li>All request metadata (timestamps, URIs, methods)</li>
+                                <li>All request details (queries, performance data)</li>
+                                <li>History statistics and trends</li>
+                            </ul>
+                        </div>
+
+                        <!-- What will be preserved -->
+                        <div class="dev-toolbar-clear-section">
+                            <h4>Will be preserved:</h4>
+                            <ul class="dev-toolbar-clear-list dev-toolbar-clear-list-preserved">
+                                <li>DevToolbar settings (minibar labels, colors)</li>
+                                <li>Active tab selection</li>
+                                <li>Xdebug cookie settings</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <div class="dev-toolbar-modal-footer">
+                        <button class="dev-toolbar-btn dev-toolbar-btn-secondary" id="clear-history-cancel">
+                            Cancel
+                        </button>
+                        <button class="dev-toolbar-btn dev-toolbar-btn-danger" id="clear-history-confirm">
+                            \u{1F5D1}\uFE0F Clear History
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
+      const container = document.createElement('div');
+      container.innerHTML = modalHTML;
+      document.body.appendChild(container.firstElementChild);
+      this.modal = document.getElementById('dev-toolbar-clear-history-overlay');
+    }
+    /**
+     * Show modal (fade in)
+     */
+    showModal() {
+      if (this.modal) {
+        this.modal.style.display = 'flex';
+        void this.modal.offsetHeight;
+        this.modal.style.opacity = '1';
+      }
+    }
+    /**
+     * Hide modal (fade out)
+     */
+    hideModal() {
+      if (this.modal) {
+        this.modal.style.opacity = '0';
+      }
+    }
+    /**
+     * Remove modal from DOM
+     */
+    removeModal() {
+      if (this.modal) {
+        setTimeout(() => {
+          this.modal?.remove();
+          this.modal = null;
+        }, 200);
+      }
+    }
+    /**
+     * Attach event handlers to modal
+     */
+    attachModalHandlers() {
+      if (!this.modal) {
+        return;
+      }
+      const confirmBtn = this.modal.querySelector('#clear-history-confirm');
+      confirmBtn?.addEventListener('click', () => {
+        if (this.onConfirm) {
+          this.onConfirm();
+        }
+        this.close();
+      });
+      const cancelBtn = this.modal.querySelector('#clear-history-cancel');
+      cancelBtn?.addEventListener('click', () => this.close());
+      const closeBtn = this.modal.querySelector('.dev-toolbar-modal-close');
+      closeBtn?.addEventListener('click', () => this.close());
+      const escHandler = (e) => {
+        if (e.key === 'Escape') {
+          this.close();
+          document.removeEventListener('keydown', escHandler);
+        }
+      };
+      document.addEventListener('keydown', escHandler);
+      this.modal.addEventListener('click', (e) => {
+        if (e.target === this.modal) {
+          this.close();
+        }
+      });
+    }
+  };
+
   // DevToolbar/ui/HistoryTabManager.ts
   var HistoryTabManager = class {
     constructor() {
       this.initialized = false;
+      this.clearHistoryDialog = new ClearHistoryDialog();
     }
     /**
      * Initialize history tab
      */
     init() {
       if (this.initialized) {
-        console.log("[HistoryTabManager] Already initialized");
+        console.log('[HistoryTabManager] Already initialized');
         return;
       }
-      console.log("[HistoryTabManager] Initializing History tab");
+      console.log('[HistoryTabManager] Initializing History tab');
       this.renderHistoryData();
       this.attachFilterListeners();
       this.attachExportListeners();
@@ -869,9 +1083,9 @@
      */
     renderHistoryData() {
       const metaArray = StorageManager.getMetadata();
-      console.log("[HistoryTabManager] Found", metaArray.length, "requests");
+      console.log('[HistoryTabManager] Found', metaArray.length, 'requests');
       this.updateStatistics(metaArray);
-      const countEl = document.getElementById("history-list-count");
+      const countEl = document.getElementById('history-list-count');
       if (countEl) {
         countEl.textContent = String(metaArray.length);
       }
@@ -889,7 +1103,7 @@
         avg_memory: `${stats.avgMemory.toFixed(1)}MB`,
         avg_queries: stats.avgQueries.toFixed(1),
         fastest: `${stats.fastest.toFixed(0)}ms`,
-        slowest: `${stats.slowest.toFixed(0)}ms`
+        slowest: `${stats.slowest.toFixed(0)}ms`,
       };
       Object.entries(statsMap).forEach(([stat, value]) => {
         const el = document.querySelector(`[data-history-stat="${stat}"]`);
@@ -909,7 +1123,7 @@
           avgMemory: 0,
           avgQueries: 0,
           fastest: 0,
-          slowest: 0
+          slowest: 0,
         };
       }
       const times = metaArray.map((r) => r.time);
@@ -921,16 +1135,19 @@
         avgMemory: memories.reduce((a, b) => a + b, 0) / memories.length,
         avgQueries: queries.reduce((a, b) => a + b, 0) / queries.length,
         fastest: Math.min(...times),
-        slowest: Math.max(...times)
+        slowest: Math.max(...times),
       };
     }
     /**
      * Render trends sparkline
      */
     renderTrends(metaArray) {
-      const trendsEl = document.querySelector(".dev-toolbar-history-sparkline");
+      const trendsEl = document.querySelector('.dev-toolbar-history-sparkline');
       if (!trendsEl) return;
-      const times = metaArray.slice(0, 20).reverse().map((r) => r.time);
+      const times = metaArray
+        .slice(0, 20)
+        .reverse()
+        .map((r) => r.time);
       const sparkline = generateSparkline(times);
       trendsEl.textContent = sparkline;
     }
@@ -938,25 +1155,26 @@
      * Render request list
      */
     renderRequestList(metaArray) {
-      const listContainer = document.getElementById("history-request-list-container");
+      const listContainer = document.getElementById('history-request-list-container');
       if (!listContainer) {
-        console.warn("[HistoryTabManager] List container not found");
+        console.warn('[HistoryTabManager] List container not found');
         return;
       }
       if (metaArray.length === 0) {
-        listContainer.innerHTML = '<p style="color: #888;">No request history yet. Reload the page to see requests.</p>';
+        listContainer.innerHTML =
+          '<p style="color: #888;">No request history yet. Reload the page to see requests.</p>';
         return;
       }
-      let html = "";
+      let html = '';
       metaArray.forEach((request) => {
         const statusIcon = this.getStatusIcon(request.status);
         const timeAgoText = timeAgo(request.timestamp);
         const fullTimestamp = formatTimestamp(request.timestamp);
-        let perfClass = "";
+        let perfClass = '';
         if (request.time > 500) {
-          perfClass = "slow";
+          perfClass = 'slow';
         } else if (request.time > 200) {
-          perfClass = "warning";
+          perfClass = 'warning';
         }
         html += `<div class="dev-toolbar-history-item ${perfClass}"
                       data-method="${this.escapeHtml(request.method)}"
@@ -982,48 +1200,48 @@
                 </div>`;
       });
       listContainer.innerHTML = html;
-      console.log("[HistoryTabManager] Rendered", metaArray.length, "requests");
+      console.log('[HistoryTabManager] Rendered', metaArray.length, 'requests');
       setTimeout(() => this.attachItemExportListeners(), 50);
     }
     /**
      * Get status icon for status code
      */
     getStatusIcon(statusCode) {
-      if (statusCode >= 200 && statusCode < 300) return "\u2713";
-      if (statusCode >= 300 && statusCode < 400) return "\u2192";
-      if (statusCode >= 400 && statusCode < 500) return "\u26A0";
-      if (statusCode >= 500) return "\u2717";
-      return "?";
+      if (statusCode >= 200 && statusCode < 300) return '\u2713';
+      if (statusCode >= 300 && statusCode < 400) return '\u2192';
+      if (statusCode >= 400 && statusCode < 500) return '\u26A0';
+      if (statusCode >= 500) return '\u2717';
+      return '?';
     }
     /**
      * Attach filter listeners
      */
     attachFilterListeners() {
-      const methodFilter = document.getElementById("history-filter-method");
-      const statusFilter = document.getElementById("history-filter-status");
-      const uriFilter = document.getElementById("history-filter-uri");
-      const minTimeFilter = document.getElementById("history-filter-min-time");
-      const resetBtn = document.getElementById("history-filter-reset");
+      const methodFilter = document.getElementById('history-filter-method');
+      const statusFilter = document.getElementById('history-filter-status');
+      const uriFilter = document.getElementById('history-filter-uri');
+      const minTimeFilter = document.getElementById('history-filter-min-time');
+      const resetBtn = document.getElementById('history-filter-reset');
       [methodFilter, statusFilter, uriFilter, minTimeFilter].forEach((el) => {
-        el?.addEventListener("input", () => this.filterRequests());
+        el?.addEventListener('input', () => this.filterRequests());
       });
-      resetBtn?.addEventListener("click", () => this.resetFilters());
+      resetBtn?.addEventListener('click', () => this.resetFilters());
     }
     /**
      * Filter requests based on current filter values
      */
     filterRequests() {
       const filters = {
-        method: document.getElementById("history-filter-method")?.value || "",
-        status: document.getElementById("history-filter-status")?.value || "",
-        uri: document.getElementById("history-filter-uri")?.value.toLowerCase() || "",
-        minTime: parseFloat(document.getElementById("history-filter-min-time")?.value || "0")
+        method: document.getElementById('history-filter-method')?.value || '',
+        status: document.getElementById('history-filter-status')?.value || '',
+        uri: document.getElementById('history-filter-uri')?.value.toLowerCase() || '',
+        minTime: parseFloat(document.getElementById('history-filter-min-time')?.value || '0'),
       };
-      const items = document.querySelectorAll(".dev-toolbar-history-item");
+      const items = document.querySelectorAll('.dev-toolbar-history-item');
       let visibleCount = 0;
       items.forEach((item) => {
         const matches = this.itemMatchesFilters(item, filters);
-        item.style.display = matches ? "" : "none";
+        item.style.display = matches ? '' : 'none';
         if (matches) visibleCount++;
       });
       this.updateListTitle(visibleCount, items.length);
@@ -1035,14 +1253,15 @@
       if (filters.method && item.dataset.method !== filters.method) return false;
       if (filters.status && !item.dataset.status?.startsWith(filters.status)) return false;
       if (filters.uri && !item.dataset.uri?.toLowerCase().includes(filters.uri)) return false;
-      if (filters.minTime > 0 && parseFloat(item.dataset.time || "0") < filters.minTime) return false;
+      if (filters.minTime > 0 && parseFloat(item.dataset.time || '0') < filters.minTime)
+        return false;
       return true;
     }
     /**
      * Update list title with counts
      */
     updateListTitle(visibleCount, totalCount) {
-      const title = document.getElementById("history-list-title");
+      const title = document.getElementById('history-list-title');
       if (title) {
         title.textContent = `Request History (${visibleCount} of ${totalCount})`;
       }
@@ -1051,9 +1270,9 @@
      * Reset filters
      */
     resetFilters() {
-      ["method", "status", "uri", "min-time"].forEach((id) => {
+      ['method', 'status', 'uri', 'min-time'].forEach((id) => {
         const el = document.getElementById(`history-filter-${id}`);
-        if (el) el.value = "";
+        if (el) el.value = '';
       });
       this.filterRequests();
     }
@@ -1061,16 +1280,22 @@
      * Attach export listeners
      */
     attachExportListeners() {
-      document.getElementById("history-export-json")?.addEventListener("click", () => this.exportAsJSON());
-      document.getElementById("history-export-csv")?.addEventListener("click", () => this.exportAsCSV());
-      document.getElementById("history-clear")?.addEventListener("click", () => this.clearHistory());
+      document
+        .getElementById('history-export-json')
+        ?.addEventListener('click', () => this.exportAsJSON());
+      document
+        .getElementById('history-export-csv')
+        ?.addEventListener('click', () => this.exportAsCSV());
+      document
+        .getElementById('history-clear')
+        ?.addEventListener('click', () => this.clearHistory());
     }
     /**
      * Attach individual item export listeners
      */
     attachItemExportListeners() {
-      document.querySelectorAll(".dev-toolbar-history-item-export").forEach((btn) => {
-        btn.addEventListener("click", (e) => {
+      document.querySelectorAll('.dev-toolbar-history-item-export').forEach((btn) => {
+        btn.addEventListener('click', (e) => {
           e.stopPropagation();
           const requestId = btn.dataset.requestId;
           if (requestId) {
@@ -1088,18 +1313,18 @@
     exportRequest(requestId) {
       const requestData = StorageManager.getRequest(requestId);
       if (!requestData) {
-        console.error("[HistoryTabManager] Request not found:", requestId);
-        alert("Request not found in history.");
+        console.error('[HistoryTabManager] Request not found:', requestId);
+        alert('Request not found in history.');
         return;
       }
       try {
         const exportData = exportRequestAsJson(requestId, requestData);
         const filename = `devtoolbar-request-${requestId}-${Date.now()}.json`;
-        downloadFile(JSON.stringify(exportData, null, 2), filename, "application/json");
+        downloadFile(JSON.stringify(exportData, null, 2), filename, 'application/json');
       } catch (error) {
-        console.error("[HistoryTabManager] Export failed:", error);
+        console.error('[HistoryTabManager] Export failed:', error);
         alert(
-          "Cannot export this request: No structured data available.\n\nThis request was stored before structured data export was implemented.\nPlease reload the page to capture new requests with structured data."
+          'Cannot export this request: No structured data available.\n\nThis request was stored before structured data export was implemented.\nPlease reload the page to capture new requests with structured data.'
         );
       }
     }
@@ -1110,52 +1335,56 @@
       const data = this.collectVisibleData();
       const json = JSON.stringify(
         {
-          toolbar_version: "2.1.0",
-          export_time: (/* @__PURE__ */ new Date()).toISOString(),
-          requests: data
+          toolbar_version: '2.1.0',
+          export_time: /* @__PURE__ */ new Date().toISOString(),
+          requests: data,
         },
         null,
         2
       );
-      downloadFile(json, `devtoolbar-history-${Date.now()}.json`, "application/json");
+      downloadFile(json, `devtoolbar-history-${Date.now()}.json`, 'application/json');
     }
     /**
      * Export visible history as CSV
      */
     exportAsCSV() {
       const data = this.collectVisibleData();
-      let csv = "Timestamp,Method,URI,Status,Time (ms),Memory (MB),Queries\n";
+      let csv = 'Timestamp,Method,URI,Status,Time (ms),Memory (MB),Queries\n';
       data.forEach((item) => {
         const timestamp = new Date(item.timestamp * 1e3).toISOString();
         const uri = `"${item.uri.replace(/"/g, '""')}"`;
         csv += `${timestamp},${item.method},${uri},${item.status},${item.time},${item.memory},${item.query_count}
 `;
       });
-      downloadFile(csv, `devtoolbar-history-${Date.now()}.csv`, "text/csv");
+      downloadFile(csv, `devtoolbar-history-${Date.now()}.csv`, 'text/csv');
     }
     /**
      * Collect visible request data
      */
     collectVisibleData() {
-      const items = document.querySelectorAll('.dev-toolbar-history-item:not([style*="display: none"])');
+      const items = document.querySelectorAll(
+        '.dev-toolbar-history-item:not([style*="display: none"])'
+      );
       return Array.from(items).map((item) => {
         const el = item;
-        const memoryText = item.querySelector(".dev-toolbar-history-meta-item:nth-child(3)")?.textContent || "";
+        const memoryText =
+          item.querySelector('.dev-toolbar-history-meta-item:nth-child(3)')?.textContent || '';
         const memoryMatch = memoryText.match(/[\d.]+/);
         const memory = memoryMatch ? parseFloat(memoryMatch[0]) : 0;
-        const queriesText = item.querySelector(".dev-toolbar-history-meta-item:nth-child(4)")?.textContent || "";
+        const queriesText =
+          item.querySelector('.dev-toolbar-history-meta-item:nth-child(4)')?.textContent || '';
         const queriesMatch = queriesText.match(/\d+/);
         const queryCount = queriesMatch ? parseInt(queriesMatch[0], 10) : 0;
-        const timeAgoText = item.querySelector(".dev-toolbar-history-time-ago")?.textContent || "";
+        const timeAgoText = item.querySelector('.dev-toolbar-history-time-ago')?.textContent || '';
         const timestamp = this.parseTimeAgo(timeAgoText);
         return {
-          method: el.dataset.method || "",
-          uri: el.dataset.uri || "",
-          status: parseInt(el.dataset.status || "0", 10),
-          time: parseFloat(el.dataset.time || "0"),
+          method: el.dataset.method || '',
+          uri: el.dataset.uri || '',
+          status: parseInt(el.dataset.status || '0', 10),
+          time: parseFloat(el.dataset.time || '0'),
           memory,
           query_count: queryCount,
-          timestamp
+          timestamp,
         };
       });
     }
@@ -1173,20 +1402,275 @@
      * Clear history
      */
     clearHistory() {
-      if (!confirm("Clear all request history? This cannot be undone.")) return;
-      StorageManager.clear();
-      window.location.reload();
+      this.clearHistoryDialog.open(() => {
+        StorageManager.clear();
+        window.location.reload();
+      });
     }
     /**
      * Escape HTML
      */
     escapeHtml(text) {
       const map = {
-        "&": "&amp;",
-        "<": "&lt;",
-        ">": "&gt;",
-        '"': "&quot;",
-        "'": "&#039;"
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#039;',
+      };
+      return text.replace(/[&<>"']/g, (char) => map[char] || char);
+    }
+  };
+
+  // DevToolbar/ui/SettingsManager.ts
+  var SettingsManager = class {
+    constructor() {
+      this.modal = null;
+      this.isOpen = false;
+    }
+    /**
+     * Open settings modal
+     */
+    open() {
+      if (this.isOpen) {
+        return;
+      }
+      this.createModal();
+      this.showModal();
+      this.attachModalHandlers();
+      this.isOpen = true;
+    }
+    /**
+     * Close settings modal
+     */
+    close() {
+      if (!this.isOpen) {
+        return;
+      }
+      this.hideModal();
+      this.removeModal();
+      this.isOpen = false;
+    }
+    /**
+     * Create modal HTML structure
+     */
+    createModal() {
+      const currentLabels = StorageManager.getMinibarLabels();
+      const currentColors = StorageManager.getBranchColors();
+      const modalHTML = `
+            <div class="dev-toolbar-modal-overlay" id="dev-toolbar-settings-overlay">
+                <div class="dev-toolbar-modal">
+                    <div class="dev-toolbar-modal-header">
+                        <h3>DevToolbar Settings</h3>
+                        <button class="dev-toolbar-modal-close" title="Close">\xD7</button>
+                    </div>
+
+                    <div class="dev-toolbar-modal-content">
+                        <!-- Minibar Label Selection -->
+                        <div class="dev-toolbar-settings-group">
+                            <label>Minibar Labels (multiple selection)</label>
+                            <p style="margin: 0 0 12px 0; color: #6b7280; font-size: 0.875rem;">
+                                Select which labels to display in the minibar (left to right order)
+                            </p>
+                            <div class="dev-toolbar-settings-checkboxes">
+                                ${this.buildCheckboxOption('branding', '\u26A1 Branding', 'Show lightning bolt icon', currentLabels)}
+                                ${this.buildCheckboxOption('branch', 'Git Branch', 'Show current git branch name', currentLabels)}
+                                ${this.buildCheckboxOption('route', 'Current Route', 'Show HTTP method and URI', currentLabels)}
+                                ${this.buildCheckboxOption('request-id', 'Request ID', 'Show unique request identifier', currentLabels)}
+                            </div>
+                        </div>
+
+                        <!-- Branch Color Configuration -->
+                        <div class="dev-toolbar-settings-group">
+                            <label>Git Branch Colors</label>
+                            <p style="margin: 0 0 12px 0; color: #6b7280; font-size: 0.875rem;">
+                                Customize colors for different branch types when using branch display mode
+                            </p>
+                            <div class="dev-toolbar-settings-colors">
+                                ${this.buildColorInput('feat', 'feat/* branches', currentColors.feat)}
+                                ${this.buildColorInput('fix', 'fix/* branches', currentColors.fix)}
+                                ${this.buildColorInput('hotfix', 'hotfix/* branches', currentColors.hotfix)}
+                                ${this.buildColorInput('chore', 'chore/* branches', currentColors.chore)}
+                                ${this.buildColorInput('default', 'Other branches', currentColors.default)}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="dev-toolbar-modal-footer">
+                        <button class="dev-toolbar-btn dev-toolbar-btn-secondary" id="settings-cancel">
+                            Cancel
+                        </button>
+                        <button class="dev-toolbar-btn dev-toolbar-btn-primary" id="settings-save">
+                            Save & Reload
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
+      const container = document.createElement('div');
+      container.innerHTML = modalHTML;
+      document.body.appendChild(container.firstElementChild);
+      this.modal = document.getElementById('dev-toolbar-settings-overlay');
+    }
+    /**
+     * Build checkbox option HTML
+     */
+    buildCheckboxOption(value, title, description, currentValues) {
+      const checked = currentValues.includes(value) ? 'checked' : '';
+      return `
+            <label class="dev-toolbar-settings-checkbox-item">
+                <input type="checkbox" name="minibar-label" value="${this.escapeHtml(value)}" ${checked}>
+                <div>
+                    <strong>${this.escapeHtml(title)}</strong>
+                    <p style="margin: 4px 0 0 0; color: #6b7280; font-size: 0.875rem;">
+                        ${this.escapeHtml(description)}
+                    </p>
+                </div>
+            </label>
+        `;
+    }
+    /**
+     * Build color input HTML
+     */
+    buildColorInput(type, label, value) {
+      return `
+            <div class="dev-toolbar-settings-color-item">
+                <label for="color-${this.escapeHtml(type)}">${this.escapeHtml(label)}</label>
+                <input type="color" id="color-${this.escapeHtml(type)}" name="color-${this.escapeHtml(type)}" value="${this.escapeHtml(value)}">
+            </div>
+        `;
+    }
+    /**
+     * Show modal (fade in)
+     */
+    showModal() {
+      if (this.modal) {
+        this.modal.style.display = 'flex';
+        void this.modal.offsetHeight;
+        this.modal.style.opacity = '1';
+      }
+    }
+    /**
+     * Hide modal (fade out)
+     */
+    hideModal() {
+      if (this.modal) {
+        this.modal.style.opacity = '0';
+      }
+    }
+    /**
+     * Remove modal from DOM
+     */
+    removeModal() {
+      if (this.modal) {
+        setTimeout(() => {
+          this.modal?.remove();
+          this.modal = null;
+        }, 200);
+      }
+    }
+    /**
+     * Attach event handlers to modal
+     */
+    attachModalHandlers() {
+      if (!this.modal) {
+        return;
+      }
+      const saveBtn = this.modal.querySelector('#settings-save');
+      saveBtn?.addEventListener('click', () => this.saveSettings());
+      const cancelBtn = this.modal.querySelector('#settings-cancel');
+      cancelBtn?.addEventListener('click', () => this.close());
+      const closeBtn = this.modal.querySelector('.dev-toolbar-modal-close');
+      closeBtn?.addEventListener('click', () => this.close());
+      const escHandler = (e) => {
+        if (e.key === 'Escape') {
+          this.close();
+          document.removeEventListener('keydown', escHandler);
+        }
+      };
+      document.addEventListener('keydown', escHandler);
+      this.modal.addEventListener('click', (e) => {
+        if (e.target === this.modal) {
+          this.close();
+        }
+      });
+    }
+    /**
+     * Save settings and reload page
+     */
+    saveSettings() {
+      const selectedLabels = this.getSelectedLabels();
+      const branchColors = this.getBranchColors();
+      if (selectedLabels.length === 0) {
+        console.error('[Settings] No labels selected');
+        return;
+      }
+      StorageManager.setMinibarLabels(selectedLabels);
+      StorageManager.setBranchColors(branchColors);
+      this.saveSettingsToCookies(selectedLabels, branchColors);
+      console.log('[Settings] Saved:', { labels: selectedLabels, colors: branchColors });
+      window.location.reload();
+    }
+    /**
+     * Save settings to cookies for PHP access
+     */
+    saveSettingsToCookies(labels, colors) {
+      const labelsJson = JSON.stringify(labels);
+      document.cookie = `devbar_labels=${encodeURIComponent(labelsJson)}; path=/; max-age=31536000`;
+      const colorsJson = JSON.stringify(colors);
+      document.cookie = `devbar_colors=${encodeURIComponent(colorsJson)}; path=/; max-age=31536000`;
+      console.log('[Settings] Cookies set:', {
+        labels: `devbar_labels=${encodeURIComponent(labelsJson)}`,
+        colors: `devbar_colors=${encodeURIComponent(colorsJson)}`,
+        allCookies: document.cookie,
+      });
+    }
+    /**
+     * Get selected minibar labels from form
+     */
+    getSelectedLabels() {
+      if (!this.modal) {
+        return [];
+      }
+      const selectedCheckboxes = this.modal.querySelectorAll('input[name="minibar-label"]:checked');
+      const labels = [];
+      selectedCheckboxes.forEach((checkbox) => {
+        labels.push(checkbox.value);
+      });
+      return labels;
+    }
+    /**
+     * Get branch colors from form
+     */
+    getBranchColors() {
+      return {
+        feat: this.getColorValue('feat') ?? DEFAULT_BRANCH_COLORS.feat,
+        fix: this.getColorValue('fix') ?? DEFAULT_BRANCH_COLORS.fix,
+        hotfix: this.getColorValue('hotfix') ?? DEFAULT_BRANCH_COLORS.hotfix,
+        chore: this.getColorValue('chore') ?? DEFAULT_BRANCH_COLORS.chore,
+        default: this.getColorValue('default') ?? DEFAULT_BRANCH_COLORS.default,
+      };
+    }
+    /**
+     * Get color value from color input
+     */
+    getColorValue(type) {
+      if (!this.modal) {
+        return null;
+      }
+      const input = this.modal.querySelector(`input[name="color-${type}"]`);
+      return input?.value ?? null;
+    }
+    /**
+     * Escape HTML special characters
+     */
+    escapeHtml(text) {
+      const map = {
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#039;',
       };
       return text.replace(/[&<>"']/g, (char) => map[char] || char);
     }
@@ -1201,55 +1685,59 @@
       this.requestSwitcher = new RequestSwitcher();
       this.xdebugControls = new XdebugControls();
       this.historyTabManager = new HistoryTabManager();
+      this.settingsManager = new SettingsManager();
     }
     /**
      * Initialize DevToolbar UI
      */
     init() {
-      console.log("[DevToolbar] Initializing UI...");
+      console.log('[DevToolbar] Initializing UI...');
       StorageManager.init();
       this.tabManager.init();
-      this.miniBar = document.querySelector(".dev-toolbar-mini");
-      this.panel = document.querySelector(".dev-toolbar-panel");
+      this.miniBar = document.querySelector('.dev-toolbar-mini');
+      this.panel = document.querySelector('.dev-toolbar-panel');
       if (!this.miniBar || !this.panel) {
-        console.error("[DevToolbar] Mini bar or panel not found");
+        console.error('[DevToolbar] Mini bar or panel not found');
         return;
       }
       this.updateHistoryBadge();
       this.restoreState();
       this.attachEventListeners();
       this.requestSwitcher.init((requestId) => this.handleRequestLoad(requestId));
-      this.tabManager.setActiveTab(
-        this.tabManager.getCurrentTab(),
-        (tabName) => this.handleTabActivate(tabName)
+      this.tabManager.setActiveTab(this.tabManager.getCurrentTab(), (tabName) =>
+        this.handleTabActivate(tabName)
       );
-      console.log("[DevToolbar] UI initialization complete");
+      console.log('[DevToolbar] UI initialization complete');
     }
     /**
      * Attach all event listeners
      */
     attachEventListeners() {
-      this.miniBar?.addEventListener("click", () => {
+      this.miniBar?.addEventListener('click', () => {
         this.togglePanel();
       });
-      document.querySelectorAll(".dev-toolbar-panel-tab").forEach((tab) => {
-        tab.addEventListener("click", (e) => {
-          const tabName = e.target.closest(".dev-toolbar-panel-tab")?.getAttribute("data-tab");
+      document.querySelectorAll('.dev-toolbar-panel-tab').forEach((tab) => {
+        tab.addEventListener('click', (e) => {
+          const tabName = e.target.closest('.dev-toolbar-panel-tab')?.getAttribute('data-tab');
           if (tabName) {
             this.tabManager.setActiveTab(tabName, (name) => this.handleTabActivate(name));
           }
         });
       });
-      const closeBtn = document.querySelector(".dev-toolbar-panel-close");
-      closeBtn?.addEventListener("click", () => {
+      const closeBtn = document.querySelector('.dev-toolbar-panel-close');
+      closeBtn?.addEventListener('click', () => {
         this.closePanel();
       });
-      const maximizeBtn = document.querySelector(".dev-toolbar-panel-maximize");
-      maximizeBtn?.addEventListener("click", () => {
+      const settingsBtn = document.querySelector('.dev-toolbar-panel-settings');
+      settingsBtn?.addEventListener('click', () => {
+        this.settingsManager.open();
+      });
+      const maximizeBtn = document.querySelector('.dev-toolbar-panel-maximize');
+      maximizeBtn?.addEventListener('click', () => {
         this.toggleMaximize();
       });
-      document.addEventListener("keydown", (e) => {
-        if (e.key === "Escape" && this.panel?.classList.contains("open")) {
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && this.panel?.classList.contains('open')) {
           this.closePanel();
         }
       });
@@ -1261,12 +1749,12 @@
      * Handle tab activation
      */
     handleTabActivate(tabName) {
-      console.log("[DevToolbarUI] Tab activated:", tabName);
-      if (tabName === "request") {
+      console.log('[DevToolbarUI] Tab activated:', tabName);
+      if (tabName === 'request') {
         setTimeout(() => this.xdebugControls.render(), 50);
         setTimeout(() => this.attachXdebugHandlers(), 100);
       }
-      if (tabName === "history") {
+      if (tabName === 'history') {
         setTimeout(() => this.initHistoryTab(), 50);
       }
     }
@@ -1274,9 +1762,9 @@
      * Handle request load (historical or current)
      */
     handleRequestLoad(requestId) {
-      console.log("[DevToolbarUI] Request loaded:", requestId);
-      if (requestId === "history") {
-        this.tabManager.setActiveTab("history", (name) => this.handleTabActivate(name));
+      console.log('[DevToolbarUI] Request loaded:', requestId);
+      if (requestId === 'history') {
+        this.tabManager.setActiveTab('history', (name) => this.handleTabActivate(name));
         return;
       }
       this.historyTabManager.reset();
@@ -1284,7 +1772,7 @@
         this.reattachTabListeners();
         const currentTab = this.tabManager.getCurrentTab();
         this.tabManager.setActiveTab(currentTab, (name) => this.handleTabActivate(name));
-        if (requestId !== "current") {
+        if (requestId !== 'current') {
           const requestData = StorageManager.getRequest(requestId);
           if (requestData?.metadata?.badge_counts) {
             this.tabManager.updateBadgeCounts(requestData.metadata.badge_counts);
@@ -1301,16 +1789,16 @@
      * Re-attach tab listeners after content replacement
      */
     reattachTabListeners() {
-      console.log("[DevToolbarUI] Re-attaching tab event listeners");
-      const tabButtons = document.querySelectorAll(".dev-toolbar-panel-tab");
-      console.log("[DevToolbarUI] Found", tabButtons.length, "tab buttons");
+      console.log('[DevToolbarUI] Re-attaching tab event listeners');
+      const tabButtons = document.querySelectorAll('.dev-toolbar-panel-tab');
+      console.log('[DevToolbarUI] Found', tabButtons.length, 'tab buttons');
       tabButtons.forEach((tab) => {
         const newTab = tab.cloneNode(true);
         tab.parentNode?.replaceChild(newTab, tab);
-        newTab.addEventListener("click", () => {
+        newTab.addEventListener('click', () => {
           const tabName = newTab.dataset.tab;
           if (tabName) {
-            console.log("[DevToolbarUI] Tab clicked:", tabName);
+            console.log('[DevToolbarUI] Tab clicked:', tabName);
             this.tabManager.setActiveTab(tabName, (name) => this.handleTabActivate(name));
           }
         });
@@ -1322,7 +1810,7 @@
      * Toggle panel open/close
      */
     togglePanel() {
-      if (this.panel?.classList.contains("open")) {
+      if (this.panel?.classList.contains('open')) {
         this.closePanel();
       } else {
         this.openPanel();
@@ -1332,38 +1820,38 @@
      * Open panel
      */
     openPanel() {
-      this.panel?.classList.add("open");
+      this.panel?.classList.add('open');
       try {
-        localStorage.setItem("devToolbar.open", "1");
+        localStorage.setItem('devToolbar.open', '1');
       } catch (e) {
-        console.warn("[DevToolbar] Could not save open state", e);
+        console.warn('[DevToolbar] Could not save open state', e);
       }
     }
     /**
      * Close panel
      */
     closePanel() {
-      this.panel?.classList.remove("open");
+      this.panel?.classList.remove('open');
       try {
-        localStorage.setItem("devToolbar.open", "0");
+        localStorage.setItem('devToolbar.open', '0');
       } catch (e) {
-        console.warn("[DevToolbar] Could not save open state", e);
+        console.warn('[DevToolbar] Could not save open state', e);
       }
     }
     /**
      * Toggle maximize
      */
     toggleMaximize() {
-      this.panel?.classList.toggle("maximized");
-      const isMaximized = this.panel?.classList.contains("maximized");
+      this.panel?.classList.toggle('maximized');
+      const isMaximized = this.panel?.classList.contains('maximized');
       try {
-        localStorage.setItem("devToolbar.maximized", isMaximized ? "1" : "0");
+        localStorage.setItem('devToolbar.maximized', isMaximized ? '1' : '0');
       } catch (e) {
-        console.warn("[DevToolbar] Could not save maximized state", e);
+        console.warn('[DevToolbar] Could not save maximized state', e);
       }
-      const maximizeBtn = document.querySelector(".dev-toolbar-panel-maximize");
+      const maximizeBtn = document.querySelector('.dev-toolbar-panel-maximize');
       if (maximizeBtn) {
-        maximizeBtn.setAttribute("title", isMaximized ? "Restore" : "Maximize");
+        maximizeBtn.setAttribute('title', isMaximized ? 'Restore' : 'Maximize');
       }
     }
     /**
@@ -1371,16 +1859,16 @@
      */
     restoreState() {
       try {
-        const isMaximized = localStorage.getItem("devToolbar.maximized") === "1";
+        const isMaximized = localStorage.getItem('devToolbar.maximized') === '1';
         if (isMaximized) {
-          this.panel?.classList.add("maximized");
+          this.panel?.classList.add('maximized');
         }
-        const isOpen = localStorage.getItem("devToolbar.open") === "1";
+        const isOpen = localStorage.getItem('devToolbar.open') === '1';
         if (isOpen) {
-          this.panel?.classList.add("open");
+          this.panel?.classList.add('open');
         }
       } catch (e) {
-        console.warn("[DevToolbar] Could not restore state", e);
+        console.warn('[DevToolbar] Could not restore state', e);
       }
     }
     /**
@@ -1388,14 +1876,14 @@
      */
     preventBackgroundScroll() {
       this.panel?.addEventListener(
-        "wheel",
+        'wheel',
         (e) => {
           e.stopPropagation();
-          const content = document.querySelector(".dev-toolbar-panel-content");
+          const content = document.querySelector('.dev-toolbar-panel-content');
           if (content && content.contains(e.target)) {
             const atTop = content.scrollTop === 0;
             const atBottom = content.scrollTop + content.clientHeight >= content.scrollHeight;
-            if (atTop && e.deltaY < 0 || atBottom && e.deltaY > 0) {
+            if ((atTop && e.deltaY < 0) || (atBottom && e.deltaY > 0)) {
               e.preventDefault();
             }
           } else {
@@ -1409,20 +1897,22 @@
      * Attach alert dismiss handlers
      */
     attachAlertHandlers() {
-      const dismissAllBtn = document.querySelector(".dev-toolbar-alerts-dismiss");
-      dismissAllBtn?.addEventListener("click", () => {
-        const alertsContainer = document.querySelector(".dev-toolbar-alerts");
-        alertsContainer?.classList.add("dismissed");
+      const dismissAllBtn = document.querySelector('.dev-toolbar-alerts-dismiss');
+      dismissAllBtn?.addEventListener('click', () => {
+        const alertsContainer = document.querySelector('.dev-toolbar-alerts');
+        alertsContainer?.classList.add('dismissed');
       });
-      document.querySelectorAll(".dev-toolbar-alert-close").forEach((closeBtn) => {
-        closeBtn.addEventListener("click", (e) => {
-          const alert2 = e.target.closest(".dev-toolbar-alert");
-          alert2?.classList.add("dismissed");
+      document.querySelectorAll('.dev-toolbar-alert-close').forEach((closeBtn) => {
+        closeBtn.addEventListener('click', (e) => {
+          const alert2 = e.target.closest('.dev-toolbar-alert');
+          alert2?.classList.add('dismissed');
           setTimeout(() => {
-            const alertsContainer = document.querySelector(".dev-toolbar-alerts");
-            const remainingAlerts = alertsContainer?.querySelectorAll(".dev-toolbar-alert:not(.dismissed)");
+            const alertsContainer = document.querySelector('.dev-toolbar-alerts');
+            const remainingAlerts = alertsContainer?.querySelectorAll(
+              '.dev-toolbar-alert:not(.dismissed)'
+            );
             if (remainingAlerts && remainingAlerts.length === 0) {
-              alertsContainer?.classList.add("dismissed");
+              alertsContainer?.classList.add('dismissed');
             }
           }, 300);
         });
@@ -1433,17 +1923,17 @@
      */
     attachXdebugHandlers() {
       document.querySelectorAll('[data-action="xdebug-enable"]').forEach((btn) => {
-        btn.addEventListener("click", (e) => {
-          const ide = e.target.dataset.ide || "PHPSTORM";
+        btn.addEventListener('click', (e) => {
+          const ide = e.target.dataset.ide || 'PHPSTORM';
           this.xdebugControls.enableXdebug(ide);
         });
       });
       const disableBtn = document.querySelector('[data-action="xdebug-disable"]');
-      disableBtn?.addEventListener("click", () => {
+      disableBtn?.addEventListener('click', () => {
         this.xdebugControls.disableXdebug();
       });
       const exportBtn = document.querySelector('[data-action="export-current"]');
-      exportBtn?.addEventListener("click", () => {
+      exportBtn?.addEventListener('click', () => {
         this.exportCurrentRequest();
       });
     }
@@ -1454,18 +1944,18 @@
       const win = window;
       const toolbarData = win.__DEV_TOOLBAR_DATA__;
       if (!toolbarData) {
-        console.error("[DevToolbar] No request data available");
-        alert("No request data available for export.");
+        console.error('[DevToolbar] No request data available');
+        alert('No request data available for export.');
         return;
       }
       try {
         const exportData = exportRequestAsJson(toolbarData.id, toolbarData);
         const filename = `devtoolbar-request-${toolbarData.id}-${Date.now()}.json`;
         downloadJson(exportData, filename);
-        console.log("[DevToolbar] Exported current request");
+        console.log('[DevToolbar] Exported current request');
       } catch (error) {
-        console.error("[DevToolbar] Export failed:", error);
-        alert("Export failed: " + error.message);
+        console.error('[DevToolbar] Export failed:', error);
+        alert('Export failed: ' + error.message);
       }
     }
     /**
@@ -1488,8 +1978,8 @@
     const toolbar = new DevToolbarUI();
     toolbar.init();
   }
-  if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", initDevToolbar);
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initDevToolbar);
   } else {
     initDevToolbar();
   }

@@ -4,18 +4,17 @@ declare(strict_types=1);
 
 namespace DevToolbar;
 
+use DevToolbar\DataCollectors\CacheCollector;
 use DevToolbar\DataCollectors\CollectorInterface;
 use DevToolbar\DataCollectors\ExceptionCollector;
+use DevToolbar\DataCollectors\HistoryCollector;
+use DevToolbar\DataCollectors\HttpClientCollector;
 use DevToolbar\DataCollectors\MessageCollector;
 use DevToolbar\DataCollectors\QueryCollector;
 use DevToolbar\DataCollectors\RequestCollector;
-use DevToolbar\DataCollectors\HttpClientCollector;
-use DevToolbar\DataCollectors\CacheCollector;
 use DevToolbar\DataCollectors\TimelineCollector;
-use DevToolbar\DataCollectors\HistoryCollector;
 use DevToolbar\Guard\DevToolbarGuard;
 use DevToolbar\Middleware\DevToolbarMiddleware;
-use DevToolbar\Storage\RequestStore;
 use DevToolbar\Security\NonceHelper;
 
 /**
@@ -29,7 +28,7 @@ class DevToolbar
 
     /** @var array<string, CollectorInterface> */
     private array $collectors = [];
-    private bool $booted = false;
+    private bool $booted      = false;
 
     private function __construct()
     {
@@ -90,9 +89,6 @@ class DevToolbar
             $collector->stop();
         }
 
-        // Store request data for history
-        $this->storeRequestData();
-
         // Get output buffer
         $output = ob_get_clean();
 
@@ -101,7 +97,7 @@ class DevToolbar
         }
 
         // Inject toolbar HTML before </body>
-        $middleware = new DevToolbarMiddleware($this->collectors);
+        $middleware     = new DevToolbarMiddleware($this->collectors);
         $modifiedOutput = $middleware->inject($output);
 
         echo $modifiedOutput;
@@ -115,18 +111,16 @@ class DevToolbar
     private function registerCollectors(): void
     {
         // Phase 1 Collectors
-        $this->collectors['request'] = new RequestCollector();
-        $this->collectors['queries'] = QueryCollector::getInstance();
-        $this->collectors['messages'] = new MessageCollector();
+        $this->collectors['request']    = new RequestCollector();
+        $this->collectors['queries']    = QueryCollector::getInstance();
+        $this->collectors['messages']   = new MessageCollector();
         $this->collectors['exceptions'] = ExceptionCollector::getInstance();
 
         // Phase 2 Collectors
-        $this->collectors['http'] = new HttpClientCollector();
-        $this->collectors['cache'] = new CacheCollector();
+        $this->collectors['http']     = new HttpClientCollector();
+        $this->collectors['cache']    = new CacheCollector();
         $this->collectors['timeline'] = new TimelineCollector();
-
-        // Phase 2.1: History Tab
-        $this->collectors['history'] = new HistoryCollector();
+        $this->collectors['history']  = new HistoryCollector(); // Client-side only (localStorage)
     }
 
     /**
@@ -147,21 +141,6 @@ class DevToolbar
     public function isBooted(): bool
     {
         return $this->booted;
-    }
-
-    /**
-     * Store request data in session for history
-     *
-     * NOTE: This method is deprecated and no longer stores data in session.
-     * Request data is now injected via DataInjectionRenderer for localStorage storage.
-     *
-     * @return void
-     * @deprecated No longer needed with localStorage implementation
-     */
-    private function storeRequestData(): void
-    {
-        // No-op: Data is now injected via DataInjectionRenderer for localStorage storage
-        // This method is kept for backward compatibility but does nothing
     }
 
     /**

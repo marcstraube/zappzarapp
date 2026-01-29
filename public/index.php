@@ -14,6 +14,7 @@ use App\Http\Controller\WelcomeController;
 use App\Http\ExceptionHandler;
 use App\Http\Middleware\CorsMiddleware;
 use App\Http\Router;
+use DevToolbar\Guard\DevToolbarGuard;
 use DI\ContainerBuilder;
 
 // Load Composer Autoloader
@@ -36,7 +37,7 @@ require_once __DIR__ . '/../vendor/autoload.php';
  * CspNonceHelper generates it (see below after CSP header setup).
  * AJAX requests for DevToolbar actions are handled above and exit early.
  */
-if (DevToolbar\Guard\DevToolbarGuard::isEnabled()) {
+if (DevToolbarGuard::isEnabled()) {
     ob_start();
     $toolbar = DevToolbar\DevToolbar::getInstance();
     $toolbar->boot();
@@ -147,7 +148,7 @@ header("Content-Security-Policy: $cspHeader");
 define('CSP_NONCE', CspNonceHelper::get());
 
 // 3. Share nonce with DevToolbar (if enabled)
-if (DevToolbar\Guard\DevToolbarGuard::isEnabled() && isset($toolbar)) {
+if (DevToolbarGuard::isEnabled() && isset($toolbar)) {
     $toolbar->setNonce(CspNonceHelper::get());
 }
 

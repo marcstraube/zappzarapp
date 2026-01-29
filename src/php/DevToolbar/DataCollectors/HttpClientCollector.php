@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 namespace DevToolbar\DataCollectors;
+use CurlHandle;
 
 /**
  * HTTP Client Collector
@@ -12,7 +13,7 @@ namespace DevToolbar\DataCollectors;
 class HttpClientCollector implements CollectorInterface
 {
     /** @var array<int, array<string, mixed>> */
-    private array $requests = [];
+    private array $requests  = [];
     private bool $collecting = false;
 
     /**
@@ -21,7 +22,7 @@ class HttpClientCollector implements CollectorInterface
     public function start(): void
     {
         $this->collecting = true;
-        $this->requests = [];
+        $this->requests   = [];
     }
 
     /**
@@ -48,8 +49,8 @@ class HttpClientCollector implements CollectorInterface
         $totalTime = array_sum(array_column($this->requests, 'time'));
 
         return [
-            'requests' => $this->requests,
-            'count' => count($this->requests),
+            'requests'   => $this->requests,
+            'count'      => count($this->requests),
             'total_time' => round($totalTime, 2),
         ];
     }
@@ -80,14 +81,14 @@ class HttpClientCollector implements CollectorInterface
         }
 
         $this->requests[] = [
-            'method' => $method,
-            'url' => $url,
-            'time' => round($time, 2),
-            'status' => $status,
-            'headers' => $headers,
-            'body' => $this->filterSensitiveData($body),
-            'request_data' => $this->filterSensitiveData($requestData),
-            'backtrace' => $this->getRelevantBacktrace(),
+            'method'            => $method,
+            'url'               => $url,
+            'time'              => round($time, 2),
+            'status'            => $status,
+            'headers'           => $headers,
+            'body'              => $this->filterSensitiveData($body),
+            'request_data'      => $this->filterSensitiveData($requestData),
+            'backtrace'         => $this->getRelevantBacktrace(),
             'performance_level' => $this->getPerformanceLevel($time),
         ];
     }
@@ -105,14 +106,14 @@ class HttpClientCollector implements CollectorInterface
             return file_get_contents($url, ...$args);
         }
 
-        $start = hrtime(true);
+        $start  = hrtime(true);
         $result = file_get_contents($url, ...$args);
-        $time = (hrtime(true) - $start) / 1_000_000; // Convert to milliseconds
+        $time   = (hrtime(true) - $start) / 1_000_000; // Convert to milliseconds
 
         // $http_response_header is set by file_get_contents() in the calling scope
         /** @var array<int, string> $responseHeaders */
         $responseHeaders = $http_response_header;
-        $status = $this->parseHttpStatus($responseHeaders);
+        $status          = $this->parseHttpStatus($responseHeaders);
 
         $this->trackRequest(
             'GET',
@@ -129,7 +130,7 @@ class HttpClientCollector implements CollectorInterface
     /**
      * Wrapper for curl_exec
      *
-     * @param \CurlHandle|resource $ch cURL handle
+     * @param CurlHandle|resource $ch cURL handle
      * @return string|bool Response content
      */
     public function wrapCurlExec($ch): string|bool
@@ -138,9 +139,9 @@ class HttpClientCollector implements CollectorInterface
             return curl_exec($ch);
         }
 
-        $start = hrtime(true);
+        $start  = hrtime(true);
         $result = curl_exec($ch);
-        $time = (hrtime(true) - $start) / 1_000_000; // Convert to milliseconds
+        $time   = (hrtime(true) - $start) / 1_000_000; // Convert to milliseconds
 
         $info = curl_getinfo($ch);
 
@@ -185,7 +186,7 @@ class HttpClientCollector implements CollectorInterface
      */
     private function getRelevantBacktrace(): array
     {
-        $trace = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 10);
+        $trace    = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 10);
         $relevant = [];
 
         foreach ($trace as $frame) {
@@ -200,10 +201,10 @@ class HttpClientCollector implements CollectorInterface
             }
 
             $relevant[] = [
-                'file' => str_replace(getcwd() . '/', '', $frame['file'] ?? ''),
-                'line' => $frame['line'] ?? 0,
+                'file'     => str_replace(getcwd() . '/', '', $frame['file'] ?? ''),
+                'line'     => $frame['line'] ?? 0,
                 'function' => $frame['function'] ?? '',
-                'class' => $frame['class'] ?? '',
+                'class'    => $frame['class'] ?? '',
             ];
 
             // Only keep first relevant frame

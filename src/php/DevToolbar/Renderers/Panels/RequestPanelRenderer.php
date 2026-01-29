@@ -33,11 +33,11 @@ class RequestPanelRenderer extends AbstractPanelRenderer
      */
     public function renderTab(array $data): string
     {
-        $method = $this->escapeHtml($data['method'] ?? 'GET');
-        $uri = $this->escapeHtml($data['uri'] ?? '/');
+        $method     = $this->escapeHtml($data['method'] ?? 'GET');
+        $uri        = $this->escapeHtml($data['uri'] ?? '/');
         $statusCode = $data['status_code'] ?? 200;
-        $time = $data['execution_time'] ?? 0;
-        $memory = $data['memory_peak'] ?? 0;
+        $time       = $data['execution_time'] ?? 0;
+        $memory     = $data['memory_peak'] ?? 0;
 
         // Xdebug controls toolbar - rendered dynamically by JavaScript to always show current state
         // This ensures historical requests don't show outdated Xdebug status

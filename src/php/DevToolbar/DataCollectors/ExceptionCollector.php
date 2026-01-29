@@ -16,7 +16,7 @@ class ExceptionCollector implements CollectorInterface
     private static ?self $instance = null;
     /** @var array<int, array<string, mixed>> */
     private array $exceptions = [];
-    private bool $collecting = false;
+    private bool $collecting  = false;
 
     private function __construct()
     {
@@ -55,12 +55,12 @@ class ExceptionCollector implements CollectorInterface
         }
 
         $this->exceptions[] = [
-            'class' => get_class($exception),
+            'class'   => get_class($exception),
             'message' => $exception->getMessage(),
-            'code' => $exception->getCode(),
-            'file' => $exception->getFile(),
-            'line' => $exception->getLine(),
-            'trace' => $this->formatTrace($exception->getTrace()),
+            'code'    => $exception->getCode(),
+            'file'    => $exception->getFile(),
+            'line'    => $exception->getLine(),
+            'trace'   => $this->formatTrace($exception->getTrace()),
             'handled' => $handled,
         ];
     }
@@ -71,9 +71,9 @@ class ExceptionCollector implements CollectorInterface
     public function getData(): array
     {
         return [
-            'exceptions' => $this->exceptions,
-            'count' => count($this->exceptions),
-            'handled_count' => count(array_filter($this->exceptions, fn($e) => $e['handled'])),
+            'exceptions'      => $this->exceptions,
+            'count'           => count($this->exceptions),
+            'handled_count'   => count(array_filter($this->exceptions, fn($e) => $e['handled'])),
             'unhandled_count' => count(array_filter($this->exceptions, fn($e) => !$e['handled'])),
         ];
     }
@@ -95,8 +95,8 @@ class ExceptionCollector implements CollectorInterface
 
         foreach ($trace as $index => $frame) {
             $formatted[] = [
-                'file' => $frame['file'] ?? '[internal function]',
-                'line' => $frame['line'] ?? 0,
+                'file'     => $frame['file'] ?? '[internal function]',
+                'line'     => $frame['line'] ?? 0,
                 'function' => ($frame['class'] ?? '') . ($frame['type'] ?? '') . ($frame['function'] ?? ''),
             ];
 

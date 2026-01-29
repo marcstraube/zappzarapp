@@ -34,11 +34,11 @@ class CachePanelRenderer extends AbstractPanelRenderer
     public function renderTab(array $data): string
     {
         $operations = $data['operations'] ?? [];
-        $hits = $data['hits'] ?? 0;
-        $misses = $data['misses'] ?? 0;
-        $hitRate = $data['hit_rate'] ?? 0;
-        $totalTime = $data['total_time'] ?? 0;
-        $count = $data['count'] ?? 0;
+        $hits       = $data['hits'] ?? 0;
+        $misses     = $data['misses'] ?? 0;
+        $hitRate    = $data['hit_rate'] ?? 0;
+        $totalTime  = $data['total_time'] ?? 0;
+        $count      = $data['count'] ?? 0;
 
         if ($count === 0) {
             return $this->renderEmptyState('No cache operations');
@@ -81,14 +81,14 @@ class CachePanelRenderer extends AbstractPanelRenderer
     private function renderCacheOperation(array $operation): string
     {
         $type = strtoupper($operation['type'] ?? 'GET');
-        $key = $this->escapeHtml($operation['key'] ?? '');
+        $key  = $this->escapeHtml($operation['key'] ?? '');
         $time = $operation['time'] ?? 0;
 
         $icon = match ($type) {
-            'GET' => ($operation['hit'] ?? false) ? '🟢 HIT' : '🔴 MISS',
-            'SET' => '⚙️ SET',
+            'GET'    => ($operation['hit'] ?? false) ? '🟢 HIT' : '🔴 MISS',
+            'SET'    => '⚙️ SET',
             'DELETE' => '🗑️ DEL',
-            default => '📝 ' . $type,
+            default  => '📝 ' . $type,
         };
 
         $html = sprintf(
@@ -135,7 +135,7 @@ class CachePanelRenderer extends AbstractPanelRenderer
     private function renderProgressBar(float $percentage): string
     {
         $filled = (int)($percentage / 5); // 20 blocks total
-        $empty = 20 - $filled;
+        $empty  = 20 - $filled;
 
         return str_repeat('█', $filled) . str_repeat('░', $empty);
     }

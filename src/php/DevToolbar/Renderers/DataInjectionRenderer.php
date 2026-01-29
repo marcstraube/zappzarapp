@@ -6,8 +6,8 @@ namespace DevToolbar\Renderers;
 
 use DevToolbar\DataCollectors\CollectorInterface;
 use DevToolbar\Security\NonceHelper;
-use DevToolbar\Storage\RequestStore;
-use ReflectionClass;
+use DevToolbar\Utils\RequestUtils;
+use Throwable;
 
 /**
  * Injects DevToolbar data as JavaScript for localStorage storage
@@ -27,7 +27,7 @@ class DataInjectionRenderer implements RendererInterface
      */
     public function __construct(array $collectors)
     {
-        $this->collectors = $collectors;
+        $this->collectors    = $collectors;
         $this->panelRenderer = new PanelRenderer($collectors);
     }
 
@@ -38,19 +38,19 @@ class DataInjectionRenderer implements RendererInterface
      */
     public function render(): string
     {
-        $nonce = NonceHelper::get();
+        $nonce   = NonceHelper::get();
         $scripts = '';
 
         // Inject current request data
-        $requestId = RequestStore::generateId();
-        $metadata = $this->extractMetadata($requestId);
-        $tabs = $this->renderAllTabs();
-        $rawData = $this->extractRawData();
+        $requestId = RequestUtils::generateId();
+        $metadata  = $this->extractMetadata($requestId);
+        $tabs      = $this->renderAllTabs();
+        $rawData   = $this->extractRawData();
 
         $currentPayload = [
-            'id' => $requestId,
+            'id'       => $requestId,
             'metadata' => $metadata,
-            'tabs' => $tabs,
+            'tabs'     => $tabs,
             'raw_data' => $rawData,
         ];
 
@@ -73,18 +73,6 @@ class DataInjectionRenderer implements RendererInterface
             $xdebugJson
         );
 
-        // Check if migration is needed (session data exists and not yet migrated)
-        $migrationData = $this->getMigrationData();
-        if (!empty($migrationData)) {
-            $migrationJson = json_encode($migrationData, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT);
-
-            $scripts .= sprintf(
-                '<script nonce="%s">window.__DEV_TOOLBAR_MIGRATION__ = %s;</script>',
-                htmlspecialchars($nonce, ENT_QUOTES, 'UTF-8'),
-                $migrationJson
-            );
-        }
-
         return $scripts;
     }
 
@@ -98,29 +86,91 @@ class DataInjectionRenderer implements RendererInterface
     {
         // Get request data from collector
         $requestData = isset($this->collectors['request']) ? $this->collectors['request']->getData() : [];
-        $queryData = isset($this->collectors['queries']) ? $this->collectors['queries']->getData() : [];
+        $queryData   = isset($this->collectors['queries']) ? $this->collectors['queries']->getData() : [];
 
         // Collect badge counts for all tabs
         $badgeCounts = [];
         foreach ($this->collectors as $name => $collector) {
-            $data = $collector->getData();
+            $data               = $collector->getData();
             $badgeCounts[$name] = $data['count'] ?? 0;
         }
 
         $timestamp = time();
 
         return [
-            'id' => $requestId,
-            'method' => $requestData['method'] ?? 'GET',
-            'uri' => $requestData['uri'] ?? '/',
-            'status' => $requestData['status_code'] ?? 200,
-            'time' => $requestData['execution_time'] ?? 0,
-            'memory' => $requestData['memory_peak'] ?? 0,
-            'query_count' => $queryData['count'] ?? 0,
-            'timestamp' => $timestamp,
-            'date' => date('Y-m-d H:i:s', $timestamp),
-            'badge_counts' => $badgeCounts,
+            'id'                 => $requestId,
+            'method'             => $requestData['method'] ?? 'GET',
+            'uri'                => $requestData['uri'] ?? '/',
+            'status'             => $requestData['status_code'] ?? 200,
+            'time'               => $requestData['execution_time'] ?? 0,
+            'memory'             => $requestData['memory_peak'] ?? 0,
+            'query_count'        => $queryData['count'] ?? 0,
+            'timestamp'          => $timestamp,
+            'date'               => date('Y-m-d H:i:s', $timestamp),
+            'badge_counts'       => $badgeCounts,
+            'minibar_label_type' => $this->getMinibarLabelType(),
+            'git_branch'         => $this->getGitBranch(),
+            'branch_colors'      => $this->getBranchColors(),
+            'request_id'         => $requestId,
         ];
+    }
+
+    /**
+     * Get minibar label type from cookie (set by client-side JS)
+     *
+     * Returns 'branding' as default if cookie is not set or invalid.
+     */
+    private function getMinibarLabelType(): string
+    {
+        $labelType = $_COOKIE['devbar_label'] ?? 'branding';
+        $allowed   = ['branding', 'branch', 'route', 'request-id'];
+        return in_array($labelType, $allowed, true) ? $labelType : 'branding';
+    }
+
+    /**
+     * Get current git branch if available
+     */
+    private function getGitBranch(): ?string
+    {
+        try {
+            $branch = trim((string) shell_exec('git branch --show-current 2>/dev/null'));
+            return $branch !== '' ? $branch : null;
+        } catch (Throwable $e) {
+            return null;
+        }
+    }
+
+    /**
+     * Get branch colors from cookie or defaults
+     *
+     * Client-side can override these colors via cookie (set from localStorage).
+     * These defaults match DEFAULT_BRANCH_COLORS in StorageConfig.ts.
+     */
+    private function getBranchColors(): array
+    {
+        $defaults = [
+            'feat'    => '#3b82f6',    // Blue
+            'fix'     => '#f59e0b',     // Orange
+            'hotfix'  => '#ef4444',  // Red
+            'chore'   => '#6b7280',   // Gray
+            'default' => '#10b981', // Green
+        ];
+
+        if (!isset($_COOKIE['devbar_colors'])) {
+            return $defaults;
+        }
+
+        try {
+            $decoded = json_decode(urldecode($_COOKIE['devbar_colors']), true);
+            if (is_array($decoded)) {
+                // Merge with defaults to ensure all keys exist
+                return array_merge($defaults, $decoded);
+            }
+        } catch (Throwable $e) {
+            // Invalid JSON, return defaults
+        }
+
+        return $defaults;
     }
 
     /**
@@ -145,22 +195,15 @@ class DataInjectionRenderer implements RendererInterface
     /**
      * Render all tab contents as key-value pairs
      *
-     * Uses reflection to access PanelRenderer's panel renderers and call renderTab().
-     *
      * @return array<string, string> Tab name => HTML content
      */
     private function renderAllTabs(): array
     {
-        $tabs = [];
-        $reflection = new ReflectionClass($this->panelRenderer);
-
-        // Access private $panelRenderers property
-        $panelRenderersProperty = $reflection->getProperty('panelRenderers');
-        $panelRenderersProperty->setAccessible(true);
-        $panelRenderers = $panelRenderersProperty->getValue($this->panelRenderer);
+        $tabs           = [];
+        $panelRenderers = $this->panelRenderer->getPanelRenderers();
 
         foreach ($this->collectors as $name => $collector) {
-            $data = $collector->getData();
+            $data     = $collector->getData();
             $renderer = $panelRenderers[$name] ?? null;
 
             if ($renderer) {
@@ -174,64 +217,4 @@ class DataInjectionRenderer implements RendererInterface
         return $tabs;
     }
 
-    /**
-     * Get migration data from session storage
-     *
-     * Returns array of historical requests with rendered tabs if migration is needed.
-     *
-     * @return array<int, array<string, mixed>> Migration data array
-     */
-    private function getMigrationData(): array
-    {
-        // Check if already migrated
-        if (isset($_SESSION['dev_toolbar_migrated'])) {
-            return [];
-        }
-
-        // Get requests from session
-        $migrationRequests = RequestStore::getAllForMigration();
-
-        if (empty($migrationRequests)) {
-            return [];
-        }
-
-        $migrationData = [];
-        $reflection = new ReflectionClass($this->panelRenderer);
-
-        // Access private $panelRenderers property
-        $panelRenderersProperty = $reflection->getProperty('panelRenderers');
-        $panelRenderersProperty->setAccessible(true);
-        $panelRenderers = $panelRenderersProperty->getValue($this->panelRenderer);
-
-        foreach ($migrationRequests as $request) {
-            $requestId = $request['id'];
-            $metadata = $request['metadata'];
-            $collectorData = $request['data'];
-
-            // Render tabs for this historical request
-            $tabs = [];
-
-            foreach ($collectorData as $collectorName => $data) {
-                $renderer = $panelRenderers[$collectorName] ?? null;
-
-                if ($renderer) {
-                    $tabs[$collectorName] = $renderer->renderTab($data);
-                } else {
-                    $tabs[$collectorName] = '<p>No data available</p>';
-                }
-            }
-
-            $migrationData[] = [
-                'id' => $requestId,
-                'metadata' => $metadata,
-                'tabs' => $tabs,
-                'raw_data' => $collectorData, // Already structured data from storage
-            ];
-        }
-
-        // Mark as migrated
-        $_SESSION['dev_toolbar_migrated'] = true;
-
-        return $migrationData;
-    }
 }

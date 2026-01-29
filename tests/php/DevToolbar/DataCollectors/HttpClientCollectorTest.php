@@ -103,7 +103,7 @@ class HttpClientCollectorTest extends TestCase
 
         $this->collector->stop();
 
-        $data = $this->collector->getData();
+        $data     = $this->collector->getData();
         $requests = $data['requests'];
 
         $this->assertEquals('good', $requests[0]['performance_level']);
@@ -127,7 +127,7 @@ class HttpClientCollectorTest extends TestCase
 
         $this->collector->stop();
 
-        $data = $this->collector->getData();
+        $data    = $this->collector->getData();
         $request = $data['requests'][0];
 
         // Check that sensitive data is filtered
@@ -152,7 +152,7 @@ class HttpClientCollectorTest extends TestCase
 
         $this->collector->stop();
 
-        $data = $this->collector->getData();
+        $data    = $this->collector->getData();
         $request = $data['requests'][0];
 
         // Should be truncated
@@ -166,7 +166,7 @@ class HttpClientCollectorTest extends TestCase
         $this->collector->trackRequest('GET', 'https://api.com', 50, 200);
         $this->collector->stop();
 
-        $data = $this->collector->getData();
+        $data    = $this->collector->getData();
         $request = $data['requests'][0];
 
         $this->assertIsArray($request['backtrace']);

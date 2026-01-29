@@ -14,7 +14,7 @@ class QueryCollector implements CollectorInterface
 {
     private static ?self $instance = null;
     /** @var array<int, array<string, mixed>> */
-    private array $queries = [];
+    private array $queries   = [];
     private bool $collecting = false;
 
     private function __construct()
@@ -54,9 +54,9 @@ class QueryCollector implements CollectorInterface
         }
 
         $this->queries[] = [
-            'sql' => $sql,
-            'bindings' => $bindings,
-            'time' => round($time, 2),
+            'sql'       => $sql,
+            'bindings'  => $bindings,
+            'time'      => round($time, 2),
             'backtrace' => $this->getRelevantBacktrace(),
         ];
     }
@@ -67,8 +67,8 @@ class QueryCollector implements CollectorInterface
     public function getData(): array
     {
         return [
-            'queries' => $this->queries,
-            'count' => count($this->queries),
+            'queries'    => $this->queries,
+            'count'      => count($this->queries),
             'total_time' => round(array_sum(array_column($this->queries, 'time')), 2),
         ];
     }

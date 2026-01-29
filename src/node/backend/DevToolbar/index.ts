@@ -6,25 +6,19 @@
  */
 
 import { DevToolbarUI } from './ui/DevToolbarUI';
-import type { DevToolbarWindow } from './types/index.js';
-
-// Ensure window types are available
-declare const window: DevToolbarWindow;
 
 /**
  * Initialize DevToolbar when DOM is ready
  */
 function initDevToolbar(): void {
-    const toolbar = new DevToolbarUI();
-    toolbar.init();
+  const toolbar = new DevToolbarUI();
+  toolbar.init();
 }
 
 // Auto-initialize on DOMContentLoaded
 if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', initDevToolbar);
+  document.addEventListener('DOMContentLoaded', initDevToolbar);
 } else {
-    // DOM already loaded
-    initDevToolbar();
+  // DOM already loaded
+  initDevToolbar();
 }
-
-export {};

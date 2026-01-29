@@ -39,10 +39,10 @@ class MessagesPanelRenderer extends AbstractPanelRenderer
         $html = '';
 
         foreach ($messages as $message) {
-            $level = $message['level'] ?? 'info';
+            $level     = $message['level'] ?? 'info';
             $levelName = $this->escapeHtml($message['level_name'] ?? 'INFO');
-            $text = $this->escapeHtml($message['message'] ?? '');
-            $time = $this->escapeHtml($message['datetime'] ?? '');
+            $text      = $this->escapeHtml($message['message'] ?? '');
+            $time      = $this->escapeHtml($message['datetime'] ?? '');
 
             $html .= sprintf(
                 '<div class="dev-toolbar-message %s">

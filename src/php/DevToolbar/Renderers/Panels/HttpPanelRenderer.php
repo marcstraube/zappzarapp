@@ -33,9 +33,9 @@ class HttpPanelRenderer extends AbstractPanelRenderer
      */
     public function renderTab(array $data): string
     {
-        $requests = $data['requests'] ?? [];
+        $requests  = $data['requests'] ?? [];
         $totalTime = $data['total_time'] ?? 0;
-        $count = $data['count'] ?? 0;
+        $count     = $data['count'] ?? 0;
 
         if ($count === 0) {
             return $this->renderEmptyState('No HTTP requests made');
@@ -65,17 +65,17 @@ class HttpPanelRenderer extends AbstractPanelRenderer
      */
     private function renderHttpRequest(array $request): string
     {
-        $method = $this->escapeHtml($request['method'] ?? 'GET');
-        $url = $this->escapeHtml($request['url'] ?? '');
-        $time = $request['time'] ?? 0;
-        $status = $request['status'] ?? 0;
+        $method    = $this->escapeHtml($request['method'] ?? 'GET');
+        $url       = $this->escapeHtml($request['url'] ?? '');
+        $time      = $request['time'] ?? 0;
+        $status    = $request['status'] ?? 0;
         $perfLevel = $request['performance_level'] ?? 'good';
 
         $icon = match ($perfLevel) {
-            'good' => '🟢',
-            'warning' => '🟡',
+            'good'     => '🟢',
+            'warning'  => '🟡',
             'critical' => '🔴',
-            default => '⚪',
+            default    => '⚪',
         };
 
         $html = sprintf(

@@ -367,11 +367,11 @@ class HistoryPanelRendererTest extends TestCase
         $output = $this->renderer->renderTab($data);
 
         // Verify all major sections are present in correct order
-        $filterPos = strpos($output, 'dev-toolbar-history-filters');
+        $filterPos  = strpos($output, 'dev-toolbar-history-filters');
         $actionsPos = strpos($output, 'dev-toolbar-history-actions');
-        $statsPos = strpos($output, 'Statistics');
-        $trendsPos = strpos($output, 'Response Time Trend');
-        $listPos = strpos($output, 'Request History');
+        $statsPos   = strpos($output, 'Statistics');
+        $trendsPos  = strpos($output, 'Response Time Trend');
+        $listPos    = strpos($output, 'Request History');
 
         // Ensure all sections exist
         $this->assertNotFalse($filterPos);

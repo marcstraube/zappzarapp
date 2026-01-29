@@ -33,7 +33,7 @@ class TimelinePanelRenderer extends AbstractPanelRenderer
      */
     public function renderTab(array $data): string
     {
-        $timeline = $data['timeline'] ?? [];
+        $timeline  = $data['timeline'] ?? [];
         $totalTime = $data['total_time'] ?? 0;
 
         if (empty($timeline)) {
@@ -62,9 +62,9 @@ class TimelinePanelRenderer extends AbstractPanelRenderer
      */
     private function renderTimelineItem(array $item): string
     {
-        $label = $this->escapeHtml($item['label'] ?? '');
-        $duration = $item['duration'] ?? 0;
-        $percentage = $item['percentage'] ?? 0;
+        $label        = $this->escapeHtml($item['label'] ?? '');
+        $duration     = $item['duration'] ?? 0;
+        $percentage   = $item['percentage'] ?? 0;
         $isBottleneck = $item['is_bottleneck'] ?? false;
 
         $bottleneckClass = $isBottleneck ? 'bottleneck' : '';

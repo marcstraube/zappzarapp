@@ -17,8 +17,8 @@ class PerformanceAnalyzerTest extends TestCase
         $data = [
             'request' => ['time' => 1500, 'memory' => 10_000_000],
             'queries' => ['queries' => []],
-            'http' => ['requests' => []],
-            'cache' => ['hit_rate' => 100],
+            'http'    => ['requests' => []],
+            'cache'   => ['hit_rate' => 100],
         ];
 
         $alerts = PerformanceAnalyzer::analyze($data);
@@ -33,8 +33,8 @@ class PerformanceAnalyzerTest extends TestCase
         $data = [
             'request' => ['time' => 100, 'memory' => 60_000_000], // 60 MB
             'queries' => ['queries' => []],
-            'http' => ['requests' => []],
-            'cache' => ['hit_rate' => 100],
+            'http'    => ['requests' => []],
+            'cache'   => ['hit_rate' => 100],
         ];
 
         $alerts = PerformanceAnalyzer::analyze($data);
@@ -51,8 +51,8 @@ class PerformanceAnalyzerTest extends TestCase
         $data = [
             'request' => ['time' => 100, 'memory' => 10_000_000],
             'queries' => ['queries' => $queries],
-            'http' => ['requests' => []],
-            'cache' => ['hit_rate' => 100],
+            'http'    => ['requests' => []],
+            'cache'   => ['hit_rate' => 100],
         ];
 
         $alerts = PerformanceAnalyzer::analyze($data);
@@ -72,8 +72,8 @@ class PerformanceAnalyzerTest extends TestCase
         $data = [
             'request' => ['time' => 100, 'memory' => 10_000_000],
             'queries' => ['queries' => $queries],
-            'http' => ['requests' => []],
-            'cache' => ['hit_rate' => 100],
+            'http'    => ['requests' => []],
+            'cache'   => ['hit_rate' => 100],
         ];
 
         $alerts = PerformanceAnalyzer::analyze($data);
@@ -89,8 +89,8 @@ class PerformanceAnalyzerTest extends TestCase
         $data = [
             'request' => ['time' => 100, 'memory' => 10_000_000],
             'queries' => ['queries' => []],
-            'http' => ['requests' => $requests],
-            'cache' => ['hit_rate' => 100],
+            'http'    => ['requests' => $requests],
+            'cache'   => ['hit_rate' => 100],
         ];
 
         $alerts = PerformanceAnalyzer::analyze($data);
@@ -109,8 +109,8 @@ class PerformanceAnalyzerTest extends TestCase
         $data = [
             'request' => ['time' => 100, 'memory' => 10_000_000],
             'queries' => ['queries' => []],
-            'http' => ['requests' => $requests],
-            'cache' => ['hit_rate' => 100],
+            'http'    => ['requests' => $requests],
+            'cache'   => ['hit_rate' => 100],
         ];
 
         $alerts = PerformanceAnalyzer::analyze($data);
@@ -124,8 +124,8 @@ class PerformanceAnalyzerTest extends TestCase
         $data = [
             'request' => ['time' => 100, 'memory' => 10_000_000],
             'queries' => ['queries' => []],
-            'http' => ['requests' => []],
-            'cache' => ['hit_rate' => 40, 'count' => 10], // Must have operations
+            'http'    => ['requests' => []],
+            'cache'   => ['hit_rate' => 40, 'count' => 10], // Must have operations
         ];
 
         $alerts = PerformanceAnalyzer::analyze($data);
@@ -140,8 +140,8 @@ class PerformanceAnalyzerTest extends TestCase
         $data = [
             'request' => ['time' => 100, 'memory' => 10_000_000],
             'queries' => ['queries' => []],
-            'http' => ['requests' => []],
-            'cache' => ['hit_rate' => 0, 'count' => 0], // No operations
+            'http'    => ['requests' => []],
+            'cache'   => ['hit_rate' => 0, 'count' => 0], // No operations
         ];
 
         $alerts = PerformanceAnalyzer::analyze($data);
@@ -156,8 +156,8 @@ class PerformanceAnalyzerTest extends TestCase
         $data = [
             'request' => ['time' => 1500, 'memory' => 60_000_000],
             'queries' => ['queries' => []],
-            'http' => ['requests' => []],
-            'cache' => ['hit_rate' => 100],
+            'http'    => ['requests' => []],
+            'cache'   => ['hit_rate' => 100],
         ];
 
         $alerts = PerformanceAnalyzer::analyze($data);
@@ -177,8 +177,8 @@ class PerformanceAnalyzerTest extends TestCase
         $data = [
             'request' => ['time' => 100, 'memory' => 10_000_000],
             'queries' => ['queries' => [['sql' => 'SELECT 1', 'time' => 5]]],
-            'http' => ['requests' => [['method' => 'GET', 'url' => 'http://api.com', 'time' => 50]]],
-            'cache' => ['hit_rate' => 90],
+            'http'    => ['requests' => [['method' => 'GET', 'url' => 'http://api.com', 'time' => 50]]],
+            'cache'   => ['hit_rate' => 90],
         ];
 
         $alerts = PerformanceAnalyzer::analyze($data);
@@ -191,8 +191,8 @@ class PerformanceAnalyzerTest extends TestCase
         $data = [
             'request' => ['time' => 1500, 'memory' => 60_000_000],
             'queries' => ['queries' => []],
-            'http' => ['requests' => []],
-            'cache' => ['hit_rate' => 40],
+            'http'    => ['requests' => []],
+            'cache'   => ['hit_rate' => 40],
         ];
 
         $summary = PerformanceAnalyzer::getSummary($data);
@@ -209,15 +209,15 @@ class PerformanceAnalyzerTest extends TestCase
         $dataWithIssues = [
             'request' => ['time' => 1500, 'memory' => 10_000_000],
             'queries' => ['queries' => []],
-            'http' => ['requests' => []],
-            'cache' => ['hit_rate' => 100],
+            'http'    => ['requests' => []],
+            'cache'   => ['hit_rate' => 100],
         ];
 
         $dataWithoutIssues = [
             'request' => ['time' => 100, 'memory' => 10_000_000],
             'queries' => ['queries' => []],
-            'http' => ['requests' => []],
-            'cache' => ['hit_rate' => 100],
+            'http'    => ['requests' => []],
+            'cache'   => ['hit_rate' => 100],
         ];
 
         $this->assertTrue(PerformanceAnalyzer::hasIssues($dataWithIssues));
@@ -229,8 +229,8 @@ class PerformanceAnalyzerTest extends TestCase
         $data = [
             'request' => ['time' => 1500, 'memory' => 10_000_000],
             'queries' => ['queries' => []],
-            'http' => ['requests' => []],
-            'cache' => ['hit_rate' => 100],
+            'http'    => ['requests' => []],
+            'cache'   => ['hit_rate' => 100],
         ];
 
         $alerts = PerformanceAnalyzer::analyze($data);

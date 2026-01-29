@@ -38,8 +38,8 @@ class HttpPanelRendererTest extends TestCase
     public function testRenderTabWithZeroCount(): void
     {
         $data = [
-            'count' => 0,
-            'requests' => [],
+            'count'      => 0,
+            'requests'   => [],
             'total_time' => 0,
         ];
 
@@ -51,14 +51,14 @@ class HttpPanelRendererTest extends TestCase
     public function testRenderTabWithSingleRequest(): void
     {
         $data = [
-            'count' => 1,
+            'count'      => 1,
             'total_time' => 123.45,
-            'requests' => [
+            'requests'   => [
                 [
-                    'method' => 'GET',
-                    'url' => 'https://api.example.com/users',
-                    'status' => 200,
-                    'time' => 123.45,
+                    'method'            => 'GET',
+                    'url'               => 'https://api.example.com/users',
+                    'status'            => 200,
+                    'time'              => 123.45,
                     'performance_level' => 'good',
                 ],
             ],
@@ -77,28 +77,28 @@ class HttpPanelRendererTest extends TestCase
     public function testRenderTabWithMultipleRequests(): void
     {
         $data = [
-            'count' => 3,
+            'count'      => 3,
             'total_time' => 450.0,
-            'requests' => [
+            'requests'   => [
                 [
-                    'method' => 'GET',
-                    'url' => 'https://api.example.com/users',
-                    'status' => 200,
-                    'time' => 150.0,
+                    'method'            => 'GET',
+                    'url'               => 'https://api.example.com/users',
+                    'status'            => 200,
+                    'time'              => 150.0,
                     'performance_level' => 'good',
                 ],
                 [
-                    'method' => 'POST',
-                    'url' => 'https://api.example.com/users',
-                    'status' => 201,
-                    'time' => 200.0,
+                    'method'            => 'POST',
+                    'url'               => 'https://api.example.com/users',
+                    'status'            => 201,
+                    'time'              => 200.0,
                     'performance_level' => 'warning',
                 ],
                 [
-                    'method' => 'DELETE',
-                    'url' => 'https://api.example.com/users/1',
-                    'status' => 204,
-                    'time' => 100.0,
+                    'method'            => 'DELETE',
+                    'url'               => 'https://api.example.com/users/1',
+                    'status'            => 204,
+                    'time'              => 100.0,
                     'performance_level' => 'good',
                 ],
             ],
@@ -118,14 +118,14 @@ class HttpPanelRendererTest extends TestCase
 
         foreach ($methods as $method) {
             $data = [
-                'count' => 1,
+                'count'      => 1,
                 'total_time' => 100.0,
-                'requests' => [
+                'requests'   => [
                     [
-                        'method' => $method,
-                        'url' => 'https://api.example.com/resource',
-                        'status' => 200,
-                        'time' => 100.0,
+                        'method'            => $method,
+                        'url'               => 'https://api.example.com/resource',
+                        'status'            => 200,
+                        'time'              => 100.0,
                         'performance_level' => 'good',
                     ],
                 ],
@@ -152,14 +152,14 @@ class HttpPanelRendererTest extends TestCase
 
         foreach ($statusCodes as $status) {
             $data = [
-                'count' => 1,
+                'count'      => 1,
                 'total_time' => 100.0,
-                'requests' => [
+                'requests'   => [
                     [
-                        'method' => 'GET',
-                        'url' => 'https://api.example.com/resource',
-                        'status' => $status,
-                        'time' => 100.0,
+                        'method'            => 'GET',
+                        'url'               => 'https://api.example.com/resource',
+                        'status'            => $status,
+                        'time'              => 100.0,
                         'performance_level' => 'good',
                     ],
                 ],
@@ -174,14 +174,14 @@ class HttpPanelRendererTest extends TestCase
     public function testRenderTabWithGoodPerformanceLevel(): void
     {
         $data = [
-            'count' => 1,
+            'count'      => 1,
             'total_time' => 50.0,
-            'requests' => [
+            'requests'   => [
                 [
-                    'method' => 'GET',
-                    'url' => 'https://api.example.com/users',
-                    'status' => 200,
-                    'time' => 50.0,
+                    'method'            => 'GET',
+                    'url'               => 'https://api.example.com/users',
+                    'status'            => 200,
+                    'time'              => 50.0,
                     'performance_level' => 'good',
                 ],
             ],
@@ -196,14 +196,14 @@ class HttpPanelRendererTest extends TestCase
     public function testRenderTabWithWarningPerformanceLevel(): void
     {
         $data = [
-            'count' => 1,
+            'count'      => 1,
             'total_time' => 800.0,
-            'requests' => [
+            'requests'   => [
                 [
-                    'method' => 'GET',
-                    'url' => 'https://api.example.com/users',
-                    'status' => 200,
-                    'time' => 800.0,
+                    'method'            => 'GET',
+                    'url'               => 'https://api.example.com/users',
+                    'status'            => 200,
+                    'time'              => 800.0,
                     'performance_level' => 'warning',
                 ],
             ],
@@ -218,14 +218,14 @@ class HttpPanelRendererTest extends TestCase
     public function testRenderTabWithCriticalPerformanceLevel(): void
     {
         $data = [
-            'count' => 1,
+            'count'      => 1,
             'total_time' => 2000.0,
-            'requests' => [
+            'requests'   => [
                 [
-                    'method' => 'GET',
-                    'url' => 'https://api.example.com/users',
-                    'status' => 200,
-                    'time' => 2000.0,
+                    'method'            => 'GET',
+                    'url'               => 'https://api.example.com/users',
+                    'status'            => 200,
+                    'time'              => 2000.0,
                     'performance_level' => 'critical',
                 ],
             ],
@@ -240,14 +240,14 @@ class HttpPanelRendererTest extends TestCase
     public function testRenderTabWithUnknownPerformanceLevel(): void
     {
         $data = [
-            'count' => 1,
+            'count'      => 1,
             'total_time' => 100.0,
-            'requests' => [
+            'requests'   => [
                 [
-                    'method' => 'GET',
-                    'url' => 'https://api.example.com/users',
-                    'status' => 200,
-                    'time' => 100.0,
+                    'method'            => 'GET',
+                    'url'               => 'https://api.example.com/users',
+                    'status'            => 200,
+                    'time'              => 100.0,
                     'performance_level' => 'unknown',
                 ],
             ],
@@ -261,14 +261,14 @@ class HttpPanelRendererTest extends TestCase
     public function testRenderTabEscapesHtmlInUrl(): void
     {
         $data = [
-            'count' => 1,
+            'count'      => 1,
             'total_time' => 100.0,
-            'requests' => [
+            'requests'   => [
                 [
-                    'method' => 'GET',
-                    'url' => 'https://api.example.com/search?q=<script>alert("XSS")</script>',
-                    'status' => 200,
-                    'time' => 100.0,
+                    'method'            => 'GET',
+                    'url'               => 'https://api.example.com/search?q=<script>alert("XSS")</script>',
+                    'status'            => 200,
+                    'time'              => 100.0,
                     'performance_level' => 'good',
                 ],
             ],
@@ -283,14 +283,14 @@ class HttpPanelRendererTest extends TestCase
     public function testRenderTabEscapesHtmlInMethod(): void
     {
         $data = [
-            'count' => 1,
+            'count'      => 1,
             'total_time' => 100.0,
-            'requests' => [
+            'requests'   => [
                 [
-                    'method' => '<script>alert("XSS")</script>',
-                    'url' => 'https://api.example.com/users',
-                    'status' => 200,
-                    'time' => 100.0,
+                    'method'            => '<script>alert("XSS")</script>',
+                    'url'               => 'https://api.example.com/users',
+                    'status'            => 200,
+                    'time'              => 100.0,
                     'performance_level' => 'good',
                 ],
             ],
@@ -305,16 +305,16 @@ class HttpPanelRendererTest extends TestCase
     public function testRenderTabWithBacktrace(): void
     {
         $data = [
-            'count' => 1,
+            'count'      => 1,
             'total_time' => 100.0,
-            'requests' => [
+            'requests'   => [
                 [
-                    'method' => 'GET',
-                    'url' => 'https://api.example.com/users',
-                    'status' => 200,
-                    'time' => 100.0,
+                    'method'            => 'GET',
+                    'url'               => 'https://api.example.com/users',
+                    'status'            => 200,
+                    'time'              => 100.0,
                     'performance_level' => 'good',
-                    'backtrace' => [
+                    'backtrace'         => [
                         [
                             'file' => '/var/www/src/Service/UserService.php',
                             'line' => 42,
@@ -334,14 +334,14 @@ class HttpPanelRendererTest extends TestCase
     public function testRenderTabWithoutBacktrace(): void
     {
         $data = [
-            'count' => 1,
+            'count'      => 1,
             'total_time' => 100.0,
-            'requests' => [
+            'requests'   => [
                 [
-                    'method' => 'GET',
-                    'url' => 'https://api.example.com/users',
-                    'status' => 200,
-                    'time' => 100.0,
+                    'method'            => 'GET',
+                    'url'               => 'https://api.example.com/users',
+                    'status'            => 200,
+                    'time'              => 100.0,
                     'performance_level' => 'good',
                 ],
             ],
@@ -355,16 +355,16 @@ class HttpPanelRendererTest extends TestCase
     public function testRenderTabEscapesHtmlInBacktraceFile(): void
     {
         $data = [
-            'count' => 1,
+            'count'      => 1,
             'total_time' => 100.0,
-            'requests' => [
+            'requests'   => [
                 [
-                    'method' => 'GET',
-                    'url' => 'https://api.example.com/users',
-                    'status' => 200,
-                    'time' => 100.0,
+                    'method'            => 'GET',
+                    'url'               => 'https://api.example.com/users',
+                    'status'            => 200,
+                    'time'              => 100.0,
                     'performance_level' => 'good',
-                    'backtrace' => [
+                    'backtrace'         => [
                         [
                             'file' => '<script>alert("XSS")</script>',
                             'line' => 42,
@@ -383,14 +383,14 @@ class HttpPanelRendererTest extends TestCase
     public function testRenderTabContainsExpectedSections(): void
     {
         $data = [
-            'count' => 1,
+            'count'      => 1,
             'total_time' => 100.0,
-            'requests' => [
+            'requests'   => [
                 [
-                    'method' => 'GET',
-                    'url' => 'https://api.example.com/users',
-                    'status' => 200,
-                    'time' => 100.0,
+                    'method'            => 'GET',
+                    'url'               => 'https://api.example.com/users',
+                    'status'            => 200,
+                    'time'              => 100.0,
                     'performance_level' => 'good',
                 ],
             ],
@@ -408,9 +408,9 @@ class HttpPanelRendererTest extends TestCase
     public function testRenderTabHandlesMissingRequestFields(): void
     {
         $data = [
-            'count' => 1,
+            'count'      => 1,
             'total_time' => 0,
-            'requests' => [
+            'requests'   => [
                 [], // Empty request data
             ],
         ];

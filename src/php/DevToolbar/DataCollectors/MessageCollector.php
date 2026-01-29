@@ -15,7 +15,7 @@ use Monolog\LogRecord;
 class MessageCollector extends AbstractProcessingHandler implements CollectorInterface
 {
     /** @var array<int, array<string, mixed>> */
-    private array $messages = [];
+    private array $messages  = [];
     private bool $collecting = false;
 
     public function start(): void
@@ -41,12 +41,12 @@ class MessageCollector extends AbstractProcessingHandler implements CollectorInt
         }
 
         $this->messages[] = [
-            'level' => strtolower($record->level->getName()),
+            'level'      => strtolower($record->level->getName()),
             'level_name' => $record->level->getName(),
-            'message' => $record->message,
-            'context' => $record->context,
-            'datetime' => $record->datetime->format('H:i:s.u'),
-            'channel' => $record->channel,
+            'message'    => $record->message,
+            'context'    => $record->context,
+            'datetime'   => $record->datetime->format('H:i:s.u'),
+            'channel'    => $record->channel,
         ];
     }
 
@@ -57,7 +57,7 @@ class MessageCollector extends AbstractProcessingHandler implements CollectorInt
     {
         return [
             'messages' => $this->messages,
-            'count' => count($this->messages),
+            'count'    => count($this->messages),
             'by_level' => $this->groupByLevel(),
         ];
     }
@@ -77,7 +77,7 @@ class MessageCollector extends AbstractProcessingHandler implements CollectorInt
         $grouped = [];
 
         foreach ($this->messages as $message) {
-            $level = $message['level'];
+            $level           = $message['level'];
             $grouped[$level] = ($grouped[$level] ?? 0) + 1;
         }
 

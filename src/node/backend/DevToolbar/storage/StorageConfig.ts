@@ -25,7 +25,7 @@ export const MIN_SAFE_ENTRIES = 5;
 
 /**
  * localStorage key for DevToolbar configuration
- * Stores: { migrated: boolean, version?: string }
+ * Stores: { version?: string, minibarLabels?: MinibarLabelType[], branchColors?: BranchColors }
  */
 export const CONFIG_KEY = 'devToolbar.config';
 
@@ -47,3 +47,22 @@ export const DATA_PREFIX = 'devToolbar.req_';
  * Stores: TabName (string)
  */
 export const ACTIVE_TAB_KEY = 'devtoolbar_active_tab';
+
+/**
+ * Default minibar labels (active by default)
+ * Shows lightning bolt (⚡) as branding by default
+ */
+export const DEFAULT_MINIBAR_LABELS: import('../types/DevToolbarTypes.js').MinibarLabelType[] = [
+  'branding',
+];
+
+/**
+ * Default branch colors for git branch types
+ */
+export const DEFAULT_BRANCH_COLORS: import('../types/DevToolbarTypes.js').BranchColors = {
+  feat: '#3b82f6', // Blue
+  fix: '#f59e0b', // Orange
+  hotfix: '#ef4444', // Red
+  chore: '#6b7280', // Gray
+  default: '#10b981', // Green
+};

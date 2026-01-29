@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace DevToolbar\Renderers;
 
-use DevToolbar\DataCollectors\CollectorInterface;
 use DevToolbar\Analyzers\PerformanceAnalyzer;
 use DevToolbar\Analyzers\QueryAnalyzer;
+use DevToolbar\DataCollectors\CollectorInterface;
 use DevToolbar\Renderers\Panels\CachePanelRenderer;
 use DevToolbar\Renderers\Panels\ExceptionsPanelRenderer;
 use DevToolbar\Renderers\Panels\HistoryPanelRenderer;
@@ -16,7 +16,6 @@ use DevToolbar\Renderers\Panels\PanelRendererInterface;
 use DevToolbar\Renderers\Panels\QueriesPanelRenderer;
 use DevToolbar\Renderers\Panels\RequestPanelRenderer;
 use DevToolbar\Renderers\Panels\TimelinePanelRenderer;
-use DevToolbar\Storage\RequestStore;
 
 /**
  * Renders expandable panel with tabs
@@ -46,22 +45,32 @@ class PanelRenderer implements RendererInterface
     private function registerPanelRenderers(): void
     {
         $this->panelRenderers = [
-            'request' => new RequestPanelRenderer(),
-            'messages' => new MessagesPanelRenderer(),
+            'request'    => new RequestPanelRenderer(),
+            'messages'   => new MessagesPanelRenderer(),
             'exceptions' => new ExceptionsPanelRenderer(),
-            'http' => new HttpPanelRenderer(),
-            'cache' => new CachePanelRenderer(),
-            'timeline' => new TimelinePanelRenderer(),
-            'queries' => new QueriesPanelRenderer(new QueryAnalyzer()),
-            'history' => new HistoryPanelRenderer(),
+            'http'       => new HttpPanelRenderer(),
+            'cache'      => new CachePanelRenderer(),
+            'timeline'   => new TimelinePanelRenderer(),
+            'queries'    => new QueriesPanelRenderer(new QueryAnalyzer()),
+            'history'    => new HistoryPanelRenderer(),
         ];
+    }
+
+    /**
+     * Get all panel renderers
+     *
+     * @return array<string, PanelRendererInterface>
+     */
+    public function getPanelRenderers(): array
+    {
+        return $this->panelRenderers;
     }
 
     public function render(): string
     {
-        $tabs = $this->renderTabs();
-        $alerts = $this->renderAlerts();
-        $content = $this->renderTabContents();
+        $tabs            = $this->renderTabs();
+        $alerts          = $this->renderAlerts();
+        $content         = $this->renderTabContents();
         $requestSwitcher = $this->renderRequestSwitcher();
 
         return sprintf(
@@ -69,6 +78,7 @@ class PanelRenderer implements RendererInterface
                 <div class="dev-toolbar-panel-header">
                     %s
                     %s
+                    <button class="dev-toolbar-panel-settings" title="Settings">⚙️</button>
                     <button class="dev-toolbar-panel-maximize" title="Maximize/Restore">⛶</button>
                     <button class="dev-toolbar-panel-close" title="Close">▼</button>
                 </div>
@@ -115,9 +125,9 @@ class PanelRenderer implements RendererInterface
 
         foreach ($alerts as $index => $alert) {
             $levelClass = 'alert-' . ($alert['level'] ?? 'info');
-            $icon = $alert['icon'] ?? '⚪';
-            $message = htmlspecialchars($alert['message'] ?? '');
-            $action = htmlspecialchars($alert['action'] ?? '');
+            $icon       = $alert['icon'] ?? '⚪';
+            $message    = htmlspecialchars($alert['message'] ?? '');
+            $action     = htmlspecialchars($alert['action'] ?? '');
 
             $html .= sprintf(
                 '<div class="dev-toolbar-alert %s" data-alert-index="%d">
@@ -156,7 +166,7 @@ class PanelRenderer implements RendererInterface
         $tabs .= '<!-- DevToolbar: Rendering tabs -->' . "\n";
 
         foreach ($this->collectors as $name => $collector) {
-            $data = $collector->getData();
+            $data  = $collector->getData();
             $count = $data['count'] ?? 0;
             $label = strtoupper($name);
 
@@ -166,7 +176,7 @@ class PanelRenderer implements RendererInterface
                 $badge = '<span class="dev-toolbar-panel-tab-badge">0</span>';
                 $tabs .= "<!-- Tab: $name, Count: $count, Badge: ALWAYS RENDERED -->\n";
             } else {
-                $badge = $count > 0 ? sprintf('<span class="dev-toolbar-panel-tab-badge">%d</span>', $count) : '';
+                $badge       = $count > 0 ? sprintf('<span class="dev-toolbar-panel-tab-badge">%d</span>', $count) : '';
                 $badgeStatus = $count > 0 ? "RENDERED (count=$count)" : "SKIPPED (count=0)";
                 $tabs .= "<!-- Tab: $name, Count: $count, Badge: $badgeStatus -->\n";
             }
@@ -200,7 +210,7 @@ class PanelRenderer implements RendererInterface
                 continue; // Skip if no renderer registered
             }
 
-            $data = $collector->getData();
+            $data    = $collector->getData();
             $content = $renderer->renderTab($data);
 
             $contents .= sprintf(
@@ -244,16 +254,13 @@ class PanelRenderer implements RendererInterface
     /**
      * Get current request ID
      *
+     * Note: With localStorage-based storage, the "current" request is always
+     * the active one. Historical requests are managed client-side.
+     *
      * @return string Request ID
      */
     private function getCurrentRequestId(): string
     {
-        // Try to get from stored requests (if this is a reload)
-        $storedRequests = RequestStore::getAll();
-        if (!empty($storedRequests)) {
-            return array_key_first($storedRequests);
-        }
-
         return 'current';
     }
 }

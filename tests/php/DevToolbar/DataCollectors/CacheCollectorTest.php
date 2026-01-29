@@ -113,7 +113,7 @@ class CacheCollectorTest extends TestCase
         );
         $this->collector->stop();
 
-        $data = $this->collector->getData();
+        $data      = $this->collector->getData();
         $operation = $data['operations'][0];
 
         $this->assertEquals('set', $operation['type']);
@@ -134,7 +134,7 @@ class CacheCollectorTest extends TestCase
         );
         $this->collector->stop();
 
-        $data = $this->collector->getData();
+        $data      = $this->collector->getData();
         $operation = $data['operations'][0];
 
         $this->assertEquals('delete', $operation['type']);
@@ -178,9 +178,9 @@ class CacheCollectorTest extends TestCase
 
         $this->collector->stop();
 
-        $data = $this->collector->getData();
+        $data      = $this->collector->getData();
         $operation = $data['operations'][0];
-        $value = $operation['value'];
+        $value     = $operation['value'];
 
         $this->assertEquals('[FILTERED]', $value['password']);
         $this->assertEquals('[FILTERED]', $value['token']);
@@ -193,7 +193,7 @@ class CacheCollectorTest extends TestCase
         $this->collector->trackOperation('get', 'key', 1.0, 'value', true);
         $this->collector->stop();
 
-        $data = $this->collector->getData();
+        $data      = $this->collector->getData();
         $operation = $data['operations'][0];
 
         $this->assertIsArray($operation['backtrace']);
@@ -254,7 +254,7 @@ class CacheCollectorTest extends TestCase
     {
         $this->collector->start();
 
-        $phpArray = ['id' => 123, 'name' => 'John'];
+        $phpArray   = ['id' => 123, 'name' => 'John'];
         $serialized = serialize($phpArray);
 
         $this->collector->trackOperation('get', 'test:key', 2.0, $serialized, true);

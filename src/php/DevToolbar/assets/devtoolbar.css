@@ -41,17 +41,20 @@
     box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.2);
 }
 
-.dev-toolbar-mini-env {
-    background: var(--color-success);
-    padding: 2px 8px;
-    border-radius: var(--radius-sm);
+.dev-toolbar-mini-label {
     font-weight: 600;
-    font-size: 0.75rem;
-    text-transform: uppercase;
+    font-size: 0.875rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
 }
 
-.dev-toolbar-mini-env.staging { background: var(--color-warning); }
-.dev-toolbar-mini-env.production { background: var(--color-danger); }
+.dev-toolbar-mini-label:not(:last-of-type)::after {
+    content: '|';
+    color: #6b7280;
+    font-weight: 400;
+    margin-left: 4px;
+}
 
 .dev-toolbar-mini-metric {
     display: flex;
@@ -1260,4 +1263,298 @@
     background: var(--color-primary);
     color: white;
     border-color: var(--color-primary);
+}
+
+/* Settings Button */
+.dev-toolbar-panel-settings {
+    padding: 12px 16px;
+    background: transparent;
+    border: none;
+    font-size: 1rem;
+    cursor: pointer;
+    color: #6b7280;
+    transition: all 0.2s ease;
+}
+
+.dev-toolbar-panel-settings:hover {
+    color: var(--color-primary);
+    transform: scale(1.1);
+}
+
+/* Settings Modal */
+.dev-toolbar-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 100000;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+}
+
+.dev-toolbar-modal {
+    background: white;
+    border-radius: 8px;
+    max-width: 500px;
+    width: 90%;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+    max-height: 90vh;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+.dev-toolbar-modal-header {
+    padding: 20px;
+    border-bottom: 1px solid #e5e7eb;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.dev-toolbar-modal-header h3 {
+    margin: 0;
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: #111827;
+}
+
+.dev-toolbar-modal-close {
+    background: transparent;
+    border: none;
+    font-size: 1.5rem;
+    cursor: pointer;
+    color: #6b7280;
+    padding: 0;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+    transition: all 0.2s ease;
+}
+
+.dev-toolbar-modal-close:hover {
+    background: #f3f4f6;
+    color: #111827;
+}
+
+.dev-toolbar-modal-content {
+    padding: 20px;
+    overflow-y: auto;
+    flex: 1;
+}
+
+.dev-toolbar-modal-footer {
+    padding: 20px;
+    border-top: 1px solid #e5e7eb;
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+}
+
+/* Settings Form */
+.dev-toolbar-settings-group {
+    margin-bottom: 20px;
+}
+
+.dev-toolbar-settings-group:last-child {
+    margin-bottom: 0;
+}
+
+.dev-toolbar-settings-group > label {
+    display: block;
+    font-weight: 600;
+    margin-bottom: 8px;
+    color: #374151;
+    font-size: 0.9375rem;
+}
+
+.dev-toolbar-settings-checkboxes {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.dev-toolbar-settings-checkbox-item {
+    display: flex;
+    align-items: flex-start;
+    padding: 12px;
+    border: 2px solid #e5e7eb;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.dev-toolbar-settings-checkbox-item:hover {
+    border-color: #3b82f6;
+    background: #eff6ff;
+}
+
+.dev-toolbar-settings-checkbox-item input[type="checkbox"] {
+    margin-right: 12px;
+    margin-top: 2px;
+    cursor: pointer;
+    flex-shrink: 0;
+    width: 18px;
+    height: 18px;
+}
+
+.dev-toolbar-settings-checkbox-item input[type="checkbox"]:checked {
+    accent-color: var(--color-primary);
+}
+
+.dev-toolbar-settings-checkbox-item div {
+    flex: 1;
+}
+
+.dev-toolbar-settings-checkbox-item strong {
+    display: block;
+    color: #111827;
+    font-size: 0.9375rem;
+}
+
+/* Branch Color Configuration */
+.dev-toolbar-settings-colors {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+}
+
+.dev-toolbar-settings-color-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 12px;
+    background: #f9fafb;
+    border-radius: 6px;
+    gap: 8px;
+}
+
+.dev-toolbar-settings-color-item label {
+    font-weight: normal;
+    margin: 0;
+    font-size: 0.875rem;
+    color: #374151;
+    cursor: pointer;
+}
+
+.dev-toolbar-settings-color-item input[type="color"] {
+    width: 40px;
+    height: 32px;
+    border: 1px solid #d1d5db;
+    border-radius: 4px;
+    cursor: pointer;
+    padding: 0;
+}
+
+.dev-toolbar-settings-color-item input[type="color"]::-webkit-color-swatch-wrapper {
+    padding: 0;
+}
+
+.dev-toolbar-settings-color-item input[type="color"]::-webkit-color-swatch {
+    border: none;
+    border-radius: 3px;
+}
+
+/* Button Styles */
+.dev-toolbar-btn {
+    padding: 8px 16px;
+    border-radius: 6px;
+    font-size: 0.875rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border: none;
+}
+
+.dev-toolbar-btn-primary {
+    background: var(--color-primary);
+    color: white;
+}
+
+.dev-toolbar-btn-primary:hover {
+    background: #2563eb;
+}
+
+.dev-toolbar-btn-secondary {
+    background: #f3f4f6;
+    color: #374151;
+}
+
+.dev-toolbar-btn-secondary:hover {
+    background: #e5e7eb;
+}
+
+.dev-toolbar-btn-danger {
+    background: #ef4444;
+    color: white;
+}
+
+.dev-toolbar-btn-danger:hover {
+    background: #dc2626;
+}
+
+/* Clear History Modal */
+.dev-toolbar-clear-history-modal {
+    max-width: 550px;
+}
+
+.dev-toolbar-clear-warning {
+    background: #fef3c7;
+    border: 2px solid #fbbf24;
+    border-radius: 6px;
+    padding: 12px;
+    margin-bottom: 20px;
+    color: #92400e;
+    font-size: 0.9375rem;
+}
+
+.dev-toolbar-clear-warning strong {
+    color: #78350f;
+}
+
+.dev-toolbar-clear-section {
+    margin-bottom: 20px;
+}
+
+.dev-toolbar-clear-section h4 {
+    margin: 0 0 8px 0;
+    color: #111827;
+    font-size: 0.9375rem;
+    font-weight: 600;
+}
+
+.dev-toolbar-clear-list {
+    margin: 0;
+    padding-left: 20px;
+    color: #374151;
+    font-size: 0.875rem;
+}
+
+.dev-toolbar-clear-list li {
+    margin-bottom: 6px;
+}
+
+.dev-toolbar-clear-list-preserved {
+    color: #059669;
+}
+
+.dev-toolbar-clear-note {
+    background: #eff6ff;
+    border: 1px solid #93c5fd;
+    border-radius: 6px;
+    padding: 12px;
+    color: #1e40af;
+    font-size: 0.875rem;
+}
+
+.dev-toolbar-clear-note strong {
+    color: #1e3a8a;
 }

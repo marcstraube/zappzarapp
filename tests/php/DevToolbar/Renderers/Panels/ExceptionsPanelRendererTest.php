@@ -52,10 +52,10 @@ class ExceptionsPanelRendererTest extends TestCase
             'exceptions' => [
                 [
                     'handled' => true,
-                    'class' => 'RuntimeException',
+                    'class'   => 'RuntimeException',
                     'message' => 'Something went wrong',
-                    'file' => '/var/www/src/Controller.php',
-                    'line' => 42,
+                    'file'    => '/var/www/src/Controller.php',
+                    'line'    => 42,
                 ],
             ],
         ];
@@ -76,10 +76,10 @@ class ExceptionsPanelRendererTest extends TestCase
             'exceptions' => [
                 [
                     'handled' => false,
-                    'class' => 'FatalErrorException',
+                    'class'   => 'FatalErrorException',
                     'message' => 'Fatal error occurred',
-                    'file' => '/var/www/src/Fatal.php',
-                    'line' => 123,
+                    'file'    => '/var/www/src/Fatal.php',
+                    'line'    => 123,
                 ],
             ],
         ];
@@ -99,17 +99,17 @@ class ExceptionsPanelRendererTest extends TestCase
             'exceptions' => [
                 [
                     'handled' => true,
-                    'class' => 'InvalidArgumentException',
+                    'class'   => 'InvalidArgumentException',
                     'message' => 'Invalid argument provided',
-                    'file' => '/var/www/src/Validator.php',
-                    'line' => 50,
+                    'file'    => '/var/www/src/Validator.php',
+                    'line'    => 50,
                 ],
                 [
                     'handled' => true,
-                    'class' => 'LogicException',
+                    'class'   => 'LogicException',
                     'message' => 'Logic error detected',
-                    'file' => '/var/www/src/Service.php',
-                    'line' => 75,
+                    'file'    => '/var/www/src/Service.php',
+                    'line'    => 75,
                 ],
             ],
         ];
@@ -130,10 +130,10 @@ class ExceptionsPanelRendererTest extends TestCase
         $data = [
             'exceptions' => [
                 [
-                    'class' => '<script>alert("XSS")</script>',
+                    'class'   => '<script>alert("XSS")</script>',
                     'message' => 'Test',
-                    'file' => '/test.php',
-                    'line' => 1,
+                    'file'    => '/test.php',
+                    'line'    => 1,
                 ],
             ],
         ];
@@ -149,10 +149,10 @@ class ExceptionsPanelRendererTest extends TestCase
         $data = [
             'exceptions' => [
                 [
-                    'class' => 'Exception',
+                    'class'   => 'Exception',
                     'message' => '<script>alert("XSS")</script>',
-                    'file' => '/test.php',
-                    'line' => 1,
+                    'file'    => '/test.php',
+                    'line'    => 1,
                 ],
             ],
         ];
@@ -168,10 +168,10 @@ class ExceptionsPanelRendererTest extends TestCase
         $data = [
             'exceptions' => [
                 [
-                    'class' => 'Exception',
+                    'class'   => 'Exception',
                     'message' => 'Test',
-                    'file' => '<script>alert("XSS")</script>',
-                    'line' => 1,
+                    'file'    => '<script>alert("XSS")</script>',
+                    'line'    => 1,
                 ],
             ],
         ];
@@ -204,10 +204,10 @@ class ExceptionsPanelRendererTest extends TestCase
             'exceptions' => [
                 [
                     // 'handled' key is missing, should default to true
-                    'class' => 'TestException',
+                    'class'   => 'TestException',
                     'message' => 'Test',
-                    'file' => '/test.php',
-                    'line' => 10,
+                    'file'    => '/test.php',
+                    'line'    => 10,
                 ],
             ],
         ];
@@ -224,10 +224,10 @@ class ExceptionsPanelRendererTest extends TestCase
             'exceptions' => [
                 [
                     'handled' => true,
-                    'class' => 'TestException',
+                    'class'   => 'TestException',
                     'message' => 'Test message',
-                    'file' => '/test.php',
-                    'line' => 42,
+                    'file'    => '/test.php',
+                    'line'    => 42,
                 ],
             ],
         ];
@@ -256,10 +256,10 @@ class ExceptionsPanelRendererTest extends TestCase
             $data = [
                 'exceptions' => [
                     [
-                        'class' => $exceptionType,
+                        'class'   => $exceptionType,
                         'message' => 'Test',
-                        'file' => '/test.php',
-                        'line' => 1,
+                        'file'    => '/test.php',
+                        'line'    => 1,
                     ],
                 ],
             ];
@@ -274,10 +274,10 @@ class ExceptionsPanelRendererTest extends TestCase
         $data = [
             'exceptions' => [
                 [
-                    'class' => 'Exception',
+                    'class'   => 'Exception',
                     'message' => 'Test',
-                    'file' => '/very/long/path/to/some/deeply/nested/directory/structure/that/contains/a/file.php',
-                    'line' => 999,
+                    'file'    => '/very/long/path/to/some/deeply/nested/directory/structure/that/contains/a/file.php',
+                    'line'    => 999,
                 ],
             ],
         ];
@@ -294,10 +294,10 @@ class ExceptionsPanelRendererTest extends TestCase
         $data = [
             'exceptions' => [
                 [
-                    'class' => 'Exception',
+                    'class'   => 'Exception',
                     'message' => 'Test',
-                    'file' => '/test.php',
-                    'line' => 0,
+                    'file'    => '/test.php',
+                    'line'    => 0,
                 ],
             ],
         ];
@@ -313,17 +313,17 @@ class ExceptionsPanelRendererTest extends TestCase
             'exceptions' => [
                 [
                     'handled' => true,
-                    'class' => 'HandledException',
+                    'class'   => 'HandledException',
                     'message' => 'Handled exception',
-                    'file' => '/test1.php',
-                    'line' => 10,
+                    'file'    => '/test1.php',
+                    'line'    => 10,
                 ],
                 [
                     'handled' => false,
-                    'class' => 'UnhandledException',
+                    'class'   => 'UnhandledException',
                     'message' => 'Unhandled exception',
-                    'file' => '/test2.php',
-                    'line' => 20,
+                    'file'    => '/test2.php',
+                    'line'    => 20,
                 ],
             ],
         ];

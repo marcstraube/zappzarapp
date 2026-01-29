@@ -45,11 +45,11 @@ class RequestPanelRendererTest extends TestCase
     public function testRenderTabWithTypicalRequestData(): void
     {
         $data = [
-            'method' => 'POST',
-            'uri' => '/api/users',
-            'status_code' => 201,
+            'method'         => 'POST',
+            'uri'            => '/api/users',
+            'status_code'    => 201,
             'execution_time' => 45.67,
-            'memory_peak' => 8.5,
+            'memory_peak'    => 8.5,
         ];
 
         $result = $this->renderer->renderTab($data);
@@ -88,12 +88,12 @@ class RequestPanelRendererTest extends TestCase
     public function testRenderTabWithHeaders(): void
     {
         $data = [
-            'method' => 'GET',
-            'uri' => '/',
+            'method'  => 'GET',
+            'uri'     => '/',
             'headers' => [
                 'Content-Type' => 'application/json',
-                'Accept' => 'application/json',
-                'User-Agent' => 'Mozilla/5.0',
+                'Accept'       => 'application/json',
+                'User-Agent'   => 'Mozilla/5.0',
             ],
         ];
 
@@ -140,7 +140,7 @@ class RequestPanelRendererTest extends TestCase
     {
         $data = [
             'method' => 'GET',
-            'uri' => '/',
+            'uri'    => '/',
         ];
 
         $result = $this->renderer->renderTab($data);
@@ -173,7 +173,7 @@ class RequestPanelRendererTest extends TestCase
         $statusCodes = [200, 201, 301, 404, 500];
 
         foreach ($statusCodes as $code) {
-            $data = ['status_code' => $code];
+            $data   = ['status_code' => $code];
             $result = $this->renderer->renderTab($data);
             $this->assertStringContainsString((string)$code, $result);
         }

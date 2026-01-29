@@ -15,17 +15,17 @@ class TimelineCollector implements CollectorInterface
     private array $events = [];
     private float $requestStart;
     private bool $collecting = false;
-    private bool $started = false;
+    private bool $started    = false;
 
     /**
      * Start collecting timeline events
      */
     public function start(): void
     {
-        $this->collecting = true;
-        $this->events = [];
+        $this->collecting   = true;
+        $this->events       = [];
         $this->requestStart = $_SERVER['REQUEST_TIME_FLOAT'] ?? microtime(true);
-        $this->started = true;
+        $this->started      = true;
 
         // Add initial event
         $this->addEvent('request_start', 'Request Start', null, 'bootstrap');
@@ -61,10 +61,10 @@ class TimelineCollector implements CollectorInterface
         $timeline = $this->buildTimeline();
 
         return [
-            'timeline' => $timeline,
+            'timeline'   => $timeline,
             'total_time' => round($totalTime, 2),
-            'events' => $this->events,
-            'count' => count($timeline), // Number of timeline items for badge
+            'events'     => $this->events,
+            'count'      => count($timeline), // Number of timeline items for badge
         ];
     }
 
@@ -88,8 +88,8 @@ class TimelineCollector implements CollectorInterface
         }
 
         $this->events[$key] = [
-            'label' => $label,
-            'time' => microtime(true),
+            'label'    => $label,
+            'time'     => microtime(true),
             'duration' => $duration,
             'category' => $category,
         ];
@@ -122,11 +122,11 @@ class TimelineCollector implements CollectorInterface
         }
 
         $startTime = $this->events[$startKey]['time'];
-        $duration = (microtime(true) - $startTime) * 1000; // Convert to ms
+        $duration  = (microtime(true) - $startTime) * 1000; // Convert to ms
 
         // Update the start event with duration
         $this->events[$startKey]['duration'] = round($duration, 2);
-        $this->events[$startKey]['label'] = rtrim($this->events[$startKey]['label'], ' Start');
+        $this->events[$startKey]['label']    = rtrim($this->events[$startKey]['label'], ' Start');
     }
 
     /**
@@ -141,8 +141,8 @@ class TimelineCollector implements CollectorInterface
         }
 
         $totalTime = (microtime(true) - $this->requestStart) * 1000;
-        $timeline = [];
-        $prevTime = $this->requestStart;
+        $timeline  = [];
+        $prevTime  = $this->requestStart;
 
         // Group events by category
         $categorized = [];
@@ -156,7 +156,7 @@ class TimelineCollector implements CollectorInterface
 
         // Build timeline items from categorized events
         foreach ($categorized as $category => $events) {
-            $categoryTime = 0;
+            $categoryTime   = 0;
             $categoryEvents = [];
 
             foreach ($events as $event) {
@@ -168,7 +168,7 @@ class TimelineCollector implements CollectorInterface
 
                 $categoryTime += $duration;
                 $categoryEvents[] = [
-                    'label' => $event['label'],
+                    'label'    => $event['label'],
                     'duration' => round($duration, 2),
                 ];
 
@@ -177,11 +177,11 @@ class TimelineCollector implements CollectorInterface
 
             if ($categoryTime > 0) {
                 $timeline[] = [
-                    'label' => ucfirst($category),
-                    'category' => $category,
-                    'duration' => round($categoryTime, 2),
-                    'percentage' => $totalTime > 0 ? round(($categoryTime / $totalTime) * 100, 1) : 0,
-                    'events' => $categoryEvents,
+                    'label'         => ucfirst($category),
+                    'category'      => $category,
+                    'duration'      => round($categoryTime, 2),
+                    'percentage'    => $totalTime > 0 ? round(($categoryTime / $totalTime) * 100, 1) : 0,
+                    'events'        => $categoryEvents,
                     'is_bottleneck' => $totalTime > 0 && ($categoryTime / $totalTime) > 0.5,
                 ];
             }

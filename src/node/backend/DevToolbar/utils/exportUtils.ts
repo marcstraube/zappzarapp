@@ -10,11 +10,11 @@ import type { RequestData } from '../types/index.js';
  * Export structure for DevToolbar request data
  */
 export interface ExportData {
-    toolbar_version: string;
-    export_time: string;
-    request_id: string;
-    metadata: RequestData['metadata'];
-    data: Record<string, any>; // Structured collector data
+  toolbar_version: string;
+  export_time: string;
+  request_id: string;
+  metadata: RequestData['metadata'];
+  data: Record<string, unknown>; // Structured collector data
 }
 
 /**
@@ -33,23 +33,23 @@ export interface ExportData {
  * downloadJson(exportData, 'devtoolbar-req-123.json');
  */
 export function exportRequestAsJson(requestId: string, requestData: RequestData): ExportData {
-    if (!requestData.raw_data) {
-        throw new Error(
-            `Cannot export request ${requestId}: No structured data available. ` +
-                `This request was stored before structured data export was implemented.`
-        );
-    }
+  if (!requestData.raw_data) {
+    throw new Error(
+      `Cannot export request ${requestId}: No structured data available. ` +
+        `This request was stored before structured data export was implemented.`
+    );
+  }
 
-    // Remove badge_counts from metadata (redundant information)
-    const { badge_counts, ...exportMetadata } = requestData.metadata;
+  // Remove badge_counts from metadata (redundant information)
+  const { badge_counts: _badge_counts, ...exportMetadata } = requestData.metadata;
 
-    return {
-        toolbar_version: '2.1.0',
-        export_time: new Date().toISOString(),
-        request_id: requestId,
-        metadata: exportMetadata,
-        data: requestData.raw_data,
-    };
+  return {
+    toolbar_version: '2.1.0',
+    export_time: new Date().toISOString(),
+    request_id: requestId,
+    metadata: exportMetadata,
+    data: requestData.raw_data,
+  };
 }
 
 /**
@@ -65,14 +65,14 @@ export function exportRequestAsJson(requestId: string, requestData: RequestData)
  * downloadJson(exportData, `devtoolbar-${requestId}.json`);
  */
 export function downloadJson(content: unknown, filename: string): void {
-    const json = typeof content === 'string' ? content : JSON.stringify(content, null, 2);
-    const blob = new Blob([json], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = filename;
-    a.click();
-    URL.revokeObjectURL(url);
+  const json = typeof content === 'string' ? content : JSON.stringify(content, null, 2);
+  const blob = new Blob([json], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
 }
 
 /**
@@ -88,12 +88,16 @@ export function downloadJson(content: unknown, filename: string): void {
  * downloadFile('{"foo":"bar"}', 'data.json', 'application/json');
  * downloadFile('a,b,c\n1,2,3', 'data.csv', 'text/csv');
  */
-export function downloadFile(content: string, filename: string, mimeType: string = 'application/json'): void {
-    const blob = new Blob([content], { type: mimeType });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = filename;
-    a.click();
-    URL.revokeObjectURL(url);
+export function downloadFile(
+  content: string,
+  filename: string,
+  mimeType: string = 'application/json'
+): void {
+  const blob = new Blob([content], { type: mimeType });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
 }

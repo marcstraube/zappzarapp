@@ -71,7 +71,7 @@ class TimelineCollectorTest extends TestCase
 
         $this->collector->stop();
 
-        $data = $this->collector->getData();
+        $data   = $this->collector->getData();
         $events = $data['events'];
 
         $this->assertArrayHasKey('controller_start', $events);
@@ -92,7 +92,7 @@ class TimelineCollectorTest extends TestCase
 
         $this->collector->stop();
 
-        $data = $this->collector->getData();
+        $data   = $this->collector->getData();
         $events = $data['events'];
 
         $this->assertArrayHasKey('aggregated_database', $events);
@@ -112,7 +112,7 @@ class TimelineCollectorTest extends TestCase
 
         $this->collector->stop();
 
-        $data = $this->collector->getData();
+        $data   = $this->collector->getData();
         $events = $data['events'];
 
         $this->assertArrayNotHasKey('aggregated_none', $events);
@@ -150,7 +150,7 @@ class TimelineCollectorTest extends TestCase
 
         $this->collector->stop();
 
-        $data = $this->collector->getData();
+        $data     = $this->collector->getData();
         $timeline = $data['timeline'];
 
         $this->assertIsArray($timeline);
@@ -176,7 +176,7 @@ class TimelineCollectorTest extends TestCase
 
         $this->collector->stop();
 
-        $data = $this->collector->getData();
+        $data     = $this->collector->getData();
         $timeline = $data['timeline'];
 
         // Find the controller category

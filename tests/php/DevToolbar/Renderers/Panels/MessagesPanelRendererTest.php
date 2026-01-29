@@ -51,10 +51,10 @@ class MessagesPanelRendererTest extends TestCase
         $data = [
             'messages' => [
                 [
-                    'level' => 'info',
+                    'level'      => 'info',
                     'level_name' => 'INFO',
-                    'message' => 'Application started',
-                    'datetime' => '2024-01-15 10:30:45',
+                    'message'    => 'Application started',
+                    'datetime'   => '2024-01-15 10:30:45',
                 ],
             ],
         ];
@@ -73,22 +73,22 @@ class MessagesPanelRendererTest extends TestCase
         $data = [
             'messages' => [
                 [
-                    'level' => 'debug',
+                    'level'      => 'debug',
                     'level_name' => 'DEBUG',
-                    'message' => 'Debug message',
-                    'datetime' => '2024-01-15 10:30:45',
+                    'message'    => 'Debug message',
+                    'datetime'   => '2024-01-15 10:30:45',
                 ],
                 [
-                    'level' => 'info',
+                    'level'      => 'info',
                     'level_name' => 'INFO',
-                    'message' => 'Info message',
-                    'datetime' => '2024-01-15 10:30:46',
+                    'message'    => 'Info message',
+                    'datetime'   => '2024-01-15 10:30:46',
                 ],
                 [
-                    'level' => 'warning',
+                    'level'      => 'warning',
                     'level_name' => 'WARNING',
-                    'message' => 'Warning message',
-                    'datetime' => '2024-01-15 10:30:47',
+                    'message'    => 'Warning message',
+                    'datetime'   => '2024-01-15 10:30:47',
                 ],
             ],
         ];
@@ -114,10 +114,10 @@ class MessagesPanelRendererTest extends TestCase
         $data = [
             'messages' => [
                 [
-                    'level' => 'error',
+                    'level'      => 'error',
                     'level_name' => 'ERROR',
-                    'message' => 'Database connection failed',
-                    'datetime' => '2024-01-15 10:30:45',
+                    'message'    => 'Database connection failed',
+                    'datetime'   => '2024-01-15 10:30:45',
                 ],
             ],
         ];
@@ -134,10 +134,10 @@ class MessagesPanelRendererTest extends TestCase
         $data = [
             'messages' => [
                 [
-                    'level' => 'info',
+                    'level'      => 'info',
                     'level_name' => 'INFO',
-                    'message' => '<script>alert("XSS")</script>',
-                    'datetime' => '2024-01-15 10:30:45',
+                    'message'    => '<script>alert("XSS")</script>',
+                    'datetime'   => '2024-01-15 10:30:45',
                 ],
             ],
         ];
@@ -153,10 +153,10 @@ class MessagesPanelRendererTest extends TestCase
         $data = [
             'messages' => [
                 [
-                    'level' => 'info',
+                    'level'      => 'info',
                     'level_name' => '<script>XSS</script>',
-                    'message' => 'Test message',
-                    'datetime' => '2024-01-15 10:30:45',
+                    'message'    => 'Test message',
+                    'datetime'   => '2024-01-15 10:30:45',
                 ],
             ],
         ];
@@ -172,10 +172,10 @@ class MessagesPanelRendererTest extends TestCase
         $data = [
             'messages' => [
                 [
-                    'level' => 'info',
+                    'level'      => 'info',
                     'level_name' => 'INFO',
-                    'message' => 'Test message',
-                    'datetime' => '<script>XSS</script>',
+                    'message'    => 'Test message',
+                    'datetime'   => '<script>XSS</script>',
                 ],
             ],
         ];
@@ -207,10 +207,10 @@ class MessagesPanelRendererTest extends TestCase
         $data = [
             'messages' => [
                 [
-                    'level' => 'info',
+                    'level'      => 'info',
                     'level_name' => 'INFO',
-                    'message' => 'Test',
-                    'datetime' => '2024-01-15 10:30:45',
+                    'message'    => 'Test',
+                    'datetime'   => '2024-01-15 10:30:45',
                 ],
             ],
         ];

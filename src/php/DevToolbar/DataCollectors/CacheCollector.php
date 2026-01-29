@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 namespace DevToolbar\DataCollectors;
+use Redis;
 
 /**
  * Cache Collector
@@ -13,9 +14,9 @@ class CacheCollector implements CollectorInterface
 {
     /** @var array<int, array<string, mixed>> */
     private array $operations = [];
-    private int $hits = 0;
-    private int $misses = 0;
-    private bool $collecting = false;
+    private int $hits         = 0;
+    private int $misses       = 0;
+    private bool $collecting  = false;
 
     /**
      * Start collecting cache operations
@@ -24,8 +25,8 @@ class CacheCollector implements CollectorInterface
     {
         $this->collecting = true;
         $this->operations = [];
-        $this->hits = 0;
-        $this->misses = 0;
+        $this->hits       = 0;
+        $this->misses     = 0;
     }
 
     /**
@@ -49,16 +50,16 @@ class CacheCollector implements CollectorInterface
      */
     public function getData(): array
     {
-        $total = $this->hits + $this->misses;
+        $total   = $this->hits + $this->misses;
         $hitRate = $total > 0 ? round(($this->hits / $total) * 100, 1) : 0;
 
         return [
             'operations' => $this->operations,
-            'hits' => $this->hits,
-            'misses' => $this->misses,
-            'hit_rate' => $hitRate,
+            'hits'       => $this->hits,
+            'misses'     => $this->misses,
+            'hit_rate'   => $hitRate,
             'total_time' => round(array_sum(array_column($this->operations, 'time')), 2),
-            'count' => count($this->operations),
+            'count'      => count($this->operations),
         ];
     }
 
@@ -87,9 +88,9 @@ class CacheCollector implements CollectorInterface
         }
 
         $operation = [
-            'type' => $type,
-            'key' => $key,
-            'time' => round($time, 2),
+            'type'      => $type,
+            'key'       => $key,
+            'time'      => round($time, 2),
             'backtrace' => $this->getRelevantBacktrace(),
         ];
 
@@ -102,7 +103,7 @@ class CacheCollector implements CollectorInterface
                 $this->misses++;
             }
         } elseif ($type === 'set') {
-            $operation['ttl'] = $ttl;
+            $operation['ttl']  = $ttl;
             $operation['size'] = $this->calculateSize($value);
         } elseif ($type === 'delete') {
             $operation['success'] = (bool)$value;
@@ -114,7 +115,7 @@ class CacheCollector implements CollectorInterface
     /**
      * Wrapper for Redis GET operation
      *
-     * @param \Redis|object $redis Redis instance
+     * @param Redis|object $redis Redis instance
      * @param string $key Cache key
      * @return mixed Cached value or false
      * @phpstan-param \Redis $redis
@@ -125,18 +126,18 @@ class CacheCollector implements CollectorInterface
             return $redis->get($key);
         }
 
-        $start = hrtime(true);
+        $start  = hrtime(true);
         $result = $redis->get($key);
-        $time = (hrtime(true) - $start) / 1_000_000; // Convert to milliseconds
+        $time   = (hrtime(true) - $start) / 1_000_000; // Convert to milliseconds
 
         $isHit = $result !== false;
-        $ttl = $isHit ? $redis->ttl($key) : null;
+        $ttl   = $isHit ? $redis->ttl($key) : null;
 
         $this->trackOperation('get', $key, $time, $result, $isHit);
 
         if ($isHit && $ttl !== null) {
             // Store TTL info for display
-            $lastOp = &$this->operations[count($this->operations) - 1];
+            $lastOp        = &$this->operations[count($this->operations) - 1];
             $lastOp['ttl'] = $ttl;
         }
 
@@ -146,7 +147,7 @@ class CacheCollector implements CollectorInterface
     /**
      * Wrapper for Redis SET operation
      *
-     * @param \Redis|object $redis Redis instance
+     * @param Redis|object $redis Redis instance
      * @param string $key Cache key
      * @param mixed $value Value to cache
      * @param int|null $ttl TTL in seconds
@@ -178,7 +179,7 @@ class CacheCollector implements CollectorInterface
     /**
      * Wrapper for Redis DELETE operation
      *
-     * @param \Redis|object $redis Redis instance
+     * @param Redis|object $redis Redis instance
      * @param string|array<string> $key Cache key(s)
      * @return int Number of keys deleted
      * @phpstan-param \Redis $redis
@@ -189,9 +190,9 @@ class CacheCollector implements CollectorInterface
             return $redis->del($key);
         }
 
-        $start = hrtime(true);
+        $start  = hrtime(true);
         $result = $redis->del($key);
-        $time = (hrtime(true) - $start) / 1_000_000; // Convert to milliseconds
+        $time   = (hrtime(true) - $start) / 1_000_000; // Convert to milliseconds
 
         $keyString = is_array($key) ? implode(', ', $key) : $key;
         $this->trackOperation('delete', $keyString, $time, $result);
@@ -206,7 +207,7 @@ class CacheCollector implements CollectorInterface
      */
     private function getRelevantBacktrace(): array
     {
-        $trace = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 10);
+        $trace    = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 10);
         $relevant = [];
 
         foreach ($trace as $frame) {
@@ -221,10 +222,10 @@ class CacheCollector implements CollectorInterface
             }
 
             $relevant[] = [
-                'file' => str_replace(getcwd() . '/', '', $frame['file'] ?? ''),
-                'line' => $frame['line'] ?? 0,
+                'file'     => str_replace(getcwd() . '/', '', $frame['file'] ?? ''),
+                'line'     => $frame['line'] ?? 0,
                 'function' => $frame['function'] ?? '',
-                'class' => $frame['class'] ?? '',
+                'class'    => $frame['class'] ?? '',
             ];
 
             // Only keep first relevant frame
@@ -276,7 +277,7 @@ class CacheCollector implements CollectorInterface
 
             // Truncate large arrays
             if (count($value) > 50) {
-                $value = array_slice($value, 0, 50, true);
+                $value                = array_slice($value, 0, 50, true);
                 $value['__truncated'] = '... (' . (count($value) - 50) . ' more items)';
             }
         }
@@ -293,7 +294,7 @@ class CacheCollector implements CollectorInterface
     private function calculateSize(mixed $value): string
     {
         $serialized = serialize($value);
-        $bytes = strlen($serialized);
+        $bytes      = strlen($serialized);
 
         if ($bytes < 1024) {
             return $bytes . 'B';

@@ -27,26 +27,26 @@ class RequestCollector implements CollectorInterface
 
     public function start(): void
     {
-        $this->startTime = microtime(true);
+        $this->startTime   = microtime(true);
         $this->startMemory = memory_get_usage();
 
         $this->data = [
-            'method' => $_SERVER['REQUEST_METHOD'] ?? 'GET',
-            'uri' => $_SERVER['REQUEST_URI'] ?? '/',
+            'method'   => $_SERVER['REQUEST_METHOD'] ?? 'GET',
+            'uri'      => $_SERVER['REQUEST_URI'] ?? '/',
             'protocol' => $_SERVER['SERVER_PROTOCOL'] ?? 'HTTP/1.1',
-            'headers' => $this->collectHeaders(),
-            'get' => $this->filterSensitiveData($_GET),
-            'post' => $this->filterSensitiveData($_POST),
-            'server' => $this->filterSensitiveData($_SERVER),
-            'cookies' => $this->filterSensitiveData($_COOKIE),
+            'headers'  => $this->collectHeaders(),
+            'get'      => $this->filterSensitiveData($_GET),
+            'post'     => $this->filterSensitiveData($_POST),
+            'server'   => $this->filterSensitiveData($_SERVER),
+            'cookies'  => $this->filterSensitiveData($_COOKIE),
         ];
     }
 
     public function stop(): void
     {
         $this->data['execution_time'] = round((microtime(true) - $this->startTime) * 1000, 2);
-        $this->data['memory_peak'] = round(memory_get_peak_usage() / 1024 / 1024, 2);
-        $this->data['memory_usage'] = round((memory_get_usage() - $this->startMemory) / 1024 / 1024, 2);
+        $this->data['memory_peak']    = round(memory_get_peak_usage() / 1024 / 1024, 2);
+        $this->data['memory_usage']   = round((memory_get_usage() - $this->startMemory) / 1024 / 1024, 2);
 
         // Collect response headers if available
         if (function_exists('headers_list')) {
@@ -84,7 +84,7 @@ class RequestCollector implements CollectorInterface
 
         foreach ($_SERVER as $key => $value) {
             if (strpos($key, 'HTTP_') === 0) {
-                $header = str_replace('_', '-', substr($key, 5));
+                $header           = str_replace('_', '-', substr($key, 5));
                 $headers[$header] = $value;
             }
         }
@@ -123,7 +123,7 @@ class RequestCollector implements CollectorInterface
         $filtered = [];
 
         foreach ($data as $key => $value) {
-            $keyLower = strtolower((string)$key);
+            $keyLower    = strtolower((string)$key);
             $isSensitive = false;
 
             foreach (self::SENSITIVE_PATTERNS as $pattern) {

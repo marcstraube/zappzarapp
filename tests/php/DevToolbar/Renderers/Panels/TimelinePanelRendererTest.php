@@ -38,7 +38,7 @@ class TimelinePanelRendererTest extends TestCase
     public function testRenderTabWithEmptyTimeline(): void
     {
         $data = [
-            'timeline' => [],
+            'timeline'   => [],
             'total_time' => 0,
         ];
 
@@ -52,9 +52,9 @@ class TimelinePanelRendererTest extends TestCase
         $data = [
             'timeline' => [
                 [
-                    'label' => 'Database Query',
-                    'duration' => 45.5,
-                    'percentage' => 50.0,
+                    'label'         => 'Database Query',
+                    'duration'      => 45.5,
+                    'percentage'    => 50.0,
                     'is_bottleneck' => false,
                 ],
             ],
@@ -74,21 +74,21 @@ class TimelinePanelRendererTest extends TestCase
         $data = [
             'timeline' => [
                 [
-                    'label' => 'Bootstrap',
-                    'duration' => 10.0,
-                    'percentage' => 10.0,
+                    'label'         => 'Bootstrap',
+                    'duration'      => 10.0,
+                    'percentage'    => 10.0,
                     'is_bottleneck' => false,
                 ],
                 [
-                    'label' => 'Database Queries',
-                    'duration' => 70.0,
-                    'percentage' => 70.0,
+                    'label'         => 'Database Queries',
+                    'duration'      => 70.0,
+                    'percentage'    => 70.0,
                     'is_bottleneck' => true,
                 ],
                 [
-                    'label' => 'View Rendering',
-                    'duration' => 20.0,
-                    'percentage' => 20.0,
+                    'label'         => 'View Rendering',
+                    'duration'      => 20.0,
+                    'percentage'    => 20.0,
                     'is_bottleneck' => false,
                 ],
             ],
@@ -111,9 +111,9 @@ class TimelinePanelRendererTest extends TestCase
         $data = [
             'timeline' => [
                 [
-                    'label' => 'Slow Operation',
-                    'duration' => 500.0,
-                    'percentage' => 90.0,
+                    'label'         => 'Slow Operation',
+                    'duration'      => 500.0,
+                    'percentage'    => 90.0,
                     'is_bottleneck' => true,
                 ],
             ],
@@ -131,9 +131,9 @@ class TimelinePanelRendererTest extends TestCase
         $data = [
             'timeline' => [
                 [
-                    'label' => 'Fast Operation',
-                    'duration' => 10.0,
-                    'percentage' => 10.0,
+                    'label'         => 'Fast Operation',
+                    'duration'      => 10.0,
+                    'percentage'    => 10.0,
                     'is_bottleneck' => false,
                 ],
             ],
@@ -154,17 +154,17 @@ class TimelinePanelRendererTest extends TestCase
         $data = [
             'timeline' => [
                 [
-                    'label' => 'Database Operations',
-                    'duration' => 100.0,
-                    'percentage' => 80.0,
+                    'label'         => 'Database Operations',
+                    'duration'      => 100.0,
+                    'percentage'    => 80.0,
                     'is_bottleneck' => true,
-                    'events' => [
+                    'events'        => [
                         [
-                            'label' => 'Query 1: SELECT * FROM users',
+                            'label'    => 'Query 1: SELECT * FROM users',
                             'duration' => 40.0,
                         ],
                         [
-                            'label' => 'Query 2: SELECT * FROM posts',
+                            'label'    => 'Query 2: SELECT * FROM posts',
                             'duration' => 60.0,
                         ],
                     ],
@@ -187,9 +187,9 @@ class TimelinePanelRendererTest extends TestCase
         $data = [
             'timeline' => [
                 [
-                    'label' => 'Simple Operation',
-                    'duration' => 50.0,
-                    'percentage' => 50.0,
+                    'label'         => 'Simple Operation',
+                    'duration'      => 50.0,
+                    'percentage'    => 50.0,
                     'is_bottleneck' => false,
                 ],
             ],
@@ -207,11 +207,11 @@ class TimelinePanelRendererTest extends TestCase
         $data = [
             'timeline' => [
                 [
-                    'label' => 'Operation',
-                    'duration' => 50.0,
-                    'percentage' => 50.0,
+                    'label'         => 'Operation',
+                    'duration'      => 50.0,
+                    'percentage'    => 50.0,
                     'is_bottleneck' => false,
-                    'events' => [],
+                    'events'        => [],
                 ],
             ],
             'total_time' => 100.0,
@@ -227,9 +227,9 @@ class TimelinePanelRendererTest extends TestCase
         $data = [
             'timeline' => [
                 [
-                    'label' => 'Over 100%',
-                    'duration' => 150.0,
-                    'percentage' => 150.0, // Over 100%
+                    'label'         => 'Over 100%',
+                    'duration'      => 150.0,
+                    'percentage'    => 150.0, // Over 100%
                     'is_bottleneck' => false,
                 ],
             ],
@@ -251,9 +251,9 @@ class TimelinePanelRendererTest extends TestCase
             $data = [
                 'timeline' => [
                     [
-                        'label' => 'Test',
-                        'duration' => $duration,
-                        'percentage' => 50.0,
+                        'label'         => 'Test',
+                        'duration'      => $duration,
+                        'percentage'    => 50.0,
                         'is_bottleneck' => false,
                     ],
                 ],
@@ -271,9 +271,9 @@ class TimelinePanelRendererTest extends TestCase
         $data = [
             'timeline' => [
                 [
-                    'label' => '<script>alert("XSS")</script>',
-                    'duration' => 50.0,
-                    'percentage' => 50.0,
+                    'label'         => '<script>alert("XSS")</script>',
+                    'duration'      => 50.0,
+                    'percentage'    => 50.0,
                     'is_bottleneck' => false,
                 ],
             ],
@@ -291,13 +291,13 @@ class TimelinePanelRendererTest extends TestCase
         $data = [
             'timeline' => [
                 [
-                    'label' => 'Safe Label',
-                    'duration' => 50.0,
-                    'percentage' => 50.0,
+                    'label'         => 'Safe Label',
+                    'duration'      => 50.0,
+                    'percentage'    => 50.0,
                     'is_bottleneck' => false,
-                    'events' => [
+                    'events'        => [
                         [
-                            'label' => '<script>alert("XSS")</script>',
+                            'label'    => '<script>alert("XSS")</script>',
                             'duration' => 25.0,
                         ],
                     ],
@@ -317,9 +317,9 @@ class TimelinePanelRendererTest extends TestCase
         $data = [
             'timeline' => [
                 [
-                    'label' => 'Test Operation',
-                    'duration' => 50.0,
-                    'percentage' => 50.0,
+                    'label'         => 'Test Operation',
+                    'duration'      => 50.0,
+                    'percentage'    => 50.0,
                     'is_bottleneck' => false,
                 ],
             ],
@@ -358,11 +358,11 @@ class TimelinePanelRendererTest extends TestCase
         $data = [
             'timeline' => [
                 [
-                    'label' => 'Parent',
-                    'duration' => 50.0,
-                    'percentage' => 50.0,
+                    'label'         => 'Parent',
+                    'duration'      => 50.0,
+                    'percentage'    => 50.0,
                     'is_bottleneck' => false,
-                    'events' => [
+                    'events'        => [
                         [], // Empty sub-event
                     ],
                 ],
@@ -382,9 +382,9 @@ class TimelinePanelRendererTest extends TestCase
         $data = [
             'timeline' => [
                 [
-                    'label' => 'Instant',
-                    'duration' => 0.0,
-                    'percentage' => 0.0,
+                    'label'         => 'Instant',
+                    'duration'      => 0.0,
+                    'percentage'    => 0.0,
                     'is_bottleneck' => false,
                 ],
             ],
@@ -401,27 +401,27 @@ class TimelinePanelRendererTest extends TestCase
         $data = [
             'timeline' => [
                 [
-                    'label' => 'Fast Operation 1',
-                    'duration' => 10.0,
-                    'percentage' => 5.0,
+                    'label'         => 'Fast Operation 1',
+                    'duration'      => 10.0,
+                    'percentage'    => 5.0,
                     'is_bottleneck' => false,
                 ],
                 [
-                    'label' => 'Bottleneck 1',
-                    'duration' => 100.0,
-                    'percentage' => 50.0,
+                    'label'         => 'Bottleneck 1',
+                    'duration'      => 100.0,
+                    'percentage'    => 50.0,
                     'is_bottleneck' => true,
                 ],
                 [
-                    'label' => 'Fast Operation 2',
-                    'duration' => 10.0,
-                    'percentage' => 5.0,
+                    'label'         => 'Fast Operation 2',
+                    'duration'      => 10.0,
+                    'percentage'    => 5.0,
                     'is_bottleneck' => false,
                 ],
                 [
-                    'label' => 'Bottleneck 2',
-                    'duration' => 80.0,
-                    'percentage' => 40.0,
+                    'label'         => 'Bottleneck 2',
+                    'duration'      => 80.0,
+                    'percentage'    => 40.0,
                     'is_bottleneck' => true,
                 ],
             ],

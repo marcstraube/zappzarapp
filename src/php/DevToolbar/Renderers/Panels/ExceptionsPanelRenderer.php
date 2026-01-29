@@ -40,10 +40,10 @@ class ExceptionsPanelRenderer extends AbstractPanelRenderer
 
         foreach ($exceptions as $exception) {
             $handled = $exception['handled'] ?? true;
-            $class = $this->escapeHtml($exception['class'] ?? 'Exception');
+            $class   = $this->escapeHtml($exception['class'] ?? 'Exception');
             $message = $this->escapeHtml($exception['message'] ?? '');
-            $file = $this->escapeHtml($exception['file'] ?? '');
-            $line = $exception['line'] ?? 0;
+            $file    = $this->escapeHtml($exception['file'] ?? '');
+            $line    = $exception['line'] ?? 0;
 
             $html .= sprintf(
                 '<div class="dev-toolbar-exception %s">

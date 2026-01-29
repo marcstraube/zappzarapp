@@ -24,35 +24,40 @@ const outputFile = join(__dirname, '../../../php/DevToolbar/assets/devtoolbar.js
 
 const isDev = process.env.NODE_ENV === 'development';
 
-async function build() {
-    console.log('[DevToolbar Build] Starting browser bundle build...');
-    console.log('[DevToolbar Build] Entry:', entryPoint);
-    console.log('[DevToolbar Build] Output:', outputFile);
-    console.log('[DevToolbar Build] Mode:', isDev ? 'development' : 'production');
+async function build(): Promise<void> {
+  // eslint-disable-next-line no-console -- Build script requires console output
+  console.log('[DevToolbar Build] Starting browser bundle build...');
+  // eslint-disable-next-line no-console -- Build script requires console output
+  console.log('[DevToolbar Build] Entry:', entryPoint);
+  // eslint-disable-next-line no-console -- Build script requires console output
+  console.log('[DevToolbar Build] Output:', outputFile);
+  // eslint-disable-next-line no-console -- Build script requires console output
+  console.log('[DevToolbar Build] Mode:', isDev ? 'development' : 'production');
 
-    try {
-        await esbuild.build({
-            entryPoints: [entryPoint],
-            bundle: true,
-            format: 'iife',
-            target: 'es2020',
-            platform: 'browser',
-            outfile: outputFile,
-            minify: !isDev,
-            sourcemap: isDev,
-            logLevel: 'info',
-            treeShaking: true,
-            legalComments: 'none',
-            banner: {
-                js: '/* DevToolbar - Generated browser bundle - DO NOT EDIT MANUALLY */',
-            },
-        });
+  try {
+    await esbuild.build({
+      entryPoints: [entryPoint],
+      bundle: true,
+      format: 'iife',
+      target: 'es2020',
+      platform: 'browser',
+      outfile: outputFile,
+      minify: !isDev,
+      sourcemap: isDev,
+      logLevel: 'info',
+      treeShaking: true,
+      legalComments: 'none',
+      banner: {
+        js: '/* DevToolbar - Generated browser bundle - DO NOT EDIT MANUALLY */',
+      },
+    });
 
-        console.log('[DevToolbar Build] ✓ Bundle created successfully');
-    } catch (error) {
-        console.error('[DevToolbar Build] ✗ Build failed:', error);
-        process.exit(1);
-    }
+    // eslint-disable-next-line no-console -- Build script requires console output
+    console.log('[DevToolbar Build] ✓ Bundle created successfully');
+  } catch (error) {
+    console.error('[DevToolbar Build] ✗ Build failed:', error);
+    process.exit(1);
+  }
 }
 
-build();
+void build();

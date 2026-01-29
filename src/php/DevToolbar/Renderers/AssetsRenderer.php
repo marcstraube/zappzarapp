@@ -29,7 +29,7 @@ class AssetsRenderer implements RendererInterface
      */
     private function renderCSS(): string
     {
-        $css = $this->loadAsset('devtoolbar.css');
+        $css   = $this->loadAsset('devtoolbar.css');
         $nonce = NonceHelper::get();
 
         return sprintf(
@@ -46,7 +46,7 @@ class AssetsRenderer implements RendererInterface
      */
     private function renderJavaScript(): string
     {
-        $js = $this->loadAsset('devtoolbar.js');
+        $js    = $this->loadAsset('devtoolbar.js');
         $nonce = NonceHelper::get();
 
         return sprintf(

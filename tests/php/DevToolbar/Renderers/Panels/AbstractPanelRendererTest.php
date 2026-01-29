@@ -190,7 +190,7 @@ class AbstractPanelRendererTest extends TestCase
     {
         $data = [
             'name' => 'John',
-            'age' => '25',
+            'age'  => '25',
         ];
 
         $result = $this->renderer->publicRenderKeyValueTable($data);

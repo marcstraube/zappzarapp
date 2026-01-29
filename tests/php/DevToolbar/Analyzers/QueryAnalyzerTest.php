@@ -103,18 +103,18 @@ class QueryAnalyzerTest extends TestCase
     {
         $queries = [
             [
-                'sql' => 'SELECT * FROM users WHERE id = 1',
-                'time' => 10,
+                'sql'       => 'SELECT * FROM users WHERE id = 1',
+                'time'      => 10,
                 'backtrace' => [['file' => 'UserRepository.php', 'line' => 45]],
             ],
             [
-                'sql' => 'SELECT * FROM users WHERE id = 2',
-                'time' => 10,
+                'sql'       => 'SELECT * FROM users WHERE id = 2',
+                'time'      => 10,
                 'backtrace' => [['file' => 'UserRepository.php', 'line' => 45]],
             ],
             [
-                'sql' => 'SELECT * FROM users WHERE id = 3',
-                'time' => 10,
+                'sql'       => 'SELECT * FROM users WHERE id = 3',
+                'time'      => 10,
                 'backtrace' => [['file' => 'UserRepository.php', 'line' => 45]],
             ],
         ];

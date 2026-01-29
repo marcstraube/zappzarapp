@@ -21,19 +21,19 @@ class QueryAnalyzer
      */
     public function detectNPlusOne(array $queries): array
     {
-        $patterns = [];
+        $patterns  = [];
         $nPlusOnes = [];
 
         // Group queries by normalized pattern
         foreach ($queries as $query) {
-            $sql = $query['sql'] ?? '';
+            $sql     = $query['sql'] ?? '';
             $pattern = self::normalizeQuery($sql);
 
             if (!isset($patterns[$pattern])) {
                 $patterns[$pattern] = [
-                    'pattern' => $pattern,
-                    'original' => $sql,
-                    'instances' => [],
+                    'pattern'    => $pattern,
+                    'original'   => $sql,
+                    'instances'  => [],
                     'total_time' => 0,
                 ];
             }
@@ -46,12 +46,12 @@ class QueryAnalyzer
         foreach ($patterns as $pattern => $data) {
             if (count($data['instances']) >= self::N_PLUS_ONE_THRESHOLD) {
                 $nPlusOnes[] = [
-                    'pattern' => $pattern,
-                    'count' => count($data['instances']),
+                    'pattern'    => $pattern,
+                    'count'      => count($data['instances']),
                     'total_time' => round($data['total_time'], 2),
-                    'avg_time' => round($data['total_time'] / count($data['instances']), 2),
-                    'instances' => $data['instances'],
-                    'location' => self::extractLocation($data['instances'][0]),
+                    'avg_time'   => round($data['total_time'] / count($data['instances']), 2),
+                    'instances'  => $data['instances'],
+                    'location'   => self::extractLocation($data['instances'][0]),
                     'suggestion' => self::generateSuggestion($pattern, $data['instances']),
                 ];
             }
@@ -101,8 +101,8 @@ class QueryAnalyzer
 
         if (!empty($backtrace)) {
             $frame = $backtrace[0];
-            $file = $frame['file'] ?? 'unknown';
-            $line = $frame['line'] ?? 0;
+            $file  = $frame['file'] ?? 'unknown';
+            $line  = $frame['line'] ?? 0;
 
             // Extract just the filename
             $filename = basename($file);
@@ -134,7 +134,7 @@ class QueryAnalyzer
             $column = $matches[1];
 
             // Extract actual values from instances
-            $values = self::extractWhereValues($instances);
+            $values     = self::extractWhereValues($instances);
             $valuesList = !empty($values) ? implode(', ', array_slice($values, 0, 3)) : '1, 2, 3, ...';
 
             return sprintf(
@@ -194,9 +194,9 @@ class QueryAnalyzer
 
             if ($time >= $threshold) {
                 $slowQueries[] = [
-                    'sql' => $query['sql'] ?? '',
-                    'time' => round($time, 2),
-                    'location' => self::extractLocation($query),
+                    'sql'        => $query['sql'] ?? '',
+                    'time'       => round($time, 2),
+                    'location'   => self::extractLocation($query),
                     'suggestion' => self::generateSlowQuerySuggestion($query),
                 ];
             }
@@ -256,16 +256,16 @@ class QueryAnalyzer
     public function getStatistics(array $queries): array
     {
         $totalTime = array_sum(array_column($queries, 'time'));
-        $count = count($queries);
+        $count     = count($queries);
 
         $times = array_column($queries, 'time');
 
         return [
             'total_count' => $count,
-            'total_time' => round($totalTime, 2),
-            'avg_time' => $count > 0 ? round($totalTime / $count, 2) : 0,
-            'slowest' => !empty($times) ? max($times) : 0,
-            'fastest' => !empty($times) ? min($times) : 0,
+            'total_time'  => round($totalTime, 2),
+            'avg_time'    => $count > 0 ? round($totalTime / $count, 2) : 0,
+            'slowest'     => !empty($times) ? max($times) : 0,
+            'fastest'     => !empty($times) ? min($times) : 0,
         ];
     }
 }

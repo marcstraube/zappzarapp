@@ -62,14 +62,14 @@ class CollectorNamingConventionTest extends TestCase
     public function testCollectorNamesMatchExpectedValues(): void
     {
         $expectedNames = [
-            CacheCollector::class => 'cache',
-            ExceptionCollector::class => 'exceptions',
-            HistoryCollector::class => 'history',
+            CacheCollector::class      => 'cache',
+            ExceptionCollector::class  => 'exceptions',
+            HistoryCollector::class    => 'history',
             HttpClientCollector::class => 'http',
-            MessageCollector::class => 'messages',
-            QueryCollector::class => 'queries',
-            RequestCollector::class => 'request',
-            TimelineCollector::class => 'timeline',
+            MessageCollector::class    => 'messages',
+            QueryCollector::class      => 'queries',
+            RequestCollector::class    => 'request',
+            TimelineCollector::class   => 'timeline',
         ];
 
         foreach ($expectedNames as $class => $expectedName) {

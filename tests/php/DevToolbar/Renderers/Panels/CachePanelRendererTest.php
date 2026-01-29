@@ -38,11 +38,11 @@ class CachePanelRendererTest extends TestCase
     public function testRenderTabWithZeroCount(): void
     {
         $data = [
-            'count' => 0,
+            'count'      => 0,
             'operations' => [],
-            'hits' => 0,
-            'misses' => 0,
-            'hit_rate' => 0,
+            'hits'       => 0,
+            'misses'     => 0,
+            'hit_rate'   => 0,
             'total_time' => 0,
         ];
 
@@ -54,18 +54,18 @@ class CachePanelRendererTest extends TestCase
     public function testRenderTabWithCacheGetHit(): void
     {
         $data = [
-            'count' => 1,
+            'count'      => 1,
             'operations' => [
                 [
                     'type' => 'get',
-                    'key' => 'user:123',
+                    'key'  => 'user:123',
                     'time' => 1.5,
-                    'hit' => true,
+                    'hit'  => true,
                 ],
             ],
-            'hits' => 1,
-            'misses' => 0,
-            'hit_rate' => 100.0,
+            'hits'       => 1,
+            'misses'     => 0,
+            'hit_rate'   => 100.0,
             'total_time' => 1.5,
         ];
 
@@ -81,18 +81,18 @@ class CachePanelRendererTest extends TestCase
     public function testRenderTabWithCacheGetMiss(): void
     {
         $data = [
-            'count' => 1,
+            'count'      => 1,
             'operations' => [
                 [
                     'type' => 'get',
-                    'key' => 'user:456',
+                    'key'  => 'user:456',
                     'time' => 2.0,
-                    'hit' => false,
+                    'hit'  => false,
                 ],
             ],
-            'hits' => 0,
-            'misses' => 1,
-            'hit_rate' => 0.0,
+            'hits'       => 0,
+            'misses'     => 1,
+            'hit_rate'   => 0.0,
             'total_time' => 2.0,
         ];
 
@@ -106,18 +106,18 @@ class CachePanelRendererTest extends TestCase
     public function testRenderTabWithCacheSet(): void
     {
         $data = [
-            'count' => 1,
+            'count'      => 1,
             'operations' => [
                 [
                     'type' => 'set',
-                    'key' => 'session:abc123',
+                    'key'  => 'session:abc123',
                     'time' => 3.5,
                     'size' => '1.2KB',
                 ],
             ],
-            'hits' => 0,
-            'misses' => 0,
-            'hit_rate' => 0.0,
+            'hits'       => 0,
+            'misses'     => 0,
+            'hit_rate'   => 0.0,
             'total_time' => 3.5,
         ];
 
@@ -132,17 +132,17 @@ class CachePanelRendererTest extends TestCase
     public function testRenderTabWithCacheDelete(): void
     {
         $data = [
-            'count' => 1,
+            'count'      => 1,
             'operations' => [
                 [
                     'type' => 'delete',
-                    'key' => 'temp:xyz',
+                    'key'  => 'temp:xyz',
                     'time' => 1.0,
                 ],
             ],
-            'hits' => 0,
-            'misses' => 0,
-            'hit_rate' => 0.0,
+            'hits'       => 0,
+            'misses'     => 0,
+            'hit_rate'   => 0.0,
             'total_time' => 1.0,
         ];
 
@@ -156,35 +156,35 @@ class CachePanelRendererTest extends TestCase
     public function testRenderTabWithMultipleOperations(): void
     {
         $data = [
-            'count' => 4,
+            'count'      => 4,
             'operations' => [
                 [
                     'type' => 'get',
-                    'key' => 'user:1',
+                    'key'  => 'user:1',
                     'time' => 1.5,
-                    'hit' => true,
+                    'hit'  => true,
                 ],
                 [
                     'type' => 'get',
-                    'key' => 'user:2',
+                    'key'  => 'user:2',
                     'time' => 1.5,
-                    'hit' => false,
+                    'hit'  => false,
                 ],
                 [
                     'type' => 'set',
-                    'key' => 'user:2',
+                    'key'  => 'user:2',
                     'time' => 2.0,
                     'size' => '500B',
                 ],
                 [
                     'type' => 'delete',
-                    'key' => 'expired:123',
+                    'key'  => 'expired:123',
                     'time' => 0.5,
                 ],
             ],
-            'hits' => 1,
-            'misses' => 1,
-            'hit_rate' => 50.0,
+            'hits'       => 1,
+            'misses'     => 1,
+            'hit_rate'   => 50.0,
             'total_time' => 5.5,
         ];
 
@@ -202,19 +202,19 @@ class CachePanelRendererTest extends TestCase
     public function testRenderTabWithTtl(): void
     {
         $data = [
-            'count' => 1,
+            'count'      => 1,
             'operations' => [
                 [
                     'type' => 'get',
-                    'key' => 'session:active',
+                    'key'  => 'session:active',
                     'time' => 1.0,
-                    'hit' => true,
-                    'ttl' => 3600,
+                    'hit'  => true,
+                    'ttl'  => 3600,
                 ],
             ],
-            'hits' => 1,
-            'misses' => 0,
-            'hit_rate' => 100.0,
+            'hits'       => 1,
+            'misses'     => 0,
+            'hit_rate'   => 100.0,
             'total_time' => 1.0,
         ];
 
@@ -226,18 +226,18 @@ class CachePanelRendererTest extends TestCase
     public function testRenderTabWithoutTtl(): void
     {
         $data = [
-            'count' => 1,
+            'count'      => 1,
             'operations' => [
                 [
                     'type' => 'get',
-                    'key' => 'permanent:data',
+                    'key'  => 'permanent:data',
                     'time' => 1.0,
-                    'hit' => true,
+                    'hit'  => true,
                 ],
             ],
-            'hits' => 1,
-            'misses' => 0,
-            'hit_rate' => 100.0,
+            'hits'       => 1,
+            'misses'     => 0,
+            'hit_rate'   => 100.0,
             'total_time' => 1.0,
         ];
 
@@ -249,18 +249,18 @@ class CachePanelRendererTest extends TestCase
     public function testRenderTabWithSetSize(): void
     {
         $data = [
-            'count' => 1,
+            'count'      => 1,
             'operations' => [
                 [
                     'type' => 'set',
-                    'key' => 'large:object',
+                    'key'  => 'large:object',
                     'time' => 5.0,
                     'size' => '2.5MB',
                 ],
             ],
-            'hits' => 0,
-            'misses' => 0,
-            'hit_rate' => 0.0,
+            'hits'       => 0,
+            'misses'     => 0,
+            'hit_rate'   => 0.0,
             'total_time' => 5.0,
         ];
 
@@ -272,17 +272,17 @@ class CachePanelRendererTest extends TestCase
     public function testRenderTabWithoutSetSize(): void
     {
         $data = [
-            'count' => 1,
+            'count'      => 1,
             'operations' => [
                 [
                     'type' => 'set',
-                    'key' => 'small:value',
+                    'key'  => 'small:value',
                     'time' => 1.0,
                 ],
             ],
-            'hits' => 0,
-            'misses' => 0,
-            'hit_rate' => 0.0,
+            'hits'       => 0,
+            'misses'     => 0,
+            'hit_rate'   => 0.0,
             'total_time' => 1.0,
         ];
 
@@ -294,11 +294,11 @@ class CachePanelRendererTest extends TestCase
     public function testRenderTabProgressBarFullHitRate(): void
     {
         $data = [
-            'count' => 10,
+            'count'      => 10,
             'operations' => [],
-            'hits' => 10,
-            'misses' => 0,
-            'hit_rate' => 100.0,
+            'hits'       => 10,
+            'misses'     => 0,
+            'hit_rate'   => 100.0,
             'total_time' => 10.0,
         ];
 
@@ -311,11 +311,11 @@ class CachePanelRendererTest extends TestCase
     public function testRenderTabProgressBarZeroHitRate(): void
     {
         $data = [
-            'count' => 10,
+            'count'      => 10,
             'operations' => [],
-            'hits' => 0,
-            'misses' => 10,
-            'hit_rate' => 0.0,
+            'hits'       => 0,
+            'misses'     => 10,
+            'hit_rate'   => 0.0,
             'total_time' => 10.0,
         ];
 
@@ -328,11 +328,11 @@ class CachePanelRendererTest extends TestCase
     public function testRenderTabProgressBarPartialHitRate(): void
     {
         $data = [
-            'count' => 10,
+            'count'      => 10,
             'operations' => [],
-            'hits' => 5,
-            'misses' => 5,
-            'hit_rate' => 50.0,
+            'hits'       => 5,
+            'misses'     => 5,
+            'hit_rate'   => 50.0,
             'total_time' => 10.0,
         ];
 
@@ -345,18 +345,18 @@ class CachePanelRendererTest extends TestCase
     public function testRenderTabEscapesHtmlInKey(): void
     {
         $data = [
-            'count' => 1,
+            'count'      => 1,
             'operations' => [
                 [
                     'type' => 'get',
-                    'key' => '<script>alert("XSS")</script>',
+                    'key'  => '<script>alert("XSS")</script>',
                     'time' => 1.0,
-                    'hit' => true,
+                    'hit'  => true,
                 ],
             ],
-            'hits' => 1,
-            'misses' => 0,
-            'hit_rate' => 100.0,
+            'hits'       => 1,
+            'misses'     => 0,
+            'hit_rate'   => 100.0,
             'total_time' => 1.0,
         ];
 
@@ -369,18 +369,18 @@ class CachePanelRendererTest extends TestCase
     public function testRenderTabEscapesHtmlInSize(): void
     {
         $data = [
-            'count' => 1,
+            'count'      => 1,
             'operations' => [
                 [
                     'type' => 'set',
-                    'key' => 'safe:key',
+                    'key'  => 'safe:key',
                     'time' => 1.0,
                     'size' => '<script>alert("XSS")</script>',
                 ],
             ],
-            'hits' => 0,
-            'misses' => 0,
-            'hit_rate' => 0.0,
+            'hits'       => 0,
+            'misses'     => 0,
+            'hit_rate'   => 0.0,
             'total_time' => 1.0,
         ];
 
@@ -393,18 +393,18 @@ class CachePanelRendererTest extends TestCase
     public function testRenderTabContainsExpectedSections(): void
     {
         $data = [
-            'count' => 1,
+            'count'      => 1,
             'operations' => [
                 [
                     'type' => 'get',
-                    'key' => 'test:key',
+                    'key'  => 'test:key',
                     'time' => 1.0,
-                    'hit' => true,
+                    'hit'  => true,
                 ],
             ],
-            'hits' => 1,
-            'misses' => 0,
-            'hit_rate' => 100.0,
+            'hits'       => 1,
+            'misses'     => 0,
+            'hit_rate'   => 100.0,
             'total_time' => 1.0,
         ];
 
@@ -420,13 +420,13 @@ class CachePanelRendererTest extends TestCase
     public function testRenderTabHandlesMissingOperationFields(): void
     {
         $data = [
-            'count' => 1,
+            'count'      => 1,
             'operations' => [
                 [], // Empty operation data
             ],
-            'hits' => 0,
-            'misses' => 0,
-            'hit_rate' => 0.0,
+            'hits'       => 0,
+            'misses'     => 0,
+            'hit_rate'   => 0.0,
             'total_time' => 0,
         ];
 
@@ -440,17 +440,17 @@ class CachePanelRendererTest extends TestCase
     public function testRenderTabWithUnknownOperationType(): void
     {
         $data = [
-            'count' => 1,
+            'count'      => 1,
             'operations' => [
                 [
                     'type' => 'unknown',
-                    'key' => 'test:key',
+                    'key'  => 'test:key',
                     'time' => 1.0,
                 ],
             ],
-            'hits' => 0,
-            'misses' => 0,
-            'hit_rate' => 0.0,
+            'hits'       => 0,
+            'misses'     => 0,
+            'hit_rate'   => 0.0,
             'total_time' => 1.0,
         ];
 

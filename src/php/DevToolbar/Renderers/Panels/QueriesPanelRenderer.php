@@ -196,12 +196,12 @@ class QueriesPanelRenderer extends AbstractPanelRenderer
      */
     private function renderQuery(array $query): string
     {
-        $time = $query['time'] ?? 0;
-        $sql = $this->escapeHtml($query['sql'] ?? '');
+        $time     = $query['time'] ?? 0;
+        $sql      = $this->escapeHtml($query['sql'] ?? '');
         $bindings = $query['bindings'] ?? [];
 
         // Determine performance class based on execution time
-        $timeClass = $this->getPerformanceClass($time, 100.0, 500.0);
+        $timeClass  = $this->getPerformanceClass($time, 100.0, 500.0);
         $queryClass = $timeClass;
 
         $html = sprintf(
@@ -251,8 +251,8 @@ class QueriesPanelRenderer extends AbstractPanelRenderer
         $html .= '<div class="dev-toolbar-backtrace-title">Called from:</div>';
 
         foreach ($backtrace as $frame) {
-            $file = $this->escapeHtml($frame['file'] ?? 'unknown');
-            $line = $frame['line'] ?? 0;
+            $file     = $this->escapeHtml($frame['file'] ?? 'unknown');
+            $line     = $frame['line'] ?? 0;
             $function = $this->escapeHtml($frame['function'] ?? '');
 
             $html .= sprintf(

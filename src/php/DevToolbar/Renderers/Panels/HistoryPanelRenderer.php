@@ -232,8 +232,8 @@ class HistoryPanelRenderer extends AbstractPanelRenderer
         }
 
         $ticks = ['▁', '▂', '▃', '▄', '▅', '▆', '▇', '█'];
-        $min = min($values);
-        $max = max($values);
+        $min   = min($values);
+        $max   = max($values);
         $range = $max - $min;
 
         if ($range == 0) {
@@ -243,7 +243,7 @@ class HistoryPanelRenderer extends AbstractPanelRenderer
         $sparkline = '';
         foreach ($values as $value) {
             $normalized = ($value - $min) / $range;
-            $index = min(7, (int)($normalized * 8));
+            $index      = min(7, (int)($normalized * 8));
             $sparkline .= $ticks[$index];
         }
 

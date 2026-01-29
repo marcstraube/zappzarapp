@@ -57,14 +57,14 @@ class DevToolbarMiddleware
      */
     private function renderToolbar(): string
     {
-        $miniBarRenderer = new MiniBarRenderer($this->collectors);
-        $panelRenderer = new PanelRenderer($this->collectors);
-        $assetsRenderer = new AssetsRenderer();
+        $miniBarRenderer       = new MiniBarRenderer($this->collectors);
+        $panelRenderer         = new PanelRenderer($this->collectors);
+        $assetsRenderer        = new AssetsRenderer();
         $dataInjectionRenderer = new DataInjectionRenderer($this->collectors);
 
-        $miniBar = $miniBarRenderer->render();
-        $panel = $panelRenderer->render();
-        $assets = $assetsRenderer->render();
+        $miniBar    = $miniBarRenderer->render();
+        $panel      = $panelRenderer->render();
+        $assets     = $assetsRenderer->render();
         $dataScript = $dataInjectionRenderer->render();
 
         return $miniBar . $panel . $assets . $dataScript;
