@@ -58,7 +58,7 @@ class StorageManagerClass {
 
     // Store current request data
     const win = window as DevToolbarWindow;
-    if (win.__DEV_TOOLBAR_DATA__) {
+    if (win.__DEV_TOOLBAR_DATA__ != null) {
       const { id, metadata, tabs, raw_data } = win.__DEV_TOOLBAR_DATA__;
       this.storeRequest(id, metadata, tabs, raw_data);
     }
@@ -226,7 +226,7 @@ class StorageManagerClass {
     const keysToDelete: string[] = [];
     for (let i = 0; i < localStorage.length; i++) {
       const key = localStorage.key(i);
-      if (key !== null && key.startsWith(DATA_PREFIX)) {
+      if (key?.startsWith(DATA_PREFIX)) {
         const id = key.substring(DATA_PREFIX.length);
         if (!fullDataIds.includes(id)) {
           keysToDelete.push(key);
@@ -270,7 +270,7 @@ class StorageManagerClass {
     const keysToDelete: string[] = [];
     for (let i = 0; i < localStorage.length; i++) {
       const key = localStorage.key(i);
-      if (key !== null && key.startsWith(DATA_PREFIX)) {
+      if (key?.startsWith(DATA_PREFIX)) {
         const id = key.substring(DATA_PREFIX.length);
         if (!idsToKeep.includes(id)) {
           keysToDelete.push(key);
@@ -315,7 +315,7 @@ class StorageManagerClass {
       const keysToDelete: string[] = [];
       for (let i = 0; i < localStorage.length; i++) {
         const key = localStorage.key(i);
-        if (key !== null && key.startsWith(DATA_PREFIX)) {
+        if (key?.startsWith(DATA_PREFIX)) {
           keysToDelete.push(key);
         }
       }

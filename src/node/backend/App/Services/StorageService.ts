@@ -725,6 +725,6 @@ export class StorageService implements StorageServiceInterface {
     // eslint-disable-next-line security/detect-non-literal-regexp -- tag is internal, not user input
     const regex = new RegExp(`<${tag}>([\\s\\S]*?)<\\/${tag}>`);
     const match = regex.exec(xml);
-    return match?.[1] !== undefined ? match[1] : null;
+    return match?.[1] ?? null;
   }
 }

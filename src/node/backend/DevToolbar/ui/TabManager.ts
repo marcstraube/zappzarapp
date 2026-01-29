@@ -22,7 +22,7 @@ export class TabManager {
   init(): void {
     // Restore last active tab from localStorage
     const savedTab = localStorage.getItem(this.STORAGE_KEY);
-    if (savedTab) {
+    if (savedTab != null) {
       this.currentTab = savedTab;
       debug('[DevToolbar] Restored active tab:', savedTab);
     }
@@ -59,7 +59,7 @@ export class TabManager {
     }
 
     // Execute callback if provided
-    if (onActivate) {
+    if (onActivate != null) {
       onActivate(tabName);
     }
   }
@@ -114,7 +114,7 @@ export class TabManager {
    * @param badgeCounts - Badge counts for each tab (e.g., {queries: 5, exceptions: 2})
    */
   updateBadgeCounts(badgeCounts: Record<string, number> | undefined): void {
-    if (!badgeCounts) {
+    if (badgeCounts == null) {
       return;
     }
 
@@ -125,7 +125,7 @@ export class TabManager {
         `.dev-toolbar-panel-tab[data-tab="${tabName}"] .dev-toolbar-panel-tab-badge`
       );
 
-      if (badge) {
+      if (badge != null) {
         badge.textContent = String(count);
         debug(`[TabManager] Updated ${tabName} badge to:`, count);
       }
@@ -142,7 +142,7 @@ export class TabManager {
       '.dev-toolbar-panel-tab[data-tab="history"] .dev-toolbar-panel-tab-badge'
     );
 
-    if (historyBadge) {
+    if (historyBadge != null) {
       historyBadge.textContent = String(count);
       debug('[TabManager] HISTORY badge updated to:', count);
     } else {

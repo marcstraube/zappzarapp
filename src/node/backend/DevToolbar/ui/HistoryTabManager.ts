@@ -70,7 +70,7 @@ export class HistoryTabManager {
 
     // Update request count
     const countEl = document.getElementById('history-list-count');
-    if (countEl) {
+    if (countEl != null) {
       countEl.textContent = String(metaArray.length);
     }
 
@@ -98,7 +98,7 @@ export class HistoryTabManager {
 
     Object.entries(statsMap).forEach(([stat, value]) => {
       const el = document.querySelector(`[data-history-stat="${stat}"]`);
-      if (el) {
+      if (el != null) {
         el.textContent = value;
       }
     });
@@ -240,7 +240,7 @@ export class HistoryTabManager {
     const resetBtn = document.getElementById('history-filter-reset');
 
     [methodFilter, statusFilter, uriFilter, minTimeFilter].forEach((el) => {
-      if (el) {
+      if (el != null) {
         el.addEventListener('input', () => this.filterRequests());
       }
     });
@@ -287,7 +287,7 @@ export class HistoryTabManager {
       (!filters.method || item.dataset.method === filters.method) &&
       (!filters.status || item.dataset.status?.startsWith(filters.status) === true) &&
       (!filters.uri || item.dataset.uri?.toLowerCase().includes(filters.uri) === true) &&
-      (filters.minTime <= 0 || parseFloat(item.dataset.time || '0') >= filters.minTime)
+      (filters.minTime <= 0 || parseFloat(item.dataset.time ?? '0') >= filters.minTime)
     );
   }
 
@@ -296,7 +296,7 @@ export class HistoryTabManager {
    */
   private updateListTitle(visibleCount: number, totalCount: number): void {
     const title = document.getElementById('history-list-title');
-    if (title) {
+    if (title != null) {
       title.textContent = `Request History (${visibleCount} of ${totalCount})`;
     }
   }
@@ -335,7 +335,7 @@ export class HistoryTabManager {
       btn.addEventListener('click', (e) => {
         e.stopPropagation();
         const requestId = (btn as HTMLElement).dataset.requestId;
-        if (requestId) {
+        if (requestId != null) {
           this.exportRequest(requestId);
         }
       });
@@ -350,7 +350,7 @@ export class HistoryTabManager {
    */
   private exportRequest(requestId: string): void {
     const requestData = StorageManager.getRequest(requestId);
-    if (!requestData) {
+    if (requestData == null) {
       logError('[HistoryTabManager] Request not found:', requestId);
       alert('Request not found in history.');
       return;
@@ -422,23 +422,23 @@ export class HistoryTabManager {
     return Array.from(items).map((item) => {
       const el = item as HTMLElement;
       const memoryText =
-        item.querySelector('.dev-toolbar-history-meta-item:nth-child(3)')?.textContent || '';
+        item.querySelector('.dev-toolbar-history-meta-item:nth-child(3)')?.textContent ?? '';
       const memoryMatch = memoryText.match(/[\d.]+/);
       const memory = memoryMatch ? parseFloat(memoryMatch[0]) : 0;
 
       const queriesText =
-        item.querySelector('.dev-toolbar-history-meta-item:nth-child(4)')?.textContent || '';
+        item.querySelector('.dev-toolbar-history-meta-item:nth-child(4)')?.textContent ?? '';
       const queriesMatch = queriesText.match(/\d+/);
       const queryCount = queriesMatch ? parseInt(queriesMatch[0], 10) : 0;
 
-      const timeAgoText = item.querySelector('.dev-toolbar-history-time-ago')?.textContent || '';
+      const timeAgoText = item.querySelector('.dev-toolbar-history-time-ago')?.textContent ?? '';
       const timestamp = this.parseTimeAgo(timeAgoText);
 
       return {
-        method: el.dataset.method || '',
-        uri: el.dataset.uri || '',
-        status: parseInt(el.dataset.status || '0', 10),
-        time: parseFloat(el.dataset.time || '0'),
+        method: el.dataset.method ?? '',
+        uri: el.dataset.uri ?? '',
+        status: parseInt(el.dataset.status ?? '0', 10),
+        time: parseFloat(el.dataset.time ?? '0'),
         memory,
         query_count: queryCount,
         timestamp,

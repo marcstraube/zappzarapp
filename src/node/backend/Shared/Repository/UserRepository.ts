@@ -178,7 +178,8 @@ export class UserRepository extends AbstractRepository<User> implements UserRepo
       ]);
 
       const row = results[0];
-      if (row === undefined || row.totp_secret === null) {
+      // Explicit null check required by strict-boolean-expressions
+      if (row?.totp_secret == null) {
         return null;
       }
 

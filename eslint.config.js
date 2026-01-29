@@ -116,7 +116,7 @@ export default [
       'no-console': ['warn', { allow: ['warn', 'error'] }],
       'prefer-const': 'error',
       'no-var': 'error',
-      eqeqeq: ['error', 'always'],
+      eqeqeq: ['error', 'always', { null: 'ignore' }], // Allow == null for null/undefined checks
       curly: ['error', 'all'],
     },
   },
@@ -151,8 +151,6 @@ export default [
       '@typescript-eslint/no-unsafe-argument': 'off',
       '@typescript-eslint/no-unsafe-call': 'off',
       '@typescript-eslint/no-unsafe-return': 'off',
-      // Allow nullable checks for DOM elements (querySelector returns null)
-      '@typescript-eslint/strict-boolean-expressions': 'off',
       // HTMLElement union types are common in DOM code
       '@typescript-eslint/no-redundant-type-constituents': 'off',
     },

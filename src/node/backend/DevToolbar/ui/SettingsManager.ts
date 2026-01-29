@@ -109,7 +109,7 @@ export class SettingsManager {
     const container = document.createElement('div');
     container.innerHTML = modalHTML;
     const modalElement = container.firstElementChild;
-    if (modalElement) {
+    if (modalElement != null) {
       document.body.appendChild(modalElement);
     }
 
@@ -156,7 +156,7 @@ export class SettingsManager {
    * Show modal (fade in)
    */
   private showModal(): void {
-    if (this.modal) {
+    if (this.modal != null) {
       this.modal.style.display = 'flex';
       // Trigger reflow for animation
       void this.modal.offsetHeight;
@@ -168,7 +168,7 @@ export class SettingsManager {
    * Hide modal (fade out)
    */
   private hideModal(): void {
-    if (this.modal) {
+    if (this.modal != null) {
       this.modal.style.opacity = '0';
     }
   }
@@ -177,9 +177,9 @@ export class SettingsManager {
    * Remove modal from DOM
    */
   private removeModal(): void {
-    if (this.modal) {
+    if (this.modal != null) {
       // Clean up ESC key handler
-      if (this.escKeyCleanup) {
+      if (this.escKeyCleanup != null) {
         this.escKeyCleanup();
         this.escKeyCleanup = null;
       }
@@ -195,7 +195,7 @@ export class SettingsManager {
    * Attach event handlers to modal
    */
   private attachModalHandlers(): void {
-    if (!this.modal) {
+    if (this.modal == null) {
       return;
     }
 
@@ -270,7 +270,7 @@ export class SettingsManager {
    * Get selected minibar labels from form
    */
   private getSelectedLabels(): MinibarLabelType[] {
-    if (!this.modal) {
+    if (this.modal == null) {
       return [];
     }
 
@@ -303,7 +303,7 @@ export class SettingsManager {
    * Get color value from color input
    */
   private getColorValue(type: string): string | null {
-    if (!this.modal) {
+    if (this.modal == null) {
       return null;
     }
 

@@ -42,7 +42,7 @@ export class RequestSwitcher {
     // Store original badge counts
     if (typeof window !== 'undefined' && 'window' in globalThis) {
       const win = window as DevToolbarWindow;
-      if (win.__DEV_TOOLBAR_DATA__?.metadata) {
+      if (win.__DEV_TOOLBAR_DATA__?.metadata != null) {
         this.originalBadgeCounts = win.__DEV_TOOLBAR_DATA__.metadata.badge_counts ?? null;
         debug('[RequestSwitcher] Stored original badge counts:', this.originalBadgeCounts);
       }
@@ -75,7 +75,7 @@ export class RequestSwitcher {
       // Handle special actions
       if (element.dataset.action === 'view-history') {
         debug('[RequestSwitcher] Opening HISTORY tab');
-        if (onRequestLoad) {
+        if (onRequestLoad != null) {
           onRequestLoad('history');
         }
         switcher.classList.remove('open');
@@ -84,7 +84,7 @@ export class RequestSwitcher {
 
       if (element.dataset.action === 'current') {
         switcher.classList.remove('open');
-        if (this.isViewingHistoricalRequest) {
+        if (this.isViewingHistoricalRequest === true) {
           this.restoreCurrentRequest(onRequestLoad);
         } else {
           debug('[RequestSwitcher] Already viewing current request');
@@ -93,7 +93,7 @@ export class RequestSwitcher {
       }
 
       const requestId = element.dataset.requestId;
-      if (requestId) {
+      if (requestId != null) {
         void this.loadHistoricalRequest(requestId, onRequestLoad);
       }
     });
@@ -171,7 +171,7 @@ export class RequestSwitcher {
    * Load historical request from localStorage
    */
   loadHistoricalRequest(requestId: string, onRequestLoad?: (requestId: string) => void): void {
-    if (this.isLoadingRequest) {
+    if (this.isLoadingRequest === true) {
       debug('[RequestSwitcher] Already loading a request, ignoring');
       return;
     }
@@ -185,7 +185,7 @@ export class RequestSwitcher {
     try {
       const requestData = StorageManager.getRequest(requestId);
 
-      if (!requestData) {
+      if (requestData == null) {
         // noinspection ExceptionCaughtLocallyJS
         throw new Error('Request not found in localStorage');
       }
@@ -195,7 +195,7 @@ export class RequestSwitcher {
 
       // Replace tab content
       const contentContainer = document.querySelector('.dev-toolbar-panel-content');
-      if (!contentContainer) {
+      if (contentContainer == null) {
         // noinspection ExceptionCaughtLocallyJS
         throw new Error('Content container not found');
       }
@@ -213,7 +213,7 @@ export class RequestSwitcher {
       this.updateSwitcherLabel(requestId, true);
 
       // Notify callback
-      if (onRequestLoad) {
+      if (onRequestLoad != null) {
         onRequestLoad(requestId);
       }
 
@@ -234,7 +234,7 @@ export class RequestSwitcher {
     debug('[RequestSwitcher] Restoring current request');
 
     const contentContainer = document.querySelector('.dev-toolbar-panel-content');
-    if (!contentContainer || !this.currentRequestData) {
+    if (contentContainer == null || this.currentRequestData == null) {
       return;
     }
 
@@ -252,7 +252,7 @@ export class RequestSwitcher {
     this.updateSwitcherLabel('current', false);
 
     // Notify callback
-    if (onRequestLoad) {
+    if (onRequestLoad != null) {
       onRequestLoad('current');
     }
 
@@ -264,7 +264,7 @@ export class RequestSwitcher {
    */
   private storeCurrentRequestData(): void {
     const contentContainer = document.querySelector('.dev-toolbar-panel-content');
-    if (contentContainer) {
+    if (contentContainer != null) {
       this.currentRequestData = contentContainer.innerHTML;
     }
   }
@@ -288,12 +288,12 @@ export class RequestSwitcher {
     const toggle = switcher?.querySelector(
       '.dev-toolbar-request-switcher-toggle'
     ) as HTMLElement | null;
-    if (!toggle) return;
+    if (toggle == null) return;
 
     toggle.dataset.current = requestId;
 
     const label = toggle.querySelector('.dev-toolbar-request-switcher-label');
-    if (label) {
+    if (label != null) {
       label.textContent = isHistorical ? 'Request (Historical)' : 'Request';
       (label as HTMLElement).style.color = isHistorical ? '#f59e0b' : '';
     }

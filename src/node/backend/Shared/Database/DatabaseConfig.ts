@@ -134,7 +134,7 @@ export function getDatabaseConfig(): DatabaseConfig {
  * Get DATABASE_URL format (for libraries that expect it).
  */
 export function getDatabaseUrl(config?: DatabaseConfig): string {
-  const cfg = config || getDatabaseConfig();
+  const cfg = config ?? getDatabaseConfig();
   const driver = cfg.type === 'postgres' ? 'postgresql' : 'mysql';
   const encodedPassword = encodeURIComponent(cfg.password);
 
@@ -155,7 +155,7 @@ export function getDatabaseUrl(config?: DatabaseConfig): string {
  * Check if using PostgreSQL.
  */
 export function isPostgres(config?: DatabaseConfig): boolean {
-  const cfg = config || getDatabaseConfig();
+  const cfg = config ?? getDatabaseConfig();
   return cfg.type === 'postgres';
 }
 
@@ -163,7 +163,7 @@ export function isPostgres(config?: DatabaseConfig): boolean {
  * Check if using MySQL/MariaDB.
  */
 export function isMySQL(config?: DatabaseConfig): boolean {
-  const cfg = config || getDatabaseConfig();
+  const cfg = config ?? getDatabaseConfig();
   return cfg.type === 'mysql';
 }
 

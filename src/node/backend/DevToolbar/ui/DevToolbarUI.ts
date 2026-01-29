@@ -96,7 +96,7 @@ export class DevToolbarUI {
         const tabName = (e.target as HTMLElement)
           .closest('.dev-toolbar-panel-tab')
           ?.getAttribute('data-tab');
-        if (tabName) {
+        if (tabName != null) {
           this.tabManager.setActiveTab(tabName, (name) => this.handleTabActivate(name));
         }
       });
@@ -181,13 +181,13 @@ export class DevToolbarUI {
       // Update tab badges
       if (requestId !== 'current') {
         const requestData = StorageManager.getRequest(requestId);
-        if (requestData?.metadata.badge_counts) {
+        if (requestData?.metadata.badge_counts != null) {
           this.tabManager.updateBadgeCounts(requestData.metadata.badge_counts);
         }
       } else {
         // Restore original badge counts
         const originalBadges = this.requestSwitcher.getOriginalBadgeCounts();
-        if (originalBadges) {
+        if (originalBadges != null) {
           this.tabManager.updateBadgeCounts(originalBadges);
         }
       }
@@ -211,7 +211,7 @@ export class DevToolbarUI {
       // Add new listener
       newTab.addEventListener('click', () => {
         const tabName = newTab.dataset.tab;
-        if (tabName) {
+        if (tabName != null) {
           debug('[DevToolbarUI] Tab clicked:', tabName);
           this.tabManager.setActiveTab(tabName, (name) => this.handleTabActivate(name));
         }
@@ -273,7 +273,7 @@ export class DevToolbarUI {
 
     // Update maximize button
     const maximizeBtn = document.querySelector('.dev-toolbar-panel-maximize');
-    if (maximizeBtn) {
+    if (maximizeBtn != null) {
       maximizeBtn.setAttribute('title', isMaximized ? 'Restore' : 'Maximize');
     }
   }
@@ -357,7 +357,7 @@ export class DevToolbarUI {
   private attachXdebugHandlers(): void {
     document.querySelectorAll('[data-action="xdebug-enable"]').forEach((btn) => {
       btn.addEventListener('click', (e) => {
-        const ide = (e.target as HTMLElement).dataset.ide || 'PHPSTORM';
+        const ide = (e.target as HTMLElement).dataset.ide ?? 'PHPSTORM';
         this.xdebugControls.enableXdebug(ide);
       });
     });

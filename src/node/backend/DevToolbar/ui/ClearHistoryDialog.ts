@@ -105,7 +105,7 @@ export class ClearHistoryDialog {
     const container = document.createElement('div');
     container.innerHTML = modalHTML;
     const modalElement = container.firstElementChild;
-    if (modalElement) {
+    if (modalElement != null) {
       document.body.appendChild(modalElement);
     }
 
@@ -116,7 +116,7 @@ export class ClearHistoryDialog {
    * Show modal (fade in)
    */
   private showModal(): void {
-    if (this.modal) {
+    if (this.modal != null) {
       this.modal.style.display = 'flex';
       // Trigger reflow for animation
       void this.modal.offsetHeight;
@@ -128,7 +128,7 @@ export class ClearHistoryDialog {
    * Hide modal (fade out)
    */
   private hideModal(): void {
-    if (this.modal) {
+    if (this.modal != null) {
       this.modal.style.opacity = '0';
     }
   }
@@ -137,9 +137,9 @@ export class ClearHistoryDialog {
    * Remove modal from DOM
    */
   private removeModal(): void {
-    if (this.modal) {
+    if (this.modal != null) {
       // Clean up ESC key handler
-      if (this.escKeyCleanup) {
+      if (this.escKeyCleanup != null) {
         this.escKeyCleanup();
         this.escKeyCleanup = null;
       }
@@ -155,14 +155,14 @@ export class ClearHistoryDialog {
    * Attach event handlers to modal
    */
   private attachModalHandlers(): void {
-    if (!this.modal) {
+    if (this.modal == null) {
       return;
     }
 
     // Confirm button
     const confirmBtn = this.modal.querySelector('#clear-history-confirm');
     confirmBtn?.addEventListener('click', () => {
-      if (this.onConfirm) {
+      if (this.onConfirm != null) {
         this.onConfirm();
       }
       this.close();

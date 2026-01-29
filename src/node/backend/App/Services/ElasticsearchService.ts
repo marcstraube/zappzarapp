@@ -329,7 +329,7 @@ export class ElasticsearchService implements ElasticsearchServiceInterface {
         `/${index}/_doc/${id}`
       );
 
-      if (!response?.found) {
+      if (response?.found !== true) {
         return null;
       }
 

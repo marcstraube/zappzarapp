@@ -35,11 +35,8 @@ export class XdebugControls {
     // Check current cookie status
     const { xdebugActive, xdebugSessionName } = this.getXdebugStatus();
 
-    // Build HTML
-    const html = this.buildControlsHTML(xdebugEnabled, xdebugActive, xdebugSessionName);
-
-    // Inject HTML
-    container.innerHTML = html;
+    // Build and inject HTML
+    container.innerHTML = this.buildControlsHTML(xdebugEnabled, xdebugActive, xdebugSessionName);
 
     debug('[Xdebug] Controls rendered, status:', xdebugActive ? 'active' : 'inactive');
   }
@@ -90,7 +87,7 @@ export class XdebugControls {
 
     return document.cookie.split(';').reduce((acc: Record<string, string>, cookie) => {
       const [key, value] = cookie.trim().split('=');
-      if (key) {
+      if (key != null && key !== '') {
         acc[key] = value ?? '';
       }
       return acc;
