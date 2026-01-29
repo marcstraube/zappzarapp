@@ -181,7 +181,7 @@ export class DevToolbarUI {
       // Update tab badges
       if (requestId !== 'current') {
         const requestData = StorageManager.getRequest(requestId);
-        if (requestData && requestData.metadata.badge_counts) {
+        if (requestData?.metadata.badge_counts) {
           this.tabManager.updateBadgeCounts(requestData.metadata.badge_counts);
         }
       } else {
@@ -307,7 +307,7 @@ export class DevToolbarUI {
         e.stopPropagation();
 
         const content = document.querySelector('.dev-toolbar-panel-content');
-        if (content && content.contains(e.target as Node)) {
+        if (content?.contains(e.target as Node)) {
           const atTop = content.scrollTop === 0;
           const atBottom = content.scrollTop + content.clientHeight >= content.scrollHeight;
 
@@ -343,7 +343,7 @@ export class DevToolbarUI {
             '.dev-toolbar-alert:not(.dismissed)'
           );
 
-          if (remainingAlerts && remainingAlerts.length === 0) {
+          if (remainingAlerts?.length === 0) {
             alertsContainer?.classList.add('dismissed');
           }
         }, 300);

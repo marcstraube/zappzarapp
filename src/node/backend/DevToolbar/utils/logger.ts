@@ -8,13 +8,27 @@
 const isDev = import.meta.env.DEV;
 
 /**
- * Debug log - only shown in development
+ * Development-only console log helper
  */
-export function debug(...args: unknown[]): void {
+function devLog(...args: unknown[]): void {
   if (isDev) {
     // eslint-disable-next-line no-console -- Development logging
     console.log(...args);
   }
+}
+
+/**
+ * Debug log - only shown in development
+ */
+export function debug(...args: unknown[]): void {
+  devLog(...args);
+}
+
+/**
+ * Info log - only shown in development
+ */
+export function info(...args: unknown[]): void {
+  devLog(...args);
 }
 
 /**
@@ -29,14 +43,4 @@ export function warn(...args: unknown[]): void {
  */
 export function error(...args: unknown[]): void {
   console.error(...args);
-}
-
-/**
- * Info - only shown in development
- */
-export function info(...args: unknown[]): void {
-  if (isDev) {
-    // eslint-disable-next-line no-console -- Development logging
-    console.log(...args);
-  }
 }

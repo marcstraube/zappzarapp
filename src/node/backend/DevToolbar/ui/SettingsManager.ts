@@ -10,6 +10,7 @@ import type { MinibarLabelType, BranchColors } from '../types/index.js';
 import { StorageManager } from '../storage/StorageManager.js';
 import { DEFAULT_BRANCH_COLORS } from '../storage/StorageConfig.js';
 import { debug, error as logError } from '../utils/logger.js';
+import { escapeHtml, createEscapeKeyHandler } from '../utils/uiHelpers.js';
 
 /**
  * SettingsManager singleton for managing settings UI
@@ -17,6 +18,7 @@ import { debug, error as logError } from '../utils/logger.js';
 export class SettingsManager {
   private modal: HTMLElement | null = null;
   private isOpen = false;
+  private escKeyCleanup: (() => void) | null = null;
 
   /**
    * Open settings modal
@@ -127,11 +129,11 @@ export class SettingsManager {
 
     return `
             <label class="dev-toolbar-settings-checkbox-item">
-                <input type="checkbox" name="minibar-label" value="${this.escapeHtml(value)}" ${checked}>
+                <input type="checkbox" name="minibar-label" value="${escapeHtml(value)}" ${checked}>
                 <div>
-                    <strong>${this.escapeHtml(title)}</strong>
+                    <strong>${escapeHtml(title)}</strong>
                     <p style="margin: 4px 0 0 0; color: #6b7280; font-size: 0.875rem;">
-                        ${this.escapeHtml(description)}
+                        ${escapeHtml(description)}
                     </p>
                 </div>
             </label>
@@ -144,8 +146,8 @@ export class SettingsManager {
   private buildColorInput(type: string, label: string, value: string): string {
     return `
             <div class="dev-toolbar-settings-color-item">
-                <label for="color-${this.escapeHtml(type)}">${this.escapeHtml(label)}</label>
-                <input type="color" id="color-${this.escapeHtml(type)}" name="color-${this.escapeHtml(type)}" value="${this.escapeHtml(value)}">
+                <label for="color-${escapeHtml(type)}">${escapeHtml(label)}</label>
+                <input type="color" id="color-${escapeHtml(type)}" name="color-${escapeHtml(type)}" value="${escapeHtml(value)}">
             </div>
         `;
   }
@@ -176,6 +178,11 @@ export class SettingsManager {
    */
   private removeModal(): void {
     if (this.modal) {
+      // Clean up ESC key handler
+      if (this.escKeyCleanup) {
+        this.escKeyCleanup();
+        this.escKeyCleanup = null;
+      }
       // Wait for fade animation
       setTimeout(() => {
         this.modal?.remove();
@@ -205,13 +212,7 @@ export class SettingsManager {
     closeBtn?.addEventListener('click', () => this.close());
 
     // ESC key
-    const escHandler = (e: KeyboardEvent): void => {
-      if (e.key === 'Escape') {
-        this.close();
-        document.removeEventListener('keydown', escHandler);
-      }
-    };
-    document.addEventListener('keydown', escHandler);
+    this.escKeyCleanup = createEscapeKeyHandler(() => this.close());
 
     // Overlay click (close if clicked outside modal)
     this.modal.addEventListener('click', (e) => {
@@ -308,19 +309,5 @@ export class SettingsManager {
 
     const input = this.modal.querySelector<HTMLInputElement>(`input[name="color-${type}"]`);
     return input?.value ?? null;
-  }
-
-  /**
-   * Escape HTML special characters
-   */
-  private escapeHtml(text: string): string {
-    const map: Record<string, string> = {
-      '&': '&amp;',
-      '<': '&lt;',
-      '>': '&gt;',
-      '"': '&quot;',
-      "'": '&#039;',
-    };
-    return text.replace(/[&<>"']/g, (char) => map[char] || char);
   }
 }

@@ -329,7 +329,7 @@ export class ElasticsearchService implements ElasticsearchServiceInterface {
         `/${index}/_doc/${id}`
       );
 
-      if (response === null || !response.found) {
+      if (!response?.found) {
         return null;
       }
 
@@ -414,7 +414,7 @@ export class ElasticsearchService implements ElasticsearchServiceInterface {
         doc: fields,
       });
 
-      return response !== null && response.result !== undefined;
+      return response?.result !== undefined;
     } catch {
       return false;
     }

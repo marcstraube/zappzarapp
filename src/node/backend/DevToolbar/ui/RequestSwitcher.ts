@@ -12,6 +12,7 @@ import { StorageManager } from '../storage/StorageManager';
 import { timeAgo } from '../utils/timeUtils';
 import type { RequestData, DevToolbarWindow } from '../types';
 import { debug, error as logError } from '../utils/logger.js';
+import { escapeHtml } from '../utils/uiHelpers.js';
 
 /**
  * RequestSwitcher for navigating between current and historical requests
@@ -146,7 +147,7 @@ export class RequestSwitcher {
         html += `<div class="dev-toolbar-request-switcher-item ${isActive ? 'active' : ''}" data-request-id="${meta.id}">
                     <span class="dev-toolbar-request-switcher-item-method">${meta.method}</span>
                     <span class="dev-toolbar-request-switcher-item-status status-${statusClass}">${meta.status}</span>
-                    <span class="dev-toolbar-request-switcher-item-uri" title="${this.escapeHtml(meta.uri)}">${this.escapeHtml(meta.uri)}</span>
+                    <span class="dev-toolbar-request-switcher-item-uri" title="${escapeHtml(meta.uri)}">${escapeHtml(meta.uri)}</span>
                     <span class="dev-toolbar-request-switcher-item-time">${time}</span>
                 </div>`;
       });
@@ -185,6 +186,7 @@ export class RequestSwitcher {
       const requestData = StorageManager.getRequest(requestId);
 
       if (!requestData) {
+        // noinspection ExceptionCaughtLocallyJS
         throw new Error('Request not found in localStorage');
       }
 
@@ -194,6 +196,7 @@ export class RequestSwitcher {
       // Replace tab content
       const contentContainer = document.querySelector('.dev-toolbar-panel-content');
       if (!contentContainer) {
+        // noinspection ExceptionCaughtLocallyJS
         throw new Error('Content container not found');
       }
 
@@ -305,20 +308,6 @@ export class RequestSwitcher {
     if (status >= 400 && status < 500) return 'client-error';
     if (status >= 500) return 'server-error';
     return 'unknown';
-  }
-
-  /**
-   * Escape HTML
-   */
-  private escapeHtml(text: string): string {
-    const map: Record<string, string> = {
-      '&': '&amp;',
-      '<': '&lt;',
-      '>': '&gt;',
-      '"': '&quot;',
-      "'": '&#039;',
-    };
-    return text.replace(/[&<>"']/g, (char) => map[char] || char);
   }
 
   /**

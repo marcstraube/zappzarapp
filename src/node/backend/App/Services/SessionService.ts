@@ -190,7 +190,7 @@ export class SessionService implements SessionServiceInterface {
 
     // Get session data to find userId for cleanup
     const data = await this.get(sessionId);
-    if (data !== null && data.userId !== undefined) {
+    if (data?.userId !== undefined) {
       await this.removeSessionFromUser(data.userId, sessionId);
     }
 

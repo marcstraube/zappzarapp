@@ -45,10 +45,7 @@ describe('DevDashboard CoverageService', () => {
     it('should return available when coverage report exists and no source dirs', () => {
       // Coverage report exists, but source/test dirs don't
       vi.mocked(fs.existsSync).mockImplementation((path) => {
-        if (typeof path === 'string' && path.includes('coverage/node/index.html')) {
-          return true;
-        }
-        return false; // src/node and tests/node don't exist
+        return typeof path === 'string' && path.includes('coverage/node/index.html');
       });
       vi.mocked(fs.statSync).mockReturnValue({
         mtimeMs: Date.now(),

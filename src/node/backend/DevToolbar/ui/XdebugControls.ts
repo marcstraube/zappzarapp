@@ -9,6 +9,7 @@
 
 import type { XdebugConfig, DevToolbarWindow } from '../types';
 import { debug } from '../utils/logger.js';
+import { escapeHtml } from '../utils/uiHelpers.js';
 
 /**
  * XdebugControls singleton for managing Xdebug UI
@@ -50,7 +51,7 @@ export class XdebugControls {
     if (typeof window !== 'undefined' && 'window' in globalThis) {
       const win = window as DevToolbarWindow;
       return (
-        win.__XDEBUG_CONFIG__ || {
+        win.__XDEBUG_CONFIG__ ?? {
           enabled: false,
           mode: 'off',
           idekey: '',
@@ -74,7 +75,7 @@ export class XdebugControls {
   private getXdebugStatus(): { xdebugActive: boolean; xdebugSessionName: string } {
     const cookies = this.parseCookies();
     const xdebugActive = 'XDEBUG_SESSION' in cookies;
-    const xdebugSessionName = cookies['XDEBUG_SESSION'] || '';
+    const xdebugSessionName = cookies['XDEBUG_SESSION'] ?? '';
 
     return { xdebugActive, xdebugSessionName };
   }
@@ -90,7 +91,7 @@ export class XdebugControls {
     return document.cookie.split(';').reduce((acc: Record<string, string>, cookie) => {
       const [key, value] = cookie.trim().split('=');
       if (key) {
-        acc[key] = value || '';
+        acc[key] = value ?? '';
       }
       return acc;
     }, {});
@@ -104,63 +105,74 @@ export class XdebugControls {
     xdebugActive: boolean,
     xdebugSessionName: string
   ): string {
-    let html = '<div class="dev-toolbar-request-status">';
+    const statusSection = this.buildStatusSection(xdebugEnabled, xdebugActive, xdebugSessionName);
+    const actionsSection = this.buildActionsSection(xdebugEnabled, xdebugActive);
 
-    if (xdebugEnabled) {
-      const statusClass = xdebugActive ? 'active' : 'inactive';
-      const statusText = xdebugActive ? `Xdebug: ${xdebugSessionName}` : 'Xdebug: Off';
-      const statusIcon = xdebugActive ? '●' : '○';
-
-      html += `<div class="dev-toolbar-xdebug-compact dev-toolbar-xdebug-compact-${statusClass}">
-                <span class="dev-toolbar-xdebug-indicator">${statusIcon}</span>
-                <span class="dev-toolbar-xdebug-label">${this.escapeHtml(statusText)}</span>
-            </div>`;
-    } else {
-      html += `<div class="dev-toolbar-xdebug-compact dev-toolbar-xdebug-compact-disabled">
-                <span class="dev-toolbar-xdebug-label">Xdebug: Not Installed</span>
-            </div>`;
-    }
-
-    html += '</div>'; // .dev-toolbar-request-status
-
-    html += '<div class="dev-toolbar-request-actions">';
-
-    if (xdebugEnabled) {
-      if (xdebugActive) {
-        html += `<button class="dev-toolbar-btn dev-toolbar-btn-secondary" data-action="xdebug-disable" title="Disable Xdebug step debugging">
-                    ⏹ Disable
-                </button>`;
-      } else {
-        html += `<button class="dev-toolbar-btn dev-toolbar-btn-secondary" data-action="xdebug-enable" data-ide="PHPSTORM" title="Enable Xdebug for PhpStorm">
-                    ▶ PhpStorm
-                </button>`;
-        html += `<button class="dev-toolbar-btn dev-toolbar-btn-secondary" data-action="xdebug-enable" data-ide="VSCODE" title="Enable Xdebug for VSCode">
-                    ▶ VSCode
-                </button>`;
-      }
-    }
-
-    html += `<button class="dev-toolbar-btn dev-toolbar-btn-secondary" data-action="export-current" title="Export current request as JSON">
-            ⬇ Export
-        </button>`;
-
-    html += '</div>'; // .dev-toolbar-request-actions
-
-    return html;
+    return `${statusSection}${actionsSection}`;
   }
 
   /**
-   * Escape HTML special characters
+   * Build status section HTML
    */
-  private escapeHtml(text: string): string {
-    const map: Record<string, string> = {
-      '&': '&amp;',
-      '<': '&lt;',
-      '>': '&gt;',
-      '"': '&quot;',
-      "'": '&#039;',
-    };
-    return text.replace(/[&<>"']/g, (char) => map[char] || char);
+  private buildStatusSection(
+    xdebugEnabled: boolean,
+    xdebugActive: boolean,
+    xdebugSessionName: string
+  ): string {
+    if (!xdebugEnabled) {
+      return `<div class="dev-toolbar-request-status">
+                <div class="dev-toolbar-xdebug-compact dev-toolbar-xdebug-compact-disabled">
+                  <span class="dev-toolbar-xdebug-label">Xdebug: Not Installed</span>
+                </div>
+              </div>`;
+    }
+
+    const statusClass = xdebugActive ? 'active' : 'inactive';
+    const statusText = xdebugActive ? `Xdebug: ${xdebugSessionName}` : 'Xdebug: Off';
+    const statusIcon = xdebugActive ? '●' : '○';
+
+    return `<div class="dev-toolbar-request-status">
+              <div class="dev-toolbar-xdebug-compact dev-toolbar-xdebug-compact-${statusClass}">
+                <span class="dev-toolbar-xdebug-indicator">${statusIcon}</span>
+                <span class="dev-toolbar-xdebug-label">${escapeHtml(statusText)}</span>
+              </div>
+            </div>`;
+  }
+
+  /**
+   * Build actions section HTML
+   */
+  private buildActionsSection(xdebugEnabled: boolean, xdebugActive: boolean): string {
+    const xdebugButtons = this.buildXdebugButtons(xdebugEnabled, xdebugActive);
+
+    return `<div class="dev-toolbar-request-actions">
+              ${xdebugButtons}
+              <button class="dev-toolbar-btn dev-toolbar-btn-secondary" data-action="export-current" title="Export current request as JSON">
+                ⬇ Export
+              </button>
+            </div>`;
+  }
+
+  /**
+   * Build Xdebug control buttons
+   */
+  private buildXdebugButtons(xdebugEnabled: boolean, xdebugActive: boolean): string {
+    if (!xdebugEnabled) {
+      return '';
+    }
+
+    if (xdebugActive) {
+      return `<button class="dev-toolbar-btn dev-toolbar-btn-secondary" data-action="xdebug-disable" title="Disable Xdebug step debugging">
+                ⏹ Disable
+              </button>`;
+    }
+
+    return `<button class="dev-toolbar-btn dev-toolbar-btn-secondary" data-action="xdebug-enable" data-ide="PHPSTORM" title="Enable Xdebug for PhpStorm">
+              ▶ PhpStorm
+            </button>
+            <button class="dev-toolbar-btn dev-toolbar-btn-secondary" data-action="xdebug-enable" data-ide="VSCODE" title="Enable Xdebug for VSCode">
+              ▶ VSCode
+            </button>`;
   }
 
   /**

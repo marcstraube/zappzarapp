@@ -141,14 +141,17 @@ if ($isDevelopment && str_starts_with($requestPath, '/_dev')) {
 use App\Security\CspNonceHelper;
 
 // 1. Build and send CSP Header (before any output!)
+/** @noinspection PhpUnhandledExceptionInspection - Entry point: CSP failures are critical and handled by global handler */
 $cspHeader = CspNonceHelper::buildCspHeader();
 header("Content-Security-Policy: $cspHeader");
 
 // 2. Define constant for backwards compatibility
+/** @noinspection PhpUnhandledExceptionInspection - Entry point: CSP failures are critical and handled by global handler */
 define('CSP_NONCE', CspNonceHelper::get());
 
 // 3. Share nonce with DevToolbar (if enabled)
 if (DevToolbarGuard::isEnabled() && isset($toolbar)) {
+    /** @noinspection PhpUnhandledExceptionInspection - Entry point: CSP failures are critical and handled by global handler */
     $toolbar->setNonce(CspNonceHelper::get());
 }
 
@@ -169,6 +172,7 @@ if (DevToolbarGuard::isEnabled() && isset($toolbar)) {
  * Security: This fixes the "Application Error Disclosure" vulnerability
  * detected by OWASP ZAP scan.
  */
+/** @noinspection PhpUnhandledExceptionInspection - Entry point: ExceptionHandler initialization failures are fatal */
 $exceptionHandler = new ExceptionHandler();
 $exceptionHandler->register();
 

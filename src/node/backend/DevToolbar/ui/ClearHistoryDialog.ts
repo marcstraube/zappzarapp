@@ -8,6 +8,8 @@
  * - Confirm/Cancel actions
  */
 
+import { createEscapeKeyHandler } from '../utils/uiHelpers.js';
+
 /**
  * ClearHistoryDialog for showing clear confirmation
  */
@@ -15,6 +17,7 @@ export class ClearHistoryDialog {
   private modal: HTMLElement | null = null;
   private isOpen = false;
   private onConfirm: (() => void) | null = null;
+  private escKeyCleanup: (() => void) | null = null;
 
   /**
    * Open dialog with confirmation callback
@@ -135,6 +138,11 @@ export class ClearHistoryDialog {
    */
   private removeModal(): void {
     if (this.modal) {
+      // Clean up ESC key handler
+      if (this.escKeyCleanup) {
+        this.escKeyCleanup();
+        this.escKeyCleanup = null;
+      }
       // Wait for fade animation
       setTimeout(() => {
         this.modal?.remove();
@@ -169,13 +177,7 @@ export class ClearHistoryDialog {
     closeBtn?.addEventListener('click', () => this.close());
 
     // ESC key
-    const escHandler = (e: KeyboardEvent): void => {
-      if (e.key === 'Escape') {
-        this.close();
-        document.removeEventListener('keydown', escHandler);
-      }
-    };
-    document.addEventListener('keydown', escHandler);
+    this.escKeyCleanup = createEscapeKeyHandler(() => this.close());
 
     // Overlay click (close if clicked outside modal)
     this.modal.addEventListener('click', (e) => {

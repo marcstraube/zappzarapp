@@ -181,7 +181,7 @@ class StorageManagerClass {
   getRequest(id: string): RequestData | null {
     try {
       if (this.useMemoryFallback) {
-        return this.memoryStore.requests[id] || null;
+        return this.memoryStore.requests[id] ?? null;
       }
 
       const data = localStorage.getItem(DATA_PREFIX + id);

@@ -82,8 +82,15 @@ export default [
       // Disabled: Very high false positive rate
       'security/detect-object-injection': 'off', // obj[key] is common pattern
 
-      // SonarJS - IDE parity (catches "redundant variable" warnings)
-      'sonarjs/prefer-immediate-return': 'warn',
+      // SonarJS - IDE parity (catches code quality issues like PhpStorm)
+      'sonarjs/prefer-immediate-return': 'warn', // Redundant variables before return
+      'sonarjs/no-identical-functions': 'warn', // Duplicated function bodies
+      'sonarjs/no-duplicated-branches': 'warn', // Identical if/else branches
+      'sonarjs/no-redundant-jump': 'warn', // Redundant return/break/continue
+      'sonarjs/no-useless-catch': 'warn', // Catch blocks that only rethrow
+      'sonarjs/no-small-switch': 'warn', // Switch with only 1-2 cases
+      'sonarjs/prefer-single-boolean-return': 'warn', // Simplify boolean return patterns
+      'sonarjs/cognitive-complexity': ['warn', 15], // Warn if function too complex
 
       // TypeScript specific rules (similar to PHPStan level 5)
       '@typescript-eslint/explicit-function-return-type': 'warn',
@@ -102,6 +109,8 @@ export default [
       '@typescript-eslint/no-unnecessary-type-assertion': 'warn',
       '@typescript-eslint/no-redundant-type-constituents': 'warn',
       '@typescript-eslint/no-useless-empty-export': 'warn',
+      '@typescript-eslint/prefer-nullish-coalescing': 'warn', // Use ?? instead of ||
+      '@typescript-eslint/prefer-optional-chain': 'warn', // Use ?. instead of &&
 
       // Code quality rules
       'no-console': ['warn', { allow: ['warn', 'error'] }],

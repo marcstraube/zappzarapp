@@ -15,6 +15,7 @@ import { downloadFile, exportRequestAsJson } from '../utils/exportUtils';
 import { ClearHistoryDialog } from './ClearHistoryDialog';
 import type { RequestMetadata } from '../types';
 import { debug, warn, error as logError } from '../utils/logger.js';
+import { escapeHtml } from '../utils/uiHelpers.js';
 
 /**
  * HistoryTabManager for managing history tab
@@ -178,26 +179,21 @@ export class HistoryTabManager {
       const fullTimestamp = formatTimestamp(request.timestamp);
 
       // Performance class
-      let perfClass = '';
-      if (request.time > 500) {
-        perfClass = 'slow';
-      } else if (request.time > 200) {
-        perfClass = 'warning';
-      }
+      const perfClass = request.time > 500 ? 'slow' : request.time > 200 ? 'warning' : '';
 
       html += `<div class="dev-toolbar-history-item ${perfClass}"
-                      data-method="${this.escapeHtml(request.method)}"
-                      data-uri="${this.escapeHtml(request.uri)}"
+                      data-method="${escapeHtml(request.method)}"
+                      data-uri="${escapeHtml(request.uri)}"
                       data-status="${request.status}"
                       data-time="${request.time}"
-                      data-request-id="${this.escapeHtml(request.id)}">
+                      data-request-id="${escapeHtml(request.id)}">
                     <div class="dev-toolbar-history-item-header">
                         <span class="dev-toolbar-history-icon">${statusIcon}</span>
-                        <span class="dev-toolbar-history-method">${this.escapeHtml(request.method)}</span>
-                        <span class="dev-toolbar-history-uri">${this.escapeHtml(request.uri)}</span>
+                        <span class="dev-toolbar-history-method">${escapeHtml(request.method)}</span>
+                        <span class="dev-toolbar-history-uri">${escapeHtml(request.uri)}</span>
                         <span class="dev-toolbar-history-time-ago" title="${fullTimestamp}">${timeAgoText}</span>
                         <button class="dev-toolbar-history-item-export"
-                                data-request-id="${this.escapeHtml(request.id)}"
+                                data-request-id="${escapeHtml(request.id)}"
                                 title="Export this request">⬇</button>
                     </div>
                     <div class="dev-toolbar-history-item-meta">
@@ -287,11 +283,12 @@ export class HistoryTabManager {
     item: HTMLElement,
     filters: { method: string; status: string; uri: string; minTime: number }
   ): boolean {
-    if (filters.method && item.dataset.method !== filters.method) return false;
-    if (filters.status && !item.dataset.status?.startsWith(filters.status)) return false;
-    if (filters.uri && !item.dataset.uri?.toLowerCase().includes(filters.uri)) return false;
-    if (filters.minTime && parseFloat(item.dataset.time || '0') < filters.minTime) return false;
-    return true;
+    return (
+      (!filters.method || item.dataset.method === filters.method) &&
+      (!filters.status || item.dataset.status?.startsWith(filters.status) === true) &&
+      (!filters.uri || item.dataset.uri?.toLowerCase().includes(filters.uri) === true) &&
+      (filters.minTime <= 0 || parseFloat(item.dataset.time || '0') >= filters.minTime)
+    );
   }
 
   /**
@@ -454,7 +451,7 @@ export class HistoryTabManager {
    */
   private parseTimeAgo(text: string): number {
     const match = text.match(/(\d+)([smhd])/);
-    if (!match || !match[1] || !match[2]) return Math.floor(Date.now() / 1000);
+    if (!match?.[1] || !match[2]) return Math.floor(Date.now() / 1000);
 
     const value = parseInt(match[1], 10);
     const multipliers: Record<string, number> = { s: 1, m: 60, h: 3600, d: 86400 };
@@ -472,19 +469,5 @@ export class HistoryTabManager {
       StorageManager.clear();
       window.location.reload();
     });
-  }
-
-  /**
-   * Escape HTML
-   */
-  private escapeHtml(text: string): string {
-    const map: Record<string, string> = {
-      '&': '&amp;',
-      '<': '&lt;',
-      '>': '&gt;',
-      '"': '&quot;',
-      "'": '&#039;',
-    };
-    return text.replace(/[&<>"']/g, (char) => map[char] || char);
   }
 }
