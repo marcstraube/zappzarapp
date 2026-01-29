@@ -197,7 +197,7 @@ class HttpClientCollector implements CollectorInterface
 
             // Parse "Name: Value" format
             if (str_contains($header, ':')) {
-                [$name, $value] = explode(':', $header, 2);
+                [$name, $value]      = explode(':', $header, 2);
                 $parsed[trim($name)] = trim($value);
             }
         }

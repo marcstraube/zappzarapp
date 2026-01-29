@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace DevToolbar\DataCollectors;
 use Redis;
+use Throwable;
 
 /**
  * Cache Collector
@@ -117,7 +118,7 @@ class CacheCollector implements CollectorInterface
      * @param Redis|object $redis Redis instance
      * @param string $key Cache key
      * @return mixed Cached value or false
-     * @phpstan-param \Redis $redis
+     * @phpstan-param Redis $redis
      */
     public function wrapRedisGet($redis, string $key): mixed
     {
@@ -151,7 +152,7 @@ class CacheCollector implements CollectorInterface
      * @param mixed $value Value to cache
      * @param int|null $ttl TTL in seconds
      * @return bool Success status
-     * @phpstan-param \Redis $redis
+     * @phpstan-param Redis $redis
      */
     public function wrapRedisSet($redis, string $key, mixed $value, ?int $ttl = null): bool
     {
@@ -181,7 +182,7 @@ class CacheCollector implements CollectorInterface
      * @param Redis|object $redis Redis instance
      * @param string|array<string> $key Cache key(s)
      * @return int Number of keys deleted
-     * @phpstan-param \Redis $redis
+     * @phpstan-param Redis $redis
      */
     public function wrapRedisDelete($redis, string|array $key): int
     {
@@ -282,7 +283,7 @@ class CacheCollector implements CollectorInterface
         try {
             $unserialized = unserialize($value);
             return $unserialized !== false ? $unserialized : $value;
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             return $value;
         }
     }

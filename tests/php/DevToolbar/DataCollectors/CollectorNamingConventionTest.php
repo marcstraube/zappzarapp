@@ -76,8 +76,8 @@ class CollectorNamingConventionTest extends TestCase
             // Handle singletons explicitly
             $collector = match ($class) {
                 ExceptionCollector::class => ExceptionCollector::getInstance(),
-                QueryCollector::class => QueryCollector::getInstance(),
-                default => new $class(),
+                QueryCollector::class     => QueryCollector::getInstance(),
+                default                   => new $class(),
             };
 
             $this->assertSame(

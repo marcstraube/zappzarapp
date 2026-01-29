@@ -139,6 +139,7 @@ if ($isDevelopment && str_starts_with($requestPath, '/_dev')) {
  */
 
 use App\Security\CspNonceHelper;
+use Random\RandomException;
 
 // 1. Build and send CSP Header (before any output!)
 try {
@@ -152,7 +153,7 @@ try {
     if (DevToolbarGuard::isEnabled() && isset($toolbar)) {
         $toolbar->setNonce(CspNonceHelper::get());
     }
-} catch (Random\RandomException $e) {
+} catch (RandomException $e) {
     // Critical: CSP nonce generation failed - no secure random source available
     // This is a fatal security issue - application cannot run without CSP protection
     error_log('[CRITICAL] CSP nonce generation failed: ' . $e->getMessage());
