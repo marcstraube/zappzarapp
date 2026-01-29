@@ -71,14 +71,14 @@ export function generateSparkline(values: number[] | null | undefined): string {
 
   // If all values are equal, use middle tick
   if (range === 0) {
-    return ticks[3].repeat(values.length);
+    return (ticks[3] ?? '▄').repeat(values.length);
   }
 
   let sparkline = '';
   values.forEach((value) => {
     const normalized = (value - min) / range;
     const index = Math.min(7, Math.floor(normalized * 8));
-    sparkline += ticks[index];
+    sparkline += ticks[index] ?? '▁';
   });
 
   return sparkline;

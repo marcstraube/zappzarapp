@@ -43,12 +43,6 @@ export const META_KEY = 'devToolbar.meta';
 export const DATA_PREFIX = 'devToolbar.req_';
 
 /**
- * localStorage key for last active tab
- * Stores: TabName (string)
- */
-export const ACTIVE_TAB_KEY = 'devtoolbar_active_tab';
-
-/**
  * Default minibar labels (active by default)
  * Shows lightning bolt (⚡) as branding by default
  */

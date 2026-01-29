@@ -5,7 +5,7 @@
  * In production: Only warnings and errors are shown
  */
 
-const isDev = import.meta.env?.DEV ?? false;
+const isDev = import.meta.env.DEV;
 
 /**
  * Debug log - only shown in development
