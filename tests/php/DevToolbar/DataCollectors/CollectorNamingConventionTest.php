@@ -32,11 +32,11 @@ class CollectorNamingConventionTest extends TestCase
     {
         $collectors = [
             new CacheCollector(),
-            new ExceptionCollector(),
+            ExceptionCollector::getInstance(), // Singleton
             new HistoryCollector(),
             new HttpClientCollector(),
             new MessageCollector(),
-            new QueryCollector(),
+            QueryCollector::getInstance(), // Singleton
             new RequestCollector(),
             new TimelineCollector(),
         ];
@@ -73,7 +73,13 @@ class CollectorNamingConventionTest extends TestCase
         ];
 
         foreach ($expectedNames as $class => $expectedName) {
-            $collector = new $class();
+            // Handle singletons explicitly
+            $collector = match ($class) {
+                ExceptionCollector::class => ExceptionCollector::getInstance(),
+                QueryCollector::class => QueryCollector::getInstance(),
+                default => new $class(),
+            };
+
             $this->assertSame(
                 $expectedName,
                 $collector->getName(),
