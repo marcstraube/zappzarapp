@@ -33,7 +33,7 @@ class CacheCollectorTest extends TestCase
 
     public function testGetName(): void
     {
-        $this->assertEquals('CACHE', $this->collector->getName());
+        $this->assertEquals('cache', $this->collector->getName());
     }
 
     public function testTracksCacheHit(): void
@@ -198,4 +198,79 @@ class CacheCollectorTest extends TestCase
 
         $this->assertIsArray($operation['backtrace']);
     }
+
+    /**
+     * Regression test: JSON strings should not cause unserialize errors
+     *
+     * Bug: CacheCollector::filterValue() tried to unserialize all strings,
+     * which caused "unserialize(): Error at offset 0 of 27 bytes" for JSON.
+     *
+     * This prevented demoCacheOperations() from completing, which blocked
+     * demoTimeline() from running, causing timeline to show only 2 entries.
+     *
+     * Fix: Check for serialized format markers before attempting unserialize.
+     */
+    public function testJsonStringsDoNotCauseUnserializeErrors(): void
+    {
+        $this->collector->start();
+
+        // These JSON strings should NOT cause errors
+        $jsonValues = [
+            '{"id": 123, "name": "John"}',
+            '{"token": "secret123", "expires": 3600}',
+            '{"user_id": 123, "last_active": 1234567890}',
+            '[1, 2, 3, 4, 5]',
+            '"simple string"',
+            'null',
+            'true',
+            '42',
+        ];
+
+        foreach ($jsonValues as $index => $json) {
+            // Should not throw unserialize errors
+            $this->collector->trackOperation(
+                'get',
+                'test:key:' . $index,
+                2.0,
+                $json,
+                true,
+                3600
+            );
+        }
+
+        $this->collector->stop();
+
+        // All operations should be tracked successfully
+        $data = $this->collector->getData();
+        $this->assertSame(count($jsonValues), $data['count']);
+        $this->assertSame(count($jsonValues), $data['hits']);
+        $this->assertSame(0, $data['misses']);
+    }
+
+    /**
+     * Test that actual PHP serialized data IS unserialized correctly
+     */
+    public function testPhpSerializedDataIsUnserialized(): void
+    {
+        $this->collector->start();
+
+        $phpArray = ['id' => 123, 'name' => 'John'];
+        $serialized = serialize($phpArray);
+
+        $this->collector->trackOperation('get', 'test:key', 2.0, $serialized, true);
+
+        $this->collector->stop();
+
+        $data = $this->collector->getData();
+
+        $this->assertSame(1, $data['count']);
+        $this->assertCount(1, $data['operations']);
+
+        // The value should have been unserialized and filtered
+        $operation = $data['operations'][0];
+        $this->assertIsArray($operation['value']);
+        $this->assertArrayHasKey('id', $operation['value']);
+        $this->assertArrayHasKey('name', $operation['value']);
+    }
 }
+

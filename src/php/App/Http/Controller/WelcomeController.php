@@ -34,7 +34,7 @@ readonly class WelcomeController
      */
     public function index(): Response
     {
-        // Demo DevToolbar features if enabled  
+        // Demo DevToolbar features if enabled
         if (\DevToolbar\Guard\DevToolbarGuard::isEnabled()) {
             try {
                 $this->demoDevToolbarFeatures();
@@ -74,15 +74,10 @@ readonly class WelcomeController
      */
     private function demoDevToolbarFeatures(): void
     {
-        error_log('=== DEMO TOOLBAR FEATURES CALLED ===');
-        
         $toolbar = DevToolbar::getInstance();
         if (!$toolbar->isBooted()) {
-            error_log('WARNING: Toolbar not booted!');
             return;
         }
-        
-        error_log('Toolbar is booted, starting demos...');
 
         // 1. Demo QUERIES Tab - Simulate database queries with N+1 pattern
         $this->demoQueries();
@@ -154,10 +149,6 @@ readonly class WelcomeController
         } catch (\Exception $e) {
             $collector->trackException($e, handled: true);
         }
-
-        // Debug: Check if exceptions were tracked
-        $data = $collector->getData();
-        error_log('ExceptionCollector tracked: ' . $data['count'] . ' exceptions');
     }
 
     /**
@@ -167,7 +158,6 @@ readonly class WelcomeController
     {
         $collector = $toolbar->getCollector('http');
         if (!$collector instanceof HttpClientCollector) {
-            error_log('HTTP Collector not found or wrong type');
             return;
         }
 
@@ -179,10 +169,6 @@ readonly class WelcomeController
 
         // Slow request (red)
         $collector->trackRequest('GET', 'https://slow-api.example.com/data', 650.0, 200, ['Content-Type' => 'application/json'], '{"data": "large response..."}');
-
-        // Debug
-        $data = $collector->getData();
-        error_log('HTTP Collector tracked: ' . $data['count'] . ' requests');
     }
 
     /**

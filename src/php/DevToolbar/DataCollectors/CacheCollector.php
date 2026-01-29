@@ -248,9 +248,9 @@ class CacheCollector implements CollectorInterface
             return $value;
         }
 
-        // Try to unserialize if serialized
-        if (is_string($value)) {
-            $unserialized = unserialize($value);
+        // Try to unserialize if serialized (check first to avoid warnings)
+        if (is_string($value) && (str_starts_with($value, 'a:') || str_starts_with($value, 'O:') || str_starts_with($value, 's:'))) {
+            $unserialized = @unserialize($value);
             if ($unserialized !== false) {
                 $value = $unserialized;
             }

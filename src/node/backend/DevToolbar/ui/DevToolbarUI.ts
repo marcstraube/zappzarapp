@@ -388,8 +388,6 @@ export class DevToolbarUI {
      */
     private updateHistoryBadge(): void {
         const metaArray = StorageManager.getMetadata();
-        console.log('[DevToolbarUI] Updating history badge. Metadata count:', metaArray.length);
-        console.log('[DevToolbarUI] Metadata entries:', metaArray.map(m => m.id));
         this.tabManager.updateHistoryBadge(metaArray.length);
     }
 
