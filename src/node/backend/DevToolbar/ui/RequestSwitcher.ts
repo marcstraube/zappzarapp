@@ -65,15 +65,14 @@ export class RequestSwitcher {
 
     // Handle item clicks
     dropdown?.addEventListener('click', (e) => {
-      const item = (e.target as HTMLElement).closest(
-        '.dev-toolbar-request-switcher-item'
-      ) as HTMLElement | null;
-      if (!item) return;
+      const target = e.target as HTMLElement;
+      const element = target.closest('.dev-toolbar-request-switcher-item');
+      if (!(element instanceof HTMLElement)) return;
 
-      debug('[RequestSwitcher] Item clicked:', item.dataset);
+      debug('[RequestSwitcher] Item clicked:', element.dataset);
 
       // Handle special actions
-      if (item.dataset.action === 'view-history') {
+      if (element.dataset.action === 'view-history') {
         debug('[RequestSwitcher] Opening HISTORY tab');
         if (onRequestLoad) {
           onRequestLoad('history');
@@ -82,7 +81,7 @@ export class RequestSwitcher {
         return;
       }
 
-      if (item.dataset.action === 'current') {
+      if (element.dataset.action === 'current') {
         switcher.classList.remove('open');
         if (this.isViewingHistoricalRequest) {
           this.restoreCurrentRequest(onRequestLoad);
@@ -92,7 +91,7 @@ export class RequestSwitcher {
         return;
       }
 
-      const requestId = item.dataset.requestId;
+      const requestId = element.dataset.requestId;
       if (requestId) {
         void this.loadHistoricalRequest(requestId, onRequestLoad);
       }
@@ -283,7 +282,9 @@ export class RequestSwitcher {
    */
   private updateSwitcherLabel(requestId: string, isHistorical: boolean): void {
     const switcher = document.querySelector('.dev-toolbar-request-switcher');
-    const toggle = switcher?.querySelector('.dev-toolbar-request-switcher-toggle') as HTMLElement;
+    const toggle = switcher?.querySelector(
+      '.dev-toolbar-request-switcher-toggle'
+    ) as HTMLElement | null;
     if (!toggle) return;
 
     toggle.dataset.current = requestId;

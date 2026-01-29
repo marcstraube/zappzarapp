@@ -114,7 +114,9 @@ describe('timeUtils', () => {
     });
 
     it('should return empty string for null/undefined', () => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Test requires invalid input types
       expect(generateSparkline(null as any)).toBe('');
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Test requires invalid input types
       expect(generateSparkline(undefined as any)).toBe('');
     });
 

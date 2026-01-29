@@ -168,6 +168,7 @@ describe('RequestSwitcher', () => {
     });
 
     it('should handle missing window globals gracefully', () => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Test requires global manipulation
       (window as any).__DEV_TOOLBAR_DATA__ = undefined;
 
       expect(() => requestSwitcher.init()).not.toThrow();
@@ -179,7 +180,7 @@ describe('RequestSwitcher', () => {
       requestSwitcher.init();
     });
 
-    it('should load request from storage', async () => {
+    it('should load request from storage', () => {
       const historicalRequest: RequestData = {
         id: 'hist-req-456',
         metadata: mockRequestMetadata({ id: 'hist-req-456', uri: '/historical' }),
@@ -191,12 +192,12 @@ describe('RequestSwitcher', () => {
 
       vi.mocked(StorageManager.getRequest).mockReturnValue(historicalRequest);
 
-      await requestSwitcher.loadHistoricalRequest('hist-req-456');
+      requestSwitcher.loadHistoricalRequest('hist-req-456');
 
       expect(StorageManager.getRequest).toHaveBeenCalledWith('hist-req-456');
     });
 
-    it('should replace tab content with historical data', async () => {
+    it('should replace tab content with historical data', () => {
       const historicalRequest: RequestData = {
         id: 'hist-req-456',
         metadata: mockRequestMetadata({ id: 'hist-req-456' }),
@@ -208,7 +209,7 @@ describe('RequestSwitcher', () => {
 
       vi.mocked(StorageManager.getRequest).mockReturnValue(historicalRequest);
 
-      await requestSwitcher.loadHistoricalRequest('hist-req-456');
+      requestSwitcher.loadHistoricalRequest('hist-req-456');
 
       const contentContainer = document.querySelector('.dev-toolbar-panel-content');
       expect(contentContainer?.innerHTML).toContain('Historical request');
@@ -216,7 +217,7 @@ describe('RequestSwitcher', () => {
       expect(contentContainer?.innerHTML).not.toContain('Current request content');
     });
 
-    it('should update switcher label to show historical state', async () => {
+    it('should update switcher label to show historical state', () => {
       const historicalRequest: RequestData = {
         id: 'hist-req-456',
         metadata: mockRequestMetadata({ id: 'hist-req-456' }),
@@ -225,13 +226,13 @@ describe('RequestSwitcher', () => {
 
       vi.mocked(StorageManager.getRequest).mockReturnValue(historicalRequest);
 
-      await requestSwitcher.loadHistoricalRequest('hist-req-456');
+      requestSwitcher.loadHistoricalRequest('hist-req-456');
 
       const label = document.querySelector('.dev-toolbar-request-switcher-label');
       expect(label?.textContent).toBe('Request (Historical)');
     });
 
-    it('should mark as viewing historical request', async () => {
+    it('should mark as viewing historical request', () => {
       const historicalRequest: RequestData = {
         id: 'hist-req-456',
         metadata: mockRequestMetadata({ id: 'hist-req-456' }),
@@ -240,13 +241,13 @@ describe('RequestSwitcher', () => {
 
       vi.mocked(StorageManager.getRequest).mockReturnValue(historicalRequest);
 
-      await requestSwitcher.loadHistoricalRequest('hist-req-456');
+      requestSwitcher.loadHistoricalRequest('hist-req-456');
 
       expect(requestSwitcher.isViewingHistory()).toBe(true);
       expect(requestSwitcher.getCurrentHistoricalRequestId()).toBe('hist-req-456');
     });
 
-    it('should call onRequestLoad callback', async () => {
+    it('should call onRequestLoad callback', () => {
       const onRequestLoad = vi.fn();
       const historicalRequest: RequestData = {
         id: 'hist-req-456',
@@ -257,7 +258,7 @@ describe('RequestSwitcher', () => {
       vi.mocked(StorageManager.getRequest).mockReturnValue(historicalRequest);
 
       // Pass callback to loadHistoricalRequest, not init
-      await requestSwitcher.loadHistoricalRequest('hist-req-456', onRequestLoad);
+      requestSwitcher.loadHistoricalRequest('hist-req-456', onRequestLoad);
 
       expect(onRequestLoad).toHaveBeenCalledWith('hist-req-456');
     });
@@ -268,7 +269,7 @@ describe('RequestSwitcher', () => {
       expect(() => requestSwitcher.loadHistoricalRequest('non-existent')).not.toThrow();
     });
 
-    it('should prevent multiple concurrent loads', async () => {
+    it('should prevent multiple concurrent loads', () => {
       const historicalRequest: RequestData = {
         id: 'hist-req-456',
         metadata: mockRequestMetadata({ id: 'hist-req-456' }),
@@ -277,17 +278,15 @@ describe('RequestSwitcher', () => {
 
       vi.mocked(StorageManager.getRequest).mockReturnValue(historicalRequest);
 
-      const promise1 = requestSwitcher.loadHistoricalRequest('hist-req-456');
-      const promise2 = requestSwitcher.loadHistoricalRequest('hist-req-789');
-
-      await Promise.all([promise1, promise2]);
+      requestSwitcher.loadHistoricalRequest('hist-req-456');
+      requestSwitcher.loadHistoricalRequest('hist-req-789');
 
       // Both calls go through (lock only prevents UI glitches, not duplicate calls)
       // This is acceptable behavior - testing that it doesn't crash
       expect(StorageManager.getRequest).toHaveBeenCalled();
     });
 
-    it('should add loading class during load', async () => {
+    it('should add loading class during load', () => {
       const historicalRequest: RequestData = {
         id: 'hist-req-456',
         metadata: mockRequestMetadata({ id: 'hist-req-456' }),
@@ -296,18 +295,16 @@ describe('RequestSwitcher', () => {
 
       vi.mocked(StorageManager.getRequest).mockReturnValue(historicalRequest);
 
-      const loadPromise = requestSwitcher.loadHistoricalRequest('hist-req-456');
+      requestSwitcher.loadHistoricalRequest('hist-req-456');
 
-      // Check loading class (might be async)
+      // Check loading class was removed after load
       const switcher = document.querySelector('.dev-toolbar-request-switcher');
-
-      await loadPromise;
 
       // Loading class should be removed after load
       expect(switcher?.classList.contains('loading')).toBe(false);
     });
 
-    it('should close dropdown after loading', async () => {
+    it('should close dropdown after loading', () => {
       const historicalRequest: RequestData = {
         id: 'hist-req-456',
         metadata: mockRequestMetadata({ id: 'hist-req-456' }),
@@ -319,7 +316,7 @@ describe('RequestSwitcher', () => {
       const switcher = document.querySelector('.dev-toolbar-request-switcher');
       switcher?.classList.add('open');
 
-      await requestSwitcher.loadHistoricalRequest('hist-req-456');
+      requestSwitcher.loadHistoricalRequest('hist-req-456');
 
       expect(switcher?.classList.contains('open')).toBe(false);
     });
@@ -330,7 +327,7 @@ describe('RequestSwitcher', () => {
       requestSwitcher.init();
     });
 
-    it('should restore original content', async () => {
+    it('should restore original content', () => {
       const historicalRequest: RequestData = {
         id: 'hist-req-456',
         metadata: mockRequestMetadata({ id: 'hist-req-456' }),
@@ -339,7 +336,7 @@ describe('RequestSwitcher', () => {
 
       vi.mocked(StorageManager.getRequest).mockReturnValue(historicalRequest);
 
-      await requestSwitcher.loadHistoricalRequest('hist-req-456');
+      requestSwitcher.loadHistoricalRequest('hist-req-456');
 
       requestSwitcher.restoreCurrentRequest();
 
@@ -348,7 +345,7 @@ describe('RequestSwitcher', () => {
       expect(contentContainer?.innerHTML).not.toContain('Historical');
     });
 
-    it('should update switcher label to current state', async () => {
+    it('should update switcher label to current state', () => {
       const historicalRequest: RequestData = {
         id: 'hist-req-456',
         metadata: mockRequestMetadata({ id: 'hist-req-456' }),
@@ -357,14 +354,14 @@ describe('RequestSwitcher', () => {
 
       vi.mocked(StorageManager.getRequest).mockReturnValue(historicalRequest);
 
-      await requestSwitcher.loadHistoricalRequest('hist-req-456');
+      requestSwitcher.loadHistoricalRequest('hist-req-456');
       requestSwitcher.restoreCurrentRequest();
 
       const label = document.querySelector('.dev-toolbar-request-switcher-label');
       expect(label?.textContent).toBe('Request');
     });
 
-    it('should reset viewing history flags', async () => {
+    it('should reset viewing history flags', () => {
       const historicalRequest: RequestData = {
         id: 'hist-req-456',
         metadata: mockRequestMetadata({ id: 'hist-req-456' }),
@@ -373,14 +370,14 @@ describe('RequestSwitcher', () => {
 
       vi.mocked(StorageManager.getRequest).mockReturnValue(historicalRequest);
 
-      await requestSwitcher.loadHistoricalRequest('hist-req-456');
+      requestSwitcher.loadHistoricalRequest('hist-req-456');
       requestSwitcher.restoreCurrentRequest();
 
       expect(requestSwitcher.isViewingHistory()).toBe(false);
       expect(requestSwitcher.getCurrentHistoricalRequestId()).toBeNull();
     });
 
-    it('should call onRequestLoad callback with "current"', async () => {
+    it('should call onRequestLoad callback with "current"', () => {
       const onRequestLoad = vi.fn();
 
       requestSwitcher.init(onRequestLoad);
@@ -409,8 +406,9 @@ describe('RequestSwitcher', () => {
       // Create metadata without badge_counts property
       const metadata = mockRequestMetadata({ id: 'test' });
 
-      delete (metadata as unknown as Record<string, unknown>).badge_counts;
+      delete (metadata as Record<string, unknown>).badge_counts;
 
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Test requires global manipulation
       (window as any).__DEV_TOOLBAR_DATA__ = {
         id: 'test',
         metadata: metadata,
@@ -438,7 +436,7 @@ describe('RequestSwitcher', () => {
       requestSwitcher.init();
     });
 
-    it('should load request when dropdown item is clicked', async () => {
+    it('should load request when dropdown item is clicked', () => {
       const historicalRequest: RequestData = {
         id: 'req-1',
         metadata: mockRequestMetadata({ id: 'req-1' }),
@@ -451,9 +449,6 @@ describe('RequestSwitcher', () => {
       const item = dropdown?.querySelector('[data-request-id="req-1"]');
 
       item?.dispatchEvent(new Event('click', { bubbles: true }));
-
-      // Wait for async operation
-      await new Promise((resolve) => setTimeout(resolve, 50));
 
       expect(StorageManager.getRequest).toHaveBeenCalledWith('req-1');
     });
@@ -481,7 +476,7 @@ describe('RequestSwitcher', () => {
   });
 
   describe('integration scenarios', () => {
-    it('should handle complete load and restore cycle', async () => {
+    it('should handle complete load and restore cycle', () => {
       const metadata = [mockRequestMetadata({ id: 'req-1', uri: '/api/test' })];
       const historicalRequest: RequestData = {
         id: 'req-1',
@@ -496,7 +491,7 @@ describe('RequestSwitcher', () => {
       requestSwitcher.init(onRequestLoad);
 
       // Load historical (pass callback)
-      await requestSwitcher.loadHistoricalRequest('req-1', onRequestLoad);
+      requestSwitcher.loadHistoricalRequest('req-1', onRequestLoad);
       expect(requestSwitcher.isViewingHistory()).toBe(true);
 
       // Restore current (pass callback)

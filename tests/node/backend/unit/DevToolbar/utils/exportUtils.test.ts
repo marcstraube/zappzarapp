@@ -170,10 +170,16 @@ describe('exportUtils', () => {
   });
 
   describe('downloadJson', () => {
-    let createElementSpy: any;
-    let createObjectURLSpy: any;
-    let revokeObjectURLSpy: any;
-    let mockAnchor: any;
+    interface MockAnchor {
+      href: string;
+      download: string;
+      click: ReturnType<typeof vi.fn>;
+    }
+
+    let createElementSpy: ReturnType<typeof vi.spyOn<typeof document.createElement>>;
+    let createObjectURLSpy: ReturnType<typeof vi.spyOn<typeof URL.createObjectURL>>;
+    let revokeObjectURLSpy: ReturnType<typeof vi.spyOn<typeof URL.revokeObjectURL>>;
+    let mockAnchor: MockAnchor;
 
     beforeEach(() => {
       // Mock anchor element
@@ -183,7 +189,9 @@ describe('exportUtils', () => {
         click: vi.fn(),
       };
 
-      createElementSpy = vi.spyOn(document, 'createElement').mockReturnValue(mockAnchor);
+      createElementSpy = vi
+        .spyOn(document, 'createElement')
+        .mockReturnValue(mockAnchor as unknown as HTMLElement);
       createObjectURLSpy = vi.spyOn(URL, 'createObjectURL').mockReturnValue('blob:mock-url');
       revokeObjectURLSpy = vi.spyOn(URL, 'revokeObjectURL').mockImplementation(() => {});
     });
@@ -245,7 +253,7 @@ describe('exportUtils', () => {
 
       createObjectURLSpy = vi.spyOn(URL, 'createObjectURL').mockImplementation((blob: Blob) => {
         // Read blob content for verification
-        blob.text().then((text) => {
+        void blob.text().then((text) => {
           blobContent = text;
         });
         return 'blob:mock-url';
@@ -262,10 +270,16 @@ describe('exportUtils', () => {
   });
 
   describe('downloadFile', () => {
-    let createElementSpy: any;
-    let createObjectURLSpy: any;
-    let revokeObjectURLSpy: any;
-    let mockAnchor: any;
+    interface MockAnchor {
+      href: string;
+      download: string;
+      click: ReturnType<typeof vi.fn>;
+    }
+
+    let _createElementSpy: ReturnType<typeof vi.spyOn<typeof document.createElement>>;
+    let createObjectURLSpy: ReturnType<typeof vi.spyOn<typeof URL.createObjectURL>>;
+    let revokeObjectURLSpy: ReturnType<typeof vi.spyOn<typeof URL.revokeObjectURL>>;
+    let mockAnchor: MockAnchor;
 
     beforeEach(() => {
       mockAnchor = {
@@ -274,7 +288,9 @@ describe('exportUtils', () => {
         click: vi.fn(),
       };
 
-      createElementSpy = vi.spyOn(document, 'createElement').mockReturnValue(mockAnchor);
+      _createElementSpy = vi
+        .spyOn(document, 'createElement')
+        .mockReturnValue(mockAnchor as unknown as HTMLElement);
       createObjectURLSpy = vi.spyOn(URL, 'createObjectURL').mockReturnValue('blob:mock-url');
       revokeObjectURLSpy = vi.spyOn(URL, 'revokeObjectURL').mockImplementation(() => {});
     });

@@ -18,6 +18,7 @@ describe('XdebugControls', () => {
     document.cookie = '';
 
     // Reset window globals
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Test requires global manipulation
     (window as any).__XDEBUG_CONFIG__ = undefined;
 
     xdebugControls = new XdebugControls();
@@ -30,6 +31,7 @@ describe('XdebugControls', () => {
 
     it('should render disabled state when Xdebug not installed', () => {
       document.body.innerHTML = '<div id="dev-toolbar-request-controls-container"></div>';
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Test requires global manipulation
       (window as any).__XDEBUG_CONFIG__ = { enabled: false };
 
       xdebugControls.render();
@@ -41,6 +43,7 @@ describe('XdebugControls', () => {
 
     it('should render inactive state when Xdebug enabled but not active', () => {
       document.body.innerHTML = '<div id="dev-toolbar-request-controls-container"></div>';
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Test requires global manipulation
       (window as any).__XDEBUG_CONFIG__ = { enabled: true };
 
       xdebugControls.render();
@@ -54,6 +57,7 @@ describe('XdebugControls', () => {
 
     it('should render active state when Xdebug session active', () => {
       document.body.innerHTML = '<div id="dev-toolbar-request-controls-container"></div>';
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Test requires global manipulation
       (window as any).__XDEBUG_CONFIG__ = { enabled: true };
       document.cookie = 'XDEBUG_SESSION=PHPSTORM';
 
@@ -67,6 +71,7 @@ describe('XdebugControls', () => {
 
     it('should always render export button', () => {
       document.body.innerHTML = '<div id="dev-toolbar-request-controls-container"></div>';
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Test requires global manipulation
       (window as any).__XDEBUG_CONFIG__ = { enabled: false };
 
       xdebugControls.render();
@@ -78,6 +83,7 @@ describe('XdebugControls', () => {
 
     it('should escape HTML in session name', () => {
       document.body.innerHTML = '<div id="dev-toolbar-request-controls-container"></div>';
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Test requires global manipulation
       (window as any).__XDEBUG_CONFIG__ = { enabled: true };
       document.cookie = 'XDEBUG_SESSION=<script>alert("xss")</script>';
 
@@ -92,6 +98,7 @@ describe('XdebugControls', () => {
   describe('enableXdebug', () => {
     it('should set cookie and reload', () => {
       document.body.innerHTML = '<div id="dev-toolbar-request-controls-container"></div>';
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Test requires global manipulation
       (window as any).__XDEBUG_CONFIG__ = { enabled: true };
 
       // Mock window.location.reload

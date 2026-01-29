@@ -7,12 +7,11 @@
  * @vitest-environment happy-dom
  */
 
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { StorageManager } from '@backend/DevToolbar/storage/StorageManager';
 import {
   MAX_METADATA,
   MAX_FULL_DATA,
-  MIN_SAFE_ENTRIES,
   CONFIG_KEY,
   META_KEY,
   DATA_PREFIX,
@@ -26,19 +25,24 @@ import {
 describe('StorageManager', () => {
   beforeEach(() => {
     // Clear localStorage (provided by happy-dom)
-    if (typeof localStorage !== 'undefined' && localStorage !== null) {
+    if (typeof localStorage !== 'undefined') {
       localStorage.clear();
     }
 
     // Reset window globals
     if (typeof window !== 'undefined') {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Test setup requires global manipulation
       (window as any).__DEV_TOOLBAR_DATA__ = undefined;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Test setup requires global manipulation
       (window as any).__XDEBUG_CONFIG__ = undefined;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Test setup requires global manipulation
       (window as any).__DEV_TOOLBAR_MIGRATION__ = undefined;
     }
 
     // Reset StorageManager internal state
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Test setup requires internal state manipulation
     (StorageManager as any).useMemoryFallback = false;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Test setup requires internal state manipulation
     (StorageManager as any).memoryStore = { meta: [], requests: {} };
   });
 
@@ -73,8 +77,8 @@ describe('StorageManager', () => {
     });
 
     it('should handle missing toolbar data gracefully', () => {
-      const win = window as any;
-      win.__DEV_TOOLBAR_DATA__ = undefined;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Test requires global manipulation
+      (window as any).__DEV_TOOLBAR_DATA__ = undefined;
 
       expect(() => StorageManager.init()).not.toThrow();
 
@@ -86,7 +90,7 @@ describe('StorageManager', () => {
 
   describe.skip('handleMigration', () => {
     it('should migrate requests from session storage', () => {
-      const migrationData = mockDevToolbarMigration([
+      const _migrationData = mockDevToolbarMigration([
         {
           id: 'migrated-1',
           metadata: mockRequestMetadata({ id: 'migrated-1' }),
@@ -186,11 +190,13 @@ describe('StorageManager', () => {
     });
 
     it('should use memory fallback when localStorage unavailable', () => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Test requires internal state manipulation
       (StorageManager as any).useMemoryFallback = true;
 
       const meta = mockRequestMetadata({ id: 'memory-test' });
       StorageManager.storeRequest('memory-test', meta, { request: '<div>Test</div>' });
 
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Test requires internal state access
       const memoryStore = (StorageManager as any).memoryStore;
       expect(memoryStore.meta).toHaveLength(1);
       expect(memoryStore.requests['memory-test']).toBeTruthy();
@@ -223,7 +229,9 @@ describe('StorageManager', () => {
     });
 
     it('should retrieve from memory when using fallback', () => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Test requires internal state manipulation
       (StorageManager as any).useMemoryFallback = true;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Test requires internal state manipulation
       (StorageManager as any).memoryStore.requests['mem-test'] = {
         id: 'mem-test',
         metadata: mockRequestMetadata({ id: 'mem-test' }),
@@ -286,6 +294,7 @@ describe('StorageManager', () => {
     });
 
     it('should not run when using memory fallback', () => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Test requires internal state manipulation
       (StorageManager as any).useMemoryFallback = true;
 
       const before = localStorage.length;
@@ -329,7 +338,9 @@ describe('StorageManager', () => {
     });
 
     it('should clear memory store when using fallback', () => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Test requires internal state manipulation
       (StorageManager as any).useMemoryFallback = true;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Test requires internal state manipulation
       (StorageManager as any).memoryStore = {
         meta: [mockRequestMetadata({ id: 'test-1' })],
         requests: {
@@ -339,7 +350,9 @@ describe('StorageManager', () => {
 
       StorageManager.clear();
 
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Test requires internal state access
       expect((StorageManager as any).memoryStore.meta).toEqual([]);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Test requires internal state access
       expect((StorageManager as any).memoryStore.requests).toEqual({});
     });
   });
@@ -369,6 +382,7 @@ describe('StorageManager', () => {
     });
 
     it('should not persist config when using memory fallback', () => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Test requires internal state manipulation
       (StorageManager as any).useMemoryFallback = true;
 
       const before = localStorage.length;
@@ -382,6 +396,7 @@ describe('StorageManager', () => {
 
   describe('LRU eviction (memory fallback)', () => {
     beforeEach(() => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Test requires internal state manipulation
       (StorageManager as any).useMemoryFallback = true;
     });
 
@@ -392,6 +407,7 @@ describe('StorageManager', () => {
         StorageManager.storeRequest(`req-${i}`, meta, {});
       }
 
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Test requires internal state access
       const memoryStore = (StorageManager as any).memoryStore;
       expect(Object.keys(memoryStore.requests)).toHaveLength(MAX_FULL_DATA);
 
@@ -407,6 +423,7 @@ describe('StorageManager', () => {
         StorageManager.storeRequest(`req-${i}`, meta, {});
       }
 
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Test requires internal state access
       const memoryStore = (StorageManager as any).memoryStore;
       expect(memoryStore.meta).toHaveLength(MAX_METADATA);
     });
