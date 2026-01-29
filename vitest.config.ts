@@ -6,6 +6,9 @@ export default defineConfig({
     // Test environment
     environment: 'node',
 
+    // Setup files (run before all tests)
+    setupFiles: ['./tests/node/backend/unit/DevToolbar/setup.ts'],
+
     // Test file patterns (Node.js backend tests only in tests/node/backend/)
     include: ['tests/node/backend/**/*.{test,spec}.{ts,js}'],
     exclude: ['**/node_modules/**', 'dist', 'build', 'vendor', 'tests/php', 'src/node/frontend'],
