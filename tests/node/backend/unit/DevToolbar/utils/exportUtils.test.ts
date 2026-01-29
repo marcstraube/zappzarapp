@@ -30,7 +30,7 @@ describe('exportUtils', () => {
             expect(result).toHaveProperty('export_time');
             expect(result).toHaveProperty('request_id', requestId);
             expect(result).toHaveProperty('metadata');
-            expect(result).toHaveProperty('html_data');
+            expect(result).toHaveProperty('html_data'); // No raw_data, falls back to HTML
         });
 
         it('should include request metadata', () => {
@@ -98,6 +98,41 @@ describe('exportUtils', () => {
             const result = exportRequestAsJson('test-123', requestData);
 
             expect(result.html_data).toEqual({});
+        });
+
+        it('should prefer raw_data over html_data when available', () => {
+            const rawData = {
+                request: { method: 'GET', uri: '/', status_code: 200 },
+                queries: { count: 5, queries: [] },
+                exceptions: { count: 0, exceptions: [] },
+            };
+
+            const requestData: RequestData = {
+                id: 'test-123',
+                metadata: mockRequestMetadata(),
+                tabs: { request: '<div>HTML</div>' },
+                raw_data: rawData,
+            };
+
+            const result = exportRequestAsJson('test-123', requestData);
+
+            expect(result.data).toEqual(rawData);
+            expect(result.html_data).toBeUndefined();
+        });
+
+        it('should fall back to html_data when raw_data is not available', () => {
+            const tabs = { request: '<div>HTML</div>' };
+
+            const requestData: RequestData = {
+                id: 'test-123',
+                metadata: mockRequestMetadata(),
+                tabs,
+            };
+
+            const result = exportRequestAsJson('test-123', requestData);
+
+            expect(result.html_data).toEqual(tabs);
+            expect(result.data).toBeUndefined();
         });
     });
 

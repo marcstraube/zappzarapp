@@ -14,11 +14,15 @@ export interface ExportData {
     export_time: string;
     request_id: string;
     metadata: RequestData['metadata'];
-    html_data: RequestData['tabs'];
+    data?: Record<string, any>; // Structured collector data (preferred)
+    html_data?: RequestData['tabs']; // HTML fallback (legacy)
 }
 
 /**
  * Create export data structure from request
+ *
+ * Prefers structured raw_data over HTML for cleaner exports.
+ * Falls back to HTML if raw_data is not available (legacy data).
  *
  * @param requestId Request ID
  * @param requestData Full request data from storage
@@ -29,13 +33,22 @@ export interface ExportData {
  * downloadJson(exportData, 'devtoolbar-req-123.json');
  */
 export function exportRequestAsJson(requestId: string, requestData: RequestData): ExportData {
-    return {
+    const exportData: ExportData = {
         toolbar_version: '2.1.0',
         export_time: new Date().toISOString(),
         request_id: requestId,
         metadata: requestData.metadata,
-        html_data: requestData.tabs,
     };
+
+    // Prefer structured data for cleaner export
+    if (requestData.raw_data) {
+        exportData.data = requestData.raw_data;
+    } else {
+        // Fallback to HTML for legacy data
+        exportData.html_data = requestData.tabs;
+    }
+
+    return exportData;
 }
 
 /**

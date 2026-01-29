@@ -29,8 +29,8 @@
       this.handleMigration();
       const win = window;
       if (win.__DEV_TOOLBAR_DATA__) {
-        const { id, metadata, tabs } = win.__DEV_TOOLBAR_DATA__;
-        this.storeRequest(id, metadata, tabs);
+        const { id, metadata, tabs, raw_data } = win.__DEV_TOOLBAR_DATA__;
+        this.storeRequest(id, metadata, tabs, raw_data);
       }
     }
     /**
@@ -60,7 +60,7 @@
       if (win.__DEV_TOOLBAR_MIGRATION__ && Array.isArray(win.__DEV_TOOLBAR_MIGRATION__)) {
         console.log("[DevToolbar] Migrating", win.__DEV_TOOLBAR_MIGRATION__.length, "requests from session");
         win.__DEV_TOOLBAR_MIGRATION__.forEach((request) => {
-          this.storeRequest(request.id, request.metadata, request.tabs);
+          this.storeRequest(request.id, request.metadata, request.tabs, request.raw_data);
         });
         console.log("[DevToolbar] Migration completed");
       }
@@ -73,12 +73,13 @@
      * @param id Request ID
      * @param metadata Lightweight metadata
      * @param tabs Full tab HTML content
+     * @param rawData Optional structured collector data for export
      */
-    storeRequest(id, metadata, tabs) {
+    storeRequest(id, metadata, tabs, rawData) {
       console.log("[StorageManager] Storing request:", id, "useMemoryFallback:", this.useMemoryFallback);
       try {
         if (this.useMemoryFallback) {
-          this.storeInMemory(id, metadata, tabs);
+          this.storeInMemory(id, metadata, tabs, rawData);
           console.log("[StorageManager] Stored in memory, total:", this.memoryStore.meta.length);
           return;
         }
@@ -88,7 +89,7 @@
           metaArray.length = MAX_METADATA;
         }
         localStorage.setItem(META_KEY, JSON.stringify(metaArray));
-        const fullData = { id, metadata, tabs };
+        const fullData = { id, metadata, tabs, raw_data: rawData };
         localStorage.setItem(DATA_PREFIX + id, JSON.stringify(fullData));
         this.enforceQuotaLimits();
       } catch (e) {
@@ -114,12 +115,12 @@
     /**
      * Store in memory (private browsing fallback)
      */
-    storeInMemory(id, metadata, tabs) {
+    storeInMemory(id, metadata, tabs, rawData) {
       this.memoryStore.meta.unshift(metadata);
       if (this.memoryStore.meta.length > MAX_METADATA) {
         this.memoryStore.meta.length = MAX_METADATA;
       }
-      this.memoryStore.requests[id] = { id, metadata, tabs };
+      this.memoryStore.requests[id] = { id, metadata, tabs, raw_data: rawData };
       const ids = this.memoryStore.meta.map((m) => m.id);
       const keysToKeep = ids.slice(0, MAX_FULL_DATA);
       for (const key in this.memoryStore.requests) {
@@ -804,13 +805,18 @@
 
   // DevToolbar/utils/exportUtils.ts
   function exportRequestAsJson(requestId, requestData) {
-    return {
+    const exportData = {
       toolbar_version: "2.1.0",
       export_time: (/* @__PURE__ */ new Date()).toISOString(),
       request_id: requestId,
-      metadata: requestData.metadata,
-      html_data: requestData.tabs
+      metadata: requestData.metadata
     };
+    if (requestData.raw_data) {
+      exportData.data = requestData.raw_data;
+    } else {
+      exportData.html_data = requestData.tabs;
+    }
+    return exportData;
   }
   function downloadJson(content, filename) {
     const json = typeof content === "string" ? content : JSON.stringify(content, null, 2);
@@ -1074,6 +1080,8 @@
     }
     /**
      * Export single request
+     *
+     * Exports structured collector data if available, falls back to HTML.
      */
     exportRequest(requestId) {
       const requestData = StorageManager.getRequest(requestId);
@@ -1081,13 +1089,7 @@
         console.error("[HistoryTabManager] Request not found:", requestId);
         return;
       }
-      const exportData = {
-        toolbar_version: "2.1.0",
-        export_time: (/* @__PURE__ */ new Date()).toISOString(),
-        request_id: requestId,
-        metadata: requestData.metadata,
-        html_data: requestData.tabs
-      };
+      const exportData = exportRequestAsJson(requestId, requestData);
       const filename = `devtoolbar-request-${requestId}-${Date.now()}.json`;
       downloadFile(JSON.stringify(exportData, null, 2), filename, "application/json");
     }

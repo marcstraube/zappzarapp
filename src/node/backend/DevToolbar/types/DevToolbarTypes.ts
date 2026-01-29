@@ -30,7 +30,8 @@ export interface RequestMetadata {
 export interface RequestData {
     id: string;
     metadata: RequestMetadata;
-    tabs: Record<string, string>;
+    tabs: Record<string, string>; // Rendered HTML for UI display
+    raw_data?: Record<string, any>; // Structured collector data for export
 }
 
 /**
@@ -59,6 +60,7 @@ export interface DevToolbarData {
     id: string;
     metadata: RequestMetadata;
     tabs: Record<string, string>;
+    raw_data?: Record<string, any>; // Structured collector data
 }
 
 /**

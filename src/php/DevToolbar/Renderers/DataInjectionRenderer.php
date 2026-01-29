@@ -45,11 +45,13 @@ class DataInjectionRenderer implements RendererInterface
         $requestId = RequestStore::generateId();
         $metadata = $this->extractMetadata($requestId);
         $tabs = $this->renderAllTabs();
+        $rawData = $this->extractRawData();
 
         $currentPayload = [
             'id' => $requestId,
             'metadata' => $metadata,
             'tabs' => $tabs,
+            'raw_data' => $rawData,
         ];
 
         $json = json_encode($currentPayload, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT);
@@ -116,6 +118,25 @@ class DataInjectionRenderer implements RendererInterface
             'timestamp' => time(),
             'badge_counts' => $badgeCounts,
         ];
+    }
+
+    /**
+     * Extract raw structured data from collectors
+     *
+     * Returns structured JSON-ready data from all collectors for export.
+     * This data is cleaner for external consumption than rendered HTML.
+     *
+     * @return array<string, mixed> Tab name => Structured data
+     */
+    private function extractRawData(): array
+    {
+        $rawData = [];
+
+        foreach ($this->collectors as $name => $collector) {
+            $rawData[$name] = $collector->getData();
+        }
+
+        return $rawData;
     }
 
     /**
@@ -201,6 +222,7 @@ class DataInjectionRenderer implements RendererInterface
                 'id' => $requestId,
                 'metadata' => $metadata,
                 'tabs' => $tabs,
+                'raw_data' => $collectorData, // Already structured data from storage
             ];
         }
 

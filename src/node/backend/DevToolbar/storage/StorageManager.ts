@@ -57,8 +57,8 @@ class StorageManagerClass {
         // Store current request data
         const win = window as DevToolbarWindow;
         if (win.__DEV_TOOLBAR_DATA__) {
-            const { id, metadata, tabs } = win.__DEV_TOOLBAR_DATA__;
-            this.storeRequest(id, metadata, tabs);
+            const { id, metadata, tabs, raw_data } = win.__DEV_TOOLBAR_DATA__;
+            this.storeRequest(id, metadata, tabs, raw_data);
         }
     }
 
@@ -94,7 +94,7 @@ class StorageManagerClass {
             console.log('[DevToolbar] Migrating', win.__DEV_TOOLBAR_MIGRATION__.length, 'requests from session');
 
             win.__DEV_TOOLBAR_MIGRATION__.forEach((request: DevToolbarMigration) => {
-                this.storeRequest(request.id, request.metadata, request.tabs);
+                this.storeRequest(request.id, request.metadata, request.tabs, request.raw_data);
             });
 
             console.log('[DevToolbar] Migration completed');
@@ -111,13 +111,19 @@ class StorageManagerClass {
      * @param id Request ID
      * @param metadata Lightweight metadata
      * @param tabs Full tab HTML content
+     * @param rawData Optional structured collector data for export
      */
-    storeRequest(id: string, metadata: RequestMetadata, tabs: Record<string, string>): void {
+    storeRequest(
+        id: string,
+        metadata: RequestMetadata,
+        tabs: Record<string, string>,
+        rawData?: Record<string, any>
+    ): void {
         console.log('[StorageManager] Storing request:', id, 'useMemoryFallback:', this.useMemoryFallback);
 
         try {
             if (this.useMemoryFallback) {
-                this.storeInMemory(id, metadata, tabs);
+                this.storeInMemory(id, metadata, tabs, rawData);
                 console.log('[StorageManager] Stored in memory, total:', this.memoryStore.meta.length);
                 return;
             }
@@ -134,7 +140,7 @@ class StorageManagerClass {
             localStorage.setItem(META_KEY, JSON.stringify(metaArray));
 
             // Store full data
-            const fullData: RequestData = { id, metadata, tabs };
+            const fullData: RequestData = { id, metadata, tabs, raw_data: rawData };
             localStorage.setItem(DATA_PREFIX + id, JSON.stringify(fullData));
 
             // Enforce quota limits
@@ -165,13 +171,18 @@ class StorageManagerClass {
     /**
      * Store in memory (private browsing fallback)
      */
-    private storeInMemory(id: string, metadata: RequestMetadata, tabs: Record<string, string>): void {
+    private storeInMemory(
+        id: string,
+        metadata: RequestMetadata,
+        tabs: Record<string, string>,
+        rawData?: Record<string, any>
+    ): void {
         this.memoryStore.meta.unshift(metadata);
         if (this.memoryStore.meta.length > MAX_METADATA) {
             this.memoryStore.meta.length = MAX_METADATA;
         }
 
-        this.memoryStore.requests[id] = { id, metadata, tabs };
+        this.memoryStore.requests[id] = { id, metadata, tabs, raw_data: rawData };
 
         // Evict old full data
         const ids = this.memoryStore.meta.map((m) => m.id);

@@ -11,7 +11,7 @@
 
 import { StorageManager } from '../storage/StorageManager';
 import { timeAgo, formatTimestamp, generateSparkline } from '../utils/timeUtils';
-import { downloadFile } from '../utils/exportUtils';
+import { downloadFile, exportRequestAsJson } from '../utils/exportUtils';
 import type { RequestMetadata } from '../types';
 
 /**
@@ -319,6 +319,8 @@ export class HistoryTabManager {
 
     /**
      * Export single request
+     *
+     * Exports structured collector data if available, falls back to HTML.
      */
     private exportRequest(requestId: string): void {
         const requestData = StorageManager.getRequest(requestId);
@@ -327,14 +329,7 @@ export class HistoryTabManager {
             return;
         }
 
-        const exportData = {
-            toolbar_version: '2.1.0',
-            export_time: new Date().toISOString(),
-            request_id: requestId,
-            metadata: requestData.metadata,
-            html_data: requestData.tabs,
-        };
-
+        const exportData = exportRequestAsJson(requestId, requestData);
         const filename = `devtoolbar-request-${requestId}-${Date.now()}.json`;
         downloadFile(JSON.stringify(exportData, null, 2), filename, 'application/json');
     }
