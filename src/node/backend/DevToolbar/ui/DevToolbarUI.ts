@@ -13,6 +13,7 @@ import { StorageManager } from '../storage/StorageManager';
 import { TabManager } from './TabManager';
 import { RequestSwitcher } from './RequestSwitcher';
 import { XdebugControls } from './XdebugControls';
+import { HistoryTabManager } from './HistoryTabManager';
 import { exportRequestAsJson, downloadJson } from '../utils/exportUtils';
 
 /**
@@ -25,13 +26,13 @@ export class DevToolbarUI {
     private tabManager: TabManager;
     private requestSwitcher: RequestSwitcher;
     private xdebugControls: XdebugControls;
-
-    private historyTabInitialized: boolean = false;
+    private historyTabManager: HistoryTabManager;
 
     constructor() {
         this.tabManager = new TabManager();
         this.requestSwitcher = new RequestSwitcher();
         this.xdebugControls = new XdebugControls();
+        this.historyTabManager = new HistoryTabManager();
     }
 
     /**
@@ -147,8 +148,8 @@ export class DevToolbarUI {
     private handleRequestLoad(requestId: string): void {
         console.log('[DevToolbarUI] Request loaded:', requestId);
 
-        // Reset history tab initialization flag
-        this.historyTabInitialized = false;
+        // Reset history tab so it re-initializes on next activation
+        this.historyTabManager.reset();
 
         // Re-attach tab event listeners
         setTimeout(() => {
@@ -379,18 +380,9 @@ export class DevToolbarUI {
     }
 
     /**
-     * Initialize history tab (placeholder for full implementation)
+     * Initialize history tab
      */
     private initHistoryTab(): void {
-        if (this.historyTabInitialized) {
-            console.log('[DevToolbar] History tab already initialized');
-            return;
-        }
-
-        console.log('[DevToolbar] Initializing History tab');
-        this.historyTabInitialized = true;
-
-        // History tab initialization would go here
-        // (filters, export buttons, etc.)
+        this.historyTabManager.init();
     }
 }

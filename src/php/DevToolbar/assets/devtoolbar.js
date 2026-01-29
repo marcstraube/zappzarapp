@@ -402,6 +402,35 @@
     if (seconds < 86400) return `${Math.floor(seconds / 3600)}h ago`;
     return `${Math.floor(seconds / 86400)}d ago`;
   }
+  function formatTimestamp(timestamp) {
+    const date = new Date(timestamp * 1e3);
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const day = String(date.getDate()).padStart(2, "0");
+    const hours = String(date.getHours()).padStart(2, "0");
+    const minutes = String(date.getMinutes()).padStart(2, "0");
+    const seconds = String(date.getSeconds()).padStart(2, "0");
+    return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
+  }
+  function generateSparkline(values) {
+    if (!values || values.length === 0) {
+      return "";
+    }
+    const ticks = ["\u2581", "\u2582", "\u2583", "\u2584", "\u2585", "\u2586", "\u2587", "\u2588"];
+    const min = Math.min(...values);
+    const max = Math.max(...values);
+    const range = max - min;
+    if (range === 0) {
+      return ticks[3].repeat(values.length);
+    }
+    let sparkline = "";
+    values.forEach((value) => {
+      const normalized = (value - min) / range;
+      const index = Math.min(7, Math.floor(normalized * 8));
+      sparkline += ticks[index];
+    });
+    return sparkline;
+  }
 
   // DevToolbar/ui/RequestSwitcher.ts
   var RequestSwitcher = class {
@@ -793,16 +822,373 @@
     a.click();
     URL.revokeObjectURL(url);
   }
+  function downloadFile(content, filename, mimeType = "application/json") {
+    const blob = new Blob([content], { type: mimeType });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  // DevToolbar/ui/HistoryTabManager.ts
+  var HistoryTabManager = class {
+    constructor() {
+      this.initialized = false;
+    }
+    /**
+     * Initialize history tab
+     */
+    init() {
+      if (this.initialized) {
+        console.log("[HistoryTabManager] Already initialized");
+        return;
+      }
+      console.log("[HistoryTabManager] Initializing History tab");
+      this.renderHistoryData();
+      this.attachFilterListeners();
+      this.attachExportListeners();
+      this.initialized = true;
+    }
+    /**
+     * Reset initialization flag (for re-initialization after request load)
+     */
+    reset() {
+      this.initialized = false;
+    }
+    /**
+     * Render history data from localStorage
+     */
+    renderHistoryData() {
+      const metaArray = StorageManager.getMetadata();
+      console.log("[HistoryTabManager] Found", metaArray.length, "requests");
+      this.updateStatistics(metaArray);
+      const countEl = document.getElementById("history-list-count");
+      if (countEl) {
+        countEl.textContent = String(metaArray.length);
+      }
+      this.renderTrends(metaArray);
+      this.renderRequestList(metaArray);
+    }
+    /**
+     * Update statistics display
+     */
+    updateStatistics(metaArray) {
+      const stats = this.calculateStats(metaArray);
+      const statsMap = {
+        total: String(stats.total),
+        avg_time: `${stats.avgTime.toFixed(0)}ms`,
+        avg_memory: `${stats.avgMemory.toFixed(1)}MB`,
+        avg_queries: stats.avgQueries.toFixed(1),
+        fastest: `${stats.fastest.toFixed(0)}ms`,
+        slowest: `${stats.slowest.toFixed(0)}ms`
+      };
+      Object.entries(statsMap).forEach(([stat, value]) => {
+        const el = document.querySelector(`[data-history-stat="${stat}"]`);
+        if (el) {
+          el.textContent = value;
+        }
+      });
+    }
+    /**
+     * Calculate statistics from metadata
+     */
+    calculateStats(metaArray) {
+      if (metaArray.length === 0) {
+        return {
+          total: 0,
+          avgTime: 0,
+          avgMemory: 0,
+          avgQueries: 0,
+          fastest: 0,
+          slowest: 0
+        };
+      }
+      const times = metaArray.map((r) => r.duration);
+      const memories = metaArray.map((r) => r.memory / 1024 / 1024);
+      const queries = metaArray.map((r) => r.query_count || 0);
+      return {
+        total: metaArray.length,
+        avgTime: times.reduce((a, b) => a + b, 0) / times.length,
+        avgMemory: memories.reduce((a, b) => a + b, 0) / memories.length,
+        avgQueries: queries.reduce((a, b) => a + b, 0) / queries.length,
+        fastest: Math.min(...times),
+        slowest: Math.max(...times)
+      };
+    }
+    /**
+     * Render trends sparkline
+     */
+    renderTrends(metaArray) {
+      const trendsEl = document.getElementById("history-trends-sparkline");
+      if (!trendsEl) return;
+      const times = metaArray.slice(0, 20).reverse().map((r) => r.duration);
+      const sparkline = generateSparkline(times);
+      trendsEl.textContent = sparkline;
+    }
+    /**
+     * Render request list
+     */
+    renderRequestList(metaArray) {
+      const listContainer = document.getElementById("history-request-list-container");
+      if (!listContainer) {
+        console.warn("[HistoryTabManager] List container not found");
+        return;
+      }
+      if (metaArray.length === 0) {
+        listContainer.innerHTML = '<p style="color: #888;">No request history yet. Reload the page to see requests.</p>';
+        return;
+      }
+      let html = "";
+      metaArray.forEach((request) => {
+        const statusIcon = this.getStatusIcon(request.statusCode);
+        const timeAgoText = timeAgo(request.timestamp);
+        const fullTimestamp = formatTimestamp(request.timestamp);
+        let perfClass = "";
+        if (request.duration > 500) {
+          perfClass = "slow";
+        } else if (request.duration > 200) {
+          perfClass = "warning";
+        }
+        html += `<div class="dev-toolbar-history-item ${perfClass}"
+                      data-method="${this.escapeHtml(request.method)}"
+                      data-uri="${this.escapeHtml(request.uri)}"
+                      data-status="${request.statusCode}"
+                      data-time="${request.duration}"
+                      data-request-id="${this.escapeHtml(request.id)}">
+                    <div class="dev-toolbar-history-item-header">
+                        <span class="dev-toolbar-history-icon">${statusIcon}</span>
+                        <span class="dev-toolbar-history-method">${this.escapeHtml(request.method)}</span>
+                        <span class="dev-toolbar-history-uri">${this.escapeHtml(request.uri)}</span>
+                        <span class="dev-toolbar-history-time-ago" title="${fullTimestamp}">${timeAgoText}</span>
+                        <button class="dev-toolbar-history-item-export"
+                                data-request-id="${this.escapeHtml(request.id)}"
+                                title="Export this request">\u2B07</button>
+                    </div>
+                    <div class="dev-toolbar-history-item-meta">
+                        <span class="dev-toolbar-history-meta-item">Status: ${request.statusCode}</span>
+                        <span class="dev-toolbar-history-meta-item">Time: ${request.duration.toFixed(0)}ms</span>
+                        <span class="dev-toolbar-history-meta-item">Memory: ${(request.memory / 1024 / 1024).toFixed(1)}MB</span>
+                        <span class="dev-toolbar-history-meta-item">Queries: ${request.query_count || 0}</span>
+                    </div>
+                </div>`;
+      });
+      listContainer.innerHTML = html;
+      console.log("[HistoryTabManager] Rendered", metaArray.length, "requests");
+      setTimeout(() => this.attachItemExportListeners(), 50);
+    }
+    /**
+     * Get status icon for status code
+     */
+    getStatusIcon(statusCode) {
+      if (statusCode >= 200 && statusCode < 300) return "\u2713";
+      if (statusCode >= 300 && statusCode < 400) return "\u2192";
+      if (statusCode >= 400 && statusCode < 500) return "\u26A0";
+      if (statusCode >= 500) return "\u2717";
+      return "?";
+    }
+    /**
+     * Attach filter listeners
+     */
+    attachFilterListeners() {
+      const methodFilter = document.getElementById("history-filter-method");
+      const statusFilter = document.getElementById("history-filter-status");
+      const uriFilter = document.getElementById("history-filter-uri");
+      const minTimeFilter = document.getElementById("history-filter-min-time");
+      const resetBtn = document.getElementById("history-filter-reset");
+      [methodFilter, statusFilter, uriFilter, minTimeFilter].forEach((el) => {
+        el?.addEventListener("input", () => this.filterRequests());
+      });
+      resetBtn?.addEventListener("click", () => this.resetFilters());
+    }
+    /**
+     * Filter requests based on current filter values
+     */
+    filterRequests() {
+      const filters = {
+        method: document.getElementById("history-filter-method")?.value || "",
+        status: document.getElementById("history-filter-status")?.value || "",
+        uri: document.getElementById("history-filter-uri")?.value.toLowerCase() || "",
+        minTime: parseFloat(document.getElementById("history-filter-min-time")?.value || "0")
+      };
+      const items = document.querySelectorAll(".dev-toolbar-history-item");
+      let visibleCount = 0;
+      items.forEach((item) => {
+        const matches = this.itemMatchesFilters(item, filters);
+        item.style.display = matches ? "" : "none";
+        if (matches) visibleCount++;
+      });
+      this.updateListTitle(visibleCount, items.length);
+    }
+    /**
+     * Check if item matches filters
+     */
+    itemMatchesFilters(item, filters) {
+      if (filters.method && item.dataset.method !== filters.method) return false;
+      if (filters.status && !item.dataset.status?.startsWith(filters.status)) return false;
+      if (filters.uri && !item.dataset.uri?.toLowerCase().includes(filters.uri)) return false;
+      if (filters.minTime > 0 && parseFloat(item.dataset.time || "0") < filters.minTime) return false;
+      return true;
+    }
+    /**
+     * Update list title with counts
+     */
+    updateListTitle(visibleCount, totalCount) {
+      const title = document.getElementById("history-list-title");
+      if (title) {
+        title.textContent = `Request History (${visibleCount} of ${totalCount})`;
+      }
+    }
+    /**
+     * Reset filters
+     */
+    resetFilters() {
+      ["method", "status", "uri", "min-time"].forEach((id) => {
+        const el = document.getElementById(`history-filter-${id}`);
+        if (el) el.value = "";
+      });
+      this.filterRequests();
+    }
+    /**
+     * Attach export listeners
+     */
+    attachExportListeners() {
+      document.getElementById("history-export-json")?.addEventListener("click", () => this.exportAsJSON());
+      document.getElementById("history-export-csv")?.addEventListener("click", () => this.exportAsCSV());
+      document.getElementById("history-clear")?.addEventListener("click", () => this.clearHistory());
+    }
+    /**
+     * Attach individual item export listeners
+     */
+    attachItemExportListeners() {
+      document.querySelectorAll(".dev-toolbar-history-item-export").forEach((btn) => {
+        btn.addEventListener("click", (e) => {
+          e.stopPropagation();
+          const requestId = btn.dataset.requestId;
+          if (requestId) {
+            this.exportRequest(requestId);
+          }
+        });
+      });
+    }
+    /**
+     * Export single request
+     */
+    exportRequest(requestId) {
+      const requestData = StorageManager.getRequest(requestId);
+      if (!requestData) {
+        console.error("[HistoryTabManager] Request not found:", requestId);
+        return;
+      }
+      const exportData = {
+        toolbar_version: "2.1.0",
+        export_time: (/* @__PURE__ */ new Date()).toISOString(),
+        request_id: requestId,
+        metadata: requestData.metadata,
+        html_data: requestData.tabs
+      };
+      const filename = `devtoolbar-request-${requestId}-${Date.now()}.json`;
+      downloadFile(JSON.stringify(exportData, null, 2), filename, "application/json");
+    }
+    /**
+     * Export visible history as JSON
+     */
+    exportAsJSON() {
+      const data = this.collectVisibleData();
+      const json = JSON.stringify(
+        {
+          toolbar_version: "2.1.0",
+          export_time: (/* @__PURE__ */ new Date()).toISOString(),
+          requests: data
+        },
+        null,
+        2
+      );
+      downloadFile(json, `devtoolbar-history-${Date.now()}.json`, "application/json");
+    }
+    /**
+     * Export visible history as CSV
+     */
+    exportAsCSV() {
+      const data = this.collectVisibleData();
+      let csv = "Timestamp,Method,URI,Status,Time (ms),Memory (MB),Queries\n";
+      data.forEach((item) => {
+        const timestamp = new Date(item.timestamp * 1e3).toISOString();
+        const uri = `"${item.uri.replace(/"/g, '""')}"`;
+        csv += `${timestamp},${item.method},${uri},${item.status},${item.time},${item.memory},${item.query_count}
+`;
+      });
+      downloadFile(csv, `devtoolbar-history-${Date.now()}.csv`, "text/csv");
+    }
+    /**
+     * Collect visible request data
+     */
+    collectVisibleData() {
+      const items = document.querySelectorAll('.dev-toolbar-history-item:not([style*="display: none"])');
+      return Array.from(items).map((item) => {
+        const el = item;
+        const memoryText = item.querySelector(".dev-toolbar-history-meta-item:nth-child(3)")?.textContent || "";
+        const memoryMatch = memoryText.match(/[\d.]+/);
+        const memory = memoryMatch ? parseFloat(memoryMatch[0]) : 0;
+        const queriesText = item.querySelector(".dev-toolbar-history-meta-item:nth-child(4)")?.textContent || "";
+        const queriesMatch = queriesText.match(/\d+/);
+        const queryCount = queriesMatch ? parseInt(queriesMatch[0], 10) : 0;
+        const timeAgoText = item.querySelector(".dev-toolbar-history-time-ago")?.textContent || "";
+        const timestamp = this.parseTimeAgo(timeAgoText);
+        return {
+          method: el.dataset.method || "",
+          uri: el.dataset.uri || "",
+          status: parseInt(el.dataset.status || "0", 10),
+          time: parseFloat(el.dataset.time || "0"),
+          memory,
+          query_count: queryCount,
+          timestamp
+        };
+      });
+    }
+    /**
+     * Parse "time ago" text to timestamp
+     */
+    parseTimeAgo(text) {
+      const match = text.match(/(\d+)([smhd])/);
+      if (!match) return Math.floor(Date.now() / 1e3);
+      const value = parseInt(match[1], 10);
+      const multipliers = { s: 1, m: 60, h: 3600, d: 86400 };
+      return Math.floor(Date.now() / 1e3) - value * (multipliers[match[2]] || 1);
+    }
+    /**
+     * Clear history
+     */
+    clearHistory() {
+      if (!confirm("Clear all request history? This cannot be undone.")) return;
+      StorageManager.clear();
+      window.location.reload();
+    }
+    /**
+     * Escape HTML
+     */
+    escapeHtml(text) {
+      const map = {
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        '"': "&quot;",
+        "'": "&#039;"
+      };
+      return text.replace(/[&<>"']/g, (char) => map[char] || char);
+    }
+  };
 
   // DevToolbar/ui/DevToolbarUI.ts
   var DevToolbarUI = class {
     constructor() {
       this.miniBar = null;
       this.panel = null;
-      this.historyTabInitialized = false;
       this.tabManager = new TabManager();
       this.requestSwitcher = new RequestSwitcher();
       this.xdebugControls = new XdebugControls();
+      this.historyTabManager = new HistoryTabManager();
     }
     /**
      * Initialize DevToolbar UI
@@ -877,7 +1263,7 @@
      */
     handleRequestLoad(requestId) {
       console.log("[DevToolbarUI] Request loaded:", requestId);
-      this.historyTabInitialized = false;
+      this.historyTabManager.reset();
       setTimeout(() => {
         this.reattachTabListeners();
         const currentTab = this.tabManager.getCurrentTab();
@@ -1068,15 +1454,10 @@
       this.tabManager.updateHistoryBadge(metaArray.length);
     }
     /**
-     * Initialize history tab (placeholder for full implementation)
+     * Initialize history tab
      */
     initHistoryTab() {
-      if (this.historyTabInitialized) {
-        console.log("[DevToolbar] History tab already initialized");
-        return;
-      }
-      console.log("[DevToolbar] Initializing History tab");
-      this.historyTabInitialized = true;
+      this.historyTabManager.init();
     }
   };
 
