@@ -2,6 +2,8 @@
  * exportUtils Unit Tests
  *
  * Tests for JSON export and browser download functionality.
+ *
+ * @vitest-environment happy-dom
  */
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
