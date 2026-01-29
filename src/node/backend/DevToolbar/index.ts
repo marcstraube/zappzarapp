@@ -1,15 +1,30 @@
 /**
  * DevToolbar Browser Entry Point
  *
- * Main entry point for the browser bundle. Will be implemented in Phase 5.
+ * Main entry point for the browser bundle.
+ * Initializes DevToolbar when DOM is ready.
  */
 
+import { DevToolbarUI } from './ui/DevToolbarUI';
 import type { DevToolbarWindow } from './types/index.js';
-
-// Placeholder - will be implemented in Phase 5
-console.log('[DevToolbar] Module loaded (placeholder)');
 
 // Ensure window types are available
 declare const window: DevToolbarWindow;
+
+/**
+ * Initialize DevToolbar when DOM is ready
+ */
+function initDevToolbar(): void {
+    const toolbar = new DevToolbarUI();
+    toolbar.init();
+}
+
+// Auto-initialize on DOMContentLoaded
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initDevToolbar);
+} else {
+    // DOM already loaded
+    initDevToolbar();
+}
 
 export {};
