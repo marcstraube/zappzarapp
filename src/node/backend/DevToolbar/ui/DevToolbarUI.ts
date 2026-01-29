@@ -361,14 +361,20 @@ export class DevToolbarUI {
 
         if (!toolbarData) {
             console.error('[DevToolbar] No request data available');
+            alert('No request data available for export.');
             return;
         }
 
-        const exportData = exportRequestAsJson(toolbarData.id, toolbarData);
-        const filename = `devtoolbar-request-${toolbarData.id}-${Date.now()}.json`;
+        try {
+            const exportData = exportRequestAsJson(toolbarData.id, toolbarData);
+            const filename = `devtoolbar-request-${toolbarData.id}-${Date.now()}.json`;
 
-        downloadJson(exportData, filename);
-        console.log('[DevToolbar] Exported current request');
+            downloadJson(exportData, filename);
+            console.log('[DevToolbar] Exported current request');
+        } catch (error) {
+            console.error('[DevToolbar] Export failed:', error);
+            alert('Export failed: ' + (error as Error).message);
+        }
     }
 
     /**

@@ -14,41 +14,39 @@ export interface ExportData {
     export_time: string;
     request_id: string;
     metadata: RequestData['metadata'];
-    data?: Record<string, any>; // Structured collector data (preferred)
-    html_data?: RequestData['tabs']; // HTML fallback (legacy)
+    data: Record<string, any>; // Structured collector data
 }
 
 /**
  * Create export data structure from request
  *
- * Prefers structured raw_data over HTML for cleaner exports.
- * Falls back to HTML if raw_data is not available (legacy data).
+ * Exports structured collector data only.
+ * Throws error if raw_data is not available (legacy data not supported).
  *
  * @param requestId Request ID
  * @param requestData Full request data from storage
  * @returns Export-ready JSON object
+ * @throws Error if raw_data is not available
  *
  * @example
  * const exportData = exportRequestAsJson('req-123', requestData);
  * downloadJson(exportData, 'devtoolbar-req-123.json');
  */
 export function exportRequestAsJson(requestId: string, requestData: RequestData): ExportData {
-    const exportData: ExportData = {
+    if (!requestData.raw_data) {
+        throw new Error(
+            `Cannot export request ${requestId}: No structured data available. ` +
+                `This request was stored before structured data export was implemented.`
+        );
+    }
+
+    return {
         toolbar_version: '2.1.0',
         export_time: new Date().toISOString(),
         request_id: requestId,
         metadata: requestData.metadata,
+        data: requestData.raw_data,
     };
-
-    // Prefer structured data for cleaner export
-    if (requestData.raw_data) {
-        exportData.data = requestData.raw_data;
-    } else {
-        // Fallback to HTML for legacy data
-        exportData.html_data = requestData.tabs;
-    }
-
-    return exportData;
 }
 
 /**

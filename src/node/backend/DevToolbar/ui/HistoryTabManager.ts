@@ -320,18 +320,29 @@ export class HistoryTabManager {
     /**
      * Export single request
      *
-     * Exports structured collector data if available, falls back to HTML.
+     * Exports structured collector data only.
+     * Shows alert if data is not available (legacy request).
      */
     private exportRequest(requestId: string): void {
         const requestData = StorageManager.getRequest(requestId);
         if (!requestData) {
             console.error('[HistoryTabManager] Request not found:', requestId);
+            alert('Request not found in history.');
             return;
         }
 
-        const exportData = exportRequestAsJson(requestId, requestData);
-        const filename = `devtoolbar-request-${requestId}-${Date.now()}.json`;
-        downloadFile(JSON.stringify(exportData, null, 2), filename, 'application/json');
+        try {
+            const exportData = exportRequestAsJson(requestId, requestData);
+            const filename = `devtoolbar-request-${requestId}-${Date.now()}.json`;
+            downloadFile(JSON.stringify(exportData, null, 2), filename, 'application/json');
+        } catch (error) {
+            console.error('[HistoryTabManager] Export failed:', error);
+            alert(
+                'Cannot export this request: No structured data available.\n\n' +
+                    'This request was stored before structured data export was implemented.\n' +
+                    'Please reload the page to capture new requests with structured data.'
+            );
+        }
     }
 
     /**

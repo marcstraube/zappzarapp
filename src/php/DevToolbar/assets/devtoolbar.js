@@ -805,18 +805,18 @@
 
   // DevToolbar/utils/exportUtils.ts
   function exportRequestAsJson(requestId, requestData) {
-    const exportData = {
+    if (!requestData.raw_data) {
+      throw new Error(
+        `Cannot export request ${requestId}: No structured data available. This request was stored before structured data export was implemented.`
+      );
+    }
+    return {
       toolbar_version: "2.1.0",
       export_time: (/* @__PURE__ */ new Date()).toISOString(),
       request_id: requestId,
-      metadata: requestData.metadata
+      metadata: requestData.metadata,
+      data: requestData.raw_data
     };
-    if (requestData.raw_data) {
-      exportData.data = requestData.raw_data;
-    } else {
-      exportData.html_data = requestData.tabs;
-    }
-    return exportData;
   }
   function downloadJson(content, filename) {
     const json = typeof content === "string" ? content : JSON.stringify(content, null, 2);
@@ -1081,17 +1081,26 @@
     /**
      * Export single request
      *
-     * Exports structured collector data if available, falls back to HTML.
+     * Exports structured collector data only.
+     * Shows alert if data is not available (legacy request).
      */
     exportRequest(requestId) {
       const requestData = StorageManager.getRequest(requestId);
       if (!requestData) {
         console.error("[HistoryTabManager] Request not found:", requestId);
+        alert("Request not found in history.");
         return;
       }
-      const exportData = exportRequestAsJson(requestId, requestData);
-      const filename = `devtoolbar-request-${requestId}-${Date.now()}.json`;
-      downloadFile(JSON.stringify(exportData, null, 2), filename, "application/json");
+      try {
+        const exportData = exportRequestAsJson(requestId, requestData);
+        const filename = `devtoolbar-request-${requestId}-${Date.now()}.json`;
+        downloadFile(JSON.stringify(exportData, null, 2), filename, "application/json");
+      } catch (error) {
+        console.error("[HistoryTabManager] Export failed:", error);
+        alert(
+          "Cannot export this request: No structured data available.\n\nThis request was stored before structured data export was implemented.\nPlease reload the page to capture new requests with structured data."
+        );
+      }
     }
     /**
      * Export visible history as JSON
@@ -1402,8 +1411,8 @@
       });
       document.querySelectorAll(".dev-toolbar-alert-close").forEach((closeBtn) => {
         closeBtn.addEventListener("click", (e) => {
-          const alert = e.target.closest(".dev-toolbar-alert");
-          alert?.classList.add("dismissed");
+          const alert2 = e.target.closest(".dev-toolbar-alert");
+          alert2?.classList.add("dismissed");
           setTimeout(() => {
             const alertsContainer = document.querySelector(".dev-toolbar-alerts");
             const remainingAlerts = alertsContainer?.querySelectorAll(".dev-toolbar-alert:not(.dismissed)");
@@ -1441,12 +1450,18 @@
       const toolbarData = win.__DEV_TOOLBAR_DATA__;
       if (!toolbarData) {
         console.error("[DevToolbar] No request data available");
+        alert("No request data available for export.");
         return;
       }
-      const exportData = exportRequestAsJson(toolbarData.id, toolbarData);
-      const filename = `devtoolbar-request-${toolbarData.id}-${Date.now()}.json`;
-      downloadJson(exportData, filename);
-      console.log("[DevToolbar] Exported current request");
+      try {
+        const exportData = exportRequestAsJson(toolbarData.id, toolbarData);
+        const filename = `devtoolbar-request-${toolbarData.id}-${Date.now()}.json`;
+        downloadJson(exportData, filename);
+        console.log("[DevToolbar] Exported current request");
+      } catch (error) {
+        console.error("[DevToolbar] Export failed:", error);
+        alert("Export failed: " + error.message);
+      }
     }
     /**
      * Update history badge
