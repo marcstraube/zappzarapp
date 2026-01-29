@@ -107,6 +107,8 @@ class DataInjectionRenderer implements RendererInterface
             $badgeCounts[$name] = $data['count'] ?? 0;
         }
 
+        $timestamp = time();
+
         return [
             'id' => $requestId,
             'method' => $requestData['method'] ?? 'GET',
@@ -115,7 +117,8 @@ class DataInjectionRenderer implements RendererInterface
             'time' => $requestData['execution_time'] ?? 0,
             'memory' => $requestData['memory_peak'] ?? 0,
             'query_count' => $queryData['count'] ?? 0,
-            'timestamp' => time(),
+            'timestamp' => $timestamp,
+            'date' => date('Y-m-d H:i:s', $timestamp),
             'badge_counts' => $badgeCounts,
         ];
     }

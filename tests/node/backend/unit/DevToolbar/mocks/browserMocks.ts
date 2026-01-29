@@ -107,12 +107,16 @@ export function mockDevToolbarMigration(requests?: DevToolbarMigration[]): DevTo
  * Create mock request metadata
  */
 export function mockRequestMetadata(overrides?: Partial<RequestMetadata>): RequestMetadata {
+    const timestamp = overrides?.timestamp || Math.floor(Date.now() / 1000);
+    const date = overrides?.date || new Date(timestamp * 1000).toISOString().slice(0, 19).replace('T', ' ');
+
     return {
         id: overrides?.id || 'test-request-123',
         method: overrides?.method || 'GET',
         uri: overrides?.uri || '/test/endpoint',
         status: overrides?.status || 200,
-        timestamp: overrides?.timestamp || Math.floor(Date.now() / 1000),
+        timestamp,
+        date,
         time: overrides?.time || 123.45,
         memory: overrides?.memory || 1024000,
         query_count: overrides?.query_count || 5,

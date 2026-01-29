@@ -16,7 +16,8 @@ export interface RequestMetadata {
     method: string;
     uri: string;
     status: number;           // PHP: status_code
-    timestamp: number;
+    timestamp: number;        // Unix timestamp
+    date: string;             // Human-readable date (Y-m-d H:i:s)
     time: number;             // PHP: execution_time (in ms)
     memory: number;           // PHP: memory_peak (in bytes)
     query_count: number;      // PHP: query count from queries collector
