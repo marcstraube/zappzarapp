@@ -106,7 +106,10 @@ export class SettingsManager {
     // Inject modal into DOM
     const container = document.createElement('div');
     container.innerHTML = modalHTML;
-    document.body.appendChild(container.firstElementChild);
+    const modalElement = container.firstElementChild;
+    if (modalElement) {
+      document.body.appendChild(modalElement);
+    }
 
     this.modal = document.getElementById('dev-toolbar-settings-overlay');
   }

@@ -150,9 +150,8 @@ export class HistoryTabManager {
       .slice(0, 20)
       .reverse()
       .map((r) => r.time);
-    const sparkline = generateSparkline(times);
 
-    trendsEl.textContent = sparkline;
+    trendsEl.textContent = generateSparkline(times);
   }
 
   /**
@@ -291,7 +290,7 @@ export class HistoryTabManager {
     if (filters.method && item.dataset.method !== filters.method) return false;
     if (filters.status && !item.dataset.status?.startsWith(filters.status)) return false;
     if (filters.uri && !item.dataset.uri?.toLowerCase().includes(filters.uri)) return false;
-    if (filters.minTime > 0 && parseFloat(item.dataset.time || '0') < filters.minTime) return false;
+    if (filters.minTime && parseFloat(item.dataset.time || '0') < filters.minTime) return false;
     return true;
   }
 
@@ -311,7 +310,9 @@ export class HistoryTabManager {
   private resetFilters(): void {
     ['method', 'status', 'uri', 'min-time'].forEach((id) => {
       const el = document.getElementById(`history-filter-${id}`);
-      if (el) el.value = '';
+      if (el instanceof HTMLInputElement) {
+        el.value = '';
+      }
     });
     this.filterRequests();
   }
@@ -453,7 +454,7 @@ export class HistoryTabManager {
    */
   private parseTimeAgo(text: string): number {
     const match = text.match(/(\d+)([smhd])/);
-    if (!match) return Math.floor(Date.now() / 1000);
+    if (!match || !match[1] || !match[2]) return Math.floor(Date.now() / 1000);
 
     const value = parseInt(match[1], 10);
     const multipliers: Record<string, number> = { s: 1, m: 60, h: 3600, d: 86400 };

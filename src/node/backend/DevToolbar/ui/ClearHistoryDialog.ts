@@ -12,7 +12,7 @@
  * ClearHistoryDialog for showing clear confirmation
  */
 export class ClearHistoryDialog {
-  private modal: Element | null = null;
+  private modal: HTMLElement | null = null;
   private isOpen = false;
   private onConfirm: (() => void) | null = null;
 
@@ -101,7 +101,10 @@ export class ClearHistoryDialog {
 
     const container = document.createElement('div');
     container.innerHTML = modalHTML;
-    document.body.appendChild(container.firstElementChild);
+    const modalElement = container.firstElementChild;
+    if (modalElement) {
+      document.body.appendChild(modalElement);
+    }
 
     this.modal = document.getElementById('dev-toolbar-clear-history-overlay');
   }
