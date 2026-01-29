@@ -60,9 +60,47 @@ rm -f next.config.js next.config.ts
 echo "[next] Creating app structure..."
 mkdir -p app
 
-# 5. Create layout.tsx
+# 5. Create globals.css
+echo "[next] Creating globals.css..."
+cat > app/globals.css << 'EOF'
+/**
+ * Global Styles - zappzarapp Next.js Frontend
+ * Minimal global resets, component styles use CSS Modules
+ */
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  line-height: 1.5;
+  color: #333;
+}
+
+code {
+  font-family: 'SF Mono', Monaco, 'Courier New', monospace;
+  background: rgba(59, 130, 246, 0.1);
+  padding: 0.2rem 0.4rem;
+  border-radius: 0.25rem;
+  font-size: 0.875em;
+}
+
+pre code {
+  display: block;
+  padding: 1rem;
+  overflow-x: auto;
+  background: #1a1a2e;
+  color: #0070f3;
+}
+EOF
+
+# 6. Create layout.tsx
 cat > app/layout.tsx << 'EOF'
 import type { Metadata } from 'next';
+import './globals.css';
 
 export const metadata: Metadata = {
   title: 'zappzarapp Frontend',
@@ -76,16 +114,106 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body style={{ margin: 0, fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif' }}>
-        {children}
-      </body>
+      <body>{children}</body>
     </html>
   );
 }
 EOF
 
-# 6. Create page.tsx
+# 7. Create page.module.css
+echo "[next] Creating page.module.css..."
+cat > app/page.module.css << 'EOF'
+/**
+ * Home Page Styles
+ * CSS Modules provide scoped styles, CSP-compatible
+ */
+
+.main {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 2rem;
+}
+
+.header {
+  text-align: center;
+  margin-bottom: 3rem;
+}
+
+.title {
+  color: #0070f3;
+  font-size: 2.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.subtitle {
+  color: #666;
+  font-size: 1.1rem;
+}
+
+.section {
+  margin-bottom: 2rem;
+}
+
+.sectionTitle {
+  color: #333;
+  font-size: 1.3rem;
+  margin-bottom: 1rem;
+  border-bottom: 2px solid #0070f3;
+  padding-bottom: 0.5rem;
+}
+
+.statusCard {
+  background: #f8f9fa;
+  border-radius: 8px;
+  padding: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.statusIndicator {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #0070f3;
+  box-shadow: 0 0 8px #0070f3;
+}
+
+.apiCard {
+  background: #f8f9fa;
+  border-radius: 8px;
+  padding: 1rem;
+}
+
+.apiCardOffline {
+  composes: apiCard;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.statusIndicatorOffline {
+  composes: statusIndicator;
+  background: #ef4444;
+  box-shadow: 0 0 8px #ef4444;
+}
+
+.apiPre {
+  background: #1a1a2e;
+  color: #0070f3;
+  padding: 1rem;
+  border-radius: 4px;
+  overflow: auto;
+  font-size: 0.875rem;
+}
+EOF
+
+# 8. Create page.tsx
 cat > app/page.tsx << 'EOF'
+import styles from './page.module.css';
+
 async function getHealth() {
   try {
     const res = await fetch('http://localhost:3000/health', {
@@ -102,89 +230,33 @@ export default async function Home() {
   const health = await getHealth();
 
   return (
-    <main style={{ maxWidth: '800px', margin: '0 auto', padding: '2rem' }}>
-      <header style={{ textAlign: 'center', marginBottom: '3rem' }}>
-        <h1 style={{ color: '#0070f3', fontSize: '2.5rem', marginBottom: '0.5rem' }}>
-          zappzarapp Frontend
-        </h1>
-        <p style={{ color: '#666', fontSize: '1.1rem' }}>
+    <main className={styles.main}>
+      <header className={styles.header}>
+        <h1 className={styles.title}>zappzarapp Frontend</h1>
+        <p className={styles.subtitle}>
           Next.js SSR Frontend running on Node.js
         </p>
       </header>
 
-      <section style={{ marginBottom: '2rem' }}>
-        <h2 style={{
-          color: '#333',
-          fontSize: '1.3rem',
-          marginBottom: '1rem',
-          borderBottom: '2px solid #0070f3',
-          paddingBottom: '0.5rem'
-        }}>
-          Frontend Status
-        </h2>
-        <div style={{
-          background: '#f8f9fa',
-          borderRadius: '8px',
-          padding: '1rem',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '0.75rem'
-        }}>
-          <span style={{
-            width: '12px',
-            height: '12px',
-            borderRadius: '50%',
-            background: '#0070f3',
-            boxShadow: '0 0 8px #0070f3'
-          }}></span>
+      <section className={styles.section}>
+        <h2 className={styles.sectionTitle}>Frontend Status</h2>
+        <div className={styles.statusCard}>
+          <span className={styles.statusIndicator}></span>
           <span>Next.js SSR Active</span>
         </div>
       </section>
 
-      <section>
-        <h2 style={{
-          color: '#333',
-          fontSize: '1.3rem',
-          marginBottom: '1rem',
-          borderBottom: '2px solid #0070f3',
-          paddingBottom: '0.5rem'
-        }}>
-          Backend API Status
-        </h2>
+      <section className={styles.section}>
+        <h2 className={styles.sectionTitle}>Backend API Status</h2>
         {health ? (
-          <div style={{
-            background: '#f8f9fa',
-            borderRadius: '8px',
-            padding: '1rem'
-          }}>
-            <pre style={{
-              background: '#1a1a2e',
-              color: '#0070f3',
-              padding: '1rem',
-              borderRadius: '4px',
-              overflow: 'auto',
-              fontSize: '0.875rem'
-            }}>
+          <div className={styles.apiCard}>
+            <pre className={styles.apiPre}>
               {JSON.stringify(health, null, 2)}
             </pre>
           </div>
         ) : (
-          <div style={{
-            background: '#fef2f2',
-            border: '1px solid #fecaca',
-            borderRadius: '8px',
-            padding: '1rem',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '0.75rem'
-          }}>
-            <span style={{
-              width: '12px',
-              height: '12px',
-              borderRadius: '50%',
-              background: '#ef4444',
-              boxShadow: '0 0 8px #ef4444'
-            }}></span>
+          <div className={styles.apiCardOffline}>
+            <span className={styles.statusIndicatorOffline}></span>
             <span>Backend not available</span>
           </div>
         )}
@@ -194,7 +266,7 @@ export default async function Home() {
 }
 EOF
 
-# 7. Create tsconfig.json
+# 9. Create tsconfig.json
 echo "[next] Creating tsconfig.json..."
 cat > tsconfig.json << 'EOF'
 {
@@ -225,7 +297,7 @@ cat > tsconfig.json << 'EOF'
 }
 EOF
 
-# 8. Create .gitignore
+# 10. Create .gitignore
 echo "[next] Creating .gitignore..."
 cat > .gitignore << 'EOF'
 # Next.js build output
