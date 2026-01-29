@@ -42,7 +42,7 @@ export class RequestSwitcher {
     if (typeof window !== 'undefined' && 'window' in globalThis) {
       const win = window as DevToolbarWindow;
       if (win.__DEV_TOOLBAR_DATA__?.metadata) {
-        this.originalBadgeCounts = win.__DEV_TOOLBAR_DATA__.metadata.badge_counts;
+        this.originalBadgeCounts = win.__DEV_TOOLBAR_DATA__.metadata.badge_counts ?? null;
         debug('[RequestSwitcher] Stored original badge counts:', this.originalBadgeCounts);
       }
     }

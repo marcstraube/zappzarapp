@@ -500,8 +500,8 @@ export class StorageService implements StorageServiceInterface {
     };
 
     if (body !== undefined) {
-      // Convert Buffer to Uint8Array for fetch compatibility
-      requestInit.body = new Uint8Array(body.buffer, body.byteOffset, body.byteLength);
+      // Use Buffer directly (compatible with fetch in Node.js)
+      requestInit.body = body as BodyInit;
     }
 
     const response = await fetch(url, requestInit);

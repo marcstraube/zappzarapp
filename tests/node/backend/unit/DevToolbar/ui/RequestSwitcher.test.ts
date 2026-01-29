@@ -406,7 +406,7 @@ describe('RequestSwitcher', () => {
       // Create metadata without badge_counts property
       const metadata = mockRequestMetadata({ id: 'test' });
 
-      delete (metadata as Record<string, unknown>).badge_counts;
+      delete (metadata as unknown as Record<string, unknown>).badge_counts;
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Test requires global manipulation
       (window as any).__DEV_TOOLBAR_DATA__ = {
@@ -420,8 +420,8 @@ describe('RequestSwitcher', () => {
 
       const badges = newSwitcher.getOriginalBadgeCounts();
 
-      // When badge_counts is undefined, originalBadgeCounts stays as null or becomes undefined
-      expect(badges).toBeUndefined();
+      // When badge_counts is undefined, originalBadgeCounts is explicitly set to null
+      expect(badges).toBeNull();
     });
   });
 
@@ -480,7 +480,7 @@ describe('RequestSwitcher', () => {
       const metadata = [mockRequestMetadata({ id: 'req-1', uri: '/api/test' })];
       const historicalRequest: RequestData = {
         id: 'req-1',
-        metadata: metadata[0],
+        metadata: metadata[0]!,
         tabs: { request: '<div>Historical</div>' },
       };
 

@@ -49,9 +49,23 @@ export class XdebugControls {
   private getXdebugConfig(): XdebugConfig {
     if (typeof window !== 'undefined' && 'window' in globalThis) {
       const win = window as DevToolbarWindow;
-      return win.__XDEBUG_CONFIG__ || { enabled: false, mode: 'off' };
+      return (
+        win.__XDEBUG_CONFIG__ || {
+          enabled: false,
+          mode: 'off',
+          idekey: '',
+          client_host: '',
+          client_port: 0,
+        }
+      );
     }
-    return { enabled: false, mode: 'off' };
+    return {
+      enabled: false,
+      mode: 'off',
+      idekey: '',
+      client_host: '',
+      client_port: 0,
+    };
   }
 
   /**

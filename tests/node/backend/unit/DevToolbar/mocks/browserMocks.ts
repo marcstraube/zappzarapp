@@ -5,12 +5,7 @@
  */
 
 import { vi } from 'vitest';
-import type {
-  DevToolbarData,
-  XdebugConfig,
-  DevToolbarMigration,
-  RequestMetadata,
-} from '@backend/DevToolbar/types';
+import type { DevToolbarData, XdebugConfig, RequestMetadata } from '@backend/DevToolbar/types';
 
 /**
  * Mock localStorage implementation
@@ -84,23 +79,6 @@ export function mockXdebugConfig(config?: Partial<XdebugConfig>): XdebugConfig {
   vi.stubGlobal('__XDEBUG_CONFIG__', mockConfig);
 
   return mockConfig;
-}
-
-/**
- * Mock window.__DEV_TOOLBAR_MIGRATION__ global
- */
-export function mockDevToolbarMigration(requests?: DevToolbarMigration[]): DevToolbarMigration[] {
-  const mockMigration: DevToolbarMigration[] = requests ?? [
-    {
-      id: 'migrated-request-1',
-      metadata: mockRequestMetadata({ id: 'migrated-request-1' }),
-      tabs: { request: '<div>Migrated content</div>' },
-    },
-  ];
-
-  vi.stubGlobal('__DEV_TOOLBAR_MIGRATION__', mockMigration);
-
-  return mockMigration;
 }
 
 /**

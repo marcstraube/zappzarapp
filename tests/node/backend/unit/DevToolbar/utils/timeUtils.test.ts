@@ -4,7 +4,7 @@
  * Tests for time formatting, time-ago strings, and sparkline generation.
  */
 
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { timeAgo, formatTimestamp, generateSparkline } from '@backend/DevToolbar/utils/timeUtils';
 
 describe('timeUtils', () => {

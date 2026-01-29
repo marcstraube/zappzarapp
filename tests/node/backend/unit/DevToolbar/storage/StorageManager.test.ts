@@ -7,7 +7,7 @@
  * @vitest-environment happy-dom
  */
 
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
 import { StorageManager } from '@backend/DevToolbar/storage/StorageManager';
 import {
   MAX_METADATA,
@@ -16,11 +16,7 @@ import {
   META_KEY,
   DATA_PREFIX,
 } from '@backend/DevToolbar/storage/StorageConfig';
-import {
-  mockDevToolbarData,
-  mockDevToolbarMigration,
-  mockRequestMetadata,
-} from '../mocks/browserMocks';
+import { mockDevToolbarData, mockRequestMetadata } from '../mocks/browserMocks';
 
 describe('StorageManager', () => {
   beforeEach(() => {
@@ -88,58 +84,6 @@ describe('StorageManager', () => {
     });
   });
 
-  describe.skip('handleMigration', () => {
-    it('should migrate requests from session storage', () => {
-      const _migrationData = mockDevToolbarMigration([
-        {
-          id: 'migrated-1',
-          metadata: mockRequestMetadata({ id: 'migrated-1' }),
-          tabs: { request: '<div>Migrated</div>' },
-        },
-        {
-          id: 'migrated-2',
-          metadata: mockRequestMetadata({ id: 'migrated-2' }),
-          tabs: { request: '<div>Migrated 2</div>' },
-        },
-      ]);
-
-      StorageManager.init();
-
-      // Check that both requests were stored
-      const metadata = StorageManager.getMetadata();
-      expect(metadata).toHaveLength(2);
-      expect(metadata[0].id).toBe('migrated-2'); // Newest first
-      expect(metadata[1].id).toBe('migrated-1');
-
-      // Check that migrated flag was set
-      const config = StorageManager.getConfig();
-      expect(config.migrated).toBe(true);
-    });
-
-    it('should not migrate if already migrated', () => {
-      // Set config to migrated
-      if (typeof localStorage !== 'undefined') {
-        localStorage.setItem(CONFIG_KEY, JSON.stringify({ migrated: true }));
-      }
-      mockDevToolbarMigration();
-
-      StorageManager.init();
-
-      // Should not store migration data
-      const metadata = StorageManager.getMetadata();
-      expect(metadata).toHaveLength(0);
-    });
-
-    it('should handle missing migration data', () => {
-      vi.stubGlobal('__DEV_TOOLBAR_MIGRATION__', undefined);
-
-      expect(() => StorageManager.init()).not.toThrow();
-
-      const config = StorageManager.getConfig();
-      expect(config.migrated).toBe(true); // Still marks as migrated
-    });
-  });
-
   describe('storeRequest', () => {
     it('should store request in localStorage', () => {
       const metadata = mockRequestMetadata({ id: 'test-123' });
@@ -167,9 +111,9 @@ describe('StorageManager', () => {
       StorageManager.storeRequest('req-3', meta3, {});
 
       const metadata = StorageManager.getMetadata();
-      expect(metadata[0].id).toBe('req-3'); // Newest first
-      expect(metadata[1].id).toBe('req-2');
-      expect(metadata[2].id).toBe('req-1');
+      expect(metadata[0]?.id).toBe('req-3'); // Newest first
+      expect(metadata[1]?.id).toBe('req-2');
+      expect(metadata[2]?.id).toBe('req-1');
     });
 
     it('should enforce MAX_METADATA limit', () => {
@@ -181,8 +125,8 @@ describe('StorageManager', () => {
 
       const metadata = StorageManager.getMetadata();
       expect(metadata).toHaveLength(MAX_METADATA);
-      expect(metadata[0].id).toBe(`req-${MAX_METADATA + 9}`); // Newest
-      expect(metadata[MAX_METADATA - 1].id).toBe(`req-10`); // Oldest kept
+      expect(metadata[0]?.id).toBe(`req-${MAX_METADATA + 9}`); // Newest
+      expect(metadata[MAX_METADATA - 1]?.id).toBe(`req-10`); // Oldest kept
     });
 
     it.skip('should handle QuotaExceededError with eviction', () => {
@@ -386,7 +330,7 @@ describe('StorageManager', () => {
       (StorageManager as any).useMemoryFallback = true;
 
       const before = localStorage.length;
-      StorageManager.setConfig({ migrated: true });
+      StorageManager.setConfig({ version: '1.0.0' });
       const after = localStorage.length;
 
       // localStorage should not have new items
