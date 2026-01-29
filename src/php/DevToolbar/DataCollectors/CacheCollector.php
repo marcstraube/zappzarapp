@@ -41,7 +41,7 @@ class CacheCollector implements CollectorInterface
      */
     public function getName(): string
     {
-        return 'CACHE';
+        return 'cache';
     }
 
     /**

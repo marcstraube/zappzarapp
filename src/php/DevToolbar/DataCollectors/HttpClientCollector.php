@@ -37,7 +37,7 @@ class HttpClientCollector implements CollectorInterface
      */
     public function getName(): string
     {
-        return 'HTTP';
+        return 'http';
     }
 
     /**

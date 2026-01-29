@@ -47,7 +47,7 @@ class TimelineCollector implements CollectorInterface
      */
     public function getName(): string
     {
-        return 'TIMELINE';
+        return 'timeline';
     }
 
     /**
