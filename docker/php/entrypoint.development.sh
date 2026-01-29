@@ -20,6 +20,14 @@ if [ -d "/run/secrets" ]; then
     echo "[entrypoint.development] Secrets copied to /tmp/secrets (readable)"
 fi
 
+# Configure PHP timezone from TZ environment variable
+# Note: PHP does NOT automatically use the TZ env var for date.timezone
+# We must explicitly configure it via INI file
+if [ -n "${TZ:-}" ]; then
+    echo "date.timezone = ${TZ}" > /usr/local/etc/php/conf.d/99-timezone.ini
+    echo "[entrypoint.development] Configured PHP timezone: ${TZ}"
+fi
+
 # Configure Git safe directory for Dev Dashboard (system-wide, applies to all users)
 git config --system --add safe.directory /var/www/html 2>/dev/null || true
 

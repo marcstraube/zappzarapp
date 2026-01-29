@@ -6,6 +6,14 @@
 
 set -e
 
+# Configure PHP timezone from TZ environment variable
+# Note: PHP does NOT automatically use the TZ env var for date.timezone
+# We must explicitly configure it via INI file
+if [ -n "${TZ:-}" ]; then
+    echo "date.timezone = ${TZ}" > /usr/local/etc/php/conf.d/99-timezone.ini
+    echo "[entrypoint.production] Configured PHP timezone: ${TZ}"
+fi
+
 # Production Environment Validation
 # Ensure APP_ENV is explicitly set to "production"
 if [ "${APP_ENV:-}" != "production" ]; then
