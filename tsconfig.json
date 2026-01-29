@@ -10,6 +10,9 @@
     "declaration": true,
     "declarationMap": true,
 
+    /* Type Definitions */
+    "types": ["node"],
+
     /* Path Mapping */
     "baseUrl": ".",
     "paths": {

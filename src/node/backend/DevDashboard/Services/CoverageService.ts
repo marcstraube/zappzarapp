@@ -38,6 +38,7 @@ function getNewestMtime(directory: string, extensions: string[]): number | null 
 
   let newestMtime: number | null = null;
 
+  // eslint-disable-next-line sonarjs/cognitive-complexity -- Recursive directory walker inherently complex
   function walkDir(dir: string): void {
     try {
       const entries: Dirent[] = readdirSync(dir, { withFileTypes: true });

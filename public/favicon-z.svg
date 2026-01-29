@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <defs>
+    <!-- Metallic gold gradient with stronger contrast -->
+    <linearGradient id="goldBase" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#FFFEF0"/>
+      <stop offset="15%" style="stop-color:#FFFACD"/>
+      <stop offset="30%" style="stop-color:#FFD700"/>
+      <stop offset="50%" style="stop-color:#FFCC00"/>
+      <stop offset="70%" style="stop-color:#FFD700"/>
+      <stop offset="85%" style="stop-color:#DAA520"/>
+      <stop offset="100%" style="stop-color:#B8860B"/>
+    </linearGradient>
+    <!-- Strong shine highlight -->
+    <radialGradient id="shine" cx="35%" cy="25%">
+      <stop offset="0%" style="stop-color:#FFFFFF;stop-opacity:0.9"/>
+      <stop offset="30%" style="stop-color:#FFFACD;stop-opacity:0.5"/>
+      <stop offset="60%" style="stop-color:#FFD700;stop-opacity:0.2"/>
+      <stop offset="100%" style="stop-color:#DAA520;stop-opacity:0"/>
+    </radialGradient>
+    <!-- Dark shadow for depth -->
+    <radialGradient id="shadow" cx="60%" cy="70%">
+      <stop offset="0%" style="stop-color:#000000;stop-opacity:0"/>
+      <stop offset="50%" style="stop-color:#3D2D14;stop-opacity:0.3"/>
+      <stop offset="100%" style="stop-color:#1A1108;stop-opacity:0.6"/>
+    </radialGradient>
+  </defs>
+  <!-- Background circle -->
+  <circle cx="32" cy="32" r="30" fill="#1a1a2e"/>
+  <!-- Lightning bolt base (mirrored for Z shape) -->
+  <path d="M28 8 L46 34 L36 34 L40 56 L18 28 L30 28 Z" fill="url(#goldBase)"/>
+  <!-- Shadow layer for depth -->
+  <path d="M28 8 L46 34 L36 34 L40 56 L18 28 L30 28 Z" fill="url(#shadow)"/>
+  <!-- Shine overlay -->
+  <path d="M28 8 L46 34 L36 34 L40 56 L18 28 L30 28 Z" fill="url(#shine)"/>
+</svg>

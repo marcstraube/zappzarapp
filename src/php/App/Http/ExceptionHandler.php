@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace App\Http;
 
 use App\Http\Response\JsonResponse;
+use DevToolbar\DataCollectors\ExceptionCollector;
+use DevToolbar\Guard\DevToolbarGuard;
 use ErrorException;
 use Psr\Log\LoggerInterface;
 use Throwable;
@@ -84,12 +86,18 @@ readonly class ExceptionHandler
      * Handle an uncaught exception.
      *
      * This method:
+     * - Tracks exception in DevToolbar (if enabled)
      * - Logs the exception details server-side
      * - Returns a safe error response based on environment
      * - Uses content negotiation (HTML vs JSON)
      */
     public function handle(Throwable $exception): void
     {
+        // Track in DevToolbar if enabled
+        if (class_exists(DevToolbarGuard::class) && DevToolbarGuard::isEnabled()) {
+            ExceptionCollector::getInstance()->trackException($exception, handled: false);
+        }
+
         // Log exception server-side (always, regardless of environment)
         $this->logException($exception);
 

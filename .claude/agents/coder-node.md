@@ -1,6 +1,6 @@
 ---
 name: coder-node
-description: "Implements Node/TypeScript code according to plan"
+description: 'Implements Node/TypeScript code according to plan'
 tools: Read, Write, Edit, Grep, Glob, Bash(make:*), Bash(git:*), WebSearch
 model: sonnet
 color: cyan
@@ -95,13 +95,13 @@ Return to Main Agent with:
 
 ### Quality Checks
 
-| Check          | Status | Notes |
-| -------------- | ------ | ----- |
-| prettier-fix   | ✅ OK  | —     |
-| lint-node-fix  | ✅ OK  | —     |
-| type-check     | ✅ OK  | —     |
-| test-node      | ✅ OK  | 8 tests passed |
-| test-coverage  | ✅ OK  | Core: 88% (80%+ required) |
+| Check         | Status | Notes                     |
+| ------------- | ------ | ------------------------- |
+| prettier-fix  | ✅ OK  | —                         |
+| lint-node-fix | ✅ OK  | —                         |
+| type-check    | ✅ OK  | —                         |
+| test-node     | ✅ OK  | 8 tests passed            |
+| test-coverage | ✅ OK  | Core: 88% (80%+ required) |
 
 ### Problems Encountered
 

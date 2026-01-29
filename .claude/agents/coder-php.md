@@ -1,6 +1,6 @@
 ---
 name: coder-php
-description: "Implements PHP application code according to plan"
+description: 'Implements PHP application code according to plan'
 tools: Read, Write, Edit, Grep, Glob, Bash(make:*), Bash(git:*), WebSearch
 model: sonnet
 color: blue
@@ -94,12 +94,12 @@ Return to Main Agent with:
 
 ### Quality Checks
 
-| Check          | Status | Notes |
-| -------------- | ------ | ----- |
-| cs-fix         | ✅ OK  | —     |
-| analyse        | ✅ OK  | —     |
-| test-php       | ✅ OK  | 12 tests passed |
-| test-coverage  | ✅ OK  | Core: 92% (80%+ required) |
+| Check         | Status | Notes                     |
+| ------------- | ------ | ------------------------- |
+| cs-fix        | ✅ OK  | —                         |
+| analyse       | ✅ OK  | —                         |
+| test-php      | ✅ OK  | 12 tests passed           |
+| test-coverage | ✅ OK  | Core: 92% (80%+ required) |
 
 ### Problems Encountered
 

@@ -26,6 +26,27 @@
     </div>
     {% endif %}
 
+    {% if env.ENV == 'development' %}
+    <div class="card" style="background: #e7f3ff; border: 2px solid #2196F3; padding: 1rem; margin-bottom: 1rem;">
+        <h3 style="color: #1565C0; margin: 0 0 0.5rem 0;">🛠️ Developer Toolbar Demo Active</h3>
+        <p style="color: #1565C0; margin: 0; font-size: 0.95em;">
+            This page demonstrates all Developer Toolbar features. Click the toolbar in the bottom-right corner to explore:
+        </p>
+        <ul style="color: #1565C0; margin: 0.5rem 0 0 1.5rem; font-size: 0.9em;">
+            <li><strong>REQUEST Tab:</strong> Current request details (method, URI, headers, timing, memory)</li>
+            <li><strong>QUERIES Tab:</strong> 9 sample queries including N+1 pattern detection (5 duplicate queries)</li>
+            <li><strong>EXCEPTIONS Tab:</strong> 2 handled exceptions (RuntimeException, InvalidArgumentException)</li>
+            <li><strong>HTTP Tab:</strong> 3 simulated API calls (fast: 150ms, medium: 350ms, slow: 650ms)</li>
+            <li><strong>CACHE Tab:</strong> 7 cache operations (3 hits, 1 miss, 2 sets, 1 delete) - ~75% hit rate</li>
+            <li><strong>TIMELINE Tab:</strong> Visual request breakdown with aggregated data from all collectors</li>
+            <li><strong>Performance Alerts:</strong> N+1 query warning should be visible in QUERIES tab</li>
+        </ul>
+        <p style="color: #1565C0; margin: 0.5rem 0 0 0; font-size: 0.85em; font-style: italic;">
+            💡 Tip: Open browser DevTools to see the toolbar's JavaScript console logs
+        </p>
+    </div>
+    {% endif %}
+
     <div class="card text-center">
         <h1>⚡ zappzarapp</h1>
         <p style="font-family: monospace; color: #666; margin: 0.25rem 0;">/ˈt͡sapt͡saˈʁap/</p>

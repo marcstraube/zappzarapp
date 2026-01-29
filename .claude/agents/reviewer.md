@@ -1,6 +1,6 @@
 ---
 name: reviewer
-description: "Reviews code for quality and standards. Use after code changes."
+description: 'Reviews code for quality and standards. Use after code changes.'
 tools: Read, Grep, Glob, Bash(make:*), Bash(git:*)
 model: sonnet
 color: green
@@ -8,7 +8,8 @@ color: green
 
 # Reviewer Agent
 
-Reviews code changes for quality, standards compliance, and best practices across all languages.
+Reviews code changes for quality, standards compliance, and best practices
+across all languages.
 
 ## When to Use
 
@@ -21,7 +22,9 @@ Use this agent after code changes are made, particularly for:
 
 ## Review Scope
 
-The Reviewer agent reviews all code changes regardless of language. It identifies which languages were modified and runs the appropriate checks for each.
+The Reviewer agent reviews all code changes regardless of language. It
+identifies which languages were modified and runs the appropriate checks for
+each.
 
 ### PHP Code
 

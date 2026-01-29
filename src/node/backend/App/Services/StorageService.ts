@@ -500,8 +500,8 @@ export class StorageService implements StorageServiceInterface {
     };
 
     if (body !== undefined) {
-      // Convert Buffer to Uint8Array for fetch compatibility
-      requestInit.body = new Uint8Array(body.buffer, body.byteOffset, body.byteLength);
+      // Use Buffer directly (compatible with fetch in Node.js)
+      requestInit.body = body as BodyInit;
     }
 
     const response = await fetch(url, requestInit);
@@ -725,6 +725,6 @@ export class StorageService implements StorageServiceInterface {
     // eslint-disable-next-line security/detect-non-literal-regexp -- tag is internal, not user input
     const regex = new RegExp(`<${tag}>([\\s\\S]*?)<\\/${tag}>`);
     const match = regex.exec(xml);
-    return match !== null && match[1] !== undefined ? match[1] : null;
+    return match?.[1] ?? null;
   }
 }

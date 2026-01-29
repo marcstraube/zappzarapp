@@ -14,10 +14,37 @@ use App\Http\Controller\WelcomeController;
 use App\Http\ExceptionHandler;
 use App\Http\Middleware\CorsMiddleware;
 use App\Http\Router;
+use DevToolbar\Guard\DevToolbarGuard;
 use DI\ContainerBuilder;
 
 // Load Composer Autoloader
 require_once __DIR__ . '/../vendor/autoload.php';
+
+/**
+ * ============================================================================
+ * DEVELOPER TOOLBAR (DEV-ONLY) - INITIALIZATION
+ * ============================================================================
+ * Start output buffering and initialize the Developer Toolbar.
+ * The toolbar provides real-time debugging information including:
+ * - Request execution time and memory usage
+ * - Database queries with performance metrics
+ * - Log messages from Monolog
+ * - Exceptions (both handled and unhandled)
+ *
+ * Security: Only enabled in development (disabled in production, CLI, AJAX)
+ *
+ * Note: DevToolbar is initialized early, but CSP nonce is set later after
+ * CspNonceHelper generates it (see below after CSP header setup).
+ * AJAX requests for DevToolbar actions are handled above and exit early.
+ */
+if (DevToolbarGuard::isEnabled()) {
+    ob_start();
+    $toolbar = DevToolbar\DevToolbar::getInstance();
+    $toolbar->boot();
+
+    // Register shutdown handler to inject toolbar HTML before </body>
+    register_shutdown_function([$toolbar, 'render']);
+}
 
 /**
  * ============================================================================
@@ -114,11 +141,28 @@ if ($isDevelopment && str_starts_with($requestPath, '/_dev')) {
 use App\Security\CspNonceHelper;
 
 // 1. Build and send CSP Header (before any output!)
-$cspHeader = CspNonceHelper::buildCspHeader();
-header("Content-Security-Policy: $cspHeader");
+try {
+    $cspHeader = CspNonceHelper::buildCspHeader();
+    header("Content-Security-Policy: $cspHeader");
 
-// 2. Define constant for backwards compatibility
-define('CSP_NONCE', CspNonceHelper::get());
+    // 2. Define constant for backwards compatibility
+    define('CSP_NONCE', CspNonceHelper::get());
+
+    // 3. Share nonce with DevToolbar (if enabled)
+    if (DevToolbarGuard::isEnabled() && isset($toolbar)) {
+        $toolbar->setNonce(CspNonceHelper::get());
+    }
+} catch (Random\RandomException $e) {
+    // Critical: CSP nonce generation failed - no secure random source available
+    // This is a fatal security issue - application cannot run without CSP protection
+    error_log('[CRITICAL] CSP nonce generation failed: ' . $e->getMessage());
+    http_response_code(500);
+    header('Content-Type: text/plain');
+    // @phpstan-ignore-next-line - Entry point error handling requires echo/exit
+    echo 'Service temporarily unavailable';
+    // @phpstan-ignore-next-line - Entry point error handling requires echo/exit
+    exit(1);
+}
 
 /**
  * ============================================================================
@@ -137,8 +181,20 @@ define('CSP_NONCE', CspNonceHelper::get());
  * Security: This fixes the "Application Error Disclosure" vulnerability
  * detected by OWASP ZAP scan.
  */
-$exceptionHandler = new ExceptionHandler();
-$exceptionHandler->register();
+try {
+    $exceptionHandler = new ExceptionHandler();
+    $exceptionHandler->register();
+} catch (ErrorException $e) {
+    // Critical: Global exception handler registration failed
+    // Log error and terminate - application cannot run without exception handler
+    error_log('[CRITICAL] Exception handler registration failed: ' . $e->getMessage());
+    http_response_code(500);
+    header('Content-Type: text/plain');
+    // @phpstan-ignore-next-line - Entry point error handling requires echo/exit
+    echo 'Service temporarily unavailable';
+    // @phpstan-ignore-next-line - Entry point error handling requires echo/exit
+    exit(1);
+}
 
 // Simple Routing Example
 $router = new Router();

@@ -44,10 +44,7 @@ describe('DevDashboard DocsService', () => {
 
     it('should return available when docs exist and no source dir', () => {
       vi.mocked(fs.existsSync).mockImplementation((path) => {
-        if (typeof path === 'string' && path.includes('docs/api/node-backend/index.html')) {
-          return true;
-        }
-        return false; // src/node doesn't exist
+        return typeof path === 'string' && path.includes('docs/api/node-backend/index.html');
       });
       vi.mocked(fs.statSync).mockReturnValue({
         mtimeMs: Date.now(),
