@@ -37,7 +37,7 @@ describe('exportUtils', () => {
             const metadata = mockRequestMetadata({
                 method: 'POST',
                 uri: '/api/test',
-                statusCode: 201,
+                status: 201,
             });
 
             const requestData: RequestData = {
@@ -51,7 +51,7 @@ describe('exportUtils', () => {
             expect(result.metadata).toEqual(metadata);
             expect(result.metadata.method).toBe('POST');
             expect(result.metadata.uri).toBe('/api/test');
-            expect(result.metadata.statusCode).toBe(201);
+            expect(result.metadata.status).toBe(201);
         });
 
         it('should include all tab HTML data', () => {

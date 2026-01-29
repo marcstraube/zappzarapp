@@ -137,12 +137,12 @@ export class RequestSwitcher {
             html += '<div class="dev-toolbar-request-switcher-separator">Recent</div>';
             recentRequests.forEach((meta) => {
                 const isActive = this.isViewingHistoricalRequest && this.currentHistoricalRequestId === meta.id;
-                const statusClass = this.getStatusClass(meta.statusCode);
+                const statusClass = this.getStatusClass(meta.status);
                 const time = timeAgo(meta.timestamp);
 
                 html += `<div class="dev-toolbar-request-switcher-item ${isActive ? 'active' : ''}" data-request-id="${meta.id}">
                     <span class="dev-toolbar-request-switcher-item-method">${meta.method}</span>
-                    <span class="dev-toolbar-request-switcher-item-status status-${statusClass}">${meta.statusCode}</span>
+                    <span class="dev-toolbar-request-switcher-item-status status-${statusClass}">${meta.status}</span>
                     <span class="dev-toolbar-request-switcher-item-uri" title="${this.escapeHtml(meta.uri)}">${this.escapeHtml(meta.uri)}</span>
                     <span class="dev-toolbar-request-switcher-item-time">${time}</span>
                 </div>`;
@@ -294,11 +294,11 @@ export class RequestSwitcher {
     /**
      * Get status class for status code
      */
-    private getStatusClass(statusCode: number): string {
-        if (statusCode >= 200 && statusCode < 300) return 'success';
-        if (statusCode >= 300 && statusCode < 400) return 'redirect';
-        if (statusCode >= 400 && statusCode < 500) return 'client-error';
-        if (statusCode >= 500) return 'server-error';
+    private getStatusClass(status: number): string {
+        if (status >= 200 && status < 300) return 'success';
+        if (status >= 300 && status < 400) return 'redirect';
+        if (status >= 400 && status < 500) return 'client-error';
+        if (status >= 500) return 'server-error';
         return 'unknown';
     }
 

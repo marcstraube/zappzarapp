@@ -528,11 +528,11 @@
         html += '<div class="dev-toolbar-request-switcher-separator">Recent</div>';
         recentRequests.forEach((meta) => {
           const isActive = this.isViewingHistoricalRequest && this.currentHistoricalRequestId === meta.id;
-          const statusClass = this.getStatusClass(meta.statusCode);
+          const statusClass = this.getStatusClass(meta.status);
           const time = timeAgo(meta.timestamp);
           html += `<div class="dev-toolbar-request-switcher-item ${isActive ? "active" : ""}" data-request-id="${meta.id}">
                     <span class="dev-toolbar-request-switcher-item-method">${meta.method}</span>
-                    <span class="dev-toolbar-request-switcher-item-status status-${statusClass}">${meta.statusCode}</span>
+                    <span class="dev-toolbar-request-switcher-item-status status-${statusClass}">${meta.status}</span>
                     <span class="dev-toolbar-request-switcher-item-uri" title="${this.escapeHtml(meta.uri)}">${this.escapeHtml(meta.uri)}</span>
                     <span class="dev-toolbar-request-switcher-item-time">${time}</span>
                 </div>`;
@@ -643,11 +643,11 @@
     /**
      * Get status class for status code
      */
-    getStatusClass(statusCode) {
-      if (statusCode >= 200 && statusCode < 300) return "success";
-      if (statusCode >= 300 && statusCode < 400) return "redirect";
-      if (statusCode >= 400 && statusCode < 500) return "client-error";
-      if (statusCode >= 500) return "server-error";
+    getStatusClass(status) {
+      if (status >= 200 && status < 300) return "success";
+      if (status >= 300 && status < 400) return "redirect";
+      if (status >= 400 && status < 500) return "client-error";
+      if (status >= 500) return "server-error";
       return "unknown";
     }
     /**
@@ -905,9 +905,9 @@
           slowest: 0
         };
       }
-      const times = metaArray.map((r) => r.duration);
+      const times = metaArray.map((r) => r.time);
       const memories = metaArray.map((r) => r.memory / 1024 / 1024);
-      const queries = metaArray.map((r) => r.query_count || 0);
+      const queries = metaArray.map((r) => r.query_count);
       return {
         total: metaArray.length,
         avgTime: times.reduce((a, b) => a + b, 0) / times.length,
@@ -921,9 +921,9 @@
      * Render trends sparkline
      */
     renderTrends(metaArray) {
-      const trendsEl = document.getElementById("history-trends-sparkline");
+      const trendsEl = document.querySelector(".dev-toolbar-history-sparkline");
       if (!trendsEl) return;
-      const times = metaArray.slice(0, 20).reverse().map((r) => r.duration);
+      const times = metaArray.slice(0, 20).reverse().map((r) => r.time);
       const sparkline = generateSparkline(times);
       trendsEl.textContent = sparkline;
     }
@@ -942,20 +942,20 @@
       }
       let html = "";
       metaArray.forEach((request) => {
-        const statusIcon = this.getStatusIcon(request.statusCode);
+        const statusIcon = this.getStatusIcon(request.status);
         const timeAgoText = timeAgo(request.timestamp);
         const fullTimestamp = formatTimestamp(request.timestamp);
         let perfClass = "";
-        if (request.duration > 500) {
+        if (request.time > 500) {
           perfClass = "slow";
-        } else if (request.duration > 200) {
+        } else if (request.time > 200) {
           perfClass = "warning";
         }
         html += `<div class="dev-toolbar-history-item ${perfClass}"
                       data-method="${this.escapeHtml(request.method)}"
                       data-uri="${this.escapeHtml(request.uri)}"
-                      data-status="${request.statusCode}"
-                      data-time="${request.duration}"
+                      data-status="${request.status}"
+                      data-time="${request.time}"
                       data-request-id="${this.escapeHtml(request.id)}">
                     <div class="dev-toolbar-history-item-header">
                         <span class="dev-toolbar-history-icon">${statusIcon}</span>
@@ -967,10 +967,10 @@
                                 title="Export this request">\u2B07</button>
                     </div>
                     <div class="dev-toolbar-history-item-meta">
-                        <span class="dev-toolbar-history-meta-item">Status: ${request.statusCode}</span>
-                        <span class="dev-toolbar-history-meta-item">Time: ${request.duration.toFixed(0)}ms</span>
+                        <span class="dev-toolbar-history-meta-item">Status: ${request.status}</span>
+                        <span class="dev-toolbar-history-meta-item">Time: ${request.time.toFixed(0)}ms</span>
                         <span class="dev-toolbar-history-meta-item">Memory: ${(request.memory / 1024 / 1024).toFixed(1)}MB</span>
-                        <span class="dev-toolbar-history-meta-item">Queries: ${request.query_count || 0}</span>
+                        <span class="dev-toolbar-history-meta-item">Queries: ${request.query_count}</span>
                     </div>
                 </div>`;
       });

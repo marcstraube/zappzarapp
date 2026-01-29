@@ -8,16 +8,19 @@
 /**
  * Request metadata stored for history navigation
  * Lightweight entries (up to 50 stored)
+ *
+ * Note: Field names match PHP's extractMetadata() output in DataInjectionRenderer
  */
 export interface RequestMetadata {
     id: string;
     method: string;
     uri: string;
-    statusCode: number;
+    status: number;           // PHP: status_code
     timestamp: number;
-    duration: number;
-    memory: number;
-    date: string;
+    time: number;             // PHP: execution_time (in ms)
+    memory: number;           // PHP: memory_peak (in bytes)
+    query_count: number;      // PHP: query count from queries collector
+    badge_counts?: Record<string, number>; // PHP: badge counts per tab
 }
 
 /**

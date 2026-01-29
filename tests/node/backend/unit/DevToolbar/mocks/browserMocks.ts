@@ -111,11 +111,12 @@ export function mockRequestMetadata(overrides?: Partial<RequestMetadata>): Reque
         id: overrides?.id || 'test-request-123',
         method: overrides?.method || 'GET',
         uri: overrides?.uri || '/test/endpoint',
-        statusCode: overrides?.statusCode || 200,
-        timestamp: overrides?.timestamp || Date.now(),
-        duration: overrides?.duration || 123.45,
+        status: overrides?.status || 200,
+        timestamp: overrides?.timestamp || Math.floor(Date.now() / 1000),
+        time: overrides?.time || 123.45,
         memory: overrides?.memory || 1024000,
-        date: overrides?.date || new Date().toISOString(),
+        query_count: overrides?.query_count || 5,
+        badge_counts: overrides?.badge_counts || {},
     };
 }
 

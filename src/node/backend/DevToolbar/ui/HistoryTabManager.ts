@@ -118,9 +118,9 @@ export class HistoryTabManager {
             };
         }
 
-        const times = metaArray.map((r) => r.duration);
+        const times = metaArray.map((r) => r.time);
         const memories = metaArray.map((r) => r.memory / 1024 / 1024); // Convert to MB
-        const queries = metaArray.map((r) => r.query_count || 0);
+        const queries = metaArray.map((r) => r.query_count);
 
         return {
             total: metaArray.length,
@@ -136,10 +136,10 @@ export class HistoryTabManager {
      * Render trends sparkline
      */
     private renderTrends(metaArray: RequestMetadata[]): void {
-        const trendsEl = document.getElementById('history-trends-sparkline');
+        const trendsEl = document.querySelector('.dev-toolbar-history-sparkline');
         if (!trendsEl) return;
 
-        const times = metaArray.slice(0, 20).reverse().map((r) => r.duration);
+        const times = metaArray.slice(0, 20).reverse().map((r) => r.time);
         const sparkline = generateSparkline(times);
 
         trendsEl.textContent = sparkline;
@@ -164,23 +164,23 @@ export class HistoryTabManager {
         let html = '';
 
         metaArray.forEach((request) => {
-            const statusIcon = this.getStatusIcon(request.statusCode);
+            const statusIcon = this.getStatusIcon(request.status);
             const timeAgoText = timeAgo(request.timestamp);
             const fullTimestamp = formatTimestamp(request.timestamp);
 
             // Performance class
             let perfClass = '';
-            if (request.duration > 500) {
+            if (request.time > 500) {
                 perfClass = 'slow';
-            } else if (request.duration > 200) {
+            } else if (request.time > 200) {
                 perfClass = 'warning';
             }
 
             html += `<div class="dev-toolbar-history-item ${perfClass}"
                       data-method="${this.escapeHtml(request.method)}"
                       data-uri="${this.escapeHtml(request.uri)}"
-                      data-status="${request.statusCode}"
-                      data-time="${request.duration}"
+                      data-status="${request.status}"
+                      data-time="${request.time}"
                       data-request-id="${this.escapeHtml(request.id)}">
                     <div class="dev-toolbar-history-item-header">
                         <span class="dev-toolbar-history-icon">${statusIcon}</span>
@@ -192,10 +192,10 @@ export class HistoryTabManager {
                                 title="Export this request">⬇</button>
                     </div>
                     <div class="dev-toolbar-history-item-meta">
-                        <span class="dev-toolbar-history-meta-item">Status: ${request.statusCode}</span>
-                        <span class="dev-toolbar-history-meta-item">Time: ${request.duration.toFixed(0)}ms</span>
+                        <span class="dev-toolbar-history-meta-item">Status: ${request.status}</span>
+                        <span class="dev-toolbar-history-meta-item">Time: ${request.time.toFixed(0)}ms</span>
                         <span class="dev-toolbar-history-meta-item">Memory: ${(request.memory / 1024 / 1024).toFixed(1)}MB</span>
-                        <span class="dev-toolbar-history-meta-item">Queries: ${request.query_count || 0}</span>
+                        <span class="dev-toolbar-history-meta-item">Queries: ${request.query_count}</span>
                     </div>
                 </div>`;
         });
