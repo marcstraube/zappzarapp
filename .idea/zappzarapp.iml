@@ -7,6 +7,8 @@
       <sourceFolder url="file://$MODULE_DIR$/tests/php/App" isTestSource="true" packagePrefix="Tests\App\" />
       <sourceFolder url="file://$MODULE_DIR$/tests/php/DevDashboard" isTestSource="true" packagePrefix="Tests\DevDashboard\" />
       <sourceFolder url="file://$MODULE_DIR$/tests" isTestSource="true" />
+      <sourceFolder url="file://$MODULE_DIR$/src/php/DevToolbar" isTestSource="false" packagePrefix="DevToolbar\" />
+      <sourceFolder url="file://$MODULE_DIR$/tests/php/DevToolbar" isTestSource="true" packagePrefix="Tests\DevToolbar\" />
       <excludeFolder url="file://$MODULE_DIR$/.pnpm-store" />
       <excludeFolder url="file://$MODULE_DIR$/build" />
       <excludeFolder url="file://$MODULE_DIR$/dist" />
