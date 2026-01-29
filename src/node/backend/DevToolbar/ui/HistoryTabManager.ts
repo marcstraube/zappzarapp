@@ -13,6 +13,7 @@ import { StorageManager } from '../storage/StorageManager';
 import { timeAgo, formatTimestamp, generateSparkline } from '../utils/timeUtils';
 import { downloadFile, exportRequestAsJson } from '../utils/exportUtils';
 import { ClearHistoryDialog } from './ClearHistoryDialog';
+import { showError } from './MessageDialog.js';
 import type { RequestMetadata } from '../types';
 import { debug, warn, error as logError } from '../utils/logger.js';
 import { escapeHtml } from '../utils/uiHelpers.js';
@@ -346,28 +347,18 @@ export class HistoryTabManager {
    * Export single request
    *
    * Exports structured collector data only.
-   * Shows alert if data is not available (legacy request).
    */
   private exportRequest(requestId: string): void {
     const requestData = StorageManager.getRequest(requestId);
     if (requestData == null) {
       logError('[HistoryTabManager] Request not found:', requestId);
-      alert('Request not found in history.');
+      showError('Request not found in history.', 'Export Failed');
       return;
     }
 
-    try {
-      const exportData = exportRequestAsJson(requestId, requestData);
-      const filename = `devtoolbar-request-${requestId}-${Date.now()}.json`;
-      downloadFile(JSON.stringify(exportData, null, 2), filename, 'application/json');
-    } catch (error) {
-      logError('[HistoryTabManager] Export failed:', error);
-      alert(
-        'Cannot export this request: No structured data available.\n\n' +
-          'This request was stored before structured data export was implemented.\n' +
-          'Please reload the page to capture new requests with structured data.'
-      );
-    }
+    const exportData = exportRequestAsJson(requestId, requestData);
+    const filename = `devtoolbar-request-${requestId}-${Date.now()}.json`;
+    downloadFile(JSON.stringify(exportData, null, 2), filename, 'application/json');
   }
 
   /**

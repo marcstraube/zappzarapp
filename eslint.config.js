@@ -107,6 +107,7 @@ export default [
       // Redundant code detection (catches issues PHPStorm would flag)
       '@typescript-eslint/no-unnecessary-condition': 'warn',
       '@typescript-eslint/no-unnecessary-type-assertion': 'warn',
+      '@typescript-eslint/no-unnecessary-boolean-literal-compare': 'warn',
       '@typescript-eslint/no-redundant-type-constituents': 'warn',
       '@typescript-eslint/no-useless-empty-export': 'warn',
       '@typescript-eslint/prefer-nullish-coalescing': 'warn', // Use ?? instead of ||
@@ -122,6 +123,7 @@ export default [
   },
 
   // DevToolbar browser code - relax unsafe rules for browser DOM APIs
+  // Note: Inherits all base TypeScript rules and only overrides specific ones
   {
     files: ['src/node/backend/DevToolbar/**/*.ts'],
     languageOptions: {
@@ -143,9 +145,66 @@ export default [
     },
     plugins: {
       '@typescript-eslint': tsPlugin,
+      prettier: prettierPlugin,
+      security: securityPlugin,
+      sonarjs: sonarjsPlugin,
     },
     rules: {
-      // Browser DOM APIs are not typed correctly in linting context
+      // Inherit all base TypeScript rules
+      ...tsPlugin.configs['recommended'].rules,
+      ...tsPlugin.configs['recommended-requiring-type-checking'].rules,
+
+      // Prettier integration
+      'prettier/prettier': 'error',
+
+      // Security rules
+      'security/detect-eval-with-expression': 'error',
+      'security/detect-child-process': 'error',
+      'security/detect-unsafe-regex': 'error',
+      'security/detect-non-literal-require': 'error',
+      'security/detect-non-literal-fs-filename': 'off',
+      'security/detect-non-literal-regexp': 'warn',
+      'security/detect-possible-timing-attacks': 'warn',
+      'security/detect-object-injection': 'off',
+
+      // SonarJS rules
+      'sonarjs/prefer-immediate-return': 'warn',
+      'sonarjs/no-identical-functions': 'warn',
+      'sonarjs/no-duplicated-branches': 'warn',
+      'sonarjs/no-redundant-jump': 'warn',
+      'sonarjs/no-useless-catch': 'warn',
+      'sonarjs/no-small-switch': 'warn',
+      'sonarjs/prefer-single-boolean-return': 'warn',
+      'sonarjs/cognitive-complexity': ['warn', 15],
+
+      // TypeScript rules
+      '@typescript-eslint/explicit-function-return-type': 'warn',
+      '@typescript-eslint/no-explicit-any': 'error',
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        { argsIgnorePattern: '^_', varsIgnorePattern: '^_' },
+      ],
+      '@typescript-eslint/no-floating-promises': 'error',
+      '@typescript-eslint/await-thenable': 'error',
+      '@typescript-eslint/no-misused-promises': 'error',
+      '@typescript-eslint/strict-boolean-expressions': 'warn',
+
+      // Redundant code detection
+      '@typescript-eslint/no-unnecessary-condition': 'warn',
+      '@typescript-eslint/no-unnecessary-type-assertion': 'warn',
+      '@typescript-eslint/no-unnecessary-boolean-literal-compare': 'warn',
+      '@typescript-eslint/no-useless-empty-export': 'warn',
+      '@typescript-eslint/prefer-nullish-coalescing': 'warn',
+      '@typescript-eslint/prefer-optional-chain': 'warn',
+
+      // Code quality
+      'no-console': ['warn', { allow: ['warn', 'error'] }],
+      'prefer-const': 'error',
+      'no-var': 'error',
+      eqeqeq: ['error', 'always', { null: 'ignore' }],
+      curly: ['error', 'all'],
+
+      // DevToolbar-specific overrides: Relax unsafe rules for browser DOM APIs
       '@typescript-eslint/no-unsafe-assignment': 'off',
       '@typescript-eslint/no-unsafe-member-access': 'off',
       '@typescript-eslint/no-unsafe-argument': 'off',

@@ -27,16 +27,19 @@ export function escapeHtml(text: string): string {
 export function createEscapeKeyHandler(onClose: () => void): () => void {
   const escHandler = (e: KeyboardEvent): void => {
     if (e.key === 'Escape') {
+      e.preventDefault();
+      e.stopImmediatePropagation(); // Prevent other listeners on same element
       onClose();
       cleanup();
     }
   };
 
   const cleanup = (): void => {
-    document.removeEventListener('keydown', escHandler);
+    document.removeEventListener('keydown', escHandler, true);
   };
 
-  document.addEventListener('keydown', escHandler);
+  // Use capture phase to handle event before DevToolbar
+  document.addEventListener('keydown', escHandler, true);
 
   return cleanup;
 }

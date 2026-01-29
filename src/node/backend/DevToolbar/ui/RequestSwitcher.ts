@@ -84,7 +84,7 @@ export class RequestSwitcher {
 
       if (element.dataset.action === 'current') {
         switcher.classList.remove('open');
-        if (this.isViewingHistoricalRequest === true) {
+        if (this.isViewingHistoricalRequest) {
           this.restoreCurrentRequest(onRequestLoad);
         } else {
           debug('[RequestSwitcher] Already viewing current request');
@@ -171,7 +171,7 @@ export class RequestSwitcher {
    * Load historical request from localStorage
    */
   loadHistoricalRequest(requestId: string, onRequestLoad?: (requestId: string) => void): void {
-    if (this.isLoadingRequest === true) {
+    if (this.isLoadingRequest) {
       debug('[RequestSwitcher] Already loading a request, ignoring');
       return;
     }
@@ -186,6 +186,7 @@ export class RequestSwitcher {
       const requestData = StorageManager.getRequest(requestId);
 
       if (requestData == null) {
+        // Intentional throw for centralized error handling in catch block
         // noinspection ExceptionCaughtLocallyJS
         throw new Error('Request not found in localStorage');
       }
@@ -196,6 +197,7 @@ export class RequestSwitcher {
       // Replace tab content
       const contentContainer = document.querySelector('.dev-toolbar-panel-content');
       if (contentContainer == null) {
+        // Intentional throw for centralized error handling in catch block
         // noinspection ExceptionCaughtLocallyJS
         throw new Error('Content container not found');
       }

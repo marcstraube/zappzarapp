@@ -17,6 +17,7 @@ import { HistoryTabManager } from './HistoryTabManager';
 import { SettingsManager } from './SettingsManager';
 import { exportRequestAsJson, downloadJson } from '../utils/exportUtils';
 import { debug, warn, error as logError } from '../utils/logger.js';
+import { showError } from './MessageDialog.js';
 import type { DevToolbarWindow } from '../types/index.js';
 
 /**
@@ -124,6 +125,25 @@ export class DevToolbarUI {
     document.addEventListener('keydown', (e) => {
       if (e.key === 'Escape' && this.panel?.classList.contains('open')) {
         this.closePanel();
+      }
+    });
+
+    // Configurable keyboard shortcut to toggle panel
+    document.addEventListener('keydown', (e) => {
+      const shortcut = StorageManager.getToggleShortcut();
+
+      // Check if all modifier keys match
+      const ctrlMatch = (shortcut.ctrlKey ?? false) === e.ctrlKey;
+      const shiftMatch = (shortcut.shiftKey ?? false) === e.shiftKey;
+      const altMatch = (shortcut.altKey ?? false) === e.altKey;
+      const metaMatch = (shortcut.metaKey ?? false) === e.metaKey;
+
+      // Check if main key matches (case-insensitive for letters)
+      const keyMatch = e.key.toUpperCase() === shortcut.key.toUpperCase();
+
+      if (keyMatch && ctrlMatch && shiftMatch && altMatch && metaMatch) {
+        e.preventDefault();
+        this.togglePanel();
       }
     });
 
@@ -382,20 +402,15 @@ export class DevToolbarUI {
 
     if (!toolbarData) {
       logError('[DevToolbar] No request data available');
-      alert('No request data available for export.');
+      showError('No request data available for export.', 'Export Failed');
       return;
     }
 
-    try {
-      const exportData = exportRequestAsJson(toolbarData.id, toolbarData);
-      const filename = `devtoolbar-request-${toolbarData.id}-${Date.now()}.json`;
+    const exportData = exportRequestAsJson(toolbarData.id, toolbarData);
+    const filename = `devtoolbar-request-${toolbarData.id}-${Date.now()}.json`;
 
-      downloadJson(exportData, filename);
-      debug('[DevToolbar] Exported current request');
-    } catch (error) {
-      logError('[DevToolbar] Export failed:', error);
-      alert('Export failed: ' + (error as Error).message);
-    }
+    downloadJson(exportData, filename);
+    debug('[DevToolbar] Exported current request');
   }
 
   /**

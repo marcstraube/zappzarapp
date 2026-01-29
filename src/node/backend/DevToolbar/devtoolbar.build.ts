@@ -49,6 +49,9 @@ async function build(): Promise<void> {
       logLevel: 'info',
       treeShaking: true,
       legalComments: 'none',
+      define: {
+        'import.meta.env.DEV': JSON.stringify(isDev),
+      },
       banner: {
         js: '/* DevToolbar - Generated browser bundle - DO NOT EDIT MANUALLY */',
       },

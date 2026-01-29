@@ -21,25 +21,16 @@ export interface ExportData {
  * Create export data structure from request
  *
  * Exports structured collector data only.
- * Throws error if raw_data is not available (legacy data not supported).
  *
  * @param requestId Request ID
  * @param requestData Full request data from storage
  * @returns Export-ready JSON object
- * @throws Error if raw_data is not available
  *
  * @example
  * const exportData = exportRequestAsJson('req-123', requestData);
  * downloadJson(exportData, 'devtoolbar-req-123.json');
  */
 export function exportRequestAsJson(requestId: string, requestData: RequestData): ExportData {
-  if (!requestData.raw_data) {
-    throw new Error(
-      `Cannot export request ${requestId}: No structured data available. ` +
-        `This request was stored before structured data export was implemented.`
-    );
-  }
-
   // Remove badge_counts from metadata (redundant information)
   const { badge_counts: _badge_counts, ...exportMetadata } = requestData.metadata;
 

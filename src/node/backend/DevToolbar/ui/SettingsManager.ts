@@ -6,9 +6,9 @@
  * - Git branch color scheme for different branch types
  */
 
-import type { MinibarLabelType, BranchColors } from '../types/index.js';
+import type { MinibarLabelType, BranchColors, KeyboardShortcut } from '../types/index.js';
 import { StorageManager } from '../storage/StorageManager.js';
-import { DEFAULT_BRANCH_COLORS } from '../storage/StorageConfig.js';
+import { DEFAULT_BRANCH_COLORS, DEFAULT_TOGGLE_SHORTCUT } from '../storage/StorageConfig.js';
 import { debug, error as logError } from '../utils/logger.js';
 import { escapeHtml, createEscapeKeyHandler } from '../utils/uiHelpers.js';
 
@@ -19,6 +19,7 @@ export class SettingsManager {
   private modal: HTMLElement | null = null;
   private isOpen = false;
   private escKeyCleanup: (() => void) | null = null;
+  private currentShortcut: KeyboardShortcut | null = null;
 
   /**
    * Open settings modal
@@ -53,6 +54,7 @@ export class SettingsManager {
   private createModal(): void {
     const currentLabels = StorageManager.getMinibarLabels();
     const currentColors = StorageManager.getBranchColors();
+    const currentShortcut = StorageManager.getToggleShortcut();
 
     const modalHTML = `
             <div class="dev-toolbar-modal-overlay" id="dev-toolbar-settings-overlay">
@@ -89,6 +91,28 @@ export class SettingsManager {
                                 ${this.buildColorInput('hotfix', 'hotfix/* branches', currentColors.hotfix)}
                                 ${this.buildColorInput('chore', 'chore/* branches', currentColors.chore)}
                                 ${this.buildColorInput('default', 'Other branches', currentColors.default)}
+                            </div>
+                        </div>
+
+                        <!-- Keyboard Shortcut Configuration -->
+                        <div class="dev-toolbar-settings-group">
+                            <label>Toggle Keyboard Shortcut</label>
+                            <p style="margin: 0 0 12px 0; color: #6b7280; font-size: 0.875rem;">
+                                Keyboard shortcut to open/close the DevToolbar. Click in the box and press your desired key combination.
+                            </p>
+                            <div class="dev-toolbar-settings-shortcut">
+                                <input
+                                    type="text"
+                                    id="shortcut-input"
+                                    readonly
+                                    placeholder="Press keys..."
+                                    value="${this.formatShortcut(currentShortcut)}"
+                                    style="width: 100%; padding: 8px 12px; border: 1px solid #d1d5db; border-radius: 4px; font-family: monospace; background: #f9fafb; cursor: pointer;"
+                                >
+                                <p style="margin: 8px 0 0 0; color: #6b7280; font-size: 0.75rem;">
+                                    Current: <strong>${this.formatShortcut(currentShortcut)}</strong> |
+                                    <a href="#" id="reset-shortcut" style="color: #3b82f6; text-decoration: none;">Reset to Ctrl+Shift+D</a>
+                                </p>
                             </div>
                         </div>
                     </div>
@@ -153,6 +177,19 @@ export class SettingsManager {
   }
 
   /**
+   * Format shortcut for display
+   */
+  private formatShortcut(shortcut: KeyboardShortcut): string {
+    const parts: string[] = [];
+    if (shortcut.ctrlKey) parts.push('Ctrl');
+    if (shortcut.shiftKey) parts.push('Shift');
+    if (shortcut.altKey) parts.push('Alt');
+    if (shortcut.metaKey) parts.push(navigator.platform.includes('Mac') ? 'Cmd' : 'Win');
+    parts.push(shortcut.key);
+    return parts.join('+');
+  }
+
+  /**
    * Show modal (fade in)
    */
   private showModal(): void {
@@ -199,6 +236,44 @@ export class SettingsManager {
       return;
     }
 
+    // Initialize current shortcut from storage
+    this.currentShortcut = StorageManager.getToggleShortcut();
+
+    // Keyboard shortcut input
+    const shortcutInput = this.modal.querySelector('#shortcut-input') as HTMLInputElement;
+    shortcutInput?.addEventListener('keydown', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+
+      // Ignore modifier-only keys
+      if (['Control', 'Shift', 'Alt', 'Meta'].includes(e.key)) {
+        return;
+      }
+
+      // Capture the shortcut
+      this.currentShortcut = {
+        key: e.key,
+        ctrlKey: e.ctrlKey,
+        shiftKey: e.shiftKey,
+        altKey: e.altKey,
+        metaKey: e.metaKey,
+      };
+
+      // Update input display
+      shortcutInput.value = this.formatShortcut(this.currentShortcut);
+      debug('[Settings] Captured shortcut:', this.currentShortcut);
+    });
+
+    // Reset shortcut link
+    const resetLink = this.modal.querySelector('#reset-shortcut');
+    resetLink?.addEventListener('click', (e) => {
+      e.preventDefault();
+      this.currentShortcut = { ...DEFAULT_TOGGLE_SHORTCUT };
+      if (shortcutInput != null) {
+        shortcutInput.value = this.formatShortcut(this.currentShortcut);
+      }
+    });
+
     // Save button
     const saveBtn = this.modal.querySelector('#settings-save');
     saveBtn?.addEventListener('click', () => this.saveSettings());
@@ -237,6 +312,11 @@ export class SettingsManager {
     // Save to localStorage
     StorageManager.setMinibarLabels(selectedLabels);
     StorageManager.setBranchColors(branchColors);
+
+    // Save keyboard shortcut
+    if (this.currentShortcut != null) {
+      StorageManager.setToggleShortcut(this.currentShortcut);
+    }
 
     // Save to cookies so PHP can read the settings
     this.saveSettingsToCookies(selectedLabels, branchColors);

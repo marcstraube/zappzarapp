@@ -60,3 +60,16 @@ export const DEFAULT_BRANCH_COLORS: import('../types/DevToolbarTypes.js').Branch
   chore: '#6b7280', // Gray
   default: '#10b981', // Green
 };
+
+/**
+ * Default keyboard shortcut for toggling DevToolbar
+ * Ctrl+Shift+D (D for DevToolbar/Debug)
+ * Does not conflict with browser DevTools (F12) or other common shortcuts
+ */
+export const DEFAULT_TOGGLE_SHORTCUT: import('../types/DevToolbarTypes.js').KeyboardShortcut = {
+  key: 'D',
+  ctrlKey: true,
+  shiftKey: true,
+  altKey: false,
+  metaKey: false,
+};

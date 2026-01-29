@@ -52,12 +52,24 @@ export interface BranchColors {
 }
 
 /**
+ * Keyboard shortcut configuration
+ */
+export interface KeyboardShortcut {
+  key: string; // e.g., 'F12', 'D', 'Escape'
+  ctrlKey?: boolean;
+  shiftKey?: boolean;
+  altKey?: boolean;
+  metaKey?: boolean; // Cmd on Mac, Win on Windows
+}
+
+/**
  * DevToolbar configuration stored in localStorage
  */
 export interface DevToolbarConfig {
   version?: string;
   minibarLabels?: MinibarLabelType[]; // Active minibar labels (can be multiple)
   branchColors?: BranchColors; // Git branch color scheme
+  toggleShortcut?: KeyboardShortcut; // Keyboard shortcut to toggle toolbar
 }
 
 /**

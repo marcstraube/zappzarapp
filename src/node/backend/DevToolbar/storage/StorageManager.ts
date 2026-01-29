@@ -13,6 +13,7 @@ import type {
   DevToolbarWindow,
   MinibarLabelType,
   BranchColors,
+  KeyboardShortcut,
 } from '../types/index.js';
 
 import {
@@ -24,6 +25,7 @@ import {
   DATA_PREFIX,
   DEFAULT_MINIBAR_LABELS,
   DEFAULT_BRANCH_COLORS,
+  DEFAULT_TOGGLE_SHORTCUT,
 } from './StorageConfig.js';
 
 import { debug, warn, error as logError } from '../utils/logger.js';
@@ -388,6 +390,22 @@ class StorageManagerClass {
   setBranchColors(colors: BranchColors): void {
     const config = this.getConfig();
     this.setConfig({ ...config, branchColors: colors });
+  }
+
+  /**
+   * Get keyboard shortcut for toggling toolbar
+   */
+  getToggleShortcut(): KeyboardShortcut {
+    const config = this.getConfig();
+    return config.toggleShortcut ?? DEFAULT_TOGGLE_SHORTCUT;
+  }
+
+  /**
+   * Set keyboard shortcut for toggling toolbar
+   */
+  setToggleShortcut(shortcut: KeyboardShortcut): void {
+    const config = this.getConfig();
+    this.setConfig({ ...config, toggleShortcut: shortcut });
   }
 }
 
