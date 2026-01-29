@@ -148,6 +148,12 @@ export class DevToolbarUI {
     private handleRequestLoad(requestId: string): void {
         console.log('[DevToolbarUI] Request loaded:', requestId);
 
+        // Special case: Switch to history tab
+        if (requestId === 'history') {
+            this.tabManager.setActiveTab('history', (name) => this.handleTabActivate(name));
+            return;
+        }
+
         // Reset history tab so it re-initializes on next activation
         this.historyTabManager.reset();
 
@@ -160,7 +166,7 @@ export class DevToolbarUI {
             this.tabManager.setActiveTab(currentTab, (name) => this.handleTabActivate(name));
 
             // Update tab badges
-            if (requestId !== 'current' && requestId !== 'history') {
+            if (requestId !== 'current') {
                 const requestData = StorageManager.getRequest(requestId);
                 if (requestData?.metadata?.badge_counts) {
                     this.tabManager.updateBadgeCounts(requestData.metadata.badge_counts);

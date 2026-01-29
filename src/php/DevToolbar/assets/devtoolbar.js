@@ -810,11 +810,12 @@
         `Cannot export request ${requestId}: No structured data available. This request was stored before structured data export was implemented.`
       );
     }
+    const { badge_counts, ...exportMetadata } = requestData.metadata;
     return {
       toolbar_version: "2.1.0",
       export_time: (/* @__PURE__ */ new Date()).toISOString(),
       request_id: requestId,
-      metadata: requestData.metadata,
+      metadata: exportMetadata,
       data: requestData.raw_data
     };
   }
@@ -1274,12 +1275,16 @@
      */
     handleRequestLoad(requestId) {
       console.log("[DevToolbarUI] Request loaded:", requestId);
+      if (requestId === "history") {
+        this.tabManager.setActiveTab("history", (name) => this.handleTabActivate(name));
+        return;
+      }
       this.historyTabManager.reset();
       setTimeout(() => {
         this.reattachTabListeners();
         const currentTab = this.tabManager.getCurrentTab();
         this.tabManager.setActiveTab(currentTab, (name) => this.handleTabActivate(name));
-        if (requestId !== "current" && requestId !== "history") {
+        if (requestId !== "current") {
           const requestData = StorageManager.getRequest(requestId);
           if (requestData?.metadata?.badge_counts) {
             this.tabManager.updateBadgeCounts(requestData.metadata.badge_counts);

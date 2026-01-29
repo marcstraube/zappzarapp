@@ -54,10 +54,33 @@ describe('exportUtils', () => {
 
             const result = exportRequestAsJson('test-123', requestData);
 
-            expect(result.metadata).toEqual(metadata);
             expect(result.metadata.method).toBe('POST');
             expect(result.metadata.uri).toBe('/api/test');
             expect(result.metadata.status).toBe(201);
+        });
+
+        it('should exclude badge_counts from metadata (redundant)', () => {
+            const metadata = mockRequestMetadata({
+                badge_counts: {
+                    request: 1,
+                    queries: 5,
+                    exceptions: 2,
+                },
+            });
+
+            const requestData: RequestData = {
+                id: 'test-123',
+                metadata,
+                tabs: {},
+                raw_data: { request: {}, queries: {} },
+            };
+
+            const result = exportRequestAsJson('test-123', requestData);
+
+            expect(result.metadata).not.toHaveProperty('badge_counts');
+            expect(result.metadata).toHaveProperty('method');
+            expect(result.metadata).toHaveProperty('uri');
+            expect(result.metadata).toHaveProperty('status');
         });
 
         it('should export structured collector data', () => {

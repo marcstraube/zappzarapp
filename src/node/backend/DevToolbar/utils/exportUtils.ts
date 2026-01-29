@@ -40,11 +40,14 @@ export function exportRequestAsJson(requestId: string, requestData: RequestData)
         );
     }
 
+    // Remove badge_counts from metadata (redundant information)
+    const { badge_counts, ...exportMetadata } = requestData.metadata;
+
     return {
         toolbar_version: '2.1.0',
         export_time: new Date().toISOString(),
         request_id: requestId,
-        metadata: requestData.metadata,
+        metadata: exportMetadata,
         data: requestData.raw_data,
     };
 }
