@@ -84,12 +84,18 @@ readonly class ExceptionHandler
      * Handle an uncaught exception.
      *
      * This method:
+     * - Tracks exception in DevToolbar (if enabled)
      * - Logs the exception details server-side
      * - Returns a safe error response based on environment
      * - Uses content negotiation (HTML vs JSON)
      */
     public function handle(Throwable $exception): void
     {
+        // Track in DevToolbar if enabled
+        if (class_exists(\DevToolbar\Guard\DevToolbarGuard::class) && \DevToolbar\Guard\DevToolbarGuard::isEnabled()) {
+            \DevToolbar\DataCollectors\ExceptionCollector::getInstance()->trackException($exception, handled: false);
+        }
+
         // Log exception server-side (always, regardless of environment)
         $this->logException($exception);
 
