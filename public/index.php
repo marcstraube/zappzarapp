@@ -141,18 +141,27 @@ if ($isDevelopment && str_starts_with($requestPath, '/_dev')) {
 use App\Security\CspNonceHelper;
 
 // 1. Build and send CSP Header (before any output!)
-/** @noinspection PhpUnhandledExceptionInspection - Entry point: CSP failures are critical and handled by global handler */
-$cspHeader = CspNonceHelper::buildCspHeader();
-header("Content-Security-Policy: $cspHeader");
+try {
+    $cspHeader = CspNonceHelper::buildCspHeader();
+    header("Content-Security-Policy: $cspHeader");
 
-// 2. Define constant for backwards compatibility
-/** @noinspection PhpUnhandledExceptionInspection - Entry point: CSP failures are critical and handled by global handler */
-define('CSP_NONCE', CspNonceHelper::get());
+    // 2. Define constant for backwards compatibility
+    define('CSP_NONCE', CspNonceHelper::get());
 
-// 3. Share nonce with DevToolbar (if enabled)
-if (DevToolbarGuard::isEnabled() && isset($toolbar)) {
-    /** @noinspection PhpUnhandledExceptionInspection - Entry point: CSP failures are critical and handled by global handler */
-    $toolbar->setNonce(CspNonceHelper::get());
+    // 3. Share nonce with DevToolbar (if enabled)
+    if (DevToolbarGuard::isEnabled() && isset($toolbar)) {
+        $toolbar->setNonce(CspNonceHelper::get());
+    }
+} catch (Random\RandomException $e) {
+    // Critical: CSP nonce generation failed - no secure random source available
+    // This is a fatal security issue - application cannot run without CSP protection
+    error_log('[CRITICAL] CSP nonce generation failed: ' . $e->getMessage());
+    http_response_code(500);
+    header('Content-Type: text/plain');
+    // @phpstan-ignore-next-line - Entry point error handling requires echo/exit
+    echo 'Service temporarily unavailable';
+    // @phpstan-ignore-next-line - Entry point error handling requires echo/exit
+    exit(1);
 }
 
 /**
@@ -172,9 +181,20 @@ if (DevToolbarGuard::isEnabled() && isset($toolbar)) {
  * Security: This fixes the "Application Error Disclosure" vulnerability
  * detected by OWASP ZAP scan.
  */
-/** @noinspection PhpUnhandledExceptionInspection - Entry point: ExceptionHandler initialization failures are fatal */
-$exceptionHandler = new ExceptionHandler();
-$exceptionHandler->register();
+try {
+    $exceptionHandler = new ExceptionHandler();
+    $exceptionHandler->register();
+} catch (ErrorException $e) {
+    // Critical: Global exception handler registration failed
+    // Log error and terminate - application cannot run without exception handler
+    error_log('[CRITICAL] Exception handler registration failed: ' . $e->getMessage());
+    http_response_code(500);
+    header('Content-Type: text/plain');
+    // @phpstan-ignore-next-line - Entry point error handling requires echo/exit
+    echo 'Service temporarily unavailable';
+    // @phpstan-ignore-next-line - Entry point error handling requires echo/exit
+    exit(1);
+}
 
 // Simple Routing Example
 $router = new Router();
