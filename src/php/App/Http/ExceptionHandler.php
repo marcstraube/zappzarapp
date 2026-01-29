@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace App\Http;
 
 use App\Http\Response\JsonResponse;
+use DevToolbar\DataCollectors\ExceptionCollector;
+use DevToolbar\Guard\DevToolbarGuard;
 use ErrorException;
 use Psr\Log\LoggerInterface;
 use Throwable;
@@ -92,8 +94,8 @@ readonly class ExceptionHandler
     public function handle(Throwable $exception): void
     {
         // Track in DevToolbar if enabled
-        if (class_exists(\DevToolbar\Guard\DevToolbarGuard::class) && \DevToolbar\Guard\DevToolbarGuard::isEnabled()) {
-            \DevToolbar\DataCollectors\ExceptionCollector::getInstance()->trackException($exception, handled: false);
+        if (class_exists(DevToolbarGuard::class) && DevToolbarGuard::isEnabled()) {
+            ExceptionCollector::getInstance()->trackException($exception, handled: false);
         }
 
         // Log exception server-side (always, regardless of environment)

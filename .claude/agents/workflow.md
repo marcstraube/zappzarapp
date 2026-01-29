@@ -329,11 +329,13 @@ Trigger Security Agent if changed files match these patterns:
 
 ### Coordination
 
-- Spawns agents in correct order: A → [C1, C2, C3, C4 parallel] → [R, S, D parallel]
+- Spawns agents in correct order: A → [C1, C2, C3, C4 parallel] → [R, S, D
+  parallel]
 - Decides on parallelization:
   - Coders (C1-C4) run in parallel if independent
   - Reviewer (R) reviews all changed code (PHP, Node, SQL, Infra)
-  - Security (S) only runs if security-relevant (see "Security Agent Triggering")
+  - Security (S) only runs if security-relevant (see "Security Agent
+    Triggering")
   - Docs (D) runs in parallel with R and S
 - Collects results from all agents
 - **Important:** Subagents are coordinated subprocesses, not separate contexts

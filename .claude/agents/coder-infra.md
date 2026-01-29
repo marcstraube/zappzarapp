@@ -1,6 +1,7 @@
 ---
 name: coder-infra
-description: "Implements infrastructure code (shell, docker, make, tests) according to plan"
+description:
+  'Implements infrastructure code (shell, docker, make, tests) according to plan'
 tools: Read, Write, Edit, Grep, Glob, Bash(make:*), Bash(git:*), WebSearch
 model: sonnet
 color: white
@@ -112,12 +113,12 @@ Return to Main Agent with:
 
 ### Quality Checks
 
-| Check         | Status | Notes |
-| ------------- | ------ | ----- |
-| lint-shell    | ✅ OK  | —     |
-| lint-docker   | ✅ OK  | —     |
-| test-bats     | ✅ OK  | 4 tests passed |
-| goss-test     | ✅ OK  | Container healthy |
+| Check       | Status | Notes             |
+| ----------- | ------ | ----------------- |
+| lint-shell  | ✅ OK  | —                 |
+| lint-docker | ✅ OK  | —                 |
+| test-bats   | ✅ OK  | 4 tests passed    |
+| goss-test   | ✅ OK  | Container healthy |
 
 ### Problems Encountered
 

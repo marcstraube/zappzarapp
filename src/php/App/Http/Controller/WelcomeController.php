@@ -9,12 +9,17 @@ use App\Http\Response\Response;
 use App\Infrastructure\HealthCheck;
 use App\Infrastructure\TwigService;
 use App\Infrastructure\ViteHelper;
-use DevToolbar\DataCollectors\QueryCollector;
+use DevToolbar\DataCollectors\CacheCollector;
 use DevToolbar\DataCollectors\ExceptionCollector;
 use DevToolbar\DataCollectors\HttpClientCollector;
-use DevToolbar\DataCollectors\CacheCollector;
+use DevToolbar\DataCollectors\QueryCollector;
 use DevToolbar\DataCollectors\TimelineCollector;
 use DevToolbar\DevToolbar;
+use DevToolbar\Guard\DevToolbarGuard;
+use Exception;
+use InvalidArgumentException;
+use RuntimeException;
+use Throwable;
 
 /**
  * Welcome Controller
@@ -35,10 +40,10 @@ readonly class WelcomeController
     public function index(): Response
     {
         // Demo DevToolbar features if enabled
-        if (\DevToolbar\Guard\DevToolbarGuard::isEnabled()) {
+        if (DevToolbarGuard::isEnabled()) {
             try {
                 $this->demoDevToolbarFeatures();
-            } catch (\Throwable $e) {
+            } catch (Throwable $e) {
                 // If demo fails, track it as an exception
                 ExceptionCollector::getInstance()->trackException($e, handled: true);
             }
@@ -139,14 +144,14 @@ readonly class WelcomeController
         $collector = ExceptionCollector::getInstance();
 
         try {
-            throw new \RuntimeException('Demo exception: This is a handled exception for testing the DevToolbar');
-        } catch (\Exception $e) {
+            throw new RuntimeException('Demo exception: This is a handled exception for testing the DevToolbar');
+        } catch (Exception $e) {
             $collector->trackException($e, handled: true);
         }
 
         try {
-            throw new \InvalidArgumentException('Demo validation error: Invalid user input provided');
-        } catch (\Exception $e) {
+            throw new InvalidArgumentException('Demo validation error: Invalid user input provided');
+        } catch (Exception $e) {
             $collector->trackException($e, handled: true);
         }
     }

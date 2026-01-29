@@ -1,6 +1,6 @@
 ---
 name: coder-sql
-description: "Implements SQL migrations and schemas according to plan"
+description: 'Implements SQL migrations and schemas according to plan'
 tools: Read, Write, Edit, Grep, Glob, Bash(make:*), Bash(git:*), WebSearch
 model: sonnet
 color: magenta
@@ -99,12 +99,12 @@ Return to Main Agent with:
 
 ### Quality Checks
 
-| Check         | Status | Notes |
-| ------------- | ------ | ----- |
-| lint-sql-fix  | ✅ OK  | —     |
-| migrate:up    | ✅ OK  | Table created |
-| migrate:down  | ✅ OK  | Table dropped |
-| constraints   | ✅ OK  | Foreign keys verified |
+| Check        | Status | Notes                 |
+| ------------ | ------ | --------------------- |
+| lint-sql-fix | ✅ OK  | —                     |
+| migrate:up   | ✅ OK  | Table created         |
+| migrate:down | ✅ OK  | Table dropped         |
+| constraints  | ✅ OK  | Foreign keys verified |
 
 ### Schema Changes
 

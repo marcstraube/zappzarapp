@@ -69,8 +69,10 @@ stack trace
 #### HISTORY Tab (Phase 2.1)
 
 - **Request History**: Browse last N requests (configurable, default: 20)
-- **Filtering**: Filter by HTTP method, status code, URI pattern, minimum execution time
-- **Statistics**: Total requests, average time/memory/queries, fastest/slowest requests
+- **Filtering**: Filter by HTTP method, status code, URI pattern, minimum
+  execution time
+- **Statistics**: Total requests, average time/memory/queries, fastest/slowest
+  requests
 - **Trends**: ASCII sparkline visualization of response time trends
 - **Export**: Export visible requests as JSON or CSV
 - **Clear History**: Remove all stored requests from session
@@ -147,7 +149,8 @@ DEV_TOOLBAR_MAX_REQUESTS=10   # Default: 10, Min: 1, Max: 50
   - Full collector data only for last 3 requests (~5-10MB each)
 - Recommended: 10-20 requests for typical development
 - Use 50 for extensive history tracking (only metadata, lightweight)
-- **Request Switcher shows only the 3 most recent requests** (with full data for AJAX)
+- **Request Switcher shows only the 3 most recent requests** (with full data for
+  AJAX)
 - Older requests visible in HISTORY tab but cannot be loaded via AJAX
 
 ### Basic Integration
@@ -450,18 +453,23 @@ RequestStore::clear();
 #### AJAX Endpoints
 
 **Load Historical Request** (GET):
+
 ```
 ?dev_toolbar_action=load_request&request_id=<id>&token=<csrf_token>
 ```
+
 Returns: Server-rendered HTML for all tabs
 
 **Clear History** (POST):
+
 ```
 ?dev_toolbar_action=clear_history
 ```
+
 Returns: JSON `{"success": true}`
 
 **Security:**
+
 - CSRF token validation using HMAC-SHA256
 - Session-based secret key
 - Automatic token generation for each request
@@ -672,11 +680,13 @@ RequestStore::getStatusDisplay(int $statusCode): array;
 
 ## TypeScript Implementation (Phase 2.1+)
 
-The DevToolbar frontend has been migrated to TypeScript for improved maintainability, type safety, and testability.
+The DevToolbar frontend has been migrated to TypeScript for improved
+maintainability, type safety, and testability.
 
 ### Architecture
 
 **Modular Structure:**
+
 ```
 src/node/backend/DevToolbar/
 ├── types/          # TypeScript interfaces and type definitions
@@ -688,25 +698,30 @@ src/node/backend/DevToolbar/
 ```
 
 **Build Process:**
+
 - Source: `src/node/backend/DevToolbar/` (TypeScript modules)
 - Build: Integrated into `make node-server-build`
 - Output: `src/php/DevToolbar/assets/devtoolbar.js` (IIFE bundle, 38KB)
 - Format: ES2020 browser-compatible bundle with sourcemaps
 
 **Testing:**
+
 - Framework: Vitest with happy-dom environment
 - Coverage: 88% overall (storage: 73%, utils: 100%, ui: 91%)
 - Tests: 69 unit tests (all passing)
 - Location: `tests/node/backend/unit/DevToolbar/`
 
 **Key Modules:**
-- **StorageManager**: localStorage + in-memory fallback, quota management, LRU eviction
+
+- **StorageManager**: localStorage + in-memory fallback, quota management, LRU
+  eviction
 - **TabManager**: Tab switching with localStorage persistence
 - **RequestSwitcher**: Historical request navigation from localStorage
 - **XdebugControls**: Dynamic Xdebug status and IDE session controls
 - **DevToolbarUI**: Main controller orchestrating all components
 
 **Features:**
+
 - Type-safe data structures
 - Comprehensive unit tests
 - localStorage persistence (50 metadata entries, 20 full requests)
@@ -715,6 +730,7 @@ src/node/backend/DevToolbar/
 - Sourcemap support for debugging
 
 **Development Workflow:**
+
 1. Edit TypeScript sources in `src/node/backend/DevToolbar/`
 2. Run tests: `make test-node`
 3. Build bundle: `make node-server-build`
