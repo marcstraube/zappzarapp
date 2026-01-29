@@ -18,6 +18,7 @@
       "Bash(./docker/hooks/php-cs-fixer-batch.sh:*)",
       "Bash(./docker/hooks/php-hooks.sh:*)",
       "Bash(./docker/hooks/php-lint-batch.sh:*)",
+      "Bash(./.claude/hooks/post-edit-autofix.sh:*)",
       "Bash(./tests/goss/preset-runner.sh:*)",
       "Bash(./tests/goss/runtime-tests.sh:*)",
       "Bash(HOOK_RUNNER_VERBOSE=1 ./docker/hooks/hook-runner.sh:*)",
@@ -220,6 +221,10 @@
           {
             "type": "command",
             "command": "./.claude/hooks/post-edit-lint.sh"
+          },
+          {
+            "type": "command",
+            "command": "./.claude/hooks/post-edit-autofix.sh"
           },
           {
             "type": "command",
