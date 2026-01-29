@@ -249,37 +249,77 @@ class CacheCollector implements CollectorInterface
             return $value;
         }
 
-        // Try to unserialize if serialized (check first to avoid warnings)
-        if (is_string($value) && (str_starts_with($value, 'a:') || str_starts_with($value, 'O:') || str_starts_with($value, 's:'))) {
-            $unserialized = @unserialize($value);
-            if ($unserialized !== false) {
-                $value = $unserialized;
-            }
+        // Try to unserialize if serialized
+        if (is_string($value) && $this->isSerializedString($value)) {
+            $value = $this->safeUnserialize($value);
         }
 
         if (is_string($value)) {
-            // Truncate long strings
-            if (strlen($value) > 1000) {
-                return substr($value, 0, 1000) . '... (truncated)';
-            }
-
-            // Filter sensitive patterns
-            $value = preg_replace('/("password"\s*:\s*)"[^"]*"/', '$1"[FILTERED]"', $value);
-            $value = preg_replace('/("token"\s*:\s*)"[^"]*"/', '$1"[FILTERED]"', $value);
+            return $this->filterString($value);
         }
 
         if (is_array($value)) {
-            foreach (array_keys($value) as $key) {
-                if (in_array(strtolower((string)$key), ['password', 'token', 'secret', 'api_key'])) {
-                    $value[$key] = '[FILTERED]';
-                }
-            }
+            return $this->filterArray($value);
+        }
 
-            // Truncate large arrays
-            if (count($value) > 50) {
-                $value                = array_slice($value, 0, 50, true);
-                $value['__truncated'] = '... (' . (count($value) - 50) . ' more items)';
+        return $value;
+    }
+
+    /**
+     * Check if string appears to be serialized
+     */
+    private function isSerializedString(string $value): bool
+    {
+        return str_starts_with($value, 'a:')
+            || str_starts_with($value, 'O:')
+            || str_starts_with($value, 's:');
+    }
+
+    /**
+     * Safely unserialize a value without error suppression
+     */
+    private function safeUnserialize(string $value): mixed
+    {
+        try {
+            $unserialized = unserialize($value);
+            return $unserialized !== false ? $unserialized : $value;
+        } catch (\Throwable $e) {
+            return $value;
+        }
+    }
+
+    /**
+     * Filter sensitive data from string values
+     */
+    private function filterString(string $value): string
+    {
+        // Truncate long strings
+        if (strlen($value) > 1000) {
+            return substr($value, 0, 1000) . '... (truncated)';
+        }
+
+        // Filter sensitive patterns
+        $value = preg_replace('/("password"\s*:\s*)"[^"]*"/', '$1"[FILTERED]"', $value);
+        $value = preg_replace('/("token"\s*:\s*)"[^"]*"/', '$1"[FILTERED]"', $value);
+
+        return $value;
+    }
+
+    /**
+     * Filter sensitive data from array values
+     */
+    private function filterArray(array $value): array
+    {
+        foreach (array_keys($value) as $key) {
+            if (in_array(strtolower((string)$key), ['password', 'token', 'secret', 'api_key'])) {
+                $value[$key] = '[FILTERED]';
             }
+        }
+
+        // Truncate large arrays
+        if (count($value) > 50) {
+            $value                = array_slice($value, 0, 50, true);
+            $value['__truncated'] = '... (' . (count($value) - 50) . ' more items)';
         }
 
         return $value;

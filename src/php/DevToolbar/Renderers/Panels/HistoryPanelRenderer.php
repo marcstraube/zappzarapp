@@ -28,11 +28,9 @@ class HistoryPanelRenderer extends AbstractPanelRenderer
      */
     public function renderTab(array $data): string
     {
-        $trends = $data['trends'] ?? [];
-
         return $this->renderFilters()
             . $this->renderStatistics()
-            . $this->renderTrends($trends)
+            . $this->renderTrends()
             . $this->renderRequestList();
     }
 
@@ -170,7 +168,7 @@ class HistoryPanelRenderer extends AbstractPanelRenderer
      * @param array<string, mixed> $trends Trend data (unused, for backwards compatibility)
      * @return string HTML for trends section placeholder
      */
-    private function renderTrends(array $trends): string
+    private function renderTrends(): string
     {
         // Always render placeholder - JavaScript will populate from localStorage
         return '<div class="dev-toolbar-section" id="dev-toolbar-history-trends-section">
@@ -225,28 +223,4 @@ class HistoryPanelRenderer extends AbstractPanelRenderer
      * @param array<int|float> $values Numeric values to visualize
      * @return string Sparkline string (empty if input is empty)
      */
-    private function generateSparkline(array $values): string
-    {
-        if (empty($values)) {
-            return '';
-        }
-
-        $ticks = ['▁', '▂', '▃', '▄', '▅', '▆', '▇', '█'];
-        $min   = min($values);
-        $max   = max($values);
-        $range = $max - $min;
-
-        if ($range == 0) {
-            return str_repeat($ticks[3], count($values)); // All middle
-        }
-
-        $sparkline = '';
-        foreach ($values as $value) {
-            $normalized = ($value - $min) / $range;
-            $index      = min(7, (int)($normalized * 8));
-            $sparkline .= $ticks[$index];
-        }
-
-        return $sparkline;
-    }
 }

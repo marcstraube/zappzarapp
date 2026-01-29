@@ -20,6 +20,8 @@ export default [
       'ecosystem.config.cjs',
       // Frontend has its own ESLint config via Nuxt/Vue
       'src/node/frontend/**',
+      // DevToolbar compiled browser bundle (build artifact)
+      'src/php/DevToolbar/assets/devtoolbar.js',
     ],
   },
 
@@ -107,6 +109,43 @@ export default [
       'no-var': 'error',
       eqeqeq: ['error', 'always'],
       curly: ['error', 'all'],
+    },
+  },
+
+  // DevToolbar browser code - relax unsafe rules for browser DOM APIs
+  {
+    files: ['src/node/backend/DevToolbar/**/*.ts'],
+    languageOptions: {
+      parser: tsParser,
+      parserOptions: {
+        ecmaVersion: 2022,
+        sourceType: 'module',
+        project: './src/node/backend/DevToolbar/tsconfig.json',
+      },
+      globals: {
+        // Browser globals
+        window: 'readonly',
+        document: 'readonly',
+        localStorage: 'readonly',
+        console: 'readonly',
+        URL: 'readonly',
+        Blob: 'readonly',
+      },
+    },
+    plugins: {
+      '@typescript-eslint': tsPlugin,
+    },
+    rules: {
+      // Browser DOM APIs are not typed correctly in linting context
+      '@typescript-eslint/no-unsafe-assignment': 'off',
+      '@typescript-eslint/no-unsafe-member-access': 'off',
+      '@typescript-eslint/no-unsafe-argument': 'off',
+      '@typescript-eslint/no-unsafe-call': 'off',
+      '@typescript-eslint/no-unsafe-return': 'off',
+      // Allow nullable checks for DOM elements (querySelector returns null)
+      '@typescript-eslint/strict-boolean-expressions': 'off',
+      // HTMLElement union types are common in DOM code
+      '@typescript-eslint/no-redundant-type-constituents': 'off',
     },
   },
 
