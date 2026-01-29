@@ -109,12 +109,6 @@ class DataInjectionRenderer implements RendererInterface
 
         $timestamp = time();
 
-        // Use DateTime with explicit timezone from TZ env var (e.g., Europe/Berlin)
-        $timezone = new \DateTimeZone(getenv('TZ') ?: 'UTC');
-        $date = (new \DateTime('@' . $timestamp))
-            ->setTimezone($timezone)
-            ->format('Y-m-d H:i:s');
-
         return [
             'id' => $requestId,
             'method' => $requestData['method'] ?? 'GET',
@@ -124,7 +118,7 @@ class DataInjectionRenderer implements RendererInterface
             'memory' => $requestData['memory_peak'] ?? 0,
             'query_count' => $queryData['count'] ?? 0,
             'timestamp' => $timestamp,
-            'date' => $date,
+            'date' => date('Y-m-d H:i:s', $timestamp),
             'badge_counts' => $badgeCounts,
         ];
     }
