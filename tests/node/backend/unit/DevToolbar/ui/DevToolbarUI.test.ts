@@ -20,6 +20,13 @@ vi.mock('@backend/DevToolbar/storage/StorageManager', () => ({
     getRequest: vi.fn(),
     storeRequest: vi.fn(),
     clear: vi.fn(),
+    getToggleShortcut: vi.fn(() => ({
+      ctrlKey: true,
+      shiftKey: true,
+      altKey: false,
+      metaKey: false,
+      key: 'd',
+    })),
   },
 }));
 

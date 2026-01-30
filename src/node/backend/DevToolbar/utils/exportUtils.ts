@@ -31,6 +31,13 @@ export interface ExportData {
  * downloadJson(exportData, 'devtoolbar-req-123.json');
  */
 export function exportRequestAsJson(requestId: string, requestData: RequestData): ExportData {
+  // Validate that structured data is available
+  if (!requestData.raw_data) {
+    throw new Error(
+      `Cannot export request ${requestId}: No structured data available (legacy format)`
+    );
+  }
+
   // Remove badge_counts from metadata (redundant information)
   const { badge_counts: _badge_counts, ...exportMetadata } = requestData.metadata;
 
