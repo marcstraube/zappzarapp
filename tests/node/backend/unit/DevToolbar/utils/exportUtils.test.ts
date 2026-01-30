@@ -30,7 +30,7 @@ describe('exportUtils', () => {
           request: '<div>Request content</div>',
           database: '<div>Database queries</div>',
         },
-        raw_data: rawData,
+        json_data: rawData,
       };
 
       const result = exportRequestAsJson(requestId, requestData);
@@ -53,7 +53,7 @@ describe('exportUtils', () => {
         id: 'test-123',
         metadata,
         tabs: {},
-        raw_data: { request: {}, queries: {} },
+        json_data: { request: {}, queries: {} },
       };
 
       const result = exportRequestAsJson('test-123', requestData);
@@ -76,7 +76,7 @@ describe('exportUtils', () => {
         id: 'test-123',
         metadata,
         tabs: {},
-        raw_data: { request: {}, queries: {} },
+        json_data: { request: {}, queries: {} },
       };
 
       const result = exportRequestAsJson('test-123', requestData);
@@ -87,7 +87,7 @@ describe('exportUtils', () => {
       expect(result.metadata).toHaveProperty('status');
     });
 
-    it('should export structured collector data', () => {
+    it('should export JSON collector data', () => {
       const rawData = {
         request: { method: 'GET', uri: '/', status_code: 200 },
         queries: { count: 9, queries: [], n_plus_one: [] },
@@ -99,7 +99,7 @@ describe('exportUtils', () => {
         id: 'test-123',
         metadata: mockRequestMetadata(),
         tabs: {},
-        raw_data: rawData,
+        json_data: rawData,
       };
 
       const result = exportRequestAsJson('test-123', requestData);
@@ -113,7 +113,7 @@ describe('exportUtils', () => {
         id: 'test-123',
         metadata: mockRequestMetadata(),
         tabs: {},
-        raw_data: {},
+        json_data: {},
       };
 
       const result = exportRequestAsJson('test-123', requestData);
@@ -128,7 +128,7 @@ describe('exportUtils', () => {
         id: 'test-123',
         metadata: mockRequestMetadata(),
         tabs: {},
-        raw_data: {},
+        json_data: {},
       };
 
       const result = exportRequestAsJson('test-123', requestData);
@@ -136,7 +136,7 @@ describe('exportUtils', () => {
       expect(result.data).toEqual({});
     });
 
-    it('should export only structured data (no HTML)', () => {
+    it('should export only JSON data (no HTML)', () => {
       const rawData = {
         request: { method: 'GET', uri: '/', status_code: 200 },
         queries: { count: 5, queries: [] },
@@ -147,7 +147,7 @@ describe('exportUtils', () => {
         id: 'test-123',
         metadata: mockRequestMetadata(),
         tabs: { request: '<div>HTML</div>' },
-        raw_data: rawData,
+        json_data: rawData,
       };
 
       const result = exportRequestAsJson('test-123', requestData);
@@ -156,15 +156,15 @@ describe('exportUtils', () => {
       expect(result).not.toHaveProperty('html_data');
     });
 
-    it('should throw error when raw_data is not available', () => {
+    it('should throw error when json_data is not available', () => {
       const requestData: RequestData = {
-        id: 'test-legacy-123',
+        id: 'test-no-json',
         metadata: mockRequestMetadata(),
         tabs: { request: '<div>HTML</div>' },
       };
 
-      expect(() => exportRequestAsJson('test-legacy-123', requestData)).toThrow(
-        'Cannot export request test-legacy-123: No structured data available'
+      expect(() => exportRequestAsJson('test-no-json', requestData)).toThrow(
+        'Cannot export request test-no-json: No JSON data available'
       );
     });
   });

@@ -12,7 +12,7 @@ use Throwable;
 /**
  * Injects DevToolbar data as JavaScript for localStorage storage
  *
- * Renders current request data as <script> tag with structured JSON payload.
+ * Renders current request data as <script> tag with JSON payload.
  * Eliminates AJAX round-trips by embedding data directly in HTML.
  */
 class DataInjectionRenderer implements RendererInterface
@@ -45,13 +45,13 @@ class DataInjectionRenderer implements RendererInterface
         $requestId = RequestUtils::generateId();
         $metadata  = $this->extractMetadata($requestId);
         $tabs      = $this->renderAllTabs();
-        $rawData   = $this->extractRawData();
+        $jsonData  = $this->extractJsonData();
 
         $currentPayload = [
-            'id'       => $requestId,
-            'metadata' => $metadata,
-            'tabs'     => $tabs,
-            'raw_data' => $rawData,
+            'id'        => $requestId,
+            'metadata'  => $metadata,
+            'tabs'      => $tabs,
+            'json_data' => $jsonData,
         ];
 
         $json = json_encode($currentPayload, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT);
@@ -198,22 +198,22 @@ class DataInjectionRenderer implements RendererInterface
     }
 
     /**
-     * Extract raw structured data from collectors
+     * Extract JSON data from collectors
      *
-     * Returns structured JSON-ready data from all collectors for export.
+     * Returns JSON data from all collectors for export.
      * This data is cleaner for external consumption than rendered HTML.
      *
-     * @return array<string, mixed> Tab name => Structured data
+     * @return array<string, mixed> Tab name => JSON data
      */
-    private function extractRawData(): array
+    private function extractJsonData(): array
     {
-        $rawData = [];
+        $jsonData = [];
 
         foreach ($this->collectors as $name => $collector) {
-            $rawData[$name] = $collector->getData();
+            $jsonData[$name] = $collector->getData();
         }
 
-        return $rawData;
+        return $jsonData;
     }
 
     /**

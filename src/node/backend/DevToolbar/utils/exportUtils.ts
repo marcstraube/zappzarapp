@@ -14,13 +14,13 @@ export interface ExportData {
   export_time: string;
   request_id: string;
   metadata: RequestData['metadata'];
-  data: Record<string, unknown>; // Structured collector data
+  data: Record<string, unknown>; // JSON collector data
 }
 
 /**
  * Create export data structure from request
  *
- * Exports structured collector data only.
+ * Exports JSON collector data only.
  *
  * @param requestId Request ID
  * @param requestData Full request data from storage
@@ -31,10 +31,10 @@ export interface ExportData {
  * downloadJson(exportData, 'devtoolbar-req-123.json');
  */
 export function exportRequestAsJson(requestId: string, requestData: RequestData): ExportData {
-  // Validate that structured data is available
-  if (!requestData.raw_data) {
+  // Validate that JSON data is available
+  if (!requestData.json_data) {
     throw new Error(
-      `Cannot export request ${requestId}: No structured data available (legacy format)`
+      `Cannot export request ${requestId}: No JSON data available`
     );
   }
 
@@ -46,7 +46,7 @@ export function exportRequestAsJson(requestId: string, requestData: RequestData)
     export_time: new Date().toISOString(),
     request_id: requestId,
     metadata: exportMetadata,
-    data: requestData.raw_data,
+    data: requestData.json_data,
   };
 }
 

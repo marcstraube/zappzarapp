@@ -346,7 +346,7 @@ export class HistoryTabManager {
   /**
    * Export single request
    *
-   * Exports structured collector data only.
+   * Exports JSON collector data only.
    */
   private exportRequest(requestId: string): void {
     const requestData = StorageManager.getRequest(requestId);

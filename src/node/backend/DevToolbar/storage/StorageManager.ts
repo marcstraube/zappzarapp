@@ -61,8 +61,8 @@ class StorageManagerClass {
     // Store current request data
     const win = window as DevToolbarWindow;
     if (win.__DEV_TOOLBAR_DATA__ != null) {
-      const { id, metadata, tabs, raw_data } = win.__DEV_TOOLBAR_DATA__;
-      this.storeRequest(id, metadata, tabs, raw_data);
+      const { id, metadata, tabs, json_data } = win.__DEV_TOOLBAR_DATA__;
+      this.storeRequest(id, metadata, tabs, json_data);
     }
   }
 
@@ -87,19 +87,19 @@ class StorageManagerClass {
    * @param id Request ID
    * @param metadata Lightweight metadata
    * @param tabs Full tab HTML content
-   * @param rawData Optional structured collector data for export
+   * @param jsonData Optional JSON collector data for export
    */
   storeRequest(
     id: string,
     metadata: RequestMetadata,
     tabs: Record<string, string>,
-    rawData?: Record<string, unknown>
+    jsonData?: Record<string, unknown>
   ): void {
     debug('[StorageManager] Storing request:', id, 'useMemoryFallback:', this.useMemoryFallback);
 
     try {
       if (this.useMemoryFallback) {
-        this.storeInMemory(id, metadata, tabs, rawData);
+        this.storeInMemory(id, metadata, tabs, jsonData);
         debug('[StorageManager] Stored in memory, total:', this.memoryStore.meta.length);
         return;
       }
@@ -116,7 +116,7 @@ class StorageManagerClass {
       localStorage.setItem(META_KEY, JSON.stringify(metaArray));
 
       // Store full data
-      const fullData: RequestData = { id, metadata, tabs, raw_data: rawData };
+      const fullData: RequestData = { id, metadata, tabs, json_data: jsonData };
       localStorage.setItem(DATA_PREFIX + id, JSON.stringify(fullData));
 
       // Enforce quota limits
@@ -136,7 +136,7 @@ class StorageManagerClass {
           localStorage.setItem(META_KEY, JSON.stringify(metaArray));
           localStorage.setItem(
             DATA_PREFIX + id,
-            JSON.stringify({ id, metadata, tabs, raw_data: rawData })
+            JSON.stringify({ id, metadata, tabs, json_data: jsonData })
           );
         } catch (retryError) {
           logError('[DevToolbar] Failed to store after eviction:', retryError);
@@ -154,14 +154,14 @@ class StorageManagerClass {
     id: string,
     metadata: RequestMetadata,
     tabs: Record<string, string>,
-    rawData?: Record<string, unknown>
+    jsonData?: Record<string, unknown>
   ): void {
     this.memoryStore.meta.unshift(metadata);
     if (this.memoryStore.meta.length > MAX_METADATA) {
       this.memoryStore.meta.length = MAX_METADATA;
     }
 
-    this.memoryStore.requests[id] = { id, metadata, tabs, raw_data: rawData };
+    this.memoryStore.requests[id] = { id, metadata, tabs, json_data: jsonData };
 
     // Evict old full data
     const ids = this.memoryStore.meta.map((m) => m.id);
