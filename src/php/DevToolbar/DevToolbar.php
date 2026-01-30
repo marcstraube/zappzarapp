@@ -15,7 +15,7 @@ use DevToolbar\DataCollectors\RequestCollector;
 use DevToolbar\DataCollectors\TimelineCollector;
 use DevToolbar\Guard\DevToolbarGuard;
 use DevToolbar\Middleware\DevToolbarMiddleware;
-use DevToolbar\Security\NonceHelper;
+use Zappzarapp\Security\Csp\Nonce\NonceRegistry;
 
 /**
  * Main Developer Toolbar class
@@ -164,7 +164,7 @@ class DevToolbar
      */
     public function setNonce(string $nonce): void
     {
-        NonceHelper::set($nonce);
+        NonceRegistry::set($nonce);
     }
 
     /**
@@ -174,6 +174,6 @@ class DevToolbar
      */
     public function getNonce(): string
     {
-        return NonceHelper::get();
+        return NonceRegistry::get();
     }
 }

@@ -2,8 +2,8 @@
 
 declare(strict_types=1);
 
+use Zappzarapp\Security\Csp\Nonce\NonceRegistry;
 use DevDashboard\Infrastructure\TwigService;
-use DevDashboard\Security\CspNonceHelper;
 
 /**
  * DevDashboard DI Container Configuration
@@ -25,8 +25,8 @@ return [
                 __DIR__ . '/../build/cache/twig'
             );
 
-        // Register CSP nonce function using DevDashboard's CspNonceHelper
-        $service->addFunction('nonce', [CspNonceHelper::class, 'get']);
+        // Register CSP nonce function
+        $service->addFunction('nonce', NonceRegistry::get(...));
 
         return $service;
     },

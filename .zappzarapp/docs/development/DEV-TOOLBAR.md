@@ -184,12 +184,12 @@ If your project uses Content Security Policy, share the nonce with DevToolbar:
 ```php
 // After CSP header is set
 if (DevToolbar\Guard\DevToolbarGuard::isEnabled() && isset($toolbar)) {
-    $toolbar->setNonce(\App\Security\CspNonceHelper::get());
+    $toolbar->setNonce(\Zappzarapp\Security\Csp\Nonce\NonceRegistry::get());
 }
 ```
 
-DevToolbar has its own self-contained nonce generation, but can use your
-project's nonce for consistency.
+DevToolbar uses `NonceRegistry` from the `zappzarapp/security` library for
+consistent nonce handling across the application.
 
 ### Data Collection Integration
 
