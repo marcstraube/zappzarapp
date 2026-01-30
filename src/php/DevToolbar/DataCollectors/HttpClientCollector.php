@@ -130,26 +130,34 @@ class HttpClientCollector implements CollectorInterface
     /**
      * Wrapper for curl_exec
      *
-     * @param CurlHandle|resource $ch cURL handle
+     * @param CurlHandle $ch cURL handle
      * @return string|bool Response content
+     * @phpstan-param CurlHandle $ch
      */
     public function wrapCurlExec($ch): string|bool
     {
         if (!$this->collecting) {
+            /** @phpstan-ignore-next-line */
             return curl_exec($ch);
         }
 
         $start  = hrtime(true);
+        /** @phpstan-ignore-next-line */
         $result = curl_exec($ch);
         $time   = (hrtime(true) - $start) / 1_000_000; // Convert to milliseconds
 
+        /** @phpstan-ignore-next-line */
         $info = curl_getinfo($ch);
 
+        // Note: curl_getinfo() doesn't provide HTTP method - would need to track CURLOPT_CUSTOMREQUEST
+        // For now, default to 'GET' for simplicity (DevToolbar is debug-only, not production-critical)
+        $method = 'GET';
+
         $this->trackRequest(
-            $info['http_method'] ?? 'GET',
-            $info['url'] ?? 'unknown',
+            $method,
+            $info['url'],
             $time,
-            $info['http_code'] ?? 0,
+            $info['http_code'],
             [],
             is_string($result) ? $result : '',
             ['curl_info' => $info]
@@ -212,6 +220,7 @@ class HttpClientCollector implements CollectorInterface
      */
     private function getRelevantBacktrace(): array
     {
+        /** @phpstan-ignore ekinoBannedCode.function */
         $trace    = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 10);
         $relevant = [];
 
@@ -227,16 +236,14 @@ class HttpClientCollector implements CollectorInterface
             }
 
             $relevant[] = [
-                'file'     => str_replace(getcwd() . '/', '', $frame['file'] ?? ''),
+                'file'     => str_replace(getcwd() . '/', '', $frame['file']),
                 'line'     => $frame['line'] ?? 0,
-                'function' => $frame['function'] ?? '',
+                'function' => $frame['function'],
                 'class'    => $frame['class'] ?? '',
             ];
 
-            // Only keep first relevant frame
-            if (count($relevant) >= 1) {
-                break;
-            }
+            // Only keep first frame (no need for >= comparison)
+            break;
         }
 
         return $relevant;
@@ -261,10 +268,11 @@ class HttpClientCollector implements CollectorInterface
             }
 
             // Filter common sensitive patterns
-            $data = preg_replace('/("password"\s*:\s*)"[^"]*"/', '$1"[FILTERED]"', $data);
-            $data = preg_replace('/("token"\s*:\s*)"[^"]*"/', '$1"[FILTERED]"', $data);
-            $data = preg_replace('/("api_key"\s*:\s*)"[^"]*"/', '$1"[FILTERED]"', $data);
-            $data = preg_replace('/("secret"\s*:\s*)"[^"]*"/', '$1"[FILTERED]"', $data);
+            $filtered = preg_replace('/("password"\s*:\s*)"[^"]*"/', '$1"[FILTERED]"', $data);
+            $filtered = preg_replace('/("token"\s*:\s*)"[^"]*"/', '$1"[FILTERED]"', is_string($filtered) ? $filtered : $data);
+            $filtered = preg_replace('/("api_key"\s*:\s*)"[^"]*"/', '$1"[FILTERED]"', is_string($filtered) ? $filtered : $data);
+            $data     = preg_replace('/("secret"\s*:\s*)"[^"]*"/', '$1"[FILTERED]"', is_string($filtered) ? $filtered : $data);
+            $data     = is_string($data) ? $data : '';
         }
 
         if (is_array($data)) {

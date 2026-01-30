@@ -90,14 +90,35 @@ class MiniBarRenderer implements RendererInterface
     }
 
     /**
-     * Get current git branch
+     * Get current git branch from .git/HEAD (read-only, no shell execution)
      */
     private function getGitBranch(): ?string
     {
+        // Try environment variable first (can be set in CI/CD or .env)
+        $envBranch = getenv('GIT_BRANCH');
+        if ($envBranch !== false && $envBranch !== '') {
+            return $envBranch;
+        }
+
+        // Fallback: Read from .git/HEAD (safer than shell_exec)
+        $gitHeadPath = getcwd() . '/.git/HEAD';
+        if (!file_exists($gitHeadPath)) {
+            return null;
+        }
+
         try {
-            // @phpstan-ignore-line - DevToolbar legitimately uses shell_exec to read git branch in dev environment
-            $branch = trim((string) shell_exec('git branch --show-current 2>/dev/null'));
-            return $branch !== '' ? $branch : null;
+            $headContent = file_get_contents($gitHeadPath);
+            if ($headContent === false) {
+                return null;
+            }
+
+            // Format: "ref: refs/heads/branch-name" or commit hash
+            if (str_starts_with($headContent, 'ref: refs/heads/')) {
+                return trim(substr($headContent, 16));
+            }
+
+            // Detached HEAD (commit hash)
+            return null;
         } catch (Throwable $e) {
             return null;
         }

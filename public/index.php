@@ -38,12 +38,11 @@ require_once __DIR__ . '/../vendor/autoload.php';
  * AJAX requests for DevToolbar actions are handled above and exit early.
  */
 if (DevToolbarGuard::isEnabled()) {
-    ob_start();
     $toolbar = DevToolbar\DevToolbar::getInstance();
     $toolbar->boot();
 
-    // Register shutdown handler to inject toolbar HTML before </body>
-    register_shutdown_function([$toolbar, 'render']);
+    // Use output buffer callback to inject toolbar HTML (secure alternative to shutdown + echo)
+    ob_start([$toolbar, 'injectToolbar']);
 }
 
 /**

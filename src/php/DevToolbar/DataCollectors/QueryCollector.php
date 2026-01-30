@@ -85,7 +85,7 @@ class QueryCollector implements CollectorInterface
      */
     private function getRelevantBacktrace(): array
     {
-        // @phpstan-ignore-line - DevToolbar legitimately uses debug_backtrace for debugging
+        /** @phpstan-ignore ekinoBannedCode.function */
         $trace = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 10);
 
         // Filter out DevToolbar and PDO internals

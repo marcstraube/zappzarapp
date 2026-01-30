@@ -74,14 +74,18 @@ class DevToolbar
     }
 
     /**
-     * Render toolbar HTML and inject into response
+     * Output buffer callback - injects toolbar HTML into response
      *
-     * @return void
+     * Called automatically by ob_start() callback when buffer is flushed.
+     * This is a secure alternative to using echo in a shutdown function.
+     *
+     * @param string $buffer Output buffer content
+     * @return string Modified buffer with toolbar HTML injected
      */
-    public function render(): void
+    public function injectToolbar(string $buffer): string
     {
         if (!$this->booted || !DevToolbarGuard::isEnabled()) {
-            return;
+            return $buffer;
         }
 
         // Stop all collectors
@@ -89,19 +93,13 @@ class DevToolbar
             $collector->stop();
         }
 
-        // Get output buffer
-        $output = ob_get_clean();
-
-        if ($output === false || $output === '') {
-            return;
+        if ($buffer === '') {
+            return $buffer;
         }
 
         // Inject toolbar HTML before </body>
-        $middleware     = new DevToolbarMiddleware($this->collectors);
-        $modifiedOutput = $middleware->inject($output);
-
-        // @phpstan-ignore-line - DevToolbar render() legitimately uses echo in shutdown handler
-        echo $modifiedOutput;
+        $middleware = new DevToolbarMiddleware($this->collectors);
+        return $middleware->inject($buffer);
     }
 
     /**

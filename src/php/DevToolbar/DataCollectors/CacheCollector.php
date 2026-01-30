@@ -207,6 +207,7 @@ class CacheCollector implements CollectorInterface
      */
     private function getRelevantBacktrace(): array
     {
+        /** @phpstan-ignore ekinoBannedCode.function */
         $trace    = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 10);
         $relevant = [];
 
@@ -222,16 +223,14 @@ class CacheCollector implements CollectorInterface
             }
 
             $relevant[] = [
-                'file'     => str_replace(getcwd() . '/', '', $frame['file'] ?? ''),
+                'file'     => str_replace(getcwd() . '/', '', $frame['file']),
                 'line'     => $frame['line'] ?? 0,
-                'function' => $frame['function'] ?? '',
+                'function' => $frame['function'],
                 'class'    => $frame['class'] ?? '',
             ];
 
-            // Only keep first relevant frame
-            if (count($relevant) >= 1) {
-                break;
-            }
+            // Only keep first frame (no need for >= comparison)
+            break;
         }
 
         return $relevant;
