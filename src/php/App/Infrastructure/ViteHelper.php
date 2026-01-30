@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace App\Infrastructure;
 
+use App\Security\CspNonceRegistry;
 use Random\RandomException;
-use Zappzarapp\Security\Csp\NonceGenerator;
 
 /**
  * Vite Helper - Dynamically loads Vite assets based on environment
@@ -248,9 +248,9 @@ class ViteHelper
             return nonce();
         }
 
-        // Fallback to NonceGenerator if function not available
-        if (class_exists(NonceGenerator::class)) {
-            return NonceGenerator::get();
+        // Fallback to CspNonceRegistry if function not available
+        if (class_exists(CspNonceRegistry::class)) {
+            return CspNonceRegistry::get();
         }
 
         // No nonce available (shouldn't happen in production)

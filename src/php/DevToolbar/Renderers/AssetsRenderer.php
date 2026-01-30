@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace DevToolbar\Renderers;
 
+use App\Security\CspNonceRegistry;
 use RuntimeException;
-use Zappzarapp\Security\Csp\NonceGenerator;
 
 /**
  * Renders inline CSS and JavaScript assets
@@ -30,7 +30,7 @@ class AssetsRenderer implements RendererInterface
     private function renderCSS(): string
     {
         $css   = $this->loadAsset('devtoolbar.css');
-        $nonce = NonceGenerator::get();
+        $nonce = CspNonceRegistry::get();
 
         return sprintf(
             '<style nonce="%s">%s</style>',
@@ -47,7 +47,7 @@ class AssetsRenderer implements RendererInterface
     private function renderJavaScript(): string
     {
         $js    = $this->loadAsset('devtoolbar.js');
-        $nonce = NonceGenerator::get();
+        $nonce = CspNonceRegistry::get();
 
         return sprintf(
             '<script nonce="%s">%s</script>',

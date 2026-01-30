@@ -10,7 +10,7 @@ declare(strict_types=1);
 
 namespace DevDashboard;
 
-use Zappzarapp\Security\Csp\NonceGenerator;
+use App\Security\CspNonceRegistry;
 
 if (!function_exists('DevDashboard\nonce')) {
     /**
@@ -32,6 +32,6 @@ if (!function_exists('DevDashboard\nonce')) {
             return \nonce();
         }
 
-        return NonceGenerator::get();
+        return CspNonceRegistry::get();
     }
 }

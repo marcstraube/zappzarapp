@@ -9,7 +9,7 @@ declare(strict_types=1);
  * Loaded via composer autoload files.
  */
 
-use Zappzarapp\Security\Csp\NonceGenerator;
+use App\Security\CspNonceRegistry;
 
 if (!function_exists('nonce')) {
     /**
@@ -23,6 +23,6 @@ if (!function_exists('nonce')) {
      */
     function nonce(): string
     {
-        return NonceGenerator::get();
+        return CspNonceRegistry::get();
     }
 }

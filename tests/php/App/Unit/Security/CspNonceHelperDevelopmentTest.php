@@ -4,38 +4,45 @@ declare(strict_types=1);
 
 namespace Tests\App\Unit\Security;
 
+use App\Security\CspNonceRegistry;
 use PHPUnit\Framework\TestCase;
+use Zappzarapp\Security\Csp\Directive\CspDirectives;
 use Zappzarapp\Security\Csp\HeaderBuilder;
-use Zappzarapp\Security\Csp\NonceGenerator;
 
 /**
- * Tests for CspNonceHelper development environment CSP headers
+ * Tests for CSP headers in development environment (lenient mode)
  */
 class CspNonceHelperDevelopmentTest extends TestCase
 {
+    private const WS_HOST = 'localhost:8443';
+
     protected function setUp(): void
     {
-        // Reset nonce before each test
-        NonceGenerator::reset();
+        CspNonceRegistry::reset();
     }
 
     protected function tearDown(): void
     {
-        // Reset nonce after each test
-        NonceGenerator::reset();
+        CspNonceRegistry::reset();
     }
 
     public function testDevelopmentCspContainsDefaultSrc(): void
     {
-        $csp = HeaderBuilder::buildDevelopment();
+        $csp = HeaderBuilder::build(
+            CspDirectives::development(self::WS_HOST),
+            CspNonceRegistry::generator()
+        );
 
         $this->assertStringContainsString("default-src 'self'", $csp);
     }
 
     public function testDevelopmentCspContainsNonceInScriptSrc(): void
     {
-        $nonce = NonceGenerator::get();
-        $csp   = HeaderBuilder::buildDevelopment();
+        $nonce = CspNonceRegistry::get();
+        $csp   = HeaderBuilder::build(
+            CspDirectives::development(self::WS_HOST),
+            CspNonceRegistry::generator()
+        );
 
         $this->assertStringContainsString(sprintf("'nonce-%s'", $nonce), $csp);
         $this->assertStringContainsString("script-src", $csp);
@@ -43,7 +50,10 @@ class CspNonceHelperDevelopmentTest extends TestCase
 
     public function testDevelopmentCspAllowsUnsafeEvalForViteHmr(): void
     {
-        $csp = HeaderBuilder::buildDevelopment();
+        $csp = HeaderBuilder::build(
+            CspDirectives::development(self::WS_HOST),
+            CspNonceRegistry::generator()
+        );
 
         $this->assertStringContainsString("'unsafe-eval'", $csp);
         $this->assertStringContainsString("script-src", $csp);
@@ -51,7 +61,10 @@ class CspNonceHelperDevelopmentTest extends TestCase
 
     public function testDevelopmentCspAllowsUnsafeInlineForViteStyles(): void
     {
-        $csp = HeaderBuilder::buildDevelopment();
+        $csp = HeaderBuilder::build(
+            CspDirectives::development(self::WS_HOST),
+            CspNonceRegistry::generator()
+        );
 
         $this->assertStringContainsString("'unsafe-inline'", $csp);
         $this->assertStringContainsString("style-src", $csp);
@@ -59,21 +72,30 @@ class CspNonceHelperDevelopmentTest extends TestCase
 
     public function testDevelopmentCspDoesNotContainUnsafeHashes(): void
     {
-        $csp = HeaderBuilder::buildDevelopment();
+        $csp = HeaderBuilder::build(
+            CspDirectives::development(self::WS_HOST),
+            CspNonceRegistry::generator()
+        );
 
         $this->assertStringNotContainsString("'unsafe-hashes'", $csp);
     }
 
     public function testDevelopmentCspContainsStrictDynamic(): void
     {
-        $csp = HeaderBuilder::buildDevelopment();
+        $csp = HeaderBuilder::build(
+            CspDirectives::development(self::WS_HOST),
+            CspNonceRegistry::generator()
+        );
 
         $this->assertStringContainsString("'strict-dynamic'", $csp);
     }
 
     public function testDevelopmentCspAllowsWebSocketConnections(): void
     {
-        $csp = HeaderBuilder::buildDevelopment();
+        $csp = HeaderBuilder::build(
+            CspDirectives::development(self::WS_HOST),
+            CspNonceRegistry::generator()
+        );
 
         $this->assertStringContainsString("connect-src", $csp);
         $this->assertStringContainsString("wss://localhost:8443", $csp);
@@ -82,7 +104,10 @@ class CspNonceHelperDevelopmentTest extends TestCase
 
     public function testDevelopmentCspContainsSecurityDirectives(): void
     {
-        $csp = HeaderBuilder::buildDevelopment();
+        $csp = HeaderBuilder::build(
+            CspDirectives::development(self::WS_HOST),
+            CspNonceRegistry::generator()
+        );
 
         $this->assertStringContainsString("frame-ancestors 'self'", $csp);
         $this->assertStringContainsString("base-uri 'self'", $csp);

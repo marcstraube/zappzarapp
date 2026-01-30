@@ -4,29 +4,27 @@ declare(strict_types=1);
 
 namespace Tests\App\Unit\Security;
 
+use App\Security\CspNonceRegistry;
 use PHPUnit\Framework\TestCase;
-use Zappzarapp\Security\Csp\NonceGenerator;
 
 /**
- * Tests for CspNonceHelper nonce generation and retrieval
+ * Tests for CspNonceRegistry nonce generation and retrieval
  */
 class CspNonceHelperNonceTest extends TestCase
 {
     protected function setUp(): void
     {
-        // Reset nonce before each test
-        NonceGenerator::reset();
+        CspNonceRegistry::reset();
     }
 
     protected function tearDown(): void
     {
-        // Reset nonce after each test
-        NonceGenerator::reset();
+        CspNonceRegistry::reset();
     }
 
-    public function testGenerateCreatesBase64EncodedString(): void
+    public function testGetCreatesBase64EncodedString(): void
     {
-        $nonce = NonceGenerator::generate();
+        $nonce = CspNonceRegistry::get();
 
         $this->assertIsString($nonce);
         $this->assertNotEmpty($nonce);
@@ -34,27 +32,38 @@ class CspNonceHelperNonceTest extends TestCase
         $this->assertMatchesRegularExpression('/^[A-Za-z0-9+\/=]+$/', $nonce);
     }
 
-    public function testGenerateReturnsSameNonceForSameRequest(): void
+    public function testGetReturnsSameNonceForSameRequest(): void
     {
-        $nonce1 = NonceGenerator::generate();
-        $nonce2 = NonceGenerator::generate();
+        $nonce1 = CspNonceRegistry::get();
+        $nonce2 = CspNonceRegistry::get();
 
         $this->assertSame($nonce1, $nonce2);
     }
 
-    public function testGetReturnsGeneratedNonce(): void
+    public function testGeneratorReturnsSameInstance(): void
     {
-        $nonce    = NonceGenerator::generate();
-        $getNonce = NonceGenerator::get();
+        $generator1 = CspNonceRegistry::generator();
+        $generator2 = CspNonceRegistry::generator();
 
-        $this->assertSame($nonce, $getNonce);
+        $this->assertSame($generator1, $generator2);
     }
 
-    public function testGetGeneratesNonceIfNotExists(): void
+    public function testResetCreatesNewNonce(): void
     {
-        $nonce = NonceGenerator::get();
+        $nonce1 = CspNonceRegistry::get();
+        CspNonceRegistry::reset();
+        $nonce2 = CspNonceRegistry::get();
 
-        $this->assertIsString($nonce);
-        $this->assertNotEmpty($nonce);
+        $this->assertNotSame($nonce1, $nonce2);
+    }
+
+    public function testSetOverridesGeneratedNonce(): void
+    {
+        $customNonce = 'Y3VzdG9tLW5vbmNl'; // 'custom-nonce' in base64
+
+        CspNonceRegistry::set($customNonce);
+        $retrievedNonce = CspNonceRegistry::get();
+
+        $this->assertSame($customNonce, $retrievedNonce);
     }
 }
