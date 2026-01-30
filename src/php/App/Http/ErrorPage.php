@@ -7,7 +7,7 @@ namespace App\Http;
 use App\Http\Response\HtmlResponse;
 use App\Http\Response\Response;
 use App\Infrastructure\TwigService;
-use App\Security\CspNonceRegistry;
+use Zappzarapp\Security\Csp\Nonce\NonceRegistry;
 
 /**
  * Dynamic Error Page Renderer
@@ -102,7 +102,7 @@ class ErrorPage
             );
 
         // Register CSP nonce function
-        $twig->addFunction('nonce', CspNonceRegistry::get(...));
+        $twig->addFunction('nonce', NonceRegistry::get(...));
 
         return $twig->render('app/error.html.twig', $data);
     }

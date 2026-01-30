@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-use App\Security\CspNonceRegistry;
+use Zappzarapp\Security\Csp\Nonce\NonceRegistry;
 use DevDashboard\Infrastructure\TwigService;
 
 /**
@@ -26,7 +26,7 @@ return [
             );
 
         // Register CSP nonce function
-        $service->addFunction('nonce', CspNonceRegistry::get(...));
+        $service->addFunction('nonce', NonceRegistry::get(...));
 
         return $service;
     },

@@ -34,7 +34,7 @@ require_once __DIR__ . '/../vendor/autoload.php';
  * Security: Only enabled in development (disabled in production, CLI, AJAX)
  *
  * Note: DevToolbar is initialized early, but CSP nonce is set later after
- * CspNonceHelper generates it (see below after CSP header setup).
+ * the CSP header is generated (see CSP section below).
  * AJAX requests for DevToolbar actions are handled above and exit early.
  */
 if (DevToolbarGuard::isEnabled()) {
@@ -137,10 +137,10 @@ if ($isDevelopment && str_starts_with($requestPath, '/_dev')) {
  * https://web.dev/articles/csp
  */
 
-use App\Security\CspNonceRegistry;
 use Random\RandomException;
 use Zappzarapp\Security\Csp\Directive\CspDirectives;
 use Zappzarapp\Security\Csp\HeaderBuilder;
+use Zappzarapp\Security\Csp\Nonce\NonceRegistry;
 
 // 1. Build and send CSP Header (before any output!)
 try {
@@ -153,15 +153,15 @@ try {
         : CspDirectives::strict();
 
     // Build header with shared nonce generator
-    $cspHeader = HeaderBuilder::build($cspDirectives, CspNonceRegistry::generator());
+    $cspHeader = HeaderBuilder::build($cspDirectives, NonceRegistry::generator());
     header("Content-Security-Policy: $cspHeader");
 
     // 2. Define constant for backwards compatibility
-    define('CSP_NONCE', CspNonceRegistry::get());
+    define('CSP_NONCE', NonceRegistry::get());
 
     // 3. Share nonce with DevToolbar (if enabled)
     if (DevToolbarGuard::isEnabled() && isset($toolbar)) {
-        $toolbar->setNonce(CspNonceRegistry::get());
+        $toolbar->setNonce(NonceRegistry::get());
     }
 } catch (RandomException $e) {
     // Critical: CSP nonce generation failed - no secure random source available

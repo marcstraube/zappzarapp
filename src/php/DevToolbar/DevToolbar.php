@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace DevToolbar;
 
-use App\Security\CspNonceRegistry;
 use DevToolbar\DataCollectors\CacheCollector;
 use DevToolbar\DataCollectors\CollectorInterface;
 use DevToolbar\DataCollectors\ExceptionCollector;
@@ -16,6 +15,7 @@ use DevToolbar\DataCollectors\RequestCollector;
 use DevToolbar\DataCollectors\TimelineCollector;
 use DevToolbar\Guard\DevToolbarGuard;
 use DevToolbar\Middleware\DevToolbarMiddleware;
+use Zappzarapp\Security\Csp\Nonce\NonceRegistry;
 
 /**
  * Main Developer Toolbar class
@@ -164,7 +164,7 @@ class DevToolbar
      */
     public function setNonce(string $nonce): void
     {
-        CspNonceRegistry::set($nonce);
+        NonceRegistry::set($nonce);
     }
 
     /**
@@ -174,6 +174,6 @@ class DevToolbar
      */
     public function getNonce(): string
     {
-        return CspNonceRegistry::get();
+        return NonceRegistry::get();
     }
 }

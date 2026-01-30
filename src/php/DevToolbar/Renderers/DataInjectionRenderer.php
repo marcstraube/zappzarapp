@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace DevToolbar\Renderers;
 
-use App\Security\CspNonceRegistry;
 use DevToolbar\DataCollectors\CollectorInterface;
 use DevToolbar\Utils\RequestUtils;
 use Throwable;
+use Zappzarapp\Security\Csp\Nonce\NonceRegistry;
 
 /**
  * Injects DevToolbar data as JavaScript for localStorage storage
@@ -38,7 +38,7 @@ class DataInjectionRenderer implements RendererInterface
      */
     public function render(): string
     {
-        $nonce   = CspNonceRegistry::get();
+        $nonce   = NonceRegistry::get();
         $scripts = '';
 
         // Inject current request data

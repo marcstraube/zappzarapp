@@ -19,7 +19,7 @@ use App\Infrastructure\Cache\RedisCache;
 use App\Infrastructure\Session\RedisSession;
 use App\Infrastructure\Session\SessionInterface;
 use App\Infrastructure\TwigService;
-use App\Security\CspNonceRegistry;
+use Zappzarapp\Security\Csp\Nonce\NonceRegistry;
 
 use function DI\autowire;
 
@@ -45,7 +45,7 @@ return [
             );
 
         // Register CSP nonce function
-        $service->addFunction('nonce', CspNonceRegistry::get(...));
+        $service->addFunction('nonce', NonceRegistry::get(...));
 
         return $service;
     },
