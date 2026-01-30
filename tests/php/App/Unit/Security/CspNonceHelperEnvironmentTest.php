@@ -4,8 +4,9 @@ declare(strict_types=1);
 
 namespace Tests\App\Unit\Security;
 
-use App\Security\CspNonceHelper;
 use PHPUnit\Framework\TestCase;
+use Zappzarapp\Security\Csp\HeaderBuilder;
+use Zappzarapp\Security\Csp\NonceGenerator;
 
 /**
  * Tests for CspNonceHelper environment detection
@@ -15,13 +16,13 @@ class CspNonceHelperEnvironmentTest extends TestCase
     protected function setUp(): void
     {
         // Reset nonce before each test
-        CspNonceHelper::reset();
+        NonceGenerator::reset();
     }
 
     protected function tearDown(): void
     {
         // Reset nonce after each test
-        CspNonceHelper::reset();
+        NonceGenerator::reset();
     }
 
     public function testBuildCspHeaderDetectsDevelopmentEnvironment(): void
@@ -29,7 +30,7 @@ class CspNonceHelperEnvironmentTest extends TestCase
         // Mock ENV environment variable
         putenv('ENV=development');
 
-        $csp = CspNonceHelper::buildCspHeader();
+        $csp = HeaderBuilder::build();
 
         $this->assertStringContainsString("'unsafe-eval'", $csp);
 
@@ -42,7 +43,7 @@ class CspNonceHelperEnvironmentTest extends TestCase
         // Mock ENV environment variable
         putenv('ENV=production');
 
-        $csp = CspNonceHelper::buildCspHeader();
+        $csp = HeaderBuilder::build();
 
         $this->assertStringNotContainsString("'unsafe-eval'", $csp);
         $this->assertStringNotContainsString("'unsafe-inline'", $csp);
@@ -56,7 +57,7 @@ class CspNonceHelperEnvironmentTest extends TestCase
         // Ensure ENV is not set
         putenv('ENV');
 
-        $csp = CspNonceHelper::buildCspHeader();
+        $csp = HeaderBuilder::build();
 
         // Should use production (strict) CSP when ENV is not set
         $this->assertStringNotContainsString("'unsafe-eval'", $csp);

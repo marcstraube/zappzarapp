@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace DevToolbar\Renderers;
 
 use DevToolbar\DataCollectors\CollectorInterface;
-use DevToolbar\Security\NonceHelper;
 use DevToolbar\Utils\RequestUtils;
 use Throwable;
+use Zappzarapp\Security\Csp\NonceGenerator;
 
 /**
  * Injects DevToolbar data as JavaScript for localStorage storage
@@ -38,7 +38,7 @@ class DataInjectionRenderer implements RendererInterface
      */
     public function render(): string
     {
-        $nonce   = NonceHelper::get();
+        $nonce   = NonceGenerator::get();
         $scripts = '';
 
         // Inject current request data

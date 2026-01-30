@@ -137,20 +137,21 @@ if ($isDevelopment && str_starts_with($requestPath, '/_dev')) {
  * https://web.dev/articles/csp
  */
 
-use App\Security\CspNonceHelper;
 use Random\RandomException;
+use Zappzarapp\Security\Csp\HeaderBuilder;
+use Zappzarapp\Security\Csp\NonceGenerator;
 
 // 1. Build and send CSP Header (before any output!)
 try {
-    $cspHeader = CspNonceHelper::buildCspHeader();
+    $cspHeader = HeaderBuilder::build();
     header("Content-Security-Policy: $cspHeader");
 
     // 2. Define constant for backwards compatibility
-    define('CSP_NONCE', CspNonceHelper::get());
+    define('CSP_NONCE', NonceGenerator::get());
 
     // 3. Share nonce with DevToolbar (if enabled)
     if (DevToolbarGuard::isEnabled() && isset($toolbar)) {
-        $toolbar->setNonce(CspNonceHelper::get());
+        $toolbar->setNonce(NonceGenerator::get());
     }
 } catch (RandomException $e) {
     // Critical: CSP nonce generation failed - no secure random source available

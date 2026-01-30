@@ -4,8 +4,9 @@ declare(strict_types=1);
 
 namespace Tests\App\Unit\Security;
 
-use App\Security\CspNonceHelper;
 use PHPUnit\Framework\TestCase;
+use Zappzarapp\Security\Csp\HeaderBuilder;
+use Zappzarapp\Security\Csp\NonceGenerator;
 
 /**
  * Tests for CspNonceHelper production environment CSP headers
@@ -15,26 +16,26 @@ class CspNonceHelperProductionTest extends TestCase
     protected function setUp(): void
     {
         // Reset nonce before each test
-        CspNonceHelper::reset();
+        NonceGenerator::reset();
     }
 
     protected function tearDown(): void
     {
         // Reset nonce after each test
-        CspNonceHelper::reset();
+        NonceGenerator::reset();
     }
 
     public function testProductionCspContainsDefaultSrc(): void
     {
-        $csp = CspNonceHelper::buildProductionCspHeader();
+        $csp = HeaderBuilder::buildProduction();
 
         $this->assertStringContainsString("default-src 'self'", $csp);
     }
 
     public function testProductionCspContainsNonceInScriptSrc(): void
     {
-        $nonce = CspNonceHelper::get();
-        $csp   = CspNonceHelper::buildProductionCspHeader();
+        $nonce = NonceGenerator::get();
+        $csp   = HeaderBuilder::buildProduction();
 
         $this->assertStringContainsString(sprintf("'nonce-%s'", $nonce), $csp);
         $this->assertStringContainsString("script-src", $csp);
@@ -42,8 +43,8 @@ class CspNonceHelperProductionTest extends TestCase
 
     public function testProductionCspContainsNonceInStyleSrc(): void
     {
-        $nonce = CspNonceHelper::get();
-        $csp   = CspNonceHelper::buildProductionCspHeader();
+        $nonce = NonceGenerator::get();
+        $csp   = HeaderBuilder::buildProduction();
 
         $this->assertStringContainsString(sprintf("'nonce-%s'", $nonce), $csp);
         $this->assertStringContainsString("style-src", $csp);
@@ -51,35 +52,35 @@ class CspNonceHelperProductionTest extends TestCase
 
     public function testProductionCspDoesNotContainUnsafeEval(): void
     {
-        $csp = CspNonceHelper::buildProductionCspHeader();
+        $csp = HeaderBuilder::buildProduction();
 
         $this->assertStringNotContainsString("'unsafe-eval'", $csp);
     }
 
     public function testProductionCspDoesNotContainUnsafeInline(): void
     {
-        $csp = CspNonceHelper::buildProductionCspHeader();
+        $csp = HeaderBuilder::buildProduction();
 
         $this->assertStringNotContainsString("'unsafe-inline'", $csp);
     }
 
     public function testProductionCspDoesNotContainUnsafeHashes(): void
     {
-        $csp = CspNonceHelper::buildProductionCspHeader();
+        $csp = HeaderBuilder::buildProduction();
 
         $this->assertStringNotContainsString("'unsafe-hashes'", $csp);
     }
 
     public function testProductionCspContainsStrictDynamic(): void
     {
-        $csp = CspNonceHelper::buildProductionCspHeader();
+        $csp = HeaderBuilder::buildProduction();
 
         $this->assertStringContainsString("'strict-dynamic'", $csp);
     }
 
     public function testProductionCspDoesNotAllowWebSocketConnections(): void
     {
-        $csp = CspNonceHelper::buildProductionCspHeader();
+        $csp = HeaderBuilder::buildProduction();
 
         $this->assertStringContainsString("connect-src 'self'", $csp);
         $this->assertStringNotContainsString("wss://localhost:8443", $csp);
@@ -87,7 +88,7 @@ class CspNonceHelperProductionTest extends TestCase
 
     public function testProductionCspContainsSecurityDirectives(): void
     {
-        $csp = CspNonceHelper::buildProductionCspHeader();
+        $csp = HeaderBuilder::buildProduction();
 
         $this->assertStringContainsString("frame-ancestors 'self'", $csp);
         $this->assertStringContainsString("base-uri 'self'", $csp);

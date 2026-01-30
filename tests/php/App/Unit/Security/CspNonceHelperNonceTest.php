@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Tests\App\Unit\Security;
 
-use App\Security\CspNonceHelper;
 use PHPUnit\Framework\TestCase;
+use Zappzarapp\Security\Csp\NonceGenerator;
 
 /**
  * Tests for CspNonceHelper nonce generation and retrieval
@@ -15,18 +15,18 @@ class CspNonceHelperNonceTest extends TestCase
     protected function setUp(): void
     {
         // Reset nonce before each test
-        CspNonceHelper::reset();
+        NonceGenerator::reset();
     }
 
     protected function tearDown(): void
     {
         // Reset nonce after each test
-        CspNonceHelper::reset();
+        NonceGenerator::reset();
     }
 
     public function testGenerateCreatesBase64EncodedString(): void
     {
-        $nonce = CspNonceHelper::generate();
+        $nonce = NonceGenerator::generate();
 
         $this->assertIsString($nonce);
         $this->assertNotEmpty($nonce);
@@ -36,23 +36,23 @@ class CspNonceHelperNonceTest extends TestCase
 
     public function testGenerateReturnsSameNonceForSameRequest(): void
     {
-        $nonce1 = CspNonceHelper::generate();
-        $nonce2 = CspNonceHelper::generate();
+        $nonce1 = NonceGenerator::generate();
+        $nonce2 = NonceGenerator::generate();
 
         $this->assertSame($nonce1, $nonce2);
     }
 
     public function testGetReturnsGeneratedNonce(): void
     {
-        $nonce    = CspNonceHelper::generate();
-        $getNonce = CspNonceHelper::get();
+        $nonce    = NonceGenerator::generate();
+        $getNonce = NonceGenerator::get();
 
         $this->assertSame($nonce, $getNonce);
     }
 
     public function testGetGeneratesNonceIfNotExists(): void
     {
-        $nonce = CspNonceHelper::get();
+        $nonce = NonceGenerator::get();
 
         $this->assertIsString($nonce);
         $this->assertNotEmpty($nonce);
