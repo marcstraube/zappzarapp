@@ -2961,7 +2961,7 @@ lint-shell: ## Lint shell scripts with ShellCheck
 
 analyse-node: ## Run TypeScript type checking (ARGS="path/to/file.ts" for specific files)
 	@echo -e "\033[0;33mRunning TypeScript type check...\033[0m"
-	@$(DC) run --rm -T dev-tools pnpm run type-check -- $(ARGS)
+	@$(DC) run --rm -T dev-tools pnpm run type-check $(if $(ARGS),-- $(ARGS))
 	@echo -e "\033[0;32mTypeScript check completed!\033[0m"
 
 prettier-check: ## Check code formatting with Prettier (ARGS="path/to/file.ts" for specific files)

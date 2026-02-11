@@ -12,7 +12,7 @@ import { StorageManager } from '../storage/StorageManager';
 import { timeAgo } from '../utils/timeUtils';
 import type { RequestData, DevToolbarWindow } from '../types';
 import { debug, error as logError } from '../utils/logger.js';
-import { escapeHtml } from '../utils/uiHelpers.js';
+import { HtmlEscaper } from '@zappzarapp/browser-utils/html';
 
 /**
  * RequestSwitcher for navigating between current and historical requests
@@ -147,7 +147,7 @@ export class RequestSwitcher {
         html += `<div class="dev-toolbar-request-switcher-item ${isActive ? 'active' : ''}" data-request-id="${meta.id}">
                     <span class="dev-toolbar-request-switcher-item-method">${meta.method}</span>
                     <span class="dev-toolbar-request-switcher-item-status status-${statusClass}">${meta.status}</span>
-                    <span class="dev-toolbar-request-switcher-item-uri" title="${escapeHtml(meta.uri)}">${escapeHtml(meta.uri)}</span>
+                    <span class="dev-toolbar-request-switcher-item-uri" title="${HtmlEscaper.escape(meta.uri)}">${HtmlEscaper.escape(meta.uri)}</span>
                     <span class="dev-toolbar-request-switcher-item-time">${time}</span>
                 </div>`;
       });

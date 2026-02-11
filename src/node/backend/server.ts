@@ -107,6 +107,6 @@ export function startServer(): Server {
 // Check if this module is the main entry point
 const isMainModule =
   process.argv[1] !== undefined && fileURLToPath(import.meta.url) === process.argv[1];
-if (isMainModule === true) {
+if (isMainModule) {
   startServer();
 }

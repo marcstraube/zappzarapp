@@ -1,6 +1,10 @@
 /* DevToolbar - Generated browser bundle - DO NOT EDIT MANUALLY */
 "use strict";
 (() => {
+  var __defProp = Object.defineProperty;
+  var __defNormalProp = (obj, key, value) => key in obj ? __defProp(obj, key, { enumerable: true, configurable: true, writable: true, value }) : obj[key] = value;
+  var __publicField = (obj, key, value) => __defNormalProp(obj, typeof key !== "symbol" ? key + "" : key, value);
+
   // DevToolbar/storage/StorageConfig.ts
   var MAX_METADATA = 50;
   var MAX_FULL_DATA = 20;
@@ -31,22 +35,202 @@
     metaKey: false
   };
 
-  // DevToolbar/utils/logger.ts
-  var isDev = true;
-  function devLog(...args) {
-    if (isDev) {
-      console.log(...args);
+  // ../../../packages/browser-utils/dist/logging/LogLevel.js
+  var LogLevel = {
+    Debug: 0,
+    Info: 1,
+    Warn: 2,
+    Error: 3,
+    Silent: 4
+  };
+  function logLevelName(level) {
+    switch (level) {
+      case LogLevel.Debug:
+        return "DEBUG";
+      case LogLevel.Info:
+        return "INFO";
+      case LogLevel.Warn:
+        return "WARN";
+      case LogLevel.Error:
+        return "ERROR";
+      case LogLevel.Silent:
+        return "SILENT";
     }
   }
-  function debug(...args) {
-    devLog(...args);
+
+  // ../../../packages/browser-utils/dist/logging/LoggerConfig.js
+  var LoggerConfig = class _LoggerConfig {
+    constructor(options) {
+      __publicField(this, "level");
+      __publicField(this, "prefix");
+      __publicField(this, "timestamps");
+      __publicField(this, "console");
+      this.level = options.level;
+      this.prefix = options.prefix;
+      this.timestamps = options.timestamps;
+      this.console = options.console;
+    }
+    static create(options = {}) {
+      return new _LoggerConfig({
+        level: options.level ?? LogLevel.Warn,
+        prefix: options.prefix ?? "",
+        timestamps: options.timestamps ?? false,
+        console: options.console ?? globalThis.console
+      });
+    }
+    static development(prefix) {
+      return _LoggerConfig.create({
+        level: LogLevel.Debug,
+        prefix,
+        timestamps: false
+      });
+    }
+    static production(prefix) {
+      return _LoggerConfig.create({
+        level: LogLevel.Warn,
+        prefix,
+        timestamps: false
+      });
+    }
+    static silent() {
+      return _LoggerConfig.create({
+        level: LogLevel.Silent
+      });
+    }
+    withLevel(level) {
+      return new _LoggerConfig({
+        level,
+        prefix: this.prefix,
+        timestamps: this.timestamps,
+        console: this.console
+      });
+    }
+    withPrefix(prefix) {
+      return new _LoggerConfig({
+        level: this.level,
+        prefix,
+        timestamps: this.timestamps,
+        console: this.console
+      });
+    }
+    withTimestamps(enabled) {
+      return new _LoggerConfig({
+        level: this.level,
+        prefix: this.prefix,
+        timestamps: enabled,
+        console: this.console
+      });
+    }
+    withConsole(console) {
+      return new _LoggerConfig({
+        level: this.level,
+        prefix: this.prefix,
+        timestamps: this.timestamps,
+        console
+      });
+    }
+  };
+
+  // ../../../packages/browser-utils/dist/logging/Logger.js
+  var Logger = class _Logger {
+    constructor(config) {
+      __publicField(this, "config");
+      this.config = config;
+    }
+    static create(options = {}) {
+      return new _Logger(LoggerConfig.create(options));
+    }
+    static fromConfig(config) {
+      return new _Logger(config);
+    }
+    static development(prefix) {
+      return new _Logger(LoggerConfig.development(prefix));
+    }
+    static production(prefix) {
+      return new _Logger(LoggerConfig.production(prefix));
+    }
+    static silent() {
+      return new _Logger(LoggerConfig.silent());
+    }
+    get level() {
+      return this.config.level;
+    }
+    get prefix() {
+      return this.config.prefix;
+    }
+    isEnabled(level) {
+      return level >= this.config.level;
+    }
+    withLevel(level) {
+      return new _Logger(this.config.withLevel(level));
+    }
+    withPrefix(prefix) {
+      return new _Logger(this.config.withPrefix(prefix));
+    }
+    withTimestamps(enabled) {
+      return new _Logger(this.config.withTimestamps(enabled));
+    }
+    withConsole(console) {
+      return new _Logger(this.config.withConsole(console));
+    }
+    debug(...args) {
+      this.log(LogLevel.Debug, args);
+    }
+    info(...args) {
+      this.log(LogLevel.Info, args);
+    }
+    warn(...args) {
+      this.log(LogLevel.Warn, args);
+    }
+    error(...args) {
+      this.log(LogLevel.Error, args);
+    }
+    log(level, args) {
+      if (level < this.config.level) {
+        return;
+      }
+      const formattedArgs = this.formatArgs(level, args);
+      switch (level) {
+        case LogLevel.Debug:
+        case LogLevel.Info:
+          this.config.console.log(...formattedArgs);
+          break;
+        case LogLevel.Warn:
+          this.config.console.warn(...formattedArgs);
+          break;
+        case LogLevel.Error:
+          this.config.console.error(...formattedArgs);
+          break;
+      }
+    }
+    formatArgs(level, args) {
+      const parts = [];
+      if (this.config.timestamps) {
+        parts.push(`[${(/* @__PURE__ */ new Date()).toISOString()}]`);
+      }
+      if (this.config.prefix) {
+        parts.push(this.config.prefix);
+      }
+      if (this.config.timestamps || level === LogLevel.Debug || level === LogLevel.Info) {
+        parts.push(`[${logLevelName(level)}]`);
+      }
+      return [...parts, ...args];
+    }
+  };
+  function createLogger(options = {}) {
+    const logger = Logger.create(options);
+    return {
+      debug: (...args) => logger.debug(...args),
+      info: (...args) => logger.info(...args),
+      warn: (...args) => logger.warn(...args),
+      error: (...args) => logger.error(...args)
+    };
   }
-  function warn(...args) {
-    console.warn(...args);
-  }
-  function error(...args) {
-    console.error(...args);
-  }
+
+  // DevToolbar/utils/logger.ts
+  var { debug, info, warn, error } = createLogger({
+    level: true ? LogLevel.Debug : LogLevel.Warn
+  });
 
   // DevToolbar/storage/StorageManager.ts
   var StorageManagerClass = class {
@@ -67,8 +251,8 @@
       }
       const win = window;
       if (win.__DEV_TOOLBAR_DATA__ != null) {
-        const { id, metadata, tabs, raw_data } = win.__DEV_TOOLBAR_DATA__;
-        this.storeRequest(id, metadata, tabs, raw_data);
+        const { id, metadata, tabs, json_data } = win.__DEV_TOOLBAR_DATA__;
+        this.storeRequest(id, metadata, tabs, json_data);
       }
     }
     /**
@@ -91,13 +275,13 @@
      * @param id Request ID
      * @param metadata Lightweight metadata
      * @param tabs Full tab HTML content
-     * @param rawData Optional structured collector data for export
+     * @param jsonData Optional JSON collector data for export
      */
-    storeRequest(id, metadata, tabs, rawData) {
+    storeRequest(id, metadata, tabs, jsonData) {
       debug("[StorageManager] Storing request:", id, "useMemoryFallback:", this.useMemoryFallback);
       try {
         if (this.useMemoryFallback) {
-          this.storeInMemory(id, metadata, tabs, rawData);
+          this.storeInMemory(id, metadata, tabs, jsonData);
           debug("[StorageManager] Stored in memory, total:", this.memoryStore.meta.length);
           return;
         }
@@ -107,7 +291,7 @@
           metaArray.length = MAX_METADATA;
         }
         localStorage.setItem(META_KEY, JSON.stringify(metaArray));
-        const fullData = { id, metadata, tabs, raw_data: rawData };
+        const fullData = { id, metadata, tabs, json_data: jsonData };
         localStorage.setItem(DATA_PREFIX + id, JSON.stringify(fullData));
         this.enforceQuotaLimits();
       } catch (e) {
@@ -123,7 +307,7 @@
             localStorage.setItem(META_KEY, JSON.stringify(metaArray));
             localStorage.setItem(
               DATA_PREFIX + id,
-              JSON.stringify({ id, metadata, tabs, raw_data: rawData })
+              JSON.stringify({ id, metadata, tabs, json_data: jsonData })
             );
           } catch (retryError) {
             error("[DevToolbar] Failed to store after eviction:", retryError);
@@ -136,12 +320,12 @@
     /**
      * Store in memory (private browsing fallback)
      */
-    storeInMemory(id, metadata, tabs, rawData) {
+    storeInMemory(id, metadata, tabs, jsonData) {
       this.memoryStore.meta.unshift(metadata);
       if (this.memoryStore.meta.length > MAX_METADATA) {
         this.memoryStore.meta.length = MAX_METADATA;
       }
-      this.memoryStore.requests[id] = { id, metadata, tabs, raw_data: rawData };
+      this.memoryStore.requests[id] = { id, metadata, tabs, json_data: jsonData };
       const ids = this.memoryStore.meta.map((m) => m.id);
       const keysToKeep = ids.slice(0, MAX_FULL_DATA);
       for (const key in this.memoryStore.requests) {
@@ -506,32 +690,599 @@
     return sparkline;
   }
 
-  // DevToolbar/utils/uiHelpers.ts
-  function escapeHtml(text) {
-    const map = {
-      "&": "&amp;",
-      "<": "&lt;",
-      ">": "&gt;",
-      '"': "&quot;",
-      "'": "&#039;"
-    };
-    return text.replace(/[&<>"']/g, (char) => map[char] ?? char);
-  }
-  function createEscapeKeyHandler(onClose) {
-    const escHandler = (e) => {
-      if (e.key === "Escape") {
-        e.preventDefault();
-        e.stopImmediatePropagation();
-        onClose();
-        cleanup();
+  // ../../../packages/browser-utils/dist/core/errors/BrowserUtilsError.js
+  var BrowserUtilsError = class extends Error {
+    constructor(message, cause) {
+      super(message, cause !== void 0 ? { cause } : void 0);
+      __publicField(this, "cause");
+      this.name = this.constructor.name;
+      this.cause = cause;
+      Object.setPrototypeOf(this, new.target.prototype);
+    }
+    toFormattedString() {
+      return `[${this.code}] ${this.message}`;
+    }
+  };
+
+  // ../../../packages/browser-utils/dist/core/errors/ValidationError.js
+  var ValidationError = class _ValidationError extends BrowserUtilsError {
+    constructor(message, field, value, constraint) {
+      super(message);
+      __publicField(this, "code", "VALIDATION_ERROR");
+      __publicField(this, "field");
+      __publicField(this, "value");
+      __publicField(this, "constraint");
+      this.field = field;
+      this.value = value;
+      this.constraint = constraint;
+    }
+    static empty(field) {
+      return new _ValidationError(`${field} cannot be empty`, field, "(empty)", "non-empty");
+    }
+    static containsForbiddenChars(field, value, chars) {
+      const sanitized = _ValidationError.sanitizeForLog(value);
+      return new _ValidationError(`${field} contains forbidden characters: ${chars}`, field, sanitized, `must not contain: ${chars}`);
+    }
+    static invalidFilename(filename, reason) {
+      const sanitized = _ValidationError.sanitizeForLog(filename);
+      return new _ValidationError(`Invalid filename: ${reason}`, "filename", sanitized, "valid filename");
+    }
+    static tooLong(field, value, maxLength) {
+      return new _ValidationError(`${field} exceeds maximum length of ${maxLength}`, field, `(${value.length} chars)`, `max ${maxLength} chars`);
+    }
+    static invalidFormat(field, value, expectedFormat) {
+      const sanitized = _ValidationError.sanitizeForLog(value);
+      return new _ValidationError(`${field} has invalid format, expected: ${expectedFormat}`, field, sanitized, expectedFormat);
+    }
+    static insufficientComplexity(field, actual, required) {
+      return new _ValidationError(`${field} must contain at least ${required} character classes (lowercase, uppercase, digits, special), got ${actual}`, field, "(hidden)", `at least ${required} of 4 character classes`);
+    }
+    static outOfRange(field, value, min, max) {
+      return new _ValidationError(`${field} must be between ${min} and ${max}, got ${value}`, field, String(value), `${min} <= value <= ${max}`);
+    }
+    static sanitizeForLog(value, maxLength = 50) {
+      const sanitized = value.replace(/\n/g, "\\n").replace(/\r/g, "\\r").replace(/\t/g, "\\t").replace(/[\x00-\x1f]/g, "?");
+      if (sanitized.length > maxLength) {
+        return sanitized.substring(0, maxLength) + "...";
       }
-    };
-    const cleanup = () => {
-      document.removeEventListener("keydown", escHandler, true);
-    };
-    document.addEventListener("keydown", escHandler, true);
-    return cleanup;
+      return sanitized;
+    }
+  };
+
+  // ../../../packages/browser-utils/dist/core/result/Result.js
+  var Result = {
+    ok(value) {
+      return { _tag: "Ok", value };
+    },
+    err(error2) {
+      return { _tag: "Err", error: error2 };
+    },
+    isOk(result) {
+      return result._tag === "Ok";
+    },
+    isErr(result) {
+      return result._tag === "Err";
+    },
+    unwrap(result) {
+      if (result._tag === "Ok") {
+        return result.value;
+      }
+      throw result.error;
+    },
+    unwrapOr(result, defaultValue) {
+      if (result._tag === "Ok") {
+        return result.value;
+      }
+      return defaultValue;
+    },
+    unwrapOrElse(result, fn) {
+      if (result._tag === "Ok") {
+        return result.value;
+      }
+      return fn(result.error);
+    },
+    unwrapErr(result) {
+      if (result._tag === "Err") {
+        return result.error;
+      }
+      throw new Error("Called unwrapErr on Ok value");
+    },
+    map(result, fn) {
+      if (result._tag === "Ok") {
+        return Result.ok(fn(result.value));
+      }
+      return result;
+    },
+    mapErr(result, fn) {
+      if (result._tag === "Err") {
+        return Result.err(fn(result.error));
+      }
+      return result;
+    },
+    flatMap(result, fn) {
+      if (result._tag === "Ok") {
+        return fn(result.value);
+      }
+      return result;
+    },
+    fromTry(fn, mapError) {
+      try {
+        return Result.ok(fn());
+      } catch (e) {
+        if (mapError) {
+          return Result.err(mapError(e));
+        }
+        return Result.err(e);
+      }
+    },
+    async fromPromise(promise, mapError) {
+      try {
+        const value = await promise;
+        return Result.ok(value);
+      } catch (e) {
+        if (mapError) {
+          return Result.err(mapError(e));
+        }
+        return Result.err(e);
+      }
+    },
+    tap(result, fn) {
+      if (result._tag === "Ok") {
+        fn(result.value);
+      }
+      return result;
+    },
+    tapErr(result, fn) {
+      if (result._tag === "Err") {
+        fn(result.error);
+      }
+      return result;
+    },
+    match(result, handlers) {
+      if (result._tag === "Ok") {
+        return handlers.ok(result.value);
+      }
+      return handlers.err(result.error);
+    }
+  };
+
+  // ../../../packages/browser-utils/dist/core/validation/StorageValidator.js
+  var FORBIDDEN_KEY_CHARS = /[;\x00-\x1f]/;
+  var MAX_LENGTHS = {
+    storageKey: 128,
+    storagePrefix: 32
+  };
+  var StorageValidator = {
+    storageKey(key) {
+      const result = StorageValidator.storageKeyResult(key);
+      if (Result.isErr(result)) {
+        throw result.error;
+      }
+    },
+    storageKeyResult(key) {
+      if (!key) {
+        return Result.err(ValidationError.empty("storageKey"));
+      }
+      if (key.length > MAX_LENGTHS.storageKey) {
+        return Result.err(ValidationError.tooLong("storageKey", key, MAX_LENGTHS.storageKey));
+      }
+      if (FORBIDDEN_KEY_CHARS.test(key)) {
+        return Result.err(ValidationError.containsForbiddenChars("storageKey", key, "semicolon, newline, control chars"));
+      }
+      return Result.ok(key);
+    },
+    storagePrefix(prefix) {
+      const result = StorageValidator.storagePrefixResult(prefix);
+      if (Result.isErr(result)) {
+        throw result.error;
+      }
+    },
+    storagePrefixResult(prefix) {
+      if (!prefix) {
+        return Result.err(ValidationError.empty("storagePrefix"));
+      }
+      if (prefix.length > MAX_LENGTHS.storagePrefix) {
+        return Result.err(ValidationError.tooLong("storagePrefix", prefix, MAX_LENGTHS.storagePrefix));
+      }
+      if (FORBIDDEN_KEY_CHARS.test(prefix)) {
+        return Result.err(ValidationError.containsForbiddenChars("storagePrefix", prefix, "semicolon, newline, control chars"));
+      }
+      if (!/^[a-zA-Z][a-zA-Z0-9_-]*$/.test(prefix)) {
+        return Result.err(ValidationError.invalidFormat("storagePrefix", prefix, "alphanumeric, starting with letter, may contain - or _"));
+      }
+      return Result.ok(prefix);
+    }
+  };
+
+  // ../../../packages/browser-utils/dist/core/validation/CacheValidator.js
+  var CACHE_KEY_PATTERN = /^[\w:.\-/]+$/;
+  var MAX_CACHE_KEY_LENGTH = 256;
+  var CacheValidator = {
+    cacheKey(key) {
+      const result = CacheValidator.cacheKeyResult(key);
+      if (Result.isErr(result)) {
+        throw result.error;
+      }
+    },
+    cacheKeyResult(key) {
+      if (!key) {
+        return Result.err(ValidationError.empty("cacheKey"));
+      }
+      if (key.length > MAX_CACHE_KEY_LENGTH) {
+        return Result.err(ValidationError.tooLong("cacheKey", key, MAX_CACHE_KEY_LENGTH));
+      }
+      if (!CACHE_KEY_PATTERN.test(key)) {
+        return Result.err(ValidationError.invalidFormat("cacheKey", key, "alphanumeric, may contain _ - : . /"));
+      }
+      return Result.ok(key);
+    }
+  };
+
+  // ../../../packages/browser-utils/dist/core/validation/FilenameValidator.js
+  var FORBIDDEN_FILENAME_CHARS = /[<>:"/\\|?*\x00-\x1f]/;
+  var PATH_TRAVERSAL_PATTERN = /(?:^|[/\\])\.\.(?:[/\\]|$)/;
+  var RESERVED_FILENAMES = /^(?:CON|PRN|AUX|NUL|COM[1-9]|LPT[1-9])(?:\.|$)/i;
+  var MAX_FILENAME_LENGTH = 255;
+  var MAX_MIMETYPE_LENGTH = 127;
+  var FilenameValidator = {
+    filename(filename) {
+      const result = FilenameValidator.filenameResult(filename);
+      if (Result.isErr(result)) {
+        throw result.error;
+      }
+    },
+    filenameResult(filename) {
+      if (!filename) {
+        return Result.err(ValidationError.empty("filename"));
+      }
+      if (filename.length > MAX_FILENAME_LENGTH) {
+        return Result.err(ValidationError.tooLong("filename", filename, MAX_FILENAME_LENGTH));
+      }
+      if (FORBIDDEN_FILENAME_CHARS.test(filename)) {
+        return Result.err(ValidationError.containsForbiddenChars("filename", filename, '< > : " / \\ | ? * control chars'));
+      }
+      if (PATH_TRAVERSAL_PATTERN.test(filename)) {
+        return Result.err(ValidationError.invalidFilename(filename, "path traversal detected"));
+      }
+      if (RESERVED_FILENAMES.test(filename)) {
+        return Result.err(ValidationError.invalidFilename(filename, "reserved system name"));
+      }
+      if (filename.startsWith(".") || filename.startsWith(" ")) {
+        return Result.err(ValidationError.invalidFilename(filename, "cannot start with dot or space"));
+      }
+      if (filename.endsWith(".") || filename.endsWith(" ")) {
+        return Result.err(ValidationError.invalidFilename(filename, "cannot end with dot or space"));
+      }
+      return Result.ok(filename);
+    },
+    sanitizeFilename(filename, replacement = "_") {
+      if (!filename) {
+        return "download";
+      }
+      let sanitized = filename.replace(FORBIDDEN_FILENAME_CHARS, replacement).replace(/\.\./g, replacement).replace(/^[.\s]+|[.\s]+$/g, "");
+      if (RESERVED_FILENAMES.test(sanitized)) {
+        sanitized = `_${sanitized}`;
+      }
+      if (!sanitized) {
+        return "download";
+      }
+      if (sanitized.length > MAX_FILENAME_LENGTH) {
+        const ext = sanitized.lastIndexOf(".");
+        if (ext > 0 && ext > sanitized.length - 10) {
+          const extension = sanitized.substring(ext);
+          const base = sanitized.substring(0, MAX_FILENAME_LENGTH - extension.length);
+          sanitized = base + extension;
+        } else {
+          sanitized = sanitized.substring(0, MAX_FILENAME_LENGTH);
+        }
+      }
+      return sanitized;
+    },
+    mimeType(mimeType) {
+      const result = FilenameValidator.mimeTypeResult(mimeType);
+      if (Result.isErr(result)) {
+        throw result.error;
+      }
+    },
+    mimeTypeResult(mimeType) {
+      if (!mimeType) {
+        return Result.err(ValidationError.empty("mimeType"));
+      }
+      if (mimeType.length > MAX_MIMETYPE_LENGTH) {
+        return Result.err(ValidationError.tooLong("mimeType", mimeType, MAX_MIMETYPE_LENGTH));
+      }
+      if (!/^[a-z]+\/[a-z0-9.+-]+(?:;\s*[a-z0-9-]+=\S+)*$/i.test(mimeType)) {
+        return Result.err(ValidationError.invalidFormat("mimeType", mimeType, "type/subtype (e.g., text/plain)"));
+      }
+      return Result.ok(mimeType);
+    }
+  };
+
+  // ../../../packages/browser-utils/dist/core/validation/CookieValidator.js
+  var MAX_LENGTHS2 = {
+    cookieName: 256,
+    cookieValue: 4096
+  };
+  var COOKIE_NAME_FORBIDDEN = /[()<>@,;:\\"/[\]?={}\s\x00-\x1f\x7f]/;
+  var COOKIE_VALUE_FORBIDDEN = /[;\x00-\x1f\x7f]/;
+  var CookieValidator = {
+    cookieName(name) {
+      const result = CookieValidator.cookieNameResult(name);
+      if (Result.isErr(result)) {
+        throw result.error;
+      }
+    },
+    cookieNameResult(name) {
+      if (!name) {
+        return Result.err(ValidationError.empty("cookieName"));
+      }
+      if (name.length > MAX_LENGTHS2.cookieName) {
+        return Result.err(ValidationError.tooLong("cookieName", name, MAX_LENGTHS2.cookieName));
+      }
+      if (COOKIE_NAME_FORBIDDEN.test(name)) {
+        return Result.err(ValidationError.containsForbiddenChars("cookieName", name, "spaces, tabs, separators, control chars"));
+      }
+      return Result.ok(name);
+    },
+    cookieValue(value) {
+      const result = CookieValidator.cookieValueResult(value);
+      if (Result.isErr(result)) {
+        throw result.error;
+      }
+    },
+    cookieValueResult(value) {
+      if (value.length > MAX_LENGTHS2.cookieValue) {
+        return Result.err(ValidationError.tooLong("cookieValue", value, MAX_LENGTHS2.cookieValue));
+      }
+      if (COOKIE_VALUE_FORBIDDEN.test(value)) {
+        return Result.err(ValidationError.containsForbiddenChars("cookieValue", value, "semicolons, control chars"));
+      }
+      return Result.ok(value);
+    }
+  };
+
+  // ../../../packages/browser-utils/dist/core/validation/UrlValidator.js
+  var DEFAULT_SAFE_PROTOCOLS = [
+    "http",
+    "https",
+    "ws",
+    "wss",
+    "mailto",
+    "ftp",
+    "ftps"
+  ];
+  function buildProtocolPattern(options) {
+    const protocols = [...DEFAULT_SAFE_PROTOCOLS];
+    if (options?.additionalProtocols) {
+      for (const protocol of options.additionalProtocols) {
+        if (/^[a-z][a-z0-9+.-]*$/i.test(protocol)) {
+          protocols.push(protocol.toLowerCase());
+        }
+      }
+    }
+    const escaped = protocols.map((p) => p.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"));
+    return new RegExp(`^(?:${escaped.join("|")}):`, "i");
   }
+  var DEFAULT_SAFE_PATTERN = buildProtocolPattern();
+  var UrlValidator = {
+    DEFAULT_SAFE_PROTOCOLS,
+    urlSafe(url, options) {
+      const result = UrlValidator.urlSafeResult(url, options);
+      if (Result.isErr(result)) {
+        throw result.error;
+      }
+    },
+    urlSafeResult(url, options) {
+      if (!url) {
+        return Result.err(ValidationError.empty("url"));
+      }
+      const colonIndex = url.indexOf(":");
+      if (colonIndex === -1) {
+        return Result.ok(url);
+      }
+      const pattern = options?.additionalProtocols ? buildProtocolPattern(options) : DEFAULT_SAFE_PATTERN;
+      if (!pattern.test(url)) {
+        const allowedList = options?.additionalProtocols ? [...DEFAULT_SAFE_PROTOCOLS, ...options.additionalProtocols].join(", ") : DEFAULT_SAFE_PROTOCOLS.join(", ");
+        return Result.err(ValidationError.invalidFormat("url", url, `allowed protocol (${allowedList})`));
+      }
+      return Result.ok(url);
+    }
+  };
+
+  // ../../../packages/browser-utils/dist/core/validation/CommonValidator.js
+  var MAX_CLIPBOARD_LENGTH = 1e7;
+  var CommonValidator = {
+    nonEmpty(field, value) {
+      const result = CommonValidator.nonEmptyResult(field, value);
+      if (Result.isErr(result)) {
+        throw result.error;
+      }
+    },
+    nonEmptyResult(field, value) {
+      if (!value) {
+        return Result.err(ValidationError.empty(field));
+      }
+      return Result.ok(value);
+    },
+    numberInRange(field, value, min, max) {
+      const result = CommonValidator.numberInRangeResult(field, value, min, max);
+      if (Result.isErr(result)) {
+        throw result.error;
+      }
+    },
+    numberInRangeResult(field, value, min, max) {
+      if (value < min || value > max) {
+        return Result.err(ValidationError.outOfRange(field, value, min, max));
+      }
+      return Result.ok(value);
+    },
+    positiveIntegerResult(field, value) {
+      if (!Number.isInteger(value) || value < 1) {
+        return Result.err(ValidationError.invalidFormat(field, String(value), "positive integer (>= 1)"));
+      }
+      return Result.ok(value);
+    },
+    clipboardText(text) {
+      const result = CommonValidator.clipboardTextResult(text);
+      if (Result.isErr(result)) {
+        throw result.error;
+      }
+    },
+    clipboardTextResult(text) {
+      if (text.length > MAX_CLIPBOARD_LENGTH) {
+        return Result.err(ValidationError.tooLong("clipboardText", text, MAX_CLIPBOARD_LENGTH));
+      }
+      return Result.ok(text);
+    }
+  };
+
+  // ../../../packages/browser-utils/dist/core/validation/Validator.js
+  var Validator = {
+    storageKey: (key) => StorageValidator.storageKey(key),
+    storageKeyResult: (key) => StorageValidator.storageKeyResult(key),
+    storagePrefix: (prefix) => StorageValidator.storagePrefix(prefix),
+    storagePrefixResult: (prefix) => StorageValidator.storagePrefixResult(prefix),
+    cacheKey: (key) => CacheValidator.cacheKey(key),
+    cacheKeyResult: (key) => CacheValidator.cacheKeyResult(key),
+    filename: (filename) => FilenameValidator.filename(filename),
+    filenameResult: (filename) => FilenameValidator.filenameResult(filename),
+    sanitizeFilename: (filename, replacement) => FilenameValidator.sanitizeFilename(filename, replacement),
+    mimeType: (mimeType) => FilenameValidator.mimeType(mimeType),
+    mimeTypeResult: (mimeType) => FilenameValidator.mimeTypeResult(mimeType),
+    cookieName: (name) => CookieValidator.cookieName(name),
+    cookieNameResult: (name) => CookieValidator.cookieNameResult(name),
+    cookieValue: (value) => CookieValidator.cookieValue(value),
+    cookieValueResult: (value) => CookieValidator.cookieValueResult(value),
+    urlSafe: (url) => UrlValidator.urlSafe(url),
+    urlSafeResult: (url) => UrlValidator.urlSafeResult(url),
+    nonEmpty: (field, value) => CommonValidator.nonEmpty(field, value),
+    nonEmptyResult: (field, value) => CommonValidator.nonEmptyResult(field, value),
+    numberInRange: (field, value, min, max) => CommonValidator.numberInRange(field, value, min, max),
+    numberInRangeResult: (field, value, min, max) => CommonValidator.numberInRangeResult(field, value, min, max),
+    positiveIntegerResult: (field, value) => CommonValidator.positiveIntegerResult(field, value),
+    clipboardText: (text) => CommonValidator.clipboardText(text),
+    clipboardTextResult: (text) => CommonValidator.clipboardTextResult(text)
+  };
+
+  // ../../../packages/browser-utils/dist/html/HtmlEscaper.js
+  var HTML_ENTITIES = {
+    "&": "&amp;",
+    "<": "&lt;",
+    ">": "&gt;",
+    '"': "&quot;",
+    "'": "&#039;",
+    "`": "&#x60;"
+  };
+  var HTML_ESCAPE_PATTERN = /[&<>"'`]/g;
+  var SAFE_ATTR_NAME = /^[a-zA-Z][a-zA-Z0-9_-]*$/;
+  var DANGEROUS_ATTRS = /* @__PURE__ */ new Set([
+    "onclick",
+    "ondblclick",
+    "onmousedown",
+    "onmouseup",
+    "onmouseover",
+    "onmousemove",
+    "onmouseout",
+    "onmouseenter",
+    "onmouseleave",
+    "onkeydown",
+    "onkeypress",
+    "onkeyup",
+    "onfocus",
+    "onblur",
+    "onsubmit",
+    "onreset",
+    "onselect",
+    "onchange",
+    "oninput",
+    "onload",
+    "onerror",
+    "onabort",
+    "onscroll",
+    "onresize",
+    "oncontextmenu",
+    "ondrag",
+    "ondragend",
+    "ondragenter",
+    "ondragleave",
+    "ondragover",
+    "ondragstart",
+    "ondrop",
+    "onanimationstart",
+    "onanimationend",
+    "onanimationiteration",
+    "ontransitionend",
+    "formaction",
+    "action",
+    "href",
+    "src",
+    "srcdoc",
+    "xlink:href"
+  ]);
+  var HtmlEscaper = {
+    escape(text) {
+      if (!text) {
+        return "";
+      }
+      return text.replace(HTML_ESCAPE_PATTERN, (char) => HTML_ENTITIES[char] ?? char);
+    },
+    truncate(text, maxLength = 100, suffix = "...") {
+      if (!text) {
+        return "";
+      }
+      const escaped = HtmlEscaper.escape(text);
+      if (escaped.length <= maxLength) {
+        return escaped;
+      }
+      return escaped.substring(0, maxLength - suffix.length) + suffix;
+    },
+    tag(tagName, attrs = {}, content) {
+      if (!SAFE_ATTR_NAME.test(tagName)) {
+        throw ValidationError.invalidFormat("tagName", tagName, "valid HTML tag name");
+      }
+      const attrParts = [];
+      for (const [name, value] of Object.entries(attrs)) {
+        if (DANGEROUS_ATTRS.has(name.toLowerCase())) {
+          continue;
+        }
+        if (!SAFE_ATTR_NAME.test(name)) {
+          continue;
+        }
+        if (typeof value === "boolean") {
+          if (value) {
+            attrParts.push(name);
+          }
+          continue;
+        }
+        const escapedValue = HtmlEscaper.escapeAttr(String(value));
+        attrParts.push(`${name}="${escapedValue}"`);
+      }
+      const attrStr = attrParts.length > 0 ? " " + attrParts.join(" ") : "";
+      if (content === null || content === void 0) {
+        return `<${tagName}${attrStr} />`;
+      }
+      return `<${tagName}${attrStr}>${HtmlEscaper.escape(content)}</${tagName}>`;
+    },
+    escapeAttr(text) {
+      if (!text) {
+        return "";
+      }
+      return text.replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/'/g, "&#039;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/`/g, "&#x60;").replace(/\//g, "&#x2F;");
+    },
+    isSafeUrl(url) {
+      if (!url) {
+        return false;
+      }
+      const normalized = url.trim().toLowerCase();
+      return !normalized.startsWith("javascript:") && !normalized.startsWith("data:") && !normalized.startsWith("vbscript:");
+    },
+    sanitizeUrl(url) {
+      if (!HtmlEscaper.isSafeUrl(url)) {
+        return "";
+      }
+      return HtmlEscaper.escapeAttr(url);
+    }
+  };
 
   // DevToolbar/ui/RequestSwitcher.ts
   var RequestSwitcher = class {
@@ -635,7 +1386,7 @@
           html += `<div class="dev-toolbar-request-switcher-item ${isActive ? "active" : ""}" data-request-id="${meta.id}">
                     <span class="dev-toolbar-request-switcher-item-method">${meta.method}</span>
                     <span class="dev-toolbar-request-switcher-item-status status-${statusClass}">${meta.status}</span>
-                    <span class="dev-toolbar-request-switcher-item-uri" title="${escapeHtml(meta.uri)}">${escapeHtml(meta.uri)}</span>
+                    <span class="dev-toolbar-request-switcher-item-uri" title="${HtmlEscaper.escape(meta.uri)}">${HtmlEscaper.escape(meta.uri)}</span>
                     <span class="dev-toolbar-request-switcher-item-time">${time}</span>
                 </div>`;
         });
@@ -854,7 +1605,7 @@
       return `<div class="dev-toolbar-request-status">
               <div class="dev-toolbar-xdebug-compact dev-toolbar-xdebug-compact-${statusClass}">
                 <span class="dev-toolbar-xdebug-indicator">${statusIcon}</span>
-                <span class="dev-toolbar-xdebug-label">${escapeHtml(statusText)}</span>
+                <span class="dev-toolbar-xdebug-label">${HtmlEscaper.escape(statusText)}</span>
               </div>
             </div>`;
     }
@@ -913,34 +1664,297 @@
 
   // DevToolbar/utils/exportUtils.ts
   function exportRequestAsJson(requestId, requestData) {
+    if (!requestData.json_data) {
+      throw new Error(`Cannot export request ${requestId}: No JSON data available`);
+    }
     const { badge_counts: _badge_counts, ...exportMetadata } = requestData.metadata;
     return {
       toolbar_version: "2.1.0",
       export_time: (/* @__PURE__ */ new Date()).toISOString(),
       request_id: requestId,
       metadata: exportMetadata,
-      data: requestData.raw_data
+      data: requestData.json_data
     };
   }
-  function downloadJson(content, filename) {
-    const json = typeof content === "string" ? content : JSON.stringify(content, null, 2);
-    const blob = new Blob([json], { type: "application/json" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = filename;
-    a.click();
-    URL.revokeObjectURL(url);
-  }
-  function downloadFile(content, filename, mimeType = "application/json") {
-    const blob = new Blob([content], { type: mimeType });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = filename;
-    a.click();
-    URL.revokeObjectURL(url);
-  }
+
+  // ../../../packages/browser-utils/dist/download/DownloadOptions.js
+  var DownloadOptions = class _DownloadOptions {
+    constructor(filename, mimeType) {
+      __publicField(this, "filename");
+      __publicField(this, "mimeType");
+      this.filename = filename;
+      this.mimeType = mimeType;
+    }
+    static create(input) {
+      let filename;
+      if (input.sanitizeFilename === true) {
+        filename = Validator.sanitizeFilename(input.filename);
+      } else {
+        Validator.filename(input.filename);
+        filename = input.filename;
+      }
+      const mimeType = input.mimeType ?? "application/octet-stream";
+      if (input.mimeType !== void 0 && input.mimeType !== "") {
+        Validator.mimeType(input.mimeType);
+      }
+      return new _DownloadOptions(filename, mimeType);
+    }
+    static json(filename, sanitize = false) {
+      const name = filename.endsWith(".json") ? filename : `${filename}.json`;
+      return _DownloadOptions.create({
+        filename: name,
+        mimeType: "application/json",
+        sanitizeFilename: sanitize
+      });
+    }
+    static csv(filename, sanitize = false) {
+      const name = filename.endsWith(".csv") ? filename : `${filename}.csv`;
+      return _DownloadOptions.create({
+        filename: name,
+        mimeType: "text/csv",
+        sanitizeFilename: sanitize
+      });
+    }
+    static text(filename, sanitize = false) {
+      const name = filename.endsWith(".txt") ? filename : `${filename}.txt`;
+      return _DownloadOptions.create({
+        filename: name,
+        mimeType: "text/plain",
+        sanitizeFilename: sanitize
+      });
+    }
+    static html(filename, sanitize = false) {
+      const name = filename.endsWith(".html") ? filename : `${filename}.html`;
+      return _DownloadOptions.create({
+        filename: name,
+        mimeType: "text/html",
+        sanitizeFilename: sanitize
+      });
+    }
+    static binary(filename, mimeType = "application/octet-stream", sanitize = false) {
+      return _DownloadOptions.create({
+        filename,
+        mimeType,
+        sanitizeFilename: sanitize
+      });
+    }
+    withFilename(filename, sanitize = false) {
+      return _DownloadOptions.create({
+        filename,
+        mimeType: this.mimeType,
+        sanitizeFilename: sanitize
+      });
+    }
+    withMimeType(mimeType) {
+      Validator.mimeType(mimeType);
+      return new _DownloadOptions(this.filename, mimeType);
+    }
+  };
+
+  // ../../../packages/browser-utils/dist/download/Downloader.js
+  var Downloader = {
+    download(content, options) {
+      const blob = new Blob([content], { type: options.mimeType });
+      Downloader.blob(blob, options.filename);
+    },
+    blob(content, filename) {
+      const options = DownloadOptions.binary(filename);
+      const blob = content instanceof Blob ? content : new Blob([content]);
+      const url = URL.createObjectURL(blob);
+      try {
+        const anchor = document.createElement("a");
+        anchor.href = url;
+        anchor.download = options.filename;
+        anchor.style.display = "none";
+        document.body.appendChild(anchor);
+        anchor.click();
+        document.body.removeChild(anchor);
+      } finally {
+        URL.revokeObjectURL(url);
+      }
+    },
+    json(content, filename, indent = 2) {
+      const options = DownloadOptions.json(filename);
+      const json = typeof content === "string" ? content : JSON.stringify(content, null, indent);
+      Downloader.download(json, options);
+    },
+    csv(content, filename) {
+      const options = DownloadOptions.csv(filename);
+      Downloader.download(content, options);
+    },
+    text(content, filename) {
+      const options = DownloadOptions.text(filename);
+      Downloader.download(content, options);
+    },
+    html(content, filename) {
+      const options = DownloadOptions.html(filename);
+      Downloader.download(content, options);
+    },
+    withOptions(content, input) {
+      const options = DownloadOptions.create(input);
+      Downloader.download(content, options);
+    },
+    safe(content, filename, mimeType = "application/octet-stream") {
+      const options = DownloadOptions.create({
+        filename,
+        mimeType,
+        sanitizeFilename: true
+      });
+      Downloader.download(content, options);
+    }
+  };
+
+  // ../../../packages/browser-utils/dist/keyboard/KeyboardShortcut.js
+  var KeyboardShortcut = class _KeyboardShortcut {
+    constructor(def) {
+      __publicField(this, "key");
+      __publicField(this, "ctrlKey");
+      __publicField(this, "shiftKey");
+      __publicField(this, "altKey");
+      __publicField(this, "metaKey");
+      this.key = def.key;
+      this.ctrlKey = def.ctrlKey;
+      this.shiftKey = def.shiftKey;
+      this.altKey = def.altKey;
+      this.metaKey = def.metaKey;
+    }
+    static create(def) {
+      return new _KeyboardShortcut({
+        key: def.key,
+        ctrlKey: def.ctrlKey ?? false,
+        shiftKey: def.shiftKey ?? false,
+        altKey: def.altKey ?? false,
+        metaKey: def.metaKey ?? false
+      });
+    }
+    static key(key) {
+      return _KeyboardShortcut.create({ key });
+    }
+    static ctrlKey(key) {
+      return _KeyboardShortcut.create({ key, ctrlKey: true });
+    }
+    static ctrlShift(key) {
+      return _KeyboardShortcut.create({ key, ctrlKey: true, shiftKey: true });
+    }
+    static altKey(key) {
+      return _KeyboardShortcut.create({ key, altKey: true });
+    }
+    static metaKey(key) {
+      return _KeyboardShortcut.create({ key, metaKey: true });
+    }
+    static escape() {
+      return _KeyboardShortcut.create({ key: "Escape" });
+    }
+    static enter() {
+      return _KeyboardShortcut.create({ key: "Enter" });
+    }
+    matches(event) {
+      const keyMatches = event.key.length === 1 ? event.key.toUpperCase() === this.key.toUpperCase() : event.key === this.key;
+      return keyMatches && event.ctrlKey === this.ctrlKey && event.shiftKey === this.shiftKey && event.altKey === this.altKey && event.metaKey === this.metaKey;
+    }
+    toString() {
+      const parts = [];
+      if (this.ctrlKey) {
+        parts.push("Ctrl");
+      }
+      if (this.altKey) {
+        parts.push("Alt");
+      }
+      if (this.shiftKey) {
+        parts.push("Shift");
+      }
+      if (this.metaKey) {
+        parts.push("Cmd");
+      }
+      parts.push(this.key.length === 1 ? this.key.toUpperCase() : this.key);
+      return parts.join("+");
+    }
+    toMacString() {
+      const parts = [];
+      if (this.ctrlKey) {
+        parts.push("\u2303");
+      }
+      if (this.altKey) {
+        parts.push("\u2325");
+      }
+      if (this.shiftKey) {
+        parts.push("\u21E7");
+      }
+      if (this.metaKey) {
+        parts.push("\u2318");
+      }
+      parts.push(this.key.length === 1 ? this.key.toUpperCase() : this.key);
+      return parts.join("");
+    }
+  };
+
+  // ../../../packages/browser-utils/dist/keyboard/ShortcutManager.js
+  var ShortcutManager = {
+    on(shortcut, handler, options = {}) {
+      const kbd = shortcut instanceof KeyboardShortcut ? shortcut : KeyboardShortcut.create(shortcut);
+      const { preventDefault = true, stopPropagation = false, stopImmediatePropagation = false, capture = false, once = false } = options;
+      let isActive = true;
+      const listener = (event) => {
+        if (!isActive || !kbd.matches(event)) {
+          return;
+        }
+        if (preventDefault) {
+          event.preventDefault();
+        }
+        if (stopPropagation) {
+          event.stopPropagation();
+        }
+        if (stopImmediatePropagation) {
+          event.stopImmediatePropagation();
+        }
+        handler();
+        if (once) {
+          cleanup();
+        }
+      };
+      const cleanup = () => {
+        isActive = false;
+        document.removeEventListener("keydown", listener, capture);
+      };
+      document.addEventListener("keydown", listener, capture);
+      return cleanup;
+    },
+    onEscape(handler) {
+      return ShortcutManager.on(KeyboardShortcut.escape(), handler, {
+        capture: true,
+        stopImmediatePropagation: true,
+        once: true
+      });
+    },
+    onEnter(handler, options = {}) {
+      return ShortcutManager.on(KeyboardShortcut.enter(), handler, options);
+    },
+    createGroup() {
+      return new ShortcutGroup();
+    }
+  };
+  var ShortcutGroup = class {
+    constructor() {
+      __publicField(this, "cleanups", []);
+    }
+    add(shortcut, handler, options) {
+      this.cleanups.push(ShortcutManager.on(shortcut, handler, options));
+      return this;
+    }
+    addEscape(handler) {
+      this.cleanups.push(ShortcutManager.onEscape(handler));
+      return this;
+    }
+    cleanup() {
+      for (const fn of this.cleanups) {
+        fn();
+      }
+      this.cleanups.length = 0;
+    }
+    get size() {
+      return this.cleanups.length;
+    }
+  };
 
   // DevToolbar/ui/ClearHistoryDialog.ts
   var ClearHistoryDialog = class {
@@ -1087,7 +2101,7 @@
       cancelBtn?.addEventListener("click", () => this.close());
       const closeBtn = this.modal.querySelector(".dev-toolbar-modal-close");
       closeBtn?.addEventListener("click", () => this.close());
-      this.escKeyCleanup = createEscapeKeyHandler(() => this.close());
+      this.escKeyCleanup = ShortcutManager.onEscape(() => this.close());
       this.modal.addEventListener("click", (e) => {
         if (e.target === this.modal) {
           this.close();
@@ -1241,7 +2255,7 @@
       okBtn?.addEventListener("click", () => this.close());
       const closeBtn = this.modal.querySelector(".dev-toolbar-modal-close");
       closeBtn?.addEventListener("click", () => this.close());
-      this.escKeyCleanup = createEscapeKeyHandler(() => this.close());
+      this.escKeyCleanup = ShortcutManager.onEscape(() => this.close());
       this.modal.addEventListener("click", (e) => {
         if (e.target === this.modal) {
           this.close();
@@ -1372,18 +2386,18 @@
         const fullTimestamp = formatTimestamp(request.timestamp);
         const perfClass = request.time > 500 ? "slow" : request.time > 200 ? "warning" : "";
         html += `<div class="dev-toolbar-history-item ${perfClass}"
-                      data-method="${escapeHtml(request.method)}"
-                      data-uri="${escapeHtml(request.uri)}"
+                      data-method="${HtmlEscaper.escape(request.method)}"
+                      data-uri="${HtmlEscaper.escape(request.uri)}"
                       data-status="${request.status}"
                       data-time="${request.time}"
-                      data-request-id="${escapeHtml(request.id)}">
+                      data-request-id="${HtmlEscaper.escape(request.id)}">
                     <div class="dev-toolbar-history-item-header">
                         <span class="dev-toolbar-history-icon">${statusIcon}</span>
-                        <span class="dev-toolbar-history-method">${escapeHtml(request.method)}</span>
-                        <span class="dev-toolbar-history-uri">${escapeHtml(request.uri)}</span>
+                        <span class="dev-toolbar-history-method">${HtmlEscaper.escape(request.method)}</span>
+                        <span class="dev-toolbar-history-uri">${HtmlEscaper.escape(request.uri)}</span>
                         <span class="dev-toolbar-history-time-ago" title="${fullTimestamp}">${timeAgoText}</span>
                         <button class="dev-toolbar-history-item-export"
-                                data-request-id="${escapeHtml(request.id)}"
+                                data-request-id="${HtmlEscaper.escape(request.id)}"
                                 title="Export this request">\u2B07</button>
                     </div>
                     <div class="dev-toolbar-history-item-meta">
@@ -1505,7 +2519,7 @@
     /**
      * Export single request
      *
-     * Exports structured collector data only.
+     * Exports JSON collector data only.
      */
     exportRequest(requestId) {
       const requestData = StorageManager.getRequest(requestId);
@@ -1516,7 +2530,7 @@
       }
       const exportData = exportRequestAsJson(requestId, requestData);
       const filename = `devtoolbar-request-${requestId}-${Date.now()}.json`;
-      downloadFile(JSON.stringify(exportData, null, 2), filename, "application/json");
+      Downloader.json(exportData, filename);
     }
     /**
      * Export visible history as JSON
@@ -1532,7 +2546,7 @@
         null,
         2
       );
-      downloadFile(json, `devtoolbar-history-${Date.now()}.json`, "application/json");
+      Downloader.json(json, `devtoolbar-history-${Date.now()}.json`);
     }
     /**
      * Export visible history as CSV
@@ -1546,7 +2560,7 @@
         csv += `${timestamp},${item.method},${uri},${item.status},${item.time},${item.memory},${item.query_count}
 `;
       });
-      downloadFile(csv, `devtoolbar-history-${Date.now()}.csv`, "text/csv");
+      Downloader.csv(csv, `devtoolbar-history-${Date.now()}.csv`);
     }
     /**
      * Collect visible request data
@@ -1724,11 +2738,11 @@
       const checked = currentValues.includes(value) ? "checked" : "";
       return `
             <label class="dev-toolbar-settings-checkbox-item">
-                <input type="checkbox" name="minibar-label" value="${escapeHtml(value)}" ${checked}>
+                <input type="checkbox" name="minibar-label" value="${HtmlEscaper.escape(value)}" ${checked}>
                 <div>
-                    <strong>${escapeHtml(title)}</strong>
+                    <strong>${HtmlEscaper.escape(title)}</strong>
                     <p style="margin: 4px 0 0 0; color: #6b7280; font-size: 0.875rem;">
-                        ${escapeHtml(description)}
+                        ${HtmlEscaper.escape(description)}
                     </p>
                 </div>
             </label>
@@ -1740,8 +2754,8 @@
     buildColorInput(type, label, value) {
       return `
             <div class="dev-toolbar-settings-color-item">
-                <label for="color-${escapeHtml(type)}">${escapeHtml(label)}</label>
-                <input type="color" id="color-${escapeHtml(type)}" name="color-${escapeHtml(type)}" value="${escapeHtml(value)}">
+                <label for="color-${HtmlEscaper.escape(type)}">${HtmlEscaper.escape(label)}</label>
+                <input type="color" id="color-${HtmlEscaper.escape(type)}" name="color-${HtmlEscaper.escape(type)}" value="${HtmlEscaper.escape(value)}">
             </div>
         `;
     }
@@ -1829,7 +2843,7 @@
       cancelBtn?.addEventListener("click", () => this.close());
       const closeBtn = this.modal.querySelector(".dev-toolbar-modal-close");
       closeBtn?.addEventListener("click", () => this.close());
-      this.escKeyCleanup = createEscapeKeyHandler(() => this.close());
+      this.escKeyCleanup = ShortcutManager.onEscape(() => this.close());
       this.modal.addEventListener("click", (e) => {
         if (e.target === this.modal) {
           this.close();
@@ -2196,7 +3210,7 @@
       }
       const exportData = exportRequestAsJson(toolbarData.id, toolbarData);
       const filename = `devtoolbar-request-${toolbarData.id}-${Date.now()}.json`;
-      downloadJson(exportData, filename);
+      Downloader.json(exportData, filename);
       debug("[DevToolbar] Exported current request");
     }
     /**

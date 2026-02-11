@@ -10,15 +10,13 @@ import type { MinibarLabelType, BranchColors, KeyboardShortcut } from '../types/
 import { StorageManager } from '../storage/StorageManager.js';
 import { DEFAULT_BRANCH_COLORS, DEFAULT_TOGGLE_SHORTCUT } from '../storage/StorageConfig.js';
 import { debug, error as logError } from '../utils/logger.js';
-import { escapeHtml, createEscapeKeyHandler } from '../utils/uiHelpers.js';
+import { HtmlEscaper } from '@zappzarapp/browser-utils/html';
+import { BaseDialog } from './BaseDialog.js';
 
 /**
  * SettingsManager singleton for managing settings UI
  */
-export class SettingsManager {
-  private modal: HTMLElement | null = null;
-  private isOpen = false;
-  private escKeyCleanup: (() => void) | null = null;
+export class SettingsManager extends BaseDialog {
   private currentShortcut: KeyboardShortcut | null = null;
 
   /**
@@ -26,26 +24,13 @@ export class SettingsManager {
    */
   open(): void {
     if (this.isOpen) {
-      return; // Already open
+      return;
     }
 
     this.createModal();
     this.showModal();
     this.attachModalHandlers();
     this.isOpen = true;
-  }
-
-  /**
-   * Close settings modal
-   */
-  close(): void {
-    if (!this.isOpen) {
-      return;
-    }
-
-    this.hideModal();
-    this.removeModal();
-    this.isOpen = false;
   }
 
   /**
@@ -129,15 +114,7 @@ export class SettingsManager {
             </div>
         `;
 
-    // Inject modal into DOM
-    const container = document.createElement('div');
-    container.innerHTML = modalHTML;
-    const modalElement = container.firstElementChild;
-    if (modalElement != null) {
-      document.body.appendChild(modalElement);
-    }
-
-    this.modal = document.getElementById('dev-toolbar-settings-overlay');
+    this.injectModal(modalHTML, 'dev-toolbar-settings-overlay');
   }
 
   /**
@@ -153,11 +130,11 @@ export class SettingsManager {
 
     return `
             <label class="dev-toolbar-settings-checkbox-item">
-                <input type="checkbox" name="minibar-label" value="${escapeHtml(value)}" ${checked}>
+                <input type="checkbox" name="minibar-label" value="${HtmlEscaper.escape(value)}" ${checked}>
                 <div>
-                    <strong>${escapeHtml(title)}</strong>
+                    <strong>${HtmlEscaper.escape(title)}</strong>
                     <p style="margin: 4px 0 0 0; color: #6b7280; font-size: 0.875rem;">
-                        ${escapeHtml(description)}
+                        ${HtmlEscaper.escape(description)}
                     </p>
                 </div>
             </label>
@@ -170,8 +147,8 @@ export class SettingsManager {
   private buildColorInput(type: string, label: string, value: string): string {
     return `
             <div class="dev-toolbar-settings-color-item">
-                <label for="color-${escapeHtml(type)}">${escapeHtml(label)}</label>
-                <input type="color" id="color-${escapeHtml(type)}" name="color-${escapeHtml(type)}" value="${escapeHtml(value)}">
+                <label for="color-${HtmlEscaper.escape(type)}">${HtmlEscaper.escape(label)}</label>
+                <input type="color" id="color-${HtmlEscaper.escape(type)}" name="color-${HtmlEscaper.escape(type)}" value="${HtmlEscaper.escape(value)}">
             </div>
         `;
   }
@@ -181,51 +158,14 @@ export class SettingsManager {
    */
   private formatShortcut(shortcut: KeyboardShortcut): string {
     const parts: string[] = [];
-    if (shortcut.ctrlKey) parts.push('Ctrl');
-    if (shortcut.shiftKey) parts.push('Shift');
-    if (shortcut.altKey) parts.push('Alt');
-    if (shortcut.metaKey) parts.push(navigator.platform.includes('Mac') ? 'Cmd' : 'Win');
+    if (shortcut.ctrlKey === true) parts.push('Ctrl');
+    if (shortcut.shiftKey === true) parts.push('Shift');
+    if (shortcut.altKey === true) parts.push('Alt');
+    if (shortcut.metaKey === true) {
+      parts.push(/Mac|iPhone|iPad/.test(navigator.userAgent) ? 'Cmd' : 'Win');
+    }
     parts.push(shortcut.key);
     return parts.join('+');
-  }
-
-  /**
-   * Show modal (fade in)
-   */
-  private showModal(): void {
-    if (this.modal != null) {
-      this.modal.style.display = 'flex';
-      // Trigger reflow for animation
-      void this.modal.offsetHeight;
-      this.modal.style.opacity = '1';
-    }
-  }
-
-  /**
-   * Hide modal (fade out)
-   */
-  private hideModal(): void {
-    if (this.modal != null) {
-      this.modal.style.opacity = '0';
-    }
-  }
-
-  /**
-   * Remove modal from DOM
-   */
-  private removeModal(): void {
-    if (this.modal != null) {
-      // Clean up ESC key handler
-      if (this.escKeyCleanup != null) {
-        this.escKeyCleanup();
-        this.escKeyCleanup = null;
-      }
-      // Wait for fade animation
-      setTimeout(() => {
-        this.modal?.remove();
-        this.modal = null;
-      }, 200);
-    }
   }
 
   /**
@@ -240,7 +180,7 @@ export class SettingsManager {
     this.currentShortcut = StorageManager.getToggleShortcut();
 
     // Keyboard shortcut input
-    const shortcutInput = this.modal.querySelector('#shortcut-input') as HTMLInputElement;
+    const shortcutInput = this.modal.querySelector<HTMLInputElement>('#shortcut-input');
     shortcutInput?.addEventListener('keydown', (e) => {
       e.preventDefault();
       e.stopPropagation();
@@ -282,19 +222,8 @@ export class SettingsManager {
     const cancelBtn = this.modal.querySelector('#settings-cancel');
     cancelBtn?.addEventListener('click', () => this.close());
 
-    // Close button (×)
-    const closeBtn = this.modal.querySelector('.dev-toolbar-modal-close');
-    closeBtn?.addEventListener('click', () => this.close());
-
-    // ESC key
-    this.escKeyCleanup = createEscapeKeyHandler(() => this.close());
-
-    // Overlay click (close if clicked outside modal)
-    this.modal.addEventListener('click', (e) => {
-      if (e.target === this.modal) {
-        this.close();
-      }
-    });
+    // Standard close handlers (×, ESC, overlay)
+    this.attachCloseHandlers();
   }
 
   /**
