@@ -15,6 +15,7 @@ use DevToolbar\DataCollectors\RequestCollector;
 use DevToolbar\DataCollectors\TimelineCollector;
 use DevToolbar\Guard\DevToolbarGuard;
 use DevToolbar\Middleware\DevToolbarMiddleware;
+use Zappzarapp\Security\Csp\Exception\InvalidDirectiveValueException;
 use Zappzarapp\Security\Csp\Nonce\NonceRegistry;
 
 /**
@@ -28,7 +29,7 @@ class DevToolbar
 
     /** @var array<string, CollectorInterface> */
     private array $collectors = [];
-    private bool $booted      = false;
+    private(set) bool $booted = false;
 
     private function __construct()
     {
@@ -123,26 +124,6 @@ class DevToolbar
     }
 
     /**
-     * Get all collectors
-     *
-     * @return array<string, CollectorInterface>
-     */
-    public function getCollectors(): array
-    {
-        return $this->collectors;
-    }
-
-    /**
-     * Check if toolbar is booted
-     *
-     * @return bool
-     */
-    public function isBooted(): bool
-    {
-        return $this->booted;
-    }
-
-    /**
      * Get a specific collector
      *
      * @param string $name Collector name
@@ -158,9 +139,12 @@ class DevToolbar
      *
      * Allows host project to override the nonce if it has its own CSP implementation.
      * Should be called before boot() if used.
+     * Validates input to prevent CSP injection attacks (Defense in Depth).
      *
-     * @param string $nonce External nonce value
+     * @param string $nonce External nonce value (base64-encoded recommended)
      * @return void
+     *
+     * @throws InvalidDirectiveValueException If nonce contains invalid characters
      */
     public function setNonce(string $nonce): void
     {

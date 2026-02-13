@@ -8,16 +8,13 @@
  * - Confirm/Cancel actions
  */
 
-import { createEscapeKeyHandler } from '../utils/uiHelpers.js';
+import { BaseDialog } from './BaseDialog.js';
 
 /**
  * ClearHistoryDialog for showing clear confirmation
  */
-export class ClearHistoryDialog {
-  private modal: HTMLElement | null = null;
-  private isOpen = false;
+export class ClearHistoryDialog extends BaseDialog {
   private onConfirm: (() => void) | null = null;
-  private escKeyCleanup: (() => void) | null = null;
 
   /**
    * Open dialog with confirmation callback
@@ -34,17 +31,7 @@ export class ClearHistoryDialog {
     this.isOpen = true;
   }
 
-  /**
-   * Close dialog
-   */
-  close(): void {
-    if (!this.isOpen) {
-      return;
-    }
-
-    this.hideModal();
-    this.removeModal();
-    this.isOpen = false;
+  protected override onClose(): void {
     this.onConfirm = null;
   }
 
@@ -102,53 +89,7 @@ export class ClearHistoryDialog {
             </div>
         `;
 
-    const container = document.createElement('div');
-    container.innerHTML = modalHTML;
-    const modalElement = container.firstElementChild;
-    if (modalElement != null) {
-      document.body.appendChild(modalElement);
-    }
-
-    this.modal = document.getElementById('dev-toolbar-clear-history-overlay');
-  }
-
-  /**
-   * Show modal (fade in)
-   */
-  private showModal(): void {
-    if (this.modal != null) {
-      this.modal.style.display = 'flex';
-      // Trigger reflow for animation
-      void this.modal.offsetHeight;
-      this.modal.style.opacity = '1';
-    }
-  }
-
-  /**
-   * Hide modal (fade out)
-   */
-  private hideModal(): void {
-    if (this.modal != null) {
-      this.modal.style.opacity = '0';
-    }
-  }
-
-  /**
-   * Remove modal from DOM
-   */
-  private removeModal(): void {
-    if (this.modal != null) {
-      // Clean up ESC key handler
-      if (this.escKeyCleanup != null) {
-        this.escKeyCleanup();
-        this.escKeyCleanup = null;
-      }
-      // Wait for fade animation
-      setTimeout(() => {
-        this.modal?.remove();
-        this.modal = null;
-      }, 200);
-    }
+    this.injectModal(modalHTML, 'dev-toolbar-clear-history-overlay');
   }
 
   /**
@@ -172,18 +113,7 @@ export class ClearHistoryDialog {
     const cancelBtn = this.modal.querySelector('#clear-history-cancel');
     cancelBtn?.addEventListener('click', () => this.close());
 
-    // Close button (×)
-    const closeBtn = this.modal.querySelector('.dev-toolbar-modal-close');
-    closeBtn?.addEventListener('click', () => this.close());
-
-    // ESC key
-    this.escKeyCleanup = createEscapeKeyHandler(() => this.close());
-
-    // Overlay click (close if clicked outside modal)
-    this.modal.addEventListener('click', (e) => {
-      if (e.target === this.modal) {
-        this.close();
-      }
-    });
+    // Standard close handlers (×, ESC, overlay)
+    this.attachCloseHandlers();
   }
 }

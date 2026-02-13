@@ -322,9 +322,7 @@ let defaultFactory: ConnectionFactory | null = null;
  * Get the default connection factory singleton
  */
 export function getConnectionFactory(): ConnectionFactory {
-  if (defaultFactory === null) {
-    defaultFactory = new ConnectionFactory();
-  }
+  defaultFactory ??= new ConnectionFactory();
   return defaultFactory;
 }
 

@@ -11,12 +11,13 @@
 
 import { StorageManager } from '../storage/StorageManager';
 import { timeAgo, formatTimestamp, generateSparkline } from '../utils/timeUtils';
-import { downloadFile, exportRequestAsJson } from '../utils/exportUtils';
+import { exportRequestAsJson } from '../utils/exportUtils';
+import { Downloader } from '@zappzarapp/browser-utils/download';
 import { ClearHistoryDialog } from './ClearHistoryDialog';
 import { showError } from './MessageDialog.js';
 import type { RequestMetadata } from '../types';
 import { debug, warn, error as logError } from '../utils/logger.js';
-import { escapeHtml } from '../utils/uiHelpers.js';
+import { HtmlEscaper } from '@zappzarapp/browser-utils/html';
 
 /**
  * HistoryTabManager for managing history tab
@@ -183,18 +184,18 @@ export class HistoryTabManager {
       const perfClass = request.time > 500 ? 'slow' : request.time > 200 ? 'warning' : '';
 
       html += `<div class="dev-toolbar-history-item ${perfClass}"
-                      data-method="${escapeHtml(request.method)}"
-                      data-uri="${escapeHtml(request.uri)}"
+                      data-method="${HtmlEscaper.escape(request.method)}"
+                      data-uri="${HtmlEscaper.escape(request.uri)}"
                       data-status="${request.status}"
                       data-time="${request.time}"
-                      data-request-id="${escapeHtml(request.id)}">
+                      data-request-id="${HtmlEscaper.escape(request.id)}">
                     <div class="dev-toolbar-history-item-header">
                         <span class="dev-toolbar-history-icon">${statusIcon}</span>
-                        <span class="dev-toolbar-history-method">${escapeHtml(request.method)}</span>
-                        <span class="dev-toolbar-history-uri">${escapeHtml(request.uri)}</span>
+                        <span class="dev-toolbar-history-method">${HtmlEscaper.escape(request.method)}</span>
+                        <span class="dev-toolbar-history-uri">${HtmlEscaper.escape(request.uri)}</span>
                         <span class="dev-toolbar-history-time-ago" title="${fullTimestamp}">${timeAgoText}</span>
                         <button class="dev-toolbar-history-item-export"
-                                data-request-id="${escapeHtml(request.id)}"
+                                data-request-id="${HtmlEscaper.escape(request.id)}"
                                 title="Export this request">⬇</button>
                     </div>
                     <div class="dev-toolbar-history-item-meta">
@@ -358,7 +359,7 @@ export class HistoryTabManager {
 
     const exportData = exportRequestAsJson(requestId, requestData);
     const filename = `devtoolbar-request-${requestId}-${Date.now()}.json`;
-    downloadFile(JSON.stringify(exportData, null, 2), filename, 'application/json');
+    Downloader.json(exportData, filename);
   }
 
   /**
@@ -376,7 +377,7 @@ export class HistoryTabManager {
       2
     );
 
-    downloadFile(json, `devtoolbar-history-${Date.now()}.json`, 'application/json');
+    Downloader.json(json, `devtoolbar-history-${Date.now()}.json`);
   }
 
   /**
@@ -392,7 +393,7 @@ export class HistoryTabManager {
       csv += `${timestamp},${item.method},${uri},${item.status},${item.time},${item.memory},${item.query_count}\n`;
     });
 
-    downloadFile(csv, `devtoolbar-history-${Date.now()}.csv`, 'text/csv');
+    Downloader.csv(csv, `devtoolbar-history-${Date.now()}.csv`);
   }
 
   /**
@@ -442,7 +443,7 @@ export class HistoryTabManager {
    */
   private parseTimeAgo(text: string): number {
     const match = text.match(/(\d+)([smhd])/);
-    if (!match?.[1] || !match[2]) return Math.floor(Date.now() / 1000);
+    if (match?.[1] == null || match[2] == null) return Math.floor(Date.now() / 1000);
 
     const value = parseInt(match[1], 10);
     const multipliers: Record<string, number> = { s: 1, m: 60, h: 3600, d: 86400 };

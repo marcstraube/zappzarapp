@@ -16,12 +16,6 @@
     "issues": "https://github.com/marcstraube/zappzarapp/issues",
     "source": "https://github.com/marcstraube/zappzarapp"
   },
-  "repositories": [
-    {
-      "type": "vcs",
-      "url": "https://github.com/marcstraube/zappzarapp-php-security"
-    }
-  ],
   "require": {
     "php": "^8.4",
     "ext-ctype": "*",
@@ -37,7 +31,7 @@
     "php-amqplib/php-amqplib": "^3.7",
     "php-di/php-di": "^7.1",
     "twig/twig": "^3.0",
-    "zappzarapp/security": "dev-initial"
+    "zappzarapp/security": "^1.0.0"
   },
   "require-dev": {
     "captainhook/captainhook": "^5.27",

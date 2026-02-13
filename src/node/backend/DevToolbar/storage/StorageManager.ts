@@ -228,7 +228,7 @@ class StorageManagerClass {
     const keysToDelete: string[] = [];
     for (let i = 0; i < localStorage.length; i++) {
       const key = localStorage.key(i);
-      if (key?.startsWith(DATA_PREFIX)) {
+      if (key?.startsWith(DATA_PREFIX) === true) {
         const id = key.substring(DATA_PREFIX.length);
         if (!fullDataIds.includes(id)) {
           keysToDelete.push(key);
@@ -272,7 +272,7 @@ class StorageManagerClass {
     const keysToDelete: string[] = [];
     for (let i = 0; i < localStorage.length; i++) {
       const key = localStorage.key(i);
-      if (key?.startsWith(DATA_PREFIX)) {
+      if (key?.startsWith(DATA_PREFIX) === true) {
         const id = key.substring(DATA_PREFIX.length);
         if (!idsToKeep.includes(id)) {
           keysToDelete.push(key);
@@ -317,7 +317,7 @@ class StorageManagerClass {
       const keysToDelete: string[] = [];
       for (let i = 0; i < localStorage.length; i++) {
         const key = localStorage.key(i);
-        if (key?.startsWith(DATA_PREFIX)) {
+        if (key?.startsWith(DATA_PREFIX) === true) {
           keysToDelete.push(key);
         }
       }

@@ -80,7 +80,7 @@ readonly class WelcomeController
     private function demoDevToolbarFeatures(): void
     {
         $toolbar = DevToolbar::getInstance();
-        if (!$toolbar->isBooted()) {
+        if (!$toolbar->booted) {
             return;
         }
 

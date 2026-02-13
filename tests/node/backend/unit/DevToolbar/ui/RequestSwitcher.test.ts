@@ -512,9 +512,12 @@ describe('RequestSwitcher', () => {
       vi.mocked(StorageManager.getMetadata).mockReturnValue(metadata);
       requestSwitcher.init();
 
-      const dropdown = document.querySelector('.dev-toolbar-request-switcher-dropdown');
-      expect(dropdown?.innerHTML).toContain('&lt;script&gt;');
-      expect(dropdown?.innerHTML).not.toContain('<script>alert');
+      // No <script> element should be created in the DOM (XSS prevention)
+      expect(document.querySelector('script')).toBeNull();
+
+      // The URI text should be visible as plain text, not rendered as HTML
+      const uriSpan = document.querySelector('.dev-toolbar-request-switcher-item-uri');
+      expect(uriSpan?.textContent).toContain('<script>alert("xss")</script>');
     });
   });
 });

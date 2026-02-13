@@ -15,7 +15,8 @@ import { RequestSwitcher } from './RequestSwitcher';
 import { XdebugControls } from './XdebugControls';
 import { HistoryTabManager } from './HistoryTabManager';
 import { SettingsManager } from './SettingsManager';
-import { exportRequestAsJson, downloadJson } from '../utils/exportUtils';
+import { exportRequestAsJson } from '../utils/exportUtils';
+import { Downloader } from '@zappzarapp/browser-utils/download';
 import { debug, warn, error as logError } from '../utils/logger.js';
 import { showError } from './MessageDialog.js';
 import type { DevToolbarWindow } from '../types/index.js';
@@ -123,7 +124,7 @@ export class DevToolbarUI {
 
     // Escape key to close
     document.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape' && this.panel?.classList.contains('open')) {
+      if (e.key === 'Escape' && this.panel?.classList.contains('open') === true) {
         this.closePanel();
       }
     });
@@ -247,7 +248,7 @@ export class DevToolbarUI {
    * Toggle panel open/close
    */
   private togglePanel(): void {
-    if (this.panel?.classList.contains('open')) {
+    if (this.panel?.classList.contains('open') === true) {
       this.closePanel();
     } else {
       this.openPanel();
@@ -283,7 +284,7 @@ export class DevToolbarUI {
    */
   private toggleMaximize(): void {
     this.panel?.classList.toggle('maximized');
-    const isMaximized = this.panel?.classList.contains('maximized');
+    const isMaximized = this.panel?.classList.contains('maximized') === true;
 
     try {
       localStorage.setItem('devToolbar.maximized', isMaximized ? '1' : '0');
@@ -327,7 +328,7 @@ export class DevToolbarUI {
         e.stopPropagation();
 
         const content = document.querySelector('.dev-toolbar-panel-content');
-        if (content?.contains(e.target as Node)) {
+        if (content?.contains(e.target as Node) === true) {
           const atTop = content.scrollTop === 0;
           const atBottom = content.scrollTop + content.clientHeight >= content.scrollHeight;
 
@@ -409,7 +410,7 @@ export class DevToolbarUI {
     const exportData = exportRequestAsJson(toolbarData.id, toolbarData);
     const filename = `devtoolbar-request-${toolbarData.id}-${Date.now()}.json`;
 
-    downloadJson(exportData, filename);
+    Downloader.json(exportData, filename);
     debug('[DevToolbar] Exported current request');
   }
 

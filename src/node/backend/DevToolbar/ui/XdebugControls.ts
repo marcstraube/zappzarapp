@@ -9,7 +9,7 @@
 
 import type { XdebugConfig, DevToolbarWindow } from '../types';
 import { debug } from '../utils/logger.js';
-import { escapeHtml } from '../utils/uiHelpers.js';
+import { HtmlEscaper } from '@zappzarapp/browser-utils/html';
 
 /**
  * XdebugControls singleton for managing Xdebug UI
@@ -131,7 +131,7 @@ export class XdebugControls {
     return `<div class="dev-toolbar-request-status">
               <div class="dev-toolbar-xdebug-compact dev-toolbar-xdebug-compact-${statusClass}">
                 <span class="dev-toolbar-xdebug-indicator">${statusIcon}</span>
-                <span class="dev-toolbar-xdebug-label">${escapeHtml(statusText)}</span>
+                <span class="dev-toolbar-xdebug-label">${HtmlEscaper.escape(statusText)}</span>
               </div>
             </div>`;
   }
