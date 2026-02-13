@@ -22,8 +22,9 @@ REMINDERS+=("Write learnings to .ai/LEARNINGS.md")
 REMINDERS+=("Write decisions to .ai/DECISIONS.md")
 
 # Output as JSON
+JOINED=$(printf '\\n- %s' "${REMINDERS[@]}")
 cat << EOF
 {
-  "message": "[SessionEnd] Session ending. Checklist:\\n- ${REMINDERS[0]}\\n- ${REMINDERS[1]}\\n- ${REMINDERS[2]}${REMINDERS[3]:+\\n- ${REMINDERS[3]}}"
+  "message": "[SessionEnd] Session ending. Checklist:${JOINED}"
 }
 EOF

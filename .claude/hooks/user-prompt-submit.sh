@@ -139,13 +139,9 @@ fi
 
 # --- Output ---
 if [[ ${#MESSAGES[@]} -gt 0 ]]; then
-    # Join messages with newline
-    JOINED=$(printf '%s\\n' "${MESSAGES[@]}")
-    cat << EOF
-{
-  "message": "${JOINED%\\n}"
-}
-EOF
+    # Join messages with newline, escape for valid JSON via jq
+    JOINED=$(printf '%s\n' "${MESSAGES[@]}")
+    jq -n --arg msg "$JOINED" '{"message": $msg}'
 fi
 
 exit 0

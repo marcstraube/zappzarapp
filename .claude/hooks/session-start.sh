@@ -102,10 +102,11 @@ ${BRANCH}
 EOF
 else
     # Use template and substitute placeholders
-    sed -e "s/YYYY-MM-DD-HHMM-<task-slug>/${TIMESTAMP}-${SLUG}/" \
-        -e "s/\[Title\]/[Title]/" \
-        -e "s/\[branch-name\]/${BRANCH}/" \
-        -e "s/\[One-line description\]/[Update after understanding task]/" \
+    # Use # as sed delimiter because branch names contain /
+    sed -e "s#YYYY-MM-DD-HHMM-<task-slug>#${TIMESTAMP}-${SLUG}#" \
+        -e "s#\[Title\]#[Title]#" \
+        -e "s#\[branch-name\]#${BRANCH}#" \
+        -e "s#\[One-line description\]#[Update after understanding task]#" \
         "${SESSION_TEMPLATE_PATH}" > "${SESSION_FILE}"
 fi
 
