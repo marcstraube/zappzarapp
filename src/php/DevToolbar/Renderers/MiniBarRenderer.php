@@ -49,7 +49,6 @@ class MiniBarRenderer implements RendererInterface
                 <span class="dev-toolbar-mini-metric">%.1fMB</span>
                 <span class="dev-toolbar-mini-metric">%d queries</span>
                 %s
-                <span class="dev-toolbar-mini-expand">↗</span>
             </div>',
             $labels,
             (int)$time,

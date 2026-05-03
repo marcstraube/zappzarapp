@@ -37,7 +37,6 @@
 }
 
 .dev-toolbar-mini:hover {
-    transform: translateY(-2px);
     box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.2);
 }
 
@@ -62,15 +61,6 @@
     gap: 4px;
 }
 
-.dev-toolbar-mini-expand {
-    margin-left: 8px;
-    font-size: 1.2rem;
-    transition: transform 0.2s ease;
-}
-
-.dev-toolbar-mini:hover .dev-toolbar-mini-expand {
-    transform: translateY(-2px);
-}
 
 .dev-toolbar-mini-alert {
     display: inline-flex;
