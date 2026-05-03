@@ -142,9 +142,9 @@ class TimelinePanelRendererTest extends TestCase
 
         $result = $this->renderer->renderTab($data);
 
-        // Should have timeline-item but not bottleneck class on the same div
+        // Should have timeline-item but not bottleneck class
         $this->assertMatchesRegularExpression(
-            '/<div class="dev-toolbar-timeline-item\s*">/',
+            '/<div class="dev-toolbar-timeline-item\s*" title="/',
             $result
         );
     }

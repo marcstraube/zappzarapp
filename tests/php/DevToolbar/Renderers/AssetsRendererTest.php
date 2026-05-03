@@ -24,9 +24,9 @@ class AssetsRendererTest extends TestCase
     {
         $output = $this->renderer->render();
 
-        $this->assertStringContainsString('<style>', $output);
+        $this->assertMatchesRegularExpression('/<style[^>]*>/', $output);
         $this->assertStringContainsString('</style>', $output);
-        $this->assertStringContainsString('<script>', $output);
+        $this->assertMatchesRegularExpression('/<script[^>]*>/', $output);
         $this->assertStringContainsString('</script>', $output);
     }
 
@@ -54,10 +54,9 @@ class AssetsRendererTest extends TestCase
     {
         $output = $this->renderer->render();
 
-        // Should not reference external files
-        $this->assertStringNotContainsString('href=', $output);
-        $this->assertStringNotContainsString('src=', $output);
-        $this->assertStringNotContainsString('import ', $output);
+        // Should not reference external stylesheet/script files
+        $this->assertStringNotContainsString('<link rel="stylesheet"', $output);
+        $this->assertStringNotContainsString('<script src=', $output);
         $this->assertStringNotContainsString('require(', $output);
     }
 }

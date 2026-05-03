@@ -43,9 +43,7 @@ class CacheCollectorTest extends TestCase
             'get',
             'user:123',
             2.5,
-            '{"id":123,"name":"John"}',
-            true,
-            3600
+            '{"id":123,"name":"John"}'
         );
         $this->collector->stop();
 
@@ -64,9 +62,7 @@ class CacheCollectorTest extends TestCase
         $this->collector->trackOperation(
             'get',
             'user:999',
-            1.8,
-            null,
-            false
+            1.8
         );
         $this->collector->stop();
 
@@ -83,12 +79,12 @@ class CacheCollectorTest extends TestCase
         $this->collector->start();
 
         // 3 hits
-        $this->collector->trackOperation('get', 'key1', 1.0, 'value1', true);
-        $this->collector->trackOperation('get', 'key2', 1.0, 'value2', true);
-        $this->collector->trackOperation('get', 'key3', 1.0, 'value3', true);
+        $this->collector->trackOperation('get', 'key1', 1.0, 'value1');
+        $this->collector->trackOperation('get', 'key2', 1.0, 'value2');
+        $this->collector->trackOperation('get', 'key3', 1.0, 'value3');
 
         // 1 miss
-        $this->collector->trackOperation('get', 'key4', 1.0, null, false);
+        $this->collector->trackOperation('get', 'key4', 1.0);
 
         $this->collector->stop();
 
@@ -108,7 +104,6 @@ class CacheCollectorTest extends TestCase
             'session:abc',
             3.2,
             ['user_id' => 123],
-            false,
             7200
         );
         $this->collector->stop();
@@ -145,7 +140,7 @@ class CacheCollectorTest extends TestCase
     public function testDoesNotTrackWhenNotCollecting(): void
     {
         // Don't call start()
-        $this->collector->trackOperation('get', 'key', 1.0, 'value', true);
+        $this->collector->trackOperation('get', 'key', 1.0, 'value');
 
         $data = $this->collector->getData();
 
@@ -156,8 +151,8 @@ class CacheCollectorTest extends TestCase
     {
         $this->collector->start();
 
-        $this->collector->trackOperation('get', 'key1', 1.0, 'value1', true);
-        $this->collector->trackOperation('set', 'key2', 2.0, 'value2', false, 3600);
+        $this->collector->trackOperation('get', 'key1', 1.0, 'value1');
+        $this->collector->trackOperation('set', 'key2', 2.0, 'value2', 3600);
         $this->collector->trackOperation('delete', 'key3', 1.5, 1);
 
         $this->collector->stop();
@@ -174,7 +169,7 @@ class CacheCollectorTest extends TestCase
         $this->collector->start();
 
         $sensitiveData = ['password' => 'secret', 'token' => 'abc123', 'name' => 'John'];
-        $this->collector->trackOperation('get', 'user:1', 1.0, $sensitiveData, true);
+        $this->collector->trackOperation('get', 'user:1', 1.0, $sensitiveData);
 
         $this->collector->stop();
 
@@ -190,7 +185,7 @@ class CacheCollectorTest extends TestCase
     public function testCapturesBacktrace(): void
     {
         $this->collector->start();
-        $this->collector->trackOperation('get', 'key', 1.0, 'value', true);
+        $this->collector->trackOperation('get', 'key', 1.0, 'value');
         $this->collector->stop();
 
         $data      = $this->collector->getData();
@@ -232,9 +227,7 @@ class CacheCollectorTest extends TestCase
                 'get',
                 'test:key:' . $index,
                 2.0,
-                $json,
-                true,
-                3600
+                $json
             );
         }
 
@@ -257,7 +250,7 @@ class CacheCollectorTest extends TestCase
         $phpArray   = ['id' => 123, 'name' => 'John'];
         $serialized = serialize($phpArray);
 
-        $this->collector->trackOperation('get', 'test:key', 2.0, $serialized, true);
+        $this->collector->trackOperation('get', 'test:key', 2.0, $serialized);
 
         $this->collector->stop();
 

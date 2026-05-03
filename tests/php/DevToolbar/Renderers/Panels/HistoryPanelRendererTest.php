@@ -45,7 +45,7 @@ class HistoryPanelRendererTest extends TestCase
         $this->assertStringContainsString('Request History', $output);
 
         // Should contain trends section placeholder (JavaScript will hide if no data)
-        $this->assertStringContainsString('Response Time Trend', $output);
+        $this->assertStringContainsString('Performance Trends', $output);
         $this->assertStringContainsString('dev-toolbar-history-trends-section', $output);
     }
 
@@ -60,12 +60,12 @@ class HistoryPanelRendererTest extends TestCase
         $output = $this->renderer->renderTab($data);
 
         // Should contain trends section placeholder (JavaScript will populate)
-        $this->assertStringContainsString('Response Time Trend', $output);
-        $this->assertStringContainsString('dev-toolbar-history-sparkline', $output);
+        $this->assertStringContainsString('Performance Trends', $output);
+        $this->assertStringContainsString('dev-toolbar-trends-container', $output);
         $this->assertStringContainsString('dev-toolbar-history-trends-section', $output);
 
         // Sparkline element should be empty (JavaScript will populate)
-        $this->assertMatchesRegularExpression('/<div class="dev-toolbar-history-sparkline"><\/div>/', $output);
+        $this->assertMatchesRegularExpression('/<div class="dev-toolbar-history-trends" id="dev-toolbar-trends-container"><\/div>/', $output);
     }
 
     public function testRenderFilters(): void
@@ -144,8 +144,8 @@ class HistoryPanelRendererTest extends TestCase
         $output = $this->renderer->renderTab($data);
 
         // Should render trends placeholder (JavaScript will populate/hide)
-        $this->assertStringContainsString('Response Time Trend', $output);
-        $this->assertStringContainsString('dev-toolbar-history-sparkline', $output);
+        $this->assertStringContainsString('Performance Trends', $output);
+        $this->assertStringContainsString('dev-toolbar-trends-container', $output);
         $this->assertStringContainsString('dev-toolbar-history-trends-section', $output);
     }
 
@@ -160,7 +160,7 @@ class HistoryPanelRendererTest extends TestCase
         $output = $this->renderer->renderTab($data);
 
         // Should render trends placeholder (JavaScript will hide if no data)
-        $this->assertStringContainsString('Response Time Trend', $output);
+        $this->assertStringContainsString('Performance Trends', $output);
         $this->assertStringContainsString('dev-toolbar-history-trends-section', $output);
     }
 
@@ -175,9 +175,9 @@ class HistoryPanelRendererTest extends TestCase
         $output = $this->renderer->renderTab($data);
 
         // Should render trends placeholder (JavaScript will populate)
-        $this->assertStringContainsString('Response Time Trend', $output);
+        $this->assertStringContainsString('Performance Trends', $output);
         $this->assertStringContainsString('dev-toolbar-history-trends-section', $output);
-        $this->assertMatchesRegularExpression('/<div class="dev-toolbar-history-sparkline"><\/div>/', $output);
+        $this->assertMatchesRegularExpression('/<div class="dev-toolbar-history-trends" id="dev-toolbar-trends-container"><\/div>/', $output);
     }
 
     public function testRenderTrendsWithMultipleValues(): void
@@ -191,9 +191,9 @@ class HistoryPanelRendererTest extends TestCase
         $output = $this->renderer->renderTab($data);
 
         // Should render trends placeholder (JavaScript will populate)
-        $this->assertStringContainsString('Response Time Trend', $output);
+        $this->assertStringContainsString('Performance Trends', $output);
         $this->assertStringContainsString('dev-toolbar-history-trends-section', $output);
-        $this->assertMatchesRegularExpression('/<div class="dev-toolbar-history-sparkline"><\/div>/', $output);
+        $this->assertMatchesRegularExpression('/<div class="dev-toolbar-history-trends" id="dev-toolbar-trends-container"><\/div>/', $output);
     }
 
     public function testRenderTrendsWithIdenticalValues(): void
@@ -207,9 +207,9 @@ class HistoryPanelRendererTest extends TestCase
         $output = $this->renderer->renderTab($data);
 
         // Should render trends placeholder (JavaScript will populate)
-        $this->assertStringContainsString('Response Time Trend', $output);
+        $this->assertStringContainsString('Performance Trends', $output);
         $this->assertStringContainsString('dev-toolbar-history-trends-section', $output);
-        $this->assertMatchesRegularExpression('/<div class="dev-toolbar-history-sparkline"><\/div>/', $output);
+        $this->assertMatchesRegularExpression('/<div class="dev-toolbar-history-trends" id="dev-toolbar-trends-container"><\/div>/', $output);
     }
 
     public function testRenderRequestListPlaceholder(): void
@@ -259,10 +259,10 @@ class HistoryPanelRendererTest extends TestCase
         $output = $this->renderer->renderTab($data);
 
         // Should render trends placeholder (JavaScript will hide if no data)
-        $this->assertStringContainsString('Response Time Trend', $output);
+        $this->assertStringContainsString('Performance Trends', $output);
         $this->assertStringContainsString('dev-toolbar-history-trends-section', $output);
         // Sparkline element should be empty (no characters)
-        $this->assertMatchesRegularExpression('/<div class="dev-toolbar-history-sparkline"><\/div>/', $output);
+        $this->assertMatchesRegularExpression('/<div class="dev-toolbar-history-trends" id="dev-toolbar-trends-container"><\/div>/', $output);
     }
 
     public function testSparklineGenerationWithAscendingValues(): void
@@ -276,9 +276,9 @@ class HistoryPanelRendererTest extends TestCase
         $output = $this->renderer->renderTab($data);
 
         // Should render trends placeholder (JavaScript will populate sparkline)
-        $this->assertStringContainsString('Response Time Trend', $output);
+        $this->assertStringContainsString('Performance Trends', $output);
         $this->assertStringContainsString('dev-toolbar-history-trends-section', $output);
-        $this->assertMatchesRegularExpression('/<div class="dev-toolbar-history-sparkline"><\/div>/', $output);
+        $this->assertMatchesRegularExpression('/<div class="dev-toolbar-history-trends" id="dev-toolbar-trends-container"><\/div>/', $output);
     }
 
     public function testSparklineGenerationWithDescendingValues(): void
@@ -293,7 +293,7 @@ class HistoryPanelRendererTest extends TestCase
 
         // Should render trends placeholder (JavaScript will populate sparkline)
         $this->assertStringContainsString('dev-toolbar-history-trends-section', $output);
-        $this->assertMatchesRegularExpression('/<div class="dev-toolbar-history-sparkline"><\/div>/', $output);
+        $this->assertMatchesRegularExpression('/<div class="dev-toolbar-history-trends" id="dev-toolbar-trends-container"><\/div>/', $output);
     }
 
     public function testSparklineGenerationWithFloatingPointValues(): void
@@ -308,7 +308,7 @@ class HistoryPanelRendererTest extends TestCase
 
         // Should render trends placeholder (JavaScript will handle floating point)
         $this->assertStringContainsString('dev-toolbar-history-trends-section', $output);
-        $this->assertMatchesRegularExpression('/<div class="dev-toolbar-history-sparkline"><\/div>/', $output);
+        $this->assertMatchesRegularExpression('/<div class="dev-toolbar-history-trends" id="dev-toolbar-trends-container"><\/div>/', $output);
     }
 
     public function testSparklineGenerationWithMixedValues(): void
@@ -323,7 +323,7 @@ class HistoryPanelRendererTest extends TestCase
 
         // Should render trends placeholder (JavaScript will create varied pattern)
         $this->assertStringContainsString('dev-toolbar-history-trends-section', $output);
-        $this->assertMatchesRegularExpression('/<div class="dev-toolbar-history-sparkline"><\/div>/', $output);
+        $this->assertMatchesRegularExpression('/<div class="dev-toolbar-history-trends" id="dev-toolbar-trends-container"><\/div>/', $output);
     }
 
     public function testSparklineGenerationWithExtremeValues(): void
@@ -338,7 +338,7 @@ class HistoryPanelRendererTest extends TestCase
 
         // Should render trends placeholder (JavaScript will normalize ranges)
         $this->assertStringContainsString('dev-toolbar-history-trends-section', $output);
-        $this->assertMatchesRegularExpression('/<div class="dev-toolbar-history-sparkline"><\/div>/', $output);
+        $this->assertMatchesRegularExpression('/<div class="dev-toolbar-history-trends" id="dev-toolbar-trends-container"><\/div>/', $output);
     }
 
     public function testSparklineGenerationWithTwoIdenticalValues(): void
@@ -353,7 +353,7 @@ class HistoryPanelRendererTest extends TestCase
 
         // Should render trends placeholder (JavaScript will handle identical values)
         $this->assertStringContainsString('dev-toolbar-history-trends-section', $output);
-        $this->assertMatchesRegularExpression('/<div class="dev-toolbar-history-sparkline"><\/div>/', $output);
+        $this->assertMatchesRegularExpression('/<div class="dev-toolbar-history-trends" id="dev-toolbar-trends-container"><\/div>/', $output);
     }
 
     public function testCompleteTabStructure(): void
@@ -370,7 +370,7 @@ class HistoryPanelRendererTest extends TestCase
         $filterPos  = strpos($output, 'dev-toolbar-history-filters');
         $actionsPos = strpos($output, 'dev-toolbar-history-actions');
         $statsPos   = strpos($output, 'Statistics');
-        $trendsPos  = strpos($output, 'Response Time Trend');
+        $trendsPos  = strpos($output, 'Performance Trends');
         $listPos    = strpos($output, 'Request History');
 
         // Ensure all sections exist
@@ -400,7 +400,7 @@ class HistoryPanelRendererTest extends TestCase
         // Should render all sections including trends placeholder
         $this->assertStringContainsString('dev-toolbar-history-filters', $output);
         $this->assertStringContainsString('Statistics', $output);
-        $this->assertStringContainsString('Response Time Trend', $output);
+        $this->assertStringContainsString('Performance Trends', $output);
     }
 
     public function testDataStructureWithNullValues(): void
@@ -412,7 +412,7 @@ class HistoryPanelRendererTest extends TestCase
         $output = $this->renderer->renderTab($data);
 
         // Should handle null trends gracefully (render placeholder)
-        $this->assertStringContainsString('Response Time Trend', $output);
+        $this->assertStringContainsString('Performance Trends', $output);
         $this->assertStringContainsString('dev-toolbar-history-trends-section', $output);
     }
 
@@ -433,9 +433,8 @@ class HistoryPanelRendererTest extends TestCase
         $this->assertStringContainsString('dev-toolbar-filter-select', $output);
         $this->assertStringContainsString('dev-toolbar-filter-input', $output);
         $this->assertStringContainsString('dev-toolbar-btn', $output);
-        $this->assertStringContainsString('dev-toolbar-btn-primary', $output);
         $this->assertStringContainsString('dev-toolbar-btn-secondary', $output);
-        $this->assertStringContainsString('dev-toolbar-btn-danger', $output);
+        $this->assertStringContainsString('dev-toolbar-btn-danger-subtle', $output);
     }
 
     public function testSparklineNormalizationLogic(): void
@@ -451,10 +450,10 @@ class HistoryPanelRendererTest extends TestCase
         $output = $this->renderer->renderTab($data);
 
         // Should render trends placeholder (JavaScript will handle normalization)
-        $this->assertStringContainsString('Response Time Trend', $output);
+        $this->assertStringContainsString('Performance Trends', $output);
         $this->assertStringContainsString('dev-toolbar-history-trends-section', $output);
 
         // Sparkline element should be empty (JavaScript populates it)
-        $this->assertMatchesRegularExpression('/<div class="dev-toolbar-history-sparkline"><\/div>/', $output);
+        $this->assertMatchesRegularExpression('/<div class="dev-toolbar-history-trends" id="dev-toolbar-trends-container"><\/div>/', $output);
     }
 }

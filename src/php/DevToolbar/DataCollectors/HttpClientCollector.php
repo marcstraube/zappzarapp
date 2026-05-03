@@ -12,6 +12,8 @@ use CurlHandle;
  */
 class HttpClientCollector implements CollectorInterface
 {
+    use BacktraceTrait;
+
     /** @var array<int, array<string, mixed>> */
     private array $requests = [];
     /** @noinspection PhpGetterAndSetterCanBeReplacedWithPropertyHooksInspection PDepend crashes on property hooks */
@@ -214,41 +216,6 @@ class HttpClientCollector implements CollectorInterface
         return $parsed;
     }
 
-    /**
-     * Get relevant backtrace (filter out internal calls)
-     *
-     * @return array<int, array<string, mixed>> Filtered backtrace
-     */
-    private function getRelevantBacktrace(): array
-    {
-        /** @phpstan-ignore ekinoBannedCode.function (debug_backtrace required for call-location tracking) */
-        $trace    = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 10);
-        $relevant = [];
-
-        foreach ($trace as $frame) {
-            // Skip internal DevToolbar calls
-            if (isset($frame['class']) && str_starts_with($frame['class'], 'DevToolbar\\')) {
-                continue;
-            }
-
-            // Skip PHP internal functions
-            if (!isset($frame['file'])) {
-                continue;
-            }
-
-            $relevant[] = [
-                'file'     => str_replace(getcwd() . '/', '', $frame['file']),
-                'line'     => $frame['line'] ?? 0,
-                'function' => $frame['function'],
-                'class'    => $frame['class'] ?? '',
-            ];
-
-            // Only keep first frame (no need for >= comparison)
-            break;
-        }
-
-        return $relevant;
-    }
 
     /**
      * Filter sensitive data from request/response
@@ -263,26 +230,57 @@ class HttpClientCollector implements CollectorInterface
         }
 
         if (is_string($data)) {
-            // Truncate long responses
-            if (strlen($data) > 10000) {
-                return substr($data, 0, 10000) . "\n\n... (truncated, " . strlen($data) . ' bytes total)';
-            }
-
-            // Filter common sensitive patterns
-            $filtered = preg_replace('/("password"\s*:\s*)"[^"]*"/', '$1"[FILTERED]"', $data);
-            $filtered = preg_replace('/("token"\s*:\s*)"[^"]*"/', '$1"[FILTERED]"', is_string($filtered) ? $filtered : $data);
-            $filtered = preg_replace('/("api_key"\s*:\s*)"[^"]*"/', '$1"[FILTERED]"', is_string($filtered) ? $filtered : $data);
-            $data     = preg_replace('/("secret"\s*:\s*)"[^"]*"/', '$1"[FILTERED]"', is_string($filtered) ? $filtered : $data);
-            $data     = is_string($data) ? $data : '';
+            return $this->filterSensitiveString($data);
         }
 
         if (is_array($data)) {
-            foreach ($data as $key => $value) {
-                if (in_array(strtolower($key), ['password', 'token', 'api_key', 'secret', 'authorization'])) {
-                    $data[$key] = '[FILTERED]';
-                } elseif (is_string($value) || is_array($value)) {
-                    $data[$key] = $this->filterSensitiveData($value);
-                }
+            return $this->filterSensitiveArray($data);
+        }
+
+        return $data;
+    }
+
+    /**
+     * Filter sensitive patterns from a string (JSON bodies, URLs)
+     */
+    private function filterSensitiveString(string $data): string
+    {
+        if (strlen($data) > 10000) {
+            return substr($data, 0, 10000) . "\n\n... (truncated, " . strlen($data) . ' bytes total)';
+        }
+
+        $patterns = [
+            '/("password"\s*:\s*)"[^"]*"/',
+            '/("token"\s*:\s*)"[^"]*"/',
+            '/("api_key"\s*:\s*)"[^"]*"/',
+            '/("secret"\s*:\s*)"[^"]*"/',
+        ];
+
+        foreach ($patterns as $pattern) {
+            $result = preg_replace($pattern, '$1"[FILTERED]"', $data);
+            if (is_string($result)) {
+                $data = $result;
+            }
+        }
+
+        return $data;
+    }
+
+    /**
+     * Filter sensitive keys from an array (recursively)
+     *
+     * @param array<string|int, mixed> $data Array to filter
+     * @return array<string|int, mixed> Filtered array
+     */
+    private function filterSensitiveArray(array $data): array
+    {
+        $sensitiveKeys = ['password', 'token', 'api_key', 'secret', 'authorization'];
+
+        foreach ($data as $key => $value) {
+            if (is_string($key) && in_array(strtolower($key), $sensitiveKeys, true)) {
+                $data[$key] = '[FILTERED]';
+            } elseif (is_string($value) || is_array($value)) {
+                $data[$key] = $this->filterSensitiveData($value);
             }
         }
 
