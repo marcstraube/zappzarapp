@@ -20,7 +20,7 @@ class MiniBarRendererTest extends TestCase
      */
     private function mockCollector(array $data): CollectorInterface
     {
-        $collector = $this->createMock(CollectorInterface::class);
+        $collector = $this->createStub(CollectorInterface::class);
         $collector->method('getData')->willReturn($data);
 
         return $collector;

@@ -11,9 +11,14 @@ namespace DevToolbar\DataCollectors;
  */
 class TimelineCollector implements CollectorInterface
 {
-    /** @var array<string, array<string, mixed>> */
+    /**
+     * @var array<string, array<string, mixed>>
+     * @noinspection PhpGetterAndSetterCanBeReplacedWithPropertyHooksInspection PHP 8.4 hooks crash PDepend/PHPMD
+     */
     private array $events = [];
+    /** @noinspection PhpGetterAndSetterCanBeReplacedWithPropertyHooksInspection PHP 8.4 hooks crash PDepend/PHPMD */
     private float $requestStart;
+    /** @noinspection PhpGetterAndSetterCanBeReplacedWithPropertyHooksInspection PHP 8.4 hooks crash PDepend/PHPMD */
     private bool $collecting = false;
     private bool $started    = false;
 
@@ -22,9 +27,12 @@ class TimelineCollector implements CollectorInterface
      */
     public function start(): void
     {
-        $this->collecting   = true;
-        $this->events       = [];
-        $this->requestStart = $_SERVER['REQUEST_TIME_FLOAT'] ?? microtime(true);
+        $this->collecting = true;
+        $this->events     = [];
+        // Collector start time, not $_SERVER['REQUEST_TIME_FLOAT']: in long-lived processes
+        // (PHPUnit, queue workers) the SAPI request time is stale and inflates the leading
+        // marker's duration to absorb idle time, breaking percentage/bottleneck calculations.
+        $this->requestStart = microtime(true);
         $this->started      = true;
 
         // Add initial event
@@ -55,10 +63,11 @@ class TimelineCollector implements CollectorInterface
      */
     public function getData(): array
     {
-        $totalTime = $this->started ? (microtime(true) - $this->requestStart) * 1000 : 0;
-
-        // Build timeline from events
         $timeline = $this->buildTimeline();
+
+        // total_time = sum of measured category durations (consistent with percentage/is_bottleneck).
+        // Using wall-clock since requestStart would include uninstrumented idle time.
+        $totalTime = array_sum(array_column($timeline, 'duration'));
 
         return [
             'timeline'   => $timeline,
@@ -124,9 +133,8 @@ class TimelineCollector implements CollectorInterface
         $startTime = $this->events[$startKey]['time'];
         $duration  = (microtime(true) - $startTime) * 1000; // Convert to ms
 
-        // Update the start event with duration
+        // Update the start event with duration (label is left as-is — startPhase passes it through unchanged)
         $this->events[$startKey]['duration'] = round($duration, 2);
-        $this->events[$startKey]['label']    = rtrim($this->events[$startKey]['label'], ' Start');
     }
 
     /**
@@ -140,9 +148,7 @@ class TimelineCollector implements CollectorInterface
             return [];
         }
 
-        $totalTime = (microtime(true) - $this->requestStart) * 1000;
-        $timeline  = [];
-        $prevTime  = $this->requestStart;
+        $prevTime = $this->requestStart;
 
         // Group events by category
         $categorized = [];
@@ -154,9 +160,12 @@ class TimelineCollector implements CollectorInterface
             $categorized[$category][] = array_merge($event, ['key' => $key]);
         }
 
-        // Build timeline items from categorized events
+        // First pass: compute per-category durations and the sum of measured work time
+        $categoryData       = [];
+        $totalCategoryTime  = 0.0;
+
         foreach ($categorized as $category => $events) {
-            $categoryTime   = 0;
+            $categoryTime   = 0.0;
             $categoryEvents = [];
 
             foreach ($events as $event) {
@@ -176,15 +185,29 @@ class TimelineCollector implements CollectorInterface
             }
 
             if ($categoryTime > 0) {
-                $timeline[] = [
-                    'label'         => ucfirst($category),
-                    'category'      => $category,
-                    'duration'      => round($categoryTime, 2),
-                    'percentage'    => $totalTime > 0 ? round(($categoryTime / $totalTime) * 100, 1) : 0,
-                    'events'        => $categoryEvents,
-                    'is_bottleneck' => $totalTime > 0 && ($categoryTime / $totalTime) > 0.5,
+                $categoryData[$category] = [
+                    'time'   => $categoryTime,
+                    'events' => $categoryEvents,
                 ];
+                $totalCategoryTime += $categoryTime;
             }
+        }
+
+        // Second pass: build timeline items — bottleneck/percentage relative to measured work time
+        // (not wall-clock since requestStart, which would include uninstrumented idle time)
+        $timeline = [];
+        foreach ($categoryData as $category => $data) {
+            $timeline[] = [
+                'label'         => ucfirst($category),
+                'category'      => $category,
+                'duration'      => round($data['time'], 2),
+                'percentage'    => $totalCategoryTime > 0
+                    ? round(($data['time'] / $totalCategoryTime) * 100, 1)
+                    : 0,
+                'events'        => $data['events'],
+                'is_bottleneck' => $totalCategoryTime > 0
+                    && ($data['time'] / $totalCategoryTime) > 0.5,
+            ];
         }
 
         return $timeline;

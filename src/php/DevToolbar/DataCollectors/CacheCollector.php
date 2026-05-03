@@ -96,7 +96,7 @@ class CacheCollector implements CollectorInterface
         ];
 
         if ($type === 'get') {
-            $hit = $value !== false && $value !== null;
+            $hit              = $value !== false && $value !== null;
             $operation['hit'] = $hit;
             if ($hit) {
                 $this->hits++;

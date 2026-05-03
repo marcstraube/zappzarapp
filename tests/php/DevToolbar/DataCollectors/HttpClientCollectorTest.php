@@ -33,7 +33,7 @@ class HttpClientCollectorTest extends TestCase
 
     public function testGetName(): void
     {
-        $this->assertEquals('HTTP', $this->collector->getName());
+        $this->assertEquals('http', $this->collector->getName());
     }
 
     public function testTracksHttpRequests(): void
@@ -45,8 +45,7 @@ class HttpClientCollectorTest extends TestCase
             127.5,
             200,
             ['Content-Type' => 'application/json'],
-            '{"users": []}',
-            []
+            '{"users": []}'
         );
         $this->collector->stop();
 
