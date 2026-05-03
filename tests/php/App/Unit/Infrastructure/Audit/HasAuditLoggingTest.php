@@ -4,11 +4,12 @@ declare(strict_types=1);
 
 namespace Tests\App\Unit\Infrastructure\Audit;
 
-use App\Infrastructure\Audit\AuditLoggerInterface;
 use App\Infrastructure\Audit\HasAuditLogging;
 use PHPUnit\Framework\Attributes\CoversNothing;
 use PHPUnit\Framework\TestCase;
 use RuntimeException;
+use Zappzarapp\AuditLogger\AuditLogEntry;
+use Zappzarapp\AuditLogger\AuditLoggerInterface;
 
 /**
  * Tests for HasAuditLogging trait
@@ -21,38 +22,55 @@ final class HasAuditLoggingTest extends TestCase
 {
     public function testAuditLogCallsLogger(): void
     {
+        $_SERVER['REMOTE_ADDR']     = '10.0.0.1';
+        $_SERVER['HTTP_USER_AGENT'] = 'TestBrowser/1.0';
+
         $logger = $this->createMock(AuditLoggerInterface::class);
         $logger->expects($this->once())
             ->method('log')
-            ->with(
-                'user.view',
-                'user',
-                123,
-                456,
-                ['context' => 'test']
-            );
+            ->with($this->equalTo(new AuditLogEntry(
+                action: 'user.view',
+                entityType: 'user',
+                entityId: 123,
+                userId: 456,
+                ipAddress: '10.0.0.1',
+                userAgent: 'TestBrowser/1.0',
+                data: ['context' => 'test'],
+            )));
 
         $service = new TestServiceWithAuditLogging($logger);
         $service->testAuditLog();
+
+        unset($_SERVER['REMOTE_ADDR'], $_SERVER['HTTP_USER_AGENT']);
     }
 
     public function testAuditLogAuthCallsLogger(): void
     {
+        $_SERVER['REMOTE_ADDR']     = '10.0.0.1';
+        $_SERVER['HTTP_USER_AGENT'] = 'TestBrowser/1.0';
+
         $logger = $this->createMock(AuditLoggerInterface::class);
         $logger->expects($this->once())
             ->method('logAuth')
             ->with(
                 'login.success',
                 123,
-                ['ip' => '192.168.1.1']
+                ['ip' => '192.168.1.1'],
+                '10.0.0.1',
+                'TestBrowser/1.0'
             );
 
         $service = new TestServiceWithAuditLogging($logger);
         $service->testAuditLogAuth();
+
+        unset($_SERVER['REMOTE_ADDR'], $_SERVER['HTTP_USER_AGENT']);
     }
 
     public function testAuditLogAdminCallsLogger(): void
     {
+        $_SERVER['REMOTE_ADDR']     = '10.0.0.1';
+        $_SERVER['HTTP_USER_AGENT'] = 'TestBrowser/1.0';
+
         $logger = $this->createMock(AuditLoggerInterface::class);
         $logger->expects($this->once())
             ->method('logAdmin')
@@ -61,11 +79,36 @@ final class HasAuditLoggingTest extends TestCase
                 1,
                 'user',
                 123,
-                ['role' => 'moderator']
+                ['role' => 'moderator'],
+                '10.0.0.1',
+                'TestBrowser/1.0'
             );
 
         $service = new TestServiceWithAuditLogging($logger);
         $service->testAuditLogAdmin();
+
+        unset($_SERVER['REMOTE_ADDR'], $_SERVER['HTTP_USER_AGENT']);
+    }
+
+    public function testAuditLogFallsBackToUnknownWhenServerVarsNotSet(): void
+    {
+        unset($_SERVER['REMOTE_ADDR'], $_SERVER['HTTP_USER_AGENT']);
+
+        $logger = $this->createMock(AuditLoggerInterface::class);
+        $logger->expects($this->once())
+            ->method('log')
+            ->with($this->equalTo(new AuditLogEntry(
+                action: 'user.view',
+                entityType: 'user',
+                entityId: 123,
+                userId: 456,
+                ipAddress: 'unknown',
+                userAgent: 'unknown',
+                data: ['context' => 'test'],
+            )));
+
+        $service = new TestServiceWithAuditLogging($logger);
+        $service->testAuditLog();
     }
 
     public function testAuditLogThrowsExceptionWhenLoggerNotInitialized(): void
@@ -80,25 +123,26 @@ final class HasAuditLoggingTest extends TestCase
 
     public function testAuditLogUsesSessionUserIdIfNotProvided(): void
     {
-        // Simulate session
-        $_SESSION['user_id'] = 789;
+        $_SESSION['user_id']        = 789;
+        $_SERVER['REMOTE_ADDR']     = '10.0.0.1';
+        $_SERVER['HTTP_USER_AGENT'] = 'TestBrowser/1.0';
 
         $logger = $this->createMock(AuditLoggerInterface::class);
         $logger->expects($this->once())
             ->method('log')
-            ->with(
-                'user.view',
-                'user',
-                123,
-                789,  // Should use session user_id
-                []
-            );
+            ->with($this->equalTo(new AuditLogEntry(
+                action: 'user.view',
+                entityType: 'user',
+                entityId: 123,
+                userId: 789,
+                ipAddress: '10.0.0.1',
+                userAgent: 'TestBrowser/1.0',
+            )));
 
         $service = new TestServiceWithAuditLogging($logger);
         $service->testAuditLogWithoutUserId();
 
-        // Clean up session
-        unset($_SESSION['user_id']);
+        unset($_SESSION['user_id'], $_SERVER['REMOTE_ADDR'], $_SERVER['HTTP_USER_AGENT']);
     }
 }
 
@@ -109,7 +153,8 @@ class TestServiceWithAuditLogging
 {
     use HasAuditLogging;
 
-    public function __construct(private AuditLoggerInterface $auditLogger)
+    /** @noinspection PhpPropertyCanBeReadonlyInspection readonly breaks PHPStan isset() analysis in trait */
+    public function __construct(private AuditLoggerInterface $auditLogger) // @phpstan-ignore property.onlyWritten (read by HasAuditLogging trait via isset)
     {
     }
 

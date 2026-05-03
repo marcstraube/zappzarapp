@@ -29,10 +29,15 @@ class DevToolbar
 
     /** @var array<string, CollectorInterface> */
     private array $collectors = [];
-    private(set) bool $booted = false;
+    private bool $booted      = false;
 
     private function __construct()
     {
+    }
+
+    public function isBooted(): bool
+    {
+        return $this->booted;
     }
 
     /**
@@ -151,13 +156,4 @@ class DevToolbar
         NonceRegistry::set($nonce);
     }
 
-    /**
-     * Get current CSP nonce
-     *
-     * @return string Current nonce value
-     */
-    public function getNonce(): string
-    {
-        return NonceRegistry::get();
-    }
 }

@@ -1,13 +1,12 @@
 <?php
 
+/* @noinspection PhpUnhandledExceptionInspection Test methods — PHPUnit catches all exceptions */
 /** @noinspection PhpMultipleClassDeclarationsInspection Override is native in PHP 8.3 */
 
 declare(strict_types=1);
 
 namespace Tests\App\Unit\Infrastructure\Database;
 
-use App\Infrastructure\Audit\AuditLoggerInterface;
-use App\Infrastructure\Audit\NullAuditLogger;
 use App\Infrastructure\Database\AbstractPdoRepository;
 use App\Infrastructure\DatabaseConfigInterface;
 use Override;
@@ -17,7 +16,8 @@ use PDOStatement;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use ReflectionClass;
-use ReflectionException;
+use Zappzarapp\AuditLogger\AuditLoggerInterface;
+use Zappzarapp\AuditLogger\NullAuditLogger;
 
 /**
  * Unit tests for AbstractPdoRepository
@@ -833,8 +833,6 @@ final class AbstractPdoRepositoryTest extends TestCase
 
     /**
      * Create a testable MariaDB repository with mocked PDO connection
-     *
-     * @throws ReflectionException
      */
     private function createRepository(PDO $pdo): MariaDbTestableRepository
     {
@@ -847,8 +845,6 @@ final class AbstractPdoRepositoryTest extends TestCase
 
     /**
      * Create a testable PostgreSQL repository with mocked PDO connection
-     *
-     * @throws ReflectionException
      */
     private function createPostgresRepository(PDO $pdo): PostgresTestableRepository
     {
@@ -873,8 +869,7 @@ final class AbstractPdoRepositoryTest extends TestCase
      * Create a testable repository with encryption support
      *
      * @param string[] $encryptedFields
-     *
-     * @throws ReflectionException
+     * @noinspection PhpSameParameterValueInspection Explicit parameter for test readability
      */
     private function createRepositoryWithEncryption(PDO $pdo, array $encryptedFields): EncryptedTestableRepository
     {
@@ -900,8 +895,6 @@ class MariaDbTestableRepository extends AbstractPdoRepository
 
     /**
      * Inject PDO connection for testing
-     *
-     * @throws ReflectionException
      */
     public function setPdo(PDO $pdo): void
     {
@@ -943,8 +936,6 @@ class PostgresTestableRepository extends AbstractPdoRepository
 
     /**
      * Inject PDO connection for testing
-     *
-     * @throws ReflectionException
      */
     public function setPdo(PDO $pdo): void
     {
@@ -990,8 +981,6 @@ class EncryptedTestableRepository extends AbstractPdoRepository
 
     /**
      * Inject PDO connection for testing
-     *
-     * @throws ReflectionException
      */
     public function setPdo(PDO $pdo): void
     {

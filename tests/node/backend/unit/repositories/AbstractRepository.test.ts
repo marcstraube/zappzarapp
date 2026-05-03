@@ -8,7 +8,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach, type Mock } from 'vitest';
 import { AbstractRepository } from '@backend/Shared/Repository/AbstractRepository';
 import type { Row } from '@backend/Shared/Repository/RepositoryInterface';
-import { NullAuditLogger } from '@backend/Shared/Audit/NullAuditLogger';
+import { NullAuditLogger } from '@zappzarapp/audit-logger';
 
 // Mock connection interface - uses simple Mock type to avoid generic issues with vi.fn()
 interface MockConnection {

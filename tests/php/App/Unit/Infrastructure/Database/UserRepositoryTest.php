@@ -1,13 +1,12 @@
 <?php
 
+/* @noinspection PhpUnhandledExceptionInspection Test methods — PHPUnit catches all exceptions */
 /** @noinspection PhpMultipleClassDeclarationsInspection Override is native in PHP 8.3 */
 
 declare(strict_types=1);
 
 namespace Tests\App\Unit\Infrastructure\Database;
 
-use App\Infrastructure\Audit\AuditLoggerInterface;
-use App\Infrastructure\Audit\NullAuditLogger;
 use App\Infrastructure\Database\AbstractPdoRepository;
 use App\Infrastructure\Database\UserRepository;
 use App\Infrastructure\DatabaseConfigInterface;
@@ -18,7 +17,8 @@ use PDOStatement;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use ReflectionClass;
-use ReflectionException;
+use Zappzarapp\AuditLogger\AuditLoggerInterface;
+use Zappzarapp\AuditLogger\NullAuditLogger;
 
 /**
  * Unit tests for UserRepository
@@ -299,7 +299,6 @@ final class UserRepositoryTest extends TestCase
     // =========================================================================
 
     /**
-     * @throws ReflectionException
      */
     public function testGetTableReturnsUsers(): void
     {
@@ -312,7 +311,6 @@ final class UserRepositoryTest extends TestCase
     }
 
     /**
-     * @throws ReflectionException
      */
     public function testGetEncryptedFieldsReturnsTotpSecret(): void
     {
@@ -339,7 +337,6 @@ final class UserRepositoryTest extends TestCase
     /**
      * Create a testable UserRepository with mocked PDO
      *
-     * @throws ReflectionException
      */
     private function createRepository(PDO $pdo): TestableUserRepository
     {
@@ -353,7 +350,6 @@ final class UserRepositoryTest extends TestCase
     /**
      * Create a testable UserRepository with encryption support
      *
-     * @throws ReflectionException
      */
     private function createRepositoryWithEncryption(PDO $pdo): TestableUserRepositoryWithEncryption
     {
@@ -399,8 +395,6 @@ class TestableUserRepository extends UserRepository
 
     /**
      * Inject PDO connection for testing
-     *
-     * @throws ReflectionException
      */
     public function setPdo(PDO $pdo): void
     {
@@ -442,8 +436,6 @@ class TestableUserRepositoryWithEncryption extends UserRepository
 
     /**
      * Inject PDO connection for testing
-     *
-     * @throws ReflectionException
      */
     public function setPdo(PDO $pdo): void
     {
