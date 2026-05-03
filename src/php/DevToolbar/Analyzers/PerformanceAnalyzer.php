@@ -11,20 +11,20 @@ namespace DevToolbar\Analyzers;
  */
 class PerformanceAnalyzer
 {
-    /** Performance thresholds */
-    private const THRESHOLDS = [
-        'time_ms'       => 1000,        // 1 second
-        'memory_mb'     => 50,        // 50 MB
-        'query_count'   => 50,      // 50 queries
-        'query_time_ms' => 500,   // 500ms total query time
-        'http_count'    => 10,       // 10 HTTP requests
+    /** @var array<string, int> Performance thresholds */
+    private const array THRESHOLDS = [
+        'time_ms'       => 1000,   // 1 second
+        'memory_mb'     => 50,     // 50 MB
+        'query_count'   => 50,     // 50 queries
+        'query_time_ms' => 500,    // 500ms total query time
+        'http_count'    => 10,     // 10 HTTP requests
         'http_time_ms'  => 1000,   // 1 second total HTTP time
     ];
 
     /** Alert levels */
-    private const LEVEL_CRITICAL = 'critical';
-    private const LEVEL_WARNING  = 'warning';
-    private const LEVEL_INFO     = 'info';
+    private const string LEVEL_CRITICAL = 'critical';
+    private const string LEVEL_WARNING  = 'warning';
+    private const string LEVEL_INFO     = 'info';
 
     /**
      * Analyze performance and generate alerts
@@ -66,7 +66,7 @@ class PerformanceAnalyzer
     private static function analyzeExecutionTime(array $data): array
     {
         $alerts = [];
-        $time   = $data['request']['time'] ?? 0;
+        $time   = $data['request']['execution_time'] ?? 0;
 
         if ($time > self::THRESHOLDS['time_ms']) {
             $alerts[] = [
@@ -75,7 +75,7 @@ class PerformanceAnalyzer
                 'icon'      => '🔴',
                 'message'   => sprintf('Slow Request (%.0fms)', $time),
                 'threshold' => self::THRESHOLDS['time_ms'] . 'ms',
-                'actual'    => round($time, 0) . 'ms',
+                'actual'    => round($time) . 'ms',
                 'action'    => 'Review Timeline tab for bottlenecks',
             ];
         } elseif ($time > self::THRESHOLDS['time_ms'] * 0.7) {
@@ -85,7 +85,7 @@ class PerformanceAnalyzer
                 'icon'      => '🟠',
                 'message'   => sprintf('Approaching Slow Request (%.0fms)', $time),
                 'threshold' => self::THRESHOLDS['time_ms'] . 'ms',
-                'actual'    => round($time, 0) . 'ms',
+                'actual'    => round($time) . 'ms',
                 'action'    => 'Monitor request performance',
             ];
         }
@@ -101,9 +101,8 @@ class PerformanceAnalyzer
      */
     private static function analyzeMemoryUsage(array $data): array
     {
-        $alerts      = [];
-        $memoryBytes = $data['request']['memory'] ?? 0;
-        $memoryMb    = $memoryBytes / 1024 / 1024;
+        $alerts   = [];
+        $memoryMb = $data['request']['memory_peak'] ?? 0;
 
         if ($memoryMb > self::THRESHOLDS['memory_mb']) {
             $alerts[] = [
@@ -164,7 +163,7 @@ class PerformanceAnalyzer
                 'icon'      => '🟠',
                 'message'   => sprintf('Slow Database Queries (%.0fms total)', $totalTime),
                 'threshold' => self::THRESHOLDS['query_time_ms'] . 'ms',
-                'actual'    => round($totalTime, 0) . 'ms',
+                'actual'    => round($totalTime) . 'ms',
                 'action'    => 'Optimize slow queries or add indexes',
             ];
         }
@@ -206,7 +205,7 @@ class PerformanceAnalyzer
                 'icon'      => '🟠',
                 'message'   => sprintf('Slow HTTP Requests (%.0fms total)', $totalTime),
                 'threshold' => self::THRESHOLDS['http_time_ms'] . 'ms',
-                'actual'    => round($totalTime, 0) . 'ms',
+                'actual'    => round($totalTime) . 'ms',
                 'action'    => 'Review HTTP tab for slow external calls',
             ];
         }

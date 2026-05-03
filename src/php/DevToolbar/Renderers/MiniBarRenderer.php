@@ -4,7 +4,10 @@ declare(strict_types=1);
 
 namespace DevToolbar\Renderers;
 
+use DevToolbar\Analyzers\PerformanceAnalyzer;
+use DevToolbar\Analyzers\QueryAnalyzer;
 use DevToolbar\DataCollectors\CollectorInterface;
+use Random\RandomException;
 use Throwable;
 
 /**
@@ -23,6 +26,9 @@ class MiniBarRenderer implements RendererInterface
         $this->collectors = $collectors;
     }
 
+    /**
+     * @throws RandomException
+     */
     public function render(): string
     {
         $requestData = $this->collectors['request']->getData();
@@ -33,7 +39,8 @@ class MiniBarRenderer implements RendererInterface
         $queryCount = $queriesData['count'] ?? 0;
 
         // Get all active labels from cookies (set by client-side JS)
-        $labels = $this->getDisplayLabels($requestData);
+        $labels     = $this->getDisplayLabels($requestData);
+        $alertBadge = $this->renderAlertBadge();
 
         return sprintf(
             '<div class="dev-toolbar-mini">
@@ -41,12 +48,14 @@ class MiniBarRenderer implements RendererInterface
                 <span class="dev-toolbar-mini-metric">%dms</span>
                 <span class="dev-toolbar-mini-metric">%.1fMB</span>
                 <span class="dev-toolbar-mini-metric">%d queries</span>
+                %s
                 <span class="dev-toolbar-mini-expand">↗</span>
             </div>',
             $labels,
             (int)$time,
             $memory,
-            $queryCount
+            $queryCount,
+            $alertBadge
         );
     }
 
@@ -54,6 +63,7 @@ class MiniBarRenderer implements RendererInterface
      * Get display labels based on configured types from cookies
      *
      * @param array<string, mixed> $requestData
+     * @throws RandomException
      */
     private function getDisplayLabels(array $requestData): string
     {
@@ -90,6 +100,50 @@ class MiniBarRenderer implements RendererInterface
     }
 
     /**
+     * Render alert badge for performance issues and N+1 detection
+     */
+    private function renderAlertBadge(): string
+    {
+        $collectorData = array_map(
+            fn(CollectorInterface $collector) => $collector->getData(),
+            $this->collectors
+        );
+
+        // Performance alerts
+        $alerts = PerformanceAnalyzer::analyze($collectorData);
+
+        // N+1 query detection
+        $queries    = $collectorData['queries']['queries'] ?? [];
+        $nPlusOnes  = new QueryAnalyzer()->detectNPlusOne($queries);
+        $alertCount = count($alerts) + count($nPlusOnes);
+
+        if ($alertCount === 0) {
+            return '';
+        }
+
+        // Determine highest severity level
+        $hasN1       = !empty($nPlusOnes);
+        $hasCritical = !empty(array_filter($alerts, fn($a) => $a['level'] === 'critical'));
+        $hasWarning  = $hasN1 || !empty(array_filter($alerts, fn($a) => $a['level'] === 'warning'));
+
+        if ($hasCritical) {
+            $levelClass = 'alert-critical';
+        } elseif ($hasWarning) {
+            $levelClass = 'alert-warning';
+        } else {
+            $levelClass = 'alert-info';
+        }
+
+        return sprintf(
+            '<span class="dev-toolbar-mini-alert %s" title="%d performance issue%s detected"><span class="dev-toolbar-mini-alert-icon">⚠</span> %d</span>',
+            $levelClass,
+            $alertCount,
+            $alertCount !== 1 ? 's' : '',
+            $alertCount
+        );
+    }
+
+    /**
      * Get current git branch from .git/HEAD (read-only, no shell execution)
      */
     private function getGitBranch(): ?string
@@ -119,7 +173,7 @@ class MiniBarRenderer implements RendererInterface
 
             // Detached HEAD (commit hash)
             return null;
-        } catch (Throwable $e) {
+        } catch (Throwable) {
             return null;
         }
     }
@@ -148,7 +202,7 @@ class MiniBarRenderer implements RendererInterface
             if (is_array($decoded)) {
                 return array_merge($defaults, $decoded);
             }
-        } catch (Throwable $e) {
+        } catch (Throwable) {
             // Invalid JSON, return defaults
         }
 
@@ -202,9 +256,11 @@ class MiniBarRenderer implements RendererInterface
     /**
      * Get current request ID
      */
+    /**
+     * @throws RandomException
+     */
     private function getCurrentRequestId(): string
     {
-        // Generate unique request ID
         return 'req_' . uniqid() . '_' . bin2hex(random_bytes(4));
     }
 
