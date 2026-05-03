@@ -119,6 +119,16 @@ class CachePanelRenderer extends AbstractPanelRenderer
             );
         }
 
+        // Show call location from backtrace
+        if (!empty($operation['backtrace'])) {
+            $location = $operation['backtrace'][0];
+            $html .= sprintf(
+                '<div class="dev-toolbar-cache-location">Called at: %s:%d</div>',
+                $this->escapeHtml($location['file'] ?? ''),
+                $location['line'] ?? 0
+            );
+        }
+
         $html .= '</div>';
 
         return $html;

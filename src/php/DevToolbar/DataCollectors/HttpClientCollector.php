@@ -13,7 +13,8 @@ use CurlHandle;
 class HttpClientCollector implements CollectorInterface
 {
     /** @var array<int, array<string, mixed>> */
-    private array $requests  = [];
+    private array $requests = [];
+    /** @noinspection PhpGetterAndSetterCanBeReplacedWithPropertyHooksInspection PDepend crashes on property hooks */
     private bool $collecting = false;
 
     /**
@@ -96,6 +97,8 @@ class HttpClientCollector implements CollectorInterface
     /**
      * Wrapper for file_get_contents
      *
+     * @noinspection PhpUnused Called by application code wrapping HTTP calls
+     *
      * @param string $url URL to fetch
      * @param mixed ...$args Additional arguments
      * @return string|false Response content
@@ -130,23 +133,21 @@ class HttpClientCollector implements CollectorInterface
     /**
      * Wrapper for curl_exec
      *
+     * @noinspection PhpUnused Called by application code wrapping cURL calls
+     *
      * @param CurlHandle $ch cURL handle
      * @return string|bool Response content
-     * @phpstan-param CurlHandle $ch
      */
-    public function wrapCurlExec($ch): string|bool
+    public function wrapCurlExec(CurlHandle $ch): string|bool
     {
         if (!$this->collecting) {
-            /** @phpstan-ignore-next-line */
             return curl_exec($ch);
         }
 
         $start  = hrtime(true);
-        /** @phpstan-ignore-next-line */
         $result = curl_exec($ch);
         $time   = (hrtime(true) - $start) / 1_000_000; // Convert to milliseconds
 
-        /** @phpstan-ignore-next-line */
         $info = curl_getinfo($ch);
 
         // Note: curl_getinfo() doesn't provide HTTP method - would need to track CURLOPT_CUSTOMREQUEST
@@ -220,7 +221,7 @@ class HttpClientCollector implements CollectorInterface
      */
     private function getRelevantBacktrace(): array
     {
-        /** @phpstan-ignore ekinoBannedCode.function */
+        /** @phpstan-ignore ekinoBannedCode.function (debug_backtrace required for call-location tracking) */
         $trace    = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 10);
         $relevant = [];
 
@@ -264,7 +265,7 @@ class HttpClientCollector implements CollectorInterface
         if (is_string($data)) {
             // Truncate long responses
             if (strlen($data) > 10000) {
-                return substr($data, 0, 10000) . '... (truncated)';
+                return substr($data, 0, 10000) . "\n\n... (truncated, " . strlen($data) . ' bytes total)';
             }
 
             // Filter common sensitive patterns

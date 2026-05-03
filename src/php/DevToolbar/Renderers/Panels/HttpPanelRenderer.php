@@ -102,8 +102,69 @@ class HttpPanelRenderer extends AbstractPanelRenderer
             );
         }
 
+        // Response headers (collapsible)
+        if (!empty($request['headers'])) {
+            $html .= '<details class="dev-toolbar-http-details">';
+            $html .= '<summary>Response Headers</summary>';
+            $html .= '<pre class="dev-toolbar-http-pre">';
+            $html .= $this->formatHeaders($request['headers']);
+            $html .= '</pre></details>';
+        }
+
+        // Response body (collapsible)
+        if (!empty($request['body'])) {
+            $body = is_string($request['body']) ? $request['body'] : '';
+            $html .= '<details class="dev-toolbar-http-details">';
+            $html .= '<summary>Response Body</summary>';
+            $html .= '<pre class="dev-toolbar-http-pre">';
+            $html .= $this->escapeHtml($this->truncateBody($body));
+            $html .= '</pre></details>';
+        }
+
         $html .= '</div>';
 
         return $html;
+    }
+
+    /**
+     * Format response headers for display
+     *
+     * @param array<string|int, string|array<string>> $headers Headers array
+     * @return string Escaped formatted headers
+     */
+    private function formatHeaders(array $headers): string
+    {
+        $lines = [];
+
+        foreach ($headers as $key => $value) {
+            $val = is_array($value) ? implode(', ', $value) : $value;
+
+            if (is_int($key)) {
+                // Raw header line (e.g., from file_get_contents)
+                $lines[] = $this->escapeHtml($val);
+            } else {
+                // Key-value pair
+                $lines[] = $this->escapeHtml($key . ': ' . $val);
+            }
+        }
+
+        return implode("\n", $lines);
+    }
+
+    /**
+     * Truncate response body for display
+     *
+     * @param string $body Response body
+     * @return string Truncated body
+     */
+    private function truncateBody(string $body): string
+    {
+        $maxLength = 2000;
+
+        if (strlen($body) <= $maxLength) {
+            return $body;
+        }
+
+        return substr($body, 0, $maxLength) . "\n\n... (truncated, " . strlen($body) . ' bytes total)';
     }
 }

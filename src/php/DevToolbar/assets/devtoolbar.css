@@ -570,6 +570,40 @@
     color: #6b7280;
 }
 
+.dev-toolbar-http-details {
+    margin-top: 8px;
+    border: 1px solid #e5e7eb;
+    border-radius: var(--radius-sm);
+    overflow: hidden;
+}
+
+.dev-toolbar-http-details summary {
+    padding: 6px 10px;
+    font-size: 0.8rem;
+    font-weight: 500;
+    cursor: pointer;
+    background: #f3f4f6;
+    color: #374151;
+    user-select: none;
+}
+
+.dev-toolbar-http-details summary:hover {
+    background: #e5e7eb;
+}
+
+.dev-toolbar-http-pre {
+    margin: 0;
+    padding: 10px;
+    font-family: var(--font-mono), monospace;
+    font-size: 0.75rem;
+    background: #f9fafb;
+    white-space: pre-wrap;
+    word-break: break-all;
+    max-height: 300px;
+    overflow-y: auto;
+    color: #374151;
+}
+
 /* Phase 2: Cache Tab */
 .dev-toolbar-cache-stats {
     font-size: 0.875rem;
@@ -595,7 +629,8 @@
 }
 
 .dev-toolbar-cache-ttl,
-.dev-toolbar-cache-size {
+.dev-toolbar-cache-size,
+.dev-toolbar-cache-location {
     font-family: var(--font-mono), monospace;
     font-size: 0.75rem;
     color: #6b7280;

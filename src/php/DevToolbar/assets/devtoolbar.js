@@ -2401,7 +2401,9 @@
       if (!metric) return;
       const dot = svg.querySelector(".dev-toolbar-trend-highlight");
       const label = svg.querySelector(".dev-toolbar-trend-value-label");
-      const dataDot = svg.querySelector(`.dev-toolbar-trend-dot[data-index="${index}"]`);
+      const dataDot = svg.querySelector(
+        `.dev-toolbar-trend-dot[data-index="${index}"]`
+      );
       if (dot && dataDot) {
         const cy = dataDot.getAttribute("cy") ?? "0";
         dot.setAttribute("cx", x.toFixed(1));
