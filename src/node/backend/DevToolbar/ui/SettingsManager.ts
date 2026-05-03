@@ -4,11 +4,21 @@
  * Provides UI for configuring:
  * - Minibar label display mode (branding, branch, route, request-id)
  * - Git branch color scheme for different branch types
+ * - Performance alert thresholds
  */
 
-import type { MinibarLabelType, BranchColors, KeyboardShortcut } from '../types/index.js';
+import type {
+  MinibarLabelType,
+  BranchColors,
+  KeyboardShortcut,
+  PerformanceThresholds,
+} from '../types/index.js';
 import { StorageManager } from '../storage/StorageManager.js';
-import { DEFAULT_BRANCH_COLORS, DEFAULT_TOGGLE_SHORTCUT } from '../storage/StorageConfig.js';
+import {
+  DEFAULT_BRANCH_COLORS,
+  DEFAULT_TOGGLE_SHORTCUT,
+  DEFAULT_THRESHOLDS,
+} from '../storage/StorageConfig.js';
 import { debug, error as logError } from '../utils/logger.js';
 import { HtmlEscaper } from '@zappzarapp/browser-utils/html';
 import { BaseDialog } from './BaseDialog.js';
@@ -40,6 +50,7 @@ export class SettingsManager extends BaseDialog {
     const currentLabels = StorageManager.getMinibarLabels();
     const currentColors = StorageManager.getBranchColors();
     const currentShortcut = StorageManager.getToggleShortcut();
+    const currentThresholds = StorageManager.getThresholds();
 
     const modalHTML = `
             <div class="dev-toolbar-modal-overlay" id="dev-toolbar-settings-overlay">
@@ -100,6 +111,25 @@ export class SettingsManager extends BaseDialog {
                                 </p>
                             </div>
                         </div>
+
+                        <!-- Performance Thresholds -->
+                        <div class="dev-toolbar-settings-group">
+                            <label>Performance Alert Thresholds</label>
+                            <p style="margin: 0 0 12px 0; color: #6b7280; font-size: 0.875rem;">
+                                Alerts trigger when values exceed these thresholds
+                            </p>
+                            <div class="dev-toolbar-settings-thresholds">
+                                ${this.buildThresholdInput('time_ms', 'Request Time', 'ms', currentThresholds.time_ms)}
+                                ${this.buildThresholdInput('memory_mb', 'Memory Peak', 'MB', currentThresholds.memory_mb)}
+                                ${this.buildThresholdInput('query_count', 'Query Count', '', currentThresholds.query_count)}
+                                ${this.buildThresholdInput('query_time_ms', 'Query Time (total)', 'ms', currentThresholds.query_time_ms)}
+                                ${this.buildThresholdInput('http_count', 'HTTP Requests', '', currentThresholds.http_count)}
+                                ${this.buildThresholdInput('http_time_ms', 'HTTP Time (total)', 'ms', currentThresholds.http_time_ms)}
+                            </div>
+                            <p style="margin: 8px 0 0 0; color: #6b7280; font-size: 0.75rem;">
+                                <a href="#" id="reset-thresholds" style="color: #3b82f6; text-decoration: none;">Reset to Defaults</a>
+                            </p>
+                        </div>
                     </div>
 
                     <div class="dev-toolbar-modal-footer">
@@ -149,6 +179,23 @@ export class SettingsManager extends BaseDialog {
             <div class="dev-toolbar-settings-color-item">
                 <label for="color-${HtmlEscaper.escape(type)}">${HtmlEscaper.escape(label)}</label>
                 <input type="color" id="color-${HtmlEscaper.escape(type)}" name="color-${HtmlEscaper.escape(type)}" value="${HtmlEscaper.escape(value)}">
+            </div>
+        `;
+  }
+
+  /**
+   * Build threshold number input HTML
+   */
+  private buildThresholdInput(key: string, label: string, unit: string, value: number): string {
+    const suffix =
+      unit !== ''
+        ? ` <span style="color: #6b7280; font-size: 0.75rem;">${HtmlEscaper.escape(unit)}</span>`
+        : '';
+    return `
+            <div class="dev-toolbar-settings-threshold-item">
+                <label for="threshold-${HtmlEscaper.escape(key)}">${HtmlEscaper.escape(label)}${suffix}</label>
+                <input type="number" id="threshold-${HtmlEscaper.escape(key)}" name="threshold-${HtmlEscaper.escape(key)}" value="${value}" min="0" step="1"
+                    class="dev-toolbar-settings-threshold-input">
             </div>
         `;
   }
@@ -214,6 +261,19 @@ export class SettingsManager extends BaseDialog {
       }
     });
 
+    // Reset thresholds link
+    const resetThresholds = this.modal.querySelector('#reset-thresholds');
+    resetThresholds?.addEventListener('click', (e) => {
+      e.preventDefault();
+      const keys = Object.keys(DEFAULT_THRESHOLDS) as (keyof Required<PerformanceThresholds>)[];
+      for (const key of keys) {
+        const input = this.modal?.querySelector<HTMLInputElement>(`#threshold-${key}`);
+        if (input != null) {
+          input.value = String(DEFAULT_THRESHOLDS[key]);
+        }
+      }
+    });
+
     // Save button
     const saveBtn = this.modal.querySelector('#settings-save');
     saveBtn?.addEventListener('click', () => this.saveSettings());
@@ -247,10 +307,14 @@ export class SettingsManager extends BaseDialog {
       StorageManager.setToggleShortcut(this.currentShortcut);
     }
 
-    // Save to cookies so PHP can read the settings
-    this.saveSettingsToCookies(selectedLabels, branchColors);
+    // Save thresholds
+    const thresholds = this.getThresholdValues();
+    StorageManager.setThresholds(thresholds);
 
-    debug('[Settings] Saved:', { labels: selectedLabels, colors: branchColors });
+    // Save to cookies so PHP can read the settings
+    this.saveSettingsToCookies(selectedLabels, branchColors, thresholds);
+
+    debug('[Settings] Saved:', { labels: selectedLabels, colors: branchColors, thresholds });
 
     // Reload page to apply changes (server-side rendering)
     window.location.reload();
@@ -259,19 +323,24 @@ export class SettingsManager extends BaseDialog {
   /**
    * Save settings to cookies for PHP access
    */
-  private saveSettingsToCookies(labels: MinibarLabelType[], colors: BranchColors): void {
-    // Set labels cookie (JSON encoded array)
+  private saveSettingsToCookies(
+    labels: MinibarLabelType[],
+    colors: BranchColors,
+    thresholds: PerformanceThresholds
+  ): void {
     const labelsJson = JSON.stringify(labels);
-    document.cookie = `devbar_labels=${encodeURIComponent(labelsJson)}; path=/; max-age=31536000`; // 1 year
+    document.cookie = `devbar_labels=${encodeURIComponent(labelsJson)}; path=/; max-age=31536000`;
 
-    // Set branch colors cookie (JSON encoded)
     const colorsJson = JSON.stringify(colors);
     document.cookie = `devbar_colors=${encodeURIComponent(colorsJson)}; path=/; max-age=31536000`;
+
+    const thresholdsJson = JSON.stringify(thresholds);
+    document.cookie = `devbar_thresholds=${encodeURIComponent(thresholdsJson)}; path=/; max-age=31536000`;
 
     debug('[Settings] Cookies set:', {
       labels: `devbar_labels=${encodeURIComponent(labelsJson)}`,
       colors: `devbar_colors=${encodeURIComponent(colorsJson)}`,
-      allCookies: document.cookie,
+      thresholds: `devbar_thresholds=${encodeURIComponent(thresholdsJson)}`,
     });
   }
 
@@ -318,5 +387,25 @@ export class SettingsManager extends BaseDialog {
 
     const input = this.modal.querySelector<HTMLInputElement>(`input[name="color-${type}"]`);
     return input?.value ?? null;
+  }
+
+  /**
+   * Get threshold values from form
+   */
+  private getThresholdValues(): PerformanceThresholds {
+    const keys = Object.keys(DEFAULT_THRESHOLDS) as (keyof Required<PerformanceThresholds>)[];
+    const thresholds: PerformanceThresholds = {};
+
+    for (const key of keys) {
+      const input = this.modal?.querySelector<HTMLInputElement>(`#threshold-${key}`);
+      if (input != null) {
+        const value = parseInt(input.value, 10);
+        if (!isNaN(value) && value >= 0) {
+          thresholds[key] = value;
+        }
+      }
+    }
+
+    return thresholds;
   }
 }

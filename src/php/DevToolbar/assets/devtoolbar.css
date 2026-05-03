@@ -1328,8 +1328,8 @@
 .dev-toolbar-modal {
     background: white;
     border-radius: 8px;
-    max-width: 500px;
-    width: 90%;
+    max-width: 700px;
+    width: 45%;
     box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
     max-height: 90vh;
     overflow: hidden;
@@ -1489,6 +1489,36 @@
 .dev-toolbar-settings-color-item input[type="color"]::-webkit-color-swatch {
     border: none;
     border-radius: 3px;
+}
+
+.dev-toolbar-settings-thresholds {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+}
+
+.dev-toolbar-settings-threshold-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 12px;
+    background: #f9fafb;
+    border-radius: 4px;
+}
+
+.dev-toolbar-settings-threshold-item label {
+    font-weight: normal;
+    margin: 0;
+    font-size: 0.875rem;
+    color: #374151;
+}
+
+.dev-toolbar-settings-threshold-input {
+    width: 100px;
+    padding: 4px 2px 4px 8px;
+    border: 1px solid #d1d5db;
+    border-radius: 4px;
+    font-family: var(--font-mono), monospace;
 }
 
 /* Button Styles */

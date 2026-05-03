@@ -14,6 +14,7 @@ import type {
   MinibarLabelType,
   BranchColors,
   KeyboardShortcut,
+  PerformanceThresholds,
 } from '../types/index.js';
 
 import {
@@ -26,6 +27,7 @@ import {
   DEFAULT_MINIBAR_LABELS,
   DEFAULT_BRANCH_COLORS,
   DEFAULT_TOGGLE_SHORTCUT,
+  DEFAULT_THRESHOLDS,
 } from './StorageConfig.js';
 
 import { debug, warn, error as logError } from '../utils/logger.js';
@@ -406,6 +408,22 @@ class StorageManagerClass {
   setToggleShortcut(shortcut: KeyboardShortcut): void {
     const config = this.getConfig();
     this.setConfig({ ...config, toggleShortcut: shortcut });
+  }
+
+  /**
+   * Get performance alert thresholds (merged with defaults)
+   */
+  getThresholds(): Required<PerformanceThresholds> {
+    const config = this.getConfig();
+    return { ...DEFAULT_THRESHOLDS, ...config.thresholds };
+  }
+
+  /**
+   * Set custom performance alert thresholds
+   */
+  setThresholds(thresholds: PerformanceThresholds): void {
+    const config = this.getConfig();
+    this.setConfig({ ...config, thresholds });
   }
 }
 

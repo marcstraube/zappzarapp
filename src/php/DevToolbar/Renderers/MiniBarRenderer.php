@@ -108,8 +108,8 @@ class MiniBarRenderer implements RendererInterface
             $this->collectors
         );
 
-        // Performance alerts
-        $alerts = PerformanceAnalyzer::analyze($collectorData);
+        // Performance alerts (with optional custom thresholds from cookie)
+        $alerts = PerformanceAnalyzer::analyze($collectorData, $this->getCustomThresholds());
 
         // N+1 query detection
         $queries    = $collectorData['queries']['queries'] ?? [];
@@ -140,6 +140,23 @@ class MiniBarRenderer implements RendererInterface
             $alertCount !== 1 ? 's' : '',
             $alertCount
         );
+    }
+
+    /**
+     * Read custom performance thresholds from cookie
+     *
+     * @return array<string, int>|null Custom thresholds or null for defaults
+     */
+    private function getCustomThresholds(): ?array
+    {
+        $json = $_COOKIE['devbar_thresholds'] ?? null;
+        if ($json === null) {
+            return null;
+        }
+
+        $decoded = json_decode(urldecode($json), true);
+
+        return is_array($decoded) ? $decoded : null;
     }
 
     /**

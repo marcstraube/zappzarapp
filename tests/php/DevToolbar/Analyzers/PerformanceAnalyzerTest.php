@@ -250,4 +250,73 @@ class PerformanceAnalyzerTest extends TestCase
             $this->assertArrayHasKey('action', $alert);
         }
     }
+
+    public function testCustomThresholdsOverrideDefaults(): void
+    {
+        $data = [
+            'request' => ['execution_time' => 600, 'memory_peak' => 9.5],
+            'queries' => ['queries' => []],
+            'http'    => ['requests' => []],
+            'cache'   => ['hit_rate' => 100],
+        ];
+
+        // No alert with defaults (threshold: 1000ms)
+        $this->assertEmpty(PerformanceAnalyzer::analyze($data));
+
+        // Alert with lower threshold (500ms)
+        $alerts = PerformanceAnalyzer::analyze($data, ['time_ms' => 500]);
+        $this->assertCount(1, $alerts);
+        $this->assertEquals('slow_request', $alerts[0]['type']);
+        $this->assertStringContainsString('500ms', $alerts[0]['threshold']);
+    }
+
+    public function testPartialThresholdOverride(): void
+    {
+        $data = [
+            'request' => ['execution_time' => 1500, 'memory_peak' => 60],
+            'queries' => ['queries' => []],
+            'http'    => ['requests' => []],
+            'cache'   => ['hit_rate' => 100],
+        ];
+
+        // Override only time threshold to much higher value — memory alert should still fire
+        $alerts = PerformanceAnalyzer::analyze($data, ['time_ms' => 5000]);
+
+        $types = array_column($alerts, 'type');
+        $this->assertNotContains('slow_request', $types);
+        $this->assertContains('high_memory', $types);
+    }
+
+    public function testGetDefaultThresholds(): void
+    {
+        $defaults = PerformanceAnalyzer::getDefaultThresholds();
+
+        $this->assertArrayHasKey('time_ms', $defaults);
+        $this->assertArrayHasKey('memory_mb', $defaults);
+        $this->assertArrayHasKey('query_count', $defaults);
+        $this->assertArrayHasKey('query_time_ms', $defaults);
+        $this->assertArrayHasKey('http_count', $defaults);
+        $this->assertArrayHasKey('http_time_ms', $defaults);
+        $this->assertEquals(1000, $defaults['time_ms']);
+    }
+
+    public function testCustomThresholdsPassedToSummary(): void
+    {
+        $data = [
+            'request' => ['execution_time' => 600, 'memory_peak' => 9.5],
+            'queries' => ['queries' => []],
+            'http'    => ['requests' => []],
+            'cache'   => ['hit_rate' => 100],
+        ];
+
+        // No issues with defaults
+        $this->assertFalse(PerformanceAnalyzer::hasIssues($data));
+
+        // Issues with custom threshold
+        $this->assertTrue(PerformanceAnalyzer::hasIssues($data, ['time_ms' => 500]));
+
+        $summary = PerformanceAnalyzer::getSummary($data, ['time_ms' => 500]);
+        $this->assertEquals(1, $summary['total_alerts']);
+        $this->assertTrue($summary['has_issues']);
+    }
 }

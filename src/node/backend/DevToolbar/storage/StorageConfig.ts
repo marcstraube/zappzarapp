@@ -73,3 +73,18 @@ export const DEFAULT_TOGGLE_SHORTCUT: import('../types/DevToolbarTypes.js').Keyb
   altKey: false,
   metaKey: false,
 };
+
+/**
+ * Default performance alert thresholds
+ * Matches PerformanceAnalyzer::DEFAULT_THRESHOLDS in PHP
+ */
+export const DEFAULT_THRESHOLDS: Required<
+  import('../types/DevToolbarTypes.js').PerformanceThresholds
+> = {
+  time_ms: 1000, // 1 second
+  memory_mb: 50, // 50 MB
+  query_count: 50, // 50 queries
+  query_time_ms: 500, // 500ms total query time
+  http_count: 10, // 10 HTTP requests
+  http_time_ms: 1000, // 1 second total HTTP time
+};
