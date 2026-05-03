@@ -20,7 +20,7 @@ import {
   getConnectionFactory,
   type ExtendedDatabaseConnection,
 } from '../Database/ConnectionFactory';
-import type { AuditLoggerInterface } from '../Audit/AuditLoggerInterface';
+import { AuditLogEntry, type AuditLoggerInterface } from '@zappzarapp/audit-logger';
 import { existsSync, readFileSync } from 'fs';
 
 /**
@@ -328,13 +328,15 @@ export abstract class AbstractRepository<T extends Row = Row> implements Reposit
 
     // Audit log: Record creation
     if (insertedId !== null) {
-      await this.auditLogger.log({
-        action: `${this.getTable()}.create`,
-        entityType: this.getTable(),
-        entityId: insertedId,
-        userId: this.getCurrentUserId(),
-        data: { fields: columns },
-      });
+      await this.auditLogger.log(
+        new AuditLogEntry({
+          action: `${this.getTable()}.create`,
+          entityType: this.getTable(),
+          entityId: insertedId,
+          userId: this.getCurrentUserId(),
+          data: { fields: columns },
+        })
+      );
     }
 
     return insertedId;
@@ -360,13 +362,15 @@ export abstract class AbstractRepository<T extends Row = Row> implements Reposit
 
     // Audit log: Record update
     if (success) {
-      await this.auditLogger.log({
-        action: `${this.getTable()}.update`,
-        entityType: this.getTable(),
-        entityId: id,
-        userId: this.getCurrentUserId(),
-        data: { fields: columns },
-      });
+      await this.auditLogger.log(
+        new AuditLogEntry({
+          action: `${this.getTable()}.update`,
+          entityType: this.getTable(),
+          entityId: id,
+          userId: this.getCurrentUserId(),
+          data: { fields: columns },
+        })
+      );
     }
 
     return success;
@@ -382,12 +386,14 @@ export abstract class AbstractRepository<T extends Row = Row> implements Reposit
 
     // Audit log: Record deletion (GDPR Art. 17 - Right to erasure)
     if (success) {
-      await this.auditLogger.log({
-        action: `${this.getTable()}.delete`,
-        entityType: this.getTable(),
-        entityId: id,
-        userId: this.getCurrentUserId(),
-      });
+      await this.auditLogger.log(
+        new AuditLogEntry({
+          action: `${this.getTable()}.delete`,
+          entityType: this.getTable(),
+          entityId: id,
+          userId: this.getCurrentUserId(),
+        })
+      );
     }
 
     return success;

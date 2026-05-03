@@ -20,6 +20,9 @@ use Exception;
 use InvalidArgumentException;
 use RuntimeException;
 use Throwable;
+use Twig\Error\LoaderError;
+use Twig\Error\RuntimeError;
+use Twig\Error\SyntaxError;
 
 /**
  * Welcome Controller
@@ -36,6 +39,10 @@ readonly class WelcomeController
 
     /**
      * Display the welcome page
+     *
+     * @throws LoaderError If template not found
+     * @throws RuntimeError If error during rendering
+     * @throws SyntaxError If template has syntax errors
      */
     public function index(): Response
     {
@@ -45,7 +52,7 @@ readonly class WelcomeController
                 $this->demoDevToolbarFeatures();
             } catch (Throwable $e) {
                 // If demo fails, track it as an exception
-                ExceptionCollector::getInstance()->trackException($e, handled: true);
+                ExceptionCollector::getInstance()->trackException($e);
             }
         }
 
@@ -80,7 +87,7 @@ readonly class WelcomeController
     private function demoDevToolbarFeatures(): void
     {
         $toolbar = DevToolbar::getInstance();
-        if (!$toolbar->booted) {
+        if (!$toolbar->isBooted()) {
             return;
         }
 
@@ -146,13 +153,13 @@ readonly class WelcomeController
         try {
             throw new RuntimeException('Demo exception: This is a handled exception for testing the DevToolbar');
         } catch (Exception $e) {
-            $collector->trackException($e, handled: true);
+            $collector->trackException($e);
         }
 
         try {
             throw new InvalidArgumentException('Demo validation error: Invalid user input provided');
         } catch (Exception $e) {
-            $collector->trackException($e, handled: true);
+            $collector->trackException($e);
         }
     }
 
@@ -192,10 +199,11 @@ readonly class WelcomeController
         $collector->trackOperation('get', 'session:abc123', 2.3, '{"user_id": 123, "last_active": 1234567890}', true, 1800);
 
         // Cache misses
-        $collector->trackOperation('get', 'user:999', 1.9, null, false);
+        $collector->trackOperation('get', 'user:999', 1.9);
 
         // Cache sets
         $collector->trackOperation('set', 'user:999', 3.2, '{"id": 999, "name": "Bob"}', false, 3600);
+        /** @noinspection HtmlRequiredLangAttribute Demo data string, not actual HTML */
         $collector->trackOperation('set', 'page:home', 4.1, '<html>...</html>', false, 7200);
 
         // Cache delete

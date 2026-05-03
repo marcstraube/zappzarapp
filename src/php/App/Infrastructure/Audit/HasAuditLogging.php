@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Infrastructure\Audit;
 
 use RuntimeException;
+use Zappzarapp\AuditLogger\AuditLogEntry;
 
 /**
  * Convenience Trait for Service-Layer Audit Logging
@@ -76,7 +77,15 @@ trait HasAuditLogging
             $userId = $_SESSION['user_id'];
         }
 
-        $this->auditLogger->log($action, $entityType, $entityId, $userId, $data);
+        $this->auditLogger->log(new AuditLogEntry(
+            action: $action,
+            entityType: $entityType,
+            entityId: $entityId,
+            userId: $userId,
+            ipAddress: $this->getClientIp(),
+            userAgent: $this->getClientUserAgent(),
+            data: $data,
+        ));
     }
 
     /**
@@ -95,7 +104,7 @@ trait HasAuditLogging
             throw new RuntimeException('AuditLogger not initialized. Did you forget to inject AuditLoggerInterface?');
         }
 
-        $this->auditLogger->logAuth($action, $userId, $data);
+        $this->auditLogger->logAuth($action, $userId, $data, $this->getClientIp(), $this->getClientUserAgent());
     }
 
     /**
@@ -118,6 +127,26 @@ trait HasAuditLogging
             throw new RuntimeException('AuditLogger not initialized. Did you forget to inject AuditLoggerInterface?');
         }
 
-        $this->auditLogger->logAdmin($action, $adminUserId, $entityType, $entityId, $data);
+        $this->auditLogger->logAdmin($action, $adminUserId, $entityType, $entityId, $data, $this->getClientIp(), $this->getClientUserAgent());
+    }
+
+    /**
+     * Get client IP address from request
+     *
+     * @SuppressWarnings("PHPMD.Superglobals") Required for request context
+     */
+    private function getClientIp(): string
+    {
+        return $_SERVER['REMOTE_ADDR'] ?? 'unknown';
+    }
+
+    /**
+     * Get client User-Agent from request
+     *
+     * @SuppressWarnings("PHPMD.Superglobals") Required for request context
+     */
+    private function getClientUserAgent(): string
+    {
+        return $_SERVER['HTTP_USER_AGENT'] ?? 'unknown';
     }
 }

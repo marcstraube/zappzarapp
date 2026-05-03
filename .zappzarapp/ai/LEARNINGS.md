@@ -807,7 +807,39 @@ styles, but Vite's injection pattern requires unsafe-inline anyway.
 
 ---
 
+## Package Linking
+
+### Docker Symlink Resolution in Bind Mounts
+
+**Problem:** Symlinks inside bind-mounted directories don't resolve inside Docker
+containers. A `packages/` directory containing symlinks to `../../other-repo`
+will show broken symlinks in the container.
+
+**Symptoms:**
+
+- `composer install` fails with "url supplied for path repository does not exist"
+- `pnpm install` fails to find linked package
+- `ls -la packages/` in container shows broken symlinks
+
+**Solution:** Mount actual package directories directly instead of the symlink
+parent:
+
+```yaml
+# WRONG: symlinks in packages/ don't resolve
+volumes:
+  - ./packages:/var/www/html/packages:ro
+
+# CORRECT: mount actual directories
+volumes:
+  - ../zappzarapp-php-audit-logger:/var/www/html/packages/zappzarapp-php-audit-logger:ro
+  - ../zappzarapp-audit-logger:/app/packages/zappzarapp-audit-logger:ro
+```
+
+**Host-side symlinks still useful:** Keep `packages/` with symlinks for IDE
+resolution and local tooling — Docker just needs direct mounts.
+
+---
+
 ## Last Updated
 
-2026-01-26 (added: Vite HMR WebSocket path, Nginx proxy path rewriting, Vite CSP
-'unsafe-inline')
+2026-02-13 (added: Docker symlink resolution in bind mounts)

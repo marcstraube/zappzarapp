@@ -8,7 +8,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach, type Mock } from 'vitest';
 import { UserRepository, type User } from '@backend/Shared/Repository/UserRepository';
 import type { Row } from '@backend/Shared/Repository/RepositoryInterface';
-import { NullAuditLogger } from '@backend/Shared/Audit/NullAuditLogger';
+import { NullAuditLogger } from '@zappzarapp/audit-logger';
 
 // Mock connection interface
 interface MockConnection {

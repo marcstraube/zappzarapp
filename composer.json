@@ -31,6 +31,7 @@
     "php-amqplib/php-amqplib": "^3.7",
     "php-di/php-di": "^7.1",
     "twig/twig": "^3.0",
+    "zappzarapp/audit-logger": "^1.1.0",
     "zappzarapp/security": "^1.0.0"
   },
   "require-dev": {

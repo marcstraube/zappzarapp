@@ -4,11 +4,12 @@ declare(strict_types=1);
 
 namespace App\Infrastructure\Database;
 
-use App\Infrastructure\Audit\AuditLoggerInterface;
 use App\Infrastructure\DatabaseConfig;
 use App\Infrastructure\DatabaseConfigInterface;
 use PDO;
 use PDOException;
+use Zappzarapp\AuditLogger\AuditLogEntry;
+use Zappzarapp\AuditLogger\AuditLoggerInterface;
 
 /**
  * Abstract PDO Repository Implementation
@@ -227,13 +228,13 @@ abstract class AbstractPdoRepository implements RepositoryInterface
             $insertedId = is_numeric($lastId) ? (int) $lastId : $lastId;
 
             // Audit log: Record creation
-            $this->auditLogger->log(
-                $this->getTable() . '.create',
-                $this->getTable(),
-                $insertedId,
-                $this->getCurrentUserId(),
-                ['fields' => array_keys($data)]
-            );
+            $this->auditLogger->log(new AuditLogEntry(
+                action: $this->getTable() . '.create',
+                entityType: $this->getTable(),
+                entityId: $insertedId,
+                userId: $this->getCurrentUserId(),
+                data: ['fields' => array_keys($data)],
+            ));
 
             return $insertedId;
         } catch (PDOException) {
@@ -281,13 +282,13 @@ abstract class AbstractPdoRepository implements RepositoryInterface
 
             if ($success) {
                 // Audit log: Record update
-                $this->auditLogger->log(
-                    $this->getTable() . '.update',
-                    $this->getTable(),
-                    $id,
-                    $this->getCurrentUserId(),
-                    ['fields' => array_keys($data)]
-                );
+                $this->auditLogger->log(new AuditLogEntry(
+                    action: $this->getTable() . '.update',
+                    entityType: $this->getTable(),
+                    entityId: $id,
+                    userId: $this->getCurrentUserId(),
+                    data: ['fields' => array_keys($data)],
+                ));
             }
 
             return $success;
@@ -319,12 +320,12 @@ abstract class AbstractPdoRepository implements RepositoryInterface
 
             if ($success) {
                 // Audit log: Record deletion (GDPR Art. 17 - Right to erasure)
-                $this->auditLogger->log(
-                    $this->getTable() . '.delete',
-                    $this->getTable(),
-                    $id,
-                    $this->getCurrentUserId()
-                );
+                $this->auditLogger->log(new AuditLogEntry(
+                    action: $this->getTable() . '.delete',
+                    entityType: $this->getTable(),
+                    entityId: $id,
+                    userId: $this->getCurrentUserId(),
+                ));
             }
 
             return $success;
