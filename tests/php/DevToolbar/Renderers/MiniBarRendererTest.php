@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\DevToolbar\Renderers;
 
+use DevToolbar\Config\MiniBarConfig;
 use DevToolbar\DataCollectors\CollectorInterface;
 use DevToolbar\Renderers\MiniBarRenderer;
 use PHPUnit\Framework\TestCase;
@@ -78,7 +79,7 @@ class MiniBarRendererTest extends TestCase
 
     public function testRendersMiniBar(): void
     {
-        $renderer = new MiniBarRenderer($this->buildCollectors());
+        $renderer = new MiniBarRenderer($this->buildCollectors(), MiniBarConfig::default());
         $output   = $renderer->render();
 
         $this->assertStringContainsString('dev-toolbar-mini', $output);
@@ -89,7 +90,7 @@ class MiniBarRendererTest extends TestCase
 
     public function testNoAlertBadgeWhenPerformanceIsGood(): void
     {
-        $renderer = new MiniBarRenderer($this->buildCollectors());
+        $renderer = new MiniBarRenderer($this->buildCollectors(), MiniBarConfig::default());
         $output   = $renderer->render();
 
         $this->assertStringNotContainsString('dev-toolbar-mini-alert', $output);
@@ -101,7 +102,7 @@ class MiniBarRendererTest extends TestCase
             'request' => ['execution_time' => 1500, 'memory_peak' => 9.5],
         ]);
 
-        $renderer = new MiniBarRenderer($collectors);
+        $renderer = new MiniBarRenderer($collectors, MiniBarConfig::default());
         $output   = $renderer->render();
 
         $this->assertStringContainsString('dev-toolbar-mini-alert', $output);
@@ -114,7 +115,7 @@ class MiniBarRendererTest extends TestCase
             'request' => ['execution_time' => 100, 'memory_peak' => 60],
         ]);
 
-        $renderer = new MiniBarRenderer($collectors);
+        $renderer = new MiniBarRenderer($collectors, MiniBarConfig::default());
         $output   = $renderer->render();
 
         $this->assertStringContainsString('dev-toolbar-mini-alert', $output);
@@ -128,7 +129,7 @@ class MiniBarRendererTest extends TestCase
             'queries' => ['queries' => $queries, 'count' => 60, 'total_time' => 60],
         ]);
 
-        $renderer = new MiniBarRenderer($collectors);
+        $renderer = new MiniBarRenderer($collectors, MiniBarConfig::default());
         $output   = $renderer->render();
 
         $this->assertStringContainsString('dev-toolbar-mini-alert', $output);
@@ -147,7 +148,7 @@ class MiniBarRendererTest extends TestCase
             'queries' => ['queries' => $queries, 'count' => 3, 'total_time' => 33],
         ]);
 
-        $renderer = new MiniBarRenderer($collectors);
+        $renderer = new MiniBarRenderer($collectors, MiniBarConfig::default());
         $output   = $renderer->render();
 
         $this->assertStringContainsString('dev-toolbar-mini-alert', $output);
@@ -161,7 +162,7 @@ class MiniBarRendererTest extends TestCase
             'request' => ['execution_time' => 1500, 'memory_peak' => 60],
         ]);
 
-        $renderer = new MiniBarRenderer($collectors);
+        $renderer = new MiniBarRenderer($collectors, MiniBarConfig::default());
         $output   = $renderer->render();
 
         $this->assertStringContainsString('2 performance issues detected', $output);
@@ -175,7 +176,7 @@ class MiniBarRendererTest extends TestCase
             'request' => ['execution_time' => 1500, 'memory_peak' => 60],
         ]);
 
-        $renderer = new MiniBarRenderer($collectors);
+        $renderer = new MiniBarRenderer($collectors, MiniBarConfig::default());
         $output   = $renderer->render();
 
         $this->assertStringContainsString('alert-critical', $output);
@@ -188,7 +189,7 @@ class MiniBarRendererTest extends TestCase
             'request' => ['execution_time' => 1500, 'memory_peak' => 9.5],
         ]);
 
-        $renderer = new MiniBarRenderer($collectors);
+        $renderer = new MiniBarRenderer($collectors, MiniBarConfig::default());
         $output   = $renderer->render();
 
         $this->assertStringContainsString('1 performance issue detected', $output);

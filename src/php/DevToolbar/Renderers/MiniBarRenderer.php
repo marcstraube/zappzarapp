@@ -6,29 +6,28 @@ namespace DevToolbar\Renderers;
 
 use DevToolbar\Analyzers\PerformanceAnalyzer;
 use DevToolbar\Analyzers\QueryAnalyzer;
+use DevToolbar\Config\MiniBarConfig;
+use DevToolbar\Config\MiniBarLabel;
 use DevToolbar\DataCollectors\CollectorInterface;
-use Random\RandomException;
-use Throwable;
 
 /**
- * Renders mini bar (always visible widget in bottom-right)
+ * Renders mini bar (always visible widget in bottom-right).
+ *
+ * Pure rendering: receives a fully-resolved {@see MiniBarConfig} and never
+ * touches superglobals or the filesystem itself. Configuration parsing and
+ * branch detection live in DevToolbar\Config.
  */
-class MiniBarRenderer implements RendererInterface
+final readonly class MiniBarRenderer implements RendererInterface
 {
-    /** @var array<string, CollectorInterface> */
-    private array $collectors;
-
     /**
      * @param array<string, CollectorInterface> $collectors
      */
-    public function __construct(array $collectors)
-    {
-        $this->collectors = $collectors;
+    public function __construct(
+        private array $collectors,
+        private MiniBarConfig $config,
+    ) {
     }
 
-    /**
-     * @throws RandomException
-     */
     public function render(): string
     {
         $requestData = $this->collectors['request']->getData();
@@ -38,8 +37,7 @@ class MiniBarRenderer implements RendererInterface
         $memory     = $requestData['memory_peak'] ?? 0;
         $queryCount = $queriesData['count'] ?? 0;
 
-        // Get all active labels from cookies (set by client-side JS)
-        $labels     = $this->getDisplayLabels($requestData);
+        $labels     = $this->renderLabels($requestData);
         $alertBadge = $this->renderAlertBadge();
 
         return sprintf(
@@ -59,48 +57,37 @@ class MiniBarRenderer implements RendererInterface
     }
 
     /**
-     * Get display labels based on configured types from cookies
-     *
      * @param array<string, mixed> $requestData
-     * @throws RandomException
      */
-    private function getDisplayLabels(array $requestData): string
+    private function renderLabels(array $requestData): string
     {
-        // Read label types from cookie (set by client-side JS)
-        $labelsJson = $_COOKIE['devbar_labels'] ?? null;
-        $types      = ['branding']; // default
-
-        if ($labelsJson) {
-            $decoded = json_decode(urldecode($labelsJson), true);
-            if (json_last_error() === JSON_ERROR_NONE && is_array($decoded) && !empty($decoded)) {
-                $types = $decoded;
-            }
+        $html = '';
+        foreach ($this->config->labels as $label) {
+            $html .= sprintf(
+                '<span class="dev-toolbar-mini-label">%s</span>',
+                $this->renderLabel($label, $requestData)
+            );
         }
 
-        $labelHtml = '';
-        foreach ($types as $type) {
-            $label = match ($type) {
-                'branch' => $this->formatBranch(
-                    $this->getGitBranch() ?? 'unknown',
-                    $this->getBranchColors()
-                ),
-                'route' => $this->formatRoute(
-                    $requestData['method'] ?? '',
-                    $requestData['uri'] ?? ''
-                ),
-                'request-id' => $this->formatRequestId($this->getCurrentRequestId()),
-                default      => '⚡', // branding
-            };
-
-            $labelHtml .= sprintf('<span class="dev-toolbar-mini-label">%s</span>', $label);
-        }
-
-        return $labelHtml;
+        return $html;
     }
 
     /**
-     * Render alert badge for performance issues and N+1 detection
+     * @param array<string, mixed> $requestData
      */
+    private function renderLabel(MiniBarLabel $label, array $requestData): string
+    {
+        return match ($label) {
+            MiniBarLabel::Branch    => $this->formatBranch($this->config->gitBranch ?? 'unknown'),
+            MiniBarLabel::Route     => $this->formatRoute(
+                $requestData['method'] ?? '',
+                $requestData['uri'] ?? ''
+            ),
+            MiniBarLabel::RequestId => $this->generateRequestIdDisplay(),
+            MiniBarLabel::Branding  => '⚡',
+        };
+    }
+
     private function renderAlertBadge(): string
     {
         $collectorData = array_map(
@@ -108,22 +95,20 @@ class MiniBarRenderer implements RendererInterface
             $this->collectors
         );
 
-        // Performance alerts (with optional custom thresholds from cookie)
-        $alerts = PerformanceAnalyzer::analyze($collectorData, $this->getCustomThresholds());
+        $alerts = PerformanceAnalyzer::analyze($collectorData, $this->config->thresholds);
 
-        // N+1 query detection
         $queries    = $collectorData['queries']['queries'] ?? [];
-        $nPlusOnes  = new QueryAnalyzer()->detectNPlusOne($queries);
+        $analyzer   = new QueryAnalyzer();
+        $nPlusOnes  = $analyzer->detectNPlusOne($queries);
         $alertCount = count($alerts) + count($nPlusOnes);
 
         if ($alertCount === 0) {
             return '';
         }
 
-        // Determine highest severity level
-        $hasN1       = !empty($nPlusOnes);
-        $hasCritical = !empty(array_filter($alerts, fn($a) => $a['level'] === 'critical'));
-        $hasWarning  = $hasN1 || !empty(array_filter($alerts, fn($a) => $a['level'] === 'warning'));
+        $hasN1       = $nPlusOnes !== [];
+        $hasCritical = array_filter($alerts, fn($a) => $a['level'] === 'critical') !== [];
+        $hasWarning  = $hasN1 || array_filter($alerts, fn($a) => $a['level'] === 'warning') !== [];
 
         if ($hasCritical) {
             $levelClass = 'alert-critical';
@@ -142,112 +127,19 @@ class MiniBarRenderer implements RendererInterface
         );
     }
 
-    /**
-     * Read custom performance thresholds from cookie
-     *
-     * @return array<string, int>|null Custom thresholds or null for defaults
-     */
-    private function getCustomThresholds(): ?array
+    private function formatBranch(string $branch): string
     {
-        $json = $_COOKIE['devbar_thresholds'] ?? null;
-        if ($json === null) {
-            return null;
-        }
+        $type = match (true) {
+            preg_match('/^(feat|feature)\//', $branch) === 1 => 'feat',
+            preg_match('/^fix\//', $branch) === 1            => 'fix',
+            preg_match('/^hotfix\//', $branch) === 1         => 'hotfix',
+            preg_match('/^chore\//', $branch) === 1          => 'chore',
+            default                                          => 'default',
+        };
 
-        $decoded = json_decode(urldecode($json), true);
+        $colors = $this->config->branchColors;
+        $color  = $colors[$type] ?? $colors['default'] ?? '#10b981';
 
-        return is_array($decoded) ? $decoded : null;
-    }
-
-    /**
-     * Get current git branch from .git/HEAD (read-only, no shell execution)
-     */
-    private function getGitBranch(): ?string
-    {
-        // Try environment variable first (can be set in CI/CD or .env)
-        $envBranch = getenv('GIT_BRANCH');
-        if ($envBranch !== false && $envBranch !== '') {
-            return $envBranch;
-        }
-
-        // Fallback: Read from .git/HEAD (safer than shell_exec)
-        $gitHeadPath = getcwd() . '/.git/HEAD';
-        if (!file_exists($gitHeadPath)) {
-            return null;
-        }
-
-        try {
-            $headContent = file_get_contents($gitHeadPath);
-            if ($headContent === false) {
-                return null;
-            }
-
-            // Format: "ref: refs/heads/branch-name" or commit hash
-            if (str_starts_with($headContent, 'ref: refs/heads/')) {
-                return trim(substr($headContent, 16));
-            }
-
-            // Detached HEAD (commit hash)
-            return null;
-        } catch (Throwable) {
-            return null;
-        }
-    }
-
-    /**
-     * Get branch colors from cookie or defaults
-     *
-     * @return array<string, string>
-     */
-    private function getBranchColors(): array
-    {
-        $defaults = [
-            'feat'    => '#3b82f6',
-            'fix'     => '#f59e0b',
-            'hotfix'  => '#ef4444',
-            'chore'   => '#6b7280',
-            'default' => '#10b981',
-        ];
-
-        if (!isset($_COOKIE['devbar_colors'])) {
-            return $defaults;
-        }
-
-        try {
-            $decoded = json_decode(urldecode($_COOKIE['devbar_colors']), true);
-            if (is_array($decoded)) {
-                return array_merge($defaults, $decoded);
-            }
-        } catch (Throwable) {
-            // Invalid JSON, return defaults
-        }
-
-        return $defaults;
-    }
-
-    /**
-     * Format branch display with color coding
-     *
-     * @param array<string, string> $colors
-     */
-    private function formatBranch(string $branch, array $colors): string
-    {
-        // Determine branch type
-        $type = 'default';
-        if (preg_match('/^(feat|feature)\//', $branch)) {
-            $type = 'feat';
-        } elseif (preg_match('/^fix\//', $branch)) {
-            $type = 'fix';
-        } elseif (preg_match('/^hotfix\//', $branch)) {
-            $type = 'hotfix';
-        } elseif (preg_match('/^chore\//', $branch)) {
-            $type = 'chore';
-        }
-
-        // Get color for branch type
-        $color = $colors[$type] ?? $colors['default'] ?? '#10b981';
-
-        // Strip prefix for brevity
         $displayName = preg_replace('/^(feature|feat|fix|hotfix|chore)\//', '', $branch) ?? $branch;
 
         return sprintf(
@@ -257,9 +149,6 @@ class MiniBarRenderer implements RendererInterface
         );
     }
 
-    /**
-     * Format route display
-     */
     private function formatRoute(string $method, string $uri): string
     {
         return sprintf(
@@ -270,22 +159,13 @@ class MiniBarRenderer implements RendererInterface
     }
 
     /**
-     * Get current request ID
+     * Format request ID display (shortened to 12 chars).
+     *
+     * uniqid() is sufficient — this is a per-render display token, not a
+     * security identifier, and the result is truncated to "req_XXXXXXXX".
      */
-    /**
-     * @throws RandomException
-     */
-    private function getCurrentRequestId(): string
+    private function generateRequestIdDisplay(): string
     {
-        return 'req_' . uniqid() . '_' . bin2hex(random_bytes(4));
-    }
-
-    /**
-     * Format request ID display (shortened)
-     */
-    private function formatRequestId(string $id): string
-    {
-        // Show shortened version
-        return htmlspecialchars(substr($id, 0, 12), ENT_QUOTES, 'UTF-8');
+        return htmlspecialchars(substr('req_' . uniqid(), 0, 12), ENT_QUOTES, 'UTF-8');
     }
 }

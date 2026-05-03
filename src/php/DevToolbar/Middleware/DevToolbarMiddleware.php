@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace DevToolbar\Middleware;
 
+use DevToolbar\Config\MiniBarConfigSource;
 use DevToolbar\DataCollectors\CollectorInterface;
 use DevToolbar\Renderers\AssetsRenderer;
 use DevToolbar\Renderers\DataInjectionRenderer;
@@ -16,17 +17,17 @@ use DevToolbar\Renderers\PanelRenderer;
  * Finds </body> tag and injects toolbar markup before it.
  * All assets (CSS/JS) are self-contained and inline.
  */
-class DevToolbarMiddleware
+final readonly class DevToolbarMiddleware
 {
-    /** @var array<string, CollectorInterface> */
-    private array $collectors;
-
     /**
      * @param array<string, CollectorInterface> $collectors
+     * @param MiniBarConfigSource               $configSource Resolves mini bar configuration
+     *                                                        (cookies, environment, git branch)
      */
-    public function __construct(array $collectors)
-    {
-        $this->collectors = $collectors;
+    public function __construct(
+        private array $collectors,
+        private MiniBarConfigSource $configSource,
+    ) {
     }
 
     /**
@@ -57,7 +58,7 @@ class DevToolbarMiddleware
      */
     private function renderToolbar(): string
     {
-        $miniBarRenderer       = new MiniBarRenderer($this->collectors);
+        $miniBarRenderer       = new MiniBarRenderer($this->collectors, $this->configSource->read());
         $panelRenderer         = new PanelRenderer($this->collectors);
         $assetsRenderer        = new AssetsRenderer();
         $dataInjectionRenderer = new DataInjectionRenderer($this->collectors);

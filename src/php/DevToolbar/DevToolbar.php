@@ -4,15 +4,9 @@ declare(strict_types=1);
 
 namespace DevToolbar;
 
-use DevToolbar\DataCollectors\CacheCollector;
+use DevToolbar\Config\CookieConfigSource;
+use DevToolbar\DataCollectors\CollectorFactory;
 use DevToolbar\DataCollectors\CollectorInterface;
-use DevToolbar\DataCollectors\ExceptionCollector;
-use DevToolbar\DataCollectors\HistoryCollector;
-use DevToolbar\DataCollectors\HttpClientCollector;
-use DevToolbar\DataCollectors\MessageCollector;
-use DevToolbar\DataCollectors\QueryCollector;
-use DevToolbar\DataCollectors\RequestCollector;
-use DevToolbar\DataCollectors\TimelineCollector;
 use DevToolbar\Guard\DevToolbarGuard;
 use DevToolbar\Middleware\DevToolbarMiddleware;
 use Zappzarapp\Security\Csp\Exception\InvalidDirectiveValueException;
@@ -29,7 +23,8 @@ class DevToolbar
 
     /** @var array<string, CollectorInterface> */
     private array $collectors = [];
-    private bool $booted      = false;
+    /** @noinspection PhpGetterAndSetterCanBeReplacedWithPropertyHooksInspection PHP 8.4 hooks crash PDepend/PHPMD */
+    private bool $booted = false;
 
     private function __construct()
     {
@@ -103,8 +98,13 @@ class DevToolbar
             return $buffer;
         }
 
-        // Inject toolbar HTML before </body>
-        $middleware = new DevToolbarMiddleware($this->collectors);
+        // Inject toolbar HTML before </body>.
+        // CookieConfigSource::fromGlobals() is the single audit point for
+        // $_COOKIE / environment / filesystem reads in the DevToolbar.
+        $middleware = new DevToolbarMiddleware(
+            $this->collectors,
+            CookieConfigSource::fromGlobals(),
+        );
         return $middleware->inject($buffer);
     }
 
@@ -115,17 +115,7 @@ class DevToolbar
      */
     private function registerCollectors(): void
     {
-        // Phase 1 Collectors
-        $this->collectors['request']    = new RequestCollector();
-        $this->collectors['queries']    = QueryCollector::getInstance();
-        $this->collectors['messages']   = new MessageCollector();
-        $this->collectors['exceptions'] = ExceptionCollector::getInstance();
-
-        // Phase 2 Collectors
-        $this->collectors['http']     = new HttpClientCollector();
-        $this->collectors['cache']    = new CacheCollector();
-        $this->collectors['timeline'] = new TimelineCollector();
-        $this->collectors['history']  = new HistoryCollector(); // Client-side only (localStorage)
+        $this->collectors = CollectorFactory::createDefault();
     }
 
     /**
