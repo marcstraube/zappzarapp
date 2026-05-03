@@ -698,25 +698,6 @@
     const seconds = String(date.getSeconds()).padStart(2, "0");
     return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
   }
-  function generateSparkline(values) {
-    if (!values || values.length === 0) {
-      return "";
-    }
-    const ticks = ["\u2581", "\u2582", "\u2583", "\u2584", "\u2585", "\u2586", "\u2587", "\u2588"];
-    const min = Math.min(...values);
-    const max = Math.max(...values);
-    const range = max - min;
-    if (range === 0) {
-      return (ticks[3] ?? "\u2584").repeat(values.length);
-    }
-    let sparkline = "";
-    values.forEach((value) => {
-      const normalized = (value - min) / range;
-      const index = Math.min(7, Math.floor(normalized * 8));
-      sparkline += ticks[index] ?? "\u2581";
-    });
-    return sparkline;
-  }
 
   // ../../../node_modules/.pnpm/@zappzarapp+browser-utils@1.0.2/node_modules/@zappzarapp/browser-utils/dist/core/errors/BrowserUtilsError.js
   var BrowserUtilsError = class extends Error {
@@ -2261,6 +2242,214 @@
     showMessage({ type: "error", title, message });
   }
 
+  // DevToolbar/ui/TrendCharts.ts
+  var CHART_HEIGHT = 70;
+  var CHART_PADDING_TOP = 8;
+  var CHART_PADDING_BOTTOM = 20;
+  var CHART_PADDING_LEFT = 50;
+  var CHART_PADDING_RIGHT = 16;
+  var METRICS = [
+    {
+      key: "time",
+      label: "Time",
+      unit: "ms",
+      color: "#3b82f6",
+      thresholdKey: "time_ms",
+      extract: (r) => r.time,
+      format: (v) => `${v.toFixed(0)}ms`
+    },
+    {
+      key: "memory",
+      label: "Memory",
+      unit: "MB",
+      color: "#10b981",
+      thresholdKey: "memory_mb",
+      extract: (r) => r.memory / 1024 / 1024,
+      format: (v) => `${v.toFixed(1)}MB`
+    },
+    {
+      key: "queries",
+      label: "Queries",
+      unit: "",
+      color: "#f59e0b",
+      thresholdKey: "query_count",
+      extract: (r) => r.query_count,
+      format: (v) => String(Math.round(v))
+    }
+  ];
+  function renderTrendCharts(container, metaArray) {
+    if (metaArray.length < 2) {
+      container.innerHTML = '<p class="dev-toolbar-trends-empty">Need at least 2 requests to show trends.</p>';
+      return;
+    }
+    const data = metaArray.slice(0, 50).reverse();
+    const thresholds = StorageManager.getThresholds();
+    const width = container.clientWidth || 500;
+    let html = '<div class="dev-toolbar-trends-controls">';
+    for (const metric of METRICS) {
+      html += `<label class="dev-toolbar-trends-toggle">
+      <input type="checkbox" data-trend-metric="${metric.key}" checked>
+      <span class="dev-toolbar-trends-color" style="background:${metric.color}"></span>
+      ${metric.label}
+    </label>`;
+    }
+    html += "</div>";
+    html += '<div class="dev-toolbar-trends-charts">';
+    for (const metric of METRICS) {
+      const values = data.map(metric.extract);
+      const threshold = thresholds[metric.thresholdKey];
+      const svg = buildChartSVG(metric, values, threshold, width);
+      html += `<div class="dev-toolbar-trend-chart" data-trend-chart="${metric.key}">
+      <div class="dev-toolbar-trend-chart-label">${metric.label}${metric.unit ? ` (${metric.unit})` : ""}</div>
+      ${svg}
+    </div>`;
+    }
+    html += "</div>";
+    html += '<div class="dev-toolbar-trends-tooltip" id="dev-toolbar-trends-tooltip"></div>';
+    container.innerHTML = html;
+    attachChartInteractions(container, data);
+  }
+  function buildChartSVG(metric, values, threshold, containerWidth) {
+    const plotWidth = containerWidth - CHART_PADDING_LEFT - CHART_PADDING_RIGHT;
+    const plotHeight = CHART_HEIGHT - CHART_PADDING_TOP - CHART_PADDING_BOTTOM;
+    const n = values.length;
+    const min = Math.min(...values);
+    const max = Math.max(...values);
+    const rangeMax = Math.max(max, threshold) * 1.1;
+    const rangeMin = Math.min(min, 0);
+    const range = rangeMax - rangeMin || 1;
+    const xStep = n > 1 ? plotWidth / (n - 1) : 0;
+    const points = values.map((v, i) => {
+      const x = CHART_PADDING_LEFT + i * xStep;
+      const y = CHART_PADDING_TOP + plotHeight - (v - rangeMin) / range * plotHeight;
+      return `${x.toFixed(1)},${y.toFixed(1)}`;
+    }).join(" ");
+    const thresholdY = CHART_PADDING_TOP + plotHeight - (threshold - rangeMin) / range * plotHeight;
+    const midVal = (rangeMin + rangeMax) / 2;
+    const midY = CHART_PADDING_TOP + plotHeight / 2;
+    let svg = `<svg class="dev-toolbar-trend-svg" data-metric="${metric.key}" width="100%" height="${CHART_HEIGHT}" viewBox="0 0 ${containerWidth} ${CHART_HEIGHT}" preserveAspectRatio="none">`;
+    svg += `<line x1="${CHART_PADDING_LEFT}" y1="${CHART_PADDING_TOP}" x2="${CHART_PADDING_LEFT + plotWidth}" y2="${CHART_PADDING_TOP}" class="dev-toolbar-trend-grid"/>`;
+    svg += `<line x1="${CHART_PADDING_LEFT}" y1="${midY}" x2="${CHART_PADDING_LEFT + plotWidth}" y2="${midY}" class="dev-toolbar-trend-grid"/>`;
+    svg += `<line x1="${CHART_PADDING_LEFT}" y1="${CHART_PADDING_TOP + plotHeight}" x2="${CHART_PADDING_LEFT + plotWidth}" y2="${CHART_PADDING_TOP + plotHeight}" class="dev-toolbar-trend-grid"/>`;
+    if (threshold > rangeMin && threshold < rangeMax) {
+      svg += `<line x1="${CHART_PADDING_LEFT}" y1="${thresholdY.toFixed(1)}" x2="${CHART_PADDING_LEFT + plotWidth}" y2="${thresholdY.toFixed(1)}" class="dev-toolbar-trend-threshold" stroke="${metric.color}"/>`;
+      svg += `<text x="${CHART_PADDING_LEFT + plotWidth + 2}" y="${thresholdY.toFixed(1)}" class="dev-toolbar-trend-threshold-label" fill="${metric.color}">${metric.format(threshold)}</text>`;
+    }
+    svg += `<text x="${CHART_PADDING_LEFT - 6}" y="${CHART_PADDING_TOP + 4}" class="dev-toolbar-trend-axis-label" text-anchor="end">${metric.format(rangeMax)}</text>`;
+    svg += `<text x="${CHART_PADDING_LEFT - 6}" y="${midY + 4}" class="dev-toolbar-trend-axis-label" text-anchor="end">${metric.format(midVal)}</text>`;
+    svg += `<text x="${CHART_PADDING_LEFT - 6}" y="${CHART_PADDING_TOP + plotHeight + 4}" class="dev-toolbar-trend-axis-label" text-anchor="end">${metric.format(rangeMin)}</text>`;
+    svg += `<polyline points="${points}" class="dev-toolbar-trend-line" stroke="${metric.color}" fill="none"/>`;
+    values.forEach((v, i) => {
+      const x = CHART_PADDING_LEFT + i * xStep;
+      const y = CHART_PADDING_TOP + plotHeight - (v - rangeMin) / range * plotHeight;
+      svg += `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="3" class="dev-toolbar-trend-dot" fill="${metric.color}" data-index="${i}"/>`;
+    });
+    svg += `<line x1="0" y1="${CHART_PADDING_TOP}" x2="0" y2="${CHART_PADDING_TOP + plotHeight}" class="dev-toolbar-trend-crosshair" style="display:none"/>`;
+    svg += `<circle cx="0" cy="0" r="4" class="dev-toolbar-trend-highlight" fill="${metric.color}" style="display:none"/>`;
+    svg += `<text x="0" y="0" class="dev-toolbar-trend-value-label" fill="${metric.color}" style="display:none"></text>`;
+    svg += "</svg>";
+    return svg;
+  }
+  function attachChartInteractions(container, data) {
+    const svgs = container.querySelectorAll(".dev-toolbar-trend-svg");
+    const tooltip = container.querySelector("#dev-toolbar-trends-tooltip");
+    const n = data.length;
+    container.querySelectorAll("[data-trend-metric]").forEach((checkbox) => {
+      checkbox.addEventListener("change", () => {
+        const metric = checkbox.dataset.trendMetric;
+        const chart = container.querySelector(`[data-trend-chart="${metric}"]`);
+        if (chart) {
+          chart.style.display = checkbox.checked ? "" : "none";
+        }
+      });
+    });
+    svgs.forEach((svg) => {
+      svg.addEventListener("mousemove", (e) => {
+        const rect = svg.getBoundingClientRect();
+        const svgWidth = rect.width;
+        const scaleX = svgWidth > 0 ? svg.viewBox.baseVal.width / svgWidth : 1;
+        const mouseX = (e.clientX - rect.left) * scaleX;
+        const plotWidth = svg.viewBox.baseVal.width - CHART_PADDING_LEFT - CHART_PADDING_RIGHT;
+        const xStep = n > 1 ? plotWidth / (n - 1) : 0;
+        const relX = mouseX - CHART_PADDING_LEFT;
+        const index = Math.round(relX / (xStep || 1));
+        if (index < 0 || index >= n) {
+          hideCrosshairs(svgs);
+          if (tooltip) tooltip.style.display = "none";
+          return;
+        }
+        const xPos = CHART_PADDING_LEFT + index * xStep;
+        showCrosshairs(svgs, xPos, index, data[index]);
+        showTooltip(tooltip, data[index], e, container);
+      });
+      svg.addEventListener("mouseleave", () => {
+        hideCrosshairs(svgs);
+        if (tooltip) tooltip.style.display = "none";
+      });
+    });
+  }
+  function showCrosshairs(svgs, x, index, request) {
+    svgs.forEach((svg) => {
+      const crosshair = svg.querySelector(".dev-toolbar-trend-crosshair");
+      if (crosshair) {
+        crosshair.setAttribute("x1", x.toFixed(1));
+        crosshair.setAttribute("x2", x.toFixed(1));
+        crosshair.style.display = "";
+      }
+      const metricKey = svg.dataset.metric;
+      const metric = METRICS.find((m) => m.key === metricKey);
+      if (!metric) return;
+      const dot = svg.querySelector(".dev-toolbar-trend-highlight");
+      const label = svg.querySelector(".dev-toolbar-trend-value-label");
+      const dataDot = svg.querySelector(`.dev-toolbar-trend-dot[data-index="${index}"]`);
+      if (dot && dataDot) {
+        const cy = dataDot.getAttribute("cy") ?? "0";
+        dot.setAttribute("cx", x.toFixed(1));
+        dot.setAttribute("cy", cy);
+        dot.style.display = "";
+      }
+      if (label) {
+        const value = metric.extract(request);
+        const cy = dataDot?.getAttribute("cy") ?? "0";
+        const labelY = parseFloat(cy) - 8;
+        label.setAttribute("x", x.toFixed(1));
+        label.setAttribute("y", labelY.toFixed(1));
+        label.textContent = metric.format(value);
+        label.style.display = "";
+      }
+    });
+  }
+  function hideCrosshairs(svgs) {
+    svgs.forEach((svg) => {
+      const crosshair = svg.querySelector(".dev-toolbar-trend-crosshair");
+      if (crosshair) {
+        crosshair.style.display = "none";
+      }
+      const dot = svg.querySelector(".dev-toolbar-trend-highlight");
+      if (dot) dot.style.display = "none";
+      const label = svg.querySelector(".dev-toolbar-trend-value-label");
+      if (label) label.style.display = "none";
+    });
+  }
+  function showTooltip(tooltip, request, event, container) {
+    if (!tooltip) return;
+    const time = request.time.toFixed(0);
+    const memory = (request.memory / 1024 / 1024).toFixed(1);
+    const queries = request.query_count;
+    tooltip.innerHTML = `<strong>${request.method} ${request.uri}</strong><br>
+    Time: ${time}ms | Memory: ${memory}MB | Queries: ${queries}`;
+    tooltip.style.display = "block";
+    const containerRect = container.getBoundingClientRect();
+    const x = event.clientX - containerRect.left;
+    const y = event.clientY - containerRect.top;
+    tooltip.style.left = `${x + 12}px`;
+    tooltip.style.top = `${y - 10}px`;
+    const tooltipRect = tooltip.getBoundingClientRect();
+    if (tooltipRect.right > containerRect.right) {
+      tooltip.style.left = `${x - tooltipRect.width - 12}px`;
+    }
+  }
+
   // DevToolbar/ui/HistoryTabManager.ts
   var HistoryTabManager = class {
     constructor() {
@@ -2348,13 +2537,12 @@
       };
     }
     /**
-     * Render trends sparkline
+     * Render performance trend charts
      */
     renderTrends(metaArray) {
-      const trendsEl = document.querySelector(".dev-toolbar-history-sparkline");
-      if (!trendsEl) return;
-      const times = metaArray.slice(0, 20).reverse().map((r) => r.time);
-      trendsEl.textContent = generateSparkline(times);
+      const container = document.getElementById("dev-toolbar-trends-container");
+      if (!container) return;
+      renderTrendCharts(container, metaArray);
     }
     /**
      * Render request list
