@@ -359,7 +359,7 @@ tab:
 
 **Example Detection:**
 
-```
+```text
 ⚠️ N+1 Query Detected!
 
 Pattern: SELECT * FROM posts WHERE user_id = ?
@@ -454,7 +454,7 @@ RequestStore::clear();
 
 **Load Historical Request** (GET):
 
-```
+```text
 ?dev_toolbar_action=load_request&request_id=<id>&token=<csrf_token>
 ```
 
@@ -462,7 +462,7 @@ Returns: Server-rendered HTML for all tabs
 
 **Clear History** (POST):
 
-```
+```text
 ?dev_toolbar_action=clear_history
 ```
 
@@ -582,7 +582,7 @@ Default thresholds for performance alerts:
 
 ### File Structure
 
-```
+```text
 src/php/DevToolbar/
 ├── DevToolbar.php              # Main singleton
 ├── Guard/
@@ -687,7 +687,7 @@ maintainability, type safety, and testability.
 
 **Modular Structure:**
 
-```
+```text
 src/node/backend/DevToolbar/
 ├── types/          # TypeScript interfaces and type definitions
 ├── storage/        # localStorage persistence with LRU eviction

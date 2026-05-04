@@ -150,11 +150,12 @@ candidate.
 
 Key design decisions:
 
-1. **Injectable encryption strategy:** `EncryptionInterface` with `AppEncryption`
-   (AES-256-GCM) default and `DatabaseEncryption` for existing DB-function users
-2. **No superglobals:** All context (userId, IP, userAgent) passed as parameters;
-   `HasAuditLogging` trait stays in boilerplate as convenience wrapper with
-   `$_SESSION` access
+1. **Injectable encryption strategy:** `EncryptionInterface` with
+   `AppEncryption` (AES-256-GCM) default and `DatabaseEncryption` for existing
+   DB-function users
+2. **No superglobals:** All context (userId, IP, userAgent) passed as
+   parameters; `HasAuditLogging` trait stays in boilerplate as convenience
+   wrapper with `$_SESSION` access
 3. **AuditLogEntry DTO:** Immutable DTO replaces individual parameters in
    `log()` method
 4. **Node QueryExecutor interface:** Zero DB driver dependencies in package;

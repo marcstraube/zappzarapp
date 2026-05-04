@@ -677,9 +677,12 @@ curl -skI https://localhost:8443 | grep -i content-security-policy
 
 **Critical for:**
 
-- CSP headers are built using `zappzarapp/security` library with environment detection
-- Production CSP: `CspDirectives::strict()` - nonce-based, no `unsafe-eval`, no `unsafe-inline`
-- Development CSP: `CspDirectives::development()` - allows `unsafe-eval` for Vite HMR
+- CSP headers are built using `zappzarapp/security` library with environment
+  detection
+- Production CSP: `CspDirectives::strict()` - nonce-based, no `unsafe-eval`, no
+  `unsafe-inline`
+- Development CSP: `CspDirectives::development()` - allows `unsafe-eval` for
+  Vite HMR
 
 ### Custom Rules
 

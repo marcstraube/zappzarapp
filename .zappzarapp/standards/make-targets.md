@@ -50,6 +50,7 @@ make test-coverage-node ARGS="tests/unit"
 ```
 
 **Performance:**
+
 - Whole project: 5-15s (all files)
 - Single file: 0.3-1s (with ARGS) ⚡
 

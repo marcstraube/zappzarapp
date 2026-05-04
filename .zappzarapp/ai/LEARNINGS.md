@@ -811,13 +811,14 @@ styles, but Vite's injection pattern requires unsafe-inline anyway.
 
 ### Docker Symlink Resolution in Bind Mounts
 
-**Problem:** Symlinks inside bind-mounted directories don't resolve inside Docker
-containers. A `packages/` directory containing symlinks to `../../other-repo`
-will show broken symlinks in the container.
+**Problem:** Symlinks inside bind-mounted directories don't resolve inside
+Docker containers. A `packages/` directory containing symlinks to
+`../../other-repo` will show broken symlinks in the container.
 
 **Symptoms:**
 
-- `composer install` fails with "url supplied for path repository does not exist"
+- `composer install` fails with "url supplied for path repository does not
+  exist"
 - `pnpm install` fails to find linked package
 - `ls -la packages/` in container shows broken symlinks
 
