@@ -34,8 +34,22 @@
     altKey: false,
     metaKey: false
   };
+  var DEFAULT_THRESHOLDS = {
+    time_ms: 1e3,
+    // 1 second
+    memory_mb: 50,
+    // 50 MB
+    query_count: 50,
+    // 50 queries
+    query_time_ms: 500,
+    // 500ms total query time
+    http_count: 10,
+    // 10 HTTP requests
+    http_time_ms: 1e3
+    // 1 second total HTTP time
+  };
 
-  // ../../../packages/browser-utils/dist/logging/LogLevel.js
+  // ../../../node_modules/.pnpm/@zappzarapp+browser-utils@1.0.2/node_modules/@zappzarapp/browser-utils/dist/logging/LogLevel.js
   var LogLevel = {
     Debug: 0,
     Info: 1,
@@ -58,7 +72,7 @@
     }
   }
 
-  // ../../../packages/browser-utils/dist/logging/LoggerConfig.js
+  // ../../../node_modules/.pnpm/@zappzarapp+browser-utils@1.0.2/node_modules/@zappzarapp/browser-utils/dist/logging/LoggerConfig.js
   var LoggerConfig = class _LoggerConfig {
     constructor(options) {
       __publicField(this, "level");
@@ -131,7 +145,7 @@
     }
   };
 
-  // ../../../packages/browser-utils/dist/logging/Logger.js
+  // ../../../node_modules/.pnpm/@zappzarapp+browser-utils@1.0.2/node_modules/@zappzarapp/browser-utils/dist/logging/Logger.js
   var Logger = class _Logger {
     constructor(config) {
       __publicField(this, "config");
@@ -381,7 +395,7 @@
       const keysToDelete = [];
       for (let i = 0; i < localStorage.length; i++) {
         const key = localStorage.key(i);
-        if (key?.startsWith(DATA_PREFIX)) {
+        if (key?.startsWith(DATA_PREFIX) === true) {
           const id = key.substring(DATA_PREFIX.length);
           if (!fullDataIds.includes(id)) {
             keysToDelete.push(key);
@@ -415,7 +429,7 @@
       const keysToDelete = [];
       for (let i = 0; i < localStorage.length; i++) {
         const key = localStorage.key(i);
-        if (key?.startsWith(DATA_PREFIX)) {
+        if (key?.startsWith(DATA_PREFIX) === true) {
           const id = key.substring(DATA_PREFIX.length);
           if (!idsToKeep.includes(id)) {
             keysToDelete.push(key);
@@ -453,7 +467,7 @@
         const keysToDelete = [];
         for (let i = 0; i < localStorage.length; i++) {
           const key = localStorage.key(i);
-          if (key?.startsWith(DATA_PREFIX)) {
+          if (key?.startsWith(DATA_PREFIX) === true) {
             keysToDelete.push(key);
           }
         }
@@ -531,6 +545,20 @@
     setToggleShortcut(shortcut) {
       const config = this.getConfig();
       this.setConfig({ ...config, toggleShortcut: shortcut });
+    }
+    /**
+     * Get performance alert thresholds (merged with defaults)
+     */
+    getThresholds() {
+      const config = this.getConfig();
+      return { ...DEFAULT_THRESHOLDS, ...config.thresholds };
+    }
+    /**
+     * Set custom performance alert thresholds
+     */
+    setThresholds(thresholds) {
+      const config = this.getConfig();
+      this.setConfig({ ...config, thresholds });
     }
   };
   var StorageManager = new StorageManagerClass();
@@ -670,27 +698,8 @@
     const seconds = String(date.getSeconds()).padStart(2, "0");
     return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
   }
-  function generateSparkline(values) {
-    if (!values || values.length === 0) {
-      return "";
-    }
-    const ticks = ["\u2581", "\u2582", "\u2583", "\u2584", "\u2585", "\u2586", "\u2587", "\u2588"];
-    const min = Math.min(...values);
-    const max = Math.max(...values);
-    const range = max - min;
-    if (range === 0) {
-      return (ticks[3] ?? "\u2584").repeat(values.length);
-    }
-    let sparkline = "";
-    values.forEach((value) => {
-      const normalized = (value - min) / range;
-      const index = Math.min(7, Math.floor(normalized * 8));
-      sparkline += ticks[index] ?? "\u2581";
-    });
-    return sparkline;
-  }
 
-  // ../../../packages/browser-utils/dist/core/errors/BrowserUtilsError.js
+  // ../../../node_modules/.pnpm/@zappzarapp+browser-utils@1.0.2/node_modules/@zappzarapp/browser-utils/dist/core/errors/BrowserUtilsError.js
   var BrowserUtilsError = class extends Error {
     constructor(message, cause) {
       super(message, cause !== void 0 ? { cause } : void 0);
@@ -704,7 +713,7 @@
     }
   };
 
-  // ../../../packages/browser-utils/dist/core/errors/ValidationError.js
+  // ../../../node_modules/.pnpm/@zappzarapp+browser-utils@1.0.2/node_modules/@zappzarapp/browser-utils/dist/core/errors/ValidationError.js
   var ValidationError = class _ValidationError extends BrowserUtilsError {
     constructor(message, field, value, constraint) {
       super(message);
@@ -749,7 +758,7 @@
     }
   };
 
-  // ../../../packages/browser-utils/dist/core/result/Result.js
+  // ../../../node_modules/.pnpm/@zappzarapp+browser-utils@1.0.2/node_modules/@zappzarapp/browser-utils/dist/core/result/Result.js
   var Result = {
     ok(value) {
       return { _tag: "Ok", value };
@@ -846,7 +855,7 @@
     }
   };
 
-  // ../../../packages/browser-utils/dist/core/validation/StorageValidator.js
+  // ../../../node_modules/.pnpm/@zappzarapp+browser-utils@1.0.2/node_modules/@zappzarapp/browser-utils/dist/core/validation/StorageValidator.js
   var FORBIDDEN_KEY_CHARS = /[;\x00-\x1f]/;
   var MAX_LENGTHS = {
     storageKey: 128,
@@ -894,7 +903,7 @@
     }
   };
 
-  // ../../../packages/browser-utils/dist/core/validation/CacheValidator.js
+  // ../../../node_modules/.pnpm/@zappzarapp+browser-utils@1.0.2/node_modules/@zappzarapp/browser-utils/dist/core/validation/CacheValidator.js
   var CACHE_KEY_PATTERN = /^[\w:.\-/]+$/;
   var MAX_CACHE_KEY_LENGTH = 256;
   var CacheValidator = {
@@ -918,7 +927,7 @@
     }
   };
 
-  // ../../../packages/browser-utils/dist/core/validation/FilenameValidator.js
+  // ../../../node_modules/.pnpm/@zappzarapp+browser-utils@1.0.2/node_modules/@zappzarapp/browser-utils/dist/core/validation/FilenameValidator.js
   var FORBIDDEN_FILENAME_CHARS = /[<>:"/\\|?*\x00-\x1f]/;
   var PATH_TRAVERSAL_PATTERN = /(?:^|[/\\])\.\.(?:[/\\]|$)/;
   var RESERVED_FILENAMES = /^(?:CON|PRN|AUX|NUL|COM[1-9]|LPT[1-9])(?:\.|$)/i;
@@ -959,7 +968,7 @@
       if (!filename) {
         return "download";
       }
-      let sanitized = filename.replace(FORBIDDEN_FILENAME_CHARS, replacement).replace(/\.\./g, replacement).replace(/^[.\s]+|[.\s]+$/g, "");
+      let sanitized = filename.replace(/[<>:"/\\|?*\x00-\x1f]/g, replacement).replace(/\.\./g, replacement).replace(/^[.\s]+|[.\s]+$/g, "");
       if (RESERVED_FILENAMES.test(sanitized)) {
         sanitized = `_${sanitized}`;
       }
@@ -991,14 +1000,14 @@
       if (mimeType.length > MAX_MIMETYPE_LENGTH) {
         return Result.err(ValidationError.tooLong("mimeType", mimeType, MAX_MIMETYPE_LENGTH));
       }
-      if (!/^[a-z]+\/[a-z0-9.+-]+(?:;\s*[a-z0-9-]+=\S+)*$/i.test(mimeType)) {
+      if (!/^[a-z]+\/[a-z0-9.+-]+(?:;\s*[a-z0-9-]+=[^\s;]+)*$/i.test(mimeType)) {
         return Result.err(ValidationError.invalidFormat("mimeType", mimeType, "type/subtype (e.g., text/plain)"));
       }
       return Result.ok(mimeType);
     }
   };
 
-  // ../../../packages/browser-utils/dist/core/validation/CookieValidator.js
+  // ../../../node_modules/.pnpm/@zappzarapp+browser-utils@1.0.2/node_modules/@zappzarapp/browser-utils/dist/core/validation/CookieValidator.js
   var MAX_LENGTHS2 = {
     cookieName: 256,
     cookieValue: 4096
@@ -1041,7 +1050,7 @@
     }
   };
 
-  // ../../../packages/browser-utils/dist/core/validation/UrlValidator.js
+  // ../../../node_modules/.pnpm/@zappzarapp+browser-utils@1.0.2/node_modules/@zappzarapp/browser-utils/dist/core/validation/UrlValidator.js
   var DEFAULT_SAFE_PROTOCOLS = [
     "http",
     "https",
@@ -1089,7 +1098,7 @@
     }
   };
 
-  // ../../../packages/browser-utils/dist/core/validation/CommonValidator.js
+  // ../../../node_modules/.pnpm/@zappzarapp+browser-utils@1.0.2/node_modules/@zappzarapp/browser-utils/dist/core/validation/CommonValidator.js
   var MAX_CLIPBOARD_LENGTH = 1e7;
   var CommonValidator = {
     nonEmpty(field, value) {
@@ -1136,7 +1145,7 @@
     }
   };
 
-  // ../../../packages/browser-utils/dist/core/validation/Validator.js
+  // ../../../node_modules/.pnpm/@zappzarapp+browser-utils@1.0.2/node_modules/@zappzarapp/browser-utils/dist/core/validation/Validator.js
   var Validator = {
     storageKey: (key) => StorageValidator.storageKey(key),
     storageKeyResult: (key) => StorageValidator.storageKeyResult(key),
@@ -1164,7 +1173,7 @@
     clipboardTextResult: (text) => CommonValidator.clipboardTextResult(text)
   };
 
-  // ../../../packages/browser-utils/dist/html/HtmlEscaper.js
+  // ../../../node_modules/.pnpm/@zappzarapp+browser-utils@1.0.2/node_modules/@zappzarapp/browser-utils/dist/html/HtmlEscaper.js
   var HTML_ENTITIES = {
     "&": "&amp;",
     "<": "&lt;",
@@ -1677,7 +1686,7 @@
     };
   }
 
-  // ../../../packages/browser-utils/dist/download/DownloadOptions.js
+  // ../../../node_modules/.pnpm/@zappzarapp+browser-utils@1.0.2/node_modules/@zappzarapp/browser-utils/dist/download/DownloadOptions.js
   var DownloadOptions = class _DownloadOptions {
     constructor(filename, mimeType) {
       __publicField(this, "filename");
@@ -1751,7 +1760,7 @@
     }
   };
 
-  // ../../../packages/browser-utils/dist/download/Downloader.js
+  // ../../../node_modules/.pnpm/@zappzarapp+browser-utils@1.0.2/node_modules/@zappzarapp/browser-utils/dist/download/Downloader.js
   var Downloader = {
     download(content, options) {
       const blob = new Blob([content], { type: options.mimeType });
@@ -1804,7 +1813,7 @@
     }
   };
 
-  // ../../../packages/browser-utils/dist/keyboard/KeyboardShortcut.js
+  // ../../../node_modules/.pnpm/@zappzarapp+browser-utils@1.0.2/node_modules/@zappzarapp/browser-utils/dist/keyboard/KeyboardShortcut.js
   var KeyboardShortcut = class _KeyboardShortcut {
     constructor(def) {
       __publicField(this, "key");
@@ -1888,7 +1897,7 @@
     }
   };
 
-  // ../../../packages/browser-utils/dist/keyboard/ShortcutManager.js
+  // ../../../node_modules/.pnpm/@zappzarapp+browser-utils@1.0.2/node_modules/@zappzarapp/browser-utils/dist/keyboard/ShortcutManager.js
   var ShortcutManager = {
     on(shortcut, handler, options = {}) {
       const kbd = shortcut instanceof KeyboardShortcut ? shortcut : KeyboardShortcut.create(shortcut);
@@ -1956,13 +1965,100 @@
     }
   };
 
-  // DevToolbar/ui/ClearHistoryDialog.ts
-  var ClearHistoryDialog = class {
+  // DevToolbar/ui/BaseDialog.ts
+  var BaseDialog = class {
     constructor() {
       this.modal = null;
       this.isOpen = false;
-      this.onConfirm = null;
       this.escKeyCleanup = null;
+    }
+    /**
+     * Close the dialog
+     */
+    close() {
+      if (!this.isOpen) {
+        return;
+      }
+      this.hideModal();
+      this.removeModal();
+      this.isOpen = false;
+      this.onClose();
+    }
+    /**
+     * Hook for subclasses to clean up on close
+     */
+    onClose() {
+    }
+    /**
+     * Inject modal HTML into DOM and store reference
+     */
+    injectModal(html, overlayId) {
+      const container = document.createElement("div");
+      container.innerHTML = html;
+      const modalElement = container.firstElementChild;
+      if (modalElement != null) {
+        document.body.appendChild(modalElement);
+      }
+      this.modal = document.getElementById(overlayId);
+    }
+    /**
+     * Show modal with fade-in animation
+     */
+    showModal() {
+      if (this.modal != null) {
+        this.modal.style.display = "flex";
+        void this.modal.offsetHeight;
+        this.modal.style.opacity = "1";
+      }
+    }
+    /**
+     * Attach standard close handlers: × button, ESC key, overlay click
+     *
+     * Call this from subclass attachModalHandlers() after adding dialog-specific handlers.
+     */
+    attachCloseHandlers() {
+      if (this.modal == null) {
+        return;
+      }
+      const closeBtn = this.modal.querySelector(".dev-toolbar-modal-close");
+      closeBtn?.addEventListener("click", () => this.close());
+      this.escKeyCleanup = ShortcutManager.onEscape(() => this.close());
+      this.modal.addEventListener("click", (e) => {
+        if (e.target === this.modal) {
+          this.close();
+        }
+      });
+    }
+    /**
+     * Hide modal (fade out)
+     */
+    hideModal() {
+      if (this.modal != null) {
+        this.modal.style.opacity = "0";
+      }
+    }
+    /**
+     * Remove modal from DOM with fade-out delay
+     */
+    removeModal() {
+      if (this.modal != null) {
+        if (this.escKeyCleanup != null) {
+          this.escKeyCleanup();
+          this.escKeyCleanup = null;
+        }
+        setTimeout(() => {
+          this.modal?.remove();
+          this.modal = null;
+        }, 200);
+      }
+    }
+  };
+
+  // DevToolbar/ui/ClearHistoryDialog.ts
+  var ClearHistoryDialog = class extends BaseDialog {
+    constructor() {
+      super(...arguments);
+      this.onConfirm = null;
     }
     /**
      * Open dialog with confirmation callback
@@ -1977,16 +2073,7 @@
       this.attachModalHandlers();
       this.isOpen = true;
     }
-    /**
-     * Close dialog
-     */
-    close() {
-      if (!this.isOpen) {
-        return;
-      }
-      this.hideModal();
-      this.removeModal();
-      this.isOpen = false;
+    onClose() {
       this.onConfirm = null;
     }
     /**
@@ -2042,46 +2129,7 @@
                 </div>
             </div>
         `;
-      const container = document.createElement("div");
-      container.innerHTML = modalHTML;
-      const modalElement = container.firstElementChild;
-      if (modalElement != null) {
-        document.body.appendChild(modalElement);
-      }
-      this.modal = document.getElementById("dev-toolbar-clear-history-overlay");
-    }
-    /**
-     * Show modal (fade in)
-     */
-    showModal() {
-      if (this.modal != null) {
-        this.modal.style.display = "flex";
-        void this.modal.offsetHeight;
-        this.modal.style.opacity = "1";
-      }
-    }
-    /**
-     * Hide modal (fade out)
-     */
-    hideModal() {
-      if (this.modal != null) {
-        this.modal.style.opacity = "0";
-      }
-    }
-    /**
-     * Remove modal from DOM
-     */
-    removeModal() {
-      if (this.modal != null) {
-        if (this.escKeyCleanup != null) {
-          this.escKeyCleanup();
-          this.escKeyCleanup = null;
-        }
-        setTimeout(() => {
-          this.modal?.remove();
-          this.modal = null;
-        }, 200);
-      }
+      this.injectModal(modalHTML, "dev-toolbar-clear-history-overlay");
     }
     /**
      * Attach event handlers to modal
@@ -2099,24 +2147,12 @@
       });
       const cancelBtn = this.modal.querySelector("#clear-history-cancel");
       cancelBtn?.addEventListener("click", () => this.close());
-      const closeBtn = this.modal.querySelector(".dev-toolbar-modal-close");
-      closeBtn?.addEventListener("click", () => this.close());
-      this.escKeyCleanup = ShortcutManager.onEscape(() => this.close());
-      this.modal.addEventListener("click", (e) => {
-        if (e.target === this.modal) {
-          this.close();
-        }
-      });
+      this.attachCloseHandlers();
     }
   };
 
   // DevToolbar/ui/MessageDialog.ts
-  var MessageDialog = class {
-    constructor() {
-      this.modal = null;
-      this.isOpen = false;
-      this.escKeyCleanup = null;
-    }
+  var MessageDialog = class extends BaseDialog {
     /**
      * Open dialog with message
      */
@@ -2130,17 +2166,6 @@
       this.isOpen = true;
     }
     /**
-     * Close dialog
-     */
-    close() {
-      if (!this.isOpen) {
-        return;
-      }
-      this.hideModal();
-      this.removeModal();
-      this.isOpen = false;
-    }
-    /**
      * Get icon and color for message type
      */
     getTypeConfig(type) {
@@ -2150,15 +2175,15 @@
         info: { icon: "\u2139\uFE0F", color: "#3b82f6" },
         success: { icon: "\u2705", color: "#10b981" }
       };
-      return configs[type] || configs.info;
+      return configs[type];
     }
     /**
      * Create modal HTML structure
      */
     createModal(options) {
-      const type = options.type || "info";
-      const title = options.title || this.getDefaultTitle(type);
-      const okButtonText = options.okButtonText || "OK";
+      const type = options.type ?? "info";
+      const title = options.title ?? this.getDefaultTitle(type);
+      const okButtonText = options.okButtonText ?? "OK";
       const { icon, color } = this.getTypeConfig(type);
       const modalHTML = `
             <div class="dev-toolbar-modal-overlay" id="dev-toolbar-message-overlay">
@@ -2166,30 +2191,24 @@
                     <div class="dev-toolbar-modal-header">
                         <div style="display: flex; align-items: center; gap: 12px;">
                             <span style="font-size: 1.5rem;">${icon}</span>
-                            <h3 style="color: ${color};">${this.escapeHtml(title)}</h3>
+                            <h3 style="color: ${color};">${HtmlEscaper.escape(title)}</h3>
                         </div>
                         <button class="dev-toolbar-modal-close" title="Close">\xD7</button>
                     </div>
 
                     <div class="dev-toolbar-modal-content">
-                        <p style="white-space: pre-wrap; margin: 0;">${this.escapeHtml(options.message)}</p>
+                        <p style="white-space: pre-wrap; margin: 0;">${HtmlEscaper.escape(options.message)}</p>
                     </div>
 
                     <div class="dev-toolbar-modal-footer">
                         <button class="dev-toolbar-btn dev-toolbar-btn-primary" id="message-dialog-ok">
-                            ${this.escapeHtml(okButtonText)}
+                            ${HtmlEscaper.escape(okButtonText)}
                         </button>
                     </div>
                 </div>
             </div>
         `;
-      const container = document.createElement("div");
-      container.innerHTML = modalHTML;
-      const modalElement = container.firstElementChild;
-      if (modalElement != null) {
-        document.body.appendChild(modalElement);
-      }
-      this.modal = document.getElementById("dev-toolbar-message-overlay");
+      this.injectModal(modalHTML, "dev-toolbar-message-overlay");
     }
     /**
      * Get default title for message type
@@ -2201,48 +2220,7 @@
         info: "Information",
         success: "Success"
       };
-      return titles[type] || "Information";
-    }
-    /**
-     * Escape HTML to prevent XSS
-     */
-    escapeHtml(text) {
-      const div = document.createElement("div");
-      div.textContent = text;
-      return div.innerHTML;
-    }
-    /**
-     * Show modal (fade in)
-     */
-    showModal() {
-      if (this.modal != null) {
-        this.modal.style.display = "flex";
-        void this.modal.offsetHeight;
-        this.modal.style.opacity = "1";
-      }
-    }
-    /**
-     * Hide modal (fade out)
-     */
-    hideModal() {
-      if (this.modal != null) {
-        this.modal.style.opacity = "0";
-      }
-    }
-    /**
-     * Remove modal from DOM
-     */
-    removeModal() {
-      if (this.modal != null) {
-        if (this.escKeyCleanup != null) {
-          this.escKeyCleanup();
-          this.escKeyCleanup = null;
-        }
-        setTimeout(() => {
-          this.modal?.remove();
-          this.modal = null;
-        }, 200);
-      }
+      return titles[type];
     }
     /**
      * Attach event handlers to modal
@@ -2253,14 +2231,7 @@
       }
       const okBtn = this.modal.querySelector("#message-dialog-ok");
       okBtn?.addEventListener("click", () => this.close());
-      const closeBtn = this.modal.querySelector(".dev-toolbar-modal-close");
-      closeBtn?.addEventListener("click", () => this.close());
-      this.escKeyCleanup = ShortcutManager.onEscape(() => this.close());
-      this.modal.addEventListener("click", (e) => {
-        if (e.target === this.modal) {
-          this.close();
-        }
-      });
+      this.attachCloseHandlers();
     }
   };
   function showMessage(options) {
@@ -2269,6 +2240,216 @@
   }
   function showError(message, title) {
     showMessage({ type: "error", title, message });
+  }
+
+  // DevToolbar/ui/TrendCharts.ts
+  var CHART_HEIGHT = 70;
+  var CHART_PADDING_TOP = 8;
+  var CHART_PADDING_BOTTOM = 20;
+  var CHART_PADDING_LEFT = 50;
+  var CHART_PADDING_RIGHT = 16;
+  var METRICS = [
+    {
+      key: "time",
+      label: "Time",
+      unit: "ms",
+      color: "#3b82f6",
+      thresholdKey: "time_ms",
+      extract: (r) => r.time,
+      format: (v) => `${v.toFixed(0)}ms`
+    },
+    {
+      key: "memory",
+      label: "Memory",
+      unit: "MB",
+      color: "#10b981",
+      thresholdKey: "memory_mb",
+      extract: (r) => r.memory / 1024 / 1024,
+      format: (v) => `${v.toFixed(1)}MB`
+    },
+    {
+      key: "queries",
+      label: "Queries",
+      unit: "",
+      color: "#f59e0b",
+      thresholdKey: "query_count",
+      extract: (r) => r.query_count,
+      format: (v) => String(Math.round(v))
+    }
+  ];
+  function renderTrendCharts(container, metaArray) {
+    if (metaArray.length < 2) {
+      container.innerHTML = '<p class="dev-toolbar-trends-empty">Need at least 2 requests to show trends.</p>';
+      return;
+    }
+    const data = metaArray.slice(0, 50).reverse();
+    const thresholds = StorageManager.getThresholds();
+    const width = container.clientWidth || 500;
+    let html = '<div class="dev-toolbar-trends-controls">';
+    for (const metric of METRICS) {
+      html += `<label class="dev-toolbar-trends-toggle">
+      <input type="checkbox" data-trend-metric="${metric.key}" checked>
+      <span class="dev-toolbar-trends-color" style="background:${metric.color}"></span>
+      ${metric.label}
+    </label>`;
+    }
+    html += "</div>";
+    html += '<div class="dev-toolbar-trends-charts">';
+    for (const metric of METRICS) {
+      const values = data.map(metric.extract);
+      const threshold = thresholds[metric.thresholdKey];
+      const svg = buildChartSVG(metric, values, threshold, width);
+      html += `<div class="dev-toolbar-trend-chart" data-trend-chart="${metric.key}">
+      <div class="dev-toolbar-trend-chart-label">${metric.label}${metric.unit ? ` (${metric.unit})` : ""}</div>
+      ${svg}
+    </div>`;
+    }
+    html += "</div>";
+    html += '<div class="dev-toolbar-trends-tooltip" id="dev-toolbar-trends-tooltip"></div>';
+    container.innerHTML = html;
+    attachChartInteractions(container, data);
+  }
+  function buildChartSVG(metric, values, threshold, containerWidth) {
+    const plotWidth = containerWidth - CHART_PADDING_LEFT - CHART_PADDING_RIGHT;
+    const plotHeight = CHART_HEIGHT - CHART_PADDING_TOP - CHART_PADDING_BOTTOM;
+    const n = values.length;
+    const min = Math.min(...values);
+    const max = Math.max(...values);
+    const rangeMax = Math.max(max, threshold) * 1.1;
+    const rangeMin = Math.min(min, 0);
+    const range = rangeMax - rangeMin || 1;
+    const xStep = n > 1 ? plotWidth / (n - 1) : 0;
+    const points = values.map((v, i) => {
+      const x = CHART_PADDING_LEFT + i * xStep;
+      const y = CHART_PADDING_TOP + plotHeight - (v - rangeMin) / range * plotHeight;
+      return `${x.toFixed(1)},${y.toFixed(1)}`;
+    }).join(" ");
+    const thresholdY = CHART_PADDING_TOP + plotHeight - (threshold - rangeMin) / range * plotHeight;
+    const midVal = (rangeMin + rangeMax) / 2;
+    const midY = CHART_PADDING_TOP + plotHeight / 2;
+    let svg = `<svg class="dev-toolbar-trend-svg" data-metric="${metric.key}" width="100%" height="${CHART_HEIGHT}" viewBox="0 0 ${containerWidth} ${CHART_HEIGHT}" preserveAspectRatio="none">`;
+    svg += `<line x1="${CHART_PADDING_LEFT}" y1="${CHART_PADDING_TOP}" x2="${CHART_PADDING_LEFT + plotWidth}" y2="${CHART_PADDING_TOP}" class="dev-toolbar-trend-grid"/>`;
+    svg += `<line x1="${CHART_PADDING_LEFT}" y1="${midY}" x2="${CHART_PADDING_LEFT + plotWidth}" y2="${midY}" class="dev-toolbar-trend-grid"/>`;
+    svg += `<line x1="${CHART_PADDING_LEFT}" y1="${CHART_PADDING_TOP + plotHeight}" x2="${CHART_PADDING_LEFT + plotWidth}" y2="${CHART_PADDING_TOP + plotHeight}" class="dev-toolbar-trend-grid"/>`;
+    if (threshold > rangeMin && threshold < rangeMax) {
+      svg += `<line x1="${CHART_PADDING_LEFT}" y1="${thresholdY.toFixed(1)}" x2="${CHART_PADDING_LEFT + plotWidth}" y2="${thresholdY.toFixed(1)}" class="dev-toolbar-trend-threshold" stroke="${metric.color}"/>`;
+      svg += `<text x="${CHART_PADDING_LEFT + plotWidth + 2}" y="${thresholdY.toFixed(1)}" class="dev-toolbar-trend-threshold-label" fill="${metric.color}">${metric.format(threshold)}</text>`;
+    }
+    svg += `<text x="${CHART_PADDING_LEFT - 6}" y="${CHART_PADDING_TOP + 4}" class="dev-toolbar-trend-axis-label" text-anchor="end">${metric.format(rangeMax)}</text>`;
+    svg += `<text x="${CHART_PADDING_LEFT - 6}" y="${midY + 4}" class="dev-toolbar-trend-axis-label" text-anchor="end">${metric.format(midVal)}</text>`;
+    svg += `<text x="${CHART_PADDING_LEFT - 6}" y="${CHART_PADDING_TOP + plotHeight + 4}" class="dev-toolbar-trend-axis-label" text-anchor="end">${metric.format(rangeMin)}</text>`;
+    svg += `<polyline points="${points}" class="dev-toolbar-trend-line" stroke="${metric.color}" fill="none"/>`;
+    values.forEach((v, i) => {
+      const x = CHART_PADDING_LEFT + i * xStep;
+      const y = CHART_PADDING_TOP + plotHeight - (v - rangeMin) / range * plotHeight;
+      svg += `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="3" class="dev-toolbar-trend-dot" fill="${metric.color}" data-index="${i}"/>`;
+    });
+    svg += `<line x1="0" y1="${CHART_PADDING_TOP}" x2="0" y2="${CHART_PADDING_TOP + plotHeight}" class="dev-toolbar-trend-crosshair" style="display:none"/>`;
+    svg += `<circle cx="0" cy="0" r="4" class="dev-toolbar-trend-highlight" fill="${metric.color}" style="display:none"/>`;
+    svg += `<text x="0" y="0" class="dev-toolbar-trend-value-label" fill="${metric.color}" style="display:none"></text>`;
+    svg += "</svg>";
+    return svg;
+  }
+  function attachChartInteractions(container, data) {
+    const svgs = container.querySelectorAll(".dev-toolbar-trend-svg");
+    const tooltip = container.querySelector("#dev-toolbar-trends-tooltip");
+    const n = data.length;
+    container.querySelectorAll("[data-trend-metric]").forEach((checkbox) => {
+      checkbox.addEventListener("change", () => {
+        const metric = checkbox.dataset.trendMetric;
+        const chart = container.querySelector(`[data-trend-chart="${metric}"]`);
+        if (chart) {
+          chart.style.display = checkbox.checked ? "" : "none";
+        }
+      });
+    });
+    svgs.forEach((svg) => {
+      svg.addEventListener("mousemove", (e) => {
+        const rect = svg.getBoundingClientRect();
+        const svgWidth = rect.width;
+        const scaleX = svgWidth > 0 ? svg.viewBox.baseVal.width / svgWidth : 1;
+        const mouseX = (e.clientX - rect.left) * scaleX;
+        const plotWidth = svg.viewBox.baseVal.width - CHART_PADDING_LEFT - CHART_PADDING_RIGHT;
+        const xStep = n > 1 ? plotWidth / (n - 1) : 0;
+        const relX = mouseX - CHART_PADDING_LEFT;
+        const index = Math.round(relX / (xStep || 1));
+        if (index < 0 || index >= n) {
+          hideCrosshairs(svgs);
+          if (tooltip) tooltip.style.display = "none";
+          return;
+        }
+        const xPos = CHART_PADDING_LEFT + index * xStep;
+        showCrosshairs(svgs, xPos, index, data[index]);
+        showTooltip(tooltip, data[index], e, container);
+      });
+      svg.addEventListener("mouseleave", () => {
+        hideCrosshairs(svgs);
+        if (tooltip) tooltip.style.display = "none";
+      });
+    });
+  }
+  function showCrosshairs(svgs, x, index, request) {
+    svgs.forEach((svg) => {
+      const crosshair = svg.querySelector(".dev-toolbar-trend-crosshair");
+      if (crosshair) {
+        crosshair.setAttribute("x1", x.toFixed(1));
+        crosshair.setAttribute("x2", x.toFixed(1));
+        crosshair.style.display = "";
+      }
+      const metricKey = svg.dataset.metric;
+      const metric = METRICS.find((m) => m.key === metricKey);
+      if (!metric) return;
+      const dot = svg.querySelector(".dev-toolbar-trend-highlight");
+      const label = svg.querySelector(".dev-toolbar-trend-value-label");
+      const dataDot = svg.querySelector(
+        `.dev-toolbar-trend-dot[data-index="${index}"]`
+      );
+      if (dot && dataDot) {
+        const cy = dataDot.getAttribute("cy") ?? "0";
+        dot.setAttribute("cx", x.toFixed(1));
+        dot.setAttribute("cy", cy);
+        dot.style.display = "";
+      }
+      if (label) {
+        const value = metric.extract(request);
+        const cy = dataDot?.getAttribute("cy") ?? "0";
+        const labelY = parseFloat(cy) - 8;
+        label.setAttribute("x", x.toFixed(1));
+        label.setAttribute("y", labelY.toFixed(1));
+        label.textContent = metric.format(value);
+        label.style.display = "";
+      }
+    });
+  }
+  function hideCrosshairs(svgs) {
+    svgs.forEach((svg) => {
+      const crosshair = svg.querySelector(".dev-toolbar-trend-crosshair");
+      if (crosshair) {
+        crosshair.style.display = "none";
+      }
+      const dot = svg.querySelector(".dev-toolbar-trend-highlight");
+      if (dot) dot.style.display = "none";
+      const label = svg.querySelector(".dev-toolbar-trend-value-label");
+      if (label) label.style.display = "none";
+    });
+  }
+  function showTooltip(tooltip, request, event, container) {
+    if (!tooltip) return;
+    const time = request.time.toFixed(0);
+    const memory = (request.memory / 1024 / 1024).toFixed(1);
+    const queries = request.query_count;
+    tooltip.innerHTML = `<strong>${request.method} ${request.uri}</strong><br>
+    Time: ${time}ms | Memory: ${memory}MB | Queries: ${queries}`;
+    tooltip.style.display = "block";
+    const containerRect = container.getBoundingClientRect();
+    const x = event.clientX - containerRect.left;
+    const y = event.clientY - containerRect.top;
+    tooltip.style.left = `${x + 12}px`;
+    tooltip.style.top = `${y - 10}px`;
+    const tooltipRect = tooltip.getBoundingClientRect();
+    if (tooltipRect.right > containerRect.right) {
+      tooltip.style.left = `${x - tooltipRect.width - 12}px`;
+    }
   }
 
   // DevToolbar/ui/HistoryTabManager.ts
@@ -2358,13 +2539,12 @@
       };
     }
     /**
-     * Render trends sparkline
+     * Render performance trend charts
      */
     renderTrends(metaArray) {
-      const trendsEl = document.querySelector(".dev-toolbar-history-sparkline");
-      if (!trendsEl) return;
-      const times = metaArray.slice(0, 20).reverse().map((r) => r.time);
-      trendsEl.textContent = generateSparkline(times);
+      const container = document.getElementById("dev-toolbar-trends-container");
+      if (!container) return;
+      renderTrendCharts(container, metaArray);
     }
     /**
      * Render request list
@@ -2595,7 +2775,7 @@
      */
     parseTimeAgo(text) {
       const match = text.match(/(\d+)([smhd])/);
-      if (!match?.[1] || !match[2]) return Math.floor(Date.now() / 1e3);
+      if (match?.[1] == null || match[2] == null) return Math.floor(Date.now() / 1e3);
       const value = parseInt(match[1], 10);
       const multipliers = { s: 1, m: 60, h: 3600, d: 86400 };
       const multiplier = multipliers[match[2]];
@@ -2614,11 +2794,9 @@
   };
 
   // DevToolbar/ui/SettingsManager.ts
-  var SettingsManager = class {
+  var SettingsManager = class extends BaseDialog {
     constructor() {
-      this.modal = null;
-      this.isOpen = false;
-      this.escKeyCleanup = null;
+      super(...arguments);
       this.currentShortcut = null;
     }
     /**
@@ -2634,23 +2812,13 @@
       this.isOpen = true;
     }
     /**
-     * Close settings modal
-     */
-    close() {
-      if (!this.isOpen) {
-        return;
-      }
-      this.hideModal();
-      this.removeModal();
-      this.isOpen = false;
-    }
-    /**
      * Create modal HTML structure
      */
     createModal() {
       const currentLabels = StorageManager.getMinibarLabels();
       const currentColors = StorageManager.getBranchColors();
       const currentShortcut = StorageManager.getToggleShortcut();
+      const currentThresholds = StorageManager.getThresholds();
       const modalHTML = `
             <div class="dev-toolbar-modal-overlay" id="dev-toolbar-settings-overlay">
                 <div class="dev-toolbar-modal">
@@ -2710,6 +2878,25 @@
                                 </p>
                             </div>
                         </div>
+
+                        <!-- Performance Thresholds -->
+                        <div class="dev-toolbar-settings-group">
+                            <label>Performance Alert Thresholds</label>
+                            <p style="margin: 0 0 12px 0; color: #6b7280; font-size: 0.875rem;">
+                                Alerts trigger when values exceed these thresholds
+                            </p>
+                            <div class="dev-toolbar-settings-thresholds">
+                                ${this.buildThresholdInput("time_ms", "Request Time", "ms", currentThresholds.time_ms)}
+                                ${this.buildThresholdInput("memory_mb", "Memory Peak", "MB", currentThresholds.memory_mb)}
+                                ${this.buildThresholdInput("query_count", "Query Count", "", currentThresholds.query_count)}
+                                ${this.buildThresholdInput("query_time_ms", "Query Time (total)", "ms", currentThresholds.query_time_ms)}
+                                ${this.buildThresholdInput("http_count", "HTTP Requests", "", currentThresholds.http_count)}
+                                ${this.buildThresholdInput("http_time_ms", "HTTP Time (total)", "ms", currentThresholds.http_time_ms)}
+                            </div>
+                            <p style="margin: 8px 0 0 0; color: #6b7280; font-size: 0.75rem;">
+                                <a href="#" id="reset-thresholds" style="color: #3b82f6; text-decoration: none;">Reset to Defaults</a>
+                            </p>
+                        </div>
                     </div>
 
                     <div class="dev-toolbar-modal-footer">
@@ -2723,13 +2910,7 @@
                 </div>
             </div>
         `;
-      const container = document.createElement("div");
-      container.innerHTML = modalHTML;
-      const modalElement = container.firstElementChild;
-      if (modalElement != null) {
-        document.body.appendChild(modalElement);
-      }
-      this.modal = document.getElementById("dev-toolbar-settings-overlay");
+      this.injectModal(modalHTML, "dev-toolbar-settings-overlay");
     }
     /**
      * Build checkbox option HTML
@@ -2760,49 +2941,31 @@
         `;
     }
     /**
+     * Build threshold number input HTML
+     */
+    buildThresholdInput(key, label, unit, value) {
+      const suffix = unit !== "" ? ` <span style="color: #6b7280; font-size: 0.75rem;">${HtmlEscaper.escape(unit)}</span>` : "";
+      return `
+            <div class="dev-toolbar-settings-threshold-item">
+                <label for="threshold-${HtmlEscaper.escape(key)}">${HtmlEscaper.escape(label)}${suffix}</label>
+                <input type="number" id="threshold-${HtmlEscaper.escape(key)}" name="threshold-${HtmlEscaper.escape(key)}" value="${value}" min="0" step="1"
+                    class="dev-toolbar-settings-threshold-input">
+            </div>
+        `;
+    }
+    /**
      * Format shortcut for display
      */
     formatShortcut(shortcut) {
       const parts = [];
-      if (shortcut.ctrlKey) parts.push("Ctrl");
-      if (shortcut.shiftKey) parts.push("Shift");
-      if (shortcut.altKey) parts.push("Alt");
-      if (shortcut.metaKey) parts.push(navigator.platform.includes("Mac") ? "Cmd" : "Win");
+      if (shortcut.ctrlKey === true) parts.push("Ctrl");
+      if (shortcut.shiftKey === true) parts.push("Shift");
+      if (shortcut.altKey === true) parts.push("Alt");
+      if (shortcut.metaKey === true) {
+        parts.push(/Mac|iPhone|iPad/.test(navigator.userAgent) ? "Cmd" : "Win");
+      }
       parts.push(shortcut.key);
       return parts.join("+");
-    }
-    /**
-     * Show modal (fade in)
-     */
-    showModal() {
-      if (this.modal != null) {
-        this.modal.style.display = "flex";
-        void this.modal.offsetHeight;
-        this.modal.style.opacity = "1";
-      }
-    }
-    /**
-     * Hide modal (fade out)
-     */
-    hideModal() {
-      if (this.modal != null) {
-        this.modal.style.opacity = "0";
-      }
-    }
-    /**
-     * Remove modal from DOM
-     */
-    removeModal() {
-      if (this.modal != null) {
-        if (this.escKeyCleanup != null) {
-          this.escKeyCleanup();
-          this.escKeyCleanup = null;
-        }
-        setTimeout(() => {
-          this.modal?.remove();
-          this.modal = null;
-        }, 200);
-      }
     }
     /**
      * Attach event handlers to modal
@@ -2837,18 +3000,22 @@
           shortcutInput.value = this.formatShortcut(this.currentShortcut);
         }
       });
+      const resetThresholds = this.modal.querySelector("#reset-thresholds");
+      resetThresholds?.addEventListener("click", (e) => {
+        e.preventDefault();
+        const keys = Object.keys(DEFAULT_THRESHOLDS);
+        for (const key of keys) {
+          const input = this.modal?.querySelector(`#threshold-${key}`);
+          if (input != null) {
+            input.value = String(DEFAULT_THRESHOLDS[key]);
+          }
+        }
+      });
       const saveBtn = this.modal.querySelector("#settings-save");
       saveBtn?.addEventListener("click", () => this.saveSettings());
       const cancelBtn = this.modal.querySelector("#settings-cancel");
       cancelBtn?.addEventListener("click", () => this.close());
-      const closeBtn = this.modal.querySelector(".dev-toolbar-modal-close");
-      closeBtn?.addEventListener("click", () => this.close());
-      this.escKeyCleanup = ShortcutManager.onEscape(() => this.close());
-      this.modal.addEventListener("click", (e) => {
-        if (e.target === this.modal) {
-          this.close();
-        }
-      });
+      this.attachCloseHandlers();
     }
     /**
      * Save settings and reload page
@@ -2865,22 +3032,26 @@
       if (this.currentShortcut != null) {
         StorageManager.setToggleShortcut(this.currentShortcut);
       }
-      this.saveSettingsToCookies(selectedLabels, branchColors);
-      debug("[Settings] Saved:", { labels: selectedLabels, colors: branchColors });
+      const thresholds = this.getThresholdValues();
+      StorageManager.setThresholds(thresholds);
+      this.saveSettingsToCookies(selectedLabels, branchColors, thresholds);
+      debug("[Settings] Saved:", { labels: selectedLabels, colors: branchColors, thresholds });
       window.location.reload();
     }
     /**
      * Save settings to cookies for PHP access
      */
-    saveSettingsToCookies(labels, colors) {
+    saveSettingsToCookies(labels, colors, thresholds) {
       const labelsJson = JSON.stringify(labels);
       document.cookie = `devbar_labels=${encodeURIComponent(labelsJson)}; path=/; max-age=31536000`;
       const colorsJson = JSON.stringify(colors);
       document.cookie = `devbar_colors=${encodeURIComponent(colorsJson)}; path=/; max-age=31536000`;
+      const thresholdsJson = JSON.stringify(thresholds);
+      document.cookie = `devbar_thresholds=${encodeURIComponent(thresholdsJson)}; path=/; max-age=31536000`;
       debug("[Settings] Cookies set:", {
         labels: `devbar_labels=${encodeURIComponent(labelsJson)}`,
         colors: `devbar_colors=${encodeURIComponent(colorsJson)}`,
-        allCookies: document.cookie
+        thresholds: `devbar_thresholds=${encodeURIComponent(thresholdsJson)}`
       });
     }
     /**
@@ -2920,6 +3091,23 @@
       }
       const input = this.modal.querySelector(`input[name="color-${type}"]`);
       return input?.value ?? null;
+    }
+    /**
+     * Get threshold values from form
+     */
+    getThresholdValues() {
+      const keys = Object.keys(DEFAULT_THRESHOLDS);
+      const thresholds = {};
+      for (const key of keys) {
+        const input = this.modal?.querySelector(`#threshold-${key}`);
+        if (input != null) {
+          const value = parseInt(input.value, 10);
+          if (!isNaN(value) && value >= 0) {
+            thresholds[key] = value;
+          }
+        }
+      }
+      return thresholds;
     }
   };
 
@@ -2985,7 +3173,7 @@
         this.toggleMaximize();
       });
       document.addEventListener("keydown", (e) => {
-        if (e.key === "Escape" && this.panel?.classList.contains("open")) {
+        if (e.key === "Escape" && this.panel?.classList.contains("open") === true) {
           this.closePanel();
         }
       });
@@ -3070,7 +3258,7 @@
      * Toggle panel open/close
      */
     togglePanel() {
-      if (this.panel?.classList.contains("open")) {
+      if (this.panel?.classList.contains("open") === true) {
         this.closePanel();
       } else {
         this.openPanel();
@@ -3103,7 +3291,7 @@
      */
     toggleMaximize() {
       this.panel?.classList.toggle("maximized");
-      const isMaximized = this.panel?.classList.contains("maximized");
+      const isMaximized = this.panel?.classList.contains("maximized") === true;
       try {
         localStorage.setItem("devToolbar.maximized", isMaximized ? "1" : "0");
       } catch (e) {
@@ -3140,7 +3328,7 @@
         (e) => {
           e.stopPropagation();
           const content = document.querySelector(".dev-toolbar-panel-content");
-          if (content?.contains(e.target)) {
+          if (content?.contains(e.target) === true) {
             const atTop = content.scrollTop === 0;
             const atBottom = content.scrollTop + content.clientHeight >= content.scrollHeight;
             if (atTop && e.deltaY < 0 || atBottom && e.deltaY > 0) {

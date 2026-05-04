@@ -182,11 +182,9 @@ class QueryAnalyzerTest extends TestCase
 
         $this->assertCount(2, $slowQueries);
 
-        // Check for SELECT * suggestion
-        $this->assertStringContainsString('SELECT *', $slowQueries[0]['suggestion']);
-
-        // Check for LIKE suggestion
-        $this->assertStringContainsString('LIKE', $slowQueries[1]['suggestion']);
+        // detectSlowQueries() sorts by time descending: LIKE query (200ms) is [0], SELECT * (150ms) is [1]
+        $this->assertStringContainsString('LIKE', $slowQueries[0]['suggestion']);
+        $this->assertStringContainsString('SELECT *', $slowQueries[1]['suggestion']);
     }
 
     public function testGetStatistics(): void

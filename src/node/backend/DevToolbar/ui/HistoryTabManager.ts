@@ -10,11 +10,12 @@
  */
 
 import { StorageManager } from '../storage/StorageManager';
-import { timeAgo, formatTimestamp, generateSparkline } from '../utils/timeUtils';
+import { timeAgo, formatTimestamp } from '../utils/timeUtils';
 import { exportRequestAsJson } from '../utils/exportUtils';
 import { Downloader } from '@zappzarapp/browser-utils/download';
 import { ClearHistoryDialog } from './ClearHistoryDialog';
 import { showError } from './MessageDialog.js';
+import { renderTrendCharts } from './TrendCharts.js';
 import type { RequestMetadata } from '../types';
 import { debug, warn, error as logError } from '../utils/logger.js';
 import { HtmlEscaper } from '@zappzarapp/browser-utils/html';
@@ -143,18 +144,13 @@ export class HistoryTabManager {
   }
 
   /**
-   * Render trends sparkline
+   * Render performance trend charts
    */
   private renderTrends(metaArray: RequestMetadata[]): void {
-    const trendsEl = document.querySelector('.dev-toolbar-history-sparkline');
-    if (!trendsEl) return;
+    const container = document.getElementById('dev-toolbar-trends-container');
+    if (!container) return;
 
-    const times = metaArray
-      .slice(0, 20)
-      .reverse()
-      .map((r) => r.time);
-
-    trendsEl.textContent = generateSparkline(times);
+    renderTrendCharts(container, metaArray);
   }
 
   /**

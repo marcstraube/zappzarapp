@@ -15,6 +15,7 @@ export type {
   MinibarLabelType,
   BranchColors,
   KeyboardShortcut,
+  PerformanceThresholds,
 } from './DevToolbarTypes.js';
 
 export { isDevToolbarWindow, hasXdebugConfig } from './DevToolbarTypes.js';

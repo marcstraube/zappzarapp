@@ -9,13 +9,16 @@ use PHPUnit\Framework\TestCase;
 
 /**
  * Test PerformanceAnalyzer alerts and analysis
+ *
+ * @SuppressWarnings("PHPMD.TooManyPublicMethods") Test classes need one public method per test case
+ * @phpstan-ignore-next-line PHPMD annotation syntax not recognized by PHPStan
  */
 class PerformanceAnalyzerTest extends TestCase
 {
     public function testDetectsSlowRequest(): void
     {
         $data = [
-            'request' => ['time' => 1500, 'memory' => 10_000_000],
+            'request' => ['execution_time' => 1500, 'memory_peak' => 9.5],
             'queries' => ['queries' => []],
             'http'    => ['requests' => []],
             'cache'   => ['hit_rate' => 100],
@@ -31,7 +34,7 @@ class PerformanceAnalyzerTest extends TestCase
     public function testDetectsHighMemoryUsage(): void
     {
         $data = [
-            'request' => ['time' => 100, 'memory' => 60_000_000], // 60 MB
+            'request' => ['execution_time' => 100, 'memory_peak' => 60], // 60 MB
             'queries' => ['queries' => []],
             'http'    => ['requests' => []],
             'cache'   => ['hit_rate' => 100],
@@ -49,7 +52,7 @@ class PerformanceAnalyzerTest extends TestCase
         $queries = array_fill(0, 60, ['sql' => 'SELECT 1', 'time' => 1]);
 
         $data = [
-            'request' => ['time' => 100, 'memory' => 10_000_000],
+            'request' => ['execution_time' => 100, 'memory_peak' => 9.5],
             'queries' => ['queries' => $queries],
             'http'    => ['requests' => []],
             'cache'   => ['hit_rate' => 100],
@@ -70,7 +73,7 @@ class PerformanceAnalyzerTest extends TestCase
         ];
 
         $data = [
-            'request' => ['time' => 100, 'memory' => 10_000_000],
+            'request' => ['execution_time' => 100, 'memory_peak' => 9.5],
             'queries' => ['queries' => $queries],
             'http'    => ['requests' => []],
             'cache'   => ['hit_rate' => 100],
@@ -84,10 +87,10 @@ class PerformanceAnalyzerTest extends TestCase
 
     public function testDetectsExcessiveHttpRequests(): void
     {
-        $requests = array_fill(0, 15, ['method' => 'GET', 'url' => 'http://api.com', 'time' => 10]);
+        $requests = array_fill(0, 15, ['method' => 'GET', 'url' => 'https://api.example.com', 'time' => 10]);
 
         $data = [
-            'request' => ['time' => 100, 'memory' => 10_000_000],
+            'request' => ['execution_time' => 100, 'memory_peak' => 9.5],
             'queries' => ['queries' => []],
             'http'    => ['requests' => $requests],
             'cache'   => ['hit_rate' => 100],
@@ -102,12 +105,12 @@ class PerformanceAnalyzerTest extends TestCase
     public function testDetectsSlowHttpRequests(): void
     {
         $requests = [
-            ['method' => 'GET', 'url' => 'http://slow-api.com', 'time' => 600],
-            ['method' => 'GET', 'url' => 'http://slow-api2.com', 'time' => 600],
+            ['method' => 'GET', 'url' => 'https://slow-api.example.com', 'time' => 600],
+            ['method' => 'GET', 'url' => 'https://slow-api2.example.com', 'time' => 600],
         ];
 
         $data = [
-            'request' => ['time' => 100, 'memory' => 10_000_000],
+            'request' => ['execution_time' => 100, 'memory_peak' => 9.5],
             'queries' => ['queries' => []],
             'http'    => ['requests' => $requests],
             'cache'   => ['hit_rate' => 100],
@@ -122,7 +125,7 @@ class PerformanceAnalyzerTest extends TestCase
     public function testDetectsLowCacheHitRate(): void
     {
         $data = [
-            'request' => ['time' => 100, 'memory' => 10_000_000],
+            'request' => ['execution_time' => 100, 'memory_peak' => 9.5],
             'queries' => ['queries' => []],
             'http'    => ['requests' => []],
             'cache'   => ['hit_rate' => 40, 'count' => 10], // Must have operations
@@ -138,7 +141,7 @@ class PerformanceAnalyzerTest extends TestCase
     public function testNoAlertWhenNoCacheOperations(): void
     {
         $data = [
-            'request' => ['time' => 100, 'memory' => 10_000_000],
+            'request' => ['execution_time' => 100, 'memory_peak' => 9.5],
             'queries' => ['queries' => []],
             'http'    => ['requests' => []],
             'cache'   => ['hit_rate' => 0, 'count' => 0], // No operations
@@ -154,7 +157,7 @@ class PerformanceAnalyzerTest extends TestCase
     public function testSortsByCriticalFirst(): void
     {
         $data = [
-            'request' => ['time' => 1500, 'memory' => 60_000_000],
+            'request' => ['execution_time' => 1500, 'memory_peak' => 60],
             'queries' => ['queries' => []],
             'http'    => ['requests' => []],
             'cache'   => ['hit_rate' => 100],
@@ -175,9 +178,9 @@ class PerformanceAnalyzerTest extends TestCase
     public function testNoAlertsForGoodPerformance(): void
     {
         $data = [
-            'request' => ['time' => 100, 'memory' => 10_000_000],
+            'request' => ['execution_time' => 100, 'memory_peak' => 9.5],
             'queries' => ['queries' => [['sql' => 'SELECT 1', 'time' => 5]]],
-            'http'    => ['requests' => [['method' => 'GET', 'url' => 'http://api.com', 'time' => 50]]],
+            'http'    => ['requests' => [['method' => 'GET', 'url' => 'https://api.example.com', 'time' => 50]]],
             'cache'   => ['hit_rate' => 90],
         ];
 
@@ -189,10 +192,10 @@ class PerformanceAnalyzerTest extends TestCase
     public function testGetSummary(): void
     {
         $data = [
-            'request' => ['time' => 1500, 'memory' => 60_000_000],
+            'request' => ['execution_time' => 1500, 'memory_peak' => 60],
             'queries' => ['queries' => []],
             'http'    => ['requests' => []],
-            'cache'   => ['hit_rate' => 40],
+            'cache'   => ['hit_rate' => 40, 'count' => 10],
         ];
 
         $summary = PerformanceAnalyzer::getSummary($data);
@@ -207,14 +210,14 @@ class PerformanceAnalyzerTest extends TestCase
     public function testHasIssues(): void
     {
         $dataWithIssues = [
-            'request' => ['time' => 1500, 'memory' => 10_000_000],
+            'request' => ['execution_time' => 1500, 'memory_peak' => 9.5],
             'queries' => ['queries' => []],
             'http'    => ['requests' => []],
             'cache'   => ['hit_rate' => 100],
         ];
 
         $dataWithoutIssues = [
-            'request' => ['time' => 100, 'memory' => 10_000_000],
+            'request' => ['execution_time' => 100, 'memory_peak' => 9.5],
             'queries' => ['queries' => []],
             'http'    => ['requests' => []],
             'cache'   => ['hit_rate' => 100],
@@ -227,7 +230,7 @@ class PerformanceAnalyzerTest extends TestCase
     public function testAlertsContainRequiredFields(): void
     {
         $data = [
-            'request' => ['time' => 1500, 'memory' => 10_000_000],
+            'request' => ['execution_time' => 1500, 'memory_peak' => 9.5],
             'queries' => ['queries' => []],
             'http'    => ['requests' => []],
             'cache'   => ['hit_rate' => 100],
@@ -246,5 +249,74 @@ class PerformanceAnalyzerTest extends TestCase
             $this->assertArrayHasKey('actual', $alert);
             $this->assertArrayHasKey('action', $alert);
         }
+    }
+
+    public function testCustomThresholdsOverrideDefaults(): void
+    {
+        $data = [
+            'request' => ['execution_time' => 600, 'memory_peak' => 9.5],
+            'queries' => ['queries' => []],
+            'http'    => ['requests' => []],
+            'cache'   => ['hit_rate' => 100],
+        ];
+
+        // No alert with defaults (threshold: 1000ms)
+        $this->assertEmpty(PerformanceAnalyzer::analyze($data));
+
+        // Alert with lower threshold (500ms)
+        $alerts = PerformanceAnalyzer::analyze($data, ['time_ms' => 500]);
+        $this->assertCount(1, $alerts);
+        $this->assertEquals('slow_request', $alerts[0]['type']);
+        $this->assertStringContainsString('500ms', $alerts[0]['threshold']);
+    }
+
+    public function testPartialThresholdOverride(): void
+    {
+        $data = [
+            'request' => ['execution_time' => 1500, 'memory_peak' => 60],
+            'queries' => ['queries' => []],
+            'http'    => ['requests' => []],
+            'cache'   => ['hit_rate' => 100],
+        ];
+
+        // Override only time threshold to much higher value — memory alert should still fire
+        $alerts = PerformanceAnalyzer::analyze($data, ['time_ms' => 5000]);
+
+        $types = array_column($alerts, 'type');
+        $this->assertNotContains('slow_request', $types);
+        $this->assertContains('high_memory', $types);
+    }
+
+    public function testGetDefaultThresholds(): void
+    {
+        $defaults = PerformanceAnalyzer::getDefaultThresholds();
+
+        $this->assertArrayHasKey('time_ms', $defaults);
+        $this->assertArrayHasKey('memory_mb', $defaults);
+        $this->assertArrayHasKey('query_count', $defaults);
+        $this->assertArrayHasKey('query_time_ms', $defaults);
+        $this->assertArrayHasKey('http_count', $defaults);
+        $this->assertArrayHasKey('http_time_ms', $defaults);
+        $this->assertEquals(1000, $defaults['time_ms']);
+    }
+
+    public function testCustomThresholdsPassedToSummary(): void
+    {
+        $data = [
+            'request' => ['execution_time' => 600, 'memory_peak' => 9.5],
+            'queries' => ['queries' => []],
+            'http'    => ['requests' => []],
+            'cache'   => ['hit_rate' => 100],
+        ];
+
+        // No issues with defaults
+        $this->assertFalse(PerformanceAnalyzer::hasIssues($data));
+
+        // Issues with custom threshold
+        $this->assertTrue(PerformanceAnalyzer::hasIssues($data, ['time_ms' => 500]));
+
+        $summary = PerformanceAnalyzer::getSummary($data, ['time_ms' => 500]);
+        $this->assertEquals(1, $summary['total_alerts']);
+        $this->assertTrue($summary['has_issues']);
     }
 }

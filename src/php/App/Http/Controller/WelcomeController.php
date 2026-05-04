@@ -52,7 +52,7 @@ readonly class WelcomeController
                 $this->demoDevToolbarFeatures();
             } catch (Throwable $e) {
                 // If demo fails, track it as an exception
-                ExceptionCollector::getInstance()->trackException($e);
+                ExceptionCollector::getInstance()->trackHandled($e);
             }
         }
 
@@ -153,13 +153,13 @@ readonly class WelcomeController
         try {
             throw new RuntimeException('Demo exception: This is a handled exception for testing the DevToolbar');
         } catch (Exception $e) {
-            $collector->trackException($e);
+            $collector->trackHandled($e);
         }
 
         try {
             throw new InvalidArgumentException('Demo validation error: Invalid user input provided');
         } catch (Exception $e) {
-            $collector->trackException($e);
+            $collector->trackHandled($e);
         }
     }
 
@@ -194,17 +194,17 @@ readonly class WelcomeController
         }
 
         // Cache hits (simulate successful reads)
-        $collector->trackOperation('get', 'user:123', 2.1, '{"id": 123, "name": "John"}', true, 3600);
-        $collector->trackOperation('get', 'user:456', 1.8, '{"id": 456, "name": "Jane"}', true, 2400);
-        $collector->trackOperation('get', 'session:abc123', 2.3, '{"user_id": 123, "last_active": 1234567890}', true, 1800);
+        $collector->trackOperation('get', 'user:123', 2.1, '{"id": 123, "name": "John"}');
+        $collector->trackOperation('get', 'user:456', 1.8, '{"id": 456, "name": "Jane"}');
+        $collector->trackOperation('get', 'session:abc123', 2.3, '{"user_id": 123, "last_active": 1234567890}');
 
         // Cache misses
         $collector->trackOperation('get', 'user:999', 1.9);
 
         // Cache sets
-        $collector->trackOperation('set', 'user:999', 3.2, '{"id": 999, "name": "Bob"}', false, 3600);
+        $collector->trackOperation('set', 'user:999', 3.2, '{"id": 999, "name": "Bob"}', 3600);
         /** @noinspection HtmlRequiredLangAttribute Demo data string, not actual HTML */
-        $collector->trackOperation('set', 'page:home', 4.1, '<html>...</html>', false, 7200);
+        $collector->trackOperation('set', 'page:home', 4.1, '<html>...</html>', 7200);
 
         // Cache delete
         $collector->trackOperation('delete', 'old_cache:*', 5.5, 10);

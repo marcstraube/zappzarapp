@@ -41,13 +41,22 @@ class ExceptionCollector implements CollectorInterface
     }
 
     /**
-     * Track an exception
-     *
-     * @param Throwable $exception
-     * @param bool $handled Whether exception was caught/handled
-     * @return void
+     * Track an exception that was caught and handled.
      */
-    public function trackException(Throwable $exception, bool $handled = true): void
+    public function trackHandled(Throwable $exception): void
+    {
+        $this->record($exception, handled: true);
+    }
+
+    /**
+     * Track an unhandled exception (one that propagated to the error boundary).
+     */
+    public function trackUnhandled(Throwable $exception): void
+    {
+        $this->record($exception, handled: false);
+    }
+
+    private function record(Throwable $exception, bool $handled): void
     {
         if (!$this->collecting) {
             return;

@@ -21,6 +21,9 @@
         <testsuite name="DevDashboard">
             <directory>tests/php/DevDashboard</directory>
         </testsuite>
+        <testsuite name="DevToolbar">
+            <directory>tests/php/DevToolbar</directory>
+        </testsuite>
     </testsuites>
 
     <!-- Source Code for Coverage (activated via CLI options) -->

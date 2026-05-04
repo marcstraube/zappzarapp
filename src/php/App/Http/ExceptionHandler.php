@@ -95,7 +95,7 @@ readonly class ExceptionHandler
     {
         // Track in DevToolbar if enabled
         if (class_exists(DevToolbarGuard::class) && DevToolbarGuard::isEnabled()) {
-            ExceptionCollector::getInstance()->trackException($exception, handled: false);
+            ExceptionCollector::getInstance()->trackUnhandled($exception);
         }
 
         // Log exception server-side (always, regardless of environment)

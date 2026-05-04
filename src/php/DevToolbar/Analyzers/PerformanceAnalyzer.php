@@ -7,48 +7,55 @@ namespace DevToolbar\Analyzers;
 /**
  * Performance Analyzer
  *
- * Analyzes application performance and generates alerts for issues
+ * Analyzes application performance and generates alerts for issues.
+ * Thresholds can be customized via the optional $thresholds parameter.
  */
 class PerformanceAnalyzer
 {
-    /** Performance thresholds */
-    private const THRESHOLDS = [
-        'time_ms'       => 1000,        // 1 second
-        'memory_mb'     => 50,        // 50 MB
-        'query_count'   => 50,      // 50 queries
-        'query_time_ms' => 500,   // 500ms total query time
-        'http_count'    => 10,       // 10 HTTP requests
+    /** @var array<string, int> Default performance thresholds */
+    private const array DEFAULT_THRESHOLDS = [
+        'time_ms'       => 1000,   // 1 second
+        'memory_mb'     => 50,     // 50 MB
+        'query_count'   => 50,     // 50 queries
+        'query_time_ms' => 500,    // 500ms total query time
+        'http_count'    => 10,     // 10 HTTP requests
         'http_time_ms'  => 1000,   // 1 second total HTTP time
     ];
 
     /** Alert levels */
-    private const LEVEL_CRITICAL = 'critical';
-    private const LEVEL_WARNING  = 'warning';
-    private const LEVEL_INFO     = 'info';
+    private const string LEVEL_CRITICAL = 'critical';
+    private const string LEVEL_WARNING  = 'warning';
+    private const string LEVEL_INFO     = 'info';
+
+    /**
+     * Get default thresholds
+     *
+     * @return array<string, int>
+     */
+    public static function getDefaultThresholds(): array
+    {
+        return self::DEFAULT_THRESHOLDS;
+    }
 
     /**
      * Analyze performance and generate alerts
      *
      * @param array<string, mixed> $collectorData Data from all collectors
+     * @param array<string, int>|null $thresholds Custom thresholds (merged with defaults)
      * @return array<int, array<string, mixed>> Performance alerts
      */
-    public static function analyze(array $collectorData): array
+    public static function analyze(array $collectorData, ?array $thresholds = null): array
     {
+        $active = $thresholds !== null
+            ? array_merge(self::DEFAULT_THRESHOLDS, $thresholds)
+            : self::DEFAULT_THRESHOLDS;
+
         $alerts = [];
 
-        // Analyze execution time
-        $alerts = array_merge($alerts, self::analyzeExecutionTime($collectorData));
-
-        // Analyze memory usage
-        $alerts = array_merge($alerts, self::analyzeMemoryUsage($collectorData));
-
-        // Analyze database queries
-        $alerts = array_merge($alerts, self::analyzeQueries($collectorData));
-
-        // Analyze HTTP requests
-        $alerts = array_merge($alerts, self::analyzeHttpRequests($collectorData));
-
-        // Analyze cache operations
+        $alerts = array_merge($alerts, self::analyzeExecutionTime($collectorData, $active));
+        $alerts = array_merge($alerts, self::analyzeMemoryUsage($collectorData, $active));
+        $alerts = array_merge($alerts, self::analyzeQueries($collectorData, $active));
+        $alerts = array_merge($alerts, self::analyzeHttpRequests($collectorData, $active));
         $alerts = array_merge($alerts, self::analyzeCacheOperations($collectorData));
 
         // Sort by level (critical first)
@@ -61,31 +68,32 @@ class PerformanceAnalyzer
      * Analyze execution time
      *
      * @param array<string, mixed> $data Collector data
+     * @param array<string, int> $thresholds Active thresholds
      * @return array<int, array<string, mixed>> Alerts
      */
-    private static function analyzeExecutionTime(array $data): array
+    private static function analyzeExecutionTime(array $data, array $thresholds): array
     {
         $alerts = [];
-        $time   = $data['request']['time'] ?? 0;
+        $time   = $data['request']['execution_time'] ?? 0;
 
-        if ($time > self::THRESHOLDS['time_ms']) {
+        if ($time > $thresholds['time_ms']) {
             $alerts[] = [
                 'level'     => self::LEVEL_CRITICAL,
                 'type'      => 'slow_request',
                 'icon'      => '🔴',
                 'message'   => sprintf('Slow Request (%.0fms)', $time),
-                'threshold' => self::THRESHOLDS['time_ms'] . 'ms',
-                'actual'    => round($time, 0) . 'ms',
+                'threshold' => $thresholds['time_ms'] . 'ms',
+                'actual'    => round($time) . 'ms',
                 'action'    => 'Review Timeline tab for bottlenecks',
             ];
-        } elseif ($time > self::THRESHOLDS['time_ms'] * 0.7) {
+        } elseif ($time > $thresholds['time_ms'] * 0.7) {
             $alerts[] = [
                 'level'     => self::LEVEL_WARNING,
                 'type'      => 'slow_request',
                 'icon'      => '🟠',
                 'message'   => sprintf('Approaching Slow Request (%.0fms)', $time),
-                'threshold' => self::THRESHOLDS['time_ms'] . 'ms',
-                'actual'    => round($time, 0) . 'ms',
+                'threshold' => $thresholds['time_ms'] . 'ms',
+                'actual'    => round($time) . 'ms',
                 'action'    => 'Monitor request performance',
             ];
         }
@@ -97,31 +105,31 @@ class PerformanceAnalyzer
      * Analyze memory usage
      *
      * @param array<string, mixed> $data Collector data
+     * @param array<string, int> $thresholds Active thresholds
      * @return array<int, array<string, mixed>> Alerts
      */
-    private static function analyzeMemoryUsage(array $data): array
+    private static function analyzeMemoryUsage(array $data, array $thresholds): array
     {
-        $alerts      = [];
-        $memoryBytes = $data['request']['memory'] ?? 0;
-        $memoryMb    = $memoryBytes / 1024 / 1024;
+        $alerts   = [];
+        $memoryMb = $data['request']['memory_peak'] ?? 0;
 
-        if ($memoryMb > self::THRESHOLDS['memory_mb']) {
+        if ($memoryMb > $thresholds['memory_mb']) {
             $alerts[] = [
                 'level'     => self::LEVEL_WARNING,
                 'type'      => 'high_memory',
                 'icon'      => '🟠',
                 'message'   => sprintf('High Memory Usage (%.1fMB)', $memoryMb),
-                'threshold' => self::THRESHOLDS['memory_mb'] . 'MB',
+                'threshold' => $thresholds['memory_mb'] . 'MB',
                 'actual'    => round($memoryMb, 1) . 'MB',
                 'action'    => 'Check for memory leaks or large datasets',
             ];
-        } elseif ($memoryMb > self::THRESHOLDS['memory_mb'] * 0.8) {
+        } elseif ($memoryMb > $thresholds['memory_mb'] * 0.8) {
             $alerts[] = [
                 'level'     => self::LEVEL_INFO,
                 'type'      => 'high_memory',
                 'icon'      => '🔵',
                 'message'   => sprintf('Elevated Memory Usage (%.1fMB)', $memoryMb),
-                'threshold' => self::THRESHOLDS['memory_mb'] . 'MB',
+                'threshold' => $thresholds['memory_mb'] . 'MB',
                 'actual'    => round($memoryMb, 1) . 'MB',
                 'action'    => 'Monitor memory usage',
             ];
@@ -134,37 +142,36 @@ class PerformanceAnalyzer
      * Analyze database queries
      *
      * @param array<string, mixed> $data Collector data
+     * @param array<string, int> $thresholds Active thresholds
      * @return array<int, array<string, mixed>> Alerts
      */
-    private static function analyzeQueries(array $data): array
+    private static function analyzeQueries(array $data, array $thresholds): array
     {
         $alerts     = [];
         $queries    = $data['queries']['queries'] ?? [];
         $queryCount = count($queries);
         $totalTime  = array_sum(array_column($queries, 'time'));
 
-        // Check query count
-        if ($queryCount > self::THRESHOLDS['query_count']) {
+        if ($queryCount > $thresholds['query_count']) {
             $alerts[] = [
                 'level'     => self::LEVEL_WARNING,
                 'type'      => 'excessive_queries',
                 'icon'      => '🟠',
                 'message'   => sprintf('Excessive Queries (%d)', $queryCount),
-                'threshold' => self::THRESHOLDS['query_count'] . ' queries',
+                'threshold' => $thresholds['query_count'] . ' queries',
                 'actual'    => $queryCount . ' queries',
                 'action'    => 'Review QUERIES tab for N+1 problems',
             ];
         }
 
-        // Check total query time
-        if ($totalTime > self::THRESHOLDS['query_time_ms']) {
+        if ($totalTime > $thresholds['query_time_ms']) {
             $alerts[] = [
                 'level'     => self::LEVEL_WARNING,
                 'type'      => 'slow_queries',
                 'icon'      => '🟠',
                 'message'   => sprintf('Slow Database Queries (%.0fms total)', $totalTime),
-                'threshold' => self::THRESHOLDS['query_time_ms'] . 'ms',
-                'actual'    => round($totalTime, 0) . 'ms',
+                'threshold' => $thresholds['query_time_ms'] . 'ms',
+                'actual'    => round($totalTime) . 'ms',
                 'action'    => 'Optimize slow queries or add indexes',
             ];
         }
@@ -176,37 +183,36 @@ class PerformanceAnalyzer
      * Analyze HTTP requests
      *
      * @param array<string, mixed> $data Collector data
+     * @param array<string, int> $thresholds Active thresholds
      * @return array<int, array<string, mixed>> Alerts
      */
-    private static function analyzeHttpRequests(array $data): array
+    private static function analyzeHttpRequests(array $data, array $thresholds): array
     {
         $alerts       = [];
         $requests     = $data['http']['requests'] ?? [];
         $requestCount = count($requests);
         $totalTime    = array_sum(array_column($requests, 'time'));
 
-        // Check HTTP request count
-        if ($requestCount > self::THRESHOLDS['http_count']) {
+        if ($requestCount > $thresholds['http_count']) {
             $alerts[] = [
                 'level'     => self::LEVEL_WARNING,
                 'type'      => 'excessive_http',
                 'icon'      => '🟠',
                 'message'   => sprintf('Excessive HTTP Requests (%d)', $requestCount),
-                'threshold' => self::THRESHOLDS['http_count'] . ' requests',
+                'threshold' => $thresholds['http_count'] . ' requests',
                 'actual'    => $requestCount . ' requests',
                 'action'    => 'Consider batching or caching HTTP requests',
             ];
         }
 
-        // Check total HTTP time
-        if ($totalTime > self::THRESHOLDS['http_time_ms']) {
+        if ($totalTime > $thresholds['http_time_ms']) {
             $alerts[] = [
                 'level'     => self::LEVEL_WARNING,
                 'type'      => 'slow_http',
                 'icon'      => '🟠',
                 'message'   => sprintf('Slow HTTP Requests (%.0fms total)', $totalTime),
-                'threshold' => self::THRESHOLDS['http_time_ms'] . 'ms',
-                'actual'    => round($totalTime, 0) . 'ms',
+                'threshold' => $thresholds['http_time_ms'] . 'ms',
+                'actual'    => round($totalTime) . 'ms',
                 'action'    => 'Review HTTP tab for slow external calls',
             ];
         }
@@ -226,12 +232,10 @@ class PerformanceAnalyzer
         $cacheCount = $data['cache']['count'] ?? 0;
         $hitRate    = $data['cache']['hit_rate'] ?? 100;
 
-        // Skip if no cache operations were performed
         if ($cacheCount === 0) {
             return $alerts;
         }
 
-        // Check cache hit rate
         if ($hitRate < 50) {
             $alerts[] = [
                 'level'     => self::LEVEL_WARNING,
@@ -279,11 +283,12 @@ class PerformanceAnalyzer
      * Get performance summary
      *
      * @param array<string, mixed> $collectorData Data from all collectors
+     * @param array<string, int>|null $thresholds Custom thresholds (merged with defaults)
      * @return array<string, mixed> Performance summary
      */
-    public static function getSummary(array $collectorData): array
+    public static function getSummary(array $collectorData, ?array $thresholds = null): array
     {
-        $alerts = self::analyze($collectorData);
+        $alerts = self::analyze($collectorData, $thresholds);
 
         return [
             'total_alerts'   => count($alerts),
@@ -298,11 +303,12 @@ class PerformanceAnalyzer
      * Check if there are any performance issues
      *
      * @param array<string, mixed> $collectorData Data from all collectors
+     * @param array<string, int>|null $thresholds Custom thresholds (merged with defaults)
      * @return bool True if issues detected
      */
-    public static function hasIssues(array $collectorData): bool
+    public static function hasIssues(array $collectorData, ?array $thresholds = null): bool
     {
-        $alerts = self::analyze($collectorData);
+        $alerts = self::analyze($collectorData, $thresholds);
         return !empty($alerts);
     }
 }

@@ -25,7 +25,9 @@ class PanelRenderer implements RendererInterface
     /** @var array<string, CollectorInterface> */
     private array $collectors;
 
-    /** @var array<string, PanelRendererInterface> */
+    /** @var array<string, PanelRendererInterface>
+     * @noinspection PhpGetterAndSetterCanBeReplacedWithPropertyHooksInspection PDepend crashes on property hooks
+     */
     private array $panelRenderers = [];
 
     /**
@@ -102,13 +104,13 @@ class PanelRenderer implements RendererInterface
     private function renderAlerts(): string
     {
         // Collect all data from collectors
-        $collectorData = [];
-        foreach ($this->collectors as $name => $collector) {
-            $collectorData[$name] = $collector->getData();
-        }
+        $collectorData = array_map(
+            fn(CollectorInterface $collector) => $collector->getData(),
+            $this->collectors
+        );
 
-        // Analyze performance
-        $alerts = PerformanceAnalyzer::analyze($collectorData);
+        // Analyze performance (with optional custom thresholds from cookie)
+        $alerts = PerformanceAnalyzer::analyze($collectorData, $this->getCustomThresholds());
 
         if (empty($alerts)) {
             return '';
@@ -156,14 +158,30 @@ class PanelRenderer implements RendererInterface
     }
 
     /**
+     * Read custom performance thresholds from cookie
+     *
+     * @return array<string, int>|null Custom thresholds or null for defaults
+     */
+    private function getCustomThresholds(): ?array
+    {
+        $json = $_COOKIE['devbar_thresholds'] ?? null;
+        if ($json === null) {
+            return null;
+        }
+
+        $decoded = json_decode(urldecode($json), true);
+
+        return is_array($decoded) ? $decoded : null;
+    }
+
+    /**
      * Render tab buttons
      *
      * @return string Tab buttons HTML
      */
     private function renderTabs(): string
     {
-        $tabs = '';
-        $tabs .= '<!-- DevToolbar: Rendering tabs -->' . "\n";
+        $tabs = '<!-- DevToolbar: Rendering tabs -->' . "\n";
 
         foreach ($this->collectors as $name => $collector) {
             $data  = $collector->getData();

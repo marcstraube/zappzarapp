@@ -13,10 +13,13 @@ use Throwable;
  */
 class CacheCollector implements CollectorInterface
 {
+    use BacktraceTrait;
+
     /** @var array<int, array<string, mixed>> */
     private array $operations = [];
     private int $hits         = 0;
     private int $misses       = 0;
+    /** @noinspection PhpGetterAndSetterCanBeReplacedWithPropertyHooksInspection PDepend crashes on property hooks */
     private bool $collecting  = false;
 
     /**
@@ -67,11 +70,10 @@ class CacheCollector implements CollectorInterface
     /**
      * Track a cache operation
      *
-     * @param string $type Operation type (get, set, delete, etc.)
+     * @param string $type Operation type (get, set, delete)
      * @param string $key Cache key
      * @param float $time Execution time in milliseconds
-     * @param mixed $value Value (for get/set operations)
-     * @param bool $hit Whether operation was a cache hit (for get operations)
+     * @param mixed $value Result value (get: cached value or false, set: value stored, delete: success)
      * @param int|null $ttl TTL in seconds (for set operations)
      * @return void
      */
@@ -80,7 +82,6 @@ class CacheCollector implements CollectorInterface
         string $key,
         float $time,
         mixed $value = null,
-        bool $hit = false,
         ?int $ttl = null
     ): void {
         if (!$this->collecting) {
@@ -95,6 +96,7 @@ class CacheCollector implements CollectorInterface
         ];
 
         if ($type === 'get') {
+            $hit              = $value !== false && $value !== null;
             $operation['hit'] = $hit;
             if ($hit) {
                 $this->hits++;
@@ -115,12 +117,13 @@ class CacheCollector implements CollectorInterface
     /**
      * Wrapper for Redis GET operation
      *
-     * @param Redis|object $redis Redis instance
+     * @noinspection PhpUnused Called by application code wrapping Redis calls
+     *
+     * @param Redis $redis Redis instance
      * @param string $key Cache key
      * @return mixed Cached value or false
-     * @phpstan-param Redis $redis
      */
-    public function wrapRedisGet($redis, string $key): mixed
+    public function wrapRedisGet(Redis $redis, string $key): mixed
     {
         if (!$this->collecting) {
             return $redis->get($key);
@@ -130,15 +133,15 @@ class CacheCollector implements CollectorInterface
         $result = $redis->get($key);
         $time   = (hrtime(true) - $start) / 1_000_000; // Convert to milliseconds
 
-        $isHit = $result !== false;
-        $ttl   = $isHit ? $redis->ttl($key) : null;
+        $this->trackOperation('get', $key, $time, $result);
 
-        $this->trackOperation('get', $key, $time, $result, $isHit);
-
-        if ($isHit && $ttl !== null) {
-            // Store TTL info for display
-            $lastOp        = &$this->operations[count($this->operations) - 1];
-            $lastOp['ttl'] = $ttl;
+        // Store TTL for hits
+        if ($result !== false) {
+            $ttl = $redis->ttl($key);
+            if ($ttl > 0) {
+                $lastOp        = &$this->operations[count($this->operations) - 1];
+                $lastOp['ttl'] = $ttl;
+            }
         }
 
         return $result;
@@ -147,14 +150,15 @@ class CacheCollector implements CollectorInterface
     /**
      * Wrapper for Redis SET operation
      *
-     * @param Redis|object $redis Redis instance
+     * @noinspection PhpUnused Called by application code wrapping Redis calls
+     *
+     * @param Redis $redis Redis instance
      * @param string $key Cache key
      * @param mixed $value Value to cache
      * @param int|null $ttl TTL in seconds
      * @return bool Success status
-     * @phpstan-param Redis $redis
      */
-    public function wrapRedisSet($redis, string $key, mixed $value, ?int $ttl = null): bool
+    public function wrapRedisSet(Redis $redis, string $key, mixed $value, ?int $ttl = null): bool
     {
         if (!$this->collecting) {
             if ($ttl !== null) {
@@ -171,7 +175,7 @@ class CacheCollector implements CollectorInterface
         }
         $time = (hrtime(true) - $start) / 1_000_000; // Convert to milliseconds
 
-        $this->trackOperation('set', $key, $time, $value, false, $ttl);
+        $this->trackOperation('set', $key, $time, $value, $ttl);
 
         return $result;
     }
@@ -179,12 +183,13 @@ class CacheCollector implements CollectorInterface
     /**
      * Wrapper for Redis DELETE operation
      *
-     * @param Redis|object $redis Redis instance
+     * @noinspection PhpUnused Called by application code wrapping Redis calls
+     *
+     * @param Redis $redis Redis instance
      * @param string|array<string> $key Cache key(s)
      * @return int Number of keys deleted
-     * @phpstan-param Redis $redis
      */
-    public function wrapRedisDelete($redis, string|array $key): int
+    public function wrapRedisDelete(Redis $redis, string|array $key): int
     {
         if (!$this->collecting) {
             return $redis->del($key);
@@ -200,41 +205,6 @@ class CacheCollector implements CollectorInterface
         return $result;
     }
 
-    /**
-     * Get relevant backtrace (filter out internal calls)
-     *
-     * @return array<int, array<string, mixed>> Filtered backtrace
-     */
-    private function getRelevantBacktrace(): array
-    {
-        /** @phpstan-ignore ekinoBannedCode.function */
-        $trace    = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 10);
-        $relevant = [];
-
-        foreach ($trace as $frame) {
-            // Skip internal DevToolbar calls
-            if (isset($frame['class']) && str_starts_with($frame['class'], 'DevToolbar\\')) {
-                continue;
-            }
-
-            // Skip PHP internal functions
-            if (!isset($frame['file'])) {
-                continue;
-            }
-
-            $relevant[] = [
-                'file'     => str_replace(getcwd() . '/', '', $frame['file']),
-                'line'     => $frame['line'] ?? 0,
-                'function' => $frame['function'],
-                'class'    => $frame['class'] ?? '',
-            ];
-
-            // Only keep first frame (no need for >= comparison)
-            break;
-        }
-
-        return $relevant;
-    }
 
     /**
      * Filter sensitive data from cached values
@@ -282,7 +252,7 @@ class CacheCollector implements CollectorInterface
         try {
             $unserialized = unserialize($value);
             return $unserialized !== false ? $unserialized : $value;
-        } catch (Throwable $e) {
+        } catch (Throwable) {
             return $value;
         }
     }
@@ -298,10 +268,9 @@ class CacheCollector implements CollectorInterface
         }
 
         // Filter sensitive patterns
-        $value = preg_replace('/("password"\s*:\s*)"[^"]*"/', '$1"[FILTERED]"', $value) ?? $value;
-        $value = preg_replace('/("token"\s*:\s*)"[^"]*"/', '$1"[FILTERED]"', $value) ?? $value;
+        $filtered = preg_replace('/("password"\s*:\s*)"[^"]*"/', '$1"[FILTERED]"', $value) ?? $value;
 
-        return $value;
+        return preg_replace('/("token"\s*:\s*)"[^"]*"/', '$1"[FILTERED]"', $filtered) ?? $filtered;
     }
 
     /**

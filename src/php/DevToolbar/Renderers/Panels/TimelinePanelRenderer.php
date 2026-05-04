@@ -70,13 +70,16 @@ class TimelinePanelRenderer extends AbstractPanelRenderer
         $bottleneckClass = $isBottleneck ? 'bottleneck' : '';
 
         $html = sprintf(
-            '<div class="dev-toolbar-timeline-item %s">
+            '<div class="dev-toolbar-timeline-item %s" title="%s: %.2fms (%.1f%% of total)">
                 <div class="dev-toolbar-timeline-label">%s</div>
                 <div class="dev-toolbar-timeline-bar-container">
                     <div class="dev-toolbar-timeline-bar" style="width: %d%%"></div>
                     <span class="dev-toolbar-timeline-time">%.2fms (%.1f%%)</span>
                 </div>',
             $bottleneckClass,
+            $this->escapeHtml($label),
+            $duration,
+            $percentage,
             $label,
             min(100, (int)$percentage),
             $duration,
@@ -87,10 +90,14 @@ class TimelinePanelRenderer extends AbstractPanelRenderer
         if (!empty($item['events'])) {
             $html .= '<div class="dev-toolbar-timeline-events">';
             foreach ($item['events'] as $event) {
+                $eventLabel    = $event['label'] ?? '';
+                $eventDuration = $event['duration'] ?? 0;
                 $html .= sprintf(
-                    '<div class="dev-toolbar-timeline-subevent">├─ %s (%.2fms)</div>',
-                    $this->escapeHtml($event['label'] ?? ''),
-                    $event['duration'] ?? 0
+                    '<div class="dev-toolbar-timeline-subevent" title="%s: %.2fms">├─ %s (%.2fms)</div>',
+                    $this->escapeHtml($eventLabel),
+                    $eventDuration,
+                    $this->escapeHtml($eventLabel),
+                    $eventDuration
                 );
             }
             $html .= '</div>';

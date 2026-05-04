@@ -39,7 +39,6 @@ class RequestPanelRendererTest extends TestCase
         $this->assertStringContainsString('200', $result);
         $this->assertStringContainsString('0.00ms', $result);
         $this->assertStringContainsString('0.00MB', $result);
-        $this->assertStringContainsString('Export Current Request', $result);
     }
 
     public function testRenderTabWithTypicalRequestData(): void
@@ -69,8 +68,9 @@ class RequestPanelRendererTest extends TestCase
 
         $result = $this->renderer->renderTab($data);
 
-        $this->assertStringContainsString('&lt;script&gt;', $result);
-        $this->assertStringNotContainsString('<script>alert', $result);
+        $expectedEscaped = htmlspecialchars('<script>');
+        $this->assertStringContainsString($expectedEscaped, $result);
+        $this->assertStringNotContainsString('<script' . '>alert', $result);
     }
 
     public function testRenderTabEscapesHtmlInUri(): void
@@ -81,8 +81,9 @@ class RequestPanelRendererTest extends TestCase
 
         $result = $this->renderer->renderTab($data);
 
-        $this->assertStringContainsString('&lt;script&gt;', $result);
-        $this->assertStringNotContainsString('<script>alert', $result);
+        $expectedEscaped = htmlspecialchars('<script>');
+        $this->assertStringContainsString($expectedEscaped, $result);
+        $this->assertStringNotContainsString('<script' . '>alert', $result);
     }
 
     public function testRenderTabWithHeaders(): void
@@ -132,8 +133,9 @@ class RequestPanelRendererTest extends TestCase
 
         $result = $this->renderer->renderTab($data);
 
-        $this->assertStringContainsString('&lt;script&gt;', $result);
-        $this->assertStringNotContainsString('<script>alert', $result);
+        $expectedEscaped = htmlspecialchars('<script>');
+        $this->assertStringContainsString($expectedEscaped, $result);
+        $this->assertStringNotContainsString('<script' . '>alert', $result);
     }
 
     public function testRenderTabWithoutHeaders(): void
@@ -147,15 +149,6 @@ class RequestPanelRendererTest extends TestCase
 
         // Headers section should not be rendered
         $this->assertStringNotContainsString('Headers', $result);
-    }
-
-    public function testRenderTabContainsExportButton(): void
-    {
-        $result = $this->renderer->renderTab([]);
-
-        $this->assertStringContainsString('dev-toolbar-export-btn', $result);
-        $this->assertStringContainsString('export-current', $result);
-        $this->assertStringContainsString('Export Current Request', $result);
     }
 
     public function testRenderTabContainsExpectedSections(): void

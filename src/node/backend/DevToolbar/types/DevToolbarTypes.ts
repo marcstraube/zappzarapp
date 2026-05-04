@@ -63,6 +63,18 @@ export interface KeyboardShortcut {
 }
 
 /**
+ * Performance alert thresholds
+ */
+export interface PerformanceThresholds {
+  time_ms?: number; // Request time (ms), default: 1000
+  memory_mb?: number; // Memory peak (MB), default: 50
+  query_count?: number; // Max queries, default: 50
+  query_time_ms?: number; // Total query time (ms), default: 500
+  http_count?: number; // Max HTTP requests, default: 10
+  http_time_ms?: number; // Total HTTP time (ms), default: 1000
+}
+
+/**
  * DevToolbar configuration stored in localStorage
  */
 export interface DevToolbarConfig {
@@ -70,6 +82,7 @@ export interface DevToolbarConfig {
   minibarLabels?: MinibarLabelType[]; // Active minibar labels (can be multiple)
   branchColors?: BranchColors; // Git branch color scheme
   toggleShortcut?: KeyboardShortcut; // Keyboard shortcut to toggle toolbar
+  thresholds?: PerformanceThresholds; // Performance alert thresholds
 }
 
 /**

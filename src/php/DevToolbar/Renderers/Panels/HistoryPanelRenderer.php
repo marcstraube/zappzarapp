@@ -23,8 +23,10 @@ class HistoryPanelRenderer extends AbstractPanelRenderer
     /**
      * Render the History tab content
      *
-     * @param array<string, mixed> $data History data including trends
+     * @param array<string, mixed> $data History data (unused — client-side rendered)
      * @return string HTML content for History tab
+     *
+     * @SuppressWarnings("PHPMD.UnusedFormalParameter") Required by PanelRendererInterface
      */
     public function renderTab(array $data): string
     {
@@ -157,24 +159,21 @@ class HistoryPanelRenderer extends AbstractPanelRenderer
     }
 
     /**
-     * Render response time trends placeholder (client-side populated)
+     * Render performance trends placeholder (client-side populated)
      *
-     * Creates placeholder container with empty sparkline.
-     * JavaScript loads request history from localStorage and generates
-     * sparkline visualization using Unicode block characters (▁▂▃▄▅▆▇█).
+     * Creates container for SVG line charts (Time, Memory, Queries).
+     * JavaScript loads request history from localStorage and renders
+     * interactive SVG charts with synchronized crosshairs and threshold lines.
      *
-     * The section is hidden by JavaScript if no data is available.
+     * The section is hidden by JavaScript if insufficient data is available.
      *
      * @return string HTML for trends section placeholder
      */
     private function renderTrends(): string
     {
-        // Always render placeholder - JavaScript will populate from localStorage
         return '<div class="dev-toolbar-section" id="dev-toolbar-history-trends-section">
-                <div class="dev-toolbar-section-title">Response Time Trend</div>
-                <div class="dev-toolbar-history-trend">
-                    <div class="dev-toolbar-history-sparkline"></div>
-                </div>
+                <div class="dev-toolbar-section-title">Performance Trends</div>
+                <div class="dev-toolbar-history-trends" id="dev-toolbar-trends-container"></div>
             </div>';
     }
 
@@ -197,29 +196,12 @@ class HistoryPanelRenderer extends AbstractPanelRenderer
     private function renderRequestList(): string
     {
         // Render placeholder - JavaScript will populate from localStorage
-        $html = '<div class="dev-toolbar-section">
+        return '<div class="dev-toolbar-section">
             <div class="dev-toolbar-section-title" id="history-list-title">Request History (<span id="history-list-count">0</span>)</div>
             <div class="dev-toolbar-history-request-list" id="history-request-list-container">
                 <p style="color: #888;">Loading history from localStorage...</p>
             </div>
         </div>';
-
-        return $html;
     }
 
-    /**
-     * Generate ASCII sparkline from numeric values
-     *
-     * Creates a visual representation using Unicode block characters (▁▂▃▄▅▆▇█)
-     * that scales proportionally to the value range.
-     *
-     * Algorithm:
-     * 1. Find min/max values to determine range
-     * 2. Normalize each value to 0-1 scale
-     * 3. Map to appropriate tick character (0-7 index)
-     * 4. Handle edge case: if all values are equal, use middle tick
-     *
-     * @param array<int|float> $values Numeric values to visualize
-     * @return string Sparkline string (empty if input is empty)
-     */
 }

@@ -33,7 +33,7 @@ class HttpClientCollectorTest extends TestCase
 
     public function testGetName(): void
     {
-        $this->assertEquals('HTTP', $this->collector->getName());
+        $this->assertEquals('http', $this->collector->getName());
     }
 
     public function testTracksHttpRequests(): void
@@ -45,8 +45,7 @@ class HttpClientCollectorTest extends TestCase
             127.5,
             200,
             ['Content-Type' => 'application/json'],
-            '{"users": []}',
-            []
+            '{"users": []}'
         );
         $this->collector->stop();
 
@@ -155,8 +154,9 @@ class HttpClientCollectorTest extends TestCase
         $data    = $this->collector->getData();
         $request = $data['requests'][0];
 
-        // Should be truncated
-        $this->assertStringContainsString('(truncated)', $request['body']);
+        // Should be truncated with size info
+        $this->assertStringContainsString('(truncated,', $request['body']);
+        $this->assertStringContainsString('bytes total)', $request['body']);
         $this->assertLessThan(strlen($longResponse), strlen($request['body']));
     }
 
