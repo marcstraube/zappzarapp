@@ -52,7 +52,7 @@ readonly class WelcomeController
                 $this->demoDevToolbarFeatures();
             } catch (Throwable $e) {
                 // If demo fails, track it as an exception
-                ExceptionCollector::getInstance()->trackException($e);
+                ExceptionCollector::getInstance()->trackHandled($e);
             }
         }
 
@@ -153,13 +153,13 @@ readonly class WelcomeController
         try {
             throw new RuntimeException('Demo exception: This is a handled exception for testing the DevToolbar');
         } catch (Exception $e) {
-            $collector->trackException($e);
+            $collector->trackHandled($e);
         }
 
         try {
             throw new InvalidArgumentException('Demo validation error: Invalid user input provided');
         } catch (Exception $e) {
-            $collector->trackException($e);
+            $collector->trackHandled($e);
         }
     }
 
