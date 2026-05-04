@@ -379,6 +379,7 @@ services:
       - ./.markdownlint-cli2.jsonc:/app/.markdownlint-cli2.jsonc:ro
       - ./lint-staged.config.js:/app/lint-staged.config.js:ro
       - ./.depcheckrc.json:/app/.depcheckrc.json:ro
+      - ./knip.config.js:/app/knip.config.js:ro
 
       # TypeScript config (for type-check)
       - ./tsconfig.json:/app/tsconfig.json:ro
