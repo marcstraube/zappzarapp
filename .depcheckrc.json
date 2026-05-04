@@ -17,6 +17,7 @@
     "@eslint/*",
     "@typescript-eslint/*",
     "prettier",
+    "prettier-plugin-toml",
     "postcss",
     "autoprefixer",
     "sass",
@@ -29,7 +30,15 @@
     "pino-pretty",
     "ws",
     "depcheck",
-    "knip"
+    "knip",
+    "@faker-js/faker",
+    "ai-command-converter",
+    "rulesync",
+    "standard-version",
+    "amqplib",
+    "meilisearch",
+    "redis",
+    "@zappzarapp/browser-utils"
   ],
   "skip-missing": true
 }
