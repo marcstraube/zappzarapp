@@ -23,7 +23,7 @@ class QueryCollector implements CollectorInterface
 
     public static function getInstance(): self
     {
-        if (self::$instance === null) {
+        if (!self::$instance instanceof QueryCollector) {
             self::$instance = new self();
         }
         return self::$instance;
@@ -45,7 +45,6 @@ class QueryCollector implements CollectorInterface
      * @param string $sql SQL query
      * @param array<int|string, mixed> $bindings Query bindings
      * @param float $time Execution time in milliseconds
-     * @return void
      */
     public function trackQuery(string $sql, array $bindings, float $time): void
     {
@@ -89,7 +88,7 @@ class QueryCollector implements CollectorInterface
         $trace = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 10);
 
         // Filter out DevToolbar and PDO internals
-        $filtered = array_filter($trace, function ($frame) {
+        $filtered = array_filter($trace, function (array $frame): bool {
             $file = $frame['file'] ?? '';
             return !str_contains($file, 'DevToolbar')
                 && !str_contains($file, 'PDO')
@@ -102,8 +101,6 @@ class QueryCollector implements CollectorInterface
 
     /**
      * Reset queries (for testing)
-     *
-     * @return void
      */
     public function reset(): void
     {

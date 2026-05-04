@@ -68,7 +68,6 @@ class HttpClientCollector implements CollectorInterface
      * @param array<string, mixed> $headers Response headers
      * @param string|false $body Response body
      * @param array<string, mixed> $requestData Request data (headers, body, etc.)
-     * @return void
      */
     public function trackRequest(
         string $method,
@@ -177,7 +176,7 @@ class HttpClientCollector implements CollectorInterface
      */
     private function parseHttpStatus(array $headers): int
     {
-        if (empty($headers)) {
+        if ($headers === []) {
             return 0;
         }
 

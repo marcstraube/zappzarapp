@@ -17,18 +17,14 @@ use Zappzarapp\Security\Csp\Nonce\NonceRegistry;
  */
 class DataInjectionRenderer implements RendererInterface
 {
-    /** @var array<string, CollectorInterface> */
-    private array $collectors;
-
-    private PanelRenderer $panelRenderer;
+    private readonly PanelRenderer $panelRenderer;
 
     /**
      * @param array<string, CollectorInterface> $collectors
      */
-    public function __construct(array $collectors)
+    public function __construct(private array $collectors)
     {
-        $this->collectors    = $collectors;
-        $this->panelRenderer = new PanelRenderer($collectors);
+        $this->panelRenderer = new PanelRenderer($this->collectors);
     }
 
     /**
@@ -67,13 +63,12 @@ class DataInjectionRenderer implements RendererInterface
             'enabled' => extension_loaded('xdebug'),
         ];
         $xdebugJson = json_encode($xdebugConfig, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT);
-        $scripts .= sprintf(
+
+        return $scripts . sprintf(
             '<script nonce="%s">window.__XDEBUG_CONFIG__ = %s;</script>',
             htmlspecialchars($nonce, ENT_QUOTES, 'UTF-8'),
             $xdebugJson
         );
-
-        return $scripts;
     }
 
     /**
@@ -157,7 +152,7 @@ class DataInjectionRenderer implements RendererInterface
 
             // Detached HEAD (commit hash)
             return null;
-        } catch (Throwable $e) {
+        } catch (Throwable) {
             return null;
         }
     }
@@ -185,12 +180,12 @@ class DataInjectionRenderer implements RendererInterface
         }
 
         try {
-            $decoded = json_decode(urldecode($_COOKIE['devbar_colors']), true);
+            $decoded = json_decode(urldecode((string) $_COOKIE['devbar_colors']), true);
             if (is_array($decoded)) {
                 // Merge with defaults to ensure all keys exist
                 return array_merge($defaults, $decoded);
             }
-        } catch (Throwable $e) {
+        } catch (Throwable) {
             // Invalid JSON, return defaults
         }
 

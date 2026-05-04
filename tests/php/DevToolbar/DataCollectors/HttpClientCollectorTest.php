@@ -157,7 +157,7 @@ class HttpClientCollectorTest extends TestCase
         // Should be truncated with size info
         $this->assertStringContainsString('(truncated,', $request['body']);
         $this->assertStringContainsString('bytes total)', $request['body']);
-        $this->assertLessThan(strlen($longResponse), strlen($request['body']));
+        $this->assertLessThan(strlen($longResponse), strlen((string) $request['body']));
     }
 
     public function testCapturesBacktrace(): void

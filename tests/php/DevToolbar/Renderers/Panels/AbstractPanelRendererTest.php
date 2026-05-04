@@ -126,7 +126,7 @@ class AbstractPanelRendererTest extends TestCase
         $result = $this->renderer->publicRenderKeyValueTable($data);
 
         $this->assertStringContainsString(htmlspecialchars('<script>'), $result);
-        $this->assertStringNotContainsString('<script' . '>alert', $result);
+        $this->assertStringNotContainsString('<script>alert', $result);
     }
 
     public function testRenderKeyValueTableArrayValue(): void

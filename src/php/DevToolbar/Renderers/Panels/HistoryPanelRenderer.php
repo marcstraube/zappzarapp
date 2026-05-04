@@ -153,9 +153,7 @@ class HistoryPanelRenderer extends AbstractPanelRenderer
                 <div class="dev-toolbar-history-stat-value slow" data-history-stat="slowest">0ms</div>
             </div>';
 
-        $html .= '</div></div>';
-
-        return $html;
+        return $html . '</div></div>';
     }
 
     /**

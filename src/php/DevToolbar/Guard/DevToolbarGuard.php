@@ -39,13 +39,8 @@ class DevToolbarGuard
         if (isset($_GET['dev_toolbar_action'])) {
             return false;
         }
-
         // Layer 5: Optional - Skip for other AJAX requests
-        if (self::isAjaxRequest()) {
-            return false;
-        }
-
-        return true;
+        return !self::isAjaxRequest();
     }
 
     /**
@@ -56,6 +51,6 @@ class DevToolbarGuard
     private static function isAjaxRequest(): bool
     {
         return !empty($_SERVER['HTTP_X_REQUESTED_WITH'])
-            && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest';
+            && strtolower((string) $_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest';
     }
 }

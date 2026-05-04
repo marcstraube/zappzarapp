@@ -132,7 +132,7 @@ abstract class AbstractPanelRenderer implements PanelRendererInterface
      */
     protected function renderKeyValueTable(array $data): string
     {
-        if (empty($data)) {
+        if ($data === []) {
             return '';
         }
 
@@ -147,9 +147,7 @@ abstract class AbstractPanelRenderer implements PanelRendererInterface
             );
         }
 
-        $html .= '</table>';
-
-        return $html;
+        return $html . '</table>';
     }
 
     /**

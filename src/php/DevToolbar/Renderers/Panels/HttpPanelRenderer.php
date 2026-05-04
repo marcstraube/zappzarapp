@@ -121,9 +121,7 @@ class HttpPanelRenderer extends AbstractPanelRenderer
             $html .= '</pre></details>';
         }
 
-        $html .= '</div>';
-
-        return $html;
+        return $html . '</div>';
     }
 
     /**

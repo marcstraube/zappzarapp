@@ -67,9 +67,7 @@ class CachePanelRenderer extends AbstractPanelRenderer
             $html .= $this->renderCacheOperation($operation);
         }
 
-        $html .= '</div>';
-
-        return $html;
+        return $html . '</div>';
     }
 
     /**
@@ -129,9 +127,7 @@ class CachePanelRenderer extends AbstractPanelRenderer
             );
         }
 
-        $html .= '</div>';
-
-        return $html;
+        return $html . '</div>';
     }
 
     /**

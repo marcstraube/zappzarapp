@@ -15,7 +15,7 @@ use Zappzarapp\Security\Csp\Nonce\NonceRegistry;
  */
 class AssetsRenderer implements RendererInterface
 {
-    private const ASSETS_DIR = __DIR__ . '/../assets/';
+    private const string ASSETS_DIR = __DIR__ . '/../assets/';
 
     public function render(): string
     {

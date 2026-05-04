@@ -24,7 +24,7 @@ class ExceptionCollector implements CollectorInterface
 
     public static function getInstance(): self
     {
-        if (self::$instance === null) {
+        if (!self::$instance instanceof ExceptionCollector) {
             self::$instance = new self();
         }
         return self::$instance;
@@ -63,7 +63,7 @@ class ExceptionCollector implements CollectorInterface
         }
 
         $this->exceptions[] = [
-            'class'   => get_class($exception),
+            'class'   => $exception::class,
             'message' => $exception->getMessage(),
             'code'    => $exception->getCode(),
             'file'    => $exception->getFile(),
@@ -81,8 +81,8 @@ class ExceptionCollector implements CollectorInterface
         return [
             'exceptions'      => $this->exceptions,
             'count'           => count($this->exceptions),
-            'handled_count'   => count(array_filter($this->exceptions, fn($e) => $e['handled'])),
-            'unhandled_count' => count(array_filter($this->exceptions, fn($e) => !$e['handled'])),
+            'handled_count'   => count(array_filter($this->exceptions, fn(array $e) => $e['handled'])),
+            'unhandled_count' => count(array_filter($this->exceptions, fn(array $e): bool => !$e['handled'])),
         ];
     }
 
@@ -119,8 +119,6 @@ class ExceptionCollector implements CollectorInterface
 
     /**
      * Reset exceptions (for testing)
-     *
-     * @return void
      */
     public function reset(): void
     {

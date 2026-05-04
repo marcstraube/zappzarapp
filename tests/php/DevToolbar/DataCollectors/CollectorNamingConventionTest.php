@@ -49,7 +49,7 @@ class CollectorNamingConventionTest extends TestCase
                 sprintf(
                     'Collector name "%s" in %s must be lowercase. Found: "%s"',
                     $name,
-                    get_class($collector),
+                    $collector::class,
                     $name
                 )
             );

@@ -91,7 +91,7 @@ final readonly class MiniBarRenderer implements RendererInterface
     private function renderAlertBadge(): string
     {
         $collectorData = array_map(
-            fn(CollectorInterface $collector) => $collector->getData(),
+            fn(CollectorInterface $collector): array => $collector->getData(),
             $this->collectors
         );
 
@@ -107,8 +107,8 @@ final readonly class MiniBarRenderer implements RendererInterface
         }
 
         $hasN1       = $nPlusOnes !== [];
-        $hasCritical = array_filter($alerts, fn($a) => $a['level'] === 'critical') !== [];
-        $hasWarning  = $hasN1 || array_filter($alerts, fn($a) => $a['level'] === 'warning') !== [];
+        $hasCritical = array_filter($alerts, fn(array $a): bool => $a['level'] === 'critical') !== [];
+        $hasWarning  = $hasN1 || array_filter($alerts, fn(array $a): bool => $a['level'] === 'warning') !== [];
 
         if ($hasCritical) {
             $levelClass = 'alert-critical';

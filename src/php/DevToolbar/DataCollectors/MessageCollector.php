@@ -6,6 +6,7 @@ namespace DevToolbar\DataCollectors;
 
 use Monolog\Handler\AbstractProcessingHandler;
 use Monolog\LogRecord;
+use Override;
 
 /**
  * Collects log messages from Monolog
@@ -30,9 +31,6 @@ class MessageCollector extends AbstractProcessingHandler implements CollectorInt
 
     /**
      * Process log record from Monolog
-     *
-     * @param LogRecord $record
-     * @return void
      */
     protected function write(LogRecord $record): void
     {
@@ -86,9 +84,8 @@ class MessageCollector extends AbstractProcessingHandler implements CollectorInt
 
     /**
      * Reset messages (for testing)
-     *
-     * @return void
      */
+    #[Override]
     public function reset(): void
     {
         $this->messages = [];

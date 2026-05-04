@@ -37,12 +37,10 @@ class DevToolbar
 
     /**
      * Get singleton instance
-     *
-     * @return self
      */
     public static function getInstance(): self
     {
-        if (self::$instance === null) {
+        if (!self::$instance instanceof DevToolbar) {
             self::$instance = new self();
         }
         return self::$instance;
@@ -50,8 +48,6 @@ class DevToolbar
 
     /**
      * Boot the toolbar and start collecting data
-     *
-     * @return void
      */
     public function boot(): void
     {
@@ -110,8 +106,6 @@ class DevToolbar
 
     /**
      * Register all data collectors
-     *
-     * @return void
      */
     private function registerCollectors(): void
     {
@@ -137,7 +131,6 @@ class DevToolbar
      * Validates input to prevent CSP injection attacks (Defense in Depth).
      *
      * @param string $nonce External nonce value (base64-encoded recommended)
-     * @return void
      *
      * @throws InvalidDirectiveValueException If nonce contains invalid characters
      */

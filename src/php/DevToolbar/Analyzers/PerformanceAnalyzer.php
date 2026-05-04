@@ -59,7 +59,7 @@ class PerformanceAnalyzer
         $alerts = array_merge($alerts, self::analyzeCacheOperations($collectorData));
 
         // Sort by level (critical first)
-        usort($alerts, fn($a, $b) => self::compareLevels($a['level'], $b['level']));
+        usort($alerts, fn(array $a, array $b): int => self::compareLevels($a['level'], $b['level']));
 
         return $alerts;
     }
@@ -292,10 +292,10 @@ class PerformanceAnalyzer
 
         return [
             'total_alerts'   => count($alerts),
-            'critical_count' => count(array_filter($alerts, fn($a) => $a['level'] === self::LEVEL_CRITICAL)),
-            'warning_count'  => count(array_filter($alerts, fn($a) => $a['level'] === self::LEVEL_WARNING)),
-            'info_count'     => count(array_filter($alerts, fn($a) => $a['level'] === self::LEVEL_INFO)),
-            'has_issues'     => !empty($alerts),
+            'critical_count' => count(array_filter($alerts, fn(array $a): bool => $a['level'] === self::LEVEL_CRITICAL)),
+            'warning_count'  => count(array_filter($alerts, fn(array $a): bool => $a['level'] === self::LEVEL_WARNING)),
+            'info_count'     => count(array_filter($alerts, fn(array $a): bool => $a['level'] === self::LEVEL_INFO)),
+            'has_issues'     => $alerts !== [],
         ];
     }
 
@@ -309,6 +309,6 @@ class PerformanceAnalyzer
     public static function hasIssues(array $collectorData, ?array $thresholds = null): bool
     {
         $alerts = self::analyze($collectorData, $thresholds);
-        return !empty($alerts);
+        return $alerts !== [];
     }
 }

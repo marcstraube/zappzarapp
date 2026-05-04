@@ -22,9 +22,6 @@ use DevToolbar\Renderers\Panels\TimelinePanelRenderer;
  */
 class PanelRenderer implements RendererInterface
 {
-    /** @var array<string, CollectorInterface> */
-    private array $collectors;
-
     /** @var array<string, PanelRendererInterface>
      * @noinspection PhpGetterAndSetterCanBeReplacedWithPropertyHooksInspection PDepend crashes on property hooks
      */
@@ -33,16 +30,13 @@ class PanelRenderer implements RendererInterface
     /**
      * @param array<string, CollectorInterface> $collectors
      */
-    public function __construct(array $collectors)
+    public function __construct(private readonly array $collectors)
     {
-        $this->collectors = $collectors;
         $this->registerPanelRenderers();
     }
 
     /**
      * Register all panel renderers
-     *
-     * @return void
      */
     private function registerPanelRenderers(): void
     {
@@ -105,14 +99,14 @@ class PanelRenderer implements RendererInterface
     {
         // Collect all data from collectors
         $collectorData = array_map(
-            fn(CollectorInterface $collector) => $collector->getData(),
+            fn(CollectorInterface $collector): array => $collector->getData(),
             $this->collectors
         );
 
         // Analyze performance (with optional custom thresholds from cookie)
         $alerts = PerformanceAnalyzer::analyze($collectorData, $this->getCustomThresholds());
 
-        if (empty($alerts)) {
+        if ($alerts === []) {
             return '';
         }
 
@@ -152,9 +146,7 @@ class PanelRenderer implements RendererInterface
             );
         }
 
-        $html .= '</div>';
-
-        return $html;
+        return $html . '</div>';
     }
 
     /**
@@ -169,7 +161,7 @@ class PanelRenderer implements RendererInterface
             return null;
         }
 
-        $decoded = json_decode(urldecode($json), true);
+        $decoded = json_decode(urldecode((string) $json), true);
 
         return is_array($decoded) ? $decoded : null;
     }
@@ -208,9 +200,7 @@ class PanelRenderer implements RendererInterface
                 $badge
             );
         }
-
-        $tabs .= '<!-- DevToolbar: Tabs rendered -->' . "\n";
-        return $tabs;
+        return $tabs . ('<!-- DevToolbar: Tabs rendered -->' . "\n");
     }
 
     /**
@@ -264,9 +254,7 @@ class PanelRenderer implements RendererInterface
         // Empty dropdown - JavaScript will populate via StorageManager
         $html .= '<div class="dev-toolbar-request-switcher-dropdown"></div>';
 
-        $html .= '</div>';
-
-        return $html;
+        return $html . '</div>';
     }
 
     /**

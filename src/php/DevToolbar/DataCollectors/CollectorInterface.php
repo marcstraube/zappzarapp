@@ -13,15 +13,11 @@ interface CollectorInterface
 {
     /**
      * Start collecting data
-     *
-     * @return void
      */
     public function start(): void;
 
     /**
      * Stop collecting data
-     *
-     * @return void
      */
     public function stop(): void;
 

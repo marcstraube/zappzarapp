@@ -11,7 +11,7 @@ namespace DevToolbar\Analyzers;
  */
 class QueryAnalyzer
 {
-    private const N_PLUS_ONE_THRESHOLD = 3; // Minimum repetitions to flag as N+1
+    private const int N_PLUS_ONE_THRESHOLD = 3; // Minimum repetitions to flag as N+1
 
     /**
      * Detect N+1 query patterns
@@ -27,7 +27,7 @@ class QueryAnalyzer
         // Group queries by normalized pattern
         foreach ($queries as $query) {
             $sql     = $query['sql'] ?? '';
-            $pattern = self::normalizeQuery($sql);
+            $pattern = $this->normalizeQuery($sql);
 
             if (!isset($patterns[$pattern])) {
                 $patterns[$pattern] = [
@@ -51,14 +51,14 @@ class QueryAnalyzer
                     'total_time' => round($data['total_time'], 2),
                     'avg_time'   => round($data['total_time'] / count($data['instances']), 2),
                     'instances'  => $data['instances'],
-                    'location'   => self::extractLocation($data['instances'][0]),
-                    'suggestion' => self::generateSuggestion($pattern, $data['instances']),
+                    'location'   => $this->extractLocation($data['instances'][0]),
+                    'suggestion' => $this->generateSuggestion($pattern, $data['instances']),
                 ];
             }
         }
 
         // Sort by total time (most impactful first)
-        usort($nPlusOnes, fn($a, $b) => $b['total_time'] <=> $a['total_time']);
+        usort($nPlusOnes, fn(array $a, array $b): int => $b['total_time'] <=> $a['total_time']);
 
         return $nPlusOnes;
     }
@@ -71,7 +71,7 @@ class QueryAnalyzer
      * @param string $sql SQL query
      * @return string Normalized query pattern
      */
-    private static function normalizeQuery(string $sql): string
+    private function normalizeQuery(string $sql): string
     {
         // Replace numbers with ?
         $sql = (string)preg_replace('/\b\d+\b/', '?', $sql);
@@ -95,7 +95,7 @@ class QueryAnalyzer
      * @param array<string, mixed> $query Query data
      * @return string Location string
      */
-    private static function extractLocation(array $query): string
+    private function extractLocation(array $query): string
     {
         $backtrace = $query['backtrace'] ?? [];
 
@@ -105,7 +105,7 @@ class QueryAnalyzer
             $line  = $frame['line'] ?? 0;
 
             // Extract just the filename
-            $filename = basename($file);
+            $filename = basename((string) $file);
 
             return "{$filename}:{$line}";
         }
@@ -120,22 +120,18 @@ class QueryAnalyzer
      * @param array<int, array<string, mixed>> $instances Query instances
      * @return string Optimization suggestion
      */
-    private static function generateSuggestion(string $pattern, array $instances): string
+    private function generateSuggestion(string $pattern, array $instances): string
     {
         // Extract table name
-        if (preg_match('/FROM\s+([a-z_]+)/i', $pattern, $matches)) {
-            $table = $matches[1];
-        } else {
-            $table = 'table';
-        }
+        $table = preg_match('/FROM\s+([a-z_]+)/i', $pattern, $matches) ? $matches[1] : 'table';
 
         // Check if it's a WHERE id = ? pattern
         if (preg_match('/WHERE\s+(\w+)\s*=\s*\?/i', $pattern, $matches)) {
             $column = $matches[1];
 
             // Extract actual values from instances
-            $values     = self::extractWhereValues($instances);
-            $valuesList = !empty($values) ? implode(', ', array_slice($values, 0, 3)) : '1, 2, 3, ...';
+            $values     = $this->extractWhereValues($instances);
+            $valuesList = $values === [] ? '1, 2, 3, ...' : implode(', ', array_slice($values, 0, 3));
 
             return sprintf(
                 "Use a WHERE IN clause to fetch all records in a single query:\n" .
@@ -160,7 +156,7 @@ class QueryAnalyzer
      * @param array<int, array<string, mixed>> $instances Query instances
      * @return array<int, string> Extracted values
      */
-    private static function extractWhereValues(array $instances): array
+    private function extractWhereValues(array $instances): array
     {
         $values = [];
 
@@ -196,14 +192,14 @@ class QueryAnalyzer
                 $slowQueries[] = [
                     'sql'        => $query['sql'] ?? '',
                     'time'       => round($time, 2),
-                    'location'   => self::extractLocation($query),
-                    'suggestion' => self::generateSlowQuerySuggestion($query),
+                    'location'   => $this->extractLocation($query),
+                    'suggestion' => $this->generateSlowQuerySuggestion($query),
                 ];
             }
         }
 
         // Sort by time (slowest first)
-        usort($slowQueries, fn($a, $b) => $b['time'] <=> $a['time']);
+        usort($slowQueries, fn(array $a, array $b): int => $b['time'] <=> $a['time']);
 
         return $slowQueries;
     }
@@ -214,33 +210,33 @@ class QueryAnalyzer
      * @param array<string, mixed> $query Query data
      * @return string Optimization suggestion
      */
-    private static function generateSlowQuerySuggestion(array $query): string
+    private function generateSlowQuerySuggestion(array $query): string
     {
         $sql = strtoupper($query['sql'] ?? '');
 
         $suggestions = [];
 
         // Check for missing WHERE clause
-        if (strpos($sql, 'WHERE') === false && strpos($sql, 'SELECT') !== false) {
+        if (!str_contains($sql, 'WHERE') && str_contains($sql, 'SELECT')) {
             $suggestions[] = "Consider adding a WHERE clause to limit results";
         }
 
         // Check for SELECT *
-        if (strpos($sql, 'SELECT *') !== false) {
+        if (str_contains($sql, 'SELECT *')) {
             $suggestions[] = "Select only needed columns instead of SELECT *";
         }
 
         // Check for missing indexes (heuristic)
-        if (strpos($sql, 'LIKE') !== false) {
+        if (str_contains($sql, 'LIKE')) {
             $suggestions[] = "LIKE queries may benefit from full-text indexes";
         }
 
         // Check for ORDER BY without LIMIT
-        if (strpos($sql, 'ORDER BY') !== false && strpos($sql, 'LIMIT') === false) {
+        if (str_contains($sql, 'ORDER BY') && !str_contains($sql, 'LIMIT')) {
             $suggestions[] = "Add LIMIT clause when using ORDER BY on large tables";
         }
 
-        if (empty($suggestions)) {
+        if ($suggestions === []) {
             $suggestions[] = "Review query execution plan and consider adding indexes";
         }
 
@@ -264,8 +260,8 @@ class QueryAnalyzer
             'total_count' => $count,
             'total_time'  => round($totalTime, 2),
             'avg_time'    => $count > 0 ? round($totalTime / $count, 2) : 0,
-            'slowest'     => !empty($times) ? max($times) : 0,
-            'fastest'     => !empty($times) ? min($times) : 0,
+            'slowest'     => $times === [] ? 0 : max($times),
+            'fastest'     => $times === [] ? 0 : min($times),
         ];
     }
 }

@@ -75,7 +75,6 @@ class CacheCollector implements CollectorInterface
      * @param float $time Execution time in milliseconds
      * @param mixed $value Result value (get: cached value or false, set: value stored, delete: success)
      * @param int|null $ttl TTL in seconds (for set operations)
-     * @return void
      */
     public function trackOperation(
         string $type,
@@ -167,13 +166,9 @@ class CacheCollector implements CollectorInterface
             return $redis->set($key, $value);
         }
 
-        $start = hrtime(true);
-        if ($ttl !== null) {
-            $result = $redis->setex($key, $ttl, $value);
-        } else {
-            $result = $redis->set($key, $value);
-        }
-        $time = (hrtime(true) - $start) / 1_000_000; // Convert to milliseconds
+        $start  = hrtime(true);
+        $result = $ttl !== null ? $redis->setex($key, $ttl, $value) : $redis->set($key, $value);
+        $time   = (hrtime(true) - $start) / 1_000_000; // Convert to milliseconds
 
         $this->trackOperation('set', $key, $time, $value, $ttl);
 

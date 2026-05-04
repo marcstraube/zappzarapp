@@ -23,7 +23,7 @@ class QueriesPanelRenderer extends AbstractPanelRenderer
     /**
      * @param QueryAnalyzer $analyzer Query analyzer for N+1 and slow query detection
      */
-    public function __construct(private QueryAnalyzer $analyzer)
+    public function __construct(private readonly QueryAnalyzer $analyzer)
     {
     }
 
@@ -57,9 +57,8 @@ class QueriesPanelRenderer extends AbstractPanelRenderer
         $html = $this->renderSummary(count($queries), $totalTime);
         $html .= $this->renderNPlusOneWarnings($queries);
         $html .= $this->renderSlowQueryWarnings($queries);
-        $html .= $this->renderQueryList($queries);
 
-        return $html;
+        return $html . $this->renderQueryList($queries);
     }
 
     /**
@@ -94,7 +93,7 @@ class QueriesPanelRenderer extends AbstractPanelRenderer
     {
         $nPlusOnes = $this->analyzer->detectNPlusOne($queries);
 
-        if (empty($nPlusOnes)) {
+        if ($nPlusOnes === []) {
             return '';
         }
 
@@ -123,9 +122,7 @@ class QueriesPanelRenderer extends AbstractPanelRenderer
             );
         }
 
-        $html .= '</div>';
-
-        return $html;
+        return $html . '</div>';
     }
 
     /**
@@ -138,7 +135,7 @@ class QueriesPanelRenderer extends AbstractPanelRenderer
     {
         $slowQueries = $this->analyzer->detectSlowQueries($queries);
 
-        if (empty($slowQueries)) {
+        if ($slowQueries === []) {
             return '';
         }
 
@@ -164,9 +161,7 @@ class QueriesPanelRenderer extends AbstractPanelRenderer
             );
         }
 
-        $html .= '</div>';
-
-        return $html;
+        return $html . '</div>';
     }
 
     /**
@@ -183,9 +178,7 @@ class QueriesPanelRenderer extends AbstractPanelRenderer
             $html .= $this->renderQuery($query);
         }
 
-        $html .= '</div>';
-
-        return $html;
+        return $html . '</div>';
     }
 
     /**
@@ -230,9 +223,7 @@ class QueriesPanelRenderer extends AbstractPanelRenderer
             $html .= $this->renderBacktrace($query['backtrace']);
         }
 
-        $html .= '</div>';
-
-        return $html;
+        return $html . '</div>';
     }
 
     /**
@@ -243,7 +234,7 @@ class QueriesPanelRenderer extends AbstractPanelRenderer
      */
     private function renderBacktrace(array $backtrace): string
     {
-        if (empty($backtrace)) {
+        if ($backtrace === []) {
             return '';
         }
 
@@ -259,12 +250,10 @@ class QueriesPanelRenderer extends AbstractPanelRenderer
                 '<div class="dev-toolbar-backtrace-frame">%s:%d %s</div>',
                 $file,
                 $line,
-                $function ? "in {$function}()" : ''
+                $function !== '' && $function !== '0' ? "in {$function}()" : ''
             );
         }
 
-        $html .= '</div>';
-
-        return $html;
+        return $html . '</div>';
     }
 }

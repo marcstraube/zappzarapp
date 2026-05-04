@@ -12,7 +12,7 @@ namespace DevToolbar\DataCollectors;
  */
 class RequestCollector implements CollectorInterface
 {
-    private const SENSITIVE_PATTERNS = [
+    private const array SENSITIVE_PATTERNS = [
         'password', 'passwd', 'pwd',
         'secret', 'token', 'api_key', 'apikey',
         'private_key', 'access_token', 'refresh_token',
@@ -35,10 +35,10 @@ class RequestCollector implements CollectorInterface
             'uri'      => $_SERVER['REQUEST_URI'] ?? '/',
             'protocol' => $_SERVER['SERVER_PROTOCOL'] ?? 'HTTP/1.1',
             'headers'  => $this->collectHeaders(),
-            'get'      => $this->filterSensitiveData($_GET),
-            'post'     => $this->filterSensitiveData($_POST),
-            'server'   => $this->filterSensitiveData($_SERVER),
-            'cookies'  => $this->filterSensitiveData($_COOKIE),
+            'get'      => static::filterSensitiveData($_GET),
+            'post'     => static::filterSensitiveData($_POST),
+            'server'   => static::filterSensitiveData($_SERVER),
+            'cookies'  => static::filterSensitiveData($_COOKIE),
         ];
     }
 
@@ -83,13 +83,13 @@ class RequestCollector implements CollectorInterface
         $headers = [];
 
         foreach ($_SERVER as $key => $value) {
-            if (strpos($key, 'HTTP_') === 0) {
-                $header           = str_replace('_', '-', substr($key, 5));
+            if (str_starts_with((string) $key, 'HTTP_')) {
+                $header           = str_replace('_', '-', substr((string) $key, 5));
                 $headers[$header] = $value;
             }
         }
 
-        return $this->filterSensitiveData($headers);
+        return static::filterSensitiveData($headers);
     }
 
     /**
@@ -124,14 +124,7 @@ class RequestCollector implements CollectorInterface
 
         foreach ($data as $key => $value) {
             $keyLower    = strtolower((string)$key);
-            $isSensitive = false;
-
-            foreach (self::SENSITIVE_PATTERNS as $pattern) {
-                if (str_contains($keyLower, $pattern)) {
-                    $isSensitive = true;
-                    break;
-                }
-            }
+            $isSensitive = array_any(self::SENSITIVE_PATTERNS, fn($pattern): bool => str_contains($keyLower, (string) $pattern));
 
             if ($isSensitive) {
                 $filtered[$key] = '[FILTERED]';

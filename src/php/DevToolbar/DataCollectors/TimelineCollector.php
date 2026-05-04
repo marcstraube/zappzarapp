@@ -84,7 +84,6 @@ class TimelineCollector implements CollectorInterface
      * @param string $label Event label (display name)
      * @param float|null $duration Optional explicit duration in ms
      * @param string $category Event category (bootstrap, middleware, controller, view, response)
-     * @return void
      */
     public function addEvent(
         string $key,
@@ -110,7 +109,6 @@ class TimelineCollector implements CollectorInterface
      * @param string $key Phase key
      * @param string $label Phase label
      * @param string $category Phase category
-     * @return void
      */
     public function startPhase(string $key, string $label, string $category = 'other'): void
     {
@@ -121,7 +119,6 @@ class TimelineCollector implements CollectorInterface
      * Mark end of a phase and calculate duration
      *
      * @param string $key Phase key (must match startPhase key)
-     * @return void
      */
     public function endPhase(string $key): void
     {
@@ -144,7 +141,7 @@ class TimelineCollector implements CollectorInterface
      */
     private function buildTimeline(): array
     {
-        if (empty($this->events)) {
+        if ($this->events === []) {
             return [];
         }
 
@@ -169,11 +166,7 @@ class TimelineCollector implements CollectorInterface
             $categoryEvents = [];
 
             foreach ($events as $event) {
-                if ($event['duration'] !== null) {
-                    $duration = $event['duration'];
-                } else {
-                    $duration = ($event['time'] - $prevTime) * 1000;
-                }
+                $duration = $event['duration'] ?? ($event['time'] - $prevTime) * 1000;
 
                 $categoryTime += $duration;
                 $categoryEvents[] = [
@@ -198,7 +191,7 @@ class TimelineCollector implements CollectorInterface
         $timeline = [];
         foreach ($categoryData as $category => $data) {
             $timeline[] = [
-                'label'         => ucfirst($category),
+                'label'         => ucfirst((string) $category),
                 'category'      => $category,
                 'duration'      => round($data['time'], 2),
                 'percentage'    => $totalCategoryTime > 0
@@ -220,7 +213,6 @@ class TimelineCollector implements CollectorInterface
      * @param int $count Number of operations
      * @param float $totalTime Total time in milliseconds
      * @param string $category Category (e.g., 'database', 'http', 'cache')
-     * @return void
      */
     public function addAggregatedData(
         string $label,

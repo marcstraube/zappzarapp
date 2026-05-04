@@ -33,7 +33,7 @@ class CookieConfigSourceTest extends TestCase
      * about json_encode's false return type — every fixture in this file
      * passes a known-encodable value.
      */
-    private static function cookie(mixed $value): string
+    private function cookie(mixed $value): string
     {
         return urlencode((string) json_encode($value));
     }
@@ -51,7 +51,7 @@ class CookieConfigSourceTest extends TestCase
     public function testParsesValidLabels(): void
     {
         $cookies = [
-            CookieKey::Labels->value => self::cookie(['branch', 'route']),
+            CookieKey::Labels->value => $this->cookie(['branch', 'route']),
         ];
 
         $config = $this->makeSource($cookies)->read();
@@ -62,7 +62,7 @@ class CookieConfigSourceTest extends TestCase
     public function testFiltersUnknownLabelTypes(): void
     {
         $cookies = [
-            CookieKey::Labels->value => self::cookie(['branch', 'evil-label', 'route']),
+            CookieKey::Labels->value => $this->cookie(['branch', 'evil-label', 'route']),
         ];
 
         $config = $this->makeSource($cookies)->read();
@@ -73,7 +73,7 @@ class CookieConfigSourceTest extends TestCase
     public function testFallsBackToDefaultLabelsWhenAllInvalid(): void
     {
         $cookies = [
-            CookieKey::Labels->value => self::cookie(['evil-label-1', 'evil-label-2']),
+            CookieKey::Labels->value => $this->cookie(['evil-label-1', 'evil-label-2']),
         ];
 
         $config = $this->makeSource($cookies)->read();
@@ -95,7 +95,7 @@ class CookieConfigSourceTest extends TestCase
     public function testParsesValidBranchColors(): void
     {
         $cookies = [
-            CookieKey::Colors->value => self::cookie([
+            CookieKey::Colors->value => $this->cookie([
                 'feat' => '#0000ff',
                 'fix'  => '#FFAA00',
             ]),
@@ -112,7 +112,7 @@ class CookieConfigSourceTest extends TestCase
     public function testRejectsUnknownColorKeys(): void
     {
         $cookies = [
-            CookieKey::Colors->value => self::cookie([
+            CookieKey::Colors->value => $this->cookie([
                 'evil' => '#000000',
                 'feat' => '#0000ff',
             ]),
@@ -127,7 +127,7 @@ class CookieConfigSourceTest extends TestCase
     public function testRejectsInvalidColorValues(): void
     {
         $cookies = [
-            CookieKey::Colors->value => self::cookie([
+            CookieKey::Colors->value => $this->cookie([
                 'feat'  => '#fff',                    // shorthand, rejected
                 'fix'   => 'red',                     // named, rejected
                 'chore' => '#000;background:url(x)', // injection attempt, rejected
@@ -145,7 +145,7 @@ class CookieConfigSourceTest extends TestCase
     public function testParsesValidThresholds(): void
     {
         $cookies = [
-            CookieKey::Thresholds->value => self::cookie([
+            CookieKey::Thresholds->value => $this->cookie([
                 'time_ms'   => 2000,
                 'memory_mb' => 100,
             ]),
@@ -159,7 +159,7 @@ class CookieConfigSourceTest extends TestCase
     public function testRejectsUnknownThresholdKeys(): void
     {
         $cookies = [
-            CookieKey::Thresholds->value => self::cookie([
+            CookieKey::Thresholds->value => $this->cookie([
                 'evil_key' => 100,
                 'time_ms'  => 2000,
             ]),
@@ -173,7 +173,7 @@ class CookieConfigSourceTest extends TestCase
     public function testRejectsNonPositiveThresholdValues(): void
     {
         $cookies = [
-            CookieKey::Thresholds->value => self::cookie([
+            CookieKey::Thresholds->value => $this->cookie([
                 'time_ms'    => 0,
                 'memory_mb'  => -10,
                 'http_count' => 5,
@@ -188,7 +188,7 @@ class CookieConfigSourceTest extends TestCase
     public function testRejectsNonIntThresholdValues(): void
     {
         $cookies = [
-            CookieKey::Thresholds->value => self::cookie([
+            CookieKey::Thresholds->value => $this->cookie([
                 'time_ms'    => '2000',
                 'memory_mb'  => 50.5,
                 'http_count' => 5,
@@ -203,7 +203,7 @@ class CookieConfigSourceTest extends TestCase
     public function testReturnsNullThresholdsWhenAllInvalid(): void
     {
         $cookies = [
-            CookieKey::Thresholds->value => self::cookie([
+            CookieKey::Thresholds->value => $this->cookie([
                 'evil_key' => 100,
                 'time_ms'  => -1,
             ]),

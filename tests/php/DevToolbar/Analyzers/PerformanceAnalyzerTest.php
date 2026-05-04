@@ -150,7 +150,7 @@ class PerformanceAnalyzerTest extends TestCase
         $alerts = PerformanceAnalyzer::analyze($data);
 
         // Should have no cache-related alerts
-        $cacheAlerts = array_filter($alerts, fn($a) => $a['type'] === 'low_cache_hit_rate');
+        $cacheAlerts = array_filter($alerts, fn(array $a): bool => $a['type'] === 'low_cache_hit_rate');
         $this->assertEmpty($cacheAlerts);
     }
 

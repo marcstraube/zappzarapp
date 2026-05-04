@@ -70,7 +70,7 @@ class RequestPanelRendererTest extends TestCase
 
         $expectedEscaped = htmlspecialchars('<script>');
         $this->assertStringContainsString($expectedEscaped, $result);
-        $this->assertStringNotContainsString('<script' . '>alert', $result);
+        $this->assertStringNotContainsString('<script>alert', $result);
     }
 
     public function testRenderTabEscapesHtmlInUri(): void
@@ -83,7 +83,7 @@ class RequestPanelRendererTest extends TestCase
 
         $expectedEscaped = htmlspecialchars('<script>');
         $this->assertStringContainsString($expectedEscaped, $result);
-        $this->assertStringNotContainsString('<script' . '>alert', $result);
+        $this->assertStringNotContainsString('<script>alert', $result);
     }
 
     public function testRenderTabWithHeaders(): void
@@ -135,7 +135,7 @@ class RequestPanelRendererTest extends TestCase
 
         $expectedEscaped = htmlspecialchars('<script>');
         $this->assertStringContainsString($expectedEscaped, $result);
-        $this->assertStringNotContainsString('<script' . '>alert', $result);
+        $this->assertStringNotContainsString('<script>alert', $result);
     }
 
     public function testRenderTabWithoutHeaders(): void

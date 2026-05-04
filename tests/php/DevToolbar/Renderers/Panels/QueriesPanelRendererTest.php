@@ -157,7 +157,7 @@ class QueriesPanelRendererTest extends TestCase
         $result = $this->renderer->renderTab($data);
 
         $this->assertStringContainsString(htmlspecialchars('<script>'), $result);
-        $this->assertStringNotContainsString('<script' . '>alert', $result);
+        $this->assertStringNotContainsString('<script>alert', $result);
     }
 
     public function testRenderTabEscapesHtmlInBindings(): void
@@ -176,7 +176,7 @@ class QueriesPanelRendererTest extends TestCase
         $result = $this->renderer->renderTab($data);
 
         $this->assertStringContainsString(htmlspecialchars('<script>'), $result);
-        $this->assertStringNotContainsString('<script' . '>alert', $result);
+        $this->assertStringNotContainsString('<script>alert', $result);
     }
 
     // ========== renderTab() tests - Backtrace ==========
