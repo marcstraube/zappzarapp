@@ -7,52 +7,42 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import type { Request, Response } from 'express';
 import { DevDashboardController } from '@backend/DevDashboard/Controllers/DevDashboardController';
-import {
-  CoverageService,
-  type CoverageStatus,
-  type CoverageResult,
-} from '@backend/DevDashboard/Services/CoverageService';
-import {
-  DocsService,
-  type DocsStatus,
-  type DocsResult,
-} from '@backend/DevDashboard/Services/DocsService';
-import { QualityService, type QualityMetrics } from '@backend/DevDashboard/Services/QualityService';
-import { SystemService, type NodeInfo } from '@backend/DevDashboard/Services/SystemService';
+import { CoverageService } from '@backend/DevDashboard/Services/CoverageService';
+import { DocsService } from '@backend/DevDashboard/Services/DocsService';
+import { QualityService } from '@backend/DevDashboard/Services/QualityService';
+import { SystemService } from '@backend/DevDashboard/Services/SystemService';
 
 // Mock services using vi.mocked to create type-safe mocks
 const createMockCoverageService = (): CoverageService => {
-  const mock = {
+  return {
     getCoverageStatus: vi.fn().mockReturnValue({
       available: true,
       outdated: false,
       reportPath: 'build/coverage/node/index.html',
       message: 'Coverage report is available',
-    } as CoverageStatus),
+    }),
     runCoverage: vi.fn().mockResolvedValue({
       success: true,
       message: 'Coverage generated',
       reportPath: 'build/coverage/node/index.html',
-    } as CoverageResult),
+    }),
   };
-  return mock as unknown as CoverageService;
 };
 
 const createMockDocsService = (): DocsService => {
-  const mock = {
+  return {
     getDocsStatus: vi.fn().mockReturnValue({
       available: true,
       outdated: false,
       reportPath: 'docs/api/node-backend/index.html',
       message: 'Documentation is available',
-    } as DocsStatus),
+    }),
     generateDocs: vi.fn().mockResolvedValue({
       success: true,
       message: 'Docs generated',
       reportPath: 'docs/api/node-backend/index.html',
-    } as DocsResult),
+    }),
   };
-  return mock as unknown as DocsService;
 };
 
 const createMockQualityService = (): QualityService => {
@@ -82,7 +72,7 @@ const createMockQualityService = (): QualityService => {
         status: 'configured',
         message: 'Vitest is configured',
       },
-    } as QualityMetrics),
+    }),
   };
   return mock as unknown as QualityService;
 };
@@ -102,7 +92,7 @@ const createMockSystemService = (): SystemService => {
         name: 'test',
         version: '1.0.0',
       },
-    } as NodeInfo),
+    }),
   };
   return mock as unknown as SystemService;
 };
@@ -348,7 +338,7 @@ describe('DevDashboard Controller', () => {
     it('should handle generation errors', async () => {
       mockCoverageService.runCoverage = vi
         .fn()
-        .mockResolvedValue({ success: false, message: 'Generation failed' } as CoverageResult);
+        .mockResolvedValue({ success: false, message: 'Generation failed' });
 
       const req = createMockRequest() as Request;
       const res = createMockResponse() as Response;
@@ -420,7 +410,7 @@ describe('DevDashboard Controller', () => {
     it('should handle generation errors', async () => {
       mockDocsService.generateDocs = vi
         .fn()
-        .mockResolvedValue({ success: false, message: 'Generation failed' } as DocsResult);
+        .mockResolvedValue({ success: false, message: 'Generation failed' });
 
       const req = createMockRequest() as Request;
       const res = createMockResponse() as Response;

@@ -27,7 +27,16 @@ use Twig\Error\SyntaxError;
 /**
  * Welcome Controller
  *
- * Displays the main landing page with service status dashboard
+ * Displays the main landing page with service status dashboard.
+ *
+ * TODO(devtoolbar-extraction): the demoDevToolbarFeatures() helpers (lines
+ *   ~85-276) account for all DevToolbar imports here. They should move into a
+ *   dedicated DevToolbarDemo service so this controller stops depending on
+ *   collector internals. Lifting that out drops the coupling from 19 to ~6
+ *   and lets us remove this suppression. Deferred while DevToolbar is being
+ *   extracted into its own package.
+ *
+ * @SuppressWarnings("PHPMD.CouplingBetweenObjects")
  */
 readonly class WelcomeController
 {

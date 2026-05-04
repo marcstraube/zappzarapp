@@ -150,7 +150,14 @@ class MariaDbConnectionImpl implements DatabaseConnection {
     sql: string,
     params?: unknown[]
   ): Promise<{ affectedRows: number; insertId?: number }> {
-    const [result] = await this.connection.execute(sql, params);
+    // Cast at adapter boundary: mysql2 3.22+ tightened ExecuteValues (string |
+    // number | bigint | boolean | Date | Blob | Buffer | Uint8Array | null and
+    // their arrays/records). Our DatabaseConnection API is provider-agnostic and
+    // accepts unknown[]; callers pass primitive SQL parameter values.
+    const [result] = await this.connection.execute(
+      sql,
+      params as Parameters<typeof this.connection.execute>[1]
+    );
     const header = result as ResultSetHeader;
     return {
       affectedRows: header.affectedRows,
