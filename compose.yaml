@@ -207,6 +207,10 @@ services:
       - LOG_LEVEL=${LOG_LEVEL:-info}
       - LOG_FORMAT=${LOG_FORMAT:-json}
       - CORS_ORIGINS=${CORS_ORIGINS:-}
+      # DevToolbar explicit on/off switch (fail-closed default). The
+      # DevToolbarGuard also enables on ENV=development, but plumbing this
+      # through makes the documented .env toggle actually take effect.
+      - ENABLE_DEV_TOOLBAR=${ENABLE_DEV_TOOLBAR:-false}
       # Service activation flags (for DevDashboard)
       - ENABLE_PHP=${ENABLE_PHP:-true}
       - ENABLE_NODE=${ENABLE_NODE:-true}
