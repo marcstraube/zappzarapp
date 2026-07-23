@@ -16,15 +16,6 @@
     "issues": "https://github.com/marcstraube/zappzarapp/issues",
     "source": "https://github.com/marcstraube/zappzarapp"
   },
-  "repositories": [
-    {
-      "type": "path",
-      "url": "packages/devtoolbar",
-      "options": {
-        "symlink": true
-      }
-    }
-  ],
   "require": {
     "php": "^8.4",
     "ext-ctype": "*",
@@ -41,7 +32,7 @@
     "php-di/php-di": "^7.1",
     "twig/twig": "^3.0",
     "zappzarapp/audit-logger": "^1.1.0",
-    "zappzarapp/devtoolbar": "@dev",
+    "zappzarapp/devtoolbar": "^1.0.0",
     "zappzarapp/security": "^1.0.0"
   },
   "require-dev": {

@@ -212,12 +212,6 @@ services:
       # Dependencies (named volume for best cross-platform performance)
       - php_vendor:/var/www/html/vendor
 
-      # Locally linked composer packages under development. The host has a
-      # `packages/<name>` symlink to the sibling repo (../<name>); for the
-      # container we bind-mount the sibling repo directly so the symlink's
-      # absolute target isn't needed inside the container's filesystem.
-      - ../zappzarapp-php-devtoolbar:/var/www/html/packages/devtoolbar
-
       # Source and Tests (bidirectional bind mounts for CS Fixer, PHPStan, etc.)
       - ./src/php:/var/www/html/src/php
       - ./tests/php:/var/www/html/tests/php
