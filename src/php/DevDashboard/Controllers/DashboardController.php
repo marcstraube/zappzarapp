@@ -69,12 +69,12 @@ readonly class DashboardController
         if ($showPhpInfo) {
             ob_start();
             phpinfo(); // @phpstan-ignore ekinoBannedCode.function (Legitimate use in DevDashboard for system info display)
+            // ob_get_clean() cannot return false here: the matching ob_start()
+            // is right above, so a buffer is always active.
             $phpinfo = ob_get_clean();
-            if ($phpinfo !== false) {
-                $phpinfo = preg_replace('%^.*<body>(.*)</body>.*$%ms', '$1', $phpinfo);
-                if ($phpinfo !== null) {
-                    $phpinfoHtml = str_replace('<table', '<table class="w-full text-sm"', $phpinfo);
-                }
+            $phpinfo = preg_replace('%^.*<body>(.*)</body>.*$%ms', '$1', $phpinfo);
+            if ($phpinfo !== null) {
+                $phpinfoHtml = str_replace('<table', '<table class="w-full text-sm"', $phpinfo);
             }
         }
 

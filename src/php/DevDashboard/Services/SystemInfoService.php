@@ -79,7 +79,7 @@ class SystemInfoService
         $sensitiveKeys = ['PASSWORD', 'SECRET', 'KEY', 'TOKEN', 'PRIVATE'];
 
         foreach ($env as $key => $value) {
-            $isSensitive    = array_any($sensitiveKeys, fn($sensitive): bool => stripos($key, (string) $sensitive) !== false);
+            $isSensitive    = array_any($sensitiveKeys, fn(string $sensitive): bool => stripos($key, $sensitive) !== false);
             $filtered[$key] = $isSensitive ? '********' : $value;
         }
 
