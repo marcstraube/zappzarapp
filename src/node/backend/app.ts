@@ -40,6 +40,8 @@ export const logger = pino({
 
 /**
  * Application options for dependency injection
+ *
+ * @public Boilerplate API — shipped for consumers, no in-tree importer expected.
  */
 export interface AppOptions {
   pool?: Pool | null;

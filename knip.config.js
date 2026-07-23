@@ -1,35 +1,27 @@
 /** @type {import('knip').KnipConfig} */
 // noinspection JSUnusedGlobalSymbols -- knip auto-loads this file by convention (knip.config.{js,ts,mjs}) via dynamic import; the default export has no static importer for the IDE to discover.
 export default {
-  // Entry points (knip auto-detects from package.json, only add non-standard ones)
-  entry: [
-    'resources/js/app.js'
-  ],
+  workspaces: {
+    // Root workspace: Laravel frontend resources
+    '.': {
+      entry: ['resources/js/app.js'],
+      project: ['resources/**/*.{js,ts}', 'tests/node/**/*.ts'],
+    },
+    // Backend and frontend workspaces use knip defaults
+    'src/node/backend': {},
+    'src/node/frontend': {},
+  },
 
-  // Project files to analyze
-  project: [
-    'src/node/**/*.ts',
-    'tests/node/**/*.ts',
-    'resources/**/*.{js,ts}'
-  ],
-
-  // Ignore patterns (build artifacts, generated files, config files)
+  // Ignore patterns (build artifacts, generated files)
   ignore: [
-    'build/**',
     '**/dist/**',
-    'docs/**',
-    'coverage/**',
-    'public/assets/**',
-    '**/*.min.js',
-    '**/*.d.ts',
-    'typedoc.json',
 
     // Boilerplate scaffolding shipped for users to build on. No in-tree
     // importer expected — this is ready-made test scaffolding (backend
     // fixtures) that ships with the platform.
     'tests/node/backend/fixtures/responses.ts',
     'tests/node/backend/fixtures/testConfig.ts',
-    'tests/node/backend/fixtures/users.ts'
+    'tests/node/backend/fixtures/users.ts',
   ],
 
   // Ignore dependencies (only those knip can't auto-detect)
@@ -39,7 +31,6 @@ export default {
 
     // Git hooks (executed via husky/git, not imports)
     '@commitlint/cli',
-    '@commitlint/config-conventional',
     'lint-staged',
 
     // Runtime utilities (loaded dynamically, not via imports)
@@ -61,6 +52,6 @@ export default {
     'standard-version',
 
     // Analysis tools (self-referential, run via CLI)
-    'depcheck'
-  ]
+    'depcheck',
+  ],
 };

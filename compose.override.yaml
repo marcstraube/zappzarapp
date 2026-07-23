@@ -359,6 +359,9 @@ services:
       - ./tests:/app/tests
       - ./templates:/app/templates
       - ./docker:/app/docker
+      # Frontend asset sources — knip analyzes resources/js via its entry
+      # pattern; without this mount every resources/** pattern is dead
+      - ./resources:/app/resources
 
       # Workspace node_modules (MUST be after ./src mount)
       - backend_node_modules:/app/src/node/backend/node_modules

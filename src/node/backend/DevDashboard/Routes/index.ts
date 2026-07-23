@@ -14,6 +14,8 @@ import { SystemService } from '../Services/SystemService.js';
 
 /**
  * Create the DevDashboard router
+ *
+ * @public Boilerplate API — shipped for consumers, no in-tree default importer expected.
  */
 export function createDevDashboardRouter(): Router {
   const router = Router();
@@ -47,5 +49,3 @@ export function createDevDashboardRouter(): Router {
 
   return router;
 }
-
-export default createDevDashboardRouter;

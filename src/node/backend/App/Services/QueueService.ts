@@ -156,6 +156,8 @@ export interface QueueMessage {
 
 /**
  * Queue service configuration
+ *
+ * @public Boilerplate API — shipped for consumers, no in-tree importer expected.
  */
 export interface QueueServiceOptions {
   /** RabbitMQ URL (default: from env or amqp://rabbitmq:5672) */

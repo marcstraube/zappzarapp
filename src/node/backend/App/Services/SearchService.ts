@@ -164,6 +164,8 @@ export interface SearchServiceInterface {
 
 /**
  * Search Service Configuration
+ *
+ * @public Boilerplate API — shipped for consumers, no in-tree importer expected.
  */
 export interface SearchServiceOptions {
   /** Meilisearch URL (default: from MEILISEARCH_URL env or https://meilisearch:7700) */

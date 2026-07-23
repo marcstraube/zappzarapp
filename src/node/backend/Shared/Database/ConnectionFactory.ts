@@ -31,11 +31,15 @@ import { getDatabaseConfig, isPostgres } from './DatabaseConfig';
 
 /**
  * Database type identifier
+ *
+ * @public Boilerplate API — shipped for consumers, no in-tree importer expected.
  */
 export type DatabaseType = 'postgres' | 'mysql';
 
 /**
  * Connection factory options
+ *
+ * @public Boilerplate API — shipped for consumers, no in-tree importer expected.
  */
 export interface ConnectionFactoryOptions {
   /** Override database type detection */
@@ -335,6 +339,8 @@ export function getConnectionFactory(): ConnectionFactory {
 
 /**
  * Create a connection using the default factory
+ *
+ * @public Boilerplate API — shipped for consumers, no in-tree importer expected.
  */
 export async function createConnection(): Promise<ExtendedDatabaseConnection> {
   return getConnectionFactory().create();

@@ -94,6 +94,8 @@ export interface CacheServiceInterface {
 
 /**
  * Cache Service Configuration
+ *
+ * @public Boilerplate API — shipped for consumers, no in-tree importer expected.
  */
 export interface CacheServiceOptions {
   /** Redis URL (default: from REDIS_URL env or rediss://redis:6379) */

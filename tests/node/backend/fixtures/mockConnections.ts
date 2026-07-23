@@ -8,6 +8,8 @@ import type { Pool as MySqlPool, PoolConnection as MySqlConnection } from 'mysql
 
 /**
  * Create a mock PostgreSQL client
+ *
+ * @public Boilerplate API — shipped for consumers, no in-tree importer expected.
  */
 export function createMockPgClient(): PgClient {
   return {
@@ -31,6 +33,8 @@ export function createMockPgPool(): PgPool {
 
 /**
  * Create a mock MySQL connection
+ *
+ * @public Boilerplate API — shipped for consumers, no in-tree importer expected.
  */
 export function createMockMySqlConnection(): MySqlConnection {
   return {

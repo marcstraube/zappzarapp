@@ -33,6 +33,8 @@ export function getCaPath(): string {
 
 /**
  * Get CA certificate buffer (if exists and verification enabled)
+ *
+ * @public Boilerplate API — shipped for consumers, no in-tree importer expected.
  */
 export function getCaCert(): Buffer | undefined {
   if (!shouldVerifyTls()) {

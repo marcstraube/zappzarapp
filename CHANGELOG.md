@@ -5186,8 +5186,7 @@ Complete feature parity between VS Code and PhpStorm:
       - `%s` Platzhalter wurden als tatsächliche Dateipfade interpretiert
       - Warnungen waren harmlos, aber störend für Code-Quality-Metriken
   - **Lösung 3: Template-Variable-Dokumentation in welcome.php**
-    - **Problem:** PhpStorm meldete "Undefined variable" für
-      $vite, $env,
+    - **Problem:** PhpStorm meldete "Undefined variable" für $vite, $env,
       $status
       - Variablen werden von WelcomeController via include übergeben
       - IDE konnte nicht erkennen, dass Variablen im Template-Scope verfügbar

@@ -47,6 +47,8 @@ import { loadCredential } from '../../Shared/Config/credentials';
 
 /**
  * Object metadata structure
+ *
+ * @public Boilerplate API — shipped for consumers, no in-tree importer expected.
  */
 export interface ObjectMetadata {
   size: number;
@@ -57,6 +59,8 @@ export interface ObjectMetadata {
 
 /**
  * List object result
+ *
+ * @public Boilerplate API — shipped for consumers, no in-tree importer expected.
  */
 export interface ListObject {
   key: string;
@@ -66,6 +70,8 @@ export interface ListObject {
 
 /**
  * Storage Service Interface
+ *
+ * @public Boilerplate API — shipped for consumers, no in-tree importer expected.
  */
 export interface StorageServiceInterface {
   /**
@@ -159,6 +165,8 @@ export interface StorageServiceInterface {
 
 /**
  * Storage Service Configuration
+ *
+ * @public Boilerplate API — shipped for consumers, no in-tree importer expected.
  */
 export interface StorageServiceOptions {
   /** S3 endpoint URL (default: from env or http://seaweedfs:8333) */

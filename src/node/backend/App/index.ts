@@ -9,6 +9,8 @@ import { Router, Request, Response } from 'express';
 
 /**
  * Create the App router with all production routes
+ *
+ * @public Boilerplate API — shipped for consumers, no in-tree default importer expected.
  */
 export function createAppRouter(): Router {
   const router = Router();
@@ -35,5 +37,3 @@ export function createAppRouter(): Router {
 
   return router;
 }
-
-export default createAppRouter;

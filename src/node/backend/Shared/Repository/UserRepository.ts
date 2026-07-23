@@ -41,6 +41,8 @@ export interface User extends Row {
 
 /**
  * User Repository Interface
+ *
+ * @public Boilerplate API — shipped for consumers, no in-tree importer expected.
  */
 export interface UserRepositoryInterface {
   /**

@@ -33,7 +33,11 @@ import * as http from 'http';
 import * as https from 'https';
 import { getHttpsTlsOptions, getTlsSocketOptions } from '../Config/TlsConfig';
 
-// Service check result
+/**
+ * Service check result
+ *
+ * @public Boilerplate API — shipped for consumers, no in-tree importer expected.
+ */
 export interface ServiceCheckResult {
   status: 'ok' | 'degraded' | 'unhealthy' | 'disabled';
   latency_ms?: number;
@@ -42,14 +46,22 @@ export interface ServiceCheckResult {
   version?: string;
 }
 
-// Liveness response
+/**
+ * Liveness response
+ *
+ * @public Boilerplate API — shipped for consumers, no in-tree importer expected.
+ */
 export interface LivenessResponse {
   status: 'ok';
   service: string;
   timestamp: string;
 }
 
-// Readiness response
+/**
+ * Readiness response
+ *
+ * @public Boilerplate API — shipped for consumers, no in-tree importer expected.
+ */
 export interface ReadinessResponse {
   status: 'ok' | 'degraded' | 'unhealthy';
   timestamp: string;
@@ -59,7 +71,11 @@ export interface ReadinessResponse {
   checks: Record<string, ServiceCheckResult>;
 }
 
-// Status response (all services including disabled)
+/**
+ * Status response (all services including disabled)
+ *
+ * @public Boilerplate API — shipped for consumers, no in-tree importer expected.
+ */
 export interface StatusResponse {
   timestamp: string;
   environment: string;

@@ -46,6 +46,8 @@ import { loadCredential } from '../../Shared/Config/credentials';
 
 /**
  * Search hit structure
+ *
+ * @public Boilerplate API — shipped for consumers, no in-tree importer expected.
  */
 export interface SearchHit<T = Record<string, unknown>> {
   _id: string;
@@ -57,6 +59,8 @@ export interface SearchHit<T = Record<string, unknown>> {
 
 /**
  * Search result structure
+ *
+ * @public Boilerplate API — shipped for consumers, no in-tree importer expected.
  */
 export interface SearchResult<T = Record<string, unknown>> {
   hits: {
@@ -71,6 +75,8 @@ export interface SearchResult<T = Record<string, unknown>> {
 
 /**
  * Bulk index result
+ *
+ * @public Boilerplate API — shipped for consumers, no in-tree importer expected.
  */
 export interface BulkIndexResult {
   indexed: number;
@@ -79,6 +85,8 @@ export interface BulkIndexResult {
 
 /**
  * Cluster health response
+ *
+ * @public Boilerplate API — shipped for consumers, no in-tree importer expected.
  */
 export interface ClusterHealth {
   status: 'green' | 'yellow' | 'red' | 'unknown';
@@ -88,6 +96,8 @@ export interface ClusterHealth {
 
 /**
  * Search options
+ *
+ * @public Boilerplate API — shipped for consumers, no in-tree importer expected.
  */
 export interface SearchOptions {
   /** Maximum number of results (default: 10) */
@@ -106,6 +116,8 @@ export interface SearchOptions {
 
 /**
  * Elasticsearch Service Interface
+ *
+ * @public Boilerplate API — shipped for consumers, no in-tree importer expected.
  */
 export interface ElasticsearchServiceInterface {
   /**
@@ -223,6 +235,8 @@ export interface ElasticsearchServiceInterface {
 
 /**
  * Elasticsearch Service Configuration
+ *
+ * @public Boilerplate API — shipped for consumers, no in-tree importer expected.
  */
 export interface ElasticsearchServiceOptions {
   /** Elasticsearch URL (default: from ELASTICSEARCH_URL env or https://elasticsearch:9200) */
