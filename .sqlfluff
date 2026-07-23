@@ -12,8 +12,10 @@ dialect = postgres
 # CV06: Semi-colon terminator (conflicts with $$ procedural blocks)
 # RF04: Keywords as identifiers (common column names like 'name', 'data', 'action')
 # CP03: Function capitalisation (PostgreSQL convention is lowercase for built-ins)
+# PG01: CREATE INDEX CONCURRENTLY (inappropriate for bootstrap migrations: tables
+#       are empty at bootstrap and CONCURRENTLY cannot run inside a transaction)
 # Note: MariaDB DELIMITER $$ syntax requires --ignore parsing flag (in Makefile)
-exclude_rules = LT01, LT02, LT05, LT12, CV06, RF04, CP03
+exclude_rules = LT01, LT02, LT05, LT12, CV06, RF04, CP03, PG01
 # Max line length
 max_line_length = 120
 # CPU processes to use while linting (0 = auto)
