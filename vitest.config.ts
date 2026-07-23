@@ -23,9 +23,6 @@ export default defineConfig({
         'src/node/frontend/**',
       ],
       // Coverage thresholds: 80% parity with PHP
-      // Note: DevToolbar (browser-targeted code) achieves 88% coverage,
-      // exceeding its 50% minimum target, though below project-wide 80% goal.
-      // UI-heavy modules are harder to test comprehensively without E2E tests.
       thresholds: {
         lines: 80,
         functions: 80,

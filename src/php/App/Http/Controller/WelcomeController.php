@@ -9,13 +9,6 @@ use App\Http\Response\Response;
 use App\Infrastructure\HealthCheck;
 use App\Infrastructure\TwigService;
 use App\Infrastructure\ViteHelper;
-use DevToolbar\DataCollectors\CacheCollector;
-use DevToolbar\DataCollectors\ExceptionCollector;
-use DevToolbar\DataCollectors\HttpClientCollector;
-use DevToolbar\DataCollectors\QueryCollector;
-use DevToolbar\DataCollectors\TimelineCollector;
-use DevToolbar\DevToolbar;
-use DevToolbar\Guard\DevToolbarGuard;
 use Exception;
 use InvalidArgumentException;
 use RuntimeException;
@@ -23,6 +16,13 @@ use Throwable;
 use Twig\Error\LoaderError;
 use Twig\Error\RuntimeError;
 use Twig\Error\SyntaxError;
+use Zappzarapp\DevToolbar\DataCollectors\CacheCollector;
+use Zappzarapp\DevToolbar\DataCollectors\ExceptionCollector;
+use Zappzarapp\DevToolbar\DataCollectors\HttpClientCollector;
+use Zappzarapp\DevToolbar\DataCollectors\QueryCollector;
+use Zappzarapp\DevToolbar\DataCollectors\TimelineCollector;
+use Zappzarapp\DevToolbar\DevToolbar;
+use Zappzarapp\DevToolbar\Guard\DevToolbarGuard;
 
 /**
  * Welcome Controller

@@ -28,6 +28,9 @@ dist/
 # Dependencies
 node_modules/
 /vendor/
+
+# Linked packages (local development)
+/packages/
 composer.local.json
 
 # Xdebug artifacts

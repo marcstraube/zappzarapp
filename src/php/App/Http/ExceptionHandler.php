@@ -5,11 +5,11 @@ declare(strict_types=1);
 namespace App\Http;
 
 use App\Http\Response\JsonResponse;
-use DevToolbar\DataCollectors\ExceptionCollector;
-use DevToolbar\Guard\DevToolbarGuard;
 use ErrorException;
 use Psr\Log\LoggerInterface;
 use Throwable;
+use Zappzarapp\DevToolbar\DataCollectors\ExceptionCollector;
+use Zappzarapp\DevToolbar\Guard\DevToolbarGuard;
 
 /**
  * Global Exception Handler

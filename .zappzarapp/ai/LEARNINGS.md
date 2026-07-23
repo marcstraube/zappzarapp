@@ -841,6 +841,52 @@ resolution and local tooling — Docker just needs direct mounts.
 
 ---
 
+## Docker & Containers (Addendum)
+
+### Single-file bind mounts go stale after inode-replacing edits
+
+**Problem:** Files mounted individually (e.g.
+`./phpunit.xml.dist:/var/www/html/phpunit.xml.dist:ro`) are bound by inode.
+Editors and tools that write via replace-and-rename (most IDEs, Claude's Edit
+tool, `sed -i`) create a new inode — the container keeps reading the old
+content.
+
+**Symptom:** Host file is updated, but in-container tools still see the old
+version (e.g. PHPUnit failing on a testsuite directory that was already removed
+from the config).
+
+**Fix:** `docker compose up -d --force-recreate <service>` after editing a
+single-file-mounted config. A plain `restart` is not reliable.
+
+---
+
+## PHP Static Analysis
+
+### PHPStan "Dead catch" is only dead under default error handling
+
+**Problem:** PHPStan flags `try/catch (Throwable)` around `file_get_contents()`
+or `unserialize()` as `catch.neverThrown` — these functions do not throw, they
+emit `E_WARNING` and return `false`. Removing the catch looks safe.
+
+**But:** Library code cannot assume default error handling. A consumer may
+install `set_error_handler()` that converts warnings into `ErrorException` (this
+boilerplate's `App\Http\ExceptionHandler` does exactly that). Under such a
+handler the "dead" catch is live: a failed file read or malformed unserialize
+input throws and breaks the request.
+
+**Rule:** In extracted packages, keep the catch and suppress the finding with a
+reasoned inline ignore:
+
+```php
+// @phpstan-ignore catch.neverThrown (consumer error handlers may convert E_WARNING to ErrorException)
+} catch (Throwable) {
+```
+
+Discovered 2026-07-23 during devtoolbar extraction: the Rector/PHPStan polish
+had removed these catches; restored in package commit 55c8855.
+
+---
+
 ## Last Updated
 
-2026-02-13 (added: Docker symlink resolution in bind mounts)
+2026-07-23 (added: PHPStan dead-catch vs. warning-converting error handlers)

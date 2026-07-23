@@ -23,21 +23,10 @@ export default {
     '**/*.min.js',
     '**/*.d.ts',
     'typedoc.json',
-    // DevToolbar browser bundle: esbuild reads src/node/backend/DevToolbar/index.ts
-    // (driven by devtoolbar.build.ts) and writes the IIFE to
-    // src/php/DevToolbar/assets/devtoolbar.js. Both ends are invisible to knip's
-    // import-graph crawl — the entry runs as a side effect and the output is a
-    // bundled artifact loaded by the PHP layer.
-    'src/node/backend/DevToolbar/index.ts',
-    'src/php/DevToolbar/assets/devtoolbar.js',
 
     // Boilerplate scaffolding shipped for users to build on. No in-tree
-    // importer expected — these are the documented Public API surface
-    // (DevToolbar barrels) and ready-made test scaffolding (backend fixtures)
-    // that ship with the platform.
-    'src/node/backend/DevToolbar/storage/index.ts',
-    'src/node/backend/DevToolbar/ui/index.ts',
-    'src/node/backend/DevToolbar/utils/index.ts',
+    // importer expected — this is ready-made test scaffolding (backend
+    // fixtures) that ships with the platform.
     'tests/node/backend/fixtures/responses.ts',
     'tests/node/backend/fixtures/testConfig.ts',
     'tests/node/backend/fixtures/users.ts'
