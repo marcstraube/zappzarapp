@@ -501,7 +501,7 @@ export class StorageService implements StorageServiceInterface {
 
     if (body !== undefined) {
       // Use Buffer directly (compatible with fetch in Node.js)
-      requestInit.body = body as BodyInit;
+      requestInit.body = body;
     }
 
     const response = await fetch(url, requestInit);

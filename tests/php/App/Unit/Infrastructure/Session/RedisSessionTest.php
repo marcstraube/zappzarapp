@@ -148,7 +148,7 @@ final class RedisSessionTest extends TestCase
         // First get returns existing data
         $cache->expects($this->exactly(2))
             ->method('get')
-            ->willReturnCallback(function (string $key) use ($sessionId, $existingData) {
+            ->willReturnCallback(function (string $key) use ($sessionId, $existingData): string|false|null {
                 if ($key === 'session:' . $sessionId) {
                     return json_encode($existingData);
                 }
@@ -202,7 +202,7 @@ final class RedisSessionTest extends TestCase
         // Get session data for userId lookup
         $cache->expects($this->exactly(2))
             ->method('get')
-            ->willReturnCallback(function (string $key) use ($sessionId) {
+            ->willReturnCallback(function (string $key) use ($sessionId): string|false {
                 if ($key === 'session:' . $sessionId) {
                     return json_encode(['userId' => 123, 'data' => 'value']);
                 }
@@ -252,7 +252,7 @@ final class RedisSessionTest extends TestCase
 
         // Get old session data and user sessions list (multiple calls)
         $cache->method('get')
-            ->willReturnCallback(function (string $key) use ($oldSessionId, $sessionData) {
+            ->willReturnCallback(function (string $key) use ($oldSessionId, $sessionData): string|false|null {
                 if ($key === 'session:' . $oldSessionId) {
                     return json_encode($sessionData);
                 }

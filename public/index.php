@@ -14,8 +14,13 @@ use App\Http\Controller\WelcomeController;
 use App\Http\ExceptionHandler;
 use App\Http\Middleware\CorsMiddleware;
 use App\Http\Router;
-use DevToolbar\Guard\DevToolbarGuard;
 use DI\ContainerBuilder;
+use Random\RandomException;
+use Zappzarapp\DevToolbar\DevToolbar;
+use Zappzarapp\DevToolbar\Guard\DevToolbarGuard;
+use Zappzarapp\Security\Csp\Directive\CspDirectives;
+use Zappzarapp\Security\Csp\HeaderBuilder;
+use Zappzarapp\Security\Csp\Nonce\NonceRegistry;
 
 // Load Composer Autoloader
 require_once __DIR__ . '/../vendor/autoload.php';
@@ -38,7 +43,7 @@ require_once __DIR__ . '/../vendor/autoload.php';
  * AJAX requests for DevToolbar actions are handled above and exit early.
  */
 if (DevToolbarGuard::isEnabled()) {
-    $toolbar = DevToolbar\DevToolbar::getInstance();
+    $toolbar = DevToolbar::getInstance();
     $toolbar->boot();
 
     // Use output buffer callback to inject toolbar HTML (secure alternative to shutdown + echo)
@@ -136,11 +141,6 @@ if ($isDevelopment && str_starts_with($requestPath, '/_dev')) {
  * https://developer.mozilla.org/en-US/docs/Web/HTTP/CSP
  * https://web.dev/articles/csp
  */
-
-use Random\RandomException;
-use Zappzarapp\Security\Csp\Directive\CspDirectives;
-use Zappzarapp\Security\Csp\HeaderBuilder;
-use Zappzarapp\Security\Csp\Nonce\NonceRegistry;
 
 // 1. Build and send CSP Header (before any output!)
 try {

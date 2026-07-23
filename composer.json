@@ -32,6 +32,7 @@
     "php-di/php-di": "^7.1",
     "twig/twig": "^3.0",
     "zappzarapp/audit-logger": "^1.1.0",
+    "zappzarapp/devtoolbar": "^1.0.0",
     "zappzarapp/security": "^1.0.0"
   },
   "require-dev": {
@@ -67,8 +68,7 @@
   "autoload": {
     "psr-4": {
       "App\\": "src/php/App/",
-      "DevDashboard\\": "src/php/DevDashboard/",
-      "DevToolbar\\": "src/php/DevToolbar/"
+      "DevDashboard\\": "src/php/DevDashboard/"
     },
     "files": [
       "src/php/App/helpers.php"
@@ -77,8 +77,7 @@
   "autoload-dev": {
     "psr-4": {
       "Tests\\App\\": "tests/php/App/",
-      "Tests\\DevDashboard\\": "tests/php/DevDashboard/",
-      "Tests\\DevToolbar\\": "tests/php/DevToolbar/"
+      "Tests\\DevDashboard\\": "tests/php/DevDashboard/"
     }
   },
   "scripts": {
