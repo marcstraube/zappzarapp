@@ -530,6 +530,18 @@ See [Frontend Scaffolding](FRONTEND-SCAFFOLDING.md) for details.
 | Node API    | <http://localhost:3000> |
 | Nginx Proxy | <http://localhost:8080> |
 
+### Browser Shortcuts
+
+Open frequently used pages directly from the CLI. The opener is detected per OS
+(`xdg-open` on Linux, `open` on macOS, `start` on Windows).
+
+| Command               | Description                                            |
+| --------------------- | ------------------------------------------------------ |
+| `make open-app`       | Open the application (`https://localhost:8443`)        |
+| `make open-dashboard` | Open the Dev Dashboard (`/_dev/`)                      |
+| `make open-docs`      | Open generated API docs (run `make docs` first)        |
+| `make open-coverage`  | Open coverage reports (run `make test-coverage` first) |
+
 ## Database & Cache
 
 Database management and CLI access.

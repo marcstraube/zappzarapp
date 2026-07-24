@@ -70,49 +70,27 @@ Workspace settings including:
 
 ### `tasks.json`
 
-Pre-configured tasks for common operations:
+44 curated tasks, one per frequently used Makefile target. Every task invokes
+`make`, so CLI and IDE behave identically.
 
-**Docker:**
+| Prefix       | Contents                                                              |
+| ------------ | --------------------------------------------------------------------- |
+| `Test:`      | PHPUnit / Vitest, coverage, watch mode, Xdebug                        |
+| `Quality:`   | check, CS, PHPStan, PHPMD, Rector, ESLint, Prettier, TS, linters      |
+| `Docker:`    | Up, Down, Restart, Status, Build, Rebuild, Check Health               |
+| `Node:`      | Dev servers and builds                                                |
+| `Open:`      | Browser shortcuts: app, Dev Dashboard, API docs, coverage             |
+| Dependencies | Composer / pnpm install + update                                      |
 
-- Docker: Up
-- Docker: Down
-- Docker: Restart
-- Docker: Fresh Build
-- Docker: Rebuild
+The set is deliberately limited to frequent, non-interactive, non-destructive
+actions. When adding new tasks, keep these rules:
 
-**PHP Quality:**
-
-- PHP: CS Fixer
-- PHP: PHPStan
-- PHP: PHPMD
-- PHP: Run Tests
-- PHP: Coverage Report
-
-**Node.js Quality:**
-
-- Node: ESLint
-- Node: Prettier
-- Node: Type Check
-- Node: Run Tests
-- Node: Coverage Report
-
-**General:**
-
-- Quality: Run All Checks
-- Quality: Fix All
-- Test: Run All Tests
-- Docs: Generate API Documentation
-
-**SSL:**
-
-- SSL: Generate Self-Signed Certificate
-- SSL: Show Certificate Info
-
-**Utilities:**
-
-- Logs: View All
-- Shell: PHP Container
-- Shell: Node Container
+- **Interactive targets** (shells, CLIs, monitors) belong in the integrated
+  terminal, not in tasks
+- **Destructive targets** (`make fresh`, `make redis-flush`, secret rotation)
+  must be typed consciously in a terminal
+- **Rare / one-time targets** (setup, SSL, backups, releases) stay CLI-only —
+  see `make help` for the full target list
 
 **Access Tasks:** `Ctrl+Shift+B` (Linux/Windows) or `Cmd+Shift+B` (macOS)
 

@@ -2,37 +2,9 @@
   "version": "2.0.0",
   "tasks": [
     {
-      "label": "Setup: Init",
-      "type": "shell",
-      "command": "make init",
-      "problemMatcher": [],
-      "presentation": { "reveal": "always", "panel": "new" }
-    },
-    {
-      "label": "Setup: Full Setup",
-      "type": "shell",
-      "command": "make setup",
-      "problemMatcher": [],
-      "presentation": { "reveal": "always", "panel": "new" }
-    },
-    {
       "label": "Setup: Composer Install (Docker)",
       "type": "shell",
       "command": "make composer-install",
-      "problemMatcher": [],
-      "presentation": { "reveal": "always", "panel": "new" }
-    },
-    {
-      "label": "Setup: Composer Install (Local)",
-      "type": "shell",
-      "command": "make composer-install-local",
-      "problemMatcher": [],
-      "presentation": { "reveal": "always", "panel": "new" }
-    },
-    {
-      "label": "Setup: Git Hooks Install",
-      "type": "shell",
-      "command": "make hooks-install",
       "problemMatcher": [],
       "presentation": { "reveal": "always", "panel": "new" }
     },
@@ -41,7 +13,10 @@
       "type": "shell",
       "command": "make up",
       "problemMatcher": [],
-      "group": { "kind": "build", "isDefault": true },
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      },
       "presentation": { "reveal": "always", "panel": "new" }
     },
     {
@@ -66,37 +41,9 @@
       "presentation": { "reveal": "always", "panel": "new" }
     },
     {
-      "label": "Docker: Build (No Cache)",
-      "type": "shell",
-      "command": "make build-no-cache",
-      "problemMatcher": [],
-      "presentation": { "reveal": "always", "panel": "new" }
-    },
-    {
       "label": "Docker: Rebuild",
       "type": "shell",
       "command": "make rebuild",
-      "problemMatcher": [],
-      "presentation": { "reveal": "always", "panel": "new" }
-    },
-    {
-      "label": "Docker: Fresh (DANGEROUS)",
-      "type": "shell",
-      "command": "make fresh",
-      "problemMatcher": [],
-      "presentation": { "reveal": "always", "panel": "new" }
-    },
-    {
-      "label": "Docker: Clean",
-      "type": "shell",
-      "command": "make clean",
-      "problemMatcher": [],
-      "presentation": { "reveal": "always", "panel": "new" }
-    },
-    {
-      "label": "Docker: Prune Images",
-      "type": "shell",
-      "command": "make prune",
       "problemMatcher": [],
       "presentation": { "reveal": "always", "panel": "new" }
     },
@@ -115,194 +62,6 @@
       "presentation": { "reveal": "always", "panel": "new" }
     },
     {
-      "label": "Logs: All",
-      "type": "shell",
-      "command": "make logs",
-      "problemMatcher": [],
-      "presentation": { "reveal": "always", "panel": "dedicated" },
-      "isBackground": true
-    },
-    {
-      "label": "Logs: Nginx",
-      "type": "shell",
-      "command": "make logs-nginx",
-      "problemMatcher": [],
-      "presentation": { "reveal": "always", "panel": "dedicated" },
-      "isBackground": true
-    },
-    {
-      "label": "Logs: PHP",
-      "type": "shell",
-      "command": "make logs-php",
-      "problemMatcher": [],
-      "presentation": { "reveal": "always", "panel": "dedicated" },
-      "isBackground": true
-    },
-    {
-      "label": "Logs: Node",
-      "type": "shell",
-      "command": "make logs-node",
-      "problemMatcher": [],
-      "presentation": { "reveal": "always", "panel": "dedicated" },
-      "isBackground": true
-    },
-    {
-      "label": "Logs: Redis",
-      "type": "shell",
-      "command": "make logs-redis",
-      "problemMatcher": [],
-      "presentation": { "reveal": "always", "panel": "dedicated" },
-      "isBackground": true
-    },
-    {
-      "label": "Logs: PostgreSQL",
-      "type": "shell",
-      "command": "make logs-postgres",
-      "problemMatcher": [],
-      "presentation": { "reveal": "always", "panel": "dedicated" },
-      "isBackground": true
-    },
-    {
-      "label": "Logs: MariaDB",
-      "type": "shell",
-      "command": "make logs-mariadb",
-      "problemMatcher": [],
-      "presentation": { "reveal": "always", "panel": "dedicated" },
-      "isBackground": true
-    },
-    {
-      "label": "Logs: Mercure",
-      "type": "shell",
-      "command": "make logs-mercure",
-      "problemMatcher": [],
-      "presentation": { "reveal": "always", "panel": "dedicated" },
-      "isBackground": true
-    },
-    {
-      "label": "Logs: Meilisearch",
-      "type": "shell",
-      "command": "make logs-meilisearch",
-      "problemMatcher": [],
-      "presentation": { "reveal": "always", "panel": "dedicated" },
-      "isBackground": true
-    },
-    {
-      "label": "Logs: Elasticsearch",
-      "type": "shell",
-      "command": "make logs-elasticsearch",
-      "problemMatcher": [],
-      "presentation": { "reveal": "always", "panel": "dedicated" },
-      "isBackground": true
-    },
-    {
-      "label": "Logs: Mailpit",
-      "type": "shell",
-      "command": "make logs-mailpit",
-      "problemMatcher": [],
-      "presentation": { "reveal": "always", "panel": "dedicated" },
-      "isBackground": true
-    },
-    {
-      "label": "Logs: SeaweedFS",
-      "type": "shell",
-      "command": "make logs-seaweedfs",
-      "problemMatcher": [],
-      "presentation": { "reveal": "always", "panel": "dedicated" },
-      "isBackground": true
-    },
-    {
-      "label": "Logs: RabbitMQ",
-      "type": "shell",
-      "command": "make logs-rabbitmq",
-      "problemMatcher": [],
-      "presentation": { "reveal": "always", "panel": "dedicated" },
-      "isBackground": true
-    },
-    {
-      "label": "Shell: Nginx",
-      "type": "shell",
-      "command": "make shell-nginx",
-      "problemMatcher": [],
-      "presentation": { "reveal": "always", "panel": "dedicated" }
-    },
-    {
-      "label": "Shell: PHP",
-      "type": "shell",
-      "command": "make shell-php",
-      "problemMatcher": [],
-      "presentation": { "reveal": "always", "panel": "dedicated" }
-    },
-    {
-      "label": "Shell: Node",
-      "type": "shell",
-      "command": "make shell-node",
-      "problemMatcher": [],
-      "presentation": { "reveal": "always", "panel": "dedicated" }
-    },
-    {
-      "label": "Shell: Redis",
-      "type": "shell",
-      "command": "make shell-redis",
-      "problemMatcher": [],
-      "presentation": { "reveal": "always", "panel": "dedicated" }
-    },
-    {
-      "label": "Shell: PostgreSQL",
-      "type": "shell",
-      "command": "make shell-postgres",
-      "problemMatcher": [],
-      "presentation": { "reveal": "always", "panel": "dedicated" }
-    },
-    {
-      "label": "Shell: MariaDB",
-      "type": "shell",
-      "command": "make shell-mariadb",
-      "problemMatcher": [],
-      "presentation": { "reveal": "always", "panel": "dedicated" }
-    },
-    {
-      "label": "Shell: Mercure",
-      "type": "shell",
-      "command": "make shell-mercure",
-      "problemMatcher": [],
-      "presentation": { "reveal": "always", "panel": "dedicated" }
-    },
-    {
-      "label": "Shell: Meilisearch",
-      "type": "shell",
-      "command": "make shell-meilisearch",
-      "problemMatcher": [],
-      "presentation": { "reveal": "always", "panel": "dedicated" }
-    },
-    {
-      "label": "Shell: Elasticsearch",
-      "type": "shell",
-      "command": "make shell-elasticsearch",
-      "problemMatcher": [],
-      "presentation": { "reveal": "always", "panel": "dedicated" }
-    },
-    {
-      "label": "Shell: Mailpit",
-      "type": "shell",
-      "command": "make shell-mailpit",
-      "problemMatcher": [],
-      "presentation": { "reveal": "always", "panel": "dedicated" }
-    },
-    {
-      "label": "Shell: SeaweedFS",
-      "type": "shell",
-      "command": "make shell-seaweedfs",
-      "problemMatcher": [],
-      "presentation": { "reveal": "always", "panel": "dedicated" }
-    },
-    {
-      "label": "Shell: RabbitMQ",
-      "type": "shell",
-      "command": "make shell-rabbitmq",
-      "problemMatcher": [],
-      "presentation": { "reveal": "always", "panel": "dedicated" }
-    },
-    {
       "label": "pnpm: Install (Docker)",
       "type": "shell",
       "command": "make pnpm-install",
@@ -310,23 +69,9 @@
       "presentation": { "reveal": "always", "panel": "new" }
     },
     {
-      "label": "pnpm: Install (Local)",
-      "type": "shell",
-      "command": "make pnpm-install-local",
-      "problemMatcher": [],
-      "presentation": { "reveal": "always", "panel": "new" }
-    },
-    {
       "label": "pnpm: Update",
       "type": "shell",
       "command": "make pnpm-update",
-      "problemMatcher": [],
-      "presentation": { "reveal": "always", "panel": "new" }
-    },
-    {
-      "label": "pnpm: Run Command",
-      "type": "shell",
-      "command": "make pnpm CMD=\"${input:pnpmCommand}\"",
       "problemMatcher": [],
       "presentation": { "reveal": "always", "panel": "new" }
     },
@@ -347,22 +92,6 @@
       "isBackground": true
     },
     {
-      "label": "Node: Dev Vite Only",
-      "type": "shell",
-      "command": "make node-dev-vite",
-      "problemMatcher": [],
-      "presentation": { "reveal": "always", "panel": "dedicated" },
-      "isBackground": true
-    },
-    {
-      "label": "Node: Dev Backend Only",
-      "type": "shell",
-      "command": "make node-dev-backend",
-      "problemMatcher": [],
-      "presentation": { "reveal": "always", "panel": "dedicated" },
-      "isBackground": true
-    },
-    {
       "label": "Node: Frontend Dev",
       "type": "shell",
       "command": "make node-frontend-dev",
@@ -377,28 +106,6 @@
       "problemMatcher": []
     },
     {
-      "label": "Node: Frontend Start",
-      "type": "shell",
-      "command": "make node-frontend-start",
-      "problemMatcher": [],
-      "presentation": { "reveal": "always", "panel": "dedicated" },
-      "isBackground": true
-    },
-    {
-      "label": "Node: Backend Up",
-      "type": "shell",
-      "command": "make node-backend-up",
-      "problemMatcher": [],
-      "presentation": { "reveal": "always", "panel": "new" }
-    },
-    {
-      "label": "Node: Frontend Up",
-      "type": "shell",
-      "command": "make node-frontend-up",
-      "problemMatcher": [],
-      "presentation": { "reveal": "always", "panel": "new" }
-    },
-    {
       "label": "Node: Server Dev (Watch)",
       "type": "shell",
       "command": "make node-server-dev",
@@ -407,45 +114,9 @@
       "isBackground": true
     },
     {
-      "label": "Node: Server Build",
-      "type": "shell",
-      "command": "make node-server-build",
-      "problemMatcher": [],
-      "presentation": { "reveal": "always", "panel": "new" }
-    },
-    {
       "label": "Node: Build Frontend",
       "type": "shell",
       "command": "make node-build",
-      "problemMatcher": [],
-      "presentation": { "reveal": "always", "panel": "new" }
-    },
-    {
-      "label": "Node: PM2 Status",
-      "type": "shell",
-      "command": "make node-pm2-status",
-      "problemMatcher": [],
-      "presentation": { "reveal": "always", "panel": "new" }
-    },
-    {
-      "label": "Node: PM2 Logs",
-      "type": "shell",
-      "command": "make node-pm2-logs",
-      "problemMatcher": [],
-      "presentation": { "reveal": "always", "panel": "dedicated" },
-      "isBackground": true
-    },
-    {
-      "label": "Node: PM2 Restart",
-      "type": "shell",
-      "command": "make node-pm2-restart",
-      "problemMatcher": [],
-      "presentation": { "reveal": "always", "panel": "new" }
-    },
-    {
-      "label": "Node: PM2 Stop",
-      "type": "shell",
-      "command": "make node-pm2-stop",
       "problemMatcher": [],
       "presentation": { "reveal": "always", "panel": "new" }
     },
@@ -457,188 +128,14 @@
       "presentation": { "reveal": "always", "panel": "new" }
     },
     {
-      "label": "Database: PostgreSQL CLI",
-      "type": "shell",
-      "command": "make postgres-cli",
-      "problemMatcher": [],
-      "presentation": { "reveal": "always", "panel": "dedicated" }
-    },
-    {
-      "label": "Database: PostgreSQL Dump",
-      "type": "shell",
-      "command": "make postgres-dump",
-      "problemMatcher": [],
-      "presentation": { "reveal": "always", "panel": "new" }
-    },
-    {
-      "label": "Database: PostgreSQL Restore",
-      "type": "shell",
-      "command": "make postgres-restore",
-      "problemMatcher": [],
-      "presentation": { "reveal": "always", "panel": "new" }
-    },
-    {
-      "label": "Database: MariaDB CLI",
-      "type": "shell",
-      "command": "make mariadb-cli",
-      "problemMatcher": [],
-      "presentation": { "reveal": "always", "panel": "dedicated" }
-    },
-    {
-      "label": "Database: MariaDB Dump",
-      "type": "shell",
-      "command": "make mariadb-dump",
-      "problemMatcher": [],
-      "presentation": { "reveal": "always", "panel": "new" }
-    },
-    {
-      "label": "Database: MariaDB Restore",
-      "type": "shell",
-      "command": "make mariadb-restore",
-      "problemMatcher": [],
-      "presentation": { "reveal": "always", "panel": "new" }
-    },
-    {
-      "label": "Database: Run Migrations",
-      "type": "shell",
-      "command": "make db-migrations",
-      "problemMatcher": [],
-      "presentation": { "reveal": "always", "panel": "new" }
-    },
-    {
-      "label": "Database: Cleanup (Retention)",
-      "type": "shell",
-      "command": "make db-cleanup",
-      "problemMatcher": [],
-      "presentation": { "reveal": "always", "panel": "new" }
-    },
-    {
-      "label": "Redis: CLI",
-      "type": "shell",
-      "command": "make redis-cli",
-      "problemMatcher": [],
-      "presentation": { "reveal": "always", "panel": "dedicated" }
-    },
-    {
-      "label": "Redis: Monitor",
-      "type": "shell",
-      "command": "make redis-monitor",
-      "problemMatcher": [],
-      "presentation": { "reveal": "always", "panel": "dedicated" },
-      "isBackground": true
-    },
-    {
-      "label": "Redis: Flush (DANGEROUS)",
-      "type": "shell",
-      "command": "make redis-flush",
-      "problemMatcher": [],
-      "presentation": { "reveal": "always", "panel": "new" }
-    },
-    {
-      "label": "Backup: All Services",
-      "type": "shell",
-      "command": "make backup-all",
-      "problemMatcher": [],
-      "presentation": { "reveal": "always", "panel": "new" }
-    },
-    {
-      "label": "Backup: Database",
-      "type": "shell",
-      "command": "make backup-db",
-      "problemMatcher": [],
-      "presentation": { "reveal": "always", "panel": "new" }
-    },
-    {
-      "label": "Backup: Database List",
-      "type": "shell",
-      "command": "make backup-db-list",
-      "problemMatcher": [],
-      "presentation": { "reveal": "always", "panel": "new" }
-    },
-    {
-      "label": "Backup: Database Restore",
-      "type": "shell",
-      "command": "make backup-db-restore",
-      "problemMatcher": [],
-      "presentation": { "reveal": "always", "panel": "new" }
-    },
-    {
-      "label": "Backup: Elasticsearch",
-      "type": "shell",
-      "command": "make backup-elasticsearch",
-      "problemMatcher": [],
-      "presentation": { "reveal": "always", "panel": "new" }
-    },
-    {
-      "label": "Backup: Elasticsearch List",
-      "type": "shell",
-      "command": "make backup-elasticsearch-list",
-      "problemMatcher": [],
-      "presentation": { "reveal": "always", "panel": "new" }
-    },
-    {
-      "label": "Backup: Elasticsearch Restore",
-      "type": "shell",
-      "command": "make backup-elasticsearch-restore",
-      "problemMatcher": [],
-      "presentation": { "reveal": "always", "panel": "new" }
-    },
-    {
-      "label": "Backup: SeaweedFS",
-      "type": "shell",
-      "command": "make backup-seaweedfs",
-      "problemMatcher": [],
-      "presentation": { "reveal": "always", "panel": "new" }
-    },
-    {
-      "label": "Backup: SeaweedFS List",
-      "type": "shell",
-      "command": "make backup-seaweedfs-list",
-      "problemMatcher": [],
-      "presentation": { "reveal": "always", "panel": "new" }
-    },
-    {
-      "label": "Backup: SeaweedFS Restore",
-      "type": "shell",
-      "command": "make backup-seaweedfs-restore",
-      "problemMatcher": [],
-      "presentation": { "reveal": "always", "panel": "new" }
-    },
-    {
-      "label": "Backup: RabbitMQ",
-      "type": "shell",
-      "command": "make backup-rabbitmq",
-      "problemMatcher": [],
-      "presentation": { "reveal": "always", "panel": "new" }
-    },
-    {
-      "label": "Backup: RabbitMQ List",
-      "type": "shell",
-      "command": "make backup-rabbitmq-list",
-      "problemMatcher": [],
-      "presentation": { "reveal": "always", "panel": "new" }
-    },
-    {
-      "label": "Backup: RabbitMQ Restore",
-      "type": "shell",
-      "command": "make backup-rabbitmq-restore",
-      "problemMatcher": [],
-      "presentation": { "reveal": "always", "panel": "new" }
-    },
-    {
       "label": "Quality: Run All Checks",
       "type": "shell",
       "command": "make check",
       "problemMatcher": [],
-      "group": { "kind": "test", "isDefault": false },
-      "presentation": { "reveal": "always", "panel": "shared" }
-    },
-    {
-      "label": "Quality: PHPStan",
-      "type": "shell",
-      "command": "make analyse",
-      "problemMatcher": [],
-      "group": { "kind": "test", "isDefault": false },
+      "group": {
+        "kind": "test",
+        "isDefault": false
+      },
       "presentation": { "reveal": "always", "panel": "shared" }
     },
     {
@@ -646,7 +143,10 @@
       "type": "shell",
       "command": "make phpmd",
       "problemMatcher": [],
-      "group": { "kind": "test", "isDefault": false },
+      "group": {
+        "kind": "test",
+        "isDefault": false
+      },
       "presentation": { "reveal": "always", "panel": "shared" }
     },
     {
@@ -654,20 +154,16 @@
       "type": "shell",
       "command": "make cs-check",
       "problemMatcher": [],
-      "group": { "kind": "test", "isDefault": false },
+      "group": {
+        "kind": "test",
+        "isDefault": false
+      },
       "presentation": { "reveal": "always", "panel": "shared" }
     },
     {
       "label": "Quality: CS Fix",
       "type": "shell",
       "command": "make cs-fix",
-      "problemMatcher": [],
-      "presentation": { "reveal": "always", "panel": "shared" }
-    },
-    {
-      "label": "Quality: CS Fix All",
-      "type": "shell",
-      "command": "make cs-fix-all",
       "problemMatcher": [],
       "presentation": { "reveal": "always", "panel": "shared" }
     },
@@ -718,7 +214,10 @@
       "type": "shell",
       "command": "make analyse-node",
       "problemMatcher": [],
-      "group": { "kind": "test", "isDefault": false },
+      "group": {
+        "kind": "test",
+        "isDefault": false
+      },
       "presentation": { "reveal": "always", "panel": "shared" }
     },
     {
@@ -726,7 +225,10 @@
       "type": "shell",
       "command": "make lint-node",
       "problemMatcher": [],
-      "group": { "kind": "test", "isDefault": false },
+      "group": {
+        "kind": "test",
+        "isDefault": false
+      },
       "presentation": { "reveal": "always", "panel": "shared" }
     },
     {
@@ -741,7 +243,10 @@
       "type": "shell",
       "command": "make prettier-check",
       "problemMatcher": [],
-      "group": { "kind": "test", "isDefault": false },
+      "group": {
+        "kind": "test",
+        "isDefault": false
+      },
       "presentation": { "reveal": "always", "panel": "shared" }
     },
     {
@@ -752,46 +257,14 @@
       "presentation": { "reveal": "always", "panel": "shared" }
     },
     {
-      "label": "Quality: Check Outdated",
-      "type": "shell",
-      "command": "make outdated",
-      "problemMatcher": [],
-      "presentation": { "reveal": "always", "panel": "shared" }
-    },
-    {
-      "label": "Quality: Depcheck (Unused Deps)",
-      "type": "shell",
-      "command": "make depcheck",
-      "problemMatcher": [],
-      "presentation": { "reveal": "always", "panel": "shared" }
-    },
-    {
-      "label": "Quality: Knip (Dead Code)",
-      "type": "shell",
-      "command": "make knip",
-      "problemMatcher": [],
-      "presentation": { "reveal": "always", "panel": "shared" }
-    },
-    {
-      "label": "Quality: Dive (Image Analysis)",
-      "type": "shell",
-      "command": "make dive",
-      "problemMatcher": [],
-      "presentation": { "reveal": "always", "panel": "dedicated" }
-    },
-    {
-      "label": "Quality: Validate",
-      "type": "shell",
-      "command": "make validate",
-      "problemMatcher": [],
-      "presentation": { "reveal": "always", "panel": "shared" }
-    },
-    {
       "label": "Test: All",
       "type": "shell",
       "command": "make test",
       "problemMatcher": [],
-      "group": { "kind": "test", "isDefault": true },
+      "group": {
+        "kind": "test",
+        "isDefault": true
+      },
       "presentation": { "reveal": "always", "panel": "shared" }
     },
     {
@@ -799,7 +272,10 @@
       "type": "shell",
       "command": "make test-php",
       "problemMatcher": [],
-      "group": { "kind": "test", "isDefault": false },
+      "group": {
+        "kind": "test",
+        "isDefault": false
+      },
       "presentation": { "reveal": "always", "panel": "shared" }
     },
     {
@@ -821,7 +297,10 @@
       "type": "shell",
       "command": "make test-node",
       "problemMatcher": [],
-      "group": { "kind": "test", "isDefault": false },
+      "group": {
+        "kind": "test",
+        "isDefault": false
+      },
       "presentation": { "reveal": "always", "panel": "shared" }
     },
     {
@@ -847,152 +326,32 @@
       "presentation": { "reveal": "always", "panel": "shared" }
     },
     {
-      "label": "Security: Secrets Generate",
+      "label": "Open: App",
       "type": "shell",
-      "command": "make secrets",
+      "command": "make open-app",
       "problemMatcher": [],
-      "presentation": { "reveal": "always", "panel": "new" }
+      "presentation": { "reveal": "silent", "panel": "shared" }
     },
     {
-      "label": "Security: Rotate Passwords",
+      "label": "Open: Dashboard",
       "type": "shell",
-      "command": "make secrets-rotate-passwords",
+      "command": "make open-dashboard",
       "problemMatcher": [],
-      "presentation": { "reveal": "always", "panel": "new" }
+      "presentation": { "reveal": "silent", "panel": "shared" }
     },
     {
-      "label": "Security: Rotate All (DANGEROUS)",
+      "label": "Open: Docs",
       "type": "shell",
-      "command": "make secrets-rotate",
+      "command": "make open-docs",
       "problemMatcher": [],
-      "presentation": { "reveal": "always", "panel": "new" }
+      "presentation": { "reveal": "silent", "panel": "shared" }
     },
     {
-      "label": "Security: Scan Images",
+      "label": "Open: Coverage",
       "type": "shell",
-      "command": "make security-scan",
+      "command": "make open-coverage",
       "problemMatcher": [],
-      "presentation": { "reveal": "always", "panel": "shared" }
-    },
-    {
-      "label": "Security: Scan Config",
-      "type": "shell",
-      "command": "make security-config",
-      "problemMatcher": [],
-      "presentation": { "reveal": "always", "panel": "shared" }
-    },
-    {
-      "label": "Security: Scan Dependencies",
-      "type": "shell",
-      "command": "make security-deps",
-      "problemMatcher": [],
-      "presentation": { "reveal": "always", "panel": "shared" }
-    },
-    {
-      "label": "Security: Node Audit",
-      "type": "shell",
-      "command": "make security-audit-node",
-      "problemMatcher": [],
-      "presentation": { "reveal": "always", "panel": "shared" }
-    },
-    {
-      "label": "Security: Generate SBOM",
-      "type": "shell",
-      "command": "make security-sbom",
-      "problemMatcher": [],
-      "presentation": { "reveal": "always", "panel": "shared" }
-    },
-    {
-      "label": "Security: Falco Monitor",
-      "type": "shell",
-      "command": "make falco-run",
-      "problemMatcher": [],
-      "presentation": { "reveal": "always", "panel": "dedicated" },
-      "isBackground": true
-    },
-    {
-      "label": "Docs: Generate All",
-      "type": "shell",
-      "command": "make docs",
-      "problemMatcher": [],
-      "presentation": { "reveal": "always", "panel": "shared" }
-    },
-    {
-      "label": "Docs: Generate PHP",
-      "type": "shell",
-      "command": "make docs-php",
-      "problemMatcher": [],
-      "presentation": { "reveal": "always", "panel": "shared" }
-    },
-    {
-      "label": "Docs: Generate Node",
-      "type": "shell",
-      "command": "make docs-node",
-      "problemMatcher": [],
-      "presentation": { "reveal": "always", "panel": "shared" }
-    },
-    {
-      "label": "Docs: Clean",
-      "type": "shell",
-      "command": "make docs-clean",
-      "problemMatcher": [],
-      "presentation": { "reveal": "always", "panel": "shared" }
-    },
-    {
-      "label": "SSL: Self-Signed Certificate",
-      "type": "shell",
-      "command": "make ssl-selfsigned",
-      "problemMatcher": [],
-      "presentation": { "reveal": "always", "panel": "new" }
-    },
-    {
-      "label": "SSL: Let's Encrypt",
-      "type": "shell",
-      "command": "make ssl-letsencrypt",
-      "problemMatcher": [],
-      "presentation": { "reveal": "always", "panel": "new" }
-    },
-    {
-      "label": "SSL: Renew",
-      "type": "shell",
-      "command": "make ssl-renew",
-      "problemMatcher": [],
-      "presentation": { "reveal": "always", "panel": "new" }
-    },
-    {
-      "label": "SSL: Reload Services",
-      "type": "shell",
-      "command": "make ssl-reload-services",
-      "problemMatcher": [],
-      "presentation": { "reveal": "always", "panel": "new" }
-    },
-    {
-      "label": "SSL: Info",
-      "type": "shell",
-      "command": "make ssl-info",
-      "problemMatcher": [],
-      "presentation": { "reveal": "always", "panel": "new" }
-    },
-    {
-      "label": "SSL: Enable Production",
-      "type": "shell",
-      "command": "make ssl-prod-enable",
-      "problemMatcher": [],
-      "presentation": { "reveal": "always", "panel": "new" }
-    },
-    {
-      "label": "SSL: Clean (DANGEROUS)",
-      "type": "shell",
-      "command": "make ssl-clean",
-      "problemMatcher": [],
-      "presentation": { "reveal": "always", "panel": "new" }
-    },
-    {
-      "label": "Renovate: Run Scanner",
-      "type": "shell",
-      "command": "make renovate",
-      "problemMatcher": [],
-      "presentation": { "reveal": "always", "panel": "shared" }
+      "presentation": { "reveal": "silent", "panel": "shared" }
     }
   ],
   "inputs": [

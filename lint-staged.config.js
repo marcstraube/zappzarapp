@@ -36,5 +36,17 @@ export default {
 
   // Markdown files (auto-fix and re-stage)
   // Prettier first (formats tables), then markdownlint (checks remaining issues)
-  '**/*.md': ['pnpm exec prettier --write', 'pnpm exec markdownlint-cli2 --fix'],
+  // IDE dirs (.idea/, .vscode/) are filtered out: they are not mounted in the
+  // dev-tools container, so in-container linters cannot see those files
+  '**/*.md': (files) => {
+    const lintable = files.filter((f) => !/(^|\/)\.(idea|vscode)\//.test(f));
+    if (lintable.length === 0) {
+      return [];
+    }
+    const fileArgs = lintable.join(' ');
+    return [
+      `pnpm exec prettier --write ${fileArgs}`,
+      `pnpm exec markdownlint-cli2 --fix ${fileArgs}`,
+    ];
+  },
 };
