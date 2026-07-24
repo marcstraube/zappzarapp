@@ -1,0 +1,70 @@
+name: Bug Report
+description: Something in the boilerplate does not work as documented
+title: '[Bug]: '
+labels: ['bug']
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to report a bug. Please do NOT report
+        security vulnerabilities here — use the private
+        [security advisory form](../../security/advisories/new) instead.
+  - type: textarea
+    id: description
+    attributes:
+      label: What happened?
+      description: A clear description of the bug.
+      placeholder: What did you do, and what went wrong?
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Steps to reproduce
+      description: Minimal steps starting from a fresh clone if possible.
+      placeholder: |
+        1. make init
+        2. make setup
+        3. ...
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+  - type: dropdown
+    id: preset
+    attributes:
+      label: Stack preset
+      options:
+        - fullstack
+        - php-only
+        - node-only
+        - framework
+        - assets
+        - minimal
+        - idle
+        - not preset-related
+    validations:
+      required: true
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: OS, Docker/Compose versions, relevant `.env` deviations.
+      placeholder: |
+        OS: ...
+        Docker: ... / Compose: ...
+        ENV: development
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant logs
+      description: |
+        Output of the failing command, `make logs <service>`, or
+        `make check-health`. Redact anything sensitive.
+      render: shell

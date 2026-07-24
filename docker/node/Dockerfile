@@ -16,10 +16,14 @@ ARG ALPINE_VERSION=3.23
 FROM node:${NODE_VERSION}-alpine${ALPINE_VERSION} AS base
 
 # Install pnpm globally and add curl for health checks, git for commitlint
+# PNPM_VERSION mirrors the packageManager pin in package.json - `make
+# pnpm-upgrade` updates both. Pinned so image builds are reproducible and do
+# not depend on the npm registry resolving "latest" at build time.
+ARG PNPM_VERSION=10.28.1
 ENV PNPM_HOME="/usr/local/bin/pnpm"
 ENV PATH="$PNPM_HOME:$PATH"
 ENV COREPACK_ENABLE_DOWNLOAD_PROMPT=0
-RUN corepack enable && corepack prepare pnpm@latest --activate && \
+RUN corepack enable && corepack prepare "pnpm@${PNPM_VERSION}" --activate && \
     apk add --no-cache curl git
 
 # Set Working Directory

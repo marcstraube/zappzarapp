@@ -25,10 +25,10 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@v4
 
       - name: Initialize environment
         run: |
@@ -73,10 +73,10 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@v4
 
       - name: Initialize environment
         run: |
@@ -104,7 +104,7 @@ jobs:
 
       - name: Upload clover report (coverage diagnostics)
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: php-clover
           path: build/coverage/php/clover.xml
@@ -112,7 +112,7 @@ jobs:
 
       - name: Upload coverage to Codecov
         if: github.event_name == 'push' && github.ref == 'refs/heads/master'
-        uses: codecov/codecov-action@v4
+        uses: codecov/codecov-action@v7
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           files: ./build/coverage/php/clover.xml
@@ -133,10 +133,10 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@v4
 
       - name: Initialize environment
         run: |
@@ -184,10 +184,10 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@v4
 
       - name: Initialize environment
         run: |
@@ -217,7 +217,7 @@ jobs:
 
       - name: Upload coverage to Codecov
         if: github.event_name == 'push' && github.ref == 'refs/heads/master'
-        uses: codecov/codecov-action@v4
+        uses: codecov/codecov-action@v7
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           files: ./build/coverage/lcov.info
@@ -241,10 +241,10 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@v4
 
       - name: Build goss utility image (dependency)
         run: docker build -t zappzarapp-goss:latest -f docker/goss/Dockerfile .
@@ -293,7 +293,7 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Install Semgrep
         run: pip install semgrep
@@ -312,7 +312,7 @@ jobs:
         continue-on-error: true
 
       - name: Upload SARIF results
-        uses: github/codeql-action/upload-sarif@v3
+        uses: github/codeql-action/upload-sarif@v4
         if: always()
         with:
           sarif_file: semgrep.sarif
@@ -327,10 +327,10 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@v4
 
       - name: Initialize environment
         run: |
@@ -350,16 +350,18 @@ jobs:
   bats-integration:
     name: BATS Integration Tests
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    # Runs the full make-target suite incl. PHPUnit twice (test + check);
+    # was at ~28 min with a 30-min timeout — headroom for suite growth
+    timeout-minutes: 45
     needs: [bats-quick]
     if: github.event_name == 'pull_request' || (github.event_name == 'push' && (github.ref == 'refs/heads/master' || github.ref == 'refs/heads/develop'))
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@v4
 
       - name: Build goss utility image (dependency)
         run: docker build -t zappzarapp-goss:latest -f docker/goss/Dockerfile .
@@ -431,10 +433,10 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@v4
 
       - name: Build goss utility image (dependency)
         run: |
@@ -510,13 +512,13 @@ jobs:
   #
   #   steps:
   #     - name: Checkout code
-  #       uses: actions/checkout@v4
+  #       uses: actions/checkout@v7
   #
   #     - name: Setup kubectl
-  #       uses: azure/setup-kubectl@v3
+  #       uses: azure/setup-kubectl@v5
   #
   #     - name: Setup Helm
-  #       uses: azure/setup-helm@v4
+  #       uses: azure/setup-helm@v5
   #
   #     - name: Configure kubeconfig
   #       run: |

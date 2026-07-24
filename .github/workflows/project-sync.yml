@@ -52,7 +52,7 @@ jobs:
 
     steps:
       - name: Sync Project Status to Labels
-        uses: actions/github-script@v7
+        uses: actions/github-script@v9
         env:
           PROJECT_NUMBER: ${{ vars.PROJECT_NUMBER }}
           PROJECT_OWNER: ${{ vars.PROJECT_OWNER }}

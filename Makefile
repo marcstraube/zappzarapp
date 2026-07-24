@@ -14,6 +14,10 @@ OPEN_CMD := $(shell command -v xdg-open || command -v open || echo start)
 # Alpine image for utility operations (ownership fixes, cleanup)
 ALPINE_IMAGE ?= alpine:3.21
 
+# SQL linter image (pinned: ':latest' made CI and local caches drift apart,
+# e.g. new rules appearing only in CI - update deliberately, then run lint-sql)
+SQLFLUFF_IMAGE ?= sqlfluff/sqlfluff:4.2.2
+
 # Load environment files in correct order:
 # 1. .env (team defaults)
 # 2. .env.production (if ENV=production)
@@ -1753,7 +1757,9 @@ pnpm-upgrade: ## Upgrade pnpm package manager to latest version
 		npm pkg set packageManager=pnpm@$$LATEST \
 	' && \
 	NEW=$$(grep -o '"pnpm@[^"]*"' package.json | tr -d '"') && \
-	echo -e "\033[0;32mpnpm upgraded: $$CURRENT → $$NEW\033[0m"
+	NEW_VERSION=$${NEW#pnpm@} && \
+	sed -i "s/^ARG PNPM_VERSION=.*/ARG PNPM_VERSION=$$NEW_VERSION/" docker/node/Dockerfile && \
+	echo -e "\033[0;32mpnpm upgraded: $$CURRENT → $$NEW (package.json + docker/node/Dockerfile)\033[0m"
 	@$(MAKE) pnpm-sync
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -2930,14 +2936,14 @@ lint-sql: ## Check SQL files for style issues (PostgreSQL + MariaDB)
 	@echo -e "\033[0;33mChecking SQL files...\033[0m"
 	@if [ -d "migrations/postgresql" ] && [ -n "$$(ls -A migrations/postgresql/*.sql 2>/dev/null)" ]; then \
 		echo -e "\033[0;90m  Checking PostgreSQL migrations...\033[0m"; \
-		docker run --rm -u $$(id -u):$$(id -g) -v "$$(pwd):/sql" sqlfluff/sqlfluff:latest lint \
+		docker run --rm -u $$(id -u):$$(id -g) -v "$$(pwd):/sql" $(SQLFLUFF_IMAGE) lint \
 			--dialect postgres \
 			--config /sql/.sqlfluff \
 			/sql/migrations/postgresql/ || exit 1; \
 	fi
 	@if [ -d "migrations/mariadb" ] && [ -n "$$(ls -A migrations/mariadb/*.sql 2>/dev/null)" ]; then \
 		echo -e "\033[0;90m  Checking MariaDB migrations...\033[0m"; \
-		docker run --rm -u $$(id -u):$$(id -g) -v "$$(pwd):/sql" sqlfluff/sqlfluff:latest lint \
+		docker run --rm -u $$(id -u):$$(id -g) -v "$$(pwd):/sql" $(SQLFLUFF_IMAGE) lint \
 			--dialect mysql \
 			--config /sql/.sqlfluff \
 			--ignore parsing,lexing \
@@ -2949,7 +2955,7 @@ lint-sql-fix: ## Fix SQL style issues automatically
 	@echo -e "\033[0;33mFixing SQL files...\033[0m"
 	@if [ -d "migrations/postgresql" ] && [ -n "$$(ls -A migrations/postgresql/*.sql 2>/dev/null)" ]; then \
 		echo -e "\033[0;90m  Fixing PostgreSQL migrations...\033[0m"; \
-		docker run --rm -u $$(id -u):$$(id -g) -v "$$(pwd):/sql" sqlfluff/sqlfluff:latest fix \
+		docker run --rm -u $$(id -u):$$(id -g) -v "$$(pwd):/sql" $(SQLFLUFF_IMAGE) fix \
 			--dialect postgres \
 			--config /sql/.sqlfluff \
 			--force \
@@ -2957,7 +2963,7 @@ lint-sql-fix: ## Fix SQL style issues automatically
 	fi
 	@if [ -d "migrations/mariadb" ] && [ -n "$$(ls -A migrations/mariadb/*.sql 2>/dev/null)" ]; then \
 		echo -e "\033[0;90m  Fixing MariaDB migrations...\033[0m"; \
-		docker run --rm -u $$(id -u):$$(id -g) -v "$$(pwd):/sql" sqlfluff/sqlfluff:latest fix \
+		docker run --rm -u $$(id -u):$$(id -g) -v "$$(pwd):/sql" $(SQLFLUFF_IMAGE) fix \
 			--dialect mysql \
 			--config /sql/.sqlfluff \
 			--ignore parsing,lexing \
