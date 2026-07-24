@@ -1,0 +1,41 @@
+name: Feature Request
+description: Suggest an improvement to the boilerplate
+title: '[Feature]: '
+labels: ['enhancement']
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: What are you trying to do that the boilerplate makes hard?
+    validations:
+      required: true
+  - type: textarea
+    id: solution
+    attributes:
+      label: Proposed solution
+      description: How should it work? Make targets, .env switches, docs?
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: |
+        Workarounds you use today, or existing tools that almost fit.
+  - type: dropdown
+    id: scope
+    attributes:
+      label: Affected area
+      options:
+        - Docker / Compose
+        - Makefile / tooling
+        - PHP backend
+        - Node.js / frontend
+        - Security / GDPR features
+        - Kubernetes / deployment
+        - Documentation
+        - IDE integration
+        - Other
+    validations:
+      required: true

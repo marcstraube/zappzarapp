@@ -89,10 +89,10 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@v4
 
       - name: Build goss utility image (dependency)
         run: |
@@ -123,7 +123,7 @@ jobs:
           ignore-unfixed: true
 
       - name: Upload Trivy results (${{ matrix.image.name }})
-        uses: github/codeql-action/upload-sarif@v3
+        uses: github/codeql-action/upload-sarif@v4
         if: always()
         with:
           sarif_file: trivy-${{ matrix.image.name }}-results.sarif
@@ -150,10 +150,10 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@v4
 
       - name: Build goss utility image (dependency)
         run: |
@@ -192,7 +192,7 @@ jobs:
           docker compose exec -T node pnpm audit --json > pnpm-audit.json || true
 
       - name: Upload audit results
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         if: always()
         with:
           name: dependency-audit-results
@@ -214,7 +214,7 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Trivy filesystem scan
         uses: aquasecurity/trivy-action@master
@@ -227,7 +227,7 @@ jobs:
           ignore-unfixed: true
 
       - name: Upload filesystem scan results
-        uses: github/codeql-action/upload-sarif@v3
+        uses: github/codeql-action/upload-sarif@v4
         if: always()
         with:
           sarif_file: trivy-fs-results.sarif
@@ -252,7 +252,7 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           fetch-depth: 0  # Full history for secret scanning
 
@@ -324,10 +324,10 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@v4
 
       - name: Build goss utility image (dependency)
         if: matrix.image.name != 'goss'
@@ -354,7 +354,7 @@ jobs:
           exit-code: '0'
 
       - name: Upload Dockle results (${{ matrix.image.name }})
-        uses: github/codeql-action/upload-sarif@v3
+        uses: github/codeql-action/upload-sarif@v4
         if: always()
         with:
           sarif_file: dockle-${{ matrix.image.name }}-results.sarif
@@ -371,7 +371,7 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Trivy license scan (PHP)
         uses: aquasecurity/trivy-action@master
@@ -393,7 +393,7 @@ jobs:
           fi
 
       - name: Upload license results
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         if: always()
         with:
           name: license-scan-results

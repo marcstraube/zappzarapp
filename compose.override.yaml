@@ -371,8 +371,12 @@ services:
       - ./.zappzarapp:/app/.zappzarapp
       - ./.claude:/app/.claude
       - ./.gemini:/app/.gemini
+      - ./.github:/app/.github
       - ./README.md:/app/README.md
       - ./CHANGELOG.md:/app/CHANGELOG.md
+      - ./CONTRIBUTING.md:/app/CONTRIBUTING.md
+      - ./CODE_OF_CONDUCT.md:/app/CODE_OF_CONDUCT.md
+      - ./SECURITY.md:/app/SECURITY.md
 
       # Linting/Formatting config files
       - ./eslint.config.js:/app/eslint.config.js:ro
