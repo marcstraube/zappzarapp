@@ -6,6 +6,7 @@ namespace Tests\DevDashboard\Infrastructure;
 
 use DevDashboard\Infrastructure\TwigService;
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Twig\Environment;
 use Twig\Error\LoaderError;
@@ -53,6 +54,7 @@ final class TwigServiceTest extends TestCase
 
     // ===== Factory methods =====
 
+    #[Test]
     public function testCreateForDevelopmentReturnsTwigService(): void
     {
         $service = TwigService::createForDevelopment($this->templateDir, $this->cacheDir);
@@ -60,6 +62,7 @@ final class TwigServiceTest extends TestCase
         $this->assertInstanceOf(TwigService::class, $service);
     }
 
+    #[Test]
     public function testCreateForProductionReturnsTwigService(): void
     {
         $service = TwigService::createForProduction($this->templateDir, $this->cacheDir);
@@ -69,6 +72,7 @@ final class TwigServiceTest extends TestCase
 
     // ===== render() =====
 
+    #[Test]
     public function testRenderReturnsRenderedString(): void
     {
         $service = TwigService::createForDevelopment($this->templateDir, $this->cacheDir);
@@ -78,6 +82,7 @@ final class TwigServiceTest extends TestCase
         $this->assertSame('Hello World!', $output);
     }
 
+    #[Test]
     public function testRenderWithEmptyContextReturnsTemplate(): void
     {
         $service = TwigService::createForDevelopment($this->templateDir, $this->cacheDir);
@@ -87,6 +92,7 @@ final class TwigServiceTest extends TestCase
         $this->assertSame('', $output);
     }
 
+    #[Test]
     public function testRenderEscapesHtmlByDefault(): void
     {
         // Twig auto-escape is 'html', so < > & " ' must be escaped
@@ -98,6 +104,7 @@ final class TwigServiceTest extends TestCase
         $this->assertStringContainsString('&lt;script&gt;', $output);
     }
 
+    #[Test]
     public function testRenderThrowsOnMissingTemplate(): void
     {
         $service = TwigService::createForDevelopment($this->templateDir, $this->cacheDir);
@@ -108,6 +115,7 @@ final class TwigServiceTest extends TestCase
 
     // ===== addFunction() =====
 
+    #[Test]
     public function testAddFunctionMakesCallableAvailableInTemplate(): void
     {
         file_put_contents($this->templateDir . '/fn.html.twig', '{{ greet("Alice") }}');
@@ -122,6 +130,7 @@ final class TwigServiceTest extends TestCase
 
     // ===== addGlobal() =====
 
+    #[Test]
     public function testAddGlobalMakesVariableAvailableInTemplate(): void
     {
         file_put_contents($this->templateDir . '/global.html.twig', '{{ appVersion }}');
@@ -136,6 +145,7 @@ final class TwigServiceTest extends TestCase
 
     // ===== getEnvironment() =====
 
+    #[Test]
     public function testGetEnvironmentReturnsEnvironmentInstance(): void
     {
         $service = TwigService::createForDevelopment($this->templateDir, $this->cacheDir);
@@ -145,6 +155,7 @@ final class TwigServiceTest extends TestCase
         $this->assertInstanceOf(Environment::class, $env);
     }
 
+    #[Test]
     public function testGetEnvironmentReturnsSameInstance(): void
     {
         $service = TwigService::createForDevelopment($this->templateDir, $this->cacheDir);

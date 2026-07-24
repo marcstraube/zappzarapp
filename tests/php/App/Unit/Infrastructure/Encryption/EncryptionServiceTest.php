@@ -6,6 +6,7 @@ namespace Tests\App\Unit\Infrastructure\Encryption;
 
 use App\Infrastructure\Encryption\EncryptionService;
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use RuntimeException;
 
@@ -19,6 +20,7 @@ final class EncryptionServiceTest extends TestCase
 {
     private const string TEST_KEY = 'test-encryption-key-32-bytes-long';
 
+    #[Test]
     public function testEncryptReturnsNonEmptyString(): void
     {
         $plaintext = 'sensitive data';
@@ -29,6 +31,7 @@ final class EncryptionServiceTest extends TestCase
         $this->assertNotEquals($plaintext, $encrypted);
     }
 
+    #[Test]
     public function testEncryptedDataContainsThreeColonSeparatedParts(): void
     {
         $plaintext = 'test';
@@ -39,6 +42,7 @@ final class EncryptionServiceTest extends TestCase
         $this->assertCount(3, $parts);
     }
 
+    #[Test]
     public function testDecryptReturnsOriginalPlaintext(): void
     {
         $plaintext = 'sensitive data';
@@ -48,6 +52,7 @@ final class EncryptionServiceTest extends TestCase
         $this->assertEquals($plaintext, $decrypted);
     }
 
+    #[Test]
     public function testEncryptWithDifferentKeysProducesDifferentCiphertext(): void
     {
         $plaintext = 'test data';
@@ -60,6 +65,7 @@ final class EncryptionServiceTest extends TestCase
         $this->assertNotEquals($encrypted1, $encrypted2);
     }
 
+    #[Test]
     public function testDecryptWithWrongKeyThrowsException(): void
     {
         $plaintext  = 'sensitive data';
@@ -74,6 +80,7 @@ final class EncryptionServiceTest extends TestCase
         EncryptionService::decrypt($encrypted, $wrongKey);
     }
 
+    #[Test]
     public function testEncryptEmptyStringThrowsException(): void
     {
         $this->expectException(RuntimeException::class);
@@ -82,6 +89,7 @@ final class EncryptionServiceTest extends TestCase
         EncryptionService::encrypt('', self::TEST_KEY);
     }
 
+    #[Test]
     public function testEncryptWithEmptyKeyThrowsException(): void
     {
         $this->expectException(RuntimeException::class);
@@ -90,6 +98,7 @@ final class EncryptionServiceTest extends TestCase
         EncryptionService::encrypt('test', '');
     }
 
+    #[Test]
     public function testDecryptEmptyStringThrowsException(): void
     {
         $this->expectException(RuntimeException::class);
@@ -98,6 +107,7 @@ final class EncryptionServiceTest extends TestCase
         EncryptionService::decrypt('', self::TEST_KEY);
     }
 
+    #[Test]
     public function testDecryptWithEmptyKeyThrowsException(): void
     {
         $this->expectException(RuntimeException::class);
@@ -106,6 +116,7 @@ final class EncryptionServiceTest extends TestCase
         EncryptionService::decrypt('some:encrypted:data', '');
     }
 
+    #[Test]
     public function testDecryptInvalidFormatThrowsException(): void
     {
         $this->expectException(RuntimeException::class);
@@ -115,6 +126,7 @@ final class EncryptionServiceTest extends TestCase
         EncryptionService::decrypt('invalid-format', self::TEST_KEY);
     }
 
+    #[Test]
     public function testDecryptInvalidBase64ThrowsException(): void
     {
         $this->expectException(RuntimeException::class);
@@ -124,6 +136,7 @@ final class EncryptionServiceTest extends TestCase
         EncryptionService::decrypt('!!!:!!!:!!!', self::TEST_KEY);
     }
 
+    #[Test]
     public function testEncryptSamePlaintextTwiceProducesDifferentCiphertext(): void
     {
         $plaintext = 'test data';
@@ -140,6 +153,7 @@ final class EncryptionServiceTest extends TestCase
         $this->assertEquals($plaintext, EncryptionService::decrypt($encrypted2, self::TEST_KEY));
     }
 
+    #[Test]
     public function testEncryptLongString(): void
     {
         $longText  = str_repeat('Lorem ipsum dolor sit amet. ', 1000); // ~28KB
@@ -149,6 +163,7 @@ final class EncryptionServiceTest extends TestCase
         $this->assertEquals($longText, $decrypted);
     }
 
+    #[Test]
     public function testEncryptUnicodeCharacters(): void
     {
         $unicode   = '🔒 Verschlüsselte Daten 🔑 中文 العربية';
@@ -158,12 +173,14 @@ final class EncryptionServiceTest extends TestCase
         $this->assertEquals($unicode, $decrypted);
     }
 
+    #[Test]
     public function testIsSupportedReturnsTrue(): void
     {
         // AES-256-GCM should be supported in modern PHP
         $this->assertTrue(EncryptionService::isSupported());
     }
 
+    #[Test]
     public function testEncryptDecryptWithSpecialCharacters(): void
     {
         $specialChars = "Line1\nLine2\tTabbed\r\nWindows\0Null'Quote\"DoubleQuote";

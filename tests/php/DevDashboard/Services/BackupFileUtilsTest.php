@@ -7,6 +7,7 @@ namespace Tests\DevDashboard\Services;
 use DevDashboard\Services\BackupFileUtils;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -25,6 +26,7 @@ class BackupFileUtilsTest extends TestCase
 
     // ==================== parseFilename – new format ====================
 
+    #[Test]
     public function testParseFilenameNewFormatPostgresUnencrypted(): void
     {
         $result = $this->utils->parseFilename('postgres_mydb_20260126_121905.sql');
@@ -43,6 +45,7 @@ class BackupFileUtilsTest extends TestCase
         $this->assertSame('mydb', $result['dbName']);     // @phpstan-ignore offsetAccess.notFound (confirmed by assertArrayHasKey above)
     }
 
+    #[Test]
     public function testParseFilenameNewFormatMariadbUnencrypted(): void
     {
         $result = $this->utils->parseFilename('mariadb_shopdb_20260301_093000.sql');
@@ -55,6 +58,7 @@ class BackupFileUtilsTest extends TestCase
         $this->assertFalse($result['encrypted']);
     }
 
+    #[Test]
     public function testParseFilenameNewFormatEncrypted(): void
     {
         $result = $this->utils->parseFilename('postgres_mydb_20260126_121905.sql.gz.enc');
@@ -67,6 +71,7 @@ class BackupFileUtilsTest extends TestCase
         $this->assertTrue($result['encrypted']);
     }
 
+    #[Test]
     public function testParseFilenameNewFormatTimestampIsCorrect(): void
     {
         $result = $this->utils->parseFilename('postgres_app_20260615_235959.sql');
@@ -77,6 +82,7 @@ class BackupFileUtilsTest extends TestCase
 
     // ==================== parseFilename – legacy format ====================
 
+    #[Test]
     public function testParseFilenameLegacyFormat(): void
     {
         $result = $this->utils->parseFilename('backup_2026-01-26_12-30-45.sql');
@@ -92,22 +98,26 @@ class BackupFileUtilsTest extends TestCase
 
     // ==================== parseFilename – invalid input ====================
 
+    #[Test]
     public function testParseFilenameInvalidFormatReturnsNull(): void
     {
         $this->assertNull($this->utils->parseFilename('random_file.txt'));
     }
 
+    #[Test]
     public function testParseFilenameEmptyStringReturnsNull(): void
     {
         $this->assertNull($this->utils->parseFilename(''));
     }
 
+    #[Test]
     public function testParseFilenamePartialNewFormatReturnsNull(): void
     {
         // Wrong db type
         $this->assertNull($this->utils->parseFilename('mysql_mydb_20260126_121905.sql'));
     }
 
+    #[Test]
     public function testParseFilenamePartialLegacyFormatReturnsNull(): void
     {
         // Missing seconds component
@@ -131,6 +141,7 @@ class BackupFileUtilsTest extends TestCase
     }
 
     #[DataProvider('validFilenameProvider')]
+    #[Test]
     public function testValidateFilenameAcceptsValidFilenames(string $filename): void
     {
         $this->assertTrue($this->utils->validateFilename($filename));
@@ -153,6 +164,7 @@ class BackupFileUtilsTest extends TestCase
     }
 
     #[DataProvider('invalidFilenameProvider')]
+    #[Test]
     public function testValidateFilenameRejectsInvalidFilenames(string $filename): void
     {
         $this->assertFalse($this->utils->validateFilename($filename));

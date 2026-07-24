@@ -8,6 +8,7 @@ use App\Infrastructure\Queue\RabbitMQConfig;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\RunInSeparateProcess;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -58,6 +59,7 @@ final class RabbitMQConfigTest extends TestCase
     // credentials come from /run/secrets rather than 'guest' defaults)
     // =========================================================================
 
+    #[Test]
     public function testDefaultHostPortVhostAndTls(): void
     {
         $config = new RabbitMQConfig();
@@ -69,6 +71,7 @@ final class RabbitMQConfigTest extends TestCase
         $this->assertFalse($config->useTls);
     }
 
+    #[Test]
     public function testDefaultCredentialsComeFromDockerSecretsOrFallback(): void
     {
         $config = new RabbitMQConfig();
@@ -83,6 +86,7 @@ final class RabbitMQConfigTest extends TestCase
     // =========================================================================
 
     #[RunInSeparateProcess]
+    #[Test]
     public function testHostFromEnv(): void
     {
         putenv('RABBITMQ_HOST=my-rabbit');
@@ -93,6 +97,7 @@ final class RabbitMQConfigTest extends TestCase
     }
 
     #[RunInSeparateProcess]
+    #[Test]
     public function testPortFromEnv(): void
     {
         putenv('RABBITMQ_PORT=5673');
@@ -103,6 +108,7 @@ final class RabbitMQConfigTest extends TestCase
     }
 
     #[RunInSeparateProcess]
+    #[Test]
     public function testVhostFromEnv(): void
     {
         putenv('RABBITMQ_VHOST=myvhost');
@@ -113,6 +119,7 @@ final class RabbitMQConfigTest extends TestCase
     }
 
     #[RunInSeparateProcess]
+    #[Test]
     public function testNonCredentialEnvVarsApplied(): void
     {
         putenv('RABBITMQ_HOST=custom-rabbit');
@@ -132,6 +139,7 @@ final class RabbitMQConfigTest extends TestCase
     // =========================================================================
 
     #[RunInSeparateProcess]
+    #[Test]
     public function testAmqpUrlFullyParsed(): void
     {
         putenv('RABBITMQ_URL=amqp://myuser:mypass@myhost:5673/myvhost');
@@ -147,6 +155,7 @@ final class RabbitMQConfigTest extends TestCase
     }
 
     #[RunInSeparateProcess]
+    #[Test]
     public function testAmqpsUrlEnablesTls(): void
     {
         putenv('RABBITMQ_URL=amqps://user:pass@host:5671/');
@@ -158,6 +167,7 @@ final class RabbitMQConfigTest extends TestCase
     }
 
     #[RunInSeparateProcess]
+    #[Test]
     public function testAmqpUrlDefaultPortWithoutTls(): void
     {
         putenv('RABBITMQ_URL=amqp://user:pass@host/vhost');
@@ -169,6 +179,7 @@ final class RabbitMQConfigTest extends TestCase
     }
 
     #[RunInSeparateProcess]
+    #[Test]
     public function testAmqpsUrlDefaultPort(): void
     {
         putenv('RABBITMQ_URL=amqps://user:pass@host/vhost');
@@ -180,6 +191,7 @@ final class RabbitMQConfigTest extends TestCase
     }
 
     #[RunInSeparateProcess]
+    #[Test]
     public function testAmqpUrlWithEncodedPassword(): void
     {
         // Password: p@ss:word (URL-encoded: p%40ss%3Aword)
@@ -191,6 +203,7 @@ final class RabbitMQConfigTest extends TestCase
     }
 
     #[RunInSeparateProcess]
+    #[Test]
     public function testAmqpUrlWithEncodedVhost(): void
     {
         // vhost "my/vhost" encoded as "my%2Fvhost"
@@ -202,6 +215,7 @@ final class RabbitMQConfigTest extends TestCase
     }
 
     #[RunInSeparateProcess]
+    #[Test]
     public function testAmqpUrlWithRootVhost(): void
     {
         putenv('RABBITMQ_URL=amqp://user:pass@host:5672/');
@@ -212,6 +226,7 @@ final class RabbitMQConfigTest extends TestCase
     }
 
     #[RunInSeparateProcess]
+    #[Test]
     public function testAmqpUrlWithNoPath(): void
     {
         putenv('RABBITMQ_URL=amqp://user:pass@host:5672');
@@ -221,6 +236,7 @@ final class RabbitMQConfigTest extends TestCase
         $this->assertEquals('/', $config->vhost);
     }
 
+    #[Test]
     public function testConstructorUrlTakesPrecedenceOverEnvUrl(): void
     {
         $config = new RabbitMQConfig('amqp://ctoruser:ctorpass@ctor-host:5672/');
@@ -230,6 +246,7 @@ final class RabbitMQConfigTest extends TestCase
         $this->assertEquals('ctorpass', $config->password);
     }
 
+    #[Test]
     public function testConstructorUrlParsedDirectly(): void
     {
         $config = new RabbitMQConfig('amqp://u:p@myhost:5672/myvhost');
@@ -245,6 +262,7 @@ final class RabbitMQConfigTest extends TestCase
     // =========================================================================
 
     #[RunInSeparateProcess]
+    #[Test]
     public function testUrlWithoutCredentialsLoadsCredentialsFromSecretsOrEnv(): void
     {
         // URL has no credentials → secrets (or env) are loaded
@@ -263,6 +281,7 @@ final class RabbitMQConfigTest extends TestCase
     }
 
     #[RunInSeparateProcess]
+    #[Test]
     public function testUrlCredentialsTakePrecedenceOverSecretsAndEnv(): void
     {
         // URL has credentials → skips secrets and env entirely
@@ -281,6 +300,7 @@ final class RabbitMQConfigTest extends TestCase
     // =========================================================================
 
     #[RunInSeparateProcess]
+    #[Test]
     public function testConstructorUrlBeatsEnvUrl(): void
     {
         putenv('RABBITMQ_URL=amqp://envuser:envpass@env-host:5672/');
@@ -296,6 +316,7 @@ final class RabbitMQConfigTest extends TestCase
     // =========================================================================
 
     #[RunInSeparateProcess]
+    #[Test]
     public function testDollarEnvSuperGlobalForUrl(): void
     {
         $_ENV['RABBITMQ_URL'] = 'amqp://sg-user:sg-pass@sg-host:5672/';
@@ -308,6 +329,7 @@ final class RabbitMQConfigTest extends TestCase
     }
 
     #[RunInSeparateProcess]
+    #[Test]
     public function testDollarEnvSuperGlobalForHost(): void
     {
         $_ENV['RABBITMQ_HOST'] = 'sg-rabbit';
@@ -322,6 +344,7 @@ final class RabbitMQConfigTest extends TestCase
     // =========================================================================
 
     #[DataProvider('amqpSchemeProvider')]
+    #[Test]
     public function testTlsDerivedFromAmqpScheme(string $url, bool $expectedTls): void
     {
         $config = new RabbitMQConfig($url);
@@ -345,6 +368,7 @@ final class RabbitMQConfigTest extends TestCase
     // =========================================================================
 
     #[RunInSeparateProcess]
+    #[Test]
     public function testRabbitMQUrlHostTakesPrecedenceOverIndividualVars(): void
     {
         putenv('RABBITMQ_URL=amqp://url-user:url-pass@url-host:5672/url-vhost');
@@ -363,6 +387,7 @@ final class RabbitMQConfigTest extends TestCase
     // Encoded username in URL
     // =========================================================================
 
+    #[Test]
     public function testAmqpUrlWithEncodedUsername(): void
     {
         // Username: user@domain (URL-encoded: user%40domain)
@@ -375,6 +400,7 @@ final class RabbitMQConfigTest extends TestCase
     // Non-standard port in URL
     // =========================================================================
 
+    #[Test]
     public function testAmqpUrlExplicitPort(): void
     {
         $config = new RabbitMQConfig('amqp://user:pass@host:12345/');

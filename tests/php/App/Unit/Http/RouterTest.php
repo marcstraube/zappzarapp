@@ -10,6 +10,7 @@ use App\Http\Response\JsonResponse;
 use App\Http\Router;
 use App\Infrastructure\TwigService;
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\Attributes\UsesClass;
 use PHPUnit\Framework\TestCase;
 
@@ -46,6 +47,7 @@ final class RouterTest extends TestCase
 
     // ===== Route registration and dispatch =====
 
+    #[Test]
     public function testGetRouteIsDispatchedForGetRequest(): void
     {
         $router = new Router();
@@ -68,6 +70,7 @@ final class RouterTest extends TestCase
         $this->assertTrue($called);
     }
 
+    #[Test]
     public function testPostRouteIsDispatchedForPostRequest(): void
     {
         $router = new Router();
@@ -90,6 +93,7 @@ final class RouterTest extends TestCase
         $this->assertTrue($called);
     }
 
+    #[Test]
     public function testGetRouteIsNotDispatchedForPostRequest(): void
     {
         $router  = new Router();
@@ -113,6 +117,7 @@ final class RouterTest extends TestCase
         $this->assertFalse($called);
     }
 
+    #[Test]
     public function testPostRouteIsNotDispatchedForGetRequest(): void
     {
         $router  = new Router();
@@ -138,6 +143,7 @@ final class RouterTest extends TestCase
 
     // ===== Path matching =====
 
+    #[Test]
     public function testExactPathMatchDispatchesHandler(): void
     {
         $router = new Router();
@@ -160,6 +166,7 @@ final class RouterTest extends TestCase
         $this->assertTrue($called);
     }
 
+    #[Test]
     public function testPartialPathDoesNotMatch(): void
     {
         $router = new Router();
@@ -183,6 +190,7 @@ final class RouterTest extends TestCase
         $this->assertFalse($called);
     }
 
+    #[Test]
     public function testRouteWithQueryStringMatchesPath(): void
     {
         $router = new Router();
@@ -208,6 +216,7 @@ final class RouterTest extends TestCase
 
     // ===== 404 responses =====
 
+    #[Test]
     public function testDispatchReturns404JsonForUnknownRouteWithJsonAccept(): void
     {
         $router = new Router();
@@ -228,6 +237,7 @@ final class RouterTest extends TestCase
         $this->assertSame('/not-found', $data['path']);
     }
 
+    #[Test]
     public function testDispatchIncludes404PathInJsonResponse(): void
     {
         $router = new Router();
@@ -245,6 +255,7 @@ final class RouterTest extends TestCase
         $this->assertSame('/missing/page', $data['path']);
     }
 
+    #[Test]
     public function testDispatchReturns404HtmlForUnknownRouteWithHtmlAccept(): void
     {
         $router = new Router();
@@ -264,6 +275,7 @@ final class RouterTest extends TestCase
         $this->assertStringContainsString('404', $output);
     }
 
+    #[Test]
     public function testDispatchReturns404HtmlWhenNoAcceptHeader(): void
     {
         $router = new Router();
@@ -284,6 +296,7 @@ final class RouterTest extends TestCase
 
     // ===== Handler return value is sent =====
 
+    #[Test]
     public function testHandlerOutputIsEmitted(): void
     {
         $router = new Router();
@@ -303,6 +316,7 @@ final class RouterTest extends TestCase
         $this->assertSame(42, $data['value']);
     }
 
+    #[Test]
     public function testHtmlHandlerOutputIsEmitted(): void
     {
         $router = new Router();
@@ -322,6 +336,7 @@ final class RouterTest extends TestCase
 
     // ===== Multiple routes — first match wins =====
 
+    #[Test]
     public function testFirstMatchingRouteWins(): void
     {
         $router       = new Router();
@@ -354,6 +369,7 @@ final class RouterTest extends TestCase
 
     // ===== Fallbacks for missing superglobals =====
 
+    #[Test]
     public function testDispatchDefaultsToGetWhenRequestMethodMissing(): void
     {
         $router = new Router();
@@ -376,6 +392,7 @@ final class RouterTest extends TestCase
         $this->assertTrue($called);
     }
 
+    #[Test]
     public function testDispatchDefaultsToRootPathWhenRequestUriBroken(): void
     {
         $router = new Router();

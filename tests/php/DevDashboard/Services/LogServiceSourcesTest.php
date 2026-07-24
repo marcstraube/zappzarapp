@@ -6,6 +6,7 @@ namespace Tests\DevDashboard\Services;
 
 use DevDashboard\Services\LogService;
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
 #[CoversClass(LogService::class)]
@@ -53,6 +54,7 @@ class LogServiceSourcesTest extends TestCase
 
     // ==================== getAvailableLogSources ====================
 
+    #[Test]
     public function testGetAvailableLogSourcesReturnsArray(): void
     {
         $sources = $this->service->getAvailableLogSources();
@@ -60,6 +62,7 @@ class LogServiceSourcesTest extends TestCase
         $this->assertIsArray($sources);
     }
 
+    #[Test]
     public function testGetAvailableLogSourcesAlwaysContainsDocker(): void
     {
         $sources = $this->service->getAvailableLogSources();
@@ -68,6 +71,7 @@ class LogServiceSourcesTest extends TestCase
         $this->assertArrayHasKey('docker', $sources);
     }
 
+    #[Test]
     public function testGetAvailableLogSourcesAlwaysContainsNginx(): void
     {
         $sources = $this->service->getAvailableLogSources();
@@ -76,6 +80,7 @@ class LogServiceSourcesTest extends TestCase
         $this->assertArrayHasKey('nginx', $sources);
     }
 
+    #[Test]
     public function testGetAvailableLogSourcesDockerHasRequiredKeys(): void
     {
         $sources = $this->service->getAvailableLogSources();
@@ -91,6 +96,7 @@ class LogServiceSourcesTest extends TestCase
         $this->assertIsArray($docker['services']);
     }
 
+    #[Test]
     public function testGetAvailableLogSourcesDockerServicesIncludeNginx(): void
     {
         $sources  = $this->service->getAvailableLogSources();
@@ -100,6 +106,7 @@ class LogServiceSourcesTest extends TestCase
         $this->assertContains('nginx', $services);
     }
 
+    #[Test]
     public function testGetAvailableLogSourcesApplicationPresentWhenDirExists(): void
     {
         // tempDir exists, so 'application' source should be included
@@ -109,6 +116,7 @@ class LogServiceSourcesTest extends TestCase
         $this->assertSame('file', $sources['application']['type']);
     }
 
+    #[Test]
     public function testGetAvailableLogSourcesApplicationAbsentWhenDirMissing(): void
     {
         // Construct with a non-existent dir
@@ -120,6 +128,7 @@ class LogServiceSourcesTest extends TestCase
         $this->assertArrayNotHasKey('application', $sources);
     }
 
+    #[Test]
     public function testGetAvailableLogSourcesFilteredToOnlyAvailable(): void
     {
         $sources = $this->service->getAvailableLogSources();
@@ -132,6 +141,7 @@ class LogServiceSourcesTest extends TestCase
         }
     }
 
+    #[Test]
     public function testGetAvailableLogSourcesOptionalServiceRespectEnv(): void
     {
         // Mercure is only available when ENABLE_MERCURE=true
@@ -148,6 +158,7 @@ class LogServiceSourcesTest extends TestCase
         putenv('ENABLE_MERCURE');
     }
 
+    #[Test]
     public function testGetAvailableLogSourcesPHPDefaultEnabled(): void
     {
         putenv('ENABLE_PHP'); // clear
@@ -157,6 +168,7 @@ class LogServiceSourcesTest extends TestCase
         $this->assertArrayHasKey('php', $sources);
     }
 
+    #[Test]
     public function testGetAvailableLogSourcesPHPDisabledWhenEnvFalse(): void
     {
         putenv('ENABLE_PHP=false');
@@ -169,6 +181,7 @@ class LogServiceSourcesTest extends TestCase
 
     // ==================== getLogStatistics ====================
 
+    #[Test]
     public function testGetLogStatisticsReturnsRequiredKeys(): void
     {
         $stats = $this->service->getLogStatistics();
@@ -179,6 +192,7 @@ class LogServiceSourcesTest extends TestCase
         $this->assertArrayHasKey('storage_dir_exists', $stats);
     }
 
+    #[Test]
     public function testGetLogStatisticsCountIncludesCreatedFile(): void
     {
         // Baseline (empty temp dir, so count is 0)
@@ -193,6 +207,7 @@ class LogServiceSourcesTest extends TestCase
         $this->assertGreaterThan($countBefore, $after['application_logs_count']);
     }
 
+    #[Test]
     public function testGetLogStatisticsTotalSizeIsNumeric(): void
     {
         $stats = $this->service->getLogStatistics();
@@ -201,6 +216,7 @@ class LogServiceSourcesTest extends TestCase
         $this->assertGreaterThanOrEqual(0, $stats['total_size']);
     }
 
+    #[Test]
     public function testGetLogStatisticsFormattedSizeIsString(): void
     {
         $stats = $this->service->getLogStatistics();
@@ -209,6 +225,7 @@ class LogServiceSourcesTest extends TestCase
         $this->assertNotEmpty($stats['total_size_formatted']);
     }
 
+    #[Test]
     public function testGetLogStatisticsStorageDirExistsTrue(): void
     {
         // tempDir exists, so storage_dir_exists must be true
@@ -217,6 +234,7 @@ class LogServiceSourcesTest extends TestCase
         $this->assertTrue($stats['storage_dir_exists']);
     }
 
+    #[Test]
     public function testGetLogStatisticsStorageDirExistsFalseWhenMissing(): void
     {
         $missingDir = sys_get_temp_dir() . '/log_service_no_such_dir_' . uniqid() . '/';

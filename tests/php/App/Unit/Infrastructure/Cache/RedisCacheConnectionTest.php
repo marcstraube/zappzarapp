@@ -7,6 +7,7 @@ namespace Tests\App\Unit\Infrastructure\Cache;
 use App\Infrastructure\Cache\RedisCache;
 use App\Infrastructure\TlsConfig;
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\Attributes\UsesClass;
 use PHPUnit\Framework\TestCase;
 use Redis;
@@ -29,6 +30,7 @@ final class RedisCacheConnectionTest extends TestCase
 
     // ===== getConnection() — factory-based connection scenarios =====
 
+    #[Test]
     public function testGetConnectionUsesFactoryForPlainConnection(): void
     {
         $mockRedis = $this->createMock(Redis::class);
@@ -45,6 +47,7 @@ final class RedisCacheConnectionTest extends TestCase
         $this->assertEquals('cached', $cache->get('key'));
     }
 
+    #[Test]
     public function testGetConnectionUsesTlsForRedissScheme(): void
     {
         $mockRedis = $this->createMock(Redis::class);
@@ -69,6 +72,7 @@ final class RedisCacheConnectionTest extends TestCase
         $this->assertEquals('value', $cache->get('key'));
     }
 
+    #[Test]
     public function testGetConnectionSkipsAuthWhenNoPassword(): void
     {
         $mockRedis = $this->createMock(Redis::class);
@@ -86,6 +90,7 @@ final class RedisCacheConnectionTest extends TestCase
         $this->assertEquals('value', $cache->get('key'));
     }
 
+    #[Test]
     public function testGetConnectionAuthenticatesWithUsernameAndPassword(): void
     {
         $mockRedis = $this->createMock(Redis::class);
@@ -104,6 +109,7 @@ final class RedisCacheConnectionTest extends TestCase
         $this->assertEquals('value', $cache->get('key'));
     }
 
+    #[Test]
     public function testGetConnectionSelectsDatabaseWhenSpecified(): void
     {
         $mockRedis = $this->createMock(Redis::class);
@@ -122,6 +128,7 @@ final class RedisCacheConnectionTest extends TestCase
         $this->assertEquals('value', $cache->get('key'));
     }
 
+    #[Test]
     public function testGetConnectionReturnsNullWhenConnectFails(): void
     {
         $mockRedis = $this->createMock(Redis::class);
@@ -134,6 +141,7 @@ final class RedisCacheConnectionTest extends TestCase
         $this->assertNull($cache->get('key'));
     }
 
+    #[Test]
     public function testGetConnectionReturnsNullOnRedisException(): void
     {
         $mockRedis = $this->createMock(Redis::class);
@@ -148,6 +156,7 @@ final class RedisCacheConnectionTest extends TestCase
 
     // ===== parseRedisUrl() =====
 
+    #[Test]
     public function testParseRedisUrlHandlesUrlWithDatabase(): void
     {
         $cache = new RedisCache('redis://localhost:6379/5', 'app:');
@@ -165,6 +174,7 @@ final class RedisCacheConnectionTest extends TestCase
         $this->assertNull($result['password']);
     }
 
+    #[Test]
     public function testParseRedisUrlHandlesRedissScheme(): void
     {
         $cache = new RedisCache('rediss://redis:6379', 'app:');
@@ -180,6 +190,7 @@ final class RedisCacheConnectionTest extends TestCase
         $this->assertEquals(0, $result['database']);
     }
 
+    #[Test]
     public function testParseRedisUrlHandlesUserAndPassword(): void
     {
         $cache = new RedisCache('redis://user:pass@host:1234', 'app:');
@@ -196,6 +207,7 @@ final class RedisCacheConnectionTest extends TestCase
         $this->assertEquals('pass', $result['password']);
     }
 
+    #[Test]
     public function testParseRedisUrlHandlesUrlEncodedCredentials(): void
     {
         $cache = new RedisCache('redis://user%40domain:p%40ss@host:6379', 'app:');
@@ -210,6 +222,7 @@ final class RedisCacheConnectionTest extends TestCase
         $this->assertEquals('p@ss', $result['password']);
     }
 
+    #[Test]
     public function testParseRedisUrlUsesDefaultsForMinimalUrl(): void
     {
         $cache = new RedisCache('redis://localhost', 'app:');
@@ -225,6 +238,7 @@ final class RedisCacheConnectionTest extends TestCase
         $this->assertEquals(0, $result['database']);
     }
 
+    #[Test]
     public function testParseRedisUrlIgnoresRootPath(): void
     {
         $cache = new RedisCache('redis://localhost:6379/', 'app:');
@@ -240,6 +254,7 @@ final class RedisCacheConnectionTest extends TestCase
 
     // ===== early-return branches when connection is unavailable =====
 
+    #[Test]
     public function testSetReturnsFalseWhenConnectionUnavailable(): void
     {
         $cache = $this->createCacheWithNoConnection();
@@ -247,6 +262,7 @@ final class RedisCacheConnectionTest extends TestCase
         $this->assertFalse($cache->set('key', 'value'));
     }
 
+    #[Test]
     public function testHasReturnsFalseWhenConnectionUnavailable(): void
     {
         $cache = $this->createCacheWithNoConnection();
@@ -254,6 +270,7 @@ final class RedisCacheConnectionTest extends TestCase
         $this->assertFalse($cache->has('key'));
     }
 
+    #[Test]
     public function testDeleteReturnsFalseWhenConnectionUnavailable(): void
     {
         $cache = $this->createCacheWithNoConnection();
@@ -261,6 +278,7 @@ final class RedisCacheConnectionTest extends TestCase
         $this->assertFalse($cache->delete('key'));
     }
 
+    #[Test]
     public function testDeletePatternReturnsZeroWhenConnectionUnavailable(): void
     {
         $cache = $this->createCacheWithNoConnection();
@@ -268,6 +286,7 @@ final class RedisCacheConnectionTest extends TestCase
         $this->assertEquals(0, $cache->deletePattern('key:*'));
     }
 
+    #[Test]
     public function testTtlReturnsNullWhenConnectionUnavailable(): void
     {
         $cache = $this->createCacheWithNoConnection();
@@ -275,6 +294,7 @@ final class RedisCacheConnectionTest extends TestCase
         $this->assertNull($cache->ttl('key'));
     }
 
+    #[Test]
     public function testIsAvailableReturnsFalseWhenConnectionUnavailable(): void
     {
         $cache = $this->createCacheWithNoConnection();

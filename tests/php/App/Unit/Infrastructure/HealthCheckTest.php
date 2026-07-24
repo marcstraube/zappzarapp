@@ -10,6 +10,7 @@ use App\Infrastructure\TlsConfig;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\RunInSeparateProcess;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\Attributes\UsesClass;
 use PHPUnit\Framework\TestCase;
 use Redis;
@@ -73,6 +74,7 @@ final class HealthCheckTest extends TestCase
     // =========================================================================
 
     #[RunInSeparateProcess]
+    #[Test]
     public function testDefaultEnvironmentValues(): void
     {
         $check = new HealthCheck();
@@ -94,6 +96,7 @@ final class HealthCheckTest extends TestCase
     }
 
     #[RunInSeparateProcess]
+    #[Test]
     public function testParseBoolTrueValues(): void
     {
         putenv('ENABLE_NODE=true');
@@ -108,6 +111,7 @@ final class HealthCheckTest extends TestCase
     }
 
     #[RunInSeparateProcess]
+    #[Test]
     public function testParseBoolFalseValues(): void
     {
         putenv('ENABLE_NODE=false');
@@ -126,6 +130,7 @@ final class HealthCheckTest extends TestCase
     }
 
     #[RunInSeparateProcess]
+    #[Test]
     public function testEnvVarDbTypeIsRead(): void
     {
         putenv('DB_TYPE=postgres');
@@ -137,6 +142,7 @@ final class HealthCheckTest extends TestCase
     }
 
     #[RunInSeparateProcess]
+    #[Test]
     public function testEnvVarNodeModeIsRead(): void
     {
         putenv('NODE_MODE=api');
@@ -152,6 +158,7 @@ final class HealthCheckTest extends TestCase
     // =========================================================================
 
     #[RunInSeparateProcess]
+    #[Test]
     public function testCheckAllWithAllServicesDisabled(): void
     {
         $check  = new HealthCheck();
@@ -191,6 +198,7 @@ final class HealthCheckTest extends TestCase
     // =========================================================================
 
     #[RunInSeparateProcess]
+    #[Test]
     public function testCheckAllNodeBackendHealthy(): void
     {
         putenv('ENABLE_NODE=true');
@@ -209,6 +217,7 @@ final class HealthCheckTest extends TestCase
     }
 
     #[RunInSeparateProcess]
+    #[Test]
     public function testCheckAllNodeBackendNotReachable(): void
     {
         putenv('ENABLE_NODE=true');
@@ -230,6 +239,7 @@ final class HealthCheckTest extends TestCase
     // =========================================================================
 
     #[RunInSeparateProcess]
+    #[Test]
     public function testCheckAllRedisExtensionNotInstalled(): void
     {
         putenv('ENABLE_REDIS=true');
@@ -251,6 +261,7 @@ final class HealthCheckTest extends TestCase
     }
 
     #[RunInSeparateProcess]
+    #[Test]
     public function testCheckAllRedisConnectionFails(): void
     {
         putenv('ENABLE_REDIS=true');
@@ -273,6 +284,7 @@ final class HealthCheckTest extends TestCase
     }
 
     #[RunInSeparateProcess]
+    #[Test]
     public function testCheckAllRedisHealthy(): void
     {
         putenv('ENABLE_REDIS=true');
@@ -298,6 +310,7 @@ final class HealthCheckTest extends TestCase
     }
 
     #[RunInSeparateProcess]
+    #[Test]
     public function testCheckAllRedisPongTrueIsHealthy(): void
     {
         putenv('ENABLE_REDIS=true');
@@ -325,6 +338,7 @@ final class HealthCheckTest extends TestCase
     // =========================================================================
 
     #[RunInSeparateProcess]
+    #[Test]
     public function testCheckAllDatabasePostgresExtensionNotInstalled(): void
     {
         putenv('ENABLE_DATABASE=true');
@@ -347,6 +361,7 @@ final class HealthCheckTest extends TestCase
     }
 
     #[RunInSeparateProcess]
+    #[Test]
     public function testCheckAllDatabaseMysqlConnectionError(): void
     {
         putenv('ENABLE_DATABASE=true');
@@ -375,6 +390,7 @@ final class HealthCheckTest extends TestCase
     // =========================================================================
 
     #[RunInSeparateProcess]
+    #[Test]
     public function testCheckAllMercureEnabled(): void
     {
         putenv('ENABLE_MERCURE=true');
@@ -391,6 +407,7 @@ final class HealthCheckTest extends TestCase
     }
 
     #[RunInSeparateProcess]
+    #[Test]
     public function testCheckAllMercureHealthy(): void
     {
         putenv('ENABLE_MERCURE=true');
@@ -406,6 +423,7 @@ final class HealthCheckTest extends TestCase
     }
 
     #[RunInSeparateProcess]
+    #[Test]
     public function testCheckAllMeilisearchAvailable(): void
     {
         putenv('ENABLE_MEILISEARCH=true');
@@ -421,6 +439,7 @@ final class HealthCheckTest extends TestCase
     }
 
     #[RunInSeparateProcess]
+    #[Test]
     public function testCheckAllMeilisearchNotAvailable(): void
     {
         putenv('ENABLE_MEILISEARCH=true');
@@ -434,6 +453,7 @@ final class HealthCheckTest extends TestCase
     }
 
     #[RunInSeparateProcess]
+    #[Test]
     public function testCheckAllMeilisearchNotReachable(): void
     {
         putenv('ENABLE_MEILISEARCH=true');
@@ -449,6 +469,7 @@ final class HealthCheckTest extends TestCase
     }
 
     #[RunInSeparateProcess]
+    #[Test]
     public function testCheckAllElasticsearchGreenStatus(): void
     {
         putenv('ENABLE_ELASTICSEARCH=true');
@@ -465,6 +486,7 @@ final class HealthCheckTest extends TestCase
     }
 
     #[RunInSeparateProcess]
+    #[Test]
     public function testCheckAllElasticsearchYellowStatus(): void
     {
         putenv('ENABLE_ELASTICSEARCH=true');
@@ -480,6 +502,7 @@ final class HealthCheckTest extends TestCase
     }
 
     #[RunInSeparateProcess]
+    #[Test]
     public function testCheckAllElasticsearchRedStatus(): void
     {
         putenv('ENABLE_ELASTICSEARCH=true');
@@ -494,6 +517,7 @@ final class HealthCheckTest extends TestCase
     }
 
     #[RunInSeparateProcess]
+    #[Test]
     public function testCheckAllElasticsearchNotReachable(): void
     {
         putenv('ENABLE_ELASTICSEARCH=true');
@@ -509,6 +533,7 @@ final class HealthCheckTest extends TestCase
     }
 
     #[RunInSeparateProcess]
+    #[Test]
     public function testCheckAllMailpitEnabled(): void
     {
         putenv('ENABLE_MAILPIT=true');
@@ -523,6 +548,7 @@ final class HealthCheckTest extends TestCase
     }
 
     #[RunInSeparateProcess]
+    #[Test]
     public function testCheckAllMailpitHealthy(): void
     {
         putenv('ENABLE_MAILPIT=true');
@@ -536,6 +562,7 @@ final class HealthCheckTest extends TestCase
     }
 
     #[RunInSeparateProcess]
+    #[Test]
     public function testCheckAllRabbitmqEnabled(): void
     {
         putenv('ENABLE_RABBITMQ=true');
@@ -550,6 +577,7 @@ final class HealthCheckTest extends TestCase
     }
 
     #[RunInSeparateProcess]
+    #[Test]
     public function testCheckAllRabbitmqHealthy(): void
     {
         putenv('ENABLE_RABBITMQ=true');
@@ -563,6 +591,7 @@ final class HealthCheckTest extends TestCase
     }
 
     #[RunInSeparateProcess]
+    #[Test]
     public function testCheckAllSeaweedfsAvailable(): void
     {
         putenv('ENABLE_SEAWEEDFS=true');
@@ -578,6 +607,7 @@ final class HealthCheckTest extends TestCase
     }
 
     #[RunInSeparateProcess]
+    #[Test]
     public function testCheckAllSeaweedfsResponseMissingIsLeader(): void
     {
         putenv('ENABLE_SEAWEEDFS=true');
@@ -591,6 +621,7 @@ final class HealthCheckTest extends TestCase
     }
 
     #[RunInSeparateProcess]
+    #[Test]
     public function testCheckAllSeaweedfsNotReachable(): void
     {
         putenv('ENABLE_SEAWEEDFS=true');
@@ -610,6 +641,7 @@ final class HealthCheckTest extends TestCase
     // =========================================================================
 
     #[RunInSeparateProcess]
+    #[Test]
     public function testOverallStatusRemainsOkWhenAllServicesDisabled(): void
     {
         $check  = new HealthCheck();
@@ -619,6 +651,7 @@ final class HealthCheckTest extends TestCase
     }
 
     #[RunInSeparateProcess]
+    #[Test]
     public function testOverallStatusBecomesDeградedOnFirstError(): void
     {
         putenv('ENABLE_NODE=true');
@@ -635,6 +668,7 @@ final class HealthCheckTest extends TestCase
     // =========================================================================
 
     #[RunInSeparateProcess]
+    #[Test]
     public function testCheckReadinessAllDisabled(): void
     {
         $check  = new HealthCheck();
@@ -655,6 +689,7 @@ final class HealthCheckTest extends TestCase
     }
 
     #[RunInSeparateProcess]
+    #[Test]
     public function testCheckReadinessWithNodeBackendEnabled(): void
     {
         putenv('ENABLE_NODE=true');
@@ -672,6 +707,7 @@ final class HealthCheckTest extends TestCase
     }
 
     #[RunInSeparateProcess]
+    #[Test]
     public function testCheckReadinessNodeBackendUnreachable(): void
     {
         putenv('ENABLE_NODE=true');
@@ -687,6 +723,7 @@ final class HealthCheckTest extends TestCase
     }
 
     #[RunInSeparateProcess]
+    #[Test]
     public function testCheckReadinessWithNodeFrontendEnabled(): void
     {
         putenv('ENABLE_NODE=true');
@@ -706,6 +743,7 @@ final class HealthCheckTest extends TestCase
     }
 
     #[RunInSeparateProcess]
+    #[Test]
     public function testCheckReadinessNodeFrontendUnreachable(): void
     {
         putenv('ENABLE_NODE=true');
@@ -721,6 +759,7 @@ final class HealthCheckTest extends TestCase
     }
 
     #[RunInSeparateProcess]
+    #[Test]
     public function testCheckReadinessWithRedisExtensionMissing(): void
     {
         putenv('ENABLE_REDIS=true');
@@ -738,6 +777,7 @@ final class HealthCheckTest extends TestCase
     }
 
     #[RunInSeparateProcess]
+    #[Test]
     public function testCheckReadinessWithRedisConnectionFailure(): void
     {
         putenv('ENABLE_REDIS=true');
@@ -758,6 +798,7 @@ final class HealthCheckTest extends TestCase
     }
 
     #[RunInSeparateProcess]
+    #[Test]
     public function testCheckReadinessWithRedisHealthy(): void
     {
         putenv('ENABLE_REDIS=true');
@@ -781,6 +822,7 @@ final class HealthCheckTest extends TestCase
     }
 
     #[RunInSeparateProcess]
+    #[Test]
     public function testCheckReadinessDatabasePostgresExtensionMissing(): void
     {
         putenv('ENABLE_DATABASE=true');
@@ -801,6 +843,7 @@ final class HealthCheckTest extends TestCase
     }
 
     #[RunInSeparateProcess]
+    #[Test]
     public function testCheckReadinessDatabaseMysqlConnectionError(): void
     {
         putenv('ENABLE_DATABASE=true');
@@ -826,6 +869,7 @@ final class HealthCheckTest extends TestCase
 
     #[DataProvider('nodeBackendModeProvider')]
     #[RunInSeparateProcess]
+    #[Test]
     public function testNodeBackendEnabledModes(string $mode, bool $backendEnabled, bool $frontendEnabled): void
     {
         putenv('ENABLE_NODE=true');
@@ -868,6 +912,7 @@ final class HealthCheckTest extends TestCase
     }
 
     #[RunInSeparateProcess]
+    #[Test]
     public function testNodeBackendDisabledWhenEnableNodeFalse(): void
     {
         putenv('ENABLE_NODE=false');
@@ -885,6 +930,7 @@ final class HealthCheckTest extends TestCase
     // =========================================================================
 
     #[RunInSeparateProcess]
+    #[Test]
     public function testGetEnvironmentReturnsCorrectEnv(): void
     {
         putenv('ENV=staging');
@@ -900,6 +946,7 @@ final class HealthCheckTest extends TestCase
     // =========================================================================
 
     #[RunInSeparateProcess]
+    #[Test]
     public function testCheckReadinessUptimeIsNonNegative(): void
     {
         $check  = new HealthCheck();
@@ -914,6 +961,7 @@ final class HealthCheckTest extends TestCase
     // =========================================================================
 
     #[RunInSeparateProcess]
+    #[Test]
     public function testMercureSocketErrorMessagePropagated(): void
     {
         putenv('ENABLE_MERCURE=true');
@@ -959,6 +1007,7 @@ final class HealthCheckTest extends TestCase
     // =========================================================================
 
     #[RunInSeparateProcess]
+    #[Test]
     public function testRealSafeSocketOpenWithUnreachablePort(): void
     {
         putenv('ENABLE_MERCURE=true');
@@ -985,6 +1034,7 @@ final class HealthCheckTest extends TestCase
     // =========================================================================
 
     #[RunInSeparateProcess]
+    #[Test]
     public function testRealFetchUrlWithUnreachableUrl(): void
     {
         putenv('ENABLE_MEILISEARCH=true');
@@ -1020,6 +1070,7 @@ final class HealthCheckTest extends TestCase
     // =========================================================================
 
     #[RunInSeparateProcess]
+    #[Test]
     public function testCheckAllNodeBackendExceptionCaughtAsError(): void
     {
         putenv('ENABLE_NODE=true');
@@ -1047,6 +1098,7 @@ final class HealthCheckTest extends TestCase
     // =========================================================================
 
     #[RunInSeparateProcess]
+    #[Test]
     public function testCheckAllRedisExceptionDuringPing(): void
     {
         putenv('ENABLE_REDIS=true');
@@ -1075,6 +1127,7 @@ final class HealthCheckTest extends TestCase
     // =========================================================================
 
     #[RunInSeparateProcess]
+    #[Test]
     public function testCheckReadinessNodeBackendExceptionCaught(): void
     {
         putenv('ENABLE_NODE=true');
@@ -1100,6 +1153,7 @@ final class HealthCheckTest extends TestCase
     // =========================================================================
 
     #[RunInSeparateProcess]
+    #[Test]
     public function testCheckReadinessNodeFrontendExceptionCaught(): void
     {
         putenv('ENABLE_NODE=true');
@@ -1125,6 +1179,7 @@ final class HealthCheckTest extends TestCase
     // =========================================================================
 
     #[RunInSeparateProcess]
+    #[Test]
     public function testCheckReadinessRedisExceptionDuringPing(): void
     {
         putenv('ENABLE_REDIS=true');

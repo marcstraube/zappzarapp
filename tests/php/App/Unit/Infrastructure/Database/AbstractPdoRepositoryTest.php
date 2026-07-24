@@ -14,6 +14,7 @@ use PDO;
 use PDOException;
 use PDOStatement;
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use ReflectionClass;
 use Zappzarapp\AuditLogger\AuditLoggerInterface;
@@ -39,6 +40,7 @@ final class AbstractPdoRepositoryTest extends TestCase
     // find() Tests
     // =========================================================================
 
+    #[Test]
     public function testFindReturnsRecordWhenFound(): void
     {
         $expectedRow = ['id' => 1, 'name' => 'Test User', 'email' => 'test@example.com'];
@@ -63,6 +65,7 @@ final class AbstractPdoRepositoryTest extends TestCase
         $this->assertEquals($expectedRow, $repository->find(1));
     }
 
+    #[Test]
     public function testFindReturnsNullWhenNotFound(): void
     {
         $stmt = $this->createMock(PDOStatement::class);
@@ -83,6 +86,7 @@ final class AbstractPdoRepositoryTest extends TestCase
         $this->assertNull($repository->find(999));
     }
 
+    #[Test]
     public function testFindReturnsNullOnPdoException(): void
     {
         $pdo = $this->createMock(PDO::class);
@@ -95,6 +99,7 @@ final class AbstractPdoRepositoryTest extends TestCase
         $this->assertNull($repository->find(1));
     }
 
+    #[Test]
     public function testFindReturnsNullWhenNoConnection(): void
     {
         $repository = $this->createRepositoryWithoutConnection();
@@ -106,6 +111,7 @@ final class AbstractPdoRepositoryTest extends TestCase
     // findAll() Tests
     // =========================================================================
 
+    #[Test]
     public function testFindAllReturnsAllRecords(): void
     {
         $expectedRows = [
@@ -132,6 +138,7 @@ final class AbstractPdoRepositoryTest extends TestCase
         $this->assertEquals($expectedRows, $repository->findAll());
     }
 
+    #[Test]
     public function testFindAllRespectsLimitAndOffset(): void
     {
         $stmt = $this->createMock(PDOStatement::class);
@@ -153,6 +160,7 @@ final class AbstractPdoRepositoryTest extends TestCase
         $this->assertEquals([['id' => 3]], $repository->findAll(10, 20));
     }
 
+    #[Test]
     public function testFindAllReturnsEmptyArrayOnException(): void
     {
         $pdo = $this->createMock(PDO::class);
@@ -165,6 +173,7 @@ final class AbstractPdoRepositoryTest extends TestCase
         $this->assertEquals([], $repository->findAll());
     }
 
+    #[Test]
     public function testFindAllReturnsEmptyArrayWhenNoConnection(): void
     {
         $repository = $this->createRepositoryWithoutConnection();
@@ -176,6 +185,7 @@ final class AbstractPdoRepositoryTest extends TestCase
     // findBy() Tests
     // =========================================================================
 
+    #[Test]
     public function testFindByReturnMatchingRecords(): void
     {
         $expectedRows = [['id' => 1, 'status' => 'active']];
@@ -200,6 +210,7 @@ final class AbstractPdoRepositoryTest extends TestCase
         $this->assertEquals($expectedRows, $repository->findBy(['status' => 'active']));
     }
 
+    #[Test]
     public function testFindByDelegatesEmptyCriteriaToFindAll(): void
     {
         $expectedRows = [['id' => 1], ['id' => 2]];
@@ -223,6 +234,7 @@ final class AbstractPdoRepositoryTest extends TestCase
         $this->assertEquals($expectedRows, $repository->findBy([]));
     }
 
+    #[Test]
     public function testFindByHandlesNullCriteriaValue(): void
     {
         $stmt = $this->createMock(PDOStatement::class);
@@ -249,6 +261,7 @@ final class AbstractPdoRepositoryTest extends TestCase
     // insert() Tests
     // =========================================================================
 
+    #[Test]
     public function testInsertReturnsIdOnSuccess(): void
     {
         $stmt = $this->createMock(PDOStatement::class);
@@ -271,6 +284,7 @@ final class AbstractPdoRepositoryTest extends TestCase
         $this->assertEquals(42, $repository->insert(['email' => 'test@example.com', 'name' => 'Test User']));
     }
 
+    #[Test]
     public function testInsertReturnsFalseForEmptyData(): void
     {
         $repository = $this->createRepositoryWithoutConnection();
@@ -278,6 +292,7 @@ final class AbstractPdoRepositoryTest extends TestCase
         $this->assertFalse($repository->insert([]));
     }
 
+    #[Test]
     public function testInsertReturnsFalseOnException(): void
     {
         $pdo = $this->createMock(PDO::class);
@@ -290,6 +305,7 @@ final class AbstractPdoRepositoryTest extends TestCase
         $this->assertFalse($repository->insert(['email' => 'test@example.com']));
     }
 
+    #[Test]
     public function testInsertReturnsFalseWhenNoConnection(): void
     {
         $repository = $this->createRepositoryWithoutConnection();
@@ -301,6 +317,7 @@ final class AbstractPdoRepositoryTest extends TestCase
     // update() Tests
     // =========================================================================
 
+    #[Test]
     public function testUpdateReturnsTrueOnSuccess(): void
     {
         $stmt = $this->createMock(PDOStatement::class);
@@ -323,6 +340,7 @@ final class AbstractPdoRepositoryTest extends TestCase
         $this->assertTrue($repository->update(1, ['name' => 'New Name']));
     }
 
+    #[Test]
     public function testUpdateReturnsFalseWhenNoRowsAffected(): void
     {
         $stmt = $this->createMock(PDOStatement::class);
@@ -343,6 +361,7 @@ final class AbstractPdoRepositoryTest extends TestCase
         $this->assertFalse($repository->update(999, ['name' => 'New Name']));
     }
 
+    #[Test]
     public function testUpdateReturnsFalseForEmptyData(): void
     {
         $repository = $this->createRepositoryWithoutConnection();
@@ -350,6 +369,7 @@ final class AbstractPdoRepositoryTest extends TestCase
         $this->assertFalse($repository->update(1, []));
     }
 
+    #[Test]
     public function testUpdateReturnsFalseOnException(): void
     {
         $pdo = $this->createMock(PDO::class);
@@ -366,6 +386,7 @@ final class AbstractPdoRepositoryTest extends TestCase
     // delete() Tests
     // =========================================================================
 
+    #[Test]
     public function testDeleteReturnsTrueOnSuccess(): void
     {
         $stmt = $this->createMock(PDOStatement::class);
@@ -388,6 +409,7 @@ final class AbstractPdoRepositoryTest extends TestCase
         $this->assertTrue($repository->delete(1));
     }
 
+    #[Test]
     public function testDeleteReturnsFalseWhenNoRowsAffected(): void
     {
         $stmt = $this->createMock(PDOStatement::class);
@@ -408,6 +430,7 @@ final class AbstractPdoRepositoryTest extends TestCase
         $this->assertFalse($repository->delete(999));
     }
 
+    #[Test]
     public function testDeleteReturnsFalseOnException(): void
     {
         $pdo = $this->createMock(PDO::class);
@@ -424,6 +447,7 @@ final class AbstractPdoRepositoryTest extends TestCase
     // exists() Tests
     // =========================================================================
 
+    #[Test]
     public function testExistsReturnsTrueWhenRecordExists(): void
     {
         $stmt = $this->createMock(PDOStatement::class);
@@ -446,6 +470,7 @@ final class AbstractPdoRepositoryTest extends TestCase
         $this->assertTrue($repository->exists(1));
     }
 
+    #[Test]
     public function testExistsReturnsFalseWhenRecordDoesNotExist(): void
     {
         $stmt = $this->createMock(PDOStatement::class);
@@ -466,6 +491,7 @@ final class AbstractPdoRepositoryTest extends TestCase
         $this->assertFalse($repository->exists(999));
     }
 
+    #[Test]
     public function testExistsReturnsFalseOnException(): void
     {
         $pdo = $this->createMock(PDO::class);
@@ -482,6 +508,7 @@ final class AbstractPdoRepositoryTest extends TestCase
     // count() Tests
     // =========================================================================
 
+    #[Test]
     public function testCountReturnsRecordCount(): void
     {
         $stmt = $this->createMock(PDOStatement::class);
@@ -503,6 +530,7 @@ final class AbstractPdoRepositoryTest extends TestCase
         $this->assertEquals(42, $repository->count());
     }
 
+    #[Test]
     public function testCountWithCriteriaReturnsFilteredCount(): void
     {
         $stmt = $this->createMock(PDOStatement::class);
@@ -525,6 +553,7 @@ final class AbstractPdoRepositoryTest extends TestCase
         $this->assertEquals(5, $repository->count(['status' => 'active']));
     }
 
+    #[Test]
     public function testCountReturnsZeroOnException(): void
     {
         $pdo = $this->createMock(PDO::class);
@@ -537,6 +566,7 @@ final class AbstractPdoRepositoryTest extends TestCase
         $this->assertEquals(0, $repository->count());
     }
 
+    #[Test]
     public function testCountReturnsZeroWhenNoConnection(): void
     {
         $repository = $this->createRepositoryWithoutConnection();
@@ -548,6 +578,7 @@ final class AbstractPdoRepositoryTest extends TestCase
     // Transaction Tests
     // =========================================================================
 
+    #[Test]
     public function testBeginTransactionReturnsTrue(): void
     {
         $pdo = $this->createMock(PDO::class);
@@ -560,6 +591,7 @@ final class AbstractPdoRepositoryTest extends TestCase
         $this->assertTrue($repository->beginTransaction());
     }
 
+    #[Test]
     public function testBeginTransactionReturnsFalseOnException(): void
     {
         $pdo = $this->createMock(PDO::class);
@@ -572,6 +604,7 @@ final class AbstractPdoRepositoryTest extends TestCase
         $this->assertFalse($repository->beginTransaction());
     }
 
+    #[Test]
     public function testBeginTransactionReturnsFalseWhenNoConnection(): void
     {
         $repository = $this->createRepositoryWithoutConnection();
@@ -579,6 +612,7 @@ final class AbstractPdoRepositoryTest extends TestCase
         $this->assertFalse($repository->beginTransaction());
     }
 
+    #[Test]
     public function testCommitReturnsTrue(): void
     {
         $pdo = $this->createMock(PDO::class);
@@ -591,6 +625,7 @@ final class AbstractPdoRepositoryTest extends TestCase
         $this->assertTrue($repository->commit());
     }
 
+    #[Test]
     public function testCommitReturnsFalseOnException(): void
     {
         $pdo = $this->createMock(PDO::class);
@@ -603,6 +638,7 @@ final class AbstractPdoRepositoryTest extends TestCase
         $this->assertFalse($repository->commit());
     }
 
+    #[Test]
     public function testCommitReturnsFalseWhenNoConnection(): void
     {
         $repository = $this->createRepositoryWithoutConnection();
@@ -610,6 +646,7 @@ final class AbstractPdoRepositoryTest extends TestCase
         $this->assertFalse($repository->commit());
     }
 
+    #[Test]
     public function testRollbackReturnsTrue(): void
     {
         $pdo = $this->createMock(PDO::class);
@@ -622,6 +659,7 @@ final class AbstractPdoRepositoryTest extends TestCase
         $this->assertTrue($repository->rollback());
     }
 
+    #[Test]
     public function testRollbackReturnsFalseOnException(): void
     {
         $pdo = $this->createMock(PDO::class);
@@ -634,6 +672,7 @@ final class AbstractPdoRepositoryTest extends TestCase
         $this->assertFalse($repository->rollback());
     }
 
+    #[Test]
     public function testRollbackReturnsFalseWhenNoConnection(): void
     {
         $repository = $this->createRepositoryWithoutConnection();
@@ -645,6 +684,7 @@ final class AbstractPdoRepositoryTest extends TestCase
     // isAvailable() Tests
     // =========================================================================
 
+    #[Test]
     public function testIsAvailableReturnsTrueWhenConnected(): void
     {
         $stmt = $this->createStub(PDOStatement::class);
@@ -660,6 +700,7 @@ final class AbstractPdoRepositoryTest extends TestCase
         $this->assertTrue($repository->isAvailable());
     }
 
+    #[Test]
     public function testIsAvailableReturnsFalseOnException(): void
     {
         $pdo = $this->createMock(PDO::class);
@@ -672,6 +713,7 @@ final class AbstractPdoRepositoryTest extends TestCase
         $this->assertFalse($repository->isAvailable());
     }
 
+    #[Test]
     public function testIsAvailableReturnsFalseWhenNoConnection(): void
     {
         $repository = $this->createRepositoryWithoutConnection();
@@ -683,6 +725,7 @@ final class AbstractPdoRepositoryTest extends TestCase
     // Identifier Quoting Tests
     // =========================================================================
 
+    #[Test]
     public function testPostgresUsesDoubleQuotesForIdentifiers(): void
     {
         $stmt = $this->createStub(PDOStatement::class);
@@ -700,6 +743,7 @@ final class AbstractPdoRepositoryTest extends TestCase
         $repository->find(1);
     }
 
+    #[Test]
     public function testMariaDbUsesBackticksForIdentifiers(): void
     {
         $stmt = $this->createStub(PDOStatement::class);
@@ -721,6 +765,7 @@ final class AbstractPdoRepositoryTest extends TestCase
     // Encryption Tests
     // =========================================================================
 
+    #[Test]
     public function testFindDecryptsEncryptedFields(): void
     {
         $encryptedRow = ['id' => 1, 'secret' => 'encrypted_value'];
@@ -755,6 +800,7 @@ final class AbstractPdoRepositoryTest extends TestCase
         $this->assertEquals('decrypted_value', $result['secret']);
     }
 
+    #[Test]
     public function testInsertEncryptsEncryptedFields(): void
     {
         $encryptStmt = $this->createMock(PDOStatement::class);
@@ -789,6 +835,7 @@ final class AbstractPdoRepositoryTest extends TestCase
     // PostgreSQL Sequence Handling Tests
     // =========================================================================
 
+    #[Test]
     public function testInsertHandlesPostgresSequenceForZeroLastInsertId(): void
     {
         $insertStmt = $this->createMock(PDOStatement::class);

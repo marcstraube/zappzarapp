@@ -9,6 +9,7 @@ use App\Infrastructure\TlsConfig;
 use DevDashboard\Services\HealthCheckService;
 use Exception;
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\Attributes\UsesClass;
 use PHPUnit\Framework\TestCase;
 use Redis;
@@ -32,6 +33,7 @@ final class HealthCheckServiceSeamsTest extends TestCase
     // checkSocketConnection() — deterministic socket failure (line 648)
     // =========================================================================
 
+    #[Test]
     public function testSocketConnectionFailureReturnsStoppedStatus(): void
     {
         $fake = $this->makeServiceWithSocket(socketReturn: false, errstr: 'Connection refused');
@@ -50,6 +52,7 @@ final class HealthCheckServiceSeamsTest extends TestCase
         putenv('DB_TYPE');
     }
 
+    #[Test]
     public function testSocketConnectionSuccessReturnsRunningStatus(): void
     {
         $fake = $this->makeServiceWithSocket(socketReturn: true);
@@ -71,6 +74,7 @@ final class HealthCheckServiceSeamsTest extends TestCase
     // checkRedisDetailed() — connected=false path (line 345)
     // =========================================================================
 
+    #[Test]
     public function testRedisDetailedConnectionFailedReturnsFalse(): void
     {
         $fake = $this->makeServiceWithRedisConnect(connectReturn: false);
@@ -93,6 +97,7 @@ final class HealthCheckServiceSeamsTest extends TestCase
     // checkRedisDetailed() — success path (lines 355–367)
     // =========================================================================
 
+    #[Test]
     public function testRedisDetailedSuccessPathReturnsPongTrue(): void
     {
         $stubRedis = $this->createRedisStub(pingReturn: true, version: '7.2.0');
@@ -114,6 +119,7 @@ final class HealthCheckServiceSeamsTest extends TestCase
         putenv('REDIS_URL');
     }
 
+    #[Test]
     public function testRedisDetailedSuccessPathReturnsPongString(): void
     {
         $stubRedis = $this->createRedisStub(pingReturn: '+PONG', version: '6.2.0');
@@ -136,6 +142,7 @@ final class HealthCheckServiceSeamsTest extends TestCase
     // checkRedisDetailed() — Exception catch path (lines 368–373, CI-only)
     // =========================================================================
 
+    #[Test]
     public function testRedisDetailedExceptionReturnsConnectedFalse(): void
     {
         $fake = $this->makeServiceWithRedisConnectThrowing(new Exception('Redis error'));
@@ -158,6 +165,7 @@ final class HealthCheckServiceSeamsTest extends TestCase
     // getSslInfo() + parseCertificate() — no certs exist (lines 562–566, CI-only)
     // =========================================================================
 
+    #[Test]
     public function testSslInfoNoCertsReturnsExistsFalse(): void
     {
         $fake = $this->makeServiceWithCertFile(fileExists: false);
@@ -173,6 +181,7 @@ final class HealthCheckServiceSeamsTest extends TestCase
     // getSslInfo() — certs present, exists=true (lines 556–557, 569–572)
     // =========================================================================
 
+    #[Test]
     public function testSslInfoWithValidCertReturnsExistsTrue(): void
     {
         $certData = $this->makeCertData(daysFromNow: 90);
@@ -192,6 +201,7 @@ final class HealthCheckServiceSeamsTest extends TestCase
     // parseCertificate() — file_get_contents returns false (lines 586–587)
     // =========================================================================
 
+    #[Test]
     public function testParseCertificateReadFailureReturnsInvalidEntry(): void
     {
         $fake = $this->makeServiceWithCertFile(fileExists: true, contents: false);
@@ -209,6 +219,7 @@ final class HealthCheckServiceSeamsTest extends TestCase
     // parseCertificate() — openssl_x509_parse returns false (lines 595–596)
     // =========================================================================
 
+    #[Test]
     public function testParseCertificateInvalidFormatReturnsInvalidEntry(): void
     {
         $fake = $this->makeServiceWithCertFile(
@@ -229,6 +240,7 @@ final class HealthCheckServiceSeamsTest extends TestCase
     // parseCertificate() — full success (lines 604–618)
     // =========================================================================
 
+    #[Test]
     public function testParseCertificateSuccessReturnsFullCertInfo(): void
     {
         $certData = $this->makeCertData(daysFromNow: 45);
@@ -251,6 +263,7 @@ final class HealthCheckServiceSeamsTest extends TestCase
         $this->assertFalse($cert['expires_soon']);  // 45 days > 30
     }
 
+    #[Test]
     public function testParseCertificateExpiresSoonWhenUnder30Days(): void
     {
         $certData = $this->makeCertData(daysFromNow: 10);

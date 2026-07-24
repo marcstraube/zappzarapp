@@ -7,6 +7,7 @@ namespace Tests\App\Unit\Infrastructure;
 use App\Infrastructure\ViteHelper;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\RunInSeparateProcess;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\Attributes\UsesFunction;
 use PHPUnit\Framework\TestCase;
 
@@ -27,6 +28,7 @@ final class ViteHelperTest extends TestCase
     }
 
     #[RunInSeparateProcess]
+    #[Test]
     public function testIsDevelopmentReturnsTrueInDevelopmentMode(): void
     {
         putenv('ENV=development');
@@ -38,6 +40,7 @@ final class ViteHelperTest extends TestCase
     }
 
     #[RunInSeparateProcess]
+    #[Test]
     public function testIsDevelopmentReturnsFalseInProductionMode(): void
     {
         putenv('ENV=production');
@@ -49,6 +52,7 @@ final class ViteHelperTest extends TestCase
     }
 
     #[RunInSeparateProcess]
+    #[Test]
     public function testDefaultsToProductionWhenEnvNotSet(): void
     {
         $vite = new ViteHelper();
@@ -58,6 +62,7 @@ final class ViteHelperTest extends TestCase
     }
 
     #[RunInSeparateProcess]
+    #[Test]
     public function testRenderScriptTagsInDevelopmentMode(): void
     {
         putenv('ENV=development');
@@ -71,6 +76,7 @@ final class ViteHelperTest extends TestCase
     }
 
     #[RunInSeparateProcess]
+    #[Test]
     public function testRenderCssTagsInDevelopmentMode(): void
     {
         putenv('ENV=development');
@@ -82,6 +88,7 @@ final class ViteHelperTest extends TestCase
     }
 
     #[RunInSeparateProcess]
+    #[Test]
     public function testRenderScriptTagsInProductionWithoutManifest(): void
     {
         putenv('ENV=production');
@@ -94,6 +101,7 @@ final class ViteHelperTest extends TestCase
     }
 
     #[RunInSeparateProcess]
+    #[Test]
     public function testRenderCssTagsInProductionWithoutManifest(): void
     {
         putenv('ENV=production');
@@ -106,6 +114,7 @@ final class ViteHelperTest extends TestCase
     }
 
     #[RunInSeparateProcess]
+    #[Test]
     public function testIsViteDevServerRunningReturnsFalseInProduction(): void
     {
         putenv('ENV=production');
@@ -116,6 +125,7 @@ final class ViteHelperTest extends TestCase
     }
 
     #[RunInSeparateProcess]
+    #[Test]
     public function testAreAssetsAvailableReturnsFalseWhenNoManifestInProduction(): void
     {
         putenv('ENV=production');

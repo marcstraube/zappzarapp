@@ -13,6 +13,7 @@ use ErrorException;
 use Exception;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\RunInSeparateProcess;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\Attributes\UsesClass;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\NullLogger;
@@ -51,6 +52,7 @@ class ExceptionHandlerTest extends TestCase
         parent::tearDown();
     }
 
+    #[Test]
     public function testProductionModeHidesExceptionDetails(): void
     {
         putenv('ENV=production');
@@ -79,6 +81,7 @@ class ExceptionHandlerTest extends TestCase
         $this->assertSame('An unexpected error occurred. Please try again later.', $data['message']);
     }
 
+    #[Test]
     public function testDevelopmentModeShowsExceptionDetails(): void
     {
         putenv('ENV=development');
@@ -109,6 +112,7 @@ class ExceptionHandlerTest extends TestCase
         $this->assertIsString($data['trace']);
     }
 
+    #[Test]
     public function testProductionModeHtmlResponse(): void
     {
         putenv('ENV=production');
@@ -131,6 +135,7 @@ class ExceptionHandlerTest extends TestCase
         $this->assertStringNotContainsString('sensitive data', $output);
     }
 
+    #[Test]
     public function testDevelopmentModeHtmlResponse(): void
     {
         putenv('ENV=development');
@@ -153,6 +158,7 @@ class ExceptionHandlerTest extends TestCase
         $this->assertStringContainsString('Stack Trace', $output);
     }
 
+    #[Test]
     public function testContentNegotiationDefaultsToJson(): void
     {
         putenv('ENV=production');
@@ -172,6 +178,7 @@ class ExceptionHandlerTest extends TestCase
         $this->assertStringContainsString('<!DOCTYPE html>', $output);
     }
 
+    #[Test]
     public function testExceptionHandlingWithNullLogger(): void
     {
         putenv('ENV=production');
@@ -195,6 +202,7 @@ class ExceptionHandlerTest extends TestCase
 
     // ===== logException without PSR-3 logger (error_log path) =====
 
+    #[Test]
     public function testHandleWithoutLoggerFallsBackToErrorLog(): void
     {
         putenv('ENV=production');
@@ -218,6 +226,7 @@ class ExceptionHandlerTest extends TestCase
         $this->assertSame('Internal Server Error', $data['error']);
     }
 
+    #[Test]
     public function testHandleWithoutLoggerInDevelopmentUsesErrorLog(): void
     {
         putenv('ENV=development');
@@ -241,6 +250,7 @@ class ExceptionHandlerTest extends TestCase
     // ===== register() covers set_exception_handler + register_shutdown_function =====
 
     #[RunInSeparateProcess]
+    #[Test]
     public function testRegisterDoesNotThrow(): void
     {
         putenv('ENV=production');
@@ -257,6 +267,7 @@ class ExceptionHandlerTest extends TestCase
     }
 
     #[RunInSeparateProcess]
+    #[Test]
     public function testRegisterSetsGlobalHandlers(): void
     {
         putenv('ENV=production');
@@ -280,6 +291,7 @@ class ExceptionHandlerTest extends TestCase
     }
 
     #[RunInSeparateProcess]
+    #[Test]
     public function testRegisterErrorHandlerRespectsErrorReportingLevel(): void
     {
         putenv('ENV=production');
@@ -305,6 +317,7 @@ class ExceptionHandlerTest extends TestCase
 
     // ===== handleShutdown() =====
 
+    #[Test]
     public function testHandleShutdownDoesNothingWhenNoFatalError(): void
     {
         putenv('ENV=production');

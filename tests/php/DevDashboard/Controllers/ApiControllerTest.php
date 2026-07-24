@@ -13,6 +13,7 @@ use DevDashboard\Services\LogService;
 use DevDashboard\Services\QualityService;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\RunInSeparateProcess;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\Attributes\UsesClass;
 use PHPUnit\Framework\TestCase;
 
@@ -61,6 +62,7 @@ final class ApiControllerTest extends TestCase
 
     // ===== healthCheck() =====
 
+    #[Test]
     public function testHealthCheckReturnsResponse(): void
     {
         $healthCheck = $this->createStub(HealthCheckService::class);
@@ -73,6 +75,7 @@ final class ApiControllerTest extends TestCase
     }
 
     #[RunInSeparateProcess]
+    #[Test]
     public function testHealthCheckOutputsJson(): void
     {
         $data        = ['status' => 'healthy', 'healthy_count' => 2, 'unhealthy_count' => 0, 'timestamp' => '2026-01-01'];
@@ -88,6 +91,7 @@ final class ApiControllerTest extends TestCase
         $this->assertSame('healthy', $decoded['status']);
     }
 
+    #[Test]
     public function testHealthCheckDelegatesGetOverallStatus(): void
     {
         $healthCheck = $this->createMock(HealthCheckService::class);
@@ -100,6 +104,7 @@ final class ApiControllerTest extends TestCase
 
     // ===== servicesStatus() =====
 
+    #[Test]
     public function testServicesStatusReturnsResponse(): void
     {
         $healthCheck = $this->createStub(HealthCheckService::class);
@@ -112,6 +117,7 @@ final class ApiControllerTest extends TestCase
     }
 
     #[RunInSeparateProcess]
+    #[Test]
     public function testServicesStatusOutputsServicesJson(): void
     {
         $services    = ['core' => ['nginx' => ['status' => 'running']], 'data' => [], 'optional' => []];
@@ -127,6 +133,7 @@ final class ApiControllerTest extends TestCase
         $this->assertArrayHasKey('core', $decoded);
     }
 
+    #[Test]
     public function testServicesStatusDelegatesGetServices(): void
     {
         $healthCheck = $this->createMock(HealthCheckService::class);
@@ -139,6 +146,7 @@ final class ApiControllerTest extends TestCase
 
     // ===== logContent() =====
 
+    #[Test]
     public function testLogContentReturnsBadRequestWhenNoFilename(): void
     {
         $_GET = [];
@@ -154,6 +162,7 @@ final class ApiControllerTest extends TestCase
     }
 
     #[RunInSeparateProcess]
+    #[Test]
     public function testLogContentReturnsBadRequestStatus400WhenNoFilename(): void
     {
         $_GET = [];
@@ -165,6 +174,7 @@ final class ApiControllerTest extends TestCase
         $this->assertSame(400, http_response_code());
     }
 
+    #[Test]
     public function testLogContentCallsLogServiceWithFilenameAndDefaultLines(): void
     {
         $_GET = ['file' => 'app.log'];
@@ -178,6 +188,7 @@ final class ApiControllerTest extends TestCase
         $this->buildController(['log' => $log])->logContent();
     }
 
+    #[Test]
     public function testLogContentCallsLogServiceWithSpecifiedLineCount(): void
     {
         $_GET = ['file' => 'error.log', 'lines' => '50'];
@@ -191,6 +202,7 @@ final class ApiControllerTest extends TestCase
         $this->buildController(['log' => $log])->logContent();
     }
 
+    #[Test]
     public function testLogContentCapsLinesAt500(): void
     {
         $_GET = ['file' => 'big.log', 'lines' => '9999'];
@@ -207,6 +219,7 @@ final class ApiControllerTest extends TestCase
     // ===== generateCoverage() =====
 
     #[RunInSeparateProcess]
+    #[Test]
     public function testGenerateCoverageReturnsBadRequestForNonPhpType(): void
     {
         $_GET = ['type' => 'node'];
@@ -218,6 +231,7 @@ final class ApiControllerTest extends TestCase
         $this->assertSame(400, http_response_code());
     }
 
+    #[Test]
     public function testGenerateCoverageReturnsErrorMessageForNonPhpType(): void
     {
         $_GET = ['type' => 'node'];
@@ -232,6 +246,7 @@ final class ApiControllerTest extends TestCase
         $this->assertStringContainsString('make test-coverage-node', $decoded['message']);
     }
 
+    #[Test]
     public function testGenerateCoverageDefaultsToPhpType(): void
     {
         $_GET = []; // no 'type' key → defaults to 'php'
@@ -245,6 +260,7 @@ final class ApiControllerTest extends TestCase
     }
 
     #[RunInSeparateProcess]
+    #[Test]
     public function testGenerateCoverageReturns200OnSuccess(): void
     {
         $_GET = ['type' => 'php'];
@@ -261,6 +277,7 @@ final class ApiControllerTest extends TestCase
     }
 
     #[RunInSeparateProcess]
+    #[Test]
     public function testGenerateCoverageReturns500OnFailure(): void
     {
         $_GET = ['type' => 'php'];

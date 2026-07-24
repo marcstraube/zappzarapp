@@ -10,6 +10,7 @@ use PDO;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\RunInSeparateProcess;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use RuntimeException;
 
@@ -47,6 +48,7 @@ final class DatabaseConfigTest extends TestCase
     }
 
     #[RunInSeparateProcess]
+    #[Test]
     public function testParsePostgresUrl(): void
     {
         putenv('DATABASE_URL=postgresql://myuser:mypass@dbhost:5432/mydb');
@@ -64,6 +66,7 @@ final class DatabaseConfigTest extends TestCase
     }
 
     #[RunInSeparateProcess]
+    #[Test]
     public function testParsePostgresUrlWithShortScheme(): void
     {
         putenv('DATABASE_URL=postgres://user:pass@host:5432/db');
@@ -75,6 +78,7 @@ final class DatabaseConfigTest extends TestCase
     }
 
     #[RunInSeparateProcess]
+    #[Test]
     public function testParseMysqlUrl(): void
     {
         putenv('DATABASE_URL=mysql://myuser:mypass@dbhost:3306/mydb');
@@ -92,6 +96,7 @@ final class DatabaseConfigTest extends TestCase
     }
 
     #[RunInSeparateProcess]
+    #[Test]
     public function testParseUrlWithEncodedPassword(): void
     {
         // Password: p@ss:word/123 (URL-encoded: p%40ss%3Aword%2F123)
@@ -103,6 +108,7 @@ final class DatabaseConfigTest extends TestCase
     }
 
     #[RunInSeparateProcess]
+    #[Test]
     public function testParseUrlWithDefaultPort(): void
     {
         putenv('DATABASE_URL=postgresql://user:pass@host/db');
@@ -113,6 +119,7 @@ final class DatabaseConfigTest extends TestCase
     }
 
     #[RunInSeparateProcess]
+    #[Test]
     public function testParseUrlWithDefaultUser(): void
     {
         putenv('DATABASE_URL=postgresql://:pass@host:5432/db');
@@ -123,6 +130,7 @@ final class DatabaseConfigTest extends TestCase
     }
 
     #[RunInSeparateProcess]
+    #[Test]
     public function testLoadFromIndividualVarsPostgres(): void
     {
         putenv('DB_TYPE=postgres');
@@ -144,6 +152,7 @@ final class DatabaseConfigTest extends TestCase
     }
 
     #[RunInSeparateProcess]
+    #[Test]
     public function testLoadFromIndividualVarsMariadb(): void
     {
         putenv('DB_TYPE=mariadb');
@@ -163,6 +172,7 @@ final class DatabaseConfigTest extends TestCase
     }
 
     #[RunInSeparateProcess]
+    #[Test]
     public function testThrowsExceptionWhenNoPasswordConfigured(): void
     {
         // No env vars set - should throw RuntimeException
@@ -173,6 +183,7 @@ final class DatabaseConfigTest extends TestCase
     }
 
     #[RunInSeparateProcess]
+    #[Test]
     public function testDefaultValuesPostgres(): void
     {
         // Set password to test other defaults
@@ -189,6 +200,7 @@ final class DatabaseConfigTest extends TestCase
     }
 
     #[RunInSeparateProcess]
+    #[Test]
     public function testDefaultHostForMariadb(): void
     {
         putenv('DB_TYPE=mariadb');
@@ -201,6 +213,7 @@ final class DatabaseConfigTest extends TestCase
     }
 
     #[RunInSeparateProcess]
+    #[Test]
     public function testDatabaseUrlTakesPrecedence(): void
     {
         // Set both DATABASE_URL and individual vars - URL should win
@@ -223,6 +236,7 @@ final class DatabaseConfigTest extends TestCase
     }
 
     #[RunInSeparateProcess]
+    #[Test]
     public function testGetDsnPostgres(): void
     {
         putenv('DB_TYPE=postgres');
@@ -237,6 +251,7 @@ final class DatabaseConfigTest extends TestCase
     }
 
     #[RunInSeparateProcess]
+    #[Test]
     public function testGetDsnMysql(): void
     {
         putenv('DB_TYPE=mysql');
@@ -251,6 +266,7 @@ final class DatabaseConfigTest extends TestCase
     }
 
     #[RunInSeparateProcess]
+    #[Test]
     public function testGetUrlPostgres(): void
     {
         putenv('DB_TYPE=postgres');
@@ -266,6 +282,7 @@ final class DatabaseConfigTest extends TestCase
     }
 
     #[RunInSeparateProcess]
+    #[Test]
     public function testGetUrlMysql(): void
     {
         putenv('DB_TYPE=mysql');
@@ -281,6 +298,7 @@ final class DatabaseConfigTest extends TestCase
     }
 
     #[RunInSeparateProcess]
+    #[Test]
     public function testGetUrlEncodesSpecialCharactersInPassword(): void
     {
         putenv('DB_TYPE=postgres');
@@ -297,6 +315,7 @@ final class DatabaseConfigTest extends TestCase
     }
 
     #[RunInSeparateProcess]
+    #[Test]
     public function testInvalidDatabaseUrlThrowsException(): void
     {
         putenv('DATABASE_URL=invalid-url-without-scheme');
@@ -309,6 +328,7 @@ final class DatabaseConfigTest extends TestCase
 
     #[RunInSeparateProcess]
     #[DataProvider('typeVariationsProvider')]
+    #[Test]
     public function testIsPostgresWithVariousTypes(string $type, bool $expectedPostgres): void
     {
         putenv('DB_TYPE=' . $type);
@@ -334,6 +354,7 @@ final class DatabaseConfigTest extends TestCase
 
     #[RunInSeparateProcess]
     #[DataProvider('mariadbTypeVariationsProvider')]
+    #[Test]
     public function testIsMariaDbWithVariousTypes(string $type, bool $expectedMariaDb): void
     {
         putenv('DB_TYPE=' . $type);
@@ -358,6 +379,7 @@ final class DatabaseConfigTest extends TestCase
     }
 
     #[RunInSeparateProcess]
+    #[Test]
     public function testSslConfigFromEnvVar(): void
     {
         putenv('DB_TYPE=mariadb');
@@ -372,6 +394,7 @@ final class DatabaseConfigTest extends TestCase
     }
 
     #[RunInSeparateProcess]
+    #[Test]
     public function testSslVerifyDefaultsToFalse(): void
     {
         putenv('DB_TYPE=postgres');
@@ -383,6 +406,7 @@ final class DatabaseConfigTest extends TestCase
     }
 
     #[RunInSeparateProcess]
+    #[Test]
     public function testHasSslReturnsFalseWhenCaNotSet(): void
     {
         putenv('DB_TYPE=postgres');
@@ -394,6 +418,7 @@ final class DatabaseConfigTest extends TestCase
     }
 
     #[RunInSeparateProcess]
+    #[Test]
     public function testGetPdoSslOptionsReturnsEmptyForPostgres(): void
     {
         putenv('DB_TYPE=postgres');
@@ -406,6 +431,7 @@ final class DatabaseConfigTest extends TestCase
     }
 
     #[RunInSeparateProcess]
+    #[Test]
     public function testGetPdoSslOptionsReturnsOptionsForMariadb(): void
     {
         putenv('DB_TYPE=mariadb');
@@ -423,6 +449,7 @@ final class DatabaseConfigTest extends TestCase
     }
 
     #[RunInSeparateProcess]
+    #[Test]
     public function testMariadbAutoDetectsInternalCert(): void
     {
         putenv('DB_TYPE=mariadb');
@@ -444,6 +471,7 @@ final class DatabaseConfigTest extends TestCase
     }
 
     #[RunInSeparateProcess]
+    #[Test]
     public function testPostgresDoesNotAutoDetectInternalCert(): void
     {
         putenv('DB_TYPE=postgres');
@@ -457,6 +485,7 @@ final class DatabaseConfigTest extends TestCase
     }
 
     #[RunInSeparateProcess]
+    #[Test]
     public function testSystemCaBundleOption(): void
     {
         putenv('DB_TYPE=mysql');
@@ -476,6 +505,7 @@ final class DatabaseConfigTest extends TestCase
     }
 
     #[RunInSeparateProcess]
+    #[Test]
     public function testSystemCaBundleOptionCaseInsensitive(): void
     {
         putenv('DB_TYPE=postgres');
@@ -491,6 +521,7 @@ final class DatabaseConfigTest extends TestCase
     }
 
     #[RunInSeparateProcess]
+    #[Test]
     public function testSystemCaBundleWorksWithPostgres(): void
     {
         putenv('DB_TYPE=postgres');
@@ -508,6 +539,7 @@ final class DatabaseConfigTest extends TestCase
     }
 
     #[RunInSeparateProcess]
+    #[Test]
     public function testPostgresSslModeEmptyByDefault(): void
     {
         putenv('DB_TYPE=postgres');
@@ -521,6 +553,7 @@ final class DatabaseConfigTest extends TestCase
     }
 
     #[RunInSeparateProcess]
+    #[Test]
     public function testPostgresSslModeVerifyFullWhenSslVerifyTrue(): void
     {
         putenv('DB_TYPE=postgres');
@@ -538,6 +571,7 @@ final class DatabaseConfigTest extends TestCase
     }
 
     #[RunInSeparateProcess]
+    #[Test]
     public function testPostgresSslModeRequireWhenSslVerifyFalse(): void
     {
         putenv('DB_TYPE=postgres');
@@ -555,6 +589,7 @@ final class DatabaseConfigTest extends TestCase
     }
 
     #[RunInSeparateProcess]
+    #[Test]
     public function testMariadbDsnNotAffectedBySslMode(): void
     {
         putenv('DB_TYPE=mariadb');
@@ -574,6 +609,7 @@ final class DatabaseConfigTest extends TestCase
     // =========================================================================
 
     #[RunInSeparateProcess]
+    #[Test]
     public function testPasswordFromFile(): void
     {
         $tempFile = sys_get_temp_dir() . '/db_password_test_' . uniqid() . '.txt';
@@ -591,6 +627,7 @@ final class DatabaseConfigTest extends TestCase
     }
 
     #[RunInSeparateProcess]
+    #[Test]
     public function testPasswordFileTrimsWhitespace(): void
     {
         $tempFile = sys_get_temp_dir() . '/db_password_test_' . uniqid() . '.txt';
@@ -608,6 +645,7 @@ final class DatabaseConfigTest extends TestCase
     }
 
     #[RunInSeparateProcess]
+    #[Test]
     public function testPasswordFileTakesPrecedenceOverEnvVar(): void
     {
         $tempFile = sys_get_temp_dir() . '/db_password_test_' . uniqid() . '.txt';
@@ -626,6 +664,7 @@ final class DatabaseConfigTest extends TestCase
     }
 
     #[RunInSeparateProcess]
+    #[Test]
     public function testFallbackToEnvVarWhenFileNotExists(): void
     {
         putenv('DB_PASSWORD_FILE=/nonexistent/path/to/password.txt');
@@ -637,6 +676,7 @@ final class DatabaseConfigTest extends TestCase
     }
 
     #[RunInSeparateProcess]
+    #[Test]
     public function testThrowsExceptionWhenFileNotExistsAndNoEnvVar(): void
     {
         putenv('DB_PASSWORD_FILE=/nonexistent/path/to/password.txt');
@@ -648,6 +688,7 @@ final class DatabaseConfigTest extends TestCase
     }
 
     #[RunInSeparateProcess]
+    #[Test]
     public function testEmptyPasswordFilePathFallsBackToEnvVar(): void
     {
         putenv('DB_PASSWORD_FILE=');

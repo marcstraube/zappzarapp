@@ -7,6 +7,7 @@ namespace Tests\App\Unit\Infrastructure\Session;
 use App\Infrastructure\Cache\CacheInterface;
 use App\Infrastructure\Session\RedisSession;
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Random\RandomException;
 
@@ -22,6 +23,7 @@ final class RedisSessionTest extends TestCase
 {
     private const int DEFAULT_TTL = 86400;
 
+    #[Test]
     public function testGetReturnsSessionData(): void
     {
         $sessionId   = $this->generateValidSessionId();
@@ -38,6 +40,7 @@ final class RedisSessionTest extends TestCase
         $this->assertEquals($sessionData, $session->get($sessionId));
     }
 
+    #[Test]
     public function testGetReturnsNullForMissingSession(): void
     {
         $sessionId = $this->generateValidSessionId();
@@ -52,6 +55,7 @@ final class RedisSessionTest extends TestCase
         $this->assertNull($session->get($sessionId));
     }
 
+    #[Test]
     public function testGetReturnsNullForInvalidSessionId(): void
     {
         $cache = $this->createMock(CacheInterface::class);
@@ -64,6 +68,7 @@ final class RedisSessionTest extends TestCase
         $this->assertNull($session->get('invalid'));
     }
 
+    #[Test]
     public function testGetReturnsNullForCorruptedJson(): void
     {
         $sessionId = $this->generateValidSessionId();
@@ -78,6 +83,7 @@ final class RedisSessionTest extends TestCase
         $this->assertNull($session->get($sessionId));
     }
 
+    #[Test]
     public function testSetStoresSessionData(): void
     {
         $sessionId   = $this->generateValidSessionId();
@@ -108,6 +114,7 @@ final class RedisSessionTest extends TestCase
         $this->assertTrue($session->set($sessionId, $sessionData));
     }
 
+    #[Test]
     public function testSetWithCustomTtl(): void
     {
         $sessionId   = $this->generateValidSessionId();
@@ -125,6 +132,7 @@ final class RedisSessionTest extends TestCase
         $this->assertTrue($session->set($sessionId, $sessionData, $customTtl));
     }
 
+    #[Test]
     public function testSetReturnsFalseForInvalidSessionId(): void
     {
         $cache = $this->createMock(CacheInterface::class);
@@ -136,6 +144,7 @@ final class RedisSessionTest extends TestCase
         $this->assertFalse($session->set('invalid', ['data' => 'value']));
     }
 
+    #[Test]
     public function testUpdateMergesData(): void
     {
         $sessionId      = $this->generateValidSessionId();
@@ -179,6 +188,7 @@ final class RedisSessionTest extends TestCase
         $this->assertTrue($session->update($sessionId, $updateData));
     }
 
+    #[Test]
     public function testUpdateReturnsFalseForNonExistentSession(): void
     {
         $sessionId = $this->generateValidSessionId();
@@ -193,6 +203,7 @@ final class RedisSessionTest extends TestCase
         $this->assertFalse($session->update($sessionId, ['data' => 'value']));
     }
 
+    #[Test]
     public function testDestroyRemovesSession(): void
     {
         $sessionId = $this->generateValidSessionId();
@@ -225,6 +236,7 @@ final class RedisSessionTest extends TestCase
         $this->assertTrue($session->destroy($sessionId));
     }
 
+    #[Test]
     public function testDestroyReturnsTrueForNonExistentSession(): void
     {
         $sessionId = $this->generateValidSessionId();
@@ -243,6 +255,7 @@ final class RedisSessionTest extends TestCase
         $this->assertTrue($session->destroy($sessionId));
     }
 
+    #[Test]
     public function testRegenerateCreatesNewIdAndCopiesData(): void
     {
         $oldSessionId = $this->generateValidSessionId();
@@ -282,6 +295,7 @@ final class RedisSessionTest extends TestCase
         $this->assertMatchesRegularExpression('/^[a-f0-9]{64}$/', $newSessionId);
     }
 
+    #[Test]
     public function testRegenerateReturnsNullForNonExistentSession(): void
     {
         $sessionId = $this->generateValidSessionId();
@@ -296,6 +310,7 @@ final class RedisSessionTest extends TestCase
         $this->assertNull($session->regenerate($sessionId));
     }
 
+    #[Test]
     public function testTouchExtendsTtl(): void
     {
         $sessionId   = $this->generateValidSessionId();
@@ -318,6 +333,7 @@ final class RedisSessionTest extends TestCase
         $this->assertTrue($session->touch($sessionId));
     }
 
+    #[Test]
     public function testTouchReturnsFalseForNonExistentSession(): void
     {
         $sessionId = $this->generateValidSessionId();
@@ -332,6 +348,7 @@ final class RedisSessionTest extends TestCase
         $this->assertFalse($session->touch($sessionId));
     }
 
+    #[Test]
     public function testGetUserSessionsReturnsActiveSessions(): void
     {
         $userId   = 123;
@@ -358,6 +375,7 @@ final class RedisSessionTest extends TestCase
         $this->assertContains($session2, $sessions);
     }
 
+    #[Test]
     public function testGetUserSessionsFiltersExpiredSessions(): void
     {
         $userId         = 123;
@@ -387,6 +405,7 @@ final class RedisSessionTest extends TestCase
         $this->assertContains($activeSession, $sessions);
     }
 
+    #[Test]
     public function testGetUserSessionsReturnsEmptyArrayWhenNoSessions(): void
     {
         $cache = $this->createMock(CacheInterface::class);
@@ -399,6 +418,7 @@ final class RedisSessionTest extends TestCase
         $this->assertEquals([], $session->getUserSessions(123));
     }
 
+    #[Test]
     public function testDestroyUserSessionsRemovesAllSessions(): void
     {
         $userId   = 123;
@@ -427,6 +447,7 @@ final class RedisSessionTest extends TestCase
         $this->assertEquals(2, $session->destroyUserSessions($userId));
     }
 
+    #[Test]
     public function testGenerateIdReturns64HexCharacters(): void
     {
         $cache   = $this->createStub(CacheInterface::class);
@@ -438,6 +459,7 @@ final class RedisSessionTest extends TestCase
         $this->assertMatchesRegularExpression('/^[a-f0-9]{64}$/', $id);
     }
 
+    #[Test]
     public function testGenerateIdIsUnique(): void
     {
         $cache   = $this->createStub(CacheInterface::class);
@@ -452,6 +474,7 @@ final class RedisSessionTest extends TestCase
         $this->assertCount(100, $uniqueIds);
     }
 
+    #[Test]
     public function testSessionIdValidationRejectsInvalidFormats(): void
     {
         $cache = $this->createMock(CacheInterface::class);

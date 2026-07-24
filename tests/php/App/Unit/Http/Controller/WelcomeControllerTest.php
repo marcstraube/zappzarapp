@@ -13,6 +13,7 @@ use App\Infrastructure\TwigService;
 use App\Infrastructure\ViteHelper;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\RunInSeparateProcess;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\Attributes\UsesClass;
 use PHPUnit\Framework\Attributes\UsesFunction;
 use PHPUnit\Framework\TestCase;
@@ -100,6 +101,7 @@ final class WelcomeControllerTest extends TestCase
     // index() — smoke / structure
     // =========================================================================
 
+    #[Test]
     public function testIndexReturnsHtmlResponseInstance(): void
     {
         $controller = $this->createController();
@@ -110,6 +112,7 @@ final class WelcomeControllerTest extends TestCase
     }
 
     #[RunInSeparateProcess]
+    #[Test]
     public function testIndexEmitsStatus200(): void
     {
         $controller = $this->createController();
@@ -125,6 +128,7 @@ final class WelcomeControllerTest extends TestCase
     // index() — HTML content markers
     // =========================================================================
 
+    #[Test]
     public function testIndexOutputContainsDoctype(): void
     {
         $controller = $this->createController();
@@ -136,6 +140,7 @@ final class WelcomeControllerTest extends TestCase
         $this->assertStringContainsString('<!DOCTYPE html>', (string) $output);
     }
 
+    #[Test]
     public function testIndexOutputContainsZappzarappTitle(): void
     {
         $controller = $this->createController();
@@ -147,6 +152,7 @@ final class WelcomeControllerTest extends TestCase
         $this->assertStringContainsString('zappzarapp', (string) $output);
     }
 
+    #[Test]
     public function testIndexOutputContainsOverallStatus(): void
     {
         $controller = $this->createController();
@@ -159,6 +165,7 @@ final class WelcomeControllerTest extends TestCase
         $this->assertStringContainsString('Overall Status', (string) $output);
     }
 
+    #[Test]
     public function testIndexOutputContainsServiceStatusSection(): void
     {
         $controller = $this->createController();
@@ -170,6 +177,7 @@ final class WelcomeControllerTest extends TestCase
         $this->assertStringContainsString('Service Status', (string) $output);
     }
 
+    #[Test]
     public function testIndexOutputContainsEndpointsSection(): void
     {
         $controller = $this->createController();
@@ -181,6 +189,7 @@ final class WelcomeControllerTest extends TestCase
         $this->assertStringContainsString('Available Endpoints', (string) $output);
     }
 
+    #[Test]
     public function testIndexOutputContainsHealthEndpointLink(): void
     {
         $controller = $this->createController();
@@ -196,6 +205,7 @@ final class WelcomeControllerTest extends TestCase
     // index() — filesystem-check variables (docs/source flags)
     // =========================================================================
 
+    #[Test]
     public function testIndexOutputReflectsPhpSourceAvailability(): void
     {
         // /var/www/html/src/php does not exist on the host runner, so
@@ -215,6 +225,7 @@ final class WelcomeControllerTest extends TestCase
     // =========================================================================
 
     #[RunInSeparateProcess]
+    #[Test]
     public function testIndexShowsProductionModeWhenEnvNotSet(): void
     {
         putenv('ENV=production');
@@ -233,6 +244,7 @@ final class WelcomeControllerTest extends TestCase
     // index() — DevToolbar guard is always off in CLI (PHPUnit)
     // =========================================================================
 
+    #[Test]
     public function testIndexDoesNotCallDemoFeaturesInCliMode(): void
     {
         // DevToolbarGuard::isEnabled() returns false in CLI (PHP_SAPI === 'cli'),
@@ -253,6 +265,7 @@ final class WelcomeControllerTest extends TestCase
     // index() — ViteHelper integration in template
     // =========================================================================
 
+    #[Test]
     public function testIndexOutputContainsViteComment(): void
     {
         // In production with no manifest, ViteHelper returns safe placeholders

@@ -6,6 +6,7 @@ namespace Tests\DevDashboard\Services;
 
 use DevDashboard\Services\SystemInfoService;
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -23,6 +24,7 @@ final class SystemInfoServiceSeamsTest extends TestCase
     // getGitStatus() — no .git directory (lines 100–103, CI-only)
     // =========================================================================
 
+    #[Test]
     public function testGetGitStatusWhenNotAGitDirectory(): void
     {
         $fake = $this->makeServiceWithGitDirectory(exists: false);
@@ -37,6 +39,7 @@ final class SystemInfoServiceSeamsTest extends TestCase
     // getGitStatus() — .git exists, commands return output (lines 106–113)
     // =========================================================================
 
+    #[Test]
     public function testGetGitStatusWhenInitialized(): void
     {
         $fake = $this->makeServiceWithGitDirectory(
@@ -51,6 +54,7 @@ final class SystemInfoServiceSeamsTest extends TestCase
         $this->assertSame('abc1234', $status['commit']);
     }
 
+    #[Test]
     public function testGetGitStatusTrimsWhitespaceFromOutput(): void
     {
         $fake = $this->makeServiceWithGitDirectory(
@@ -68,6 +72,7 @@ final class SystemInfoServiceSeamsTest extends TestCase
     // executeCommand() — process launches and produces output (lines 139–152)
     // =========================================================================
 
+    #[Test]
     public function testExecuteCommandWhenProcessLaunchesReturnsOutput(): void
     {
         $fake = $this->makeServiceWithGitDirectory(
@@ -85,6 +90,7 @@ final class SystemInfoServiceSeamsTest extends TestCase
     // getGitStatus() — command returns empty output
     // =========================================================================
 
+    #[Test]
     public function testGetGitStatusWithEmptyCommandOutputReturnsEmptyStrings(): void
     {
         $fake = $this->makeServiceWithGitDirectory(

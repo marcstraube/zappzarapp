@@ -6,6 +6,7 @@ namespace Tests\App\Unit\Infrastructure\Search;
 
 use App\Infrastructure\Search\MeilisearchConfig;
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -56,6 +57,7 @@ final class MeilisearchConfigTest extends TestCase
         parent::tearDown();
     }
 
+    #[Test]
     public function testUsesProvidedUrl(): void
     {
         $config = new MeilisearchConfig('https://custom:7700');
@@ -64,6 +66,7 @@ final class MeilisearchConfigTest extends TestCase
         $this->assertTrue($config->useTls);
     }
 
+    #[Test]
     public function testUsesEnvUrlWhenNoUrlProvided(): void
     {
         $_ENV['MEILISEARCH_URL'] = 'https://env-host:9000';
@@ -74,6 +77,7 @@ final class MeilisearchConfigTest extends TestCase
         $this->assertTrue($config->useTls);
     }
 
+    #[Test]
     public function testBuildsUrlFromHostAndPort(): void
     {
         $_ENV['MEILISEARCH_HOST'] = 'custom-host';
@@ -85,6 +89,7 @@ final class MeilisearchConfigTest extends TestCase
         $this->assertTrue($config->useTls);
     }
 
+    #[Test]
     public function testUsesDefaultUrlWhenNoEnvSet(): void
     {
         $config = new MeilisearchConfig();
@@ -93,6 +98,7 @@ final class MeilisearchConfigTest extends TestCase
         $this->assertTrue($config->useTls);
     }
 
+    #[Test]
     public function testDetectsTlsFromHttpsUrl(): void
     {
         $config = new MeilisearchConfig('https://secure:7700');
@@ -100,6 +106,7 @@ final class MeilisearchConfigTest extends TestCase
         $this->assertTrue($config->useTls);
     }
 
+    #[Test]
     public function testDetectsTlsFromHttpUrl(): void
     {
         $config = new MeilisearchConfig('http://insecure:7700');
@@ -107,6 +114,7 @@ final class MeilisearchConfigTest extends TestCase
         $this->assertFalse($config->useTls);
     }
 
+    #[Test]
     public function testLoadsEmptyMasterKeyByDefault(): void
     {
         // Note: In the test environment, if a Docker secret exists at
@@ -118,6 +126,7 @@ final class MeilisearchConfigTest extends TestCase
         $this->assertIsString($config->masterKey);
     }
 
+    #[Test]
     public function testLoadsMasterKeyFromEnvironment(): void
     {
         // Note: Docker secrets take precedence over environment variables.
@@ -132,6 +141,7 @@ final class MeilisearchConfigTest extends TestCase
         $this->assertNotEmpty($config->masterKey);
     }
 
+    #[Test]
     public function testPrioritizesHostPortOverDefault(): void
     {
         $_ENV['MEILISEARCH_HOST'] = 'priority-host';
@@ -141,6 +151,7 @@ final class MeilisearchConfigTest extends TestCase
         $this->assertStringContainsString('priority-host', $config->url);
     }
 
+    #[Test]
     public function testPrioritizesUrlOverHostPort(): void
     {
         $_ENV['MEILISEARCH_URL']  = 'https://url-host:7700';
@@ -152,6 +163,7 @@ final class MeilisearchConfigTest extends TestCase
         $this->assertEquals('https://url-host:7700', $config->url);
     }
 
+    #[Test]
     public function testPrioritizesConstructorUrlOverEnv(): void
     {
         $_ENV['MEILISEARCH_URL'] = 'https://env-host:7700';
@@ -161,6 +173,7 @@ final class MeilisearchConfigTest extends TestCase
         $this->assertEquals('https://constructor-host:8080', $config->url);
     }
 
+    #[Test]
     public function testHandlesNonStandardPort(): void
     {
         $_ENV['MEILISEARCH_PORT'] = '12345';
@@ -170,6 +183,7 @@ final class MeilisearchConfigTest extends TestCase
         $this->assertEquals('https://meilisearch:12345', $config->url);
     }
 
+    #[Test]
     public function testTreatsEmptyEnvValuesAsUnset(): void
     {
         $_ENV['MEILISEARCH_URL']        = '';

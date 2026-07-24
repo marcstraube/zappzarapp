@@ -8,6 +8,7 @@ use App\Infrastructure\Storage\StorageConfig;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\RunInSeparateProcess;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -69,6 +70,7 @@ final class StorageConfigTest extends TestCase
     // Default values (non-credential fields; credentials come from secrets)
     // =========================================================================
 
+    #[Test]
     public function testDefaultNonCredentialValues(): void
     {
         $config = new StorageConfig();
@@ -82,6 +84,7 @@ final class StorageConfigTest extends TestCase
         $this->assertTrue($config->usePathStyle);
     }
 
+    #[Test]
     public function testDefaultCredentialsComeFromDockerSecretsOrFallback(): void
     {
         $config = new StorageConfig();
@@ -95,6 +98,7 @@ final class StorageConfigTest extends TestCase
     // Constructor parameters (highest priority — bypasses secrets and env vars)
     // =========================================================================
 
+    #[Test]
     public function testConstructorEndpointTakesPrecedence(): void
     {
         putenv('S3_ENDPOINT_URL=http://env-endpoint:8333');
@@ -104,6 +108,7 @@ final class StorageConfigTest extends TestCase
         $this->assertEquals('http://ctor-endpoint:9000', $config->endpoint);
     }
 
+    #[Test]
     public function testConstructorAccessKeyTakesPrecedence(): void
     {
         $config = new StorageConfig(accessKey: 'ctor-key');
@@ -111,6 +116,7 @@ final class StorageConfigTest extends TestCase
         $this->assertEquals('ctor-key', $config->accessKey);
     }
 
+    #[Test]
     public function testConstructorSecretKeyTakesPrecedence(): void
     {
         $config = new StorageConfig(secretKey: 'ctor-secret');
@@ -118,6 +124,7 @@ final class StorageConfigTest extends TestCase
         $this->assertEquals('ctor-secret', $config->secretKey);
     }
 
+    #[Test]
     public function testConstructorRegionTakesPrecedence(): void
     {
         putenv('S3_REGION=eu-west-1');
@@ -127,6 +134,7 @@ final class StorageConfigTest extends TestCase
         $this->assertEquals('ap-southeast-1', $config->region);
     }
 
+    #[Test]
     public function testConstructorBucketTakesPrecedence(): void
     {
         putenv('S3_BUCKET=env-bucket');
@@ -136,6 +144,7 @@ final class StorageConfigTest extends TestCase
         $this->assertEquals('ctor-bucket', $config->bucket);
     }
 
+    #[Test]
     public function testAllConstructorParamsTogether(): void
     {
         $config = new StorageConfig(
@@ -159,6 +168,7 @@ final class StorageConfigTest extends TestCase
     // =========================================================================
 
     #[RunInSeparateProcess]
+    #[Test]
     public function testS3EndpointUrlEnvVar(): void
     {
         putenv('S3_ENDPOINT_URL=https://s3.amazonaws.com');
@@ -170,6 +180,7 @@ final class StorageConfigTest extends TestCase
     }
 
     #[RunInSeparateProcess]
+    #[Test]
     public function testS3EndpointUrlTakesPrecedenceOverSeaweedfsEndpoint(): void
     {
         putenv('S3_ENDPOINT_URL=http://s3-wins:9000');
@@ -185,6 +196,7 @@ final class StorageConfigTest extends TestCase
     // =========================================================================
 
     #[RunInSeparateProcess]
+    #[Test]
     public function testSeaweedfsFallbackEndpoint(): void
     {
         putenv('SEAWEEDFS_ENDPOINT=http://custom-seaweedfs:9000');
@@ -198,6 +210,7 @@ final class StorageConfigTest extends TestCase
     // Trailing slash is stripped from endpoint
     // =========================================================================
 
+    #[Test]
     public function testTrailingSlashStrippedFromEndpoint(): void
     {
         $config = new StorageConfig(endpoint: 'http://seaweedfs:8333/');
@@ -205,6 +218,7 @@ final class StorageConfigTest extends TestCase
         $this->assertEquals('http://seaweedfs:8333', $config->endpoint);
     }
 
+    #[Test]
     public function testMultipleTrailingSlashesStripped(): void
     {
         // rtrim strips all trailing slashes
@@ -214,6 +228,7 @@ final class StorageConfigTest extends TestCase
     }
 
     #[RunInSeparateProcess]
+    #[Test]
     public function testTrailingSlashStrippedFromEnvEndpoint(): void
     {
         putenv('S3_ENDPOINT_URL=http://env-host:9000/');
@@ -228,6 +243,7 @@ final class StorageConfigTest extends TestCase
     // the priority logic without secrets interfering)
     // =========================================================================
 
+    #[Test]
     public function testConstructorAccessKeyBeatsEnvAndSecrets(): void
     {
         putenv('S3_ACCESS_KEY=should-be-ignored');
@@ -237,6 +253,7 @@ final class StorageConfigTest extends TestCase
         $this->assertEquals('explicit-key', $config->accessKey);
     }
 
+    #[Test]
     public function testConstructorSecretKeyBeatsEnvAndSecrets(): void
     {
         putenv('S3_SECRET_KEY=should-be-ignored');
@@ -251,6 +268,7 @@ final class StorageConfigTest extends TestCase
     // =========================================================================
 
     #[RunInSeparateProcess]
+    #[Test]
     public function testS3RegionEnvVar(): void
     {
         putenv('S3_REGION=eu-west-1');
@@ -261,6 +279,7 @@ final class StorageConfigTest extends TestCase
     }
 
     #[RunInSeparateProcess]
+    #[Test]
     public function testSeaweedfsRegionFallback(): void
     {
         putenv('SEAWEEDFS_REGION=ap-east-1');
@@ -271,6 +290,7 @@ final class StorageConfigTest extends TestCase
     }
 
     #[RunInSeparateProcess]
+    #[Test]
     public function testS3RegionTakesPrecedenceOverSeaweedfsRegion(): void
     {
         putenv('S3_REGION=s3-region');
@@ -286,6 +306,7 @@ final class StorageConfigTest extends TestCase
     // =========================================================================
 
     #[RunInSeparateProcess]
+    #[Test]
     public function testS3BucketEnvVar(): void
     {
         putenv('S3_BUCKET=my-bucket');
@@ -296,6 +317,7 @@ final class StorageConfigTest extends TestCase
     }
 
     #[RunInSeparateProcess]
+    #[Test]
     public function testSeaweedfsBucketFallback(): void
     {
         putenv('SEAWEEDFS_BUCKET=sw-bucket');
@@ -306,6 +328,7 @@ final class StorageConfigTest extends TestCase
     }
 
     #[RunInSeparateProcess]
+    #[Test]
     public function testS3BucketTakesPrecedenceOverSeaweedfsBucket(): void
     {
         putenv('S3_BUCKET=s3-bucket');
@@ -321,6 +344,7 @@ final class StorageConfigTest extends TestCase
     // =========================================================================
 
     #[DataProvider('tlsEndpointProvider')]
+    #[Test]
     public function testTlsDerivedFromEndpointScheme(string $endpoint, bool $expectedTls): void
     {
         $config = new StorageConfig(endpoint: $endpoint);
@@ -345,6 +369,7 @@ final class StorageConfigTest extends TestCase
 
     #[RunInSeparateProcess]
     #[DataProvider('trueBoolEnvValuesProvider')]
+    #[Test]
     public function testVerifySslTrueValues(string $envValue): void
     {
         putenv('S3_VERIFY_SSL=' . $envValue);
@@ -370,6 +395,7 @@ final class StorageConfigTest extends TestCase
 
     #[RunInSeparateProcess]
     #[DataProvider('falseBoolEnvValuesProvider')]
+    #[Test]
     public function testVerifySslFalseValues(string $envValue): void
     {
         putenv('S3_VERIFY_SSL=' . $envValue);
@@ -392,6 +418,7 @@ final class StorageConfigTest extends TestCase
         ];
     }
 
+    #[Test]
     public function testVerifySslDefaultsFalse(): void
     {
         $config = new StorageConfig();
@@ -404,6 +431,7 @@ final class StorageConfigTest extends TestCase
     // =========================================================================
 
     #[RunInSeparateProcess]
+    #[Test]
     public function testUsePathStyleDefaultsTrue(): void
     {
         $config = new StorageConfig();
@@ -413,6 +441,7 @@ final class StorageConfigTest extends TestCase
 
     #[RunInSeparateProcess]
     #[DataProvider('falsePathStyleValuesProvider')]
+    #[Test]
     public function testUsePathStyleCanBeDisabled(string $envValue): void
     {
         putenv('S3_USE_PATH_STYLE=' . $envValue);
@@ -436,6 +465,7 @@ final class StorageConfigTest extends TestCase
     }
 
     #[RunInSeparateProcess]
+    #[Test]
     public function testUsePathStyleCanBeEnabledExplicitly(): void
     {
         putenv('S3_USE_PATH_STYLE=true');
@@ -450,6 +480,7 @@ final class StorageConfigTest extends TestCase
     // =========================================================================
 
     #[RunInSeparateProcess]
+    #[Test]
     public function testDollarEnvSuperGlobalForEndpoint(): void
     {
         $_ENV['S3_ENDPOINT_URL'] = 'https://s3-superglobal:9000';
@@ -460,6 +491,7 @@ final class StorageConfigTest extends TestCase
     }
 
     #[RunInSeparateProcess]
+    #[Test]
     public function testDollarEnvSuperGlobalForRegion(): void
     {
         $_ENV['S3_REGION'] = 'eu-north-1';
@@ -474,6 +506,7 @@ final class StorageConfigTest extends TestCase
     // test container, so env vars for credentials are overshadowed)
     // =========================================================================
 
+    #[Test]
     public function testCredentialsAreNonEmptyFromSecretsOrDefault(): void
     {
         // Docker secrets exist → seaweedfs credentials loaded from /run/secrets/

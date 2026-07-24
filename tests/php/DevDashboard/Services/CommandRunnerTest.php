@@ -6,6 +6,7 @@ namespace Tests\DevDashboard\Services;
 
 use DevDashboard\Services\CommandRunner;
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
 #[CoversClass(CommandRunner::class)]
@@ -19,6 +20,7 @@ class CommandRunnerTest extends TestCase
         $this->runner = new CommandRunner();
     }
 
+    #[Test]
     public function testRunEchoCommandReturnsOutput(): void
     {
         $result = $this->runner->run('echo hello');
@@ -29,6 +31,7 @@ class CommandRunnerTest extends TestCase
         $this->assertStringContainsString('hello', $result['output']);
     }
 
+    #[Test]
     public function testRunSuccessfulCommandHasZeroExitCode(): void
     {
         $result = $this->runner->run('true');
@@ -36,6 +39,7 @@ class CommandRunnerTest extends TestCase
         $this->assertSame(0, $result['exitCode']);
     }
 
+    #[Test]
     public function testRunFailingCommandHasNonZeroExitCode(): void
     {
         $result = $this->runner->run('false');
@@ -43,6 +47,7 @@ class CommandRunnerTest extends TestCase
         $this->assertNotSame(0, $result['exitCode']);
     }
 
+    #[Test]
     public function testRunCombinesStdoutAndStderr(): void
     {
         // Write to both stdout and stderr
@@ -53,6 +58,7 @@ class CommandRunnerTest extends TestCase
         $this->assertStringContainsString('err', $result['output']);
     }
 
+    #[Test]
     public function testRunReturnsStringOutput(): void
     {
         $result = $this->runner->run('echo test_value');
@@ -61,6 +67,7 @@ class CommandRunnerTest extends TestCase
         $this->assertIsInt($result['exitCode']);
     }
 
+    #[Test]
     public function testRunCommandWithNoOutput(): void
     {
         $result = $this->runner->run('true');
@@ -69,6 +76,7 @@ class CommandRunnerTest extends TestCase
         $this->assertSame(0, $result['exitCode']);
     }
 
+    #[Test]
     public function testRunCommandOutputContainsActualText(): void
     {
         $result = $this->runner->run('echo "zappzarapp_test_marker"');
@@ -76,6 +84,7 @@ class CommandRunnerTest extends TestCase
         $this->assertStringContainsString('zappzarapp_test_marker', $result['output']);
     }
 
+    #[Test]
     public function testRunExitCodeReflectsCommandStatus(): void
     {
         // exit 42 should yield exit code 42

@@ -6,6 +6,7 @@ namespace Tests\DevDashboard\Services;
 
 use DevDashboard\Services\LogService;
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
 #[CoversClass(LogService::class)]
@@ -53,6 +54,7 @@ class LogServiceTest extends TestCase
 
     // ==================== readLogFile ====================
 
+    #[Test]
     public function testReadLogFileReturnsErrorWhenFileNotFound(): void
     {
         $result = $this->service->readLogFile('nonexistent_test_file.log');
@@ -62,6 +64,7 @@ class LogServiceTest extends TestCase
         $this->assertSame('Log file not found', $result['error']);
     }
 
+    #[Test]
     public function testReadLogFileReturnsContentForExistingFile(): void
     {
         $content = "line 1\nline 2\nline 3\n";
@@ -80,6 +83,7 @@ class LogServiceTest extends TestCase
         $this->assertStringContainsString('line 3', $result['content']);
     }
 
+    #[Test]
     public function testReadLogFileDefaultLines(): void
     {
         $this->createLogFile('test_default_lines.log', "content\n");
@@ -89,6 +93,7 @@ class LogServiceTest extends TestCase
         $this->assertSame(100, $result['lines']);
     }
 
+    #[Test]
     public function testReadLogFileCustomLines(): void
     {
         $this->createLogFile('test_custom_lines.log', "content\n");
@@ -98,6 +103,7 @@ class LogServiceTest extends TestCase
         $this->assertSame(50, $result['lines']);
     }
 
+    #[Test]
     public function testReadLogFileTailBehaviourWithManyLines(): void
     {
         // Create a file with 200 lines
@@ -121,6 +127,7 @@ class LogServiceTest extends TestCase
         $this->assertStringNotContainsString('line 1' . PHP_EOL, $content);
     }
 
+    #[Test]
     public function testReadLogFilePreventsPathTraversal(): void
     {
         // Path traversal attempt — the service uses basename() so '../etc/passwd'
@@ -131,6 +138,7 @@ class LogServiceTest extends TestCase
         $this->assertSame('Log file not found', $result['error']);
     }
 
+    #[Test]
     public function testReadLogFileSizeIsCorrect(): void
     {
         $content = "hello world\n";
@@ -143,6 +151,7 @@ class LogServiceTest extends TestCase
 
     // ==================== getLogCommands ====================
 
+    #[Test]
     public function testGetLogCommandsReturnsNonEmptyArray(): void
     {
         $commands = $this->service->getLogCommands();
@@ -151,6 +160,7 @@ class LogServiceTest extends TestCase
         $this->assertNotEmpty($commands);
     }
 
+    #[Test]
     public function testGetLogCommandsHaveRequiredKeys(): void
     {
         $commands = $this->service->getLogCommands();
@@ -165,6 +175,7 @@ class LogServiceTest extends TestCase
         }
     }
 
+    #[Test]
     public function testGetLogCommandsIncludesMakeLogs(): void
     {
         $commands     = $this->service->getLogCommands();

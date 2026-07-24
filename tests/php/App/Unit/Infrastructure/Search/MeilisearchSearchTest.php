@@ -13,6 +13,7 @@ use Meilisearch\Endpoints\Indexes;
 use Meilisearch\Exceptions\CommunicationException;
 use Meilisearch\Search\SearchResult;
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\Attributes\UsesClass;
 use PHPUnit\Framework\TestCase;
 use ReflectionClass;
@@ -32,6 +33,7 @@ final class MeilisearchSearchTest extends TestCase
 {
     private const string TEST_URL = 'https://localhost:7700';
 
+    #[Test]
     public function testSearchReturnsResultsWhenSuccessful(): void
     {
         $mockSearchResult = $this->createStub(SearchResult::class);
@@ -65,6 +67,7 @@ final class MeilisearchSearchTest extends TestCase
         $this->assertEquals(2, $result['estimatedTotalHits']);
     }
 
+    #[Test]
     public function testSearchReturnsEmptyArrayOnApiException(): void
     {
         $mockClient = $this->createMock(Client::class);
@@ -79,6 +82,7 @@ final class MeilisearchSearchTest extends TestCase
         $this->assertEquals([], $result);
     }
 
+    #[Test]
     public function testSearchReturnsEmptyArrayOnCommunicationException(): void
     {
         $mockClient = $this->createMock(Client::class);
@@ -93,6 +97,7 @@ final class MeilisearchSearchTest extends TestCase
         $this->assertEquals([], $result);
     }
 
+    #[Test]
     public function testSearchPassesOptionsToMeilisearch(): void
     {
         $mockSearchResult = $this->createStub(SearchResult::class);
@@ -125,6 +130,7 @@ final class MeilisearchSearchTest extends TestCase
         $search->search('products', 'test', $expectedOptions);
     }
 
+    #[Test]
     public function testIndexReturnsIndexObject(): void
     {
         $mockIndex = $this->createStub(Indexes::class);
@@ -142,6 +148,7 @@ final class MeilisearchSearchTest extends TestCase
         $this->assertSame($mockIndex, $result);
     }
 
+    #[Test]
     public function testUpdateDocumentsIndexesDocuments(): void
     {
         $documents = [
@@ -164,6 +171,7 @@ final class MeilisearchSearchTest extends TestCase
         $this->assertTrue($result);
     }
 
+    #[Test]
     public function testUpdateDocumentsWithCustomPrimaryKey(): void
     {
         $documents = [['customId' => 1, 'name' => 'Item']];
@@ -183,6 +191,7 @@ final class MeilisearchSearchTest extends TestCase
         $this->assertTrue($result);
     }
 
+    #[Test]
     public function testUpdateDocumentsReturnsFalseOnException(): void
     {
         $mockClient = $this->createMock(Client::class);
@@ -197,6 +206,7 @@ final class MeilisearchSearchTest extends TestCase
         $this->assertFalse($result);
     }
 
+    #[Test]
     public function testDeleteDocumentsRemovesSpecifiedDocuments(): void
     {
         $documentIds = [1, 2, 3];
@@ -216,6 +226,7 @@ final class MeilisearchSearchTest extends TestCase
         $this->assertTrue($result);
     }
 
+    #[Test]
     public function testDeleteDocumentsReturnsFalseOnException(): void
     {
         $mockClient = $this->createMock(Client::class);
@@ -230,6 +241,7 @@ final class MeilisearchSearchTest extends TestCase
         $this->assertFalse($result);
     }
 
+    #[Test]
     public function testDeleteAllDocumentsClearsIndex(): void
     {
         $mockIndex = $this->createMock(Indexes::class);
@@ -246,6 +258,7 @@ final class MeilisearchSearchTest extends TestCase
         $this->assertTrue($result);
     }
 
+    #[Test]
     public function testDeleteAllDocumentsReturnsFalseOnException(): void
     {
         $mockClient = $this->createMock(Client::class);
@@ -260,6 +273,7 @@ final class MeilisearchSearchTest extends TestCase
         $this->assertFalse($result);
     }
 
+    #[Test]
     public function testCreateIndexCreatesNewIndex(): void
     {
         $mockClient = $this->createMock(Client::class);
@@ -274,6 +288,7 @@ final class MeilisearchSearchTest extends TestCase
         $this->assertTrue($result);
     }
 
+    #[Test]
     public function testCreateIndexWithPrimaryKey(): void
     {
         $mockClient = $this->createMock(Client::class);
@@ -288,6 +303,7 @@ final class MeilisearchSearchTest extends TestCase
         $this->assertTrue($result);
     }
 
+    #[Test]
     public function testCreateIndexReturnsFalseOnException(): void
     {
         $mockClient = $this->createMock(Client::class);
@@ -302,6 +318,7 @@ final class MeilisearchSearchTest extends TestCase
         $this->assertFalse($result);
     }
 
+    #[Test]
     public function testDeleteIndexRemovesIndex(): void
     {
         $mockClient = $this->createMock(Client::class);
@@ -316,6 +333,7 @@ final class MeilisearchSearchTest extends TestCase
         $this->assertTrue($result);
     }
 
+    #[Test]
     public function testDeleteIndexReturnsFalseOnException(): void
     {
         $mockClient = $this->createMock(Client::class);
@@ -330,6 +348,7 @@ final class MeilisearchSearchTest extends TestCase
         $this->assertFalse($result);
     }
 
+    #[Test]
     public function testGetIndexesReturnsAllIndexes(): void
     {
         $mockIndex1 = $this->createStub(Indexes::class);
@@ -362,6 +381,7 @@ final class MeilisearchSearchTest extends TestCase
         $this->assertNull($result[1]['primaryKey']);
     }
 
+    #[Test]
     public function testGetIndexesReturnsEmptyArrayOnException(): void
     {
         $mockClient = $this->createMock(Client::class);
@@ -376,6 +396,7 @@ final class MeilisearchSearchTest extends TestCase
         $this->assertEquals([], $result);
     }
 
+    #[Test]
     public function testIsAvailableReturnsTrueWhenHealthy(): void
     {
         $mockClient = $this->createMock(Client::class);
@@ -390,6 +411,7 @@ final class MeilisearchSearchTest extends TestCase
         $this->assertTrue($result);
     }
 
+    #[Test]
     public function testIsAvailableReturnsFalseOnException(): void
     {
         $mockClient = $this->createMock(Client::class);
@@ -404,6 +426,7 @@ final class MeilisearchSearchTest extends TestCase
         $this->assertFalse($result);
     }
 
+    #[Test]
     public function testConstructorAcceptsCustomUrl(): void
     {
         $search = new MeilisearchSearch('https://custom:9000');

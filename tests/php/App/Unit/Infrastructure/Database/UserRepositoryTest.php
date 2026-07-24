@@ -15,6 +15,7 @@ use PDO;
 use PDOException;
 use PDOStatement;
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use ReflectionClass;
 use Zappzarapp\AuditLogger\AuditLoggerInterface;
@@ -36,6 +37,7 @@ final class UserRepositoryTest extends TestCase
     // findByEmail() Tests
     // =========================================================================
 
+    #[Test]
     public function testFindByEmailReturnsUserWhenFound(): void
     {
         $expectedUser = [
@@ -57,6 +59,7 @@ final class UserRepositoryTest extends TestCase
         $this->assertEquals($expectedUser, $repository->findByEmail('user@example.com'));
     }
 
+    #[Test]
     public function testFindByEmailReturnsNullWhenNotFound(): void
     {
         $stmt = $this->createStub(PDOStatement::class);
@@ -75,6 +78,7 @@ final class UserRepositoryTest extends TestCase
     // emailExists() Tests
     // =========================================================================
 
+    #[Test]
     public function testEmailExistsReturnsTrueWhenEmailFound(): void
     {
         $stmt = $this->createMock(PDOStatement::class);
@@ -97,6 +101,7 @@ final class UserRepositoryTest extends TestCase
         $this->assertTrue($repository->emailExists('user@example.com'));
     }
 
+    #[Test]
     public function testEmailExistsReturnsFalseWhenEmailNotFound(): void
     {
         $stmt = $this->createStub(PDOStatement::class);
@@ -111,6 +116,7 @@ final class UserRepositoryTest extends TestCase
         $this->assertFalse($repository->emailExists('nonexistent@example.com'));
     }
 
+    #[Test]
     public function testEmailExistsExcludesUserIdWhenProvided(): void
     {
         $stmt = $this->createMock(PDOStatement::class);
@@ -133,6 +139,7 @@ final class UserRepositoryTest extends TestCase
         $this->assertFalse($repository->emailExists('user@example.com', 5));
     }
 
+    #[Test]
     public function testEmailExistsReturnsFalseOnException(): void
     {
         $pdo = $this->createStub(PDO::class);
@@ -148,6 +155,7 @@ final class UserRepositoryTest extends TestCase
     // enableTotp() Tests
     // =========================================================================
 
+    #[Test]
     public function testEnableTotpReturnsTrueOnSuccess(): void
     {
         $encryptStmt = $this->createStub(PDOStatement::class);
@@ -168,6 +176,7 @@ final class UserRepositoryTest extends TestCase
         $this->assertTrue($repository->enableTotp(1, 'JBSWY3DPEHPK3PXP'));
     }
 
+    #[Test]
     public function testEnableTotpReturnsFalseWhenEncryptionFails(): void
     {
         $repository = $this->createRepositoryWithoutEncryption();
@@ -175,6 +184,7 @@ final class UserRepositoryTest extends TestCase
         $this->assertFalse($repository->enableTotp(1, 'JBSWY3DPEHPK3PXP'));
     }
 
+    #[Test]
     public function testEnableTotpReturnsFalseWhenUserNotFound(): void
     {
         $encryptStmt = $this->createStub(PDOStatement::class);
@@ -199,6 +209,7 @@ final class UserRepositoryTest extends TestCase
     // disableTotp() Tests
     // =========================================================================
 
+    #[Test]
     public function testDisableTotpReturnsTrueOnSuccess(): void
     {
         $stmt = $this->createMock(PDOStatement::class);
@@ -220,6 +231,7 @@ final class UserRepositoryTest extends TestCase
         $this->assertTrue($repository->disableTotp(1));
     }
 
+    #[Test]
     public function testDisableTotpReturnsFalseWhenUserNotFound(): void
     {
         $stmt = $this->createStub(PDOStatement::class);
@@ -234,6 +246,7 @@ final class UserRepositoryTest extends TestCase
         $this->assertFalse($repository->disableTotp(999));
     }
 
+    #[Test]
     public function testDisableTotpReturnsFalseOnException(): void
     {
         $pdo = $this->createStub(PDO::class);
@@ -249,6 +262,7 @@ final class UserRepositoryTest extends TestCase
     // getTotpSecret() Tests
     // =========================================================================
 
+    #[Test]
     public function testGetTotpSecretReturnsDecryptedSecret(): void
     {
         $selectStmt = $this->createStub(PDOStatement::class);
@@ -269,6 +283,7 @@ final class UserRepositoryTest extends TestCase
         $this->assertEquals('JBSWY3DPEHPK3PXP', $repository->getTotpSecret(1));
     }
 
+    #[Test]
     public function testGetTotpSecretReturnsNullWhenTotpNotEnabled(): void
     {
         $stmt = $this->createStub(PDOStatement::class);
@@ -283,6 +298,7 @@ final class UserRepositoryTest extends TestCase
         $this->assertNull($repository->getTotpSecret(1));
     }
 
+    #[Test]
     public function testGetTotpSecretReturnsNullOnException(): void
     {
         $pdo = $this->createStub(PDO::class);
@@ -300,6 +316,7 @@ final class UserRepositoryTest extends TestCase
 
     /**
      */
+    #[Test]
     public function testGetTableReturnsUsers(): void
     {
         $repository = $this->createRepositoryWithoutConnection();
@@ -312,6 +329,7 @@ final class UserRepositoryTest extends TestCase
 
     /**
      */
+    #[Test]
     public function testGetEncryptedFieldsReturnsTotpSecret(): void
     {
         $repository = $this->createRepositoryWithoutConnection();

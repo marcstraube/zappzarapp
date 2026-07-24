@@ -7,6 +7,7 @@ namespace Tests\App\Unit\Infrastructure\Cache;
 use App\Infrastructure\Cache\RedisCache;
 use App\Infrastructure\TlsConfig;
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\Attributes\UsesClass;
 use PHPUnit\Framework\TestCase;
 use Redis;
@@ -29,6 +30,7 @@ final class RedisCacheDeletePatternAndTtlTest extends TestCase
 
     // ===== deletePattern() =====
 
+    #[Test]
     public function testDeletePatternDeletesMatchingKeys(): void
     {
         $mockRedis = $this->createMock(Redis::class);
@@ -47,6 +49,7 @@ final class RedisCacheDeletePatternAndTtlTest extends TestCase
         $this->assertEquals(2, $cache->deletePattern('user:123:*'));
     }
 
+    #[Test]
     public function testDeletePatternReturnsZeroWhenNoKeysMatch(): void
     {
         $mockRedis = $this->createMock(Redis::class);
@@ -60,6 +63,7 @@ final class RedisCacheDeletePatternAndTtlTest extends TestCase
         $this->assertEquals(0, $cache->deletePattern('nonexistent:*'));
     }
 
+    #[Test]
     public function testDeletePatternReturnsZeroOnRedisException(): void
     {
         $mockRedis = $this->createMock(Redis::class);
@@ -72,6 +76,7 @@ final class RedisCacheDeletePatternAndTtlTest extends TestCase
         $this->assertEquals(0, $cache->deletePattern('any:*'));
     }
 
+    #[Test]
     public function testDeletePatternReturnsZeroWhenKeysReturnsFalse(): void
     {
         $mockRedis = $this->createMock(Redis::class);
@@ -84,6 +89,7 @@ final class RedisCacheDeletePatternAndTtlTest extends TestCase
         $this->assertEquals(0, $cache->deletePattern('any:*'));
     }
 
+    #[Test]
     public function testDeletePatternReturnsZeroWhenDelReturnsFalse(): void
     {
         $mockRedis = $this->createMock(Redis::class);
@@ -101,6 +107,7 @@ final class RedisCacheDeletePatternAndTtlTest extends TestCase
 
     // ===== ttl() =====
 
+    #[Test]
     public function testTtlReturnsRemainingTime(): void
     {
         $mockRedis = $this->createMock(Redis::class);
@@ -114,6 +121,7 @@ final class RedisCacheDeletePatternAndTtlTest extends TestCase
         $this->assertEquals(3500, $cache->ttl('mykey'));
     }
 
+    #[Test]
     public function testTtlReturnsNullWhenKeyDoesNotExist(): void
     {
         $mockRedis = $this->createMock(Redis::class);
@@ -127,6 +135,7 @@ final class RedisCacheDeletePatternAndTtlTest extends TestCase
         $this->assertNull($cache->ttl('missing'));
     }
 
+    #[Test]
     public function testTtlReturnsMinusOneForKeyWithoutExpiry(): void
     {
         $mockRedis = $this->createMock(Redis::class);
@@ -140,6 +149,7 @@ final class RedisCacheDeletePatternAndTtlTest extends TestCase
         $this->assertEquals(-1, $cache->ttl('persistent'));
     }
 
+    #[Test]
     public function testTtlReturnsNullOnRedisException(): void
     {
         $mockRedis = $this->createMock(Redis::class);
@@ -152,6 +162,7 @@ final class RedisCacheDeletePatternAndTtlTest extends TestCase
         $this->assertNull($cache->ttl('anykey'));
     }
 
+    #[Test]
     public function testTtlReturnsNullWhenRedisReturnsFalse(): void
     {
         $mockRedis = $this->createMock(Redis::class);
@@ -166,6 +177,7 @@ final class RedisCacheDeletePatternAndTtlTest extends TestCase
 
     // ===== disconnect() (exercised via get/set exception paths) =====
 
+    #[Test]
     public function testDisconnectClosesConnectionAndClearsReference(): void
     {
         $mockRedis = $this->createMock(Redis::class);
@@ -184,6 +196,7 @@ final class RedisCacheDeletePatternAndTtlTest extends TestCase
         $this->assertNull($property->getValue($cache));
     }
 
+    #[Test]
     public function testDisconnectIgnoresRedisExceptionOnClose(): void
     {
         $mockRedis = $this->createMock(Redis::class);
@@ -206,6 +219,7 @@ final class RedisCacheDeletePatternAndTtlTest extends TestCase
 
     // ===== getConnection() — cached connection =====
 
+    #[Test]
     public function testGetConnectionReturnsCachedConnectionOnSecondCall(): void
     {
         $mockRedis = $this->createMock(Redis::class);

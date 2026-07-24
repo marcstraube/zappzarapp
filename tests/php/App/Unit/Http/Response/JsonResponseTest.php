@@ -8,6 +8,7 @@ use App\Http\Response\JsonResponse;
 use JsonException;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\RunInSeparateProcess;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -22,6 +23,7 @@ final class JsonResponseTest extends TestCase
 {
     // ===== Output (no header inspection needed) =====
 
+    #[Test]
     public function testSendOutputsJsonEncodedData(): void
     {
         $response = new JsonResponse(['key' => 'value']);
@@ -35,6 +37,7 @@ final class JsonResponseTest extends TestCase
         $this->assertSame('value', $data['key']);
     }
 
+    #[Test]
     public function testSendOutputsArrayData(): void
     {
         $response = new JsonResponse([1, 2, 3]);
@@ -46,6 +49,7 @@ final class JsonResponseTest extends TestCase
         $this->assertSame('[1,2,3]', $output);
     }
 
+    #[Test]
     public function testSendOutputsObjectData(): void
     {
         $response = new JsonResponse(['nested' => ['a' => 1, 'b' => 2]]);
@@ -60,6 +64,7 @@ final class JsonResponseTest extends TestCase
         $this->assertSame(2, $data['nested']['b']);
     }
 
+    #[Test]
     public function testSendOutputsEmptyArray(): void
     {
         $response = new JsonResponse([]);
@@ -71,6 +76,7 @@ final class JsonResponseTest extends TestCase
         $this->assertSame('[]', $output);
     }
 
+    #[Test]
     public function testSendOutputsNullData(): void
     {
         $response = new JsonResponse(null);
@@ -82,6 +88,7 @@ final class JsonResponseTest extends TestCase
         $this->assertSame('null', $output);
     }
 
+    #[Test]
     public function testSendOutputsScalarString(): void
     {
         $response = new JsonResponse('hello');
@@ -93,6 +100,7 @@ final class JsonResponseTest extends TestCase
         $this->assertSame('"hello"', $output);
     }
 
+    #[Test]
     public function testSendOutputsIntegerData(): void
     {
         $response = new JsonResponse(42);
@@ -104,6 +112,7 @@ final class JsonResponseTest extends TestCase
         $this->assertSame('42', $output);
     }
 
+    #[Test]
     public function testSendThrowsJsonExceptionForUnencodableData(): void
     {
         // JSON_THROW_ON_ERROR (default) causes an exception for invalid UTF-8
@@ -124,6 +133,7 @@ final class JsonResponseTest extends TestCase
     // header cannot be asserted here. http_response_code() works in CLI.
 
     #[RunInSeparateProcess]
+    #[Test]
     public function testSendEmitsDefaultStatus200(): void
     {
         $response = new JsonResponse(['ok' => true]);
@@ -136,6 +146,7 @@ final class JsonResponseTest extends TestCase
     }
 
     #[RunInSeparateProcess]
+    #[Test]
     public function testSendEmitsCustomStatus201(): void
     {
         $response = new JsonResponse(['created' => true], 201);
@@ -148,6 +159,7 @@ final class JsonResponseTest extends TestCase
     }
 
     #[RunInSeparateProcess]
+    #[Test]
     public function testSendEmitsStatus404(): void
     {
         $response = new JsonResponse(['error' => 'Not Found'], 404);
@@ -160,6 +172,7 @@ final class JsonResponseTest extends TestCase
     }
 
     #[RunInSeparateProcess]
+    #[Test]
     public function testSendEmitsStatus500(): void
     {
         $response = new JsonResponse(['error' => 'Server Error'], 500);
@@ -173,6 +186,7 @@ final class JsonResponseTest extends TestCase
 
     // ===== Custom JSON flags =====
 
+    #[Test]
     public function testSendRespectsCustomJsonFlags(): void
     {
         $response = new JsonResponse(['a' => 1], 200, JSON_THROW_ON_ERROR | JSON_PRETTY_PRINT);

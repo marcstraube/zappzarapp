@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tests\App\Unit\Infrastructure;
 
 use App\Infrastructure\TlsConfig;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
 class TlsConfigTest extends TestCase
@@ -18,6 +19,7 @@ class TlsConfigTest extends TestCase
         unset($_ENV['ENV'], $_ENV['TLS_CA_PATH']);
     }
 
+    #[Test]
     public function testShouldVerifyInProduction(): void
     {
         $_ENV['ENV'] = 'production';
@@ -26,6 +28,7 @@ class TlsConfigTest extends TestCase
         $this->assertTrue(TlsConfig::shouldVerify());
     }
 
+    #[Test]
     public function testShouldNotVerifyInDevelopment(): void
     {
         $_ENV['ENV'] = 'development';
@@ -34,6 +37,7 @@ class TlsConfigTest extends TestCase
         $this->assertFalse(TlsConfig::shouldVerify());
     }
 
+    #[Test]
     public function testExplicitOverrideToDisable(): void
     {
         $_ENV['ENV'] = 'production';
@@ -42,6 +46,7 @@ class TlsConfigTest extends TestCase
         $this->assertFalse(TlsConfig::shouldVerify());
     }
 
+    #[Test]
     public function testExplicitOverrideToEnable(): void
     {
         $_ENV['ENV'] = 'development';
@@ -50,12 +55,14 @@ class TlsConfigTest extends TestCase
         $this->assertTrue(TlsConfig::shouldVerify());
     }
 
+    #[Test]
     public function testDefaultsToProductionWhenEnvNotSet(): void
     {
         // No ENV set - should default to production (secure by default)
         $this->assertTrue(TlsConfig::shouldVerify());
     }
 
+    #[Test]
     public function testGetCaPathReturnsDefault(): void
     {
         putenv('TLS_CA_PATH');
@@ -64,6 +71,7 @@ class TlsConfigTest extends TestCase
         $this->assertSame('/etc/ssl/certs/internal-ca.crt', TlsConfig::getCaPath());
     }
 
+    #[Test]
     public function testGetCaPathReturnsCustomPath(): void
     {
         $_ENV['TLS_CA_PATH'] = '/custom/ca.crt';
@@ -71,6 +79,7 @@ class TlsConfigTest extends TestCase
         $this->assertSame('/custom/ca.crt', TlsConfig::getCaPath());
     }
 
+    #[Test]
     public function testGetSslContextOptionsInDevelopment(): void
     {
         $_ENV['ENV'] = 'development';
@@ -84,6 +93,7 @@ class TlsConfigTest extends TestCase
         $this->assertArrayNotHasKey('cafile', $options);
     }
 
+    #[Test]
     public function testGetSslContextOptionsInProduction(): void
     {
         $_ENV['ENV'] = 'production';
@@ -97,6 +107,7 @@ class TlsConfigTest extends TestCase
         // cafile only included if file exists
     }
 
+    #[Test]
     public function testGetRedisStreamOptionsStructure(): void
     {
         $_ENV['ENV'] = 'development';

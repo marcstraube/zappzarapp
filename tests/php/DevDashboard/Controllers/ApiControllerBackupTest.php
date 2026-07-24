@@ -13,6 +13,7 @@ use DevDashboard\Services\LogService;
 use DevDashboard\Services\QualityService;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\RunInSeparateProcess;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\Attributes\UsesClass;
 use PHPUnit\Framework\TestCase;
 
@@ -58,6 +59,7 @@ final class ApiControllerBackupTest extends TestCase
 
     // ===== listBackups() =====
 
+    #[Test]
     public function testListBackupsReturnsResponse(): void
     {
         $database = $this->createStub(DatabaseService::class);
@@ -69,6 +71,7 @@ final class ApiControllerBackupTest extends TestCase
     }
 
     #[RunInSeparateProcess]
+    #[Test]
     public function testListBackupsReturns200(): void
     {
         $database = $this->createStub(DatabaseService::class);
@@ -81,6 +84,7 @@ final class ApiControllerBackupTest extends TestCase
         $this->assertSame(200, http_response_code());
     }
 
+    #[Test]
     public function testListBackupsDelegatesListBackups(): void
     {
         $database = $this->createMock(DatabaseService::class);
@@ -93,6 +97,7 @@ final class ApiControllerBackupTest extends TestCase
 
     // ===== createBackup() =====
 
+    #[Test]
     public function testCreateBackupCallsDatabaseServiceWithDefaults(): void
     {
         $_GET = [];
@@ -106,6 +111,7 @@ final class ApiControllerBackupTest extends TestCase
         $this->buildController(['database' => $database])->createBackup();
     }
 
+    #[Test]
     public function testCreateBackupPassesRetentionAndEncryptParams(): void
     {
         $_GET = ['retention' => '7', 'encrypt' => 'true'];
@@ -119,6 +125,7 @@ final class ApiControllerBackupTest extends TestCase
         $this->buildController(['database' => $database])->createBackup();
     }
 
+    #[Test]
     public function testCreateBackupEncryptFalseWhenNotTrue(): void
     {
         $_GET = ['encrypt' => 'false'];
@@ -133,6 +140,7 @@ final class ApiControllerBackupTest extends TestCase
     }
 
     #[RunInSeparateProcess]
+    #[Test]
     public function testCreateBackupReturns200OnSuccess(): void
     {
         $_GET = [];
@@ -149,6 +157,7 @@ final class ApiControllerBackupTest extends TestCase
     }
 
     #[RunInSeparateProcess]
+    #[Test]
     public function testCreateBackupReturns500OnFailure(): void
     {
         $_GET = [];
@@ -166,6 +175,7 @@ final class ApiControllerBackupTest extends TestCase
 
     // ===== restoreBackup() =====
 
+    #[Test]
     public function testRestoreBackupReturnsBadRequestWhenFilenameNotProvided(): void
     {
         // php://input is empty → json_decode returns [] → no 'filename' key
@@ -181,6 +191,7 @@ final class ApiControllerBackupTest extends TestCase
 
     // ===== deleteBackup() =====
 
+    #[Test]
     public function testDeleteBackupReturnsBadRequestWhenFilenameNotProvided(): void
     {
         ob_start();

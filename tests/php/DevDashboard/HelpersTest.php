@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tests\DevDashboard;
 
 use PHPUnit\Framework\Attributes\CoversFunction;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\Attributes\UsesFunction;
 use PHPUnit\Framework\TestCase;
 use Zappzarapp\Security\Csp\Nonce\NonceRegistry;
@@ -42,6 +43,7 @@ final class HelpersTest extends TestCase
 
     // ===== nonce() — function presence and output =====
 
+    #[Test]
     public function testNonceFunctionExistsAndReturnsValue(): void
     {
         // Both assert the function is defined AND call it so coverage maps correctly
@@ -51,6 +53,7 @@ final class HelpersTest extends TestCase
         $this->assertNotEmpty($nonce);
     }
 
+    #[Test]
     public function testNonceReturnsNonEmptyString(): void
     {
         // When neither CSP_NONCE constant nor global nonce() is defined,
@@ -61,6 +64,7 @@ final class HelpersTest extends TestCase
         $this->assertNotEmpty($nonce);
     }
 
+    #[Test]
     public function testNonceReturnsDifferentValuesAfterRegistryReset(): void
     {
         // First call generates nonce and caches it in the generator
@@ -76,6 +80,7 @@ final class HelpersTest extends TestCase
         $this->assertIsString($nonce2);
     }
 
+    #[Test]
     public function testNonceReturnsSameValueWithinSameRequest(): void
     {
         // Within one request (no reset) the registry returns the same nonce
@@ -85,6 +90,7 @@ final class HelpersTest extends TestCase
         $this->assertSame($nonce1, $nonce2, 'Nonce should be stable within the same request');
     }
 
+    #[Test]
     public function testNonceReturnsBase64LikeString(): void
     {
         $nonce = \DevDashboard\nonce();

@@ -7,6 +7,7 @@ namespace Tests\App\Unit\Http\Middleware;
 use App\Http\Middleware\CorsMiddleware;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\RunInSeparateProcess;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -48,6 +49,7 @@ final class CorsMiddlewareTest extends TestCase
 
     // ===== No CORS configuration =====
 
+    #[Test]
     public function testHandleReturnsTrueWhenNoCorsConfigured(): void
     {
         $middleware                = new CorsMiddleware('');
@@ -58,6 +60,7 @@ final class CorsMiddlewareTest extends TestCase
         $this->assertTrue($result);
     }
 
+    #[Test]
     public function testHandleReturnsTrueWhenNoCorsConfiguredAndOriginPresent(): void
     {
         $middleware                = new CorsMiddleware('');
@@ -71,6 +74,7 @@ final class CorsMiddlewareTest extends TestCase
 
     // ===== Empty origin (same-origin / internal requests) =====
 
+    #[Test]
     public function testHandleReturnsTrueForGetWithNoOriginHeader(): void
     {
         $middleware                = new CorsMiddleware('https://example.com');
@@ -86,6 +90,7 @@ final class CorsMiddlewareTest extends TestCase
 
     // ===== OPTIONS preflight =====
 
+    #[Test]
     public function testHandleReturnsFalseForOptionsRequest(): void
     {
         $middleware                = new CorsMiddleware('https://example.com');
@@ -97,6 +102,7 @@ final class CorsMiddlewareTest extends TestCase
         $this->assertFalse($result);
     }
 
+    #[Test]
     public function testHandleReturnsFalseForOptionsWithNoMatchingOrigin(): void
     {
         // Even if origin doesn't match, OPTIONS request is still halted
@@ -109,6 +115,7 @@ final class CorsMiddlewareTest extends TestCase
         $this->assertFalse($result);
     }
 
+    #[Test]
     public function testHandleReturnsFalseForOptionsWithNoOrigin(): void
     {
         $middleware                = new CorsMiddleware('https://example.com');
@@ -122,6 +129,7 @@ final class CorsMiddlewareTest extends TestCase
 
     // ===== Non-OPTIONS requests with matching origin =====
 
+    #[Test]
     public function testHandleReturnsTrueForGetWithMatchingOrigin(): void
     {
         $middleware                = new CorsMiddleware('https://example.com');
@@ -133,6 +141,7 @@ final class CorsMiddlewareTest extends TestCase
         $this->assertTrue($result);
     }
 
+    #[Test]
     public function testHandleReturnsTrueForPostWithMatchingOrigin(): void
     {
         $middleware                = new CorsMiddleware('https://app.example.com');
@@ -146,6 +155,7 @@ final class CorsMiddlewareTest extends TestCase
 
     // ===== Origin matching (comma-separated list) =====
 
+    #[Test]
     public function testHandleReturnsTrueForFirstOriginInList(): void
     {
         $middleware                = new CorsMiddleware('https://example.com,https://app.example.com');
@@ -157,6 +167,7 @@ final class CorsMiddlewareTest extends TestCase
         $this->assertTrue($result);
     }
 
+    #[Test]
     public function testHandleReturnsTrueForSecondOriginInList(): void
     {
         $middleware                = new CorsMiddleware('https://example.com,https://app.example.com');
@@ -168,6 +179,7 @@ final class CorsMiddlewareTest extends TestCase
         $this->assertTrue($result);
     }
 
+    #[Test]
     public function testHandleReturnsTrueForOriginWithWhitespaceInList(): void
     {
         // Middleware trims whitespace from comma-separated entries
@@ -180,6 +192,7 @@ final class CorsMiddlewareTest extends TestCase
         $this->assertTrue($result);
     }
 
+    #[Test]
     public function testHandleReturnsTrueForNonMatchingOriginOnGetRequest(): void
     {
         // Non-matching origin: CORS headers not added, but GET still continues
@@ -198,6 +211,7 @@ final class CorsMiddlewareTest extends TestCase
     // "unexpected output" even from stderr, marking the test risky.
     // Redirect error_log to /dev/null for the duration of the wildcard instantiation.
 
+    #[Test]
     public function testHandleReturnsTrueForWildcardWithAnyOrigin(): void
     {
         ini_set('error_log', '/dev/null');
@@ -212,6 +226,7 @@ final class CorsMiddlewareTest extends TestCase
         $this->assertTrue($result);
     }
 
+    #[Test]
     public function testHandleReturnsFalseForOptionsWithWildcard(): void
     {
         ini_set('error_log', '/dev/null');
@@ -229,6 +244,7 @@ final class CorsMiddlewareTest extends TestCase
     // ===== Constructor: reads from environment when no argument given =====
 
     #[RunInSeparateProcess]
+    #[Test]
     public function testConstructorReadsFromEnvironmentWhenNoArgumentGiven(): void
     {
         putenv('CORS_ORIGINS=https://env-configured.com');
@@ -243,6 +259,7 @@ final class CorsMiddlewareTest extends TestCase
     }
 
     #[RunInSeparateProcess]
+    #[Test]
     public function testConstructorFallsBackToEmptyWhenEnvNotSet(): void
     {
         putenv('CORS_ORIGINS');
@@ -262,6 +279,7 @@ final class CorsMiddlewareTest extends TestCase
     // and by ensuring all code paths execute without error.
 
     #[RunInSeparateProcess]
+    #[Test]
     public function testHandleReturnsTrueForMatchingOriginInDevelopmentWithSpecificOrigin(): void
     {
         putenv('APP_ENV=development');
@@ -276,6 +294,7 @@ final class CorsMiddlewareTest extends TestCase
     }
 
     #[RunInSeparateProcess]
+    #[Test]
     public function testHandleReturnsTrueForMatchingOriginInProduction(): void
     {
         putenv('APP_ENV=production');
@@ -289,6 +308,7 @@ final class CorsMiddlewareTest extends TestCase
     }
 
     #[RunInSeparateProcess]
+    #[Test]
     public function testHandleReturnsTrueForWildcardInDevelopment(): void
     {
         putenv('APP_ENV=development');
@@ -306,6 +326,7 @@ final class CorsMiddlewareTest extends TestCase
     }
 
     #[RunInSeparateProcess]
+    #[Test]
     public function testHandleReturnsTrueForWildcardInProduction(): void
     {
         putenv('APP_ENV=production');
