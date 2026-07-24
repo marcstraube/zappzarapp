@@ -7,6 +7,7 @@ namespace Tests\App\Unit\Infrastructure\Elasticsearch;
 use App\Infrastructure\Elasticsearch\ElasticsearchClient;
 use App\Infrastructure\Elasticsearch\ElasticsearchConfig;
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\Attributes\UsesClass;
 use PHPUnit\Framework\TestCase;
 use ReflectionClass;
@@ -25,6 +26,7 @@ final class ElasticsearchClientTest extends TestCase
 {
     private const string TEST_URL = 'https://localhost:9200';
 
+    #[Test]
     public function testConstructorAcceptsCustomUrl(): void
     {
         $client = new ElasticsearchClient('https://custom:9200');
@@ -36,6 +38,7 @@ final class ElasticsearchClientTest extends TestCase
         $this->assertEquals('https://custom:9200', $config->url);
     }
 
+    #[Test]
     public function testConstructorUsesDefaultWhenNoUrlProvided(): void
     {
         // Clear environment variables to ensure defaults are used
@@ -55,6 +58,7 @@ final class ElasticsearchClientTest extends TestCase
         $this->assertStringContainsString('9200', $config->url);
     }
 
+    #[Test]
     public function testBulkIndexReturnsZeroForEmptyDocuments(): void
     {
         $client = new ElasticsearchClient(self::TEST_URL);
@@ -70,6 +74,7 @@ final class ElasticsearchClientTest extends TestCase
      * When no Elasticsearch server is available, all methods should return
      * safe default values (null, false, empty array) instead of throwing exceptions.
      */
+    #[Test]
     public function testAllMethodsHandleConnectionErrorsGracefully(): void
     {
         $client = new ElasticsearchClient(self::TEST_URL);
@@ -107,6 +112,7 @@ final class ElasticsearchClientTest extends TestCase
         $this->assertEquals(1, $result['errors']);
     }
 
+    #[Test]
     public function testConfigDetectsHttpsUseTls(): void
     {
         $client = new ElasticsearchClient('https://secure:9200');
@@ -118,6 +124,7 @@ final class ElasticsearchClientTest extends TestCase
         $this->assertTrue($config->useTls);
     }
 
+    #[Test]
     public function testConfigDetectsHttpNoTls(): void
     {
         $client = new ElasticsearchClient('http://local:9200');

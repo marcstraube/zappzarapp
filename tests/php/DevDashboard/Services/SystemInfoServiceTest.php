@@ -6,6 +6,7 @@ namespace Tests\DevDashboard\Services;
 
 use DevDashboard\Services\SystemInfoService;
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
 #[CoversClass(SystemInfoService::class)]
@@ -20,6 +21,7 @@ class SystemInfoServiceTest extends TestCase
         $this->service = new SystemInfoService();
     }
 
+    #[Test]
     public function testGetBasicInfo(): void
     {
         $info = $this->service->getBasicInfo();
@@ -34,6 +36,7 @@ class SystemInfoServiceTest extends TestCase
         $this->assertEquals(PHP_OS, $info['os']);
     }
 
+    #[Test]
     public function testGetPhpVersion(): void
     {
         $version = $this->service->getPhpVersion();
@@ -48,6 +51,7 @@ class SystemInfoServiceTest extends TestCase
         $this->assertEquals(PHP_MINOR_VERSION, $version['minor']);
     }
 
+    #[Test]
     public function testGetPhpExtensions(): void
     {
         $extensions = $this->service->getPhpExtensions();
@@ -65,6 +69,7 @@ class SystemInfoServiceTest extends TestCase
         $this->assertContains('standard', $extensionNames);
     }
 
+    #[Test]
     public function testGetEnvironmentVariables(): void
     {
         // Set a test environment variable
@@ -86,6 +91,7 @@ class SystemInfoServiceTest extends TestCase
         putenv('TEST_PASSWORD');
     }
 
+    #[Test]
     public function testGetGitStatusWhenNotARepository(): void
     {
         // Create a temporary directory that's not a git repository
@@ -107,6 +113,7 @@ class SystemInfoServiceTest extends TestCase
         rmdir($tempDir);
     }
 
+    #[Test]
     public function testGetGitStatusWhenInitialized(): void
     {
         $status = $this->service->getGitStatus();
@@ -125,6 +132,7 @@ class SystemInfoServiceTest extends TestCase
         }
     }
 
+    #[Test]
     public function testSensitiveKeyFiltering(): void
     {
         // Set various sensitive environment variables

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tests\DevDashboard\Services;
 
 use DevDashboard\Services\HealthCheckService;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -22,6 +23,7 @@ class HealthCheckServiceTest extends TestCase
         $this->service = new HealthCheckService();
     }
 
+    #[Test]
     public function testGetOverallStatus(): void
     {
         $status = $this->service->getOverallStatus();
@@ -37,6 +39,7 @@ class HealthCheckServiceTest extends TestCase
         $this->assertIsString($status['timestamp']);
     }
 
+    #[Test]
     public function testGetServicesReturnsCategories(): void
     {
         $services = $this->service->getServices();
@@ -46,6 +49,7 @@ class HealthCheckServiceTest extends TestCase
         $this->assertArrayHasKey('optional', $services);
     }
 
+    #[Test]
     public function testGetServicesCoreContainsNginx(): void
     {
         $services = $this->service->getServices();
@@ -64,6 +68,7 @@ class HealthCheckServiceTest extends TestCase
         $this->assertContains($nginx['status'], ['running', 'stopped']);
     }
 
+    #[Test]
     public function testGetServicesDataContainsDatabase(): void
     {
         $services = $this->service->getServices();
@@ -76,6 +81,7 @@ class HealthCheckServiceTest extends TestCase
         $this->assertTrue($hasDatabase, 'Data services should contain postgres or mariadb');
     }
 
+    #[Test]
     public function testGetConnectionsReturnsDatabase(): void
     {
         $connections = $this->service->getConnections();
@@ -97,6 +103,7 @@ class HealthCheckServiceTest extends TestCase
         }
     }
 
+    #[Test]
     public function testGetConnectionsReturnsRedis(): void
     {
         // Skip if Redis is disabled
@@ -114,6 +121,7 @@ class HealthCheckServiceTest extends TestCase
         $this->assertEquals('Redis', $redis['type']);
     }
 
+    #[Test]
     public function testGetSslInfoWhenCertificateDoesNotExist(): void
     {
         $ssl = $this->service->getSslInfo();
@@ -126,6 +134,7 @@ class HealthCheckServiceTest extends TestCase
         }
     }
 
+    #[Test]
     public function testGetSslInfoStructure(): void
     {
         $ssl = $this->service->getSslInfo();
@@ -161,6 +170,7 @@ class HealthCheckServiceTest extends TestCase
         }
     }
 
+    #[Test]
     public function testConnectionWithInvalidCredentials(): void
     {
         // Temporarily set invalid database credentials
@@ -193,6 +203,7 @@ class HealthCheckServiceTest extends TestCase
         }
     }
 
+    #[Test]
     public function testOverallStatusDeterminesHealthCorrectly(): void
     {
         $status = $this->service->getOverallStatus();
@@ -209,6 +220,7 @@ class HealthCheckServiceTest extends TestCase
         $this->assertGreaterThanOrEqual(0, $status['unhealthy_count']);
     }
 
+    #[Test]
     public function testServiceStructureIsCorrect(): void
     {
         $services = $this->service->getServices();

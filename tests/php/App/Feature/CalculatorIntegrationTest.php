@@ -6,6 +6,7 @@ namespace Tests\App\Feature;
 
 use App\Utils\Calculator;
 use DivisionByZeroError;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -24,6 +25,7 @@ class CalculatorIntegrationTest extends TestCase
         $this->calculator = new Calculator();
     }
 
+    #[Test]
     public function testComplexMathematicalOperation(): void
     {
         // Test: Calculate (10 + 5) * 2 / 3
@@ -34,6 +36,7 @@ class CalculatorIntegrationTest extends TestCase
         $this->assertEquals(10, $step3);
     }
 
+    #[Test]
     public function testMultipleOperationsWithValidation(): void
     {
         $values = [2, 4, 6, 8, 10];
@@ -54,6 +57,7 @@ class CalculatorIntegrationTest extends TestCase
         $this->assertEquals(6, $average);
     }
 
+    #[Test]
     public function testWorkflowWithErrorHandling(): void
     {
         $numerator   = 100;
@@ -72,6 +76,7 @@ class CalculatorIntegrationTest extends TestCase
         }
     }
 
+    #[Test]
     public function testChainedCalculations(): void
     {
         // Start value

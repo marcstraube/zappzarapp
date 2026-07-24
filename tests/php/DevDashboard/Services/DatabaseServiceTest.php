@@ -6,6 +6,7 @@ namespace Tests\DevDashboard\Services;
 
 use DevDashboard\Services\DatabaseService;
 use PDO;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -57,6 +58,7 @@ class DatabaseServiceTest extends TestCase
 
     // ==================== BASIC SERVICE TESTS ====================
 
+    #[Test]
     public function testGetConnectionReturnsValidPDO(): void
     {
         $connection = $this->service->getConnection();
@@ -69,6 +71,7 @@ class DatabaseServiceTest extends TestCase
         }
     }
 
+    #[Test]
     public function testGetDatabaseOverviewReturnsCorrectStructure(): void
     {
         $overview = $this->service->getDatabaseOverview();
@@ -89,12 +92,14 @@ class DatabaseServiceTest extends TestCase
         }
     }
 
+    #[Test]
     public function testGetTablesReturnsArray(): void
     {
         $tables = $this->service->getTables();
         $this->assertIsArray($tables);
     }
 
+    #[Test]
     public function testGetConnectionStatsReturnsCorrectStructure(): void
     {
         $stats = $this->service->getConnectionStats();
@@ -107,6 +112,7 @@ class DatabaseServiceTest extends TestCase
         }
     }
 
+    #[Test]
     public function testGetDatabaseCommandsReturnsArray(): void
     {
         $commands = $this->service->getDatabaseCommands();
@@ -122,6 +128,7 @@ class DatabaseServiceTest extends TestCase
         }
     }
 
+    #[Test]
     public function testGetDatabaseCommandsIncludesBackupCommands(): void
     {
         $commands     = $this->service->getDatabaseCommands();
@@ -132,6 +139,7 @@ class DatabaseServiceTest extends TestCase
         $this->assertContains('make backup-db-restore', $commandTexts);
     }
 
+    #[Test]
     public function testGetDbToolsStatusReturnsArray(): void
     {
         $tools = $this->service->getDbToolsStatus();
@@ -139,6 +147,7 @@ class DatabaseServiceTest extends TestCase
         $this->assertArrayHasKey('adminer', $tools);
     }
 
+    #[Test]
     public function testGetQuickStatsReturnsCorrectStructure(): void
     {
         $stats = $this->service->getQuickStats();

@@ -20,6 +20,7 @@ use DevDashboard\Services\LogService;
 use DevDashboard\Services\QualityService;
 use DevDashboard\Services\SystemInfoService;
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\Attributes\UsesClass;
 use PHPUnit\Framework\TestCase;
 
@@ -70,6 +71,7 @@ class DashboardControllerTest extends TestCase
         );
     }
 
+    #[Test]
     public function testControllerCanBeInstantiated(): void
     {
         $controller = $this->createController();

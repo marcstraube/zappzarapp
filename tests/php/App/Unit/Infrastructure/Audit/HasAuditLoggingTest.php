@@ -6,6 +6,7 @@ namespace Tests\App\Unit\Infrastructure\Audit;
 
 use App\Infrastructure\Audit\HasAuditLogging;
 use PHPUnit\Framework\Attributes\CoversTrait;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use RuntimeException;
 use Zappzarapp\AuditLogger\AuditLogEntry;
@@ -20,6 +21,7 @@ use Zappzarapp\AuditLogger\AuditLoggerInterface;
 #[CoversTrait(HasAuditLogging::class)]
 final class HasAuditLoggingTest extends TestCase
 {
+    #[Test]
     public function testAuditLogCallsLogger(): void
     {
         $_SERVER['REMOTE_ADDR']     = '10.0.0.1';
@@ -44,6 +46,7 @@ final class HasAuditLoggingTest extends TestCase
         unset($_SERVER['REMOTE_ADDR'], $_SERVER['HTTP_USER_AGENT']);
     }
 
+    #[Test]
     public function testAuditLogAuthCallsLogger(): void
     {
         $_SERVER['REMOTE_ADDR']     = '10.0.0.1';
@@ -66,6 +69,7 @@ final class HasAuditLoggingTest extends TestCase
         unset($_SERVER['REMOTE_ADDR'], $_SERVER['HTTP_USER_AGENT']);
     }
 
+    #[Test]
     public function testAuditLogAdminCallsLogger(): void
     {
         $_SERVER['REMOTE_ADDR']     = '10.0.0.1';
@@ -90,6 +94,7 @@ final class HasAuditLoggingTest extends TestCase
         unset($_SERVER['REMOTE_ADDR'], $_SERVER['HTTP_USER_AGENT']);
     }
 
+    #[Test]
     public function testAuditLogFallsBackToUnknownWhenServerVarsNotSet(): void
     {
         unset($_SERVER['REMOTE_ADDR'], $_SERVER['HTTP_USER_AGENT']);
@@ -111,6 +116,7 @@ final class HasAuditLoggingTest extends TestCase
         $service->testAuditLog();
     }
 
+    #[Test]
     public function testAuditLogThrowsExceptionWhenLoggerNotInitialized(): void
     {
         $service = new TestServiceWithoutLogger();
@@ -121,6 +127,7 @@ final class HasAuditLoggingTest extends TestCase
         $service->testAuditLogWithoutLogger();
     }
 
+    #[Test]
     public function testAuditLogUsesSessionUserIdIfNotProvided(): void
     {
         $_SESSION['user_id']        = 789;
@@ -145,6 +152,7 @@ final class HasAuditLoggingTest extends TestCase
         unset($_SESSION['user_id'], $_SERVER['REMOTE_ADDR'], $_SERVER['HTTP_USER_AGENT']);
     }
 
+    #[Test]
     public function testAuditLogLeavesUserIdNullWhenNoSessionAndNoArgument(): void
     {
         unset($_SESSION['user_id']);
@@ -168,6 +176,7 @@ final class HasAuditLoggingTest extends TestCase
         unset($_SERVER['REMOTE_ADDR'], $_SERVER['HTTP_USER_AGENT']);
     }
 
+    #[Test]
     public function testAuditLogAuthThrowsExceptionWhenLoggerNotInitialized(): void
     {
         $service = new TestServiceWithoutLogger();
@@ -178,6 +187,7 @@ final class HasAuditLoggingTest extends TestCase
         $service->testAuditLogAuthWithoutLogger();
     }
 
+    #[Test]
     public function testAuditLogAdminThrowsExceptionWhenLoggerNotInitialized(): void
     {
         $service = new TestServiceWithoutLogger();

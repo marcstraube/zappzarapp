@@ -7,6 +7,7 @@ namespace Tests\App\Unit\Infrastructure\Session;
 use App\Infrastructure\Cache\CacheInterface;
 use App\Infrastructure\Session\RedisSession;
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Random\RandomException;
 
@@ -17,6 +18,7 @@ use Random\RandomException;
 #[CoversClass(RedisSession::class)]
 final class RedisSessionEdgeCasesTest extends TestCase
 {
+    #[Test]
     public function testDestroyReturnsFalseForInvalidSessionId(): void
     {
         $cache = $this->createMock(CacheInterface::class);
@@ -28,6 +30,7 @@ final class RedisSessionEdgeCasesTest extends TestCase
         $this->assertFalse($session->destroy('too-short'));
     }
 
+    #[Test]
     public function testRegenerateReturnsNullWhenStoringNewSessionFails(): void
     {
         $oldSessionId = $this->generateValidSessionId();
@@ -51,6 +54,7 @@ final class RedisSessionEdgeCasesTest extends TestCase
         $this->assertNull($session->regenerate($oldSessionId));
     }
 
+    #[Test]
     public function testGetUserSessionsReturnsEmptyArrayWhenDecodedValueIsNotArray(): void
     {
         $cache = $this->createMock(CacheInterface::class);
@@ -66,6 +70,7 @@ final class RedisSessionEdgeCasesTest extends TestCase
         $this->assertSame([], $session->getUserSessions(7));
     }
 
+    #[Test]
     public function testGetUserSessionsReturnsEmptyArrayOnCorruptedJson(): void
     {
         $cache = $this->createMock(CacheInterface::class);
@@ -80,6 +85,7 @@ final class RedisSessionEdgeCasesTest extends TestCase
         $this->assertSame([], $session->getUserSessions(8));
     }
 
+    #[Test]
     public function testDestroyDeletesUserSessionsKeyWhenLastSessionIsRemoved(): void
     {
         $userId    = 99;

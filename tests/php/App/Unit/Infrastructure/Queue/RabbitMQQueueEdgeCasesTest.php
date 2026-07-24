@@ -11,6 +11,7 @@ use PhpAmqpLib\Channel\AMQPChannel;
 use PhpAmqpLib\Connection\AMQPStreamConnection;
 use PhpAmqpLib\Message\AMQPMessage;
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\Attributes\UsesClass;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\MockObject\Stub;
@@ -29,6 +30,7 @@ final class RabbitMQQueueEdgeCasesTest extends TestCase
 {
     private const string TEST_URL = 'amqp://user:password@localhost:5672/testvhost';
 
+    #[Test]
     public function testConsumeDoesNothingWhenNoChannel(): void
     {
         // Without a real connection the channel cannot be obtained;
@@ -41,6 +43,7 @@ final class RabbitMQQueueEdgeCasesTest extends TestCase
         $this->addToAssertionCount(1); // confirm no exception
     }
 
+    #[Test]
     public function testConsumeReturnsEarlyWhenDeclareQueueFails(): void
     {
         $mockChannel = $this->createMock(AMQPChannel::class);
@@ -58,6 +61,7 @@ final class RabbitMQQueueEdgeCasesTest extends TestCase
         $this->addToAssertionCount(1); // confirm no exception
     }
 
+    #[Test]
     public function testConsumeSetupRunsWhenChannelNotConsuming(): void
     {
         $mockChannel = $this->createMock(AMQPChannel::class);
@@ -88,6 +92,7 @@ final class RabbitMQQueueEdgeCasesTest extends TestCase
         $this->assertTrue(true);
     }
 
+    #[Test]
     public function testPublishWithHeadersOptionAddsAMQPTable(): void
     {
         $mockChannel = $this->createMock(AMQPChannel::class);
@@ -110,6 +115,7 @@ final class RabbitMQQueueEdgeCasesTest extends TestCase
         ]));
     }
 
+    #[Test]
     public function testConsumerCallbackAcksMessageOnSuccessfulCallback(): void
     {
         $mockChannel = $this->createMock(AMQPChannel::class);
@@ -138,6 +144,7 @@ final class RabbitMQQueueEdgeCasesTest extends TestCase
         $this->assertSame('hello', $receivedBody);
     }
 
+    #[Test]
     public function testConsumerCallbackNacksMessageOnFailedCallback(): void
     {
         $mockChannel = $this->createMock(AMQPChannel::class);
@@ -166,6 +173,7 @@ final class RabbitMQQueueEdgeCasesTest extends TestCase
         $this->assertSame('bad', $receivedBody);
     }
 
+    #[Test]
     public function testConsumerCallbackSkipsAckNackWhenNoAck(): void
     {
         $mockChannel = $this->createMock(AMQPChannel::class);

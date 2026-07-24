@@ -11,6 +11,7 @@ use PhpAmqpLib\Channel\AMQPChannel;
 use PhpAmqpLib\Connection\AMQPStreamConnection;
 use PhpAmqpLib\Message\AMQPMessage;
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\Attributes\UsesClass;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\MockObject\Stub;
@@ -33,6 +34,7 @@ final class RabbitMQQueueTest extends TestCase
 {
     private const string TEST_URL = 'amqp://user:password@localhost:5672/testvhost';
 
+    #[Test]
     public function testPublishSendsMessageToQueue(): void
     {
         $mockChannel = $this->createMock(AMQPChannel::class);
@@ -53,6 +55,7 @@ final class RabbitMQQueueTest extends TestCase
         $this->assertTrue($queue->publish('test-queue', 'test message'));
     }
 
+    #[Test]
     public function testPublishReturnsFalseWhenNotConnected(): void
     {
         $queue = new RabbitMQQueue(self::TEST_URL);
@@ -61,6 +64,7 @@ final class RabbitMQQueueTest extends TestCase
         $this->assertFalse($queue->publish('test-queue', 'test message'));
     }
 
+    #[Test]
     public function testPublishReturnsFalseOnException(): void
     {
         $mockChannel = $this->createMock(AMQPChannel::class);
@@ -73,6 +77,7 @@ final class RabbitMQQueueTest extends TestCase
         $this->assertFalse($queue->publish('test-queue', 'test message'));
     }
 
+    #[Test]
     public function testPublishWithCustomOptions(): void
     {
         $mockChannel = $this->createMock(AMQPChannel::class);
@@ -100,6 +105,7 @@ final class RabbitMQQueueTest extends TestCase
         ]));
     }
 
+    #[Test]
     public function testGetReturnMessageFromQueue(): void
     {
         $mockMessage = $this->createStub(AMQPMessage::class);
@@ -123,6 +129,7 @@ final class RabbitMQQueueTest extends TestCase
         $this->assertEquals(123, $result['deliveryTag']);
     }
 
+    #[Test]
     public function testGetReturnsNullWhenQueueIsEmpty(): void
     {
         $mockChannel = $this->createMock(AMQPChannel::class);
@@ -138,6 +145,7 @@ final class RabbitMQQueueTest extends TestCase
         $this->assertNull($queue->get('test-queue'));
     }
 
+    #[Test]
     public function testGetReturnsNullOnException(): void
     {
         $mockChannel = $this->createMock(AMQPChannel::class);
@@ -150,6 +158,7 @@ final class RabbitMQQueueTest extends TestCase
         $this->assertNull($queue->get('test-queue'));
     }
 
+    #[Test]
     public function testAckAcknowledgesMessage(): void
     {
         $mockChannel = $this->createMock(AMQPChannel::class);
@@ -162,6 +171,7 @@ final class RabbitMQQueueTest extends TestCase
         $this->assertTrue($queue->ack(123));
     }
 
+    #[Test]
     public function testAckReturnsFalseOnException(): void
     {
         $mockChannel = $this->createMock(AMQPChannel::class);
@@ -174,6 +184,7 @@ final class RabbitMQQueueTest extends TestCase
         $this->assertFalse($queue->ack(123));
     }
 
+    #[Test]
     public function testNackRejectsMessage(): void
     {
         $mockChannel = $this->createMock(AMQPChannel::class);
@@ -186,6 +197,7 @@ final class RabbitMQQueueTest extends TestCase
         $this->assertTrue($queue->nack(123));
     }
 
+    #[Test]
     public function testNackRequeuesMessageWhenRequested(): void
     {
         $mockChannel = $this->createMock(AMQPChannel::class);
@@ -198,6 +210,7 @@ final class RabbitMQQueueTest extends TestCase
         $this->assertTrue($queue->nack(123, true));
     }
 
+    #[Test]
     public function testNackReturnsFalseOnException(): void
     {
         $mockChannel = $this->createMock(AMQPChannel::class);
@@ -210,6 +223,7 @@ final class RabbitMQQueueTest extends TestCase
         $this->assertFalse($queue->nack(123));
     }
 
+    #[Test]
     public function testDeclareQueueCreatesQueue(): void
     {
         $mockChannel = $this->createMock(AMQPChannel::class);
@@ -230,6 +244,7 @@ final class RabbitMQQueueTest extends TestCase
         $this->assertTrue($queue->declareQueue('test-queue'));
     }
 
+    #[Test]
     public function testDeclareQueueWithCustomOptions(): void
     {
         $mockChannel = $this->createMock(AMQPChannel::class);
@@ -255,6 +270,7 @@ final class RabbitMQQueueTest extends TestCase
         ]));
     }
 
+    #[Test]
     public function testDeclareQueueReturnsFalseOnException(): void
     {
         $mockChannel = $this->createMock(AMQPChannel::class);
@@ -267,6 +283,7 @@ final class RabbitMQQueueTest extends TestCase
         $this->assertFalse($queue->declareQueue('test-queue'));
     }
 
+    #[Test]
     public function testGetMessageCountReturnsCount(): void
     {
         $mockChannel = $this->createMock(AMQPChannel::class);
@@ -280,6 +297,7 @@ final class RabbitMQQueueTest extends TestCase
         $this->assertEquals(42, $queue->getMessageCount('test-queue'));
     }
 
+    #[Test]
     public function testGetMessageCountReturnsNullOnException(): void
     {
         $mockChannel = $this->createMock(AMQPChannel::class);
@@ -292,6 +310,7 @@ final class RabbitMQQueueTest extends TestCase
         $this->assertNull($queue->getMessageCount('test-queue'));
     }
 
+    #[Test]
     public function testPurgeQueueRemovesAllMessages(): void
     {
         $mockChannel = $this->createMock(AMQPChannel::class);
@@ -305,6 +324,7 @@ final class RabbitMQQueueTest extends TestCase
         $this->assertEquals(15, $queue->purgeQueue('test-queue'));
     }
 
+    #[Test]
     public function testPurgeQueueReturnsZeroOnException(): void
     {
         $mockChannel = $this->createMock(AMQPChannel::class);
@@ -317,6 +337,7 @@ final class RabbitMQQueueTest extends TestCase
         $this->assertEquals(0, $queue->purgeQueue('test-queue'));
     }
 
+    #[Test]
     public function testIsAvailableReturnsTrueWhenConnected(): void
     {
         $mockConnection = $this->createStub(AMQPStreamConnection::class);
@@ -330,6 +351,7 @@ final class RabbitMQQueueTest extends TestCase
         $this->assertTrue($queue->isAvailable());
     }
 
+    #[Test]
     public function testIsAvailableReturnsFalseWhenNotConnected(): void
     {
         $queue = new RabbitMQQueue(self::TEST_URL);
@@ -337,6 +359,7 @@ final class RabbitMQQueueTest extends TestCase
         $this->assertFalse($queue->isAvailable());
     }
 
+    #[Test]
     public function testIsAvailableReturnsFalseOnException(): void
     {
         $mockConnection = $this->createStub(AMQPStreamConnection::class);
@@ -349,6 +372,7 @@ final class RabbitMQQueueTest extends TestCase
         $this->assertFalse($queue->isAvailable());
     }
 
+    #[Test]
     public function testConstructorParsesAmqpUrl(): void
     {
         $queue = new RabbitMQQueue('amqp://testuser:testpass@testhost:5673/testvhost');
@@ -363,6 +387,7 @@ final class RabbitMQQueueTest extends TestCase
         $this->assertFalse($config->useTls);
     }
 
+    #[Test]
     public function testConstructorParsesAmqpsUrlWithTls(): void
     {
         $queue = new RabbitMQQueue('amqps://user:pass@host:5671/vhost');
@@ -373,6 +398,7 @@ final class RabbitMQQueueTest extends TestCase
         $this->assertEquals(5671, $config->port);
     }
 
+    #[Test]
     public function testConstructorUsesDefaultValuesForMinimalUrl(): void
     {
         $queue = new RabbitMQQueue('amqp://localhost');
@@ -383,6 +409,7 @@ final class RabbitMQQueueTest extends TestCase
         $this->assertEquals('/', $config->vhost);
     }
 
+    #[Test]
     public function testConstructorHandlesUrlEncodedCredentials(): void
     {
         // URL with special characters that need encoding

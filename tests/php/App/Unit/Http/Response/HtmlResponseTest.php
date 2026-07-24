@@ -7,6 +7,7 @@ namespace Tests\App\Unit\Http\Response;
 use App\Http\Response\HtmlResponse;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\RunInSeparateProcess;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -21,6 +22,7 @@ final class HtmlResponseTest extends TestCase
 {
     // ===== Output =====
 
+    #[Test]
     public function testSendOutputsContent(): void
     {
         $response = new HtmlResponse('<h1>Hello</h1>');
@@ -32,6 +34,7 @@ final class HtmlResponseTest extends TestCase
         $this->assertSame('<h1>Hello</h1>', $output);
     }
 
+    #[Test]
     public function testSendOutputsEmptyContent(): void
     {
         $response = new HtmlResponse('');
@@ -43,6 +46,7 @@ final class HtmlResponseTest extends TestCase
         $this->assertSame('', $output);
     }
 
+    #[Test]
     public function testSendOutputsFullHtmlDocument(): void
     {
         $html     = "<!DOCTYPE html>\n<html><head></head><body>Test</body></html>";
@@ -55,6 +59,7 @@ final class HtmlResponseTest extends TestCase
         $this->assertSame($html, $output);
     }
 
+    #[Test]
     public function testSendPreservesSpecialCharacters(): void
     {
         // HtmlResponse outputs content verbatim — caller is responsible for escaping
@@ -73,6 +78,7 @@ final class HtmlResponseTest extends TestCase
     // header cannot be asserted here. http_response_code() works in CLI.
 
     #[RunInSeparateProcess]
+    #[Test]
     public function testSendEmitsDefaultStatus200(): void
     {
         $response = new HtmlResponse('<p>OK</p>');
@@ -85,6 +91,7 @@ final class HtmlResponseTest extends TestCase
     }
 
     #[RunInSeparateProcess]
+    #[Test]
     public function testSendEmitsCustomStatus404(): void
     {
         $response = new HtmlResponse('<h1>Not Found</h1>', 404);
@@ -97,6 +104,7 @@ final class HtmlResponseTest extends TestCase
     }
 
     #[RunInSeparateProcess]
+    #[Test]
     public function testSendEmitsCustomStatus500(): void
     {
         $response = new HtmlResponse('<h1>Error</h1>', 500);
@@ -109,6 +117,7 @@ final class HtmlResponseTest extends TestCase
     }
 
     #[RunInSeparateProcess]
+    #[Test]
     public function testSendEmitsStatus301(): void
     {
         $response = new HtmlResponse('', 301);

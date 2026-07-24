@@ -8,6 +8,7 @@ use App\Http\ErrorPage;
 use App\Http\Response\HtmlResponse;
 use App\Http\Response\Response;
 use PHPUnit\Framework\Attributes\DataProvider;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -19,6 +20,7 @@ class ErrorPageTest extends TestCase
 {
     // ===== getErrorInfo Tests =====
 
+    #[Test]
     public function testGetErrorInfoReturns404Info(): void
     {
         $info = ErrorPage::getErrorInfo(404);
@@ -27,6 +29,7 @@ class ErrorPageTest extends TestCase
         $this->assertStringContainsString('exist', $info['message']);
     }
 
+    #[Test]
     public function testGetErrorInfoReturns500Info(): void
     {
         $info = ErrorPage::getErrorInfo(500);
@@ -35,6 +38,7 @@ class ErrorPageTest extends TestCase
         $this->assertStringContainsString('went wrong', $info['message']);
     }
 
+    #[Test]
     public function testGetErrorInfoReturnsDefaultForUnknownCode(): void
     {
         $info = ErrorPage::getErrorInfo(999);
@@ -44,6 +48,7 @@ class ErrorPageTest extends TestCase
     }
 
     #[DataProvider('supportedErrorCodesProvider')]
+    #[Test]
     public function testGetErrorInfoReturnsInfoForAllSupportedCodes(int $code): void
     {
         $info = ErrorPage::getErrorInfo($code);
@@ -56,6 +61,7 @@ class ErrorPageTest extends TestCase
 
     // ===== hasErrorInfo Tests =====
 
+    #[Test]
     public function testHasErrorInfoReturnsTrueForKnownCodes(): void
     {
         $this->assertTrue(ErrorPage::hasErrorInfo(400));
@@ -67,6 +73,7 @@ class ErrorPageTest extends TestCase
         $this->assertTrue(ErrorPage::hasErrorInfo(503));
     }
 
+    #[Test]
     public function testHasErrorInfoReturnsFalseForUnknownCodes(): void
     {
         $this->assertFalse(ErrorPage::hasErrorInfo(200));
@@ -76,6 +83,7 @@ class ErrorPageTest extends TestCase
 
     // ===== getSupportedCodes Tests =====
 
+    #[Test]
     public function testGetSupportedCodesReturnsAllCodes(): void
     {
         $codes = ErrorPage::getSupportedCodes();
@@ -92,6 +100,7 @@ class ErrorPageTest extends TestCase
 
     // ===== renderHtml Tests =====
 
+    #[Test]
     public function testRenderHtmlContainsErrorCode(): void
     {
         $html = ErrorPage::renderHtml(404);
@@ -99,6 +108,7 @@ class ErrorPageTest extends TestCase
         $this->assertStringContainsString('404', $html);
     }
 
+    #[Test]
     public function testRenderHtmlContainsTitle(): void
     {
         $html = ErrorPage::renderHtml(404);
@@ -106,6 +116,7 @@ class ErrorPageTest extends TestCase
         $this->assertStringContainsString('Page Not Found', $html);
     }
 
+    #[Test]
     public function testRenderHtmlContainsMessage(): void
     {
         $html = ErrorPage::renderHtml(404);
@@ -114,6 +125,7 @@ class ErrorPageTest extends TestCase
         $this->assertStringContainsString('exist', $html);
     }
 
+    #[Test]
     public function testRenderHtmlContainsPathWhenProvided(): void
     {
         $html = ErrorPage::renderHtml(404, '/test/path');
@@ -121,6 +133,7 @@ class ErrorPageTest extends TestCase
         $this->assertStringContainsString('/test/path', $html);
     }
 
+    #[Test]
     public function testRenderHtmlDoesNotContainPathWhenNull(): void
     {
         $html = ErrorPage::renderHtml(404);
@@ -128,6 +141,7 @@ class ErrorPageTest extends TestCase
         $this->assertStringNotContainsString('Path:', $html);
     }
 
+    #[Test]
     public function testRenderHtmlEscapesPath(): void
     {
         $html = ErrorPage::renderHtml(404, '/path/<script>alert("xss")</script>');
@@ -136,6 +150,7 @@ class ErrorPageTest extends TestCase
         $this->assertStringContainsString('&lt;script&gt;', $html);
     }
 
+    #[Test]
     public function testRenderHtmlIsValidHtml(): void
     {
         $html = ErrorPage::renderHtml(404);
@@ -149,6 +164,7 @@ class ErrorPageTest extends TestCase
         $this->assertStringContainsString('</body>', $html);
     }
 
+    #[Test]
     public function testRenderHtmlContainsBackLink(): void
     {
         $html = ErrorPage::renderHtml(404);
@@ -158,6 +174,7 @@ class ErrorPageTest extends TestCase
     }
 
     #[DataProvider('supportedErrorCodesProvider')]
+    #[Test]
     public function testRenderHtmlWorksForAllSupportedCodes(int $code): void
     {
         $html = ErrorPage::renderHtml($code);
@@ -168,6 +185,7 @@ class ErrorPageTest extends TestCase
 
     // ===== render Tests =====
 
+    #[Test]
     public function testRenderReturnsResponseObject(): void
     {
         $response = ErrorPage::render(404);

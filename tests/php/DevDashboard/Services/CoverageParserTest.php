@@ -6,6 +6,7 @@ namespace Tests\DevDashboard\Services;
 
 use DevDashboard\Services\CoverageParser;
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -49,6 +50,7 @@ class CoverageParserTest extends TestCase
 
     // ==================== parseNodeCoverageFormat ====================
 
+    #[Test]
     public function testParseNodeCoverageFormatExtractsAllMetrics(): void
     {
         $html = <<<'HTML'
@@ -66,6 +68,7 @@ class CoverageParserTest extends TestCase
         $this->assertSame(77.91, $metrics['lines']);
     }
 
+    #[Test]
     public function testParseNodeCoverageFormatReturnsEmptyArrayWhenNoMatch(): void
     {
         $metrics = $this->parser->parseNodeCoverageFormat('<html><body>no coverage data</body></html>');
@@ -73,6 +76,7 @@ class CoverageParserTest extends TestCase
         $this->assertSame([], $metrics);
     }
 
+    #[Test]
     public function testParseNodeCoverageFormatPartialMetrics(): void
     {
         $html = '<span class="strong">90.00% </span><span class="quiet">Statements</span>';
@@ -85,6 +89,7 @@ class CoverageParserTest extends TestCase
         $this->assertArrayNotHasKey('lines', $metrics);
     }
 
+    #[Test]
     public function testParseNodeCoverageFormatHandlesZeroPercent(): void
     {
         $html = '<span class="strong">0.00% </span><span class="quiet">Statements</span>';
@@ -94,6 +99,7 @@ class CoverageParserTest extends TestCase
         $this->assertSame(0.0, $metrics['statements']);
     }
 
+    #[Test]
     public function testParseNodeCoverageFormatHandlesHundredPercent(): void
     {
         $html = '<span class="strong">100.00% </span><span class="quiet">Lines</span>';
@@ -103,6 +109,7 @@ class CoverageParserTest extends TestCase
         $this->assertSame(100.0, $metrics['lines']);
     }
 
+    #[Test]
     public function testParseNodeCoverageFormatIsCaseInsensitive(): void
     {
         $html = '<SPAN CLASS="STRONG">55.55% </SPAN><SPAN CLASS="QUIET">Statements</SPAN>';
@@ -114,6 +121,7 @@ class CoverageParserTest extends TestCase
 
     // ==================== parsePhpUnitCoverageFormat ====================
 
+    #[Test]
     public function testParsePhpUnitCoverageFormatExtractsLines(): void
     {
         $html = '<div class="progress-bar bg-success" role="progressbar" aria-valuenow="25.27" aria-valuemin="0" aria-valuemax="100"></div>';
@@ -126,6 +134,7 @@ class CoverageParserTest extends TestCase
         $this->assertSame(25.27, $metrics['statements']);
     }
 
+    #[Test]
     public function testParsePhpUnitCoverageFormatReturnsEmptyArrayWhenNoMatch(): void
     {
         $metrics = $this->parser->parsePhpUnitCoverageFormat('<html><body>no coverage data</body></html>');
@@ -133,6 +142,7 @@ class CoverageParserTest extends TestCase
         $this->assertSame([], $metrics);
     }
 
+    #[Test]
     public function testParsePhpUnitCoverageFormatHandlesZero(): void
     {
         $html = '<div class="progress-bar" aria-valuenow="0.00"></div>';
@@ -142,6 +152,7 @@ class CoverageParserTest extends TestCase
         $this->assertSame(0.0, $metrics['lines']);
     }
 
+    #[Test]
     public function testParsePhpUnitCoverageFormatHandlesHundred(): void
     {
         $html = '<div class="progress-bar" aria-valuenow="100.00"></div>';
@@ -153,6 +164,7 @@ class CoverageParserTest extends TestCase
 
     // ==================== parseCoverageMetrics ====================
 
+    #[Test]
     public function testParseCoverageMetricsReturnsNullForNonExistentFile(): void
     {
         // file_get_contents emits a PHP warning for missing files.
@@ -168,6 +180,7 @@ class CoverageParserTest extends TestCase
         $this->assertNull($result);
     }
 
+    #[Test]
     public function testParseCoverageMetricsDetectsNodeFormat(): void
     {
         $html = <<<'HTML'
@@ -187,6 +200,7 @@ class CoverageParserTest extends TestCase
         $this->assertSame(77.91, $result['lines']);
     }
 
+    #[Test]
     public function testParseCoverageMetricsDetectsPhpUnitFormat(): void
     {
         $html = '<div class="progress-bar bg-success" aria-valuenow="92.50" aria-valuemin="0" aria-valuemax="100"></div>';
@@ -200,6 +214,7 @@ class CoverageParserTest extends TestCase
         $this->assertSame(92.50, $result['lines']);
     }
 
+    #[Test]
     public function testParseCoverageMetricsReturnsNullForEmptyMatchingHtml(): void
     {
         $file = $this->tempDir . '/index.html';

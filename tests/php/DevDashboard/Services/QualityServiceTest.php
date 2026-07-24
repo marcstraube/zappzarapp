@@ -8,6 +8,7 @@ use DevDashboard\Services\CommandRunner;
 use DevDashboard\Services\CoverageParser;
 use DevDashboard\Services\QualityService;
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\Attributes\UsesClass;
 use PHPUnit\Framework\TestCase;
 
@@ -67,6 +68,7 @@ class QualityServiceTest extends TestCase
 
     // ==================== getQualityMetrics — structure ====================
 
+    #[Test]
     public function testGetQualityMetricsReturnsExpectedKeys(): void
     {
         $service = $this->makeService();
@@ -83,6 +85,7 @@ class QualityServiceTest extends TestCase
 
     // ==================== getPhpStanStatus — "not configured" branch ====================
 
+    #[Test]
     public function testPhpStanNotConfiguredWhenFileAbsent(): void
     {
         $service = $this->makeService();
@@ -95,6 +98,7 @@ class QualityServiceTest extends TestCase
 
     // ==================== getPhpStanStatus — "configured" branch ====================
 
+    #[Test]
     public function testPhpStanConfiguredWhenFilePresent(): void
     {
         file_put_contents($this->tempRoot . 'phpstan.neon', "parameters:\n    level: 9\n");
@@ -110,6 +114,7 @@ class QualityServiceTest extends TestCase
 
     // ==================== getPhpMdStatus — "not configured" branch ====================
 
+    #[Test]
     public function testPhpMdNotConfiguredWhenFileAbsent(): void
     {
         $service = $this->makeService();
@@ -121,6 +126,7 @@ class QualityServiceTest extends TestCase
 
     // ==================== getPhpMdStatus — "configured" branch ====================
 
+    #[Test]
     public function testPhpMdConfiguredWhenFilePresent(): void
     {
         file_put_contents($this->tempRoot . 'phpmd.xml.dist', '<ruleset/>');
@@ -135,6 +141,7 @@ class QualityServiceTest extends TestCase
 
     // ==================== getCsFixerStatus — "not configured" branch ====================
 
+    #[Test]
     public function testCsFixerNotConfiguredWhenFileAbsent(): void
     {
         $service = $this->makeService();
@@ -146,6 +153,7 @@ class QualityServiceTest extends TestCase
 
     // ==================== getCsFixerStatus — "configured" branch ====================
 
+    #[Test]
     public function testCsFixerConfiguredWhenFilePresent(): void
     {
         file_put_contents($this->tempRoot . '.php-cs-fixer.dist.php', '<?php return [];');
@@ -160,6 +168,7 @@ class QualityServiceTest extends TestCase
 
     // ==================== getEslintStatus — "not configured" branch (CI-only lines 242-245) ====================
 
+    #[Test]
     public function testEslintNotConfiguredWhenFileAbsent(): void
     {
         // tempRoot has no eslint.config.js → "not configured" branch
@@ -173,6 +182,7 @@ class QualityServiceTest extends TestCase
 
     // ==================== getEslintStatus — "configured" branch (local-only lines 248-253) ====================
 
+    #[Test]
     public function testEslintConfiguredWhenFilePresent(): void
     {
         file_put_contents($this->tempRoot . 'eslint.config.js', 'export default [];');
@@ -188,6 +198,7 @@ class QualityServiceTest extends TestCase
 
     // ==================== getPrettierStatus — "not configured" branch (CI-only lines 266-269) ====================
 
+    #[Test]
     public function testPrettierNotConfiguredWhenFileAbsent(): void
     {
         $service = $this->makeService();
@@ -200,6 +211,7 @@ class QualityServiceTest extends TestCase
 
     // ==================== getPrettierStatus — "configured" branch (local-only lines 272-277) ====================
 
+    #[Test]
     public function testPrettierConfiguredWhenFilePresent(): void
     {
         file_put_contents($this->tempRoot . '.prettierrc.json', '{}');
@@ -215,6 +227,7 @@ class QualityServiceTest extends TestCase
 
     // ==================== getTypeScriptStatus — "not configured" branch (CI-only lines 290-293) ====================
 
+    #[Test]
     public function testTypeScriptNotConfiguredWhenFileAbsent(): void
     {
         $service = $this->makeService();
@@ -227,6 +240,7 @@ class QualityServiceTest extends TestCase
 
     // ==================== getTypeScriptStatus — "configured" branch (local-only lines 296-301) ====================
 
+    #[Test]
     public function testTypeScriptConfiguredWhenFilePresent(): void
     {
         file_put_contents($this->tempRoot . 'tsconfig.json', '{}');
@@ -242,6 +256,7 @@ class QualityServiceTest extends TestCase
 
     // ==================== countFiles — "dir missing" branch (CI-only line 336) ====================
 
+    #[Test]
     public function testCodeStatsZeroWhenSourceDirsAbsent(): void
     {
         // tempRoot has no src/php, src/node, tests/php, tests/node → all counts 0
@@ -257,6 +272,7 @@ class QualityServiceTest extends TestCase
 
     // ==================== countFiles — "dir exists with files" branch ====================
 
+    #[Test]
     public function testCodeStatsCountsFilesWhenDirsExist(): void
     {
         $phpSrcDir = $this->tempRoot . 'src/php/';
@@ -275,6 +291,7 @@ class QualityServiceTest extends TestCase
 
     // ==================== getQuickActions — structure ====================
 
+    #[Test]
     public function testGetQuickActions(): void
     {
         $service = $this->makeService();
@@ -291,6 +308,7 @@ class QualityServiceTest extends TestCase
 
     // ==================== getPhpStanStatus — unreadable config (false branch at line 168) ====================
 
+    #[Test]
     public function testPhpStanLevelUnknownWhenConfigUnreadable(): void
     {
         // Write a phpstan.neon with content that has no "level:" line → level becomes 'unknown'

@@ -10,6 +10,7 @@ use App\Infrastructure\HealthCheck;
 use App\Infrastructure\TlsConfig;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\RunInSeparateProcess;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\Attributes\UsesClass;
 use PHPUnit\Framework\TestCase;
 use RuntimeException;
@@ -79,6 +80,7 @@ final class ExampleControllerTest extends TestCase
     // index()
     // =========================================================================
 
+    #[Test]
     public function testIndexReturnsJsonResponseInstance(): void
     {
         $controller = new ExampleController(new HealthCheck());
@@ -88,6 +90,7 @@ final class ExampleControllerTest extends TestCase
         $this->assertInstanceOf(JsonResponse::class, $response);
     }
 
+    #[Test]
     public function testIndexOutputContainsHelloMessage(): void
     {
         $controller = new ExampleController(new HealthCheck());
@@ -101,6 +104,7 @@ final class ExampleControllerTest extends TestCase
         $this->assertSame('Hello from PHP!', $data['message']);
     }
 
+    #[Test]
     public function testIndexOutputContainsPhpVersion(): void
     {
         $controller = new ExampleController(new HealthCheck());
@@ -114,6 +118,7 @@ final class ExampleControllerTest extends TestCase
         $this->assertSame(PHP_VERSION, $data['php_version']);
     }
 
+    #[Test]
     public function testIndexOutputContainsTimestamp(): void
     {
         $controller = new ExampleController(new HealthCheck());
@@ -132,6 +137,7 @@ final class ExampleControllerTest extends TestCase
     // health() — Node disabled (default environment)
     // =========================================================================
 
+    #[Test]
     public function testHealthReturnsJsonResponseWhenNodeDisabled(): void
     {
         // Default: ENABLE_NODE not set → Node disabled
@@ -143,6 +149,7 @@ final class ExampleControllerTest extends TestCase
     }
 
     #[RunInSeparateProcess]
+    #[Test]
     public function testHealthReturnsStatus200WhenNodeDisabled(): void
     {
         $controller = new ExampleController(new HealthCheck());
@@ -154,6 +161,7 @@ final class ExampleControllerTest extends TestCase
         $this->assertSame(200, http_response_code());
     }
 
+    #[Test]
     public function testHealthOutputContainsOkStatusWhenNodeDisabled(): void
     {
         $controller = new ExampleController(new HealthCheck());
@@ -167,6 +175,7 @@ final class ExampleControllerTest extends TestCase
         $this->assertSame('ok', $data['status']);
     }
 
+    #[Test]
     public function testHealthOutputContainsPhpBackendOk(): void
     {
         $controller = new ExampleController(new HealthCheck());
@@ -181,6 +190,7 @@ final class ExampleControllerTest extends TestCase
         $this->assertSame(0, $data['backends']['php']['latency_ms']);
     }
 
+    #[Test]
     public function testHealthOutputContainsNodeDisabledWhenNodeOff(): void
     {
         // ENABLE_NODE defaults to false — Node backend should report disabled
@@ -195,6 +205,7 @@ final class ExampleControllerTest extends TestCase
         $this->assertSame('disabled', $data['backends']['node']['status']);
     }
 
+    #[Test]
     public function testHealthOutputContainsTimestamp(): void
     {
         $controller = new ExampleController(new HealthCheck());
@@ -214,6 +225,7 @@ final class ExampleControllerTest extends TestCase
     // =========================================================================
 
     #[RunInSeparateProcess]
+    #[Test]
     public function testHealthReturnsOkWhenNodeReachable(): void
     {
         putenv('ENABLE_NODE=true');
@@ -234,6 +246,7 @@ final class ExampleControllerTest extends TestCase
     }
 
     #[RunInSeparateProcess]
+    #[Test]
     public function testHealthReturnsDegradedWhenNodeUnreachable(): void
     {
         putenv('ENABLE_NODE=true');
@@ -259,6 +272,7 @@ final class ExampleControllerTest extends TestCase
     // =========================================================================
 
     #[RunInSeparateProcess]
+    #[Test]
     public function testHealthReturnsDisabledWhenNodeModeIsAssets(): void
     {
         putenv('ENABLE_NODE=true');
@@ -283,6 +297,7 @@ final class ExampleControllerTest extends TestCase
     // =========================================================================
 
     #[RunInSeparateProcess]
+    #[Test]
     public function testHealthActivatesNodeCheckForBackendMode(): void
     {
         putenv('ENABLE_NODE=true');
@@ -300,6 +315,7 @@ final class ExampleControllerTest extends TestCase
     }
 
     #[RunInSeparateProcess]
+    #[Test]
     public function testHealthActivatesNodeCheckForAssetsApiMode(): void
     {
         putenv('ENABLE_NODE=true');
@@ -317,6 +333,7 @@ final class ExampleControllerTest extends TestCase
     }
 
     #[RunInSeparateProcess]
+    #[Test]
     public function testHealthActivatesNodeCheckForFrameworkApiMode(): void
     {
         putenv('ENABLE_NODE=true');
@@ -338,6 +355,7 @@ final class ExampleControllerTest extends TestCase
     // =========================================================================
 
     #[RunInSeparateProcess]
+    #[Test]
     public function testHealthReturnsDegradedOnFetchException(): void
     {
         putenv('ENABLE_NODE=true');
@@ -368,6 +386,7 @@ final class ExampleControllerTest extends TestCase
     // fetchNodeHealth() — real implementation (no network I/O: URL is invalid)
     // =========================================================================
 
+    #[Test]
     public function testFetchNodeHealthReturnsFalseForUnreachableUrl(): void
     {
         // Call the real fetchNodeHealth() via a real ExampleController subclass

@@ -7,6 +7,7 @@ namespace Tests\App\Unit\Infrastructure\Storage;
 use App\Infrastructure\Storage\S3Storage;
 use App\Infrastructure\Storage\StorageConfig;
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\Attributes\UsesClass;
 use PHPUnit\Framework\TestCase;
 use ReflectionClass;
@@ -25,6 +26,7 @@ final class S3StorageTest extends TestCase
 {
     private const string TEST_ENDPOINT = 'http://localhost:8333';
 
+    #[Test]
     public function testConstructorAcceptsCustomParameters(): void
     {
         $storage = new S3Storage(
@@ -46,6 +48,7 @@ final class S3StorageTest extends TestCase
         $this->assertEquals('custom-bucket', $config->bucket);
     }
 
+    #[Test]
     public function testConstructorUsesDefaultsWhenNoParametersProvided(): void
     {
         // Clear environment variables
@@ -65,6 +68,7 @@ final class S3StorageTest extends TestCase
         $this->assertEquals('us-east-1', $config->region);
     }
 
+    #[Test]
     public function testGetPublicUrlWithPathStyle(): void
     {
         $storage = new S3Storage(
@@ -80,6 +84,7 @@ final class S3StorageTest extends TestCase
         $this->assertEquals('http://seaweedfs:8333/mybucket/avatars/user-123.jpg', $url);
     }
 
+    #[Test]
     public function testGetPublicUrlStripsLeadingSlash(): void
     {
         $storage = new S3Storage(
@@ -95,6 +100,7 @@ final class S3StorageTest extends TestCase
         $this->assertEquals('http://seaweedfs:8333/mybucket/avatars/user-123.jpg', $url);
     }
 
+    #[Test]
     public function testUploadReturnsNullWhenNotConnected(): void
     {
         $storage = new S3Storage(self::TEST_ENDPOINT, 'access', 'secret');
@@ -105,6 +111,7 @@ final class S3StorageTest extends TestCase
         $this->assertNull($result);
     }
 
+    #[Test]
     public function testUploadFileReturnsNullForNonExistentFile(): void
     {
         $storage = new S3Storage(self::TEST_ENDPOINT, 'access', 'secret');
@@ -114,6 +121,7 @@ final class S3StorageTest extends TestCase
         $this->assertNull($result);
     }
 
+    #[Test]
     public function testDownloadReturnsNullWhenNotConnected(): void
     {
         $storage = new S3Storage(self::TEST_ENDPOINT, 'access', 'secret');
@@ -123,6 +131,7 @@ final class S3StorageTest extends TestCase
         $this->assertNull($result);
     }
 
+    #[Test]
     public function testDownloadFileReturnsFalseWhenNotConnected(): void
     {
         $storage  = new S3Storage(self::TEST_ENDPOINT, 'access', 'secret');
@@ -138,6 +147,7 @@ final class S3StorageTest extends TestCase
         }
     }
 
+    #[Test]
     public function testExistsReturnsFalseWhenNotConnected(): void
     {
         $storage = new S3Storage(self::TEST_ENDPOINT, 'access', 'secret');
@@ -147,6 +157,7 @@ final class S3StorageTest extends TestCase
         $this->assertFalse($result);
     }
 
+    #[Test]
     public function testDeleteReturnsFalseWhenNotConnected(): void
     {
         $storage = new S3Storage(self::TEST_ENDPOINT, 'access', 'secret');
@@ -156,6 +167,7 @@ final class S3StorageTest extends TestCase
         $this->assertFalse($result);
     }
 
+    #[Test]
     public function testDeleteMultipleReturnsZeroWhenNotConnected(): void
     {
         $storage = new S3Storage(self::TEST_ENDPOINT, 'access', 'secret');
@@ -165,6 +177,7 @@ final class S3StorageTest extends TestCase
         $this->assertEquals(0, $result);
     }
 
+    #[Test]
     public function testListReturnsEmptyArrayWhenNotConnected(): void
     {
         $storage = new S3Storage(self::TEST_ENDPOINT, 'access', 'secret');
@@ -174,6 +187,7 @@ final class S3StorageTest extends TestCase
         $this->assertEquals([], $result);
     }
 
+    #[Test]
     public function testCopyReturnsFalseWhenNotConnected(): void
     {
         $storage = new S3Storage(self::TEST_ENDPOINT, 'access', 'secret');
@@ -183,6 +197,7 @@ final class S3StorageTest extends TestCase
         $this->assertFalse($result);
     }
 
+    #[Test]
     public function testMoveReturnsFalseWhenCopyFails(): void
     {
         $storage = new S3Storage(self::TEST_ENDPOINT, 'access', 'secret');
@@ -192,6 +207,7 @@ final class S3StorageTest extends TestCase
         $this->assertFalse($result);
     }
 
+    #[Test]
     public function testGetMetadataReturnsNullWhenNotConnected(): void
     {
         $storage = new S3Storage(self::TEST_ENDPOINT, 'access', 'secret');
@@ -201,6 +217,7 @@ final class S3StorageTest extends TestCase
         $this->assertNull($result);
     }
 
+    #[Test]
     public function testGetPresignedUrlGeneratesValidUrl(): void
     {
         $storage = new S3Storage(
@@ -220,6 +237,7 @@ final class S3StorageTest extends TestCase
         $this->assertStringContainsString('X-Amz-Expires=3600', $url);
     }
 
+    #[Test]
     public function testCreateBucketReturnsFalseWhenNotConnected(): void
     {
         $storage = new S3Storage(self::TEST_ENDPOINT, 'access', 'secret');
@@ -229,6 +247,7 @@ final class S3StorageTest extends TestCase
         $this->assertFalse($result);
     }
 
+    #[Test]
     public function testBucketExistsReturnsFalseWhenNotConnected(): void
     {
         $storage = new S3Storage(self::TEST_ENDPOINT, 'access', 'secret');
@@ -238,6 +257,7 @@ final class S3StorageTest extends TestCase
         $this->assertFalse($result);
     }
 
+    #[Test]
     public function testIsPresignedSupportedReturnsTrue(): void
     {
         $storage = new S3Storage(self::TEST_ENDPOINT, 'access', 'secret');
@@ -245,6 +265,7 @@ final class S3StorageTest extends TestCase
         $this->assertTrue($storage->isPresignedSupported());
     }
 
+    #[Test]
     public function testIsAvailableReturnsFalseWhenNotConnected(): void
     {
         $storage = new S3Storage(self::TEST_ENDPOINT, 'access', 'secret');
@@ -254,6 +275,7 @@ final class S3StorageTest extends TestCase
         $this->assertFalse($result);
     }
 
+    #[Test]
     public function testConfigDetectsHttpsUseTls(): void
     {
         $storage = new S3Storage('https://secure:8333', 'access', 'secret');
@@ -265,6 +287,7 @@ final class S3StorageTest extends TestCase
         $this->assertTrue($config->useTls);
     }
 
+    #[Test]
     public function testConfigDetectsHttpNoTls(): void
     {
         $storage = new S3Storage('http://local:8333', 'access', 'secret');
@@ -276,6 +299,7 @@ final class S3StorageTest extends TestCase
         $this->assertFalse($config->useTls);
     }
 
+    #[Test]
     public function testConfigUsesPathStyleByDefault(): void
     {
         $storage = new S3Storage(self::TEST_ENDPOINT, 'access', 'secret');

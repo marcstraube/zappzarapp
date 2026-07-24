@@ -8,6 +8,7 @@ use DevDashboard\Response\HtmlResponse;
 use DevDashboard\Response\Response;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\RunInSeparateProcess;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -56,6 +57,7 @@ final class HtmlResponseTest extends TestCase
 
     // ===== Interface contract =====
 
+    #[Test]
     public function testImplementsResponseInterface(): void
     {
         $response = new HtmlResponse('<p>Test</p>');
@@ -65,6 +67,7 @@ final class HtmlResponseTest extends TestCase
 
     // ===== Output content =====
 
+    #[Test]
     public function testSendOutputsContent(): void
     {
         $response = new HtmlResponse('<h1>Hello</h1>');
@@ -76,6 +79,7 @@ final class HtmlResponseTest extends TestCase
         $this->assertSame('<h1>Hello</h1>', $output);
     }
 
+    #[Test]
     public function testSendOutputsEmptyContent(): void
     {
         $response = new HtmlResponse('');
@@ -87,6 +91,7 @@ final class HtmlResponseTest extends TestCase
         $this->assertSame('', $output);
     }
 
+    #[Test]
     public function testSendOutputsFullHtmlDocument(): void
     {
         $html     = "<!DOCTYPE html>\n<html><head></head><body>Test</body></html>";
@@ -99,6 +104,7 @@ final class HtmlResponseTest extends TestCase
         $this->assertSame($html, $output);
     }
 
+    #[Test]
     public function testSendPreservesRawContent(): void
     {
         // HtmlResponse outputs content verbatim — caller is responsible for escaping
@@ -115,6 +121,7 @@ final class HtmlResponseTest extends TestCase
     // ===== Status codes =====
 
     #[RunInSeparateProcess]
+    #[Test]
     public function testSendEmitsDefaultStatus200(): void
     {
         $response = new HtmlResponse('<p>OK</p>');
@@ -127,6 +134,7 @@ final class HtmlResponseTest extends TestCase
     }
 
     #[RunInSeparateProcess]
+    #[Test]
     public function testSendEmitsCustomStatus404(): void
     {
         $response = new HtmlResponse('<h1>Not Found</h1>', 404);
@@ -139,6 +147,7 @@ final class HtmlResponseTest extends TestCase
     }
 
     #[RunInSeparateProcess]
+    #[Test]
     public function testSendEmitsCustomStatus500(): void
     {
         $response = new HtmlResponse('<h1>Error</h1>', 500);
@@ -151,6 +160,7 @@ final class HtmlResponseTest extends TestCase
     }
 
     #[RunInSeparateProcess]
+    #[Test]
     public function testSendEmitsStatus301(): void
     {
         $response = new HtmlResponse('', 301);
@@ -164,6 +174,7 @@ final class HtmlResponseTest extends TestCase
 
     // ===== fromView factory — "view not found" branch =====
 
+    #[Test]
     public function testFromViewReturnsSelf(): void
     {
         // A non-existent view returns a 404 HtmlResponse
@@ -172,6 +183,7 @@ final class HtmlResponseTest extends TestCase
         $this->assertInstanceOf(HtmlResponse::class, $response);
     }
 
+    #[Test]
     public function testFromViewReturns404WhenViewNotFound(): void
     {
         ob_start();
@@ -182,6 +194,7 @@ final class HtmlResponseTest extends TestCase
     }
 
     #[RunInSeparateProcess]
+    #[Test]
     public function testFromViewEmits404StatusWhenViewNotFound(): void
     {
         ob_start();
@@ -193,6 +206,7 @@ final class HtmlResponseTest extends TestCase
 
     // ===== fromView factory — "view found" branch (lines 35-40) =====
 
+    #[Test]
     public function testFromViewRendersExistingView(): void
     {
         // Use temp dir seam — no write access to source tree required
@@ -209,6 +223,7 @@ final class HtmlResponseTest extends TestCase
         $this->assertSame('<p>test view</p>', $output);
     }
 
+    #[Test]
     public function testFromViewPassesDataToView(): void
     {
         $viewName = 'test_data_view_' . uniqid();
@@ -224,6 +239,7 @@ final class HtmlResponseTest extends TestCase
         $this->assertSame('Hello, world!', $output);
     }
 
+    #[Test]
     public function testFromViewUsesDefaultStatusForExistingView(): void
     {
         $viewName = 'status_view_' . uniqid();
@@ -239,6 +255,7 @@ final class HtmlResponseTest extends TestCase
         $this->assertSame('<p>ok</p>', $output);
     }
 
+    #[Test]
     public function testFromViewPassesCustomStatusForExistingView(): void
     {
         $viewName = 'custom_status_view_' . uniqid();
@@ -254,6 +271,7 @@ final class HtmlResponseTest extends TestCase
         $this->assertSame('<p>created</p>', $output);
     }
 
+    #[Test]
     public function testFromViewEmptyViewOutputFallsBackToEmptyString(): void
     {
         // View outputs nothing → ob_get_clean() returns '' or false → coerces to ''
@@ -272,6 +290,7 @@ final class HtmlResponseTest extends TestCase
 
     // ===== fromView — default viewsDir fallback (no seam) =====
 
+    #[Test]
     public function testFromViewDefaultViewsDirUsed(): void
     {
         // Without viewsDir param, the default Views dir is used.

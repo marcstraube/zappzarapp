@@ -7,6 +7,7 @@ namespace Tests\App\Unit\Infrastructure\Cache;
 use App\Infrastructure\Cache\RedisCache;
 use App\Infrastructure\TlsConfig;
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\Attributes\UsesClass;
 use PHPUnit\Framework\TestCase;
 use Redis;
@@ -27,6 +28,7 @@ final class RedisCacheTest extends TestCase
 
     private const string TEST_PREFIX = 'test:';
 
+    #[Test]
     public function testGetReturnsValueWhenKeyExists(): void
     {
         $mockRedis = $this->createMock(Redis::class);
@@ -40,6 +42,7 @@ final class RedisCacheTest extends TestCase
         $this->assertEquals('myvalue', $cache->get('mykey'));
     }
 
+    #[Test]
     public function testGetReturnsNullWhenKeyDoesNotExist(): void
     {
         $mockRedis = $this->createMock(Redis::class);
@@ -53,6 +56,7 @@ final class RedisCacheTest extends TestCase
         $this->assertNull($cache->get('missing'));
     }
 
+    #[Test]
     public function testGetReturnsNullOnRedisException(): void
     {
         $mockRedis = $this->createMock(Redis::class);
@@ -65,6 +69,7 @@ final class RedisCacheTest extends TestCase
         $this->assertNull($cache->get('anykey'));
     }
 
+    #[Test]
     public function testSetStoresValueWithTtl(): void
     {
         $mockRedis = $this->createMock(Redis::class);
@@ -78,6 +83,7 @@ final class RedisCacheTest extends TestCase
         $this->assertTrue($cache->set('mykey', 'myvalue', 7200));
     }
 
+    #[Test]
     public function testSetUsesDefaultTtlWhenNotSpecified(): void
     {
         $mockRedis = $this->createMock(Redis::class);
@@ -91,6 +97,7 @@ final class RedisCacheTest extends TestCase
         $this->assertTrue($cache->set('mykey', 'myvalue'));
     }
 
+    #[Test]
     public function testSetReturnsFalseOnRedisException(): void
     {
         $mockRedis = $this->createMock(Redis::class);
@@ -103,6 +110,7 @@ final class RedisCacheTest extends TestCase
         $this->assertFalse($cache->set('mykey', 'myvalue'));
     }
 
+    #[Test]
     public function testHasReturnsTrueWhenKeyExists(): void
     {
         $mockRedis = $this->createMock(Redis::class);
@@ -116,6 +124,7 @@ final class RedisCacheTest extends TestCase
         $this->assertTrue($cache->has('mykey'));
     }
 
+    #[Test]
     public function testHasReturnsFalseWhenKeyDoesNotExist(): void
     {
         $mockRedis = $this->createMock(Redis::class);
@@ -129,6 +138,7 @@ final class RedisCacheTest extends TestCase
         $this->assertFalse($cache->has('missing'));
     }
 
+    #[Test]
     public function testHasReturnsFalseOnRedisException(): void
     {
         $mockRedis = $this->createMock(Redis::class);
@@ -141,6 +151,7 @@ final class RedisCacheTest extends TestCase
         $this->assertFalse($cache->has('anykey'));
     }
 
+    #[Test]
     public function testDeleteRemovesKey(): void
     {
         $mockRedis = $this->createMock(Redis::class);
@@ -154,6 +165,7 @@ final class RedisCacheTest extends TestCase
         $this->assertTrue($cache->delete('mykey'));
     }
 
+    #[Test]
     public function testDeleteReturnsTrueEvenIfKeyDidNotExist(): void
     {
         $mockRedis = $this->createMock(Redis::class);
@@ -167,6 +179,7 @@ final class RedisCacheTest extends TestCase
         $this->assertTrue($cache->delete('missing'));
     }
 
+    #[Test]
     public function testDeleteReturnsFalseOnRedisException(): void
     {
         $mockRedis = $this->createMock(Redis::class);
@@ -179,6 +192,7 @@ final class RedisCacheTest extends TestCase
         $this->assertFalse($cache->delete('anykey'));
     }
 
+    #[Test]
     public function testIsAvailableReturnsTrueWhenPingSucceeds(): void
     {
         $mockRedis = $this->createMock(Redis::class);
@@ -191,6 +205,7 @@ final class RedisCacheTest extends TestCase
         $this->assertTrue($cache->isAvailable());
     }
 
+    #[Test]
     public function testIsAvailableReturnsFalseOnRedisException(): void
     {
         $mockRedis = $this->createMock(Redis::class);
@@ -203,6 +218,7 @@ final class RedisCacheTest extends TestCase
         $this->assertFalse($cache->isAvailable());
     }
 
+    #[Test]
     public function testIsAvailableReturnsFalseWhenPingReturnsFalse(): void
     {
         $mockRedis = $this->createMock(Redis::class);
@@ -215,6 +231,7 @@ final class RedisCacheTest extends TestCase
         $this->assertFalse($cache->isAvailable());
     }
 
+    #[Test]
     public function testKeyPrefixIsApplied(): void
     {
         $mockRedis = $this->createMock(Redis::class);
@@ -228,6 +245,7 @@ final class RedisCacheTest extends TestCase
         $this->assertEquals('value', $cache->get('mykey'));
     }
 
+    #[Test]
     public function testConstructorAcceptsCustomUrl(): void
     {
         $cache = new RedisCache('redis://custom:1234', 'prefix:');
@@ -239,6 +257,7 @@ final class RedisCacheTest extends TestCase
         $this->assertEquals('redis://custom:1234', $urlProperty->getValue($cache));
     }
 
+    #[Test]
     public function testConstructorUsesEnvRedisUrl(): void
     {
         $_ENV['REDIS_URL'] = 'redis://envhost:1234';
@@ -252,6 +271,7 @@ final class RedisCacheTest extends TestCase
         unset($_ENV['REDIS_URL']);
     }
 
+    #[Test]
     public function testConstructorUsesDefaultUrlWhenEnvIsEmpty(): void
     {
         unset($_ENV['REDIS_URL']);

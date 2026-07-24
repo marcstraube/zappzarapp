@@ -6,6 +6,7 @@ namespace Tests\DevDashboard\Services;
 
 use DevDashboard\Services\DocsService;
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -45,6 +46,7 @@ final class DocsServiceTest extends TestCase
 
     // ===== Default constructor =====
 
+    #[Test]
     public function testDefaultConstructorUsesContainerPaths(): void
     {
         $service = new DocsService();
@@ -58,6 +60,7 @@ final class DocsServiceTest extends TestCase
 
     // ===== getApiDocsStatus() — no source dirs exist =====
 
+    #[Test]
     public function testGetApiDocsStatusReturnsMandatoryKeys(): void
     {
         $service = new DocsService($this->docsDir, $this->srcDir);
@@ -72,6 +75,7 @@ final class DocsServiceTest extends TestCase
         $this->assertArrayHasKey('commands', $status);
     }
 
+    #[Test]
     public function testGetApiDocsStatusWhenNoSourceDirsExist(): void
     {
         // No src/php, no src/node/backend, no src/node/frontend created
@@ -84,6 +88,7 @@ final class DocsServiceTest extends TestCase
         $this->assertTrue($status['allFresh'], 'No source dirs → allFresh');
     }
 
+    #[Test]
     public function testGetApiDocsStatusPhpSectionStructure(): void
     {
         $service = new DocsService($this->docsDir, $this->srcDir);
@@ -102,6 +107,7 @@ final class DocsServiceTest extends TestCase
 
     // ===== getApiDocsStatus() — source exists, no docs =====
 
+    #[Test]
     public function testGetApiDocsStatusUnavailableWhenSourceExistsButNoDocs(): void
     {
         // Create a PHP source file so hasSource=true
@@ -118,6 +124,7 @@ final class DocsServiceTest extends TestCase
         $this->assertNull($status['php']['url']);
     }
 
+    #[Test]
     public function testGetApiDocsStatusIncludesMakeDocsCommandWhenPhpAndNodeNeedRegen(): void
     {
         // Create source files for both PHP and node
@@ -136,6 +143,7 @@ final class DocsServiceTest extends TestCase
         $this->assertSame('make docs', $status['commands']['all']);
     }
 
+    #[Test]
     public function testGetApiDocsStatusIncludesMakeDocsPhpWhenOnlyPhpNeedsRegen(): void
     {
         // Create PHP source only
@@ -153,6 +161,7 @@ final class DocsServiceTest extends TestCase
 
     // ===== getApiDocsStatus() — docs exist, fresh =====
 
+    #[Test]
     public function testGetApiDocsStatusFreshWhenDocsNewerThanSource(): void
     {
         // Create PHP source file with old mtime
@@ -177,6 +186,7 @@ final class DocsServiceTest extends TestCase
         $this->assertNotNull($status['php']['docsAge'], 'docsAge should be set when docs exist');
     }
 
+    #[Test]
     public function testGetApiDocsStatusOutdatedWhenSourceNewerThanDocs(): void
     {
         // Create docs first (old)
@@ -201,6 +211,7 @@ final class DocsServiceTest extends TestCase
 
     // ===== getApiDocsStatus() — node-specific commands =====
 
+    #[Test]
     public function testGetApiDocsStatusMakeDocsNodeWhenBothNodeSrcExistNoRegen(): void
     {
         // Create node/backend and node/frontend sources, but NOT php
@@ -220,6 +231,7 @@ final class DocsServiceTest extends TestCase
         $this->assertArrayNotHasKey('all', $status['commands']);
     }
 
+    #[Test]
     public function testGetApiDocsStatusMakeDocsNodeBackendWhenOnlyBackendNeedsRegen(): void
     {
         // Create node/backend source only (frontend has docs)
@@ -245,6 +257,7 @@ final class DocsServiceTest extends TestCase
         $this->assertArrayNotHasKey('node_frontend', $status['commands']);
     }
 
+    #[Test]
     public function testGetApiDocsStatusMakeDocsNodeFrontendWhenOnlyFrontendNeedsRegen(): void
     {
         // Create both node sources but only provide fresh backend docs
@@ -272,6 +285,7 @@ final class DocsServiceTest extends TestCase
 
     // ===== getApiDocsStatus() — all sources have fresh docs =====
 
+    #[Test]
     public function testGetApiDocsStatusAllFreshWhenAllDocsExistAndFresh(): void
     {
         // PHP
@@ -314,6 +328,7 @@ final class DocsServiceTest extends TestCase
 
     // ===== getNewestMtime via getApiDocsStatus — extension filtering =====
 
+    #[Test]
     public function testGetApiDocsStatusIgnoresFilesWithNonMatchingExtensions(): void
     {
         // Put only non-PHP files in src/php — should yield hasSource=false
@@ -328,6 +343,7 @@ final class DocsServiceTest extends TestCase
         $this->assertFalse($status['php']['hasSource'], 'Non-PHP files should not count as source');
     }
 
+    #[Test]
     public function testGetApiDocsStatusFindsJsFilesInNodeBackend(): void
     {
         // .js files should count for node/backend

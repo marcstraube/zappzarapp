@@ -8,6 +8,7 @@ use App\Infrastructure\Elasticsearch\ElasticsearchConfig;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\RunInSeparateProcess;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -49,6 +50,7 @@ final class ElasticsearchConfigTest extends TestCase
     // Default values
     // =========================================================================
 
+    #[Test]
     public function testDefaultsWhenNoEnvSet(): void
     {
         $config = new ElasticsearchConfig();
@@ -63,6 +65,7 @@ final class ElasticsearchConfigTest extends TestCase
     // Constructor URL parameter (highest priority)
     // =========================================================================
 
+    #[Test]
     public function testConstructorUrlTakesPrecedenceOverEnv(): void
     {
         putenv('ELASTICSEARCH_URL=https://env-host:9200');
@@ -72,6 +75,7 @@ final class ElasticsearchConfigTest extends TestCase
         $this->assertEquals('https://constructor-host:9201', $config->url);
     }
 
+    #[Test]
     public function testConstructorHttpsUrlEnablesTls(): void
     {
         $config = new ElasticsearchConfig('https://myhost:9200');
@@ -79,6 +83,7 @@ final class ElasticsearchConfigTest extends TestCase
         $this->assertTrue($config->useTls);
     }
 
+    #[Test]
     public function testConstructorHttpUrlDisablesTls(): void
     {
         $config = new ElasticsearchConfig('http://myhost:9200');
@@ -91,6 +96,7 @@ final class ElasticsearchConfigTest extends TestCase
     // =========================================================================
 
     #[RunInSeparateProcess]
+    #[Test]
     public function testElasticsearchUrlEnvVar(): void
     {
         putenv('ELASTICSEARCH_URL=https://env-es:9201');
@@ -102,6 +108,7 @@ final class ElasticsearchConfigTest extends TestCase
     }
 
     #[RunInSeparateProcess]
+    #[Test]
     public function testElasticsearchUrlEnvVarHttp(): void
     {
         putenv('ELASTICSEARCH_URL=http://env-es:9200');
@@ -113,6 +120,7 @@ final class ElasticsearchConfigTest extends TestCase
     }
 
     #[RunInSeparateProcess]
+    #[Test]
     public function testElasticsearchUrlFromDollarEnvSuperGlobal(): void
     {
         $_ENV['ELASTICSEARCH_URL'] = 'https://superglobal-host:9200';
@@ -127,6 +135,7 @@ final class ElasticsearchConfigTest extends TestCase
     // =========================================================================
 
     #[RunInSeparateProcess]
+    #[Test]
     public function testCustomHostAndPort(): void
     {
         putenv('ELASTICSEARCH_HOST=custom-es-host');
@@ -138,6 +147,7 @@ final class ElasticsearchConfigTest extends TestCase
     }
 
     #[RunInSeparateProcess]
+    #[Test]
     public function testCustomHostDefaultPort(): void
     {
         putenv('ELASTICSEARCH_HOST=my-es');
@@ -148,6 +158,7 @@ final class ElasticsearchConfigTest extends TestCase
     }
 
     #[RunInSeparateProcess]
+    #[Test]
     public function testDefaultHostCustomPort(): void
     {
         putenv('ELASTICSEARCH_PORT=9300');
@@ -158,6 +169,7 @@ final class ElasticsearchConfigTest extends TestCase
     }
 
     #[RunInSeparateProcess]
+    #[Test]
     public function testElasticsearchUrlTakesPrecedenceOverHostAndPort(): void
     {
         putenv('ELASTICSEARCH_URL=https://url-wins:9200');
@@ -174,6 +186,7 @@ final class ElasticsearchConfigTest extends TestCase
     // =========================================================================
 
     #[RunInSeparateProcess]
+    #[Test]
     public function testApiKeyFromEnvVar(): void
     {
         putenv('ELASTICSEARCH_API_KEY=my-secret-key');
@@ -184,6 +197,7 @@ final class ElasticsearchConfigTest extends TestCase
     }
 
     #[RunInSeparateProcess]
+    #[Test]
     public function testApiKeyDefaultsToEmptyString(): void
     {
         $config = new ElasticsearchConfig();
@@ -192,6 +206,7 @@ final class ElasticsearchConfigTest extends TestCase
     }
 
     #[RunInSeparateProcess]
+    #[Test]
     public function testApiKeyFromDollarEnvSuperGlobal(): void
     {
         $_ENV['ELASTICSEARCH_API_KEY'] = 'superGlobalApiKey';
@@ -207,6 +222,7 @@ final class ElasticsearchConfigTest extends TestCase
 
     #[RunInSeparateProcess]
     #[DataProvider('trueBoolEnvValuesProvider')]
+    #[Test]
     public function testVerifySslTrueValues(string $envValue): void
     {
         putenv('ELASTICSEARCH_VERIFY_SSL=' . $envValue);
@@ -232,6 +248,7 @@ final class ElasticsearchConfigTest extends TestCase
 
     #[RunInSeparateProcess]
     #[DataProvider('falseBoolEnvValuesProvider')]
+    #[Test]
     public function testVerifySslFalseValues(string $envValue): void
     {
         putenv('ELASTICSEARCH_VERIFY_SSL=' . $envValue);
@@ -254,6 +271,7 @@ final class ElasticsearchConfigTest extends TestCase
         ];
     }
 
+    #[Test]
     public function testVerifySslDefaultsFalse(): void
     {
         $config = new ElasticsearchConfig();
@@ -266,6 +284,7 @@ final class ElasticsearchConfigTest extends TestCase
     // =========================================================================
 
     #[RunInSeparateProcess]
+    #[Test]
     public function testApiKeyFromDockerSecretTxtFile(): void
     {
         $tempFile = tempnam(sys_get_temp_dir(), 'es_secret_');
@@ -291,6 +310,7 @@ final class ElasticsearchConfigTest extends TestCase
     // Trailing-slash and URL-shape edge cases
     // =========================================================================
 
+    #[Test]
     public function testUrlWithTrailingSlashIsPreserved(): void
     {
         // ElasticsearchConfig does NOT strip trailing slashes (unlike StorageConfig)
@@ -299,6 +319,7 @@ final class ElasticsearchConfigTest extends TestCase
         $this->assertEquals('https://myhost:9200/', $config->url);
     }
 
+    #[Test]
     public function testNullConstructorUrlFallsBackToEnvAndThenDefault(): void
     {
         $config = new ElasticsearchConfig();
@@ -311,6 +332,7 @@ final class ElasticsearchConfigTest extends TestCase
     // =========================================================================
 
     #[DataProvider('tlsUrlProvider')]
+    #[Test]
     public function testTlsDerivedFromUrlScheme(string $url, bool $expectedTls): void
     {
         $config = new ElasticsearchConfig($url);

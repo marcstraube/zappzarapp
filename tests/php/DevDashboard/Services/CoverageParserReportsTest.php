@@ -6,6 +6,7 @@ namespace Tests\DevDashboard\Services;
 
 use DevDashboard\Services\CoverageParser;
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -49,6 +50,7 @@ class CoverageParserReportsTest extends TestCase
 
     // ==================== getPhpTestCoverage — "report missing" branch ====================
 
+    #[Test]
     public function testGetPhpTestCoverageUnavailableWhenNoReport(): void
     {
         // projectRoot has no coverage-php/ directory → file_exists() returns false → lines 110-113
@@ -61,6 +63,7 @@ class CoverageParserReportsTest extends TestCase
 
     // ==================== getPhpTestCoverage — "report present" branch ====================
 
+    #[Test]
     public function testGetPhpTestCoverageAvailableWhenReportExists(): void
     {
         // Create a minimal PHPUnit-style coverage report → lines 116-127
@@ -80,6 +83,7 @@ class CoverageParserReportsTest extends TestCase
         $this->assertSame('/build/coverage-php/index.html', $result['report_path']);
     }
 
+    #[Test]
     public function testGetPhpTestCoverageMetricsAreCorrectlyParsed(): void
     {
         $coverageDir = $this->tempRoot . 'build/coverage-php/';
@@ -95,6 +99,7 @@ class CoverageParserReportsTest extends TestCase
         $this->assertSame(72.50, $result['metrics']['lines']);
     }
 
+    #[Test]
     public function testGetPhpTestCoverageOutdatedWhenSourceIsNewer(): void
     {
         // Create coverage report, then create a newer PHP source file → outdated = true (line 119)
@@ -121,6 +126,7 @@ class CoverageParserReportsTest extends TestCase
 
     // ==================== getNodeTestCoverage — "report missing" branch ====================
 
+    #[Test]
     public function testGetNodeTestCoverageUnavailableWhenNoReport(): void
     {
         // tempRoot has no coverage/node directory → file_exists() returns false → lines 140-143
@@ -133,6 +139,7 @@ class CoverageParserReportsTest extends TestCase
 
     // ==================== getNodeTestCoverage — "report present" branch ====================
 
+    #[Test]
     public function testGetNodeTestCoverageAvailableWhenReportExists(): void
     {
         // Create a minimal Vitest-style coverage report → lines 146-157
@@ -153,6 +160,7 @@ class CoverageParserReportsTest extends TestCase
         $this->assertSame('/build/coverage/node/index.html', $result['report_path']);
     }
 
+    #[Test]
     public function testGetNodeTestCoverageMetricsAreCorrectlyParsed(): void
     {
         $nodeDir = $this->tempRoot . 'build/coverage/node/';
@@ -170,6 +178,7 @@ class CoverageParserReportsTest extends TestCase
         $this->assertSame(88.5, $result['metrics']['lines']);
     }
 
+    #[Test]
     public function testGetNodeTestCoverageReportPath(): void
     {
         $nodeDir = $this->tempRoot . 'build/coverage/node/';
@@ -185,6 +194,7 @@ class CoverageParserReportsTest extends TestCase
 
     // ==================== formatAge — all branches via getPhpTestCoverage ====================
 
+    #[Test]
     public function testFormatAgeJustNow(): void
     {
         // Report mtime = now → diff < 60 → "just now" (line 210)
@@ -202,6 +212,7 @@ class CoverageParserReportsTest extends TestCase
         $this->assertSame('just now', $result['generated_at']);
     }
 
+    #[Test]
     public function testFormatAgeMinutesAgo(): void
     {
         // Report mtime = 5 minutes ago → "5 minutes ago" (line 213-215)
@@ -219,6 +230,7 @@ class CoverageParserReportsTest extends TestCase
         $this->assertSame('5 minutes ago', $result['generated_at']);
     }
 
+    #[Test]
     public function testFormatAgeOneMinuteAgo(): void
     {
         // Exactly 1 minute → "1 minute ago" (singular branch in line 215)
@@ -236,6 +248,7 @@ class CoverageParserReportsTest extends TestCase
         $this->assertSame('1 minute ago', $result['generated_at']);
     }
 
+    #[Test]
     public function testFormatAgeHoursAgo(): void
     {
         // Report mtime = 3 hours ago → "3 hours ago" (line 218-220)
@@ -253,6 +266,7 @@ class CoverageParserReportsTest extends TestCase
         $this->assertSame('3 hours ago', $result['generated_at']);
     }
 
+    #[Test]
     public function testFormatAgeOneHourAgo(): void
     {
         // Exactly 1 hour → "1 hour ago" (singular branch)
@@ -270,6 +284,7 @@ class CoverageParserReportsTest extends TestCase
         $this->assertSame('1 hour ago', $result['generated_at']);
     }
 
+    #[Test]
     public function testFormatAgeDaysAgo(): void
     {
         // Report mtime = 2 days ago → "2 days ago" (line 223-224)
@@ -287,6 +302,7 @@ class CoverageParserReportsTest extends TestCase
         $this->assertSame('2 days ago', $result['generated_at']);
     }
 
+    #[Test]
     public function testFormatAgeOneDayAgo(): void
     {
         // Exactly 1 day → "1 day ago" (singular branch)
@@ -306,6 +322,7 @@ class CoverageParserReportsTest extends TestCase
 
     // ==================== getNewestFileMtime — directory not found ====================
 
+    #[Test]
     public function testGetNewestFileMtimeWithMissingSourceDir(): void
     {
         // src/php does not exist in tempRoot → getNewestFileMtime returns null → outdated = false (line 167-169)
@@ -323,6 +340,7 @@ class CoverageParserReportsTest extends TestCase
 
     // ==================== getNewestFileMtime — directory exists with matching files ====================
 
+    #[Test]
     public function testGetNewestFileMtimeWithExistingSrcDir(): void
     {
         // src/php dir exists with .php files → getNewestFileMtime returns a timestamp (lines 171-199)
@@ -348,6 +366,7 @@ class CoverageParserReportsTest extends TestCase
 
     // ==================== getNewestFileMtime — non-file entries skipped (line 185) ====================
 
+    #[Test]
     public function testGetNewestFileMtimeSkipsNonFileEntries(): void
     {
         // Empty subdirectory inside src/php — LEAVES_ONLY yields it, isFile() → false → continue (line 185)
@@ -371,6 +390,7 @@ class CoverageParserReportsTest extends TestCase
 
     // ==================== getNewestFileMtime — wrong extension skipped (line 190) ====================
 
+    #[Test]
     public function testGetNewestFileMtimeSkipsWrongExtension(): void
     {
         // A .txt file in src/php should be skipped; no .php files → outdated = false (line 190 hit)

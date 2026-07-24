@@ -6,6 +6,7 @@ namespace Tests\DevDashboard\Services;
 
 use DevDashboard\Services\DocsService;
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -48,6 +49,7 @@ final class DocsServiceGenerationTest extends TestCase
 
     // ===== docsAge formatting (indirectly via getApiDocsStatus) =====
 
+    #[Test]
     public function testDocsAgeShowsJustNow(): void
     {
         $phpSrcDir = $this->srcDir . '/php';
@@ -68,6 +70,7 @@ final class DocsServiceGenerationTest extends TestCase
         $this->assertSame('just now', $status['php']['docsAge']);
     }
 
+    #[Test]
     public function testDocsAgeShowsMinutes(): void
     {
         $phpSrcDir = $this->srcDir . '/php';
@@ -88,6 +91,7 @@ final class DocsServiceGenerationTest extends TestCase
         $this->assertSame('5 mins ago', $status['php']['docsAge']);
     }
 
+    #[Test]
     public function testDocsAgeShowsSingleMinute(): void
     {
         $phpSrcDir = $this->srcDir . '/php';
@@ -108,6 +112,7 @@ final class DocsServiceGenerationTest extends TestCase
         $this->assertSame('1 min ago', $status['php']['docsAge']);
     }
 
+    #[Test]
     public function testDocsAgeShowsHours(): void
     {
         $phpSrcDir = $this->srcDir . '/php';
@@ -128,6 +133,7 @@ final class DocsServiceGenerationTest extends TestCase
         $this->assertSame('3 hours ago', $status['php']['docsAge']);
     }
 
+    #[Test]
     public function testDocsAgeShowsSingleHour(): void
     {
         $phpSrcDir = $this->srcDir . '/php';
@@ -148,6 +154,7 @@ final class DocsServiceGenerationTest extends TestCase
         $this->assertSame('1 hour ago', $status['php']['docsAge']);
     }
 
+    #[Test]
     public function testDocsAgeShowsDays(): void
     {
         $phpSrcDir = $this->srcDir . '/php';
@@ -168,6 +175,7 @@ final class DocsServiceGenerationTest extends TestCase
         $this->assertSame('2 days ago', $status['php']['docsAge']);
     }
 
+    #[Test]
     public function testDocsAgeShowsSingleDay(): void
     {
         $phpSrcDir = $this->srcDir . '/php';
@@ -190,6 +198,7 @@ final class DocsServiceGenerationTest extends TestCase
 
     // ===== generatePhpDocs() — both branches always deterministic =====
 
+    #[Test]
     public function testGeneratePhpDocsReturnsExpectedStructure(): void
     {
         // Use a nonexistent phar path so the missing-tool branch is always taken
@@ -208,6 +217,7 @@ final class DocsServiceGenerationTest extends TestCase
         $this->assertIsString($result['output']);
     }
 
+    #[Test]
     public function testGeneratePhpDocsReturnsNotFoundWhenPhpdocMissing(): void
     {
         // Always deterministic: inject a path guaranteed not to exist
@@ -223,6 +233,7 @@ final class DocsServiceGenerationTest extends TestCase
         $this->assertSame('', $result['output']);
     }
 
+    #[Test]
     public function testGeneratePhpDocsRunsCommandWhenPhpdocPresent(): void
     {
         // Create a fake "phar" that is actually a PHP script echoing known output
@@ -244,6 +255,7 @@ final class DocsServiceGenerationTest extends TestCase
         $this->assertStringContainsString('Documentation generated.', $result['output']);
     }
 
+    #[Test]
     public function testGeneratePhpDocsReturnsFailureWhenCommandFails(): void
     {
         // Create a fake "phar" that exits with a non-zero exit code
@@ -266,6 +278,7 @@ final class DocsServiceGenerationTest extends TestCase
 
     // ===== getNewestMtime — recursive directory scan =====
 
+    #[Test]
     public function testGetApiDocsStatusFindsSourceFileInSubdirectory(): void
     {
         // PHP source file nested in a subdirectory
