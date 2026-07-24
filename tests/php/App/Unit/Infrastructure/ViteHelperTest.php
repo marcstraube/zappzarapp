@@ -7,9 +7,11 @@ namespace Tests\App\Unit\Infrastructure;
 use App\Infrastructure\ViteHelper;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\RunInSeparateProcess;
+use PHPUnit\Framework\Attributes\UsesFunction;
 use PHPUnit\Framework\TestCase;
 
 #[CoversClass(ViteHelper::class)]
+#[UsesFunction('nonce')]
 final class ViteHelperTest extends TestCase
 {
     protected function setUp(): void

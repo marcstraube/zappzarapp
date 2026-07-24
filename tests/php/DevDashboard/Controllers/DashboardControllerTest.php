@@ -4,8 +4,15 @@ declare(strict_types=1);
 
 namespace Tests\DevDashboard\Controllers;
 
+use App\Infrastructure\DatabaseConfig as AppDatabaseConfig;
 use DevDashboard\Controllers\DashboardController;
 use DevDashboard\Infrastructure\TwigService;
+use DevDashboard\Services\CommandRunner;
+use DevDashboard\Services\CoverageParser;
+use DevDashboard\Services\DatabaseBackupService;
+use DevDashboard\Services\DatabaseCommandBuilder;
+use DevDashboard\Services\DatabaseConfig;
+use DevDashboard\Services\DatabaseMetricsService;
 use DevDashboard\Services\DatabaseService;
 use DevDashboard\Services\DocsService;
 use DevDashboard\Services\HealthCheckService;
@@ -13,9 +20,24 @@ use DevDashboard\Services\LogService;
 use DevDashboard\Services\QualityService;
 use DevDashboard\Services\SystemInfoService;
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\UsesClass;
 use PHPUnit\Framework\TestCase;
 
 #[CoversClass(DashboardController::class)]
+#[UsesClass(AppDatabaseConfig::class)]
+#[UsesClass(CommandRunner::class)]
+#[UsesClass(CoverageParser::class)]
+#[UsesClass(DatabaseBackupService::class)]
+#[UsesClass(DatabaseCommandBuilder::class)]
+#[UsesClass(DatabaseConfig::class)]
+#[UsesClass(DatabaseMetricsService::class)]
+#[UsesClass(DatabaseService::class)]
+#[UsesClass(DocsService::class)]
+#[UsesClass(HealthCheckService::class)]
+#[UsesClass(LogService::class)]
+#[UsesClass(QualityService::class)]
+#[UsesClass(SystemInfoService::class)]
+#[UsesClass(TwigService::class)]
 class DashboardControllerTest extends TestCase
 {
     protected function setUp(): void

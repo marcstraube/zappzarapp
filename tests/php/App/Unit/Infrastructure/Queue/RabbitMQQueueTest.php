@@ -11,6 +11,7 @@ use PhpAmqpLib\Channel\AMQPChannel;
 use PhpAmqpLib\Connection\AMQPStreamConnection;
 use PhpAmqpLib\Message\AMQPMessage;
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\UsesClass;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\MockObject\Stub;
 use PHPUnit\Framework\TestCase;
@@ -27,6 +28,7 @@ use ReflectionClass;
  * @SuppressWarnings("PHPMD.CouplingBetweenObjects") Required mocks for AMQP testing
  */
 #[CoversClass(RabbitMQQueue::class)]
+#[UsesClass(RabbitMQConfig::class)]
 final class RabbitMQQueueTest extends TestCase
 {
     private const string TEST_URL = 'amqp://user:password@localhost:5672/testvhost';

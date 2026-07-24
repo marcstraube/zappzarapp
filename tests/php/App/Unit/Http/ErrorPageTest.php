@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace Tests\App\Unit\Http;
 
 use App\Http\ErrorPage;
+use App\Http\Response\HtmlResponse;
+use App\Http\Response\Response;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
@@ -162,6 +164,16 @@ class ErrorPageTest extends TestCase
 
         $this->assertStringContainsString((string) $code, $html);
         $this->assertStringContainsString('<!DOCTYPE html>', $html);
+    }
+
+    // ===== render Tests =====
+
+    public function testRenderReturnsResponseObject(): void
+    {
+        $response = ErrorPage::render(404);
+
+        $this->assertInstanceOf(Response::class, $response);
+        $this->assertInstanceOf(HtmlResponse::class, $response);
     }
 
     // ===== Data Providers =====

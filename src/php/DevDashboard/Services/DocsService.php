@@ -18,11 +18,17 @@ readonly class DocsService
 
     private string $srcPath;
 
-    public function __construct()
-    {
+    /**
+     * @param string|null $docsPath Absolute path to docs directory (defaults to container path)
+     * @param string|null $srcPath  Absolute path to source directory (defaults to container path)
+     */
+    public function __construct(
+        ?string $docsPath = null,
+        ?string $srcPath = null,
+    ) {
         // Paths from container perspective
-        $this->docsPath = '/var/www/html/docs';
-        $this->srcPath  = '/var/www/html/src';
+        $this->docsPath = $docsPath ?? '/var/www/html/docs';
+        $this->srcPath  = $srcPath ?? '/var/www/html/src';
     }
 
     /**

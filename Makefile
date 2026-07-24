@@ -3093,6 +3093,27 @@ test-coverage-php: ## Generate PHPUnit coverage report (ARGS="--filter testName"
 	fi
 	@echo -e "\033[0;32mPHP coverage report generated in build/coverage/php/index.html!\033[0m"
 
+coverage-check-php: ## Verify PHP coverage meets PHP_COVERAGE_MIN (set in .env; ratchet - raise, never lower)
+	@if [ ! -f build/coverage/php/clover.xml ]; then \
+		echo -e "\033[0;31mNo clover.xml found - run 'make test-coverage-php' first\033[0m"; \
+		exit 1; \
+	fi
+	@$(LOAD_ENV); \
+	MIN="$${PHP_COVERAGE_MIN:-70}"; \
+	echo -e "\033[0;33mChecking PHP coverage threshold (>= $$MIN%)...\033[0m"; \
+	grep -o '<metrics[^>]*>' build/coverage/php/clover.xml | tail -1 | \
+	awk -v min="$$MIN" ' \
+		match($$0, /coveredstatements="[0-9]+"/) { covered = substr($$0, RSTART + 19, RLENGTH - 20) } \
+		match($$0, / statements="[0-9]+"/) { total = substr($$0, RSTART + 13, RLENGTH - 14) } \
+		END { \
+			if (total == 0) { print "No statements found in clover.xml"; exit 1 } \
+			pct = covered / total * 100; \
+			printf "Overall PHP coverage: %.2f%% (%d/%d statements)\n", pct, covered, total; \
+			if (pct + 0.005 < min) { printf "FAIL: below minimum of %d%%\n", min; exit 1 } \
+			printf "OK: meets minimum of %d%%\n", min; \
+		}'
+	@echo -e "\033[0;32mPHP coverage threshold check passed!\033[0m"
+
 test-node: ## Run Vitest tests (ARGS="path/to/test.ts" for specific tests)
 	@echo -e "\033[0;33mRunning Vitest tests...\033[0m"
 	@$(DC) run --rm -T dev-tools pnpm test -- $(ARGS)

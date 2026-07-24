@@ -104,12 +104,7 @@ class ExampleController
                 'ssl' => TlsConfig::getSslContextOptions(),
             ]);
 
-            set_error_handler(static fn (): bool => true);
-            try {
-                $response = file_get_contents($url, false, $context);
-            } finally {
-                restore_error_handler();
-            }
+            $response = $this->fetchNodeHealth($url, $context);
 
             $latencyMs = (int) ((hrtime(true) - $start) / 1_000_000);
 
@@ -129,6 +124,25 @@ class ExampleController
                 'status'  => 'unhealthy',
                 'message' => $exception->getMessage(),
             ];
+        }
+    }
+
+    /**
+     * Fetch the Node health endpoint — protected so tests can override without network I/O.
+     *
+     * Uses set_error_handler instead of @ operator to satisfy PHPMD.
+     * Errors are intentionally ignored; callers check the return value.
+     *
+     * @param resource|null $context Stream context from stream_context_create()
+     */
+    protected function fetchNodeHealth(string $url, mixed $context = null): string|false
+    {
+        set_error_handler(static fn (): bool => true);
+
+        try {
+            return file_get_contents($url, false, $context);
+        } finally {
+            restore_error_handler();
         }
     }
 }

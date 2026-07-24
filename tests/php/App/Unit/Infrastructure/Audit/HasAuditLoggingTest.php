@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Tests\App\Unit\Infrastructure\Audit;
 
 use App\Infrastructure\Audit\HasAuditLogging;
-use PHPUnit\Framework\Attributes\CoversNothing;
+use PHPUnit\Framework\Attributes\CoversTrait;
 use PHPUnit\Framework\TestCase;
 use RuntimeException;
 use Zappzarapp\AuditLogger\AuditLogEntry;
@@ -14,10 +14,10 @@ use Zappzarapp\AuditLogger\AuditLoggerInterface;
 /**
  * Tests for HasAuditLogging trait
  *
- * Note: Trait coverage is measured through the test classes that use it
- * (TestServiceWithAuditLogging, TestServiceWithoutLogger)
+ * Uses PHPUnit 12's CoversTrait attribute so trait lines are attributed
+ * correctly to HasAuditLogging.php in coverage reports.
  */
-#[CoversNothing]
+#[CoversTrait(HasAuditLogging::class)]
 final class HasAuditLoggingTest extends TestCase
 {
     public function testAuditLogCallsLogger(): void
@@ -144,6 +144,49 @@ final class HasAuditLoggingTest extends TestCase
 
         unset($_SESSION['user_id'], $_SERVER['REMOTE_ADDR'], $_SERVER['HTTP_USER_AGENT']);
     }
+
+    public function testAuditLogLeavesUserIdNullWhenNoSessionAndNoArgument(): void
+    {
+        unset($_SESSION['user_id']);
+        $_SERVER['REMOTE_ADDR']     = '10.0.0.1';
+        $_SERVER['HTTP_USER_AGENT'] = 'TestBrowser/1.0';
+
+        $logger = $this->createMock(AuditLoggerInterface::class);
+        $logger->expects($this->once())
+            ->method('log')
+            ->with($this->equalTo(new AuditLogEntry(
+                action: 'user.view',
+                entityType: 'user',
+                entityId: 123,
+                ipAddress: '10.0.0.1',
+                userAgent: 'TestBrowser/1.0',
+            )));
+
+        $service = new TestServiceWithAuditLogging($logger);
+        $service->testAuditLogWithoutUserId();
+
+        unset($_SERVER['REMOTE_ADDR'], $_SERVER['HTTP_USER_AGENT']);
+    }
+
+    public function testAuditLogAuthThrowsExceptionWhenLoggerNotInitialized(): void
+    {
+        $service = new TestServiceWithoutLogger();
+
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessage('AuditLogger not initialized');
+
+        $service->testAuditLogAuthWithoutLogger();
+    }
+
+    public function testAuditLogAdminThrowsExceptionWhenLoggerNotInitialized(): void
+    {
+        $service = new TestServiceWithoutLogger();
+
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessage('AuditLogger not initialized');
+
+        $service->testAuditLogAdminWithoutLogger();
+    }
 }
 
 /**
@@ -213,6 +256,21 @@ class TestServiceWithoutLogger
             action: 'user.view',
             entityType: 'user',
             entityId: 123
+        );
+    }
+
+    public function testAuditLogAuthWithoutLogger(): void
+    {
+        $this->auditLogAuth(action: 'login.success');
+    }
+
+    public function testAuditLogAdminWithoutLogger(): void
+    {
+        $this->auditLogAdmin(
+            action: 'role.granted',
+            adminUserId: 1,
+            entityType: 'user',
+            entityId: 99
         );
     }
 }
