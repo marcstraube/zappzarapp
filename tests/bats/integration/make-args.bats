@@ -49,10 +49,15 @@ EOF
     require_database
     require_dependencies
 
-    # Run only tests matching filter (even if no match, should execute successfully)
-    run timeout 120 make test-php ARGS="--filter NonExistentTest"
-    # PHPUnit returns 0 even when filter matches nothing
+    # Filter for a test that exists (CalculatorTest is the boilerplate example)
+    run timeout 120 make test-php ARGS="--filter CalculatorTest"
     assert_success
+    assert_output --partial "OK"
+
+    # Since PHPUnit 12.5.18 (#6276), a filter matching nothing exits non-zero
+    run timeout 120 make test-php ARGS="--filter NonExistentTest"
+    assert_failure
+    assert_output --partial "No tests executed"
 }
 
 @test "[ARGS] make lint-node ARGS works with specific file pattern" {

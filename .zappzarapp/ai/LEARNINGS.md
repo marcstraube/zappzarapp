@@ -309,6 +309,16 @@ changes - linter checks alone may miss IDE-specific inspections.
 - **RandomException in PHP 8.2+**: `random_bytes()` can throw
   `\Random\RandomException`. In tests, either catch it or add `@throws` PHPDoc.
 
+### PHPUnit exits non-zero when explicit selection matches nothing
+
+Since PHPUnit 12.5.18
+([#6276](https://github.com/sebastianbergmann/phpunit/issues/6276)),
+`--filter`/`--group`/`--testsuite` yielding zero tests exits with a non-zero
+code ("No tests executed!"). Tests or scripts that treat an empty match as
+success break. Because lockfiles are not tracked in this repo, CI resolves fresh
+dependencies and picks up such behavior changes before local environments do —
+same drift pattern as the sqlfluff `latest` image (see SQL Linting section).
+
 ---
 
 ## Kubernetes
