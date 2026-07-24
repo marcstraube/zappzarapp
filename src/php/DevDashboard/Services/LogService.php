@@ -19,10 +19,13 @@ class LogService
 
     private readonly string $storageDir;
 
-    public function __construct()
+    /**
+     * @param string|null $logsDir Absolute path to logs directory (defaults to storage/logs/ relative to project root)
+     */
+    public function __construct(?string $logsDir = null)
     {
         $this->projectRoot = __DIR__ . '/../../../../';
-        $this->storageDir  = $this->projectRoot . 'storage/logs/';
+        $this->storageDir  = $logsDir ?? ($this->projectRoot . 'storage/logs/');
     }
 
     /**

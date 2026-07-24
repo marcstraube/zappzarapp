@@ -13,30 +13,29 @@ class LogServiceSourcesTest extends TestCase
 {
     private LogService $service;
 
-    /**
-     * Path to the storage/logs directory the service reads from.
-     * LogService uses __DIR__ . '/../../../../' relative to its own file, which
-     * resolves to the project root, then appends 'storage/logs/'.
-     */
-    private string $storageLogsDir;
-
-    /** @var list<string> */
-    private array $createdFiles = [];
+    private string $tempDir;
 
     protected function setUp(): void
     {
         parent::setUp();
-        $this->service        = new LogService();
-        $this->storageLogsDir = __DIR__ . '/../../../../src/php/DevDashboard/Services/../../../../storage/logs/';
-        $this->createdFiles   = [];
+
+        $this->tempDir = sys_get_temp_dir() . '/log_service_sources_test_' . uniqid();
+        mkdir($this->tempDir, 0o755, recursive: true);
+
+        $this->service = new LogService(logsDir: $this->tempDir . '/');
     }
 
     protected function tearDown(): void
     {
-        foreach ($this->createdFiles as $file) {
-            if (file_exists($file)) {
+        $files = glob($this->tempDir . '/*');
+        if ($files !== false) {
+            foreach ($files as $file) {
                 unlink($file);
             }
+        }
+
+        if (is_dir($this->tempDir)) {
+            rmdir($this->tempDir);
         }
 
         parent::tearDown();
@@ -44,9 +43,10 @@ class LogServiceSourcesTest extends TestCase
 
     private function createLogFile(string $name, string $content = ''): string
     {
-        $path = $this->storageLogsDir . $name;
-        file_put_contents($path, $content);
-        $this->createdFiles[] = $path;
+        $path   = $this->tempDir . '/' . $name;
+        $result = file_put_contents($path, $content);
+
+        $this->assertNotFalse($result, sprintf('Failed to write fixture file "%s" — check temp dir permissions', $path));
 
         return $path;
     }
@@ -100,17 +100,24 @@ class LogServiceSourcesTest extends TestCase
         $this->assertContains('nginx', $services);
     }
 
-    public function testGetAvailableLogSourcesApplicationHasCorrectType(): void
+    public function testGetAvailableLogSourcesApplicationPresentWhenDirExists(): void
     {
-        // application source may or may not be available depending on storageDir
+        // tempDir exists, so 'application' source should be included
         $sources = $this->service->getAvailableLogSources();
 
-        if (isset($sources['application'])) {
-            $this->assertSame('file', $sources['application']['type']);
-        } else {
-            // storageDir does not exist — application source was filtered out
-            $this->assertTrue(true);
-        }
+        $this->assertArrayHasKey('application', $sources);
+        $this->assertSame('file', $sources['application']['type']);
+    }
+
+    public function testGetAvailableLogSourcesApplicationAbsentWhenDirMissing(): void
+    {
+        // Construct with a non-existent dir
+        $missingDir = sys_get_temp_dir() . '/log_service_no_such_dir_' . uniqid() . '/';
+        $service    = new LogService(logsDir: $missingDir);
+
+        $sources = $service->getAvailableLogSources();
+
+        $this->assertArrayNotHasKey('application', $sources);
     }
 
     public function testGetAvailableLogSourcesFilteredToOnlyAvailable(): void
@@ -174,7 +181,7 @@ class LogServiceSourcesTest extends TestCase
 
     public function testGetLogStatisticsCountIncludesCreatedFile(): void
     {
-        // Baseline
+        // Baseline (empty temp dir, so count is 0)
         $before      = $this->service->getLogStatistics();
         $countBefore = $before['application_logs_count'];
 
@@ -202,11 +209,21 @@ class LogServiceSourcesTest extends TestCase
         $this->assertNotEmpty($stats['total_size_formatted']);
     }
 
-    public function testGetLogStatisticsStorageDirExistsReflectsReality(): void
+    public function testGetLogStatisticsStorageDirExistsTrue(): void
     {
+        // tempDir exists, so storage_dir_exists must be true
         $stats = $this->service->getLogStatistics();
 
-        // storage/logs exists in this project
-        $this->assertIsBool($stats['storage_dir_exists']);
+        $this->assertTrue($stats['storage_dir_exists']);
+    }
+
+    public function testGetLogStatisticsStorageDirExistsFalseWhenMissing(): void
+    {
+        $missingDir = sys_get_temp_dir() . '/log_service_no_such_dir_' . uniqid() . '/';
+        $service    = new LogService(logsDir: $missingDir);
+
+        $stats = $service->getLogStatistics();
+
+        $this->assertFalse($stats['storage_dir_exists']);
     }
 }

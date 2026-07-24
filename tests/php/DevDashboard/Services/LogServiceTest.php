@@ -13,30 +13,29 @@ class LogServiceTest extends TestCase
 {
     private LogService $service;
 
-    /**
-     * Path to the storage/logs directory the service reads from.
-     * LogService uses __DIR__ . '/../../../../' relative to its own file, which
-     * resolves to the project root, then appends 'storage/logs/'.
-     */
-    private string $storageLogsDir;
-
-    /** @var list<string> */
-    private array $createdFiles = [];
+    private string $tempDir;
 
     protected function setUp(): void
     {
         parent::setUp();
-        $this->service        = new LogService();
-        $this->storageLogsDir = __DIR__ . '/../../../../src/php/DevDashboard/Services/../../../../storage/logs/';
-        $this->createdFiles   = [];
+
+        $this->tempDir = sys_get_temp_dir() . '/log_service_test_' . uniqid();
+        mkdir($this->tempDir, 0o755, recursive: true);
+
+        $this->service = new LogService(logsDir: $this->tempDir . '/');
     }
 
     protected function tearDown(): void
     {
-        foreach ($this->createdFiles as $file) {
-            if (file_exists($file)) {
+        $files = glob($this->tempDir . '/*');
+        if ($files !== false) {
+            foreach ($files as $file) {
                 unlink($file);
             }
+        }
+
+        if (is_dir($this->tempDir)) {
+            rmdir($this->tempDir);
         }
 
         parent::tearDown();
@@ -44,9 +43,10 @@ class LogServiceTest extends TestCase
 
     private function createLogFile(string $name, string $content = ''): string
     {
-        $path = $this->storageLogsDir . $name;
-        file_put_contents($path, $content);
-        $this->createdFiles[] = $path;
+        $path   = $this->tempDir . '/' . $name;
+        $result = file_put_contents($path, $content);
+
+        $this->assertNotFalse($result, sprintf('Failed to write fixture file "%s" — check temp dir permissions', $path));
 
         return $path;
     }
@@ -111,7 +111,6 @@ class LogServiceTest extends TestCase
         // Read only last 10 lines
         $result = $this->service->readLogFile('test_tail.log', 10);
 
-        $this->assertSame(0, $result['exitCode'] ?? 0); // no exitCode key, just asserting structure
         $content = $result['content'];
 
         // Last lines should be present
@@ -125,7 +124,7 @@ class LogServiceTest extends TestCase
     public function testReadLogFilePreventsPathTraversal(): void
     {
         // Path traversal attempt — the service uses basename() so '../etc/passwd'
-        // becomes 'passwd' which won't exist in storage/logs/
+        // becomes 'passwd' which won't exist in the logs dir
         $result = $this->service->readLogFile('../etc/passwd');
 
         $this->assertArrayHasKey('error', $result);
