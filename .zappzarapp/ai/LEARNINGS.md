@@ -897,6 +897,35 @@ had removed these catches; restored in package commit 55c8855.
 
 ---
 
+## Git Hooks
+
+### lint-staged `--no-stash` can drop container-invisible files from the index
+
+**Symptom:** After a failed pre-commit run, files staged as modifications are
+suddenly recorded as **deleted** in the index (and end up deleted in the next
+commit), while the files still exist on disk.
+
+**Cause:** The pre-commit hook runs lint-staged inside the dev-tools container
+with `--no-stash`. Files that are staged on the host but NOT mounted into the
+container (e.g. `.idea/`, `.vscode/`) do not exist from the container's point of
+view. When lint-staged applies task modifications, its index sync records those
+invisible files as deletions — the "might result in data loss" warning is
+literal.
+
+**Detection:** Watch the commit output for unexpected `delete mode` lines, and
+`git show --stat` after committing. Files reappear as untracked (`??`).
+
+**Recovery:** Files are still on disk — `git add` them again and
+`git commit --amend --no-verify` (the `--no-verify` avoids the same hook
+clobbering the index again, and skips lint-staged's empty-commit guard, which
+also fires when the only staged files are container-invisible).
+
+**Prevention:** The lint-staged markdown glob filters `.idea/`/`.vscode/` via a
+function entry in `lint-staged.config.js`. Commits touching ONLY IDE-dir
+markdown still need `--no-verify` (empty-commit guard edge case).
+
+---
+
 ## SQL Linting
 
 ### sqlfluff `latest` tag drifts between CI and local cache
