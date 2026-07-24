@@ -39,7 +39,6 @@
     "build/**",
     "docs/**",
     ".git/**",
-    "CHANGELOG.md",
     // Claude Code non-committed directories (matches .gitignore pattern)
     ".claude/cache/**",
     ".claude/reports/**",
