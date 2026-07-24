@@ -25,6 +25,12 @@ namespace:
 
 # ============================================================================
 # CORE SERVICES
+# ----------------------------------------------------------------------------
+# Image strategy: core services use locally built images (repository
+# "zappzarapp-<service>", combined with global.imagePullPolicy: Never for
+# minikube). Optional services below pull official upstream images from a
+# registry. Set global.imageRegistry/imageTag to source the core images
+# from a registry instead.
 # ============================================================================
 
 nginx:

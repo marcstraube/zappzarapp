@@ -42,15 +42,15 @@ tests/goss/
 │   ├── mailpit.yaml
 │   ├── seaweedfs.yaml
 │   └── rabbitmq.yaml
-├── presets/            # Environment presets for matrix testing
-│   ├── fullstack.env
-│   ├── php-only.env
-│   ├── node-only.env
-│   ├── minimal.env
-│   ├── fullstack-mariadb.env
-│   ├── fullstack-optional.env
-│   ├── framework.env
-│   └── framework-only.env  # Node frontend only (no backend)
+├── presets/            # Environment presets for matrix testing (17 files)
+│   ├── dev-*.env       # 10 development presets (host-mounted volumes):
+│   │                   #   fullstack, php-only, node-only, minimal,
+│   │                   #   fullstack-mariadb, fullstack-optional, framework,
+│   │                   #   framework-only, assets, idle
+│   └── prod-*.env      # 7 production presets (self-contained images):
+│                       #   fullstack, php-only, node-only, minimal,
+│                       #   fullstack-mariadb, fullstack-optional,
+│                       #   framework-only
 ├── runtime-tests.sh    # Runtime integration test script
 └── README.md
 ```
@@ -132,17 +132,28 @@ make goss-test-redis
 
 ### Preset Tests (Full Stack Testing)
 
-| Target                                     | Description                         |
-| ------------------------------------------ | ----------------------------------- |
-| `make goss-test-preset-fullstack`          | PHP + Node + Postgres + Redis       |
-| `make goss-test-preset-php-only`           | PHP + Postgres + Redis              |
-| `make goss-test-preset-node-only`          | Node + Postgres + Redis             |
-| `make goss-test-preset-minimal`            | Nginx only (static mode)            |
-| `make goss-test-preset-fullstack-mariadb`  | Full-Stack with MariaDB             |
-| `make goss-test-preset-fullstack-optional` | All services enabled                |
-| `make goss-test-preset-framework`          | Nuxt/Next + Express (framework-api) |
-| `make goss-test-preset-framework-only`     | Nuxt/Next only (no backend)         |
-| `make goss-test-matrix`                    | Run ALL presets (CI/CD)             |
+Any preset in `tests/goss/presets/` can be run via the generic target:
+
+```bash
+make goss-test-preset PRESET=<name>   # e.g. PRESET=dev-fullstack
+```
+
+Named aliases exist for the common presets (`make goss-test-dev-*` /
+`make goss-test-prod-*`):
+
+| Target                                  | Description                           |
+| --------------------------------------- | ------------------------------------- |
+| `make goss-test-dev-fullstack`          | [DEV] PHP + Node + Postgres + Redis   |
+| `make goss-test-dev-php-only`           | [DEV] PHP + Postgres + Redis          |
+| `make goss-test-dev-node-only`          | [DEV] Node + Postgres + Redis         |
+| `make goss-test-dev-minimal`            | [DEV] Nginx only (static mode)        |
+| `make goss-test-dev-fullstack-mariadb`  | [DEV] Full-Stack with MariaDB         |
+| `make goss-test-dev-fullstack-optional` | [DEV] All services enabled            |
+| `make goss-test-dev-framework`          | [DEV] Nuxt/Next + Express             |
+| `make goss-test-dev-assets`             | [DEV] Assets-only (Vite HMR)          |
+| `make goss-test-dev-idle`               | [DEV] Idle mode (Node container)      |
+| `make goss-test-prod-*`                 | [PROD] Same stacks, production images |
+| `make goss-test-matrix`                 | Run ALL presets (CI/CD)               |
 
 ## What Gets Tested
 

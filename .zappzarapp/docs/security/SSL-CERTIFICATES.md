@@ -83,10 +83,10 @@ docker/certs/
 │   └── ca.key             # Private CA key (chmod 600)
 ├── nginx/                 # Frontend/reverse proxy
 │   ├── cert.crt
-│   └── cert.key
+│   └── cert.key           # chmod 600 + read ACLs for container uids
 ├── internal/              # Service-to-service TLS
 │   ├── cert.crt
-│   ├── cert.key
+│   ├── cert.key           # chmod 600 + read ACLs for container uids
 │   └── ca.crt             # CA copy for easy mounting
 ├── generate-ca.sh
 ├── generate-internal.sh

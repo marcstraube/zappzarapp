@@ -10,6 +10,7 @@
   - [Makefile Reference](development/MAKEFILE-REFERENCE.md)
   - [AI Integration](development/AI-INTEGRATION.md)
   - [Dependencies](development/DEPENDENCIES.md)
+  - [Database Tools](development/DATABASE-TOOLS.md)
   - [Frontend Scaffolding](development/FRONTEND-SCAFFOLDING.md)
   - [Dev Dashboard](development/DEV-DASHBOARD.md)
   - [Dev Toolbar](development/DEV-TOOLBAR.md)
@@ -26,6 +27,7 @@
   - [Database](infrastructure/DATABASE.md)
   - [Network](infrastructure/NETWORK.md)
   - [Nginx](infrastructure/NGINX.md)
+  - [Node SSL](infrastructure/NODE-SSL.md)
   - [Deployment](infrastructure/DEPLOYMENT.md)
   - [Kubernetes](infrastructure/KUBERNETES.md)
   - [Error Pages](infrastructure/ERROR-PAGES.md)
@@ -42,11 +44,14 @@
   - [Secrets](security/SECRETS.md)
   - [Retention Policy](security/RETENTION-POLICY.md)
   - [Access Log Monitoring](security/ACCESS-LOG-MONITORING.md)
+  - [Security Headers](security/SECURITY-HEADERS.md)
+  - [CORS](security/CORS.md)
   - [Security Scanning](security/SECURITY-SCANNING.md)
   - [Known Vulnerabilities](security/KNOWN-VULNERABILITIES.md)
 
 - **Setup Guides**
   - [Windows (WSL2)](setup/WINDOWS.md)
+  - [IDE Integration](setup/IDE-INTEGRATION.md)
 
 - **API Documentation**
   - <a href="/docs/api/php/" target="_top">PHP API</a>

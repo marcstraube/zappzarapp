@@ -29,6 +29,9 @@ GDPR-compliant security features and data protection.
 | [ACCESS-LOG-MONITORING.md](security/ACCESS-LOG-MONITORING.md) | Access log analysis                        |
 | [SECURITY-SCANNING.md](security/SECURITY-SCANNING.md)         | Vulnerability scanning tools               |
 | [INTERNAL-TLS.md](security/INTERNAL-TLS.md)                   | Internal TLS for zero-trust networking     |
+| [CORS.md](security/CORS.md)                                   | CORS configuration for APIs                |
+| [SECURITY-HEADERS.md](security/SECURITY-HEADERS.md)           | HTTP security headers                      |
+| [KNOWN-VULNERABILITIES.md](security/KNOWN-VULNERABILITIES.md) | Documented vulnerabilities, accepted risks |
 
 ## Development
 
@@ -42,15 +45,19 @@ Tools and configurations for local development.
 | [XDEBUG.md](development/XDEBUG.md)                             | Xdebug configuration for PHP debugging        |
 | [RENOVATE.md](development/RENOVATE.md)                         | Automated dependency updates                  |
 | [FRONTEND-SCAFFOLDING.md](development/FRONTEND-SCAFFOLDING.md) | Node.js frontend framework setup              |
+| [AI-INTEGRATION.md](development/AI-INTEGRATION.md)             | AI tooling and agent workflow                 |
+| [DATABASE-TOOLS.md](development/DATABASE-TOOLS.md)             | Database administration and CLI tools         |
+| [DEV-TOOLBAR.md](development/DEV-TOOLBAR.md)                   | Dev toolbar (zappzarapp/devtoolbar package)   |
 
 ## Testing
 
-Testing guides for PHP and Node.js.
+Testing guides for PHP, Node.js, and shell.
 
-| Document                                   | Description                    |
-| ------------------------------------------ | ------------------------------ |
-| [TESTING-PHP.md](testing/TESTING-PHP.md)   | PHP testing guide (PHPUnit)    |
-| [TESTING-NODE.md](testing/TESTING-NODE.md) | Node.js testing guide (Vitest) |
+| Document                                     | Description                    |
+| -------------------------------------------- | ------------------------------ |
+| [TESTING-PHP.md](testing/TESTING-PHP.md)     | PHP testing guide (PHPUnit)    |
+| [TESTING-NODE.md](testing/TESTING-NODE.md)   | Node.js testing guide (Vitest) |
+| [TESTING-SHELL.md](testing/TESTING-SHELL.md) | Shell testing guide (BATS)     |
 
 ## Infrastructure
 
@@ -67,14 +74,17 @@ Network architecture, system configuration, and deployment.
 | [NGINX.md](infrastructure/NGINX.md)                         | Nginx configuration and customization          |
 | [OPTIONAL-SERVICES.md](infrastructure/OPTIONAL-SERVICES.md) | Optional services (Mercure, Meilisearch, etc.) |
 | [KUBERNETES.md](infrastructure/KUBERNETES.md)               | Kubernetes deployment with Helm                |
+| [DATABASE.md](infrastructure/DATABASE.md)                   | Database setup (PostgreSQL / MariaDB)          |
+| [NODE-SSL.md](infrastructure/NODE-SSL.md)                   | SSL/TLS for direct Node.js exposure            |
 
 ## Setup Guides
 
 Platform-specific installation and configuration.
 
-| Document                       | Description                     |
-| ------------------------------ | ------------------------------- |
-| [WINDOWS.md](setup/WINDOWS.md) | Windows setup (WSL2 / Git Bash) |
+| Document                                       | Description                     |
+| ---------------------------------------------- | ------------------------------- |
+| [WINDOWS.md](setup/WINDOWS.md)                 | Windows setup (WSL2 / Git Bash) |
+| [IDE-INTEGRATION.md](setup/IDE-INTEGRATION.md) | PhpStorm / VS Code integration  |
 
 ## IDE Integration
 
@@ -104,8 +114,10 @@ directories):
 │   ├── TROUBLESHOOTING.md
 │   ├── development/
 │   │   ├── AI-INTEGRATION.md
+│   │   ├── DATABASE-TOOLS.md
 │   │   ├── DEPENDENCIES.md
 │   │   ├── DEV-DASHBOARD.md
+│   │   ├── DEV-TOOLBAR.md
 │   │   ├── FRONTEND-SCAFFOLDING.md
 │   │   ├── MAKEFILE-REFERENCE.md
 │   │   ├── RENOVATE.md
@@ -114,29 +126,36 @@ directories):
 │   │   └── CUSTOMIZATION.md
 │   ├── infrastructure/
 │   │   ├── ARCHITECTURE.md
+│   │   ├── DATABASE.md
 │   │   ├── DEPLOYMENT.md
 │   │   ├── ERROR-PAGES.md
 │   │   ├── KUBERNETES.md
 │   │   ├── MONITORING.md
 │   │   ├── NETWORK.md
 │   │   ├── NGINX.md
+│   │   ├── NODE-SSL.md
 │   │   ├── OPTIONAL-SERVICES.md
 │   │   └── PERFORMANCE.md
 │   ├── security/
 │   │   ├── ACCESS-LOG-MONITORING.md
 │   │   ├── AUDIT-LOGGING.md
 │   │   ├── BACKUP.md
+│   │   ├── CORS.md
 │   │   ├── ENCRYPTION.md
 │   │   ├── INTERNAL-TLS.md
+│   │   ├── KNOWN-VULNERABILITIES.md
 │   │   ├── RETENTION-POLICY.md
 │   │   ├── SECRETS.md
+│   │   ├── SECURITY-HEADERS.md
 │   │   ├── SECURITY-SCANNING.md
 │   │   └── SSL-CERTIFICATES.md
 │   ├── setup/
+│   │   ├── IDE-INTEGRATION.md
 │   │   └── WINDOWS.md
 │   └── testing/
 │       ├── TESTING-NODE.md
-│       └── TESTING-PHP.md
+│       ├── TESTING-PHP.md
+│       └── TESTING-SHELL.md
 └── standards/                # Coding standards (all AI agents)
 ```
 

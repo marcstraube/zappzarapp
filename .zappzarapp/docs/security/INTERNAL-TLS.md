@@ -212,7 +212,12 @@ Ensure certificate paths in `CADDY_SERVER_EXTRA_DIRECTIVES` are correct.
    certificates, regenerate periodically.
 
 4. **Secret Management:** Certificate private keys should be protected:
-   - File permissions: `chmod 600 cert.key`
+   - File permissions: `chmod 600 cert.key`, plus POSIX read ACLs for the
+     container uids that consume the key via bind mounts (uid 0, 101, 999, 1000
+     — set automatically by `docker/certs/generate-internal.sh`). Docker bind
+     mounts do not remap ownership, and the production preset runs services
+     unprivileged with `cap_drop: ALL`, so without the ACLs those containers
+     could not read a 600 key.
    - Not committed to version control
    - In production, use Docker Secrets or external secret management
 
