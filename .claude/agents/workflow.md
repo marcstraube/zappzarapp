@@ -276,7 +276,7 @@ See "Security Agent Triggering" section below.
 ## Security Agent Triggering
 
 Agent S (Security Auditor) runs **conditionally** to avoid overhead on low-risk
-tasks. See `.claude/agents/security.md` for full details.
+tasks. See `.claude/agents/security-auditor.md` for full details.
 
 ### By Task Scope
 

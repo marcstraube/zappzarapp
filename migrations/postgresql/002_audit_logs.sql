@@ -91,7 +91,10 @@ CREATE INDEX idx_audit_logs_entity ON audit_logs (entity_type, entity_id, timest
 -- Index for queries by action (e.g., get all 'user.delete' actions)
 CREATE INDEX idx_audit_logs_action ON audit_logs (action, timestamp DESC);
 
--- Partial index for failed login attempts (security monitoring)
+-- Partial index for failed login attempts (security monitoring).
+-- Intentional dialect difference: MariaDB has no partial indexes; its
+-- migration relies on idx_action (action, timestamp DESC) for this query
+-- and defines no failed-login index.
 CREATE INDEX idx_audit_logs_failed_login ON audit_logs (timestamp DESC)
 WHERE action = 'login.failed';
 

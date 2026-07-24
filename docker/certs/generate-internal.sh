@@ -75,8 +75,30 @@ openssl x509 -req -days $DAYS \
 rm -f "$NGINX_DIR/cert.csr"
 
 # Set permissions
+# Certificates are public, private keys must not be world-readable.
 chmod 644 "$INTERNAL_DIR/cert.crt" "$INTERNAL_DIR/ca.crt" "$NGINX_DIR/cert.crt"
-chmod 644 "$INTERNAL_DIR/cert.key" "$NGINX_DIR/cert.key"
+chmod 600 "$INTERNAL_DIR/cert.key" "$NGINX_DIR/cert.key"
+
+# Grant read access to the container users that consume the keys via bind
+# mounts (Docker bind mounts do not remap ownership, and the production
+# preset runs services unprivileged with cap_drop: ALL, so neither
+# world-read nor DAC_OVERRIDE is available):
+#   u:0    root entrypoints with dropped capabilities (postgres/mariadb copy
+#          certs from /tmp/certs without DAC_OVERRIDE)
+#   u:101  nginx (production preset runs as 101:101)
+#   u:999  redis (production preset) and rabbitmq
+#   u:1000 default container USER_ID (CI hosts may generate certs as a
+#          different UID, e.g. 1001 on GitHub runners)
+if command -v setfacl >/dev/null 2>&1; then
+    setfacl -m u:0:r,u:101:r,u:999:r,u:1000:r \
+        "$INTERNAL_DIR/cert.key" "$NGINX_DIR/cert.key"
+else
+    echo "WARNING: setfacl not found - keys are mode 600 without ACLs."
+    echo "         Unprivileged container users (production preset, redis," \
+        "rabbitmq)"
+    echo "         will not be able to read them. Install the 'acl' package" \
+        "and re-run."
+fi
 
 echo "============================================================================"
 echo "Internal certificates generated successfully!"

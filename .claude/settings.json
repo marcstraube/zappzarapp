@@ -15,9 +15,7 @@
       "Bash(make:*)",
 
       "Bash(./docker/hooks/hook-runner.sh:*)",
-      "Bash(./docker/hooks/php-cs-fixer-batch.sh:*)",
       "Bash(./docker/hooks/php-hooks.sh:*)",
-      "Bash(./docker/hooks/php-lint-batch.sh:*)",
       "Bash(./.claude/hooks/post-edit-autofix.sh:*)",
       "Bash(./tests/goss/preset-runner.sh:*)",
       "Bash(./tests/goss/runtime-tests.sh:*)",

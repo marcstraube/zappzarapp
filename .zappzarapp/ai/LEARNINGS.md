@@ -951,7 +951,32 @@ Discovered 2026-07-24 while triaging the develop CI failure (BATS test 114).
 
 ---
 
+### Bind-mounted private keys: chmod 600 alone breaks unprivileged containers
+
+**Symptom:** Hardening bind-mounted TLS keys from 644 to 600 looks like a
+one-line fix, but the production preset runs services unprivileged
+(`user: "101:101"` nginx, `user: "999:1000"` redis) with `cap_drop: ALL` and
+`no-new-privileges`. Docker bind mounts do not remap ownership, and without
+`DAC_OVERRIDE` even root entrypoints (postgres/mariadb cert-copy) cannot read a
+600 host-owned key. The old 644 was intentional ("readable by all container
+users") — but world-readable private keys are wrong on multi-user hosts.
+
+**Solution:** `chmod 600` + POSIX ACLs on the host file:
+`setfacl -m u:0:r,u:101:r,u:999:r,u:1000:r cert.key`. The kernel checks ACLs at
+the host inode, so they work through bind mounts for exactly the container UIDs
+that need read access (u:1000 covers CI, where the generating user may be uid
+1001 while containers run the default USER_ID 1000). Implemented in
+`docker/certs/generate-internal.sh`; verified against the live dev stack and
+`helm lint` / compose-validate.
+
+**Rule of thumb:** Before tightening permissions on anything bind-mounted,
+enumerate every consuming container's effective UID (including `user:`
+directives, gosu drops, and entrypoints running with dropped capabilities).
+
+Discovered 2026-07-24 while fixing review finding 27.1.
+
+---
+
 ## Last Updated
 
-2026-07-24 (added: sqlfluff latest-tag drift and PG01 bootstrap-migration
-exception)
+2026-07-24 (added: bind-mounted key permissions need ACLs, not just chmod 600)
