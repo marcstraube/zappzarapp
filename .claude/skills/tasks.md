@@ -180,6 +180,7 @@ Standard types (platform-compatible):
 | Documentation | `documentation` | `documentation` | Docs improvements                        |
 | Maintenance   | `chore`         | `chore`         | Maintenance, tooling, dependencies       |
 | Refactoring   | `refactor`      | `refactor`      | Code improvement without behavior change |
+| Security      | `security`      | `security`      | Security fixes                           |
 
 ## Status Labels
 
@@ -227,7 +228,7 @@ Standard types (platform-compatible):
 
 1. Gather information:
    - Title (required)
-   - Type: bug, enhancement, documentation, chore, refactor
+   - Type: bug, enhancement, documentation, chore, refactor, security
    - Milestone: v1.0, v1.1, Backlog, or none (Needs Triage)
    - Description/Context
    - Optional: Labels (effort, custom)
