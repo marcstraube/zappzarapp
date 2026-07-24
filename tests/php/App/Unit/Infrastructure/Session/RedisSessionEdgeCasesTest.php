@@ -38,9 +38,7 @@ final class RedisSessionEdgeCasesTest extends TestCase
         // get() returns session data for the old ID, null for user sessions list
         $cache->method('get')
             ->willReturnCallback(
-                function (string $key) use ($oldSessionId, $sessionData): ?string {
-                    return $key === 'session:' . $oldSessionId ? (string) json_encode($sessionData) : null;
-                }
+                fn(string $key): ?string => $key === 'session:' . $oldSessionId ? (string) json_encode($sessionData) : null
             );
 
         $cache->method('ttl')->willReturn(3600);
@@ -93,11 +91,9 @@ final class RedisSessionEdgeCasesTest extends TestCase
         $cache->expects($this->exactly(2))
             ->method('get')
             ->willReturnCallback(
-                function (string $key) use ($sessionId, $userId): string {
-                    return $key === 'session:' . $sessionId
-                        ? (string) json_encode(['userId' => $userId])
-                        : (string) json_encode([$sessionId]);
-                }
+                fn(string $key): string => $key === 'session:' . $sessionId
+                    ? (string) json_encode(['userId' => $userId])
+                    : (string) json_encode([$sessionId])
             );
 
         // has() checks whether session key exists (for getUserSessions filter step)

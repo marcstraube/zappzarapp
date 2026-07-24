@@ -36,9 +36,7 @@ final class RabbitMQQueueEdgeCasesTest extends TestCase
         $queue = new RabbitMQQueue(self::TEST_URL);
 
         // consume() must exit before invoking the callback — no exception thrown
-        $queue->consume('test-queue', static function (): bool {
-            return true;
-        });
+        $queue->consume('test-queue', static fn(): bool => true);
 
         $this->addToAssertionCount(1); // confirm no exception
     }
@@ -55,9 +53,7 @@ final class RabbitMQQueueEdgeCasesTest extends TestCase
         $queue = $this->createQueueWithMockedChannel($mockChannel);
 
         // consume() disconnects and returns early — no exception reaches the test
-        $queue->consume('test-queue', static function (): bool {
-            return true;
-        });
+        $queue->consume('test-queue', static fn(): bool => true);
 
         $this->addToAssertionCount(1); // confirm no exception
     }

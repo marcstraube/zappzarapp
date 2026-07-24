@@ -37,16 +37,11 @@ final class ExampleControllerTest extends TestCase
      */
     private function makeController(string|false $fetchResult): ExampleController
     {
-        return new class ($fetchResult, new HealthCheck()) extends ExampleController {
-            private readonly string|false $fakeResponse;
-
-            public function __construct(
-                string|false $fakeResponse,
-                HealthCheck $healthCheck,
-            ) {
-                $this->fakeResponse = $fakeResponse;
-                parent::__construct($healthCheck);
-            }
+        // No custom constructor: PHPMD/PDepend misreport promoted constructor
+        // properties in anonymous classes as unused parameters, while Rector
+        // enforces the promotion — a plain public property avoids both tools.
+        $controller = new class (new HealthCheck()) extends ExampleController {
+            public string|false $fakeResponse = false;
 
             protected function fetchNodeHealth(string $url, mixed $context = null): string|false
             {
@@ -55,6 +50,9 @@ final class ExampleControllerTest extends TestCase
                 return $this->fakeResponse;
             }
         };
+        $controller->fakeResponse = $fetchResult;
+
+        return $controller;
     }
 
     private function clearEnvVars(): void
