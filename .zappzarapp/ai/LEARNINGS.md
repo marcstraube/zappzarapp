@@ -891,23 +891,22 @@ had removed these catches; restored in package commit 55c8855.
 
 ### sqlfluff `latest` tag drifts between CI and local cache
 
-**Symptom:** `make lint-sql` is green locally but red in CI (or vice versa)
-with rule codes that one side has never seen — e.g. sqlfluff 4.x introduced
+**Symptom:** `make lint-sql` is green locally but red in CI (or vice versa) with
+rule codes that one side has never seen — e.g. sqlfluff 4.x introduced
 `PG01 CREATE INDEX should use CONCURRENTLY [postgres.excessive_locks]`.
 
-**Cause:** The Makefile runs `sqlfluff/sqlfluff:latest`. CI pulls a fresh
-image on every run; the local Docker cache keeps whatever was pulled last.
-New releases can add rules, so results diverge without any repo change.
+**Cause:** The Makefile runs `sqlfluff/sqlfluff:latest`. CI pulls a fresh image
+on every run; the local Docker cache keeps whatever was pulled last. New
+releases can add rules, so results diverge without any repo change.
 
 **Reproduce locally:** `docker pull sqlfluff/sqlfluff:latest`, then re-run
 `make lint-sql`.
 
-**PG01 specifically:** Inappropriate for bootstrap migrations — tables are
-empty at bootstrap (no lock contention) and `CREATE INDEX CONCURRENTLY`
-cannot run inside a transaction, so following the rule would break
-transactional migration runners. Excluded via `exclude_rules` in `.sqlfluff`
-with a reasoned comment (config-level exception preferred over per-line
-`-- noqa`).
+**PG01 specifically:** Inappropriate for bootstrap migrations — tables are empty
+at bootstrap (no lock contention) and `CREATE INDEX CONCURRENTLY` cannot run
+inside a transaction, so following the rule would break transactional migration
+runners. Excluded via `exclude_rules` in `.sqlfluff` with a reasoned comment
+(config-level exception preferred over per-line `-- noqa`).
 
 Discovered 2026-07-24 while triaging the develop CI failure (BATS test 114).
 
@@ -915,4 +914,5 @@ Discovered 2026-07-24 while triaging the develop CI failure (BATS test 114).
 
 ## Last Updated
 
-2026-07-24 (added: sqlfluff latest-tag drift and PG01 bootstrap-migration exception)
+2026-07-24 (added: sqlfluff latest-tag drift and PG01 bootstrap-migration
+exception)
