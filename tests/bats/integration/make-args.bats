@@ -16,6 +16,22 @@ teardown_file() {
     integration_teardown
 }
 
+# Fixture files created by the ARGS tests below. They are removed in
+# teardown() (which BATS runs even when an assert fails) because the BATS
+# container runs as root: a fixture left behind by a failed test would be
+# root-owned on the host and not deletable by the host user.
+ARGS_FIXTURES=(
+    "src/php/App/ArgsTestHelper.php"
+    "src/node/args-test.ts"
+    "src/php/App/QuickTest.php"
+)
+
+# Overrides teardown() from helpers/setup.bash - keep its cd restore
+teardown() {
+    cd "${PROJECT_ROOT}" || true
+    rm -f "${ARGS_FIXTURES[@]}"
+}
+
 # =============================================================================
 # Core Functionality Tests
 # =============================================================================
@@ -39,9 +55,6 @@ EOF
     # Verify file was formatted (should have proper spacing now)
     run grep -q "class ArgsTestHelper" "$TEST_FILE"
     assert_success
-
-    # Cleanup
-    rm -f "$TEST_FILE"
 }
 
 @test "[ARGS] make test-php ARGS works with filter" {
@@ -96,6 +109,9 @@ EOF
     TEST_FILE="src/node/args-test.ts"
     mkdir -p "src/node"
     echo "const x={a:1,b:2};export default x;" > "$TEST_FILE"
+    # BATS container runs as root; prettier runs as the dev-tools "node"
+    # user and needs write access to the root-owned fixture
+    chmod 666 "$TEST_FILE"
 
     # Run prettier on single file
     run timeout 60 make prettier-fix ARGS="$TEST_FILE"
@@ -104,9 +120,6 @@ EOF
     # Verify file was formatted (prettier should add proper spacing)
     run grep -q "const x = " "$TEST_FILE"
     assert_success
-
-    # Cleanup
-    rm -f "$TEST_FILE"
 }
 
 # =============================================================================
@@ -150,7 +163,4 @@ EOF
     # Single file should complete in reasonable time (<30s)
     run timeout 30 make cs-fix ARGS="$TEST_FILE"
     assert_success
-
-    # Cleanup
-    rm -f "$TEST_FILE"
 }

@@ -2922,12 +2922,12 @@ analyse-node: ## Run TypeScript type checking (ARGS="path/to/file.ts" for specif
 
 prettier-check: ## Check code formatting with Prettier (ARGS="path/to/file.ts" for specific files)
 	@echo -e "\033[0;33mChecking code formatting (Prettier)...\033[0m"
-	@$(DC) run --rm -T dev-tools pnpm run format:check -- $(ARGS)
+	@$(DC) run --rm -T dev-tools $(if $(ARGS),pnpm exec prettier --check $(ARGS),pnpm run format:check)
 	@echo -e "\033[0;32mPrettier check completed!\033[0m"
 
 prettier-fix: ## Fix code formatting with Prettier (ARGS="path/to/file.ts" for specific files)
 	@echo -e "\033[0;33mFixing code formatting (Prettier)...\033[0m"
-	@$(DC) run --rm -T dev-tools pnpm run format -- $(ARGS)
+	@$(DC) run --rm -T dev-tools $(if $(ARGS),pnpm exec prettier --write $(ARGS),pnpm run format)
 	@echo -e "\033[0;32mPrettier formatting applied!\033[0m"
 
 outdated: ## Check for outdated Composer dependencies
