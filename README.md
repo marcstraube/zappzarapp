@@ -6,8 +6,10 @@
 
 > German colloquial for "in a flash" — from Russian цап-царап: grab it and go.
 
-A professional web development stack that gets you coding in minutes, not hours.
-No setup hassle, no reinventing the wheel - just clone, configure, and go.
+A **developer platform** for PHP and Node.js projects that gets you from zero to
+production-ready in minutes — not hours. Unlike a simple boilerplate, it ships
+the complete infrastructure, toolchain, and IDE integration around your code:
+clone, configure, and go.
 
 ## Why zappzarapp?
 
@@ -16,48 +18,77 @@ No setup hassle, no reinventing the wheel - just clone, configure, and go.
 - **Zero Configuration** — `make setup` handles everything: SSL certs, secrets,
   dependencies, containers
 - **Security & GDPR-Ready** — Docker Secrets, internal TLS, network
-  segmentation, encryption helpers
-- **Production-Ready** — Same stack from development to deployment, no rebuild
-  required
+  segmentation, encryption helpers, audit logging
+- **Production-Ready** — Same stack from development to deployment, including a
+  Kubernetes Helm chart
 - **Full IDE Support** — Pre-configured for PHPStorm and VS Code (run configs,
   debugging, database)
 - **Modular Architecture** — 7 stack presets from static sites to full-stack,
   enable only what you need
-- **Optional Services** — Redis, Mercure, Meilisearch, Elasticsearch, Mailpit,
-  SeaweedFS, RabbitMQ — all pre-configured, one toggle away
 
-### Built for
+## What's Included
 
-- Teams building PHP and/or Node.js applications
-- Projects requiring GDPR/compliance features
-- Developers who want to understand their stack, not just use it
-- Production deployments from day one
+| Category        | Scope                                                                  |
+| --------------- | ---------------------------------------------------------------------- |
+| Docker Services | 16 pre-configured (Nginx, PHP, Node, databases, cache, search, queue…) |
+| Make Targets    | 260 across 17 categories (`make help`)                                 |
+| Stack Presets   | 7 modes, from full-stack to static                                     |
+| Kubernetes      | Helm chart for production deployment                                   |
+| Documentation   | 40+ guides in [`.zappzarapp/docs/`](.zappzarapp/docs/)                 |
+| IDE Configs     | PHPStorm + VS Code, working out of the box                             |
 
-### Consider alternatives if
+## Integrated Toolchain
 
-- Single-framework projects (Laravel, Symfony, Nest.js have dedicated tools)
-- CMS-focused work (Drupal, WordPress, TYPO3 have specialized environments)
-- Quick prototypes where Docker knowledge isn't desired
+| Category            | PHP               | Node/TypeScript     |
+| ------------------- | ----------------- | ------------------- |
+| **Static Analysis** | PHPStan (Level 8) | TypeScript (strict) |
+| **Code Quality**    | PHPMD, Rector     | ESLint + sonarjs    |
+| **Formatting**      | PHP-CS-Fixer      | Prettier            |
+| **Testing**         | PHPUnit           | Vitest              |
+| **Coverage**        | Xdebug/PCOV       | v8                  |
+| **Documentation**   | phpDocumentor     | TypeDoc             |
+| **Dead Code**       | —                 | Knip, depcheck      |
 
-## Features
+**Infrastructure linting:** Hadolint (Docker), ShellCheck (Bash), SQLFluff
+(SQL), Markdownlint, YAML validation
 
-- **PHP 8.4** with PHP-FPM and comprehensive extension support
-- **Node.js 24** with Vite, TypeScript, and HMR
-- **Nginx** as reverse proxy with SSL/TLS support
-- **Databases:** PostgreSQL and MariaDB with encryption at rest
-- **Redis** for caching and sessions
-- **GDPR Compliance:** Audit logging, encryption services, network segmentation
-- **Development Tools:** Xdebug, PHPStan, PHPUnit, Vitest, ESLint
-- **IDE Support:** Pre-configured for PhpStorm and VS Code
-- **Git Hooks:** Automated quality checks via Captainhook
-- **CI/CD Ready:** GitHub Actions, GitLab CI, Renovate
+**Container testing:** GOSS (serverspec-style container tests), BATS (Makefile
+integration tests)
 
-## Prerequisites
+**Git hooks:** CaptainHook — auto-fix on commit, conventional-commit validation,
+static analysis and tests on push
 
-- Docker 20.10+
-- Docker Compose V2
-- Make
-- Git
+**Security scanning:** composer audit, pnpm audit, Trivy (images + SBOM), OWASP
+ZAP, Semgrep (CI)
+
+## IDE Integration
+
+| Feature         | PHPStorm/WebStorm          | VS Code                  |
+| --------------- | -------------------------- | ------------------------ |
+| **Run Configs** | 45 curated run configs     | 44 curated tasks         |
+| **Debugging**   | Xdebug ready (port 9003)   | Xdebug ready (port 9003) |
+| **Database**    | Connections pre-configured | SQLTools pre-configured  |
+| **Code Style**  | Project settings included  | Settings synced          |
+| **Extensions**  | —                          | Recommendations included |
+
+No manual setup required — `make setup` configures database connections for both
+IDEs. See [.idea/README.md](.idea/README.md) and
+[.vscode/README.md](.vscode/README.md).
+
+## Stack Presets
+
+| Preset      | What runs                                             |
+| ----------- | ----------------------------------------------------- |
+| `fullstack` | PHP + Node (Vite HMR + API) + database + Redis        |
+| `php-only`  | PHP + database + Redis                                |
+| `node-only` | Node + database + Redis                               |
+| `framework` | Node frontend framework (Next.js, Nuxt, SvelteKit, …) |
+| `assets`    | Vite asset pipeline only (PHP renders the pages)      |
+| `minimal`   | Nginx serving static files                            |
+| `idle`      | Node container idle (PHP-only work without rebuilds)  |
+
+Optional services — Redis, Mercure, Meilisearch, Elasticsearch, Mailpit,
+SeaweedFS, RabbitMQ — are pre-configured and one `.env` toggle away.
 
 ## Quick Start
 
@@ -80,6 +111,29 @@ The application is available at:
 - **HTTP:** <http://localhost:8080>
 - **HTTPS:** <https://localhost:8443>
 - **Dev Dashboard:** <http://localhost:8080/\_dev>
+
+Prerequisites: Docker 20.10+, Docker Compose V2, Make, Git.
+
+## What It Is — and Is Not
+
+**It is** a developer platform: infrastructure, tooling, and scaffolding that
+live _around_ your application code.
+
+**It is not** a framework: it adds no runtime dependencies to your application.
+Your PHP and Node code stay plain and portable.
+
+### Built for
+
+- Teams building PHP and/or Node.js applications
+- Projects requiring GDPR/compliance features
+- Developers who want to understand their stack, not just use it
+- Production deployments from day one
+
+### Consider alternatives if
+
+- Single-framework projects (Laravel, Symfony, Nest.js have dedicated tools)
+- CMS-focused work (Drupal, WordPress, TYPO3 have specialized environments)
+- Quick prototypes where Docker knowledge isn't desired
 
 ## Project Structure
 
@@ -163,33 +217,24 @@ Detailed documentation is available in [`.zappzarapp/docs/`](.zappzarapp/docs/):
 ## Make Commands
 
 ```bash
-make help          # Show all available commands
+make help          # Show all available commands (FILTER=<category> to filter)
 make init          # Initialize project (create .env)
 make setup         # Full project setup
 make up            # Start containers
 make down          # Stop containers
-make build         # Build Docker images
-make restart       # Restart containers
-make logs          # Show logs
-make shell-php     # Shell in PHP container
-make shell-node    # Shell in Node container
+make logs          # Show logs (make logs php nginx for specific services)
 make test          # Run all tests
-make analyse       # Static analysis (PHPStan)
-make check         # Full quality check
+make check         # Full quality check (CI simulation)
+make open-app      # Open the application in the browser
 ```
+
+See the [Makefile Reference](.zappzarapp/docs/development/MAKEFILE-REFERENCE.md)
+for all 260 targets.
 
 ## Git Hooks
 
 This project uses [Captainhook](https://github.com/captainhookphp/captainhook)
-for Git hooks.
-
-Hooks are automatically installed during `make setup`. To install manually:
-
-```bash
-vendor/bin/captainhook install
-```
-
-Configured hooks include:
+for Git hooks. Hooks are installed automatically during `make setup`.
 
 - **pre-commit:** Auto-fix code style (PHP-CS-Fixer, Prettier, ESLint,
   Markdownlint)
