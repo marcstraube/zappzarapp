@@ -341,7 +341,6 @@
     "retention",
     "rollup",
     "rootfs",
-    "rulesync",
     "sarif",
     "sast",
     "sbom",

@@ -132,6 +132,5 @@ Thumbs.db
 # - .ai/REFERENCES.md (documentation links)
 # Tasks managed via /tasks command (GitHub/GitLab Issues)
 
-# Gemini CLI - Generated from Claude via: make ai-commands-sync FROM=claude TO=gemini
-# Not committed - generate with: make ai-sync
+# Personal AI tool configurations (Gemini CLI / Antigravity etc.) - not committed
 .gemini/

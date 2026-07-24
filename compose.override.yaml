@@ -370,7 +370,6 @@ services:
       # Documentation and boilerplate config (read-write for Prettier/markdownlint)
       - ./.zappzarapp:/app/.zappzarapp
       - ./.claude:/app/.claude
-      - ./.gemini:/app/.gemini
       - ./.github:/app/.github
       - ./README.md:/app/README.md
       - ./CHANGELOG.md:/app/CHANGELOG.md

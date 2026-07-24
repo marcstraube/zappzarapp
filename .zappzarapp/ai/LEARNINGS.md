@@ -235,6 +235,26 @@ changes - linter checks alone may miss IDE-specific inspections.
 - **Dual-container architecture**: `node` (frontend, port 3001) + `node-backend`
   (Express API, port 3000).
 
+### pnpm override floors must not cross major versions
+
+**Symptom:** The audit-triage override `"js-yaml@<4.3.0": ">=4.3.0"` silently
+rewrote js-yaml **3.x** dependencies (gray-matter, depcheck) to 4.x. js-yaml 4
+removed `safeLoad`, so every 3.x consumer crashed at require time
+(`TypeError: Cannot read properties of undefined (reading 'bind')`) — a runtime
+break that no lint or audit check catches, only actually executing the tool.
+
+**Solution:** Write one floor per major line, targeting that line's patched
+release: `"js-yaml@<3.15.0": ">=3.15.0 <4.0.0"` and
+`"js-yaml@>=4.0.0 <4.3.0": ">=4.3.0 <5.0.0"`. Check OSV/GHSA "affected ranges"
+for per-major fix versions before writing a floor — advisories often ship
+backports (here: 3.15.0 fixes the same GHSAs as 4.3.0).
+
+**Rule of thumb:** An override selector that spans a semver major is a
+compatibility rewrite, not a security floor. After adding overrides, smoke-run
+the CLIs that consume the affected transitive.
+
+Discovered 2026-07-24 when `rulesync --version` crashed after the audit triage.
+
 ---
 
 ## PHP
@@ -979,4 +999,4 @@ Discovered 2026-07-24 while fixing review finding 27.1.
 
 ## Last Updated
 
-2026-07-24 (added: bind-mounted key permissions need ACLs, not just chmod 600)
+2026-07-24 (added: pnpm override floors must not cross major versions)

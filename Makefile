@@ -359,9 +359,6 @@ setup: ## Create directories, install dependencies (BOILERPLATE=1 to force file 
 	@echo -e "\033[0;32m╠════════════════════════════════════════════════════════════╣\033[0m"
 	@echo -e "\033[0;32m║\033[0m Next steps:                                                \033[0;32m║\033[0m"
 	@echo -e "\033[0;32m║\033[0m   make up          \033[0;34mStart development environment\033[0m         \033[0;32m║\033[0m"
-	@echo -e "\033[0;32m║\033[0m                                                            \033[0;32m║\033[0m"
-	@echo -e "\033[0;32m║\033[0m Optional:                                                  \033[0;32m║\033[0m"
-	@echo -e "\033[0;32m║\033[0m   make ai-sync     \033[0;34mSync config to AI tools\033[0m               \033[0;32m║\033[0m"
 	@echo -e "\033[0;32m╚════════════════════════════════════════════════════════════╝\033[0m"
 
 ide-config: ## Configure all IDE database connections (PHPStorm + VS Code)
@@ -2700,82 +2697,6 @@ boilerplate-diff: ## Show diff between local and zappzarapp upstream (dry-run)
 		fi; \
 	done
 	@echo -e "\033[0;34mFor full diff: git diff HEAD...zappzarapp/$(ZAPPZARAPP_BRANCH) -- <path>\033[0m"
-
-# AI Sync configuration (can be overridden via .env or command line)
-# Command line: make ai-commands-sync FROM=claude TO=gemini
-# Or via .env.local: AI_SYNC_FROM=claude, AI_SYNC_TO=gemini
-AI_SYNC_FROM ?= $(or $(FROM),$(shell grep -E '^AI_SYNC_FROM=' .env.local .env 2>/dev/null | head -1 | cut -d= -f2))
-AI_SYNC_TO ?= $(or $(TO),$(shell grep -E '^AI_SYNC_TO=' .env.local .env 2>/dev/null | head -1 | cut -d= -f2))
-# ai-command-converter only supports Claude ↔ Gemini
-AI_COMMAND_TOOLS := claude gemini
-# rulesync supports more tools
-AI_RULES_TOOLS := claude gemini cursor copilot cline roo
-
-ai-commands-sync: ## Sync AI commands between tools (FROM=claude TO=gemini, or configure in .env)
-	@if [ -z "$(AI_SYNC_FROM)" ]; then \
-		echo -e "\033[0;33mUsage:\033[0m make ai-commands-sync FROM=claude TO=gemini"; \
-		echo -e "       Or set AI_SYNC_FROM (and optionally AI_SYNC_TO) in .env.local"; \
-		echo -e "\033[0;34mSupported tools (commands):\033[0m $(AI_COMMAND_TOOLS)"; \
-		echo -e "\033[0;36mNote: For rules, use 'make ai-rules-sync' (supports more tools)\033[0m"; \
-		exit 1; \
-	fi
-	@if ! echo "$(AI_COMMAND_TOOLS)" | grep -qw "$(AI_SYNC_FROM)"; then \
-		echo -e "\033[0;31mError: Invalid FROM='$(AI_SYNC_FROM)'\033[0m"; \
-		echo -e "\033[0;34mSupported tools (commands):\033[0m $(AI_COMMAND_TOOLS)"; \
-		exit 1; \
-	fi
-	@# Validate TO tools (supports comma or space separated list)
-	@if [ -n "$(AI_SYNC_TO)" ]; then \
-		for tool in $$(echo "$(AI_SYNC_TO)" | tr ',' ' '); do \
-			if ! echo "$(AI_COMMAND_TOOLS)" | grep -qw "$$tool"; then \
-				echo -e "\033[0;31mError: Invalid TO tool '$$tool'\033[0m"; \
-				echo -e "\033[0;34mSupported tools (commands):\033[0m $(AI_COMMAND_TOOLS)"; \
-				exit 1; \
-			fi; \
-		done; \
-	fi
-	@if [ "$(AI_SYNC_FROM)" != "claude" ]; then \
-		echo -e "\033[0;33m⚠️  Warning: Syncing from '$(AI_SYNC_FROM)' instead of 'claude' (project default)\033[0m"; \
-		echo -e "\033[0;36m   This project uses Claude as the source of truth for commands.\033[0m"; \
-	fi
-	@echo -e "\033[0;33mSyncing AI commands...\033[0m"
-	@if [ -z "$(AI_SYNC_TO)" ]; then \
-		echo -e "\033[0;34m  Source: $(AI_SYNC_FROM) → Target: all other tools\033[0m"; \
-		for tool in $(AI_COMMAND_TOOLS); do \
-			if [ "$$tool" != "$(AI_SYNC_FROM)" ]; then \
-				echo -e "\033[0;36m  Syncing $(AI_SYNC_FROM) → $$tool...\033[0m"; \
-				mkdir -p .$$tool/commands; \
-				$(DC_RUN) run --rm --no-TTY dev-tools npx ai-command-converter batch \
-					.$(AI_SYNC_FROM)/commands .$$tool/commands --format $$tool --force || \
-					echo -e "\033[0;31m  ✗ Failed to sync to $$tool\033[0m"; \
-			fi; \
-		done; \
-	else \
-		echo -e "\033[0;34m  Source: $(AI_SYNC_FROM) → Target: $(AI_SYNC_TO)\033[0m"; \
-		for tool in $$(echo "$(AI_SYNC_TO)" | tr ',' ' '); do \
-			if [ "$$tool" != "$(AI_SYNC_FROM)" ]; then \
-				echo -e "\033[0;36m  Syncing $(AI_SYNC_FROM) → $$tool...\033[0m"; \
-				mkdir -p .$$tool/commands; \
-				$(DC_RUN) run --rm --no-TTY dev-tools npx ai-command-converter batch \
-					.$(AI_SYNC_FROM)/commands .$$tool/commands --format $$tool --force || \
-					echo -e "\033[0;31m  ✗ Failed to sync to $$tool\033[0m"; \
-			fi; \
-		done; \
-	fi
-	@echo -e "\033[0;32m✓ AI commands sync complete!\033[0m"
-
-ai-rules-sync: ## Sync AI rules to all configured tools (Claude, Gemini, Cursor, Copilot, etc.)
-	@echo -e "\033[0;33mSyncing AI rules...\033[0m"
-	@echo -e "\033[0;34mSupported tools (rules):\033[0m $(AI_RULES_TOOLS)"
-	@if [ ! -d .rulesync ]; then \
-		echo -e "\033[0;33m  Initializing rulesync...\033[0m"; \
-		$(DC_RUN) run --rm --no-TTY dev-tools pnpm exec rulesync init; \
-	fi
-	@echo -e "\033[0;36m  Reading from .rulesync/*.md, generating for all configured targets...\033[0m"
-	@$(DC_RUN) run --rm --no-TTY dev-tools pnpm exec rulesync generate
-	@echo -e "\033[0;32m✓ AI rules sync complete!\033[0m"
-
-ai-sync: ai-commands-sync ai-rules-sync ## Sync both AI commands and rules
 
 ai-setup: ## Initialize labels and milestones for /tasks command (auto-detects GitHub/GitLab)
 	@REMOTE_URL=$$(git remote get-url origin 2>/dev/null); \

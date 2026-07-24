@@ -33,8 +33,6 @@
     "depcheck",
     "knip",
     "@faker-js/faker",
-    "ai-command-converter",
-    "rulesync",
     "standard-version",
     "amqplib",
     "meilisearch",

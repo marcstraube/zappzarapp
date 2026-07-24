@@ -1,18 +1,19 @@
 # AI Integration
 
-This project supports multiple AI coding assistants with a unified configuration
-approach.
+This project ships a first-class Claude Code integration. Other AI coding
+assistants are supported through the tool-neutral `AGENTS.md` convention.
 
 ## Supported Tools
 
-| Tool           | Commands | Rules | Agent Workflow |
-| -------------- | -------- | ----- | -------------- |
-| Claude Code    | Yes      | Yes   | Yes            |
-| Gemini CLI     | Yes      | Yes   | No             |
-| Cursor         | No       | Yes   | No             |
-| GitHub Copilot | No       | Yes   | No             |
-| Cline          | No       | Yes   | No             |
-| Roo Code       | No       | Yes   | No             |
+| Tool        | Integration                              | Agent Workflow |
+| ----------- | ---------------------------------------- | -------------- |
+| Claude Code | Full (`.claude/`: skills, hooks, agents) | Yes            |
+| Other tools | `AGENTS.md` convention (see below)       | No             |
+
+Most current AI coding assistants (Codex CLI, Gemini CLI / Antigravity, Cursor,
+GitHub Copilot, OpenCode, Cline, Roo Code, ...) read a root-level `AGENTS.md`
+file natively. If your team uses one of these tools, maintain an `AGENTS.md`
+with your project rules — no sync tooling required.
 
 ## 2-Layer Architecture
 
@@ -163,57 +164,23 @@ When detecting an implementation task:
 [Implementation Task] Check .claude/agents/workflow.md for scope before starting.
 ```
 
-### Gemini CLI
+### Other Tools (`AGENTS.md` Convention)
 
-Generated from Claude skills via `make ai-commands-sync`.
+The industry has converged on `AGENTS.md` as the tool-neutral rules file: Codex
+CLI, Gemini CLI / Antigravity, Cursor, GitHub Copilot, OpenCode, Cline, Roo Code
+and others read it natively.
 
-```text
-.gemini/
-└── commands/           # Generated .toml files (gitignored)
-```
+If your team uses tools besides Claude Code:
 
-### Other Tools
+1. Create an `AGENTS.md` in the project root with your shared project rules
+2. Keep tool-specific configuration (e.g. `.gemini/`, `.cursor/`) personal and
+   uncommitted (see [CONTRIBUTING.md](../CONTRIBUTING.md))
 
-Rules are synced via `make ai-rules-sync` to:
+Which additional AI tools to adopt — and whether to keep their configurations in
+sync — is a per-project decision, so the boilerplate does not prescribe sync
+tooling for it.
 
-- `.cursor/rules/`
-- `.github/copilot-instructions.md`
-- etc.
-
-## Synchronization
-
-### Skills (Claude ↔ Gemini)
-
-```bash
-# Sync to specific tool
-make ai-commands-sync FROM=claude TO=gemini
-
-# Sync to all supported tools
-make ai-commands-sync FROM=claude
-```
-
-Converts skills from `.claude/skills/` to Gemini-compatible `.toml` format.
-
-Uses
-[ai-command-converter](https://github.com/Commands-com/ai-command-converter).
-
-### Rules (All Tools)
-
-```bash
-# Sync CLAUDE.md rules to all tools
-make ai-rules-sync
-```
-
-Uses [rulesync](https://github.com/dyoshikawa/rulesync).
-
-### Both
-
-```bash
-# Sync everything
-make ai-sync FROM=claude
-```
-
-### Task Integration Setup
+## Task Integration Setup
 
 ```bash
 # Initialize labels and milestones (auto-detects GitHub/GitLab)
@@ -225,15 +192,6 @@ This creates:
 - Standard labels (bug, enhancement, chore, status::in-progress, etc.)
 - "Backlog" milestone for deferred tasks
 - GitLab uses `::` for scoped labels (mutually exclusive)
-
-### Environment Configuration
-
-Set defaults in `.env.local`:
-
-```bash
-AI_SYNC_FROM=claude
-# AI_SYNC_TO=gemini  # Optional: leave empty for all
-```
 
 ## Skills
 
@@ -403,13 +361,12 @@ See `.claude/agents/workflow.md` for detailed documentation.
 file swaps when developing zappzarapp itself. See
 [CONTRIBUTING.md](../CONTRIBUTING.md) for details.
 
-**Gemini commands:** Not generated automatically. Run `make ai-sync` if needed.
-
 ## Team Workflow
 
-1. Claude Code is the source of truth for skills (`.claude/skills/`)
-2. Team members using other tools run `make ai-sync FROM=claude` after pulling
-3. CaptainHook can notify when synced skills change (optional)
+1. Claude Code is the source of truth for skills (`.claude/skills/`) and project
+   rules
+2. Team members using other tools maintain a shared `AGENTS.md` (see "Other
+   Tools" above)
 
 ## Troubleshooting
 
@@ -419,9 +376,3 @@ file swaps when developing zappzarapp itself. See
 2. Run `/hooks` to see loaded hooks
 3. Check `~/.claude/debug/` for settings loading logs
 4. "Found 0 hook matchers" = hooks format broken
-
-### Skills Not Syncing
-
-1. Verify source files exist in `.claude/skills/`
-2. Check Docker containers are running (`make up`)
-3. Run with verbose output: `VERBOSE=1 make ai-commands-sync FROM=claude`
