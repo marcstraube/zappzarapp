@@ -95,6 +95,18 @@ echo "Creating symlinks for Nginx..."
 ln -sf "letsencrypt/live/$DOMAIN/fullchain.pem" "$CERT_DIR/cert.crt"
 ln -sf "letsencrypt/live/$DOMAIN/privkey.pem" "$CERT_DIR/cert.key"
 
+# The production preset runs nginx unprivileged (uid 101) and reads the key
+# through this symlink. Let's Encrypt keys are 0600 root-owned, so grant a
+# read ACL on the live key (certbot renewals replace the file - re-run this
+# script or add a certbot deploy-hook to reapply).
+if command -v setfacl >/dev/null 2>&1; then
+    setfacl -m u:101:r "$CERT_DIR/letsencrypt/live/$DOMAIN/privkey.pem" \
+        || echo "WARNING: could not set ACL on privkey.pem (run as root?)"
+else
+    echo "WARNING: setfacl not found - nginx (uid 101) cannot read the" \
+        "0600 private key. Install the 'acl' package and re-run."
+fi
+
 echo "============================================================================"
 echo "✅ Let's Encrypt certificate installed successfully!"
 echo "============================================================================"

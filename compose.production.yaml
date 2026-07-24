@@ -42,7 +42,8 @@ services:
       - php-fpm-socket:/var/run/php-fpm
       # Production SSL config template (processed by entrypoint at runtime)
       - ./docker/nginx/conf.d/ssl-production.conf.template:/etc/nginx/conf.d/ssl-production.conf.template:ro
-      # SSL certificates (bind mount, readable by all container users)
+      # SSL certificates (bind mount; key is 0600 + ACL for uid 101,
+      # set by docker/certs/generate-internal.sh)
       - ./docker/certs/nginx/cert.crt:/etc/nginx/certs/cert.crt:ro
       - ./docker/certs/nginx/cert.key:/etc/nginx/certs/cert.key:ro
     read_only: true
@@ -191,7 +192,8 @@ services:
       - SETGID
       # FOWNER: allows chmod on files not owned by root (for cert permissions)
       - FOWNER
-      # Note: DAC_OVERRIDE not needed - secrets/certs are 0644 (world-readable)
+      # Note: DAC_OVERRIDE not needed - secrets are 0644, cert keys carry a
+      # read ACL for uid 0 (set by docker/certs/generate-internal.sh)
     shm_size: 256mb
     volumes:
       - mariadb-data:/var/lib/mysql
@@ -242,7 +244,8 @@ services:
       - SETGID
       # FOWNER: allows chmod on files not owned by root (for cert permissions)
       - FOWNER
-      # Note: DAC_OVERRIDE not needed - secrets/certs are 0644 (world-readable)
+      # Note: DAC_OVERRIDE not needed - secrets are 0644, cert keys carry a
+      # read ACL for uid 0 (set by docker/certs/generate-internal.sh)
     shm_size: 256mb
     volumes:
       - postgres-data:/var/lib/postgresql/data

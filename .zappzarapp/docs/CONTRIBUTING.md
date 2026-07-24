@@ -100,7 +100,8 @@ make check
 ```
 
 This runs: `cs-check`, `analyse-php`, `phpmd`, `rector-check`, `prettier-check`,
-`analyse-node`, `lint-node`, `test`, `validate`, `lint-md`
+`analyse-node`, `lint-node`, `test`, `deps-validate`, `compose-validate`,
+`validate-env`, `lint-md`, `lint-sql`, `lint-docker`, `lint-shell`
 
 ### Commit Messages
 

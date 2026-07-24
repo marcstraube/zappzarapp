@@ -87,6 +87,8 @@ php:
 node:
   # Enable for: framework, framework-api modes
   enabled: false
+  # NODE_MODE for the frontend container: framework or framework-api
+  mode: framework
   replicaCount: 1
   image:
     repository: zappzarapp-node

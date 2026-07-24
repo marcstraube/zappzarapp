@@ -12,6 +12,7 @@
   - [Dependencies](development/DEPENDENCIES.md)
   - [Frontend Scaffolding](development/FRONTEND-SCAFFOLDING.md)
   - [Dev Dashboard](development/DEV-DASHBOARD.md)
+  - [Dev Toolbar](development/DEV-TOOLBAR.md)
   - [Xdebug](development/XDEBUG.md)
   - [Renovate](development/RENOVATE.md)
 

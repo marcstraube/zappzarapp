@@ -52,8 +52,13 @@ CREATE TABLE IF NOT EXISTS audit_logs (
     INDEX idx_timestamp (timestamp DESC),
     INDEX idx_user_id (user_id, timestamp DESC),
     INDEX idx_entity (entity_type, entity_id, timestamp DESC),
-    INDEX idx_action (action, timestamp DESC),
-    INDEX idx_failed_login (timestamp DESC, action)  -- For failed login monitoring
+    INDEX idx_action (action, timestamp DESC)
+
+    -- Intentional dialect difference: PostgreSQL uses a partial index
+    -- (idx_audit_logs_failed_login) for failed-login monitoring. MariaDB has
+    -- no partial indexes, and idx_action above already serves
+    -- WHERE action = 'login.failed' ORDER BY timestamp optimally, so no
+    -- dedicated failed-login index is defined here.
 
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
