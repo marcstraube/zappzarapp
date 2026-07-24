@@ -25,6 +25,20 @@ Fixes) **Version:** 3.79
     `compose.override.yaml`, `.claude/settings.json`, `.depcheckrc.json`,
     `knip.config.js`, `tests/bats/make-targets-dryrun.bats`, docs
 
+#### Fixed
+
+- **Prettier ARGS Selectivity**: `make prettier-check`/`prettier-fix` with
+  `ARGS` appended the given files to the full format globs (formatting
+  everything anyway); they now run Prettier on exactly the given files (same
+  `$(if $(ARGS),...)` pattern as `analyse-node`)
+- **BATS prettier-fix ARGS Test**: fixture is now created world-writable (BATS
+  container runs as root, Prettier runs as the dev-tools `node` user → EACCES)
+  and all ARGS fixtures are cleaned up in `teardown()`, which also runs for
+  failed tests (no more root-owned leftovers on the host)
+- **hook-runner Service Detection**: `is_running()` now checks
+  `docker compose ps -q --status running` — plain `ps -q` also lists
+  created/exited containers and routed into `exec` against dead containers
+
 #### Changed
 
 - **js-yaml Override Split**: The blanket `js-yaml@<4.3.0 -> >=4.3.0` pnpm

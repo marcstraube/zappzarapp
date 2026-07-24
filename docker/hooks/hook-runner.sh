@@ -23,8 +23,10 @@ shift
 COMMAND=("$@")
 
 # Check if container is running
+# --status running is required: plain "ps -q" also lists created/exited
+# containers, which would route into "exec" against a dead container
 is_running() {
-    docker compose ps -q "$1" 2>/dev/null | grep -q .
+    docker compose ps -q --status running "$1" 2>/dev/null | grep -q .
 }
 
 # Debug output
