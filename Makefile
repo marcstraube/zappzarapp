@@ -8,6 +8,9 @@ DC := docker compose --progress=plain
 # This ensures make pnpm/composer/etc. work regardless of .env settings
 DC_RUN := COMPOSE_PROFILES=php,node,node-backend,dev-tools $(DC)
 
+# Browser opener: xdg-open (Linux), open (macOS), start (Windows/Git Bash)
+OPEN_CMD := $(shell command -v xdg-open || command -v open || echo start)
+
 # Alpine image for utility operations (ownership fixes, cleanup)
 ALPINE_IMAGE ?= alpine:3.21
 
@@ -2383,6 +2386,32 @@ check-health: ## Check application health by container status for all services
 	fi
 
 	@echo ""
+
+open-app: ## Open the application in the browser
+	@if [ -f .env ]; then . ./.env; fi; \
+	$(OPEN_CMD) "https://localhost:$${NGINX_SSL_PORT:-8443}"
+
+open-dashboard: ## Open the Dev Dashboard in the browser
+	@if [ -f .env ]; then . ./.env; fi; \
+	$(OPEN_CMD) "https://localhost:$${NGINX_SSL_PORT:-8443}/_dev/"
+
+open-docs: ## Open generated API documentation in the browser (run 'make docs' first)
+	@opened=0; \
+	for f in docs/api/php/index.html docs/api/node-backend/index.html docs/api/node-frontend/index.html; do \
+		if [ -f "$$f" ]; then $(OPEN_CMD) "$$f"; opened=1; fi; \
+	done; \
+	if [ "$$opened" = "0" ]; then \
+		echo -e "\033[0;33mNo generated documentation found - run 'make docs' first\033[0m"; \
+	fi
+
+open-coverage: ## Open test coverage reports in the browser (run 'make test-coverage' first)
+	@opened=0; \
+	for f in build/coverage/php/index.html build/coverage/node/index.html; do \
+		if [ -f "$$f" ]; then $(OPEN_CMD) "$$f"; opened=1; fi; \
+	done; \
+	if [ "$$opened" = "0" ]; then \
+		echo -e "\033[0;33mNo coverage reports found - run 'make test-coverage' first\033[0m"; \
+	fi
 
 fresh: ## Complete clean slate rebuild, removing all data volumes (DANGEROUS!)
 	@echo -e "\033[0;31m!!! WARNING: You are about to remove all containers, images, AND data volumes (e.g. database). !!!\033[0m"

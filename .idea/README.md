@@ -39,57 +39,27 @@ Code inspection settings:
 
 ### Run Configurations (`runConfigurations/`)
 
-25 pre-configured run configurations organized by category:
+45 curated run configurations, one per frequently used Makefile target. Every
+configuration invokes `make`, so CLI and IDE behave identically.
 
-#### Browser
+| Prefix         | Contents                                                             |
+| -------------- | -------------------------------------------------------------------- |
+| `Test:`        | PHPUnit / Vitest, coverage, watch mode, Xdebug (8)                   |
+| `Quality:`     | check, CS, PHPStan, PHPMD, Rector, ESLint, Prettier, TS, linters (16) |
+| `Docker:`      | Up, Down, Restart, Status, Build, Rebuild, Check Health (7)          |
+| `Node:`        | Dev servers and builds (6)                                           |
+| `Open:`        | Browser shortcuts: app, Dev Dashboard, API docs, coverage (4)        |
+| Dependencies   | Composer / pnpm install + update (4)                                 |
 
-- **Browser: Open App** - Open application in browser (localhost:8080)
+The set is deliberately limited to frequent, non-interactive, non-destructive
+actions. When adding new configurations, keep these rules:
 
-#### Docker/Make
-
-- **Make: Up** - Start all containers
-- **Make: Down** - Stop all containers
-- **Make: Restart** - Restart containers
-- **Make: Fresh Build** - Clean rebuild all images (make fresh)
-- **Make: Rebuild** - Rebuild Docker images (make rebuild)
-
-#### PHP Quality
-
-- **PHP: CS Fixer** - Format PHP code (PER-CS)
-- **PHP: PHPStan** - Static analysis (Level 5)
-- **PHP: PHPMD** - Mess detection
-- **PHP: Run Tests** - Execute PHPUnit tests
-- **PHP: Coverage Report** - Generate test coverage report
-
-#### Node.js Quality
-
-- **Node: ESLint** - Lint JavaScript/TypeScript
-- **Node: Prettier** - Format JavaScript/TypeScript
-- **Node: Type Check** - TypeScript type checking
-- **Node: Run Tests** - Execute Vitest tests
-- **Node: Coverage Report** - Generate test coverage report
-
-#### General
-
-- **Quality: Run All Checks** - Run all quality checks (PHP + Node.js)
-- **Quality: Fix All** - Auto-fix all code issues
-- **Test: Run All Tests** - Execute all tests (PHP + Node.js)
-
-#### Documentation
-
-- **Docs: Generate API Documentation** - Generate PHPDoc and TypeDoc
-
-#### SSL
-
-- **SSL: Generate Self-Signed** - Generate self-signed certificate for
-  development
-- **SSL: Show Certificate Info** - Display SSL certificate information
-
-#### Utilities
-
-- **Logs: View All** - View Docker container logs
-- **Shell: PHP Container** - Open bash shell in PHP container
-- **Shell: Node Container** - Open bash shell in Node container
+- **Interactive targets** (shells, CLIs, monitors) belong in the IDE terminal,
+  not in run configurations
+- **Destructive targets** (`make fresh`, `make redis-flush`, secret rotation)
+  must be typed consciously in a terminal
+- **Rare / one-time targets** (setup, SSL, backups, releases) stay CLI-only —
+  see `make help` for the full target list
 
 **Access Run Configurations:** `Alt+Shift+F10` (Linux/Windows) or
 `Ctrl+Option+R` (macOS)
@@ -167,7 +137,7 @@ PHP CS Fixer is configured for format-on-save:
    - Check: "Reformat code"
    - Select: "PHP CS Fixer"
 
-Alternatively, use Run Configuration: `PHP: CS Fixer`
+Alternatively, use Run Configuration: `Quality: CS Fix`
 
 ## Usage
 
@@ -220,13 +190,13 @@ Alternatively, use Run Configuration: `PHP: CS Fixer`
 
 **Run Individual Tools:**
 
-- Use run configurations: `PHP: CS Fixer`, `PHP: PHPStan`, etc.
+- Use run configurations: `Quality: CS Fix`, `Quality: PHPStan`, etc.
 - Or via Makefile: Right-click `Makefile` → Run Make Target
 
 **Run All Quality Checks:**
 
-- Select: `Quality: Run All Checks`
-- Or terminal: `make quality`
+- Select: `Quality: Check All`
+- Or terminal: `make check`
 
 **Format Code:**
 
@@ -258,7 +228,7 @@ This PhpStorm configuration provides feature parity with VS Code:
 | Formatting         | Prettier (built-in) | Prettier              |
 | Database Tools     | Built-in DataGrip   | SQL Tools             |
 | Git Integration    | Built-in VCS        | GitLens               |
-| Run Configurations | 25 pre-configured   | 23 tasks              |
+| Run Configurations | 45 curated          | 44 tasks              |
 | Docker Integration | Built-in            | Docker Extension      |
 
 ## Troubleshooting
