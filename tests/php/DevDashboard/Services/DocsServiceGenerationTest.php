@@ -13,6 +13,10 @@ use PHPUnit\Framework\TestCase;
  *
  * Covers the docsAge formatting logic (exercised via getApiDocsStatus), the
  * generatePhpDocs() method, and recursive source-file discovery.
+ *
+ * generatePhpDocs() is made deterministic by injecting the phpdoc path and
+ * working directory via constructor parameters so both branches (phar missing
+ * and phar present) are always exercised regardless of the environment.
  */
 #[CoversClass(DocsService::class)]
 final class DocsServiceGenerationTest extends TestCase
@@ -184,12 +188,17 @@ final class DocsServiceGenerationTest extends TestCase
         $this->assertSame('1 day ago', $status['php']['docsAge']);
     }
 
-    // ===== generatePhpDocs() =====
+    // ===== generatePhpDocs() — both branches always deterministic =====
 
     public function testGeneratePhpDocsReturnsExpectedStructure(): void
     {
-        $service = new DocsService($this->docsDir, $this->srcDir);
-        $result  = $service->generatePhpDocs();
+        // Use a nonexistent phar path so the missing-tool branch is always taken
+        $service = new DocsService(
+            docsPath: $this->docsDir,
+            srcPath: $this->srcDir,
+            phpdocPath: $this->baseDir . '/nonexistent/phpdoc.phar',
+        );
+        $result = $service->generatePhpDocs();
 
         $this->assertArrayHasKey('success', $result);
         $this->assertArrayHasKey('message', $result);
@@ -201,16 +210,58 @@ final class DocsServiceGenerationTest extends TestCase
 
     public function testGeneratePhpDocsReturnsNotFoundWhenPhpdocMissing(): void
     {
-        // phpdoc.phar is at a hardcoded path in the container; skip if it exists
-        if (file_exists('/var/www/html/tools/phpdoc.phar')) {
-            $this->markTestSkipped('phpdoc.phar exists in this environment; cannot test missing-tool path');
-        }
-
-        $service = new DocsService($this->docsDir, $this->srcDir);
-        $result  = $service->generatePhpDocs();
+        // Always deterministic: inject a path guaranteed not to exist
+        $service = new DocsService(
+            docsPath: $this->docsDir,
+            srcPath: $this->srcDir,
+            phpdocPath: $this->baseDir . '/nonexistent/phpdoc.phar',
+        );
+        $result = $service->generatePhpDocs();
 
         $this->assertFalse($result['success']);
         $this->assertStringContainsString('phpDocumentor not found', $result['message']);
+        $this->assertSame('', $result['output']);
+    }
+
+    public function testGeneratePhpDocsRunsCommandWhenPhpdocPresent(): void
+    {
+        // Create a fake "phar" that is actually a PHP script echoing known output
+        // and exiting successfully (exit code 0)
+        $fakePhar = $this->baseDir . '/phpdoc.phar';
+        file_put_contents($fakePhar, '<?php echo "Documentation generated.\n";');
+        chmod($fakePhar, 0755);
+
+        $service = new DocsService(
+            docsPath: $this->docsDir,
+            srcPath: $this->srcDir,
+            phpdocPath: $fakePhar,
+            commandWorkingDir: $this->baseDir,
+        );
+        $result = $service->generatePhpDocs();
+
+        $this->assertTrue($result['success']);
+        $this->assertSame('PHP documentation generated successfully', $result['message']);
+        $this->assertStringContainsString('Documentation generated.', $result['output']);
+    }
+
+    public function testGeneratePhpDocsReturnsFailureWhenCommandFails(): void
+    {
+        // Create a fake "phar" that exits with a non-zero exit code
+        $fakePhar = $this->baseDir . '/phpdoc_fail.phar';
+        file_put_contents($fakePhar, '<?php fwrite(STDERR, "Error output.\n"); exit(1);');
+        chmod($fakePhar, 0755);
+
+        $service = new DocsService(
+            docsPath: $this->docsDir,
+            srcPath: $this->srcDir,
+            phpdocPath: $fakePhar,
+            commandWorkingDir: $this->baseDir,
+        );
+        $result = $service->generatePhpDocs();
+
+        $this->assertFalse($result['success']);
+        $this->assertStringContainsString('phpDocumentor failed with exit code', $result['message']);
+        $this->assertStringContainsString('Error output.', $result['output']);
     }
 
     // ===== getNewestMtime — recursive directory scan =====

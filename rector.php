@@ -33,6 +33,12 @@ return static function (RectorConfig $rectorConfig): void {
     $rectorConfig->skip([
         __DIR__ . '/tests/php/App/Unit/Infrastructure/Database/DatabaseConfigStub.php',
         '*/DatabaseConfigStub.php',
+
+        // Anonymous-class constructors in these test files use explicit property assignment
+        // (not constructor property promotion) to avoid a PHPMD 2.x false-positive:
+        // PHPMD.UnusedFormalParameter is incorrectly emitted for promoted properties in
+        // anonymous classes even when the property is later accessed via $this-> in other methods.
+        '*SeamsTest.php',
     ]);
 
     // Use the configured PHPStan cache

@@ -96,7 +96,7 @@ class SystemInfoService
     {
         $gitDir = __DIR__ . '/../../../..';  // Project root
 
-        if (!is_dir($gitDir . '/.git')) {
+        if (!$this->isGitDirectory($gitDir . '/.git')) {
             return [
                 'initialized' => false,
                 'message'     => 'Not a git repository',
@@ -132,9 +132,17 @@ class SystemInfoService
     }
 
     /**
+     * I/O seam: check whether a path is a directory (overridable in tests)
+     */
+    protected function isGitDirectory(string $path): bool
+    {
+        return is_dir($path);
+    }
+
+    /**
      * Execute a shell command and return output
      */
-    private function executeCommand(string $command, ?string $cwd = null): string
+    protected function executeCommand(string $command, ?string $cwd = null): string
     {
         $descriptorspec = [
             1 => ['pipe', 'w'],  // stdout

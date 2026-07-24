@@ -10,200 +10,389 @@ use PHPUnit\Framework\TestCase;
 
 /**
  * Unit tests for CoverageParser — getPhpTestCoverage(), getNodeTestCoverage(), formatAge()
+ *
+ * Uses a temp-dir fixture as projectRoot so both "report exists" and "report missing"
+ * branches are exercised deterministically in every environment.
  */
 #[CoversClass(CoverageParser::class)]
 class CoverageParserReportsTest extends TestCase
 {
-    private CoverageParser $parser;
+    private string $tempRoot;
 
     protected function setUp(): void
     {
         parent::setUp();
-        $this->parser = new CoverageParser();
+        $this->tempRoot = sys_get_temp_dir() . '/coverage_parser_reports_test_' . uniqid() . '/';
+        mkdir($this->tempRoot, 0755, recursive: true);
     }
 
-    // ==================== getPhpTestCoverage ====================
+    protected function tearDown(): void
+    {
+        $this->removeDirectory($this->tempRoot);
+        parent::tearDown();
+    }
+
+    private function removeDirectory(string $dir): void
+    {
+        if (!is_dir($dir)) {
+            return;
+        }
+
+        $files = array_diff(scandir($dir) ?: [], ['.', '..']);
+        foreach ($files as $file) {
+            $path = $dir . '/' . $file;
+            is_dir($path) ? $this->removeDirectory($path) : unlink($path);
+        }
+
+        rmdir($dir);
+    }
+
+    // ==================== getPhpTestCoverage — "report missing" branch ====================
 
     public function testGetPhpTestCoverageUnavailableWhenNoReport(): void
     {
-        // The project's actual build/coverage-php/index.html may not exist in CI
-        // We verify the structure regardless
-        $result = $this->parser->getPhpTestCoverage();
+        // projectRoot has no coverage-php/ directory → file_exists() returns false → lines 110-113
+        $parser = new CoverageParser($this->tempRoot);
+        $result = $parser->getPhpTestCoverage();
 
-        $this->assertIsArray($result);
-        $this->assertArrayHasKey('available', $result);
-
-        if (!$result['available']) {
-            $this->assertArrayHasKey('message', $result);
-            $this->assertIsString($result['message']);
-        } else {
-            $this->assertArrayHasKey('metrics', $result);
-            $this->assertArrayHasKey('generated_at', $result);
-            $this->assertArrayHasKey('outdated', $result);
-            $this->assertArrayHasKey('report_path', $result);
-        }
+        $this->assertSame(false, $result['available']);
+        $this->assertStringContainsString('make test-coverage-php', $result['message']);
     }
 
-    public function testGetPhpTestCoverageStructureWhenAvailable(): void
+    // ==================== getPhpTestCoverage — "report present" branch ====================
+
+    public function testGetPhpTestCoverageAvailableWhenReportExists(): void
     {
-        // Create a fake coverage report in the expected project location
-        // The parser uses realpath(__DIR__ . '/../../../../') as projectRoot
-        // We can't easily redirect that, so we verify the returned structure is consistent
-        $result = $this->parser->getPhpTestCoverage();
+        // Create a minimal PHPUnit-style coverage report → lines 116-127
+        $coverageDir = $this->tempRoot . 'build/coverage-php/';
+        mkdir($coverageDir, 0755, recursive: true);
 
-        $this->assertIsBool($result['available']);
+        $html = '<div class="progress-bar" aria-valuenow="85.00"></div>';
+        file_put_contents($coverageDir . 'index.html', $html);
 
-        if ($result['available']) {
-            $this->assertArrayHasKey('report_path', $result);
-            $this->assertSame('/build/coverage-php/index.html', $result['report_path']);
-        }
+        $parser = new CoverageParser($this->tempRoot);
+        $result = $parser->getPhpTestCoverage();
+
+        $this->assertTrue($result['available']);
+        $this->assertArrayHasKey('metrics', $result);
+        $this->assertArrayHasKey('generated_at', $result);
+        $this->assertArrayHasKey('outdated', $result);
+        $this->assertSame('/build/coverage-php/index.html', $result['report_path']);
     }
 
-    public function testGetPhpTestCoverageUnavailableWhenFileAbsent(): void
+    public function testGetPhpTestCoverageMetricsAreCorrectlyParsed(): void
     {
-        // Use a fresh parser instance to query coverage.
-        // If the PHP coverage report happens to not exist, this tests the unavailable path.
-        // If it does exist, we verify the available=true structure.
-        $result = $this->parser->getPhpTestCoverage();
+        $coverageDir = $this->tempRoot . 'build/coverage-php/';
+        mkdir($coverageDir, 0755, recursive: true);
 
-        $this->assertIsArray($result);
-        $this->assertArrayHasKey('available', $result);
+        $html = '<div class="progress-bar" aria-valuenow="72.50"></div>';
+        file_put_contents($coverageDir . 'index.html', $html);
 
-        if (!$result['available']) {
-            $this->assertSame(false, $result['available']);
-            $this->assertStringContainsString('make test-coverage-php', $result['message']);
-        } else {
-            $this->assertTrue($result['available']);
-        }
+        $parser  = new CoverageParser($this->tempRoot);
+        $result  = $parser->getPhpTestCoverage();
+
+        $this->assertTrue($result['available']);
+        $this->assertSame(72.50, $result['metrics']['lines']);
     }
 
-    // ==================== getNodeTestCoverage ====================
+    public function testGetPhpTestCoverageOutdatedWhenSourceIsNewer(): void
+    {
+        // Create coverage report, then create a newer PHP source file → outdated = true (line 119)
+        $coverageDir = $this->tempRoot . 'build/coverage-php/';
+        $phpSrcDir   = $this->tempRoot . 'src/php/';
+        mkdir($coverageDir, 0755, recursive: true);
+        mkdir($phpSrcDir, 0755, recursive: true);
+
+        $htmlFile = $coverageDir . 'index.html';
+        file_put_contents($htmlFile, '<div class="progress-bar" aria-valuenow="80.00"></div>');
+        // Set report mtime to 1 hour ago, source file mtime to now
+        touch($htmlFile, time() - 3600);
+
+        $srcFile = $phpSrcDir . 'Dummy.php';
+        file_put_contents($srcFile, '<?php // dummy');
+        touch($srcFile, time());
+
+        $parser = new CoverageParser($this->tempRoot);
+        $result = $parser->getPhpTestCoverage();
+
+        $this->assertTrue($result['available']);
+        $this->assertTrue($result['outdated']);
+    }
+
+    // ==================== getNodeTestCoverage — "report missing" branch ====================
 
     public function testGetNodeTestCoverageUnavailableWhenNoReport(): void
     {
-        $result = $this->parser->getNodeTestCoverage();
+        // tempRoot has no coverage/node directory → file_exists() returns false → lines 140-143
+        $parser = new CoverageParser($this->tempRoot);
+        $result = $parser->getNodeTestCoverage();
 
-        $this->assertIsArray($result);
-        $this->assertArrayHasKey('available', $result);
+        $this->assertSame(false, $result['available']);
+        $this->assertStringContainsString('make test-coverage-node', $result['message']);
+    }
 
-        if (!$result['available']) {
-            $this->assertArrayHasKey('message', $result);
-            $this->assertIsString($result['message']);
-        } else {
-            $this->assertArrayHasKey('metrics', $result);
-            $this->assertArrayHasKey('generated_at', $result);
-            $this->assertArrayHasKey('outdated', $result);
-            $this->assertArrayHasKey('report_path', $result);
-        }
+    // ==================== getNodeTestCoverage — "report present" branch ====================
+
+    public function testGetNodeTestCoverageAvailableWhenReportExists(): void
+    {
+        // Create a minimal Vitest-style coverage report → lines 146-157
+        $nodeDir = $this->tempRoot . 'build/coverage/node/';
+        mkdir($nodeDir, 0755, recursive: true);
+
+        $html = '<span class="strong">85.00% </span><span class="quiet">Statements</span>' .
+                '<span class="strong">72.00% </span><span class="quiet">Lines</span>';
+        file_put_contents($nodeDir . 'index.html', $html);
+
+        $parser = new CoverageParser($this->tempRoot);
+        $result = $parser->getNodeTestCoverage();
+
+        $this->assertTrue($result['available']);
+        $this->assertArrayHasKey('metrics', $result);
+        $this->assertArrayHasKey('generated_at', $result);
+        $this->assertArrayHasKey('outdated', $result);
+        $this->assertSame('/build/coverage/node/index.html', $result['report_path']);
+    }
+
+    public function testGetNodeTestCoverageMetricsAreCorrectlyParsed(): void
+    {
+        $nodeDir = $this->tempRoot . 'build/coverage/node/';
+        mkdir($nodeDir, 0755, recursive: true);
+
+        $html = '<span class="strong">91.00% </span><span class="quiet">Statements</span>' .
+                '<span class="strong">88.50% </span><span class="quiet">Lines</span>';
+        file_put_contents($nodeDir . 'index.html', $html);
+
+        $parser = new CoverageParser($this->tempRoot);
+        $result = $parser->getNodeTestCoverage();
+
+        $this->assertTrue($result['available']);
+        $this->assertSame(91.0, $result['metrics']['statements']);
+        $this->assertSame(88.5, $result['metrics']['lines']);
     }
 
     public function testGetNodeTestCoverageReportPath(): void
     {
-        $result = $this->parser->getNodeTestCoverage();
+        $nodeDir = $this->tempRoot . 'build/coverage/node/';
+        mkdir($nodeDir, 0755, recursive: true);
+        file_put_contents($nodeDir . 'index.html', '<div class="progress-bar" aria-valuenow="90.00"></div>');
 
-        $this->assertIsBool($result['available']);
+        $parser = new CoverageParser($this->tempRoot);
+        $result = $parser->getNodeTestCoverage();
 
-        if ($result['available']) {
-            $this->assertSame('/build/coverage/node/index.html', $result['report_path']);
-        }
+        $this->assertTrue($result['available']);
+        $this->assertSame('/build/coverage/node/index.html', $result['report_path']);
     }
 
-    public function testGetNodeTestCoverageAvailableWhenFileExists(): void
+    // ==================== formatAge — all branches via getPhpTestCoverage ====================
+
+    public function testFormatAgeJustNow(): void
     {
-        // Create a fake Node coverage report at the path the service expects,
-        // then clean it up. This exercises the available=true branch (lines 146-157).
-        $nodeReportDir  = __DIR__ . '/../../../../build/coverage/node/';
-        $nodeReportFile = $nodeReportDir . 'index.html';
-        $created        = false;
-        $dirCreated     = false;
+        // Report mtime = now → diff < 60 → "just now" (line 210)
+        $coverageDir = $this->tempRoot . 'build/coverage-php/';
+        mkdir($coverageDir, 0755, recursive: true);
 
-        if (!is_dir($nodeReportDir)) {
-            mkdir($nodeReportDir, 0755, recursive: true);
-            $dirCreated = true;
-        }
+        $htmlFile = $coverageDir . 'index.html';
+        file_put_contents($htmlFile, '<div class="progress-bar" aria-valuenow="90.00"></div>');
+        touch($htmlFile, time());
 
-        if (!file_exists($nodeReportFile)) {
-            $html = '<span class="strong">85.00% </span><span class="quiet">Statements</span>' .
-                    '<span class="strong">72.00% </span><span class="quiet">Lines</span>';
-            file_put_contents($nodeReportFile, $html);
-            $created = true;
-        }
+        $parser = new CoverageParser($this->tempRoot);
+        $result = $parser->getPhpTestCoverage();
 
-        try {
-            $result = $this->parser->getNodeTestCoverage();
-
-            $this->assertTrue($result['available']);
-            $this->assertArrayHasKey('metrics', $result);
-            $this->assertArrayHasKey('generated_at', $result);
-            $this->assertArrayHasKey('outdated', $result);
-            $this->assertArrayHasKey('report_path', $result);
-            $this->assertSame('/build/coverage/node/index.html', $result['report_path']);
-            $this->assertIsString($result['generated_at']);
-        } finally {
-            if ($created) {
-                unlink($nodeReportFile);
-            }
-
-            if ($dirCreated) {
-                rmdir($nodeReportDir);
-            }
-        }
+        $this->assertTrue($result['available']);
+        $this->assertSame('just now', $result['generated_at']);
     }
 
-    // ==================== formatAge (via parseCoverageMetrics + getPhpTestCoverage) ====================
-
-    /**
-     * Tests formatAge indirectly by creating a real coverage file and checking the generated_at field.
-     * The formatAge private method is exercised through getPhpTestCoverage/getNodeTestCoverage.
-     */
-    public function testFormatAgeIsReturnedAsString(): void
+    public function testFormatAgeMinutesAgo(): void
     {
-        $result = $this->parser->getPhpTestCoverage();
+        // Report mtime = 5 minutes ago → "5 minutes ago" (line 213-215)
+        $coverageDir = $this->tempRoot . 'build/coverage-php/';
+        mkdir($coverageDir, 0755, recursive: true);
 
-        // available=true means formatAge was called; available=false means file not found (also valid)
-        if ($result['available']) {
-            $this->assertIsString($result['generated_at']);
-            $this->assertNotEmpty($result['generated_at']);
-        } else {
-            // File not found branch — still a valid execution path
-            $this->assertFalse($result['available']);
-        }
+        $htmlFile = $coverageDir . 'index.html';
+        file_put_contents($htmlFile, '<div class="progress-bar" aria-valuenow="90.00"></div>');
+        touch($htmlFile, time() - 300);
+
+        $parser = new CoverageParser($this->tempRoot);
+        $result = $parser->getPhpTestCoverage();
+
+        $this->assertTrue($result['available']);
+        $this->assertSame('5 minutes ago', $result['generated_at']);
     }
 
-    public function testFormatAgeViaNodeCoverageWithRecentFile(): void
+    public function testFormatAgeOneMinuteAgo(): void
     {
-        // Create a coverage file with a known mtime to exercise all formatAge branches.
-        // "just now" branch: mtime = now (diff < 60)
-        $nodeReportDir  = __DIR__ . '/../../../../build/coverage/node/';
-        $nodeReportFile = $nodeReportDir . 'index.html';
-        $dirCreated     = !is_dir($nodeReportDir);
+        // Exactly 1 minute → "1 minute ago" (singular branch in line 215)
+        $coverageDir = $this->tempRoot . 'build/coverage-php/';
+        mkdir($coverageDir, 0755, recursive: true);
 
-        if ($dirCreated) {
-            mkdir($nodeReportDir, 0755, recursive: true);
-        }
+        $htmlFile = $coverageDir . 'index.html';
+        file_put_contents($htmlFile, '<div class="progress-bar" aria-valuenow="90.00"></div>');
+        touch($htmlFile, time() - 60);
 
-        $html = '<div class="progress-bar" aria-valuenow="90.00"></div>';
-        file_put_contents($nodeReportFile, $html);
+        $parser = new CoverageParser($this->tempRoot);
+        $result = $parser->getPhpTestCoverage();
 
-        try {
-            $result = $this->parser->getNodeTestCoverage();
+        $this->assertTrue($result['available']);
+        $this->assertSame('1 minute ago', $result['generated_at']);
+    }
 
-            if ($result['available']) {
-                $generatedAt = $result['generated_at'];
-                // Any of the formatAge output patterns are valid
-                $this->assertMatchesRegularExpression(
-                    '/just now|minute|hour|day/',
-                    $generatedAt,
-                );
-            } else {
-                // File not parseable (PHPUnit format only yields lines/statements)
-                $this->assertFalse($result['available']);
-            }
-        } finally {
-            unlink($nodeReportFile);
-            if ($dirCreated) {
-                rmdir($nodeReportDir);
-            }
-        }
+    public function testFormatAgeHoursAgo(): void
+    {
+        // Report mtime = 3 hours ago → "3 hours ago" (line 218-220)
+        $coverageDir = $this->tempRoot . 'build/coverage-php/';
+        mkdir($coverageDir, 0755, recursive: true);
+
+        $htmlFile = $coverageDir . 'index.html';
+        file_put_contents($htmlFile, '<div class="progress-bar" aria-valuenow="90.00"></div>');
+        touch($htmlFile, time() - 10800);
+
+        $parser = new CoverageParser($this->tempRoot);
+        $result = $parser->getPhpTestCoverage();
+
+        $this->assertTrue($result['available']);
+        $this->assertSame('3 hours ago', $result['generated_at']);
+    }
+
+    public function testFormatAgeOneHourAgo(): void
+    {
+        // Exactly 1 hour → "1 hour ago" (singular branch)
+        $coverageDir = $this->tempRoot . 'build/coverage-php/';
+        mkdir($coverageDir, 0755, recursive: true);
+
+        $htmlFile = $coverageDir . 'index.html';
+        file_put_contents($htmlFile, '<div class="progress-bar" aria-valuenow="90.00"></div>');
+        touch($htmlFile, time() - 3600);
+
+        $parser = new CoverageParser($this->tempRoot);
+        $result = $parser->getPhpTestCoverage();
+
+        $this->assertTrue($result['available']);
+        $this->assertSame('1 hour ago', $result['generated_at']);
+    }
+
+    public function testFormatAgeDaysAgo(): void
+    {
+        // Report mtime = 2 days ago → "2 days ago" (line 223-224)
+        $coverageDir = $this->tempRoot . 'build/coverage-php/';
+        mkdir($coverageDir, 0755, recursive: true);
+
+        $htmlFile = $coverageDir . 'index.html';
+        file_put_contents($htmlFile, '<div class="progress-bar" aria-valuenow="90.00"></div>');
+        touch($htmlFile, time() - 172800);
+
+        $parser = new CoverageParser($this->tempRoot);
+        $result = $parser->getPhpTestCoverage();
+
+        $this->assertTrue($result['available']);
+        $this->assertSame('2 days ago', $result['generated_at']);
+    }
+
+    public function testFormatAgeOneDayAgo(): void
+    {
+        // Exactly 1 day → "1 day ago" (singular branch)
+        $coverageDir = $this->tempRoot . 'build/coverage-php/';
+        mkdir($coverageDir, 0755, recursive: true);
+
+        $htmlFile = $coverageDir . 'index.html';
+        file_put_contents($htmlFile, '<div class="progress-bar" aria-valuenow="90.00"></div>');
+        touch($htmlFile, time() - 86400);
+
+        $parser = new CoverageParser($this->tempRoot);
+        $result = $parser->getPhpTestCoverage();
+
+        $this->assertTrue($result['available']);
+        $this->assertSame('1 day ago', $result['generated_at']);
+    }
+
+    // ==================== getNewestFileMtime — directory not found ====================
+
+    public function testGetNewestFileMtimeWithMissingSourceDir(): void
+    {
+        // src/php does not exist in tempRoot → getNewestFileMtime returns null → outdated = false (line 167-169)
+        $coverageDir = $this->tempRoot . 'build/coverage-php/';
+        mkdir($coverageDir, 0755, recursive: true);
+        file_put_contents($coverageDir . 'index.html', '<div class="progress-bar" aria-valuenow="80.00"></div>');
+
+        $parser = new CoverageParser($this->tempRoot);
+        $result = $parser->getPhpTestCoverage();
+
+        $this->assertTrue($result['available']);
+        // sourceMtime is null → isOutdated must be false
+        $this->assertFalse($result['outdated']);
+    }
+
+    // ==================== getNewestFileMtime — directory exists with matching files ====================
+
+    public function testGetNewestFileMtimeWithExistingSrcDir(): void
+    {
+        // src/php dir exists with .php files → getNewestFileMtime returns a timestamp (lines 171-199)
+        $coverageDir = $this->tempRoot . 'build/coverage-php/';
+        $phpSrcDir   = $this->tempRoot . 'src/php/';
+        mkdir($coverageDir, 0755, recursive: true);
+        mkdir($phpSrcDir, 0755, recursive: true);
+
+        $htmlFile = $coverageDir . 'index.html';
+        file_put_contents($htmlFile, '<div class="progress-bar" aria-valuenow="80.00"></div>');
+        touch($htmlFile, time() - 7200);
+
+        file_put_contents($phpSrcDir . 'Example.php', '<?php // dummy');
+        touch($phpSrcDir . 'Example.php', time() - 3600);
+
+        $parser = new CoverageParser($this->tempRoot);
+        $result = $parser->getPhpTestCoverage();
+
+        $this->assertTrue($result['available']);
+        // Source file is newer than report by 3600s — wait, report is 7200s old, src 3600s old → src newer → outdated
+        $this->assertTrue($result['outdated']);
+    }
+
+    // ==================== getNewestFileMtime — non-file entries skipped (line 185) ====================
+
+    public function testGetNewestFileMtimeSkipsNonFileEntries(): void
+    {
+        // Empty subdirectory inside src/php — LEAVES_ONLY yields it, isFile() → false → continue (line 185)
+        $coverageDir = $this->tempRoot . 'build/coverage-php/';
+        $phpSrcDir   = $this->tempRoot . 'src/php/';
+        $subDir      = $phpSrcDir . 'subdir/';
+        mkdir($coverageDir, 0755, recursive: true);
+        mkdir($subDir, 0755, recursive: true);
+
+        $htmlFile = $coverageDir . 'index.html';
+        file_put_contents($htmlFile, '<div class="progress-bar" aria-valuenow="80.00"></div>');
+        touch($htmlFile, time() - 7200);
+
+        $parser = new CoverageParser($this->tempRoot);
+        $result = $parser->getPhpTestCoverage();
+
+        // Directory has no PHP files → newestMtime = null → outdated = false
+        $this->assertTrue($result['available']);
+        $this->assertFalse($result['outdated']);
+    }
+
+    // ==================== getNewestFileMtime — wrong extension skipped (line 190) ====================
+
+    public function testGetNewestFileMtimeSkipsWrongExtension(): void
+    {
+        // A .txt file in src/php should be skipped; no .php files → outdated = false (line 190 hit)
+        $coverageDir = $this->tempRoot . 'build/coverage-php/';
+        $phpSrcDir   = $this->tempRoot . 'src/php/';
+        mkdir($coverageDir, 0755, recursive: true);
+        mkdir($phpSrcDir, 0755, recursive: true);
+
+        $htmlFile = $coverageDir . 'index.html';
+        file_put_contents($htmlFile, '<div class="progress-bar" aria-valuenow="80.00"></div>');
+        touch($htmlFile, time() - 7200);
+
+        // A recent .txt file — wrong extension, should be ignored
+        $txtFile = $phpSrcDir . 'notes.txt';
+        file_put_contents($txtFile, 'not php');
+        touch($txtFile, time());
+
+        $parser = new CoverageParser($this->tempRoot);
+        $result = $parser->getPhpTestCoverage();
+
+        // .txt ignored → newestMtime = null → outdated = false
+        $this->assertTrue($result['available']);
+        $this->assertFalse($result['outdated']);
     }
 }

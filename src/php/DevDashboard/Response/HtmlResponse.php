@@ -23,10 +23,12 @@ final readonly class HtmlResponse implements Response
      * Create HtmlResponse from a view file
      *
      * @param array<string, mixed> $data
+     * @param string|null          $viewsDir Absolute path to views directory (injectable for tests; defaults to DevDashboard/Views)
      */
-    public static function fromView(string $view, array $data = [], int $status = 200): self
+    public static function fromView(string $view, array $data = [], int $status = 200, ?string $viewsDir = null): self
     {
-        $viewPath = __DIR__ . '/../Views/' . $view . '.php';
+        $viewsDir ??= __DIR__ . '/../Views';
+        $viewPath   = $viewsDir . '/' . $view . '.php';
 
         if (!file_exists($viewPath)) {
             return new self('View not found: ' . $view, 404);

@@ -18,6 +18,7 @@ use Redis;
  *
  * @SuppressWarnings("PHPMD.ExcessiveClassComplexity")
  * @SuppressWarnings("PHPMD.ExcessiveClassLength")
+ * @SuppressWarnings("PHPMD.TooManyMethods") Protected I/O seams for deterministic testing require extra methods
  */
 class HealthCheckService
 {
@@ -328,7 +329,7 @@ class HealthCheckService
         }
 
         try {
-            $redis    = new Redis();
+            $redis    = $this->newRedisInstance();
             $redisUrl = getenv('REDIS_URL') ?: 'redis://redis:6379';
             $useTls   = str_starts_with($redisUrl, 'rediss://');
 
@@ -577,13 +578,13 @@ class HealthCheckService
      *
      * @return array<string, mixed>|null
      */
-    private function parseCertificate(string $path, string $name): ?array
+    protected function parseCertificate(string $path, string $name): ?array
     {
-        if (!file_exists($path) || !is_file($path)) {
+        if (!$this->certFileExists($path)) {
             return null;
         }
 
-        $certContent = file_get_contents($path);
+        $certContent = $this->fileGetContents($path);
         if ($certContent === false) {
             return [
                 'name'    => $name,
@@ -592,7 +593,7 @@ class HealthCheckService
             ];
         }
 
-        $certData = openssl_x509_parse($certContent);
+        $certData = $this->opensslX509Parse($certContent);
         if (!$certData) {
             return [
                 'name'    => $name,
@@ -657,7 +658,7 @@ class HealthCheckService
      * @return resource|false Socket resource on success, false on failure
      */
     /** @noinspection PhpMixedReturnTypeCanBeReducedInspection */
-    private function safeSocketOpen(string $host, int $port, ?int &$errno, ?string &$errstr): mixed
+    protected function safeSocketOpen(string $host, int $port, ?int &$errno, ?string &$errstr): mixed
     {
         set_error_handler(static fn (): bool => true);
 
@@ -673,7 +674,7 @@ class HealthCheckService
      *
      * @param array<string, mixed>|null $context TLS stream context options
      */
-    private function safeRedisConnect(Redis $redis, string $host, int $port, ?array $context = null): bool
+    protected function safeRedisConnect(Redis $redis, string $host, int $port, ?array $context = null): bool
     {
         set_error_handler(static fn (): bool => true);
 
@@ -686,5 +687,39 @@ class HealthCheckService
         } finally {
             restore_error_handler();
         }
+    }
+
+    /**
+     * Seam: create a new Redis instance (overridable in tests).
+     */
+    protected function newRedisInstance(): Redis
+    {
+        return new Redis();
+    }
+
+    /**
+     * Seam: check whether a certificate file exists (overridable in tests).
+     */
+    protected function certFileExists(string $path): bool
+    {
+        return file_exists($path) && is_file($path);
+    }
+
+    /**
+     * Seam: read a file's contents (overridable in tests).
+     */
+    protected function fileGetContents(string $path): string|false
+    {
+        return file_get_contents($path);
+    }
+
+    /**
+     * Seam: parse an X.509 certificate (overridable in tests).
+     *
+     * @return array<string, mixed>|false
+     */
+    protected function opensslX509Parse(string $certContent): array|false
+    {
+        return openssl_x509_parse($certContent);
     }
 }

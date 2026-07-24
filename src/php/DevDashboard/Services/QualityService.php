@@ -19,11 +19,17 @@ class QualityService
 {
     private readonly string $projectRoot;
 
+    /**
+     * @param CoverageParser $coverageParser Coverage parser (injectable for tests)
+     * @param CommandRunner  $commandRunner  Command runner (injectable for tests)
+     * @param string|null    $projectRoot    Absolute path to project root (injectable for tests)
+     */
     public function __construct(
         private readonly CoverageParser $coverageParser = new CoverageParser(),
         private readonly CommandRunner $commandRunner = new CommandRunner(),
+        ?string $projectRoot = null,
     ) {
-        $this->projectRoot    = realpath(__DIR__ . '/../../../../') . '/';
+        $this->projectRoot = $projectRoot ?? (realpath(__DIR__ . '/../../../../') . '/');
     }
 
     /**

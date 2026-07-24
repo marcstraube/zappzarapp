@@ -19,9 +19,12 @@ class CoverageParser
 {
     private readonly string $projectRoot;
 
-    public function __construct()
+    /**
+     * @param string|null $projectRoot Absolute path to project root (defaults to detected path; injectable for tests)
+     */
+    public function __construct(?string $projectRoot = null)
     {
-        $this->projectRoot = realpath(__DIR__ . '/../../../../') . '/';
+        $this->projectRoot = $projectRoot ?? (realpath(__DIR__ . '/../../../../') . '/');
     }
 
     /**

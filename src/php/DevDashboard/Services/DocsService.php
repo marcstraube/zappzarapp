@@ -18,17 +18,27 @@ readonly class DocsService
 
     private string $srcPath;
 
+    private string $phpdocPath;
+
+    private string $commandWorkingDir;
+
     /**
-     * @param string|null $docsPath Absolute path to docs directory (defaults to container path)
-     * @param string|null $srcPath  Absolute path to source directory (defaults to container path)
+     * @param string|null $docsPath          Absolute path to docs directory (defaults to container path)
+     * @param string|null $srcPath           Absolute path to source directory (defaults to container path)
+     * @param string|null $phpdocPath        Absolute path to phpdoc.phar (defaults to container path)
+     * @param string|null $commandWorkingDir Working directory for shell commands (defaults to container path)
      */
     public function __construct(
         ?string $docsPath = null,
         ?string $srcPath = null,
+        ?string $phpdocPath = null,
+        ?string $commandWorkingDir = null,
     ) {
         // Paths from container perspective
-        $this->docsPath = $docsPath ?? '/var/www/html/docs';
-        $this->srcPath  = $srcPath ?? '/var/www/html/src';
+        $this->docsPath          = $docsPath ?? '/var/www/html/docs';
+        $this->srcPath           = $srcPath ?? '/var/www/html/src';
+        $this->phpdocPath        = $phpdocPath ?? '/var/www/html/tools/phpdoc.phar';
+        $this->commandWorkingDir = $commandWorkingDir ?? '/var/www/html';
     }
 
     /**
@@ -199,9 +209,7 @@ readonly class DocsService
      */
     public function generatePhpDocs(): array
     {
-        $phpdocPath = '/var/www/html/tools/phpdoc.phar';
-
-        if (!file_exists($phpdocPath)) {
+        if (!file_exists($this->phpdocPath)) {
             return [
                 'success' => false,
                 'message' => 'phpDocumentor not found. Run "make docs-php" from host first.',
@@ -211,8 +219,8 @@ readonly class DocsService
 
         // Run phpDocumentor using proc_open (exec is disabled)
         $command = sprintf(
-            'cd /var/www/html && php %s run --config=phpdoc.xml 2>&1',
-            escapeshellarg($phpdocPath),
+            'php %s run --config=phpdoc.xml 2>&1',
+            escapeshellarg($this->phpdocPath),
         );
 
         $result = $this->runCommand($command);
@@ -247,7 +255,7 @@ readonly class DocsService
         ];
 
         // @phpstan-ignore ekinoBannedCode.function (exec disabled in PHP config, proc_open is the secure alternative)
-        $process = proc_open($command, $descriptors, $pipes, '/var/www/html');
+        $process = proc_open($command, $descriptors, $pipes, $this->commandWorkingDir);
 
         if (!is_resource($process)) {
             return ['exitCode' => -1, 'output' => 'Failed to start process'];

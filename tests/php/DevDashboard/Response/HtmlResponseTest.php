@@ -16,10 +16,44 @@ use PHPUnit\Framework\TestCase;
  * send() emits output and calls header()/http_response_code().
  * Output is captured via ob_start()/ob_get_clean().
  * Header assertions require RunInSeparateProcess so http_response_code() is fresh.
+ *
+ * fromView() uses the optional $viewsDir parameter (injectable seam) so the
+ * "view found" branch (lines 35-40) is exercised deterministically via a temp
+ * directory, without writing to the source tree.
  */
 #[CoversClass(HtmlResponse::class)]
 final class HtmlResponseTest extends TestCase
 {
+    private string $tempViewsDir;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+        $this->tempViewsDir = sys_get_temp_dir() . '/html_response_views_test_' . uniqid();
+        mkdir($this->tempViewsDir, 0755, recursive: true);
+    }
+
+    protected function tearDown(): void
+    {
+        $this->removeTempDir($this->tempViewsDir);
+        parent::tearDown();
+    }
+
+    private function removeTempDir(string $dir): void
+    {
+        if (!is_dir($dir)) {
+            return;
+        }
+
+        $files = array_diff(scandir($dir) ?: [], ['.', '..']);
+        foreach ($files as $file) {
+            $path = $dir . '/' . $file;
+            is_dir($path) ? $this->removeTempDir($path) : unlink($path);
+        }
+
+        rmdir($dir);
+    }
+
     // ===== Interface contract =====
 
     public function testImplementsResponseInterface(): void
@@ -128,12 +162,12 @@ final class HtmlResponseTest extends TestCase
         $this->assertSame(301, http_response_code());
     }
 
-    // ===== fromView factory =====
+    // ===== fromView factory — "view not found" branch =====
 
     public function testFromViewReturnsSelf(): void
     {
         // A non-existent view returns a 404 HtmlResponse
-        $response = HtmlResponse::fromView('this-view-does-not-exist-xyz');
+        $response = HtmlResponse::fromView('this-view-does-not-exist-xyz', viewsDir: $this->tempViewsDir);
 
         $this->assertInstanceOf(HtmlResponse::class, $response);
     }
@@ -141,7 +175,7 @@ final class HtmlResponseTest extends TestCase
     public function testFromViewReturns404WhenViewNotFound(): void
     {
         ob_start();
-        HtmlResponse::fromView('this-view-does-not-exist-xyz')->send();
+        HtmlResponse::fromView('this-view-does-not-exist-xyz', viewsDir: $this->tempViewsDir)->send();
         $output = (string) ob_get_clean();
 
         $this->assertStringContainsString('View not found', $output);
@@ -151,68 +185,103 @@ final class HtmlResponseTest extends TestCase
     public function testFromViewEmits404StatusWhenViewNotFound(): void
     {
         ob_start();
-        HtmlResponse::fromView('nonexistent-view')->send();
+        HtmlResponse::fromView('nonexistent-view', viewsDir: $this->tempViewsDir)->send();
         ob_get_clean();
 
         $this->assertSame(404, http_response_code());
     }
 
+    // ===== fromView factory — "view found" branch (lines 35-40) =====
+
     public function testFromViewRendersExistingView(): void
     {
-        // fromView includes files from src/php/DevDashboard/Views/ (relative to Response/ dir).
-        // We create a minimal test view there, test it, then remove it.
-        $viewsDir  = __DIR__ . '/../../../../src/php/DevDashboard/Views';
-        $viewsDir  = realpath($viewsDir);
-        $viewName  = '_test_view_' . uniqid();
-        $viewFile  = $viewsDir . '/' . $viewName . '.php';
-
-        if ($viewsDir === false || !is_dir($viewsDir)) {
-            $this->markTestSkipped('DevDashboard/Views directory not available in this environment');
-        }
-
+        // Use temp dir seam — no write access to source tree required
+        $viewName = 'test_view_' . uniqid();
+        $viewFile = $this->tempViewsDir . '/' . $viewName . '.php';
         file_put_contents($viewFile, '<p>test view</p>');
 
-        try {
-            $response = HtmlResponse::fromView($viewName);
+        $response = HtmlResponse::fromView($viewName, viewsDir: $this->tempViewsDir);
 
-            ob_start();
-            $response->send();
-            $output = (string) ob_get_clean();
+        ob_start();
+        $response->send();
+        $output = (string) ob_get_clean();
 
-            $this->assertSame('<p>test view</p>', $output);
-        } finally {
-            if (file_exists($viewFile)) {
-                unlink($viewFile);
-            }
-        }
+        $this->assertSame('<p>test view</p>', $output);
     }
 
     public function testFromViewPassesDataToView(): void
     {
-        $viewsDir = __DIR__ . '/../../../../src/php/DevDashboard/Views';
-        $viewsDir = realpath($viewsDir);
-        $viewName = '_test_view_data_' . uniqid();
-        $viewFile = $viewsDir . '/' . $viewName . '.php';
-
-        if ($viewsDir === false || !is_dir($viewsDir)) {
-            $this->markTestSkipped('DevDashboard/Views directory not available in this environment');
-        }
-
-        // View can access extracted $data vars
+        $viewName = 'test_data_view_' . uniqid();
+        $viewFile = $this->tempViewsDir . '/' . $viewName . '.php';
         file_put_contents($viewFile, '<?php echo $greeting; ?>');
 
-        try {
-            $response = HtmlResponse::fromView($viewName, ['greeting' => 'Hello, world!']);
+        $response = HtmlResponse::fromView($viewName, ['greeting' => 'Hello, world!'], viewsDir: $this->tempViewsDir);
 
-            ob_start();
-            $response->send();
-            $output = (string) ob_get_clean();
+        ob_start();
+        $response->send();
+        $output = (string) ob_get_clean();
 
-            $this->assertSame('Hello, world!', $output);
-        } finally {
-            if (file_exists($viewFile)) {
-                unlink($viewFile);
-            }
-        }
+        $this->assertSame('Hello, world!', $output);
+    }
+
+    public function testFromViewUsesDefaultStatusForExistingView(): void
+    {
+        $viewName = 'status_view_' . uniqid();
+        $viewFile = $this->tempViewsDir . '/' . $viewName . '.php';
+        file_put_contents($viewFile, '<p>ok</p>');
+
+        $response = HtmlResponse::fromView($viewName, viewsDir: $this->tempViewsDir);
+
+        ob_start();
+        $response->send();
+        $output = (string) ob_get_clean();
+
+        $this->assertSame('<p>ok</p>', $output);
+    }
+
+    public function testFromViewPassesCustomStatusForExistingView(): void
+    {
+        $viewName = 'custom_status_view_' . uniqid();
+        $viewFile = $this->tempViewsDir . '/' . $viewName . '.php';
+        file_put_contents($viewFile, '<p>created</p>');
+
+        $response = HtmlResponse::fromView($viewName, status: 201, viewsDir: $this->tempViewsDir);
+
+        ob_start();
+        $response->send();
+        $output = (string) ob_get_clean();
+
+        $this->assertSame('<p>created</p>', $output);
+    }
+
+    public function testFromViewEmptyViewOutputFallsBackToEmptyString(): void
+    {
+        // View outputs nothing → ob_get_clean() returns '' or false → coerces to ''
+        $viewName = 'empty_view_' . uniqid();
+        $viewFile = $this->tempViewsDir . '/' . $viewName . '.php';
+        file_put_contents($viewFile, '<?php // nothing');
+
+        $response = HtmlResponse::fromView($viewName, viewsDir: $this->tempViewsDir);
+
+        ob_start();
+        $response->send();
+        $output = (string) ob_get_clean();
+
+        $this->assertSame('', $output);
+    }
+
+    // ===== fromView — default viewsDir fallback (no seam) =====
+
+    public function testFromViewDefaultViewsDirUsed(): void
+    {
+        // Without viewsDir param, the default Views dir is used.
+        // A non-existent view name exercises the !file_exists branch via the real path.
+        $response = HtmlResponse::fromView('nonexistent-for-default-path-test');
+
+        ob_start();
+        $response->send();
+        $output = (string) ob_get_clean();
+
+        $this->assertStringContainsString('View not found', $output);
     }
 }
