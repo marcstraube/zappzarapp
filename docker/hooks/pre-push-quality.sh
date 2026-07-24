@@ -203,6 +203,13 @@ if is_extended_branch; then
     fi
 
     # Security: Static configuration checks
+    #
+    # Intentionally informational (--exit-code 0): by-design findings make
+    # blocking impractical — the config scan flags the root entrypoints
+    # (DS-0002; containers copy certs/secrets as root, then drop privileges)
+    # and the secret scan flags the generated dev keys (docker/certs/*.key)
+    # and the local .env. Enforcement lives in the pre-commit secret check
+    # and the CI security-scan workflow (SARIF -> GitHub Security tab).
     if has_changes docker || has_changes nginx || has_changes compose; then
         echo -e "${YELLOW}→ Security configuration changed (extended checks)${NC}"
 
