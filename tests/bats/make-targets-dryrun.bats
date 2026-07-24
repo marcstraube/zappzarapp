@@ -5,25 +5,6 @@
 load 'helpers/setup'
 
 # =============================================================================
-# AI Sync Targets
-# =============================================================================
-
-@test "make ai-commands-sync --dry-run validates" {
-    run make -n ai-commands-sync
-    assert_success
-}
-
-@test "make ai-rules-sync --dry-run validates" {
-    run make -n ai-rules-sync
-    assert_success
-}
-
-@test "make ai-sync --dry-run validates" {
-    run make -n ai-sync
-    assert_success
-}
-
-# =============================================================================
 # Setup Targets
 # =============================================================================
 

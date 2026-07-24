@@ -231,10 +231,6 @@
           {
             "type": "command",
             "command": "TOOL_INPUT=$(cat); if echo \"$TOOL_INPUT\" | grep -qE '\\.claude/skills/.*\\.md'; then echo '[Hook] Claude skill updated.'; fi"
-          },
-          {
-            "type": "command",
-            "command": "TOOL_INPUT=$(cat); if echo \"$TOOL_INPUT\" | grep -qE '(\\.rulesync/.*\\.md|CLAUDE\\.md)'; then echo '[Hook] AI rules updated. Sync to all tools with: make ai-rules-sync'; fi"
           }
         ]
       },

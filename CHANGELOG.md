@@ -9,7 +9,31 @@ Fixes) **Version:** 3.79
 
 ### Unreleased
 
+#### Removed
+
+- **AI Sync Tooling**: Removed `make ai-sync`, `ai-commands-sync` and
+  `ai-rules-sync` targets along with the `rulesync` and `ai-command-converter`
+  dependencies
+  - Rationale: Which AI tools a project uses (and whether to sync their configs)
+    is a per-project decision; the AI tool landscape has converged on the
+    tool-neutral `AGENTS.md` convention (read natively by Codex CLI, Gemini CLI
+    / Antigravity, Cursor, Copilot, Cline, Roo Code, ...)
+  - Dropping `rulesync` removes the vulnerable transitive `@hono/node-server`
+    (GHSA-frvp-7c67-39w9) and its `ignoreGhsas` audit exception
+  - `make ai-setup` (labels/milestones for `/tasks`) is unaffected
+  - Files: `Makefile`, `package.json`, `.env`, `.gitignore`,
+    `compose.override.yaml`, `.claude/settings.json`, `.depcheckrc.json`,
+    `knip.config.js`, `tests/bats/make-targets-dryrun.bats`, docs
+
 #### Changed
+
+- **js-yaml Override Split**: The blanket `js-yaml@<4.3.0 -> >=4.3.0` pnpm
+  override force-upgraded js-yaml 3.x consumers (e.g. `gray-matter`) to the 4.x
+  API, breaking them at require time (`yaml.safeLoad` removed in 4.x)
+  - Split into per-major security floors: `<3.15.0 -> >=3.15.0 <4.0.0` and
+    `>=4.0.0 <4.3.0 -> >=4.3.0 <5.0.0`
+  - 3.15.0/4.3.0 fix GHSA-52cp-r559-cp3m, GHSA-h67p-54hq-rp68 and
+    GHSA-mh29-5h37-fv8m within each major line
 
 - **Documentation Structure**: Moved Node.js SSL documentation for better
   organization

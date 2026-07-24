@@ -66,7 +66,6 @@
     "@typescript-eslint/parser": "^8.65.0",
     "@vitest/coverage-v8": "^4.1.10",
     "@vitest/ui": "^4.1.10",
-    "ai-command-converter": "^0.1.0",
     "autoprefixer": "^10.5.4",
     "depcheck": "^1.4.7",
     "eslint": "^9.39.5",
@@ -83,7 +82,6 @@
     "postcss": "^8.5.23",
     "prettier": "^3.9.6",
     "prettier-plugin-toml": "^2.0.6",
-    "rulesync": "^8.32.0",
     "sass": "^1.101.7",
     "standard-version": "^9.5.0",
     "supertest": "^7.2.2",
@@ -110,14 +108,12 @@
     "auditConfig": {
       "ignoreCves": [
         "CVE-2025-5891"
-      ],
-      "ignoreGhsas": [
-        "GHSA-frvp-7c67-39w9"
       ]
     },
     "overrides": {
       "smol-toml@<1.6.1": ">=1.6.1",
-      "js-yaml@<4.3.0": ">=4.3.0",
+      "js-yaml@<3.15.0": ">=3.15.0 <4.0.0",
+      "js-yaml@>=4.0.0 <4.3.0": ">=4.3.0 <5.0.0",
       "js-yaml@>=5.0.0 <5.2.2": ">=5.2.2"
     }
   }

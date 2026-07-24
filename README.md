@@ -31,7 +31,7 @@ clone, configure, and go.
 | Category        | Scope                                                                  |
 | --------------- | ---------------------------------------------------------------------- |
 | Docker Services | 16 pre-configured (Nginx, PHP, Node, databases, cache, search, queue…) |
-| Make Targets    | 260 across 17 categories (`make help`)                                 |
+| Make Targets    | 257 across 17 categories (`make help`)                                 |
 | Stack Presets   | 7 modes, from full-stack to static                                     |
 | Kubernetes      | Helm chart for production deployment                                   |
 | Documentation   | 40+ guides in [`.zappzarapp/docs/`](.zappzarapp/docs/)                 |
@@ -229,7 +229,7 @@ make open-app      # Open the application in the browser
 ```
 
 See the [Makefile Reference](.zappzarapp/docs/development/MAKEFILE-REFERENCE.md)
-for all 260 targets.
+for all 257 targets.
 
 ## Git Hooks
 

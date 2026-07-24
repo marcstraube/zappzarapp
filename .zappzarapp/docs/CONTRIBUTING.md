@@ -55,7 +55,7 @@ project using this boilerplate will have its own lock files.
 Do not commit personal tool configurations:
 
 - `.claude/sessions/`, `.claude/state/`, `.claude/cache/` - Claude Code data
-- `.gemini/` - Gemini CLI (generated via `make ai-sync`)
+- `.gemini/` - Gemini CLI / Antigravity settings
 - `.cursor/` - Cursor IDE settings
 - `.aider/` - Aider settings
 - Any other AI assistant or personal IDE configurations
@@ -166,11 +166,10 @@ make pnpm-install    # Ensures lint-staged is available in the container
 
 ## AI Tools
 
-This project supports multiple AI coding assistants (Claude, Gemini, Cursor,
-Copilot, etc.) with:
+This project ships a first-class Claude Code integration; other AI coding
+assistants are supported via the tool-neutral `AGENTS.md` convention:
 
 - Skills (slash commands) in `.claude/skills/`
-- Automated sync between tools (`make ai-sync`)
 - 3-layer knowledge architecture (zappzarapp/project/personal)
 - Agent workflow for complex tasks
 

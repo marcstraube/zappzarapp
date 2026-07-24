@@ -47,8 +47,6 @@ export default {
     'postcss',
 
     // CLI tools used via Make targets
-    'ai-command-converter',
-    'rulesync',
     'standard-version',
 
     // Analysis tools (self-referential, run via CLI)
