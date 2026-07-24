@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\App\Unit\Infrastructure\Search;
 
+use App\Infrastructure\Search\MeilisearchConfig;
 use App\Infrastructure\Search\MeilisearchSearch;
 use DateTime;
 use Meilisearch\Client;
@@ -12,6 +13,7 @@ use Meilisearch\Endpoints\Indexes;
 use Meilisearch\Exceptions\CommunicationException;
 use Meilisearch\Search\SearchResult;
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\UsesClass;
 use PHPUnit\Framework\TestCase;
 use ReflectionClass;
 
@@ -25,6 +27,7 @@ use ReflectionClass;
  * @SuppressWarnings("PHPMD.CouplingBetweenObjects")
  */
 #[CoversClass(MeilisearchSearch::class)]
+#[UsesClass(MeilisearchConfig::class)]
 final class MeilisearchSearchTest extends TestCase
 {
     private const string TEST_URL = 'https://localhost:7700';

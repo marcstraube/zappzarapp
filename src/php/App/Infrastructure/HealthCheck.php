@@ -746,12 +746,73 @@ class HealthCheck
     }
 
     /**
+     * Check TCP connection to a service
+     *
+     * @return array<string, mixed>
+     */
+    private function checkTcpConnection(string $host, int $port): array
+    {
+        $errno  = 0;
+        $errstr = '';
+        $socket = $this->safeSocketOpen($host, $port, $errno, $errstr, 2);
+
+        if ($socket) {
+            fclose($socket);
+            return ['connected' => true];
+        }
+
+        $errorMsg = $errstr ?: 'Connection failed';
+        if ($errno > 0) {
+            $errorMsg .= sprintf(' (errno: %d)', $errno);
+        }
+
+        return ['connected' => false, 'error' => $errorMsg];
+    }
+
+    /**
+     * Safe wrapper for fsockopen that suppresses warnings without @ operator
+     *
+     * @param int<0, max> $timeout Connection timeout in seconds
+     * @return resource|false Socket resource on success, false on failure
+     * @noinspection PhpMixedReturnTypeCanBeReducedInspection - 'resource' is not a native PHP type
+     */
+    protected function safeSocketOpen(string $host, int $port, ?int &$errno, ?string &$errstr, int $timeout = 1): mixed
+    {
+        set_error_handler(static fn (): bool => true);
+
+        try {
+            return fsockopen($host, $port, $errno, $errstr, $timeout);
+        } finally {
+            restore_error_handler();
+        }
+    }
+
+    /**
+     * Fetch URL content with error suppression
+     *
+     * Uses set_error_handler instead of @ operator to satisfy PHPMD.
+     * Errors are intentionally ignored as we check the return value.
+     *
+     * @param resource|null $context Stream context from stream_context_create()
+     */
+    protected function fetchUrl(string $url, mixed $context = null): string|false
+    {
+        set_error_handler(static fn (): bool => true);
+
+        try {
+            return file_get_contents($url, false, $context);
+        } finally {
+            restore_error_handler();
+        }
+    }
+
+    /**
      * Create Redis connection with TLS support
      *
      * @return array{redis: Redis|null, host: string, port: int, useTls: bool, error: string|null}
      * @throws ErrorException If connection fails and custom error handler catches warnings
      */
-    private function createRedisConnection(): array
+    protected function createRedisConnection(): array
     {
         $redisUrl  = $_ENV['REDIS_URL'] ?? getenv('REDIS_URL') ?: 'rediss://redis:6379';
         $useTls    = str_starts_with((string) $redisUrl, 'rediss://');
@@ -801,66 +862,5 @@ class HealthCheck
             'useTls' => $useTls,
             'error'  => null,
         ];
-    }
-
-    /**
-     * Check TCP connection to a service
-     *
-     * @return array<string, mixed>
-     */
-    private function checkTcpConnection(string $host, int $port): array
-    {
-        $errno  = 0;
-        $errstr = '';
-        $socket = $this->safeSocketOpen($host, $port, $errno, $errstr, 2);
-
-        if ($socket) {
-            fclose($socket);
-            return ['connected' => true];
-        }
-
-        $errorMsg = $errstr ?: 'Connection failed';
-        if ($errno > 0) {
-            $errorMsg .= sprintf(' (errno: %d)', $errno);
-        }
-
-        return ['connected' => false, 'error' => $errorMsg];
-    }
-
-    /**
-     * Safe wrapper for fsockopen that suppresses warnings without @ operator
-     *
-     * @param int<0, max> $timeout Connection timeout in seconds
-     * @return resource|false Socket resource on success, false on failure
-     * @noinspection PhpMixedReturnTypeCanBeReducedInspection - 'resource' is not a native PHP type
-     */
-    private function safeSocketOpen(string $host, int $port, ?int &$errno, ?string &$errstr, int $timeout = 1): mixed
-    {
-        set_error_handler(static fn (): bool => true);
-
-        try {
-            return fsockopen($host, $port, $errno, $errstr, $timeout);
-        } finally {
-            restore_error_handler();
-        }
-    }
-
-    /**
-     * Fetch URL content with error suppression
-     *
-     * Uses set_error_handler instead of @ operator to satisfy PHPMD.
-     * Errors are intentionally ignored as we check the return value.
-     *
-     * @param resource|null $context Stream context from stream_context_create()
-     */
-    private function fetchUrl(string $url, mixed $context = null): string|false
-    {
-        set_error_handler(static fn (): bool => true);
-
-        try {
-            return file_get_contents($url, false, $context);
-        } finally {
-            restore_error_handler();
-        }
     }
 }

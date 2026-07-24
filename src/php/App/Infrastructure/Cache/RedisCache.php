@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Infrastructure\Cache;
 
 use App\Infrastructure\TlsConfig;
+use Closure;
 use Redis;
 use RedisException;
 
@@ -52,17 +53,25 @@ final class RedisCache implements CacheInterface
 
     private readonly string $redisUrl;
 
+    /** @var Closure(): Redis */
+    private readonly Closure $redisFactory;
+
+    /**
+     * @param Closure(): Redis|null $redisFactory Factory for creating Redis instances (injectable for testing)
+     */
     public function __construct(
         ?string $redisUrl = null,
         private readonly string $prefix = 'app:',
-        private readonly int $timeout = 2
+        private readonly int $timeout = 2,
+        ?Closure $redisFactory = null
     ) {
         if ($redisUrl === null) {
             $envValue = $_ENV['REDIS_URL'] ?? getenv('REDIS_URL');
             $redisUrl = ($envValue !== false && $envValue !== '') ? $envValue : 'rediss://redis:6379';
         }
 
-        $this->redisUrl = $redisUrl;
+        $this->redisUrl     = $redisUrl;
+        $this->redisFactory = $redisFactory ?? static fn(): Redis => new Redis();
     }
 
     public function get(string $key): ?string
@@ -195,7 +204,7 @@ final class RedisCache implements CacheInterface
 
         try {
             $parsed = $this->parseRedisUrl($this->redisUrl);
-            $redis  = new Redis();
+            $redis  = ($this->redisFactory)();
 
             $useTls = str_starts_with($this->redisUrl, 'rediss://');
 

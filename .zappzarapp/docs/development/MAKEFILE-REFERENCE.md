@@ -634,11 +634,12 @@ Code quality, testing, and validation commands.
 
 ### PHP Testing
 
-| Command                  | Description                             |
-| ------------------------ | --------------------------------------- |
-| `make test-php`          | Run PHPUnit tests                       |
-| `make test-php-debug`    | Run PHPUnit tests with Xdebug enabled   |
-| `make test-coverage-php` | Generate PHPUnit coverage report (HTML) |
+| Command                   | Description                                                                                                            |
+| ------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
+| `make test-php`           | Run PHPUnit tests                                                                                                      |
+| `make test-php-debug`     | Run PHPUnit tests with Xdebug enabled                                                                                  |
+| `make test-coverage-php`  | Generate PHPUnit coverage report (HTML)                                                                                |
+| `make coverage-check-php` | Enforce minimum coverage (`PHP_COVERAGE_MIN` in `.env`, ratchet — raise as coverage climbs, never lower; CI runs this) |
 
 ### Node.js Testing
 

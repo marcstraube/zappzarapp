@@ -4,11 +4,16 @@ declare(strict_types=1);
 
 namespace Tests\DevDashboard\Services;
 
+use DevDashboard\Services\CommandRunner;
+use DevDashboard\Services\CoverageParser;
 use DevDashboard\Services\QualityService;
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\UsesClass;
 use PHPUnit\Framework\TestCase;
 
 #[CoversClass(QualityService::class)]
+#[UsesClass(CommandRunner::class)]
+#[UsesClass(CoverageParser::class)]
 class QualityServiceTest extends TestCase
 {
     private QualityService $service;

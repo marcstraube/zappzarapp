@@ -5,7 +5,9 @@ declare(strict_types=1);
 namespace Tests\App\Unit\Infrastructure\Elasticsearch;
 
 use App\Infrastructure\Elasticsearch\ElasticsearchClient;
+use App\Infrastructure\Elasticsearch\ElasticsearchConfig;
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\UsesClass;
 use PHPUnit\Framework\TestCase;
 use ReflectionClass;
 use stdClass;
@@ -18,6 +20,7 @@ use stdClass;
  * or a mock server - see tests/php/App/Feature/.
  */
 #[CoversClass(ElasticsearchClient::class)]
+#[UsesClass(ElasticsearchConfig::class)]
 final class ElasticsearchClientTest extends TestCase
 {
     private const string TEST_URL = 'https://localhost:9200';

@@ -5,7 +5,9 @@ declare(strict_types=1);
 namespace Tests\App\Unit\Infrastructure\Storage;
 
 use App\Infrastructure\Storage\S3Storage;
+use App\Infrastructure\Storage\StorageConfig;
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\UsesClass;
 use PHPUnit\Framework\TestCase;
 use ReflectionClass;
 
@@ -18,6 +20,7 @@ use ReflectionClass;
  * @SuppressWarnings("PHPMD.TooManyPublicMethods")
  */
 #[CoversClass(S3Storage::class)]
+#[UsesClass(StorageConfig::class)]
 final class S3StorageTest extends TestCase
 {
     private const string TEST_ENDPOINT = 'http://localhost:8333';

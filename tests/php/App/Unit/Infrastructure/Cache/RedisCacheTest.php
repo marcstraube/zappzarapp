@@ -5,21 +5,22 @@ declare(strict_types=1);
 namespace Tests\App\Unit\Infrastructure\Cache;
 
 use App\Infrastructure\Cache\RedisCache;
+use App\Infrastructure\TlsConfig;
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\UsesClass;
 use PHPUnit\Framework\TestCase;
 use Redis;
 use RedisException;
 use ReflectionClass;
 
 /**
- * Unit tests for RedisCache
+ * Unit tests for RedisCache — get, set, has, delete, isAvailable, and constructor
  *
  * These tests use mocking to test the cache logic without a real Redis connection.
  * For integration tests with actual Redis, see tests/php/App/Feature/.
- *
- * @SuppressWarnings("PHPMD.TooManyPublicMethods")
  */
 #[CoversClass(RedisCache::class)]
+#[UsesClass(TlsConfig::class)]
 final class RedisCacheTest extends TestCase
 {
     private const string TEST_URL    = 'redis://localhost:6379';
@@ -178,100 +179,6 @@ final class RedisCacheTest extends TestCase
         $this->assertFalse($cache->delete('anykey'));
     }
 
-    public function testDeletePatternDeletesMatchingKeys(): void
-    {
-        $mockRedis = $this->createMock(Redis::class);
-        $mockRedis->expects($this->once())
-            ->method('keys')
-            ->with('test:user:123:*')
-            ->willReturn(['test:user:123:profile', 'test:user:123:settings']);
-
-        $mockRedis->expects($this->once())
-            ->method('del')
-            ->with(['test:user:123:profile', 'test:user:123:settings'])
-            ->willReturn(2);
-
-        $cache = $this->createCacheWithMockedRedis($mockRedis);
-
-        $this->assertEquals(2, $cache->deletePattern('user:123:*'));
-    }
-
-    public function testDeletePatternReturnsZeroWhenNoKeysMatch(): void
-    {
-        $mockRedis = $this->createMock(Redis::class);
-        $mockRedis->expects($this->once())
-            ->method('keys')
-            ->with('test:nonexistent:*')
-            ->willReturn([]);
-
-        $cache = $this->createCacheWithMockedRedis($mockRedis);
-
-        $this->assertEquals(0, $cache->deletePattern('nonexistent:*'));
-    }
-
-    public function testDeletePatternReturnsZeroOnRedisException(): void
-    {
-        $mockRedis = $this->createMock(Redis::class);
-        $mockRedis->expects($this->once())
-            ->method('keys')
-            ->willThrowException(new RedisException('Connection lost'));
-
-        $cache = $this->createCacheWithMockedRedis($mockRedis);
-
-        $this->assertEquals(0, $cache->deletePattern('any:*'));
-    }
-
-    public function testTtlReturnsRemainingTime(): void
-    {
-        $mockRedis = $this->createMock(Redis::class);
-        $mockRedis->expects($this->once())
-            ->method('ttl')
-            ->with('test:mykey')
-            ->willReturn(3500);
-
-        $cache = $this->createCacheWithMockedRedis($mockRedis);
-
-        $this->assertEquals(3500, $cache->ttl('mykey'));
-    }
-
-    public function testTtlReturnsNullWhenKeyDoesNotExist(): void
-    {
-        $mockRedis = $this->createMock(Redis::class);
-        $mockRedis->expects($this->once())
-            ->method('ttl')
-            ->with('test:missing')
-            ->willReturn(-2); // Redis returns -2 for non-existent keys
-
-        $cache = $this->createCacheWithMockedRedis($mockRedis);
-
-        $this->assertNull($cache->ttl('missing'));
-    }
-
-    public function testTtlReturnsMinusOneForKeyWithoutExpiry(): void
-    {
-        $mockRedis = $this->createMock(Redis::class);
-        $mockRedis->expects($this->once())
-            ->method('ttl')
-            ->with('test:persistent')
-            ->willReturn(-1); // Redis returns -1 for keys without expiry
-
-        $cache = $this->createCacheWithMockedRedis($mockRedis);
-
-        $this->assertEquals(-1, $cache->ttl('persistent'));
-    }
-
-    public function testTtlReturnsNullOnRedisException(): void
-    {
-        $mockRedis = $this->createMock(Redis::class);
-        $mockRedis->expects($this->once())
-            ->method('ttl')
-            ->willThrowException(new RedisException('Connection lost'));
-
-        $cache = $this->createCacheWithMockedRedis($mockRedis);
-
-        $this->assertNull($cache->ttl('anykey'));
-    }
-
     public function testIsAvailableReturnsTrueWhenPingSucceeds(): void
     {
         $mockRedis = $this->createMock(Redis::class);
@@ -290,6 +197,18 @@ final class RedisCacheTest extends TestCase
         $mockRedis->expects($this->once())
             ->method('ping')
             ->willThrowException(new RedisException('Connection lost'));
+
+        $cache = $this->createCacheWithMockedRedis($mockRedis);
+
+        $this->assertFalse($cache->isAvailable());
+    }
+
+    public function testIsAvailableReturnsFalseWhenPingReturnsFalse(): void
+    {
+        $mockRedis = $this->createMock(Redis::class);
+        $mockRedis->expects($this->once())
+            ->method('ping')
+            ->willReturn(false);
 
         $cache = $this->createCacheWithMockedRedis($mockRedis);
 
@@ -318,6 +237,30 @@ final class RedisCacheTest extends TestCase
         $urlProperty = $reflection->getProperty('redisUrl');
 
         $this->assertEquals('redis://custom:1234', $urlProperty->getValue($cache));
+    }
+
+    public function testConstructorUsesEnvRedisUrl(): void
+    {
+        $_ENV['REDIS_URL'] = 'redis://envhost:1234';
+
+        $cache      = new RedisCache();
+        $reflection = new ReflectionClass($cache);
+        $property   = $reflection->getProperty('redisUrl');
+
+        $this->assertEquals('redis://envhost:1234', $property->getValue($cache));
+
+        unset($_ENV['REDIS_URL']);
+    }
+
+    public function testConstructorUsesDefaultUrlWhenEnvIsEmpty(): void
+    {
+        unset($_ENV['REDIS_URL']);
+
+        $cache      = new RedisCache(null, 'app:', 2);
+        $reflection = new ReflectionClass($cache);
+        $property   = $reflection->getProperty('redisUrl');
+
+        $this->assertEquals('rediss://redis:6379', $property->getValue($cache));
     }
 
     /**
