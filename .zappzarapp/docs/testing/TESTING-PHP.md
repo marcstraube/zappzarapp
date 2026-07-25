@@ -146,6 +146,15 @@ class ApiEndpointTest extends TestCase
 }
 ```
 
+### Best Practices
+
+- **Test data at method start**: Define test variables at the beginning of test
+  methods for readability, even if they are only used in closures. PHPStorm's
+  "variable only used in closure" warning is disabled for the test scope.
+- **RandomException in PHP 8.2+**: `random_bytes()` can throw
+  `\Random\RandomException`. In tests, either catch it or add an `@throws`
+  PHPDoc annotation.
+
 ## Test Configuration
 
 PHPUnit configuration is in `phpunit.xml.dist` at the project root.

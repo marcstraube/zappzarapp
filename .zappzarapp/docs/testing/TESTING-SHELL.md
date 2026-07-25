@@ -224,6 +224,15 @@ Goss-specific helpers:
 | `get_goss_presets`           | List available presets         |
 | `preset_exists <preset>`     | Check if preset exists         |
 
+## GOSS Two-Phase Test Strategy
+
+Goss validation runs in two phases:
+
+| Phase      | When                         | What                     | How                |
+| ---------- | ---------------------------- | ------------------------ | ------------------ |
+| Build-time | `docker build --target test` | Files, configs, commands | GOSS in Dockerfile |
+| Runtime    | `make goss-test`             | HTTP, TLS, connectivity  | Shell script       |
+
 ## Test Tiers
 
 BATS tests are organized in tiers for different use cases:
@@ -425,4 +434,3 @@ teardown() {
 
 - [TESTING-PHP.md](TESTING-PHP.md) - PHP unit/feature tests (PHPUnit)
 - [TESTING-NODE.md](TESTING-NODE.md) - Node.js tests (Vitest)
-- [TESTING.md](../../ai/TESTING.md) - Goss container tests

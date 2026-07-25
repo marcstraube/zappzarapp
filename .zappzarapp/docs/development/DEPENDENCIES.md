@@ -118,6 +118,44 @@ make composer-update    # Updates + syncs composer.lock
 make pnpm-update        # Updates + syncs pnpm-lock.yaml
 ```
 
+### Updating the Package Managers
+
+**pnpm** is version-pinned in `package.json` via
+`"packageManager": "pnpm@x.x.x"`; Corepack enforces this version inside the
+container.
+
+- To update pnpm, use `make pnpm-upgrade` — it fetches the latest version via
+  the container and updates the pin.
+- The container is the source of truth: local Node/pnpm versions may differ.
+- Rebuilding the container (even with `--no-cache --pull`) does NOT update pnpm
+  — the `packageManager` field takes precedence.
+
+**Composer** is baked into the PHP image at build time via `FROM composer:2`.
+
+- To update Composer, run `make build-php` — it pulls the latest `composer:2`
+  image.
+- There is no runtime pinning (unlike pnpm/Corepack) and no dedicated
+  `composer-upgrade` target: the container rebuild handles it automatically.
+
+### pnpm Override Floors (Security Fixes)
+
+When forcing a patched version of a vulnerable transitive dependency via
+`pnpm.overrides`, never let an override selector span a semver major:
+
+- A floor like `"js-yaml@<4.3.0": ">=4.3.0"` silently rewrites js-yaml **3.x**
+  consumers onto 4.x. js-yaml 4 removed `safeLoad`, so every 3.x consumer
+  crashes at require time — a runtime break that no lint or audit check catches,
+  only actually executing the tool.
+- Write one floor per major line, targeting that line's patched release:
+  `"js-yaml@<3.15.0": ">=3.15.0 <4.0.0"` and
+  `"js-yaml@>=4.0.0 <4.3.0": ">=4.3.0 <5.0.0"`.
+- Check the OSV/GHSA "affected ranges" for per-major fix versions before writing
+  a floor — advisories often ship backports (here, 3.15.0 fixes the same GHSAs
+  as 4.3.0).
+- An override selector that spans a semver major is a compatibility rewrite, not
+  a security floor. After adding overrides, smoke-run the CLIs that consume the
+  affected transitive.
+
 ---
 
 ## Lock File Synchronization

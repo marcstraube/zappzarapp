@@ -31,11 +31,34 @@ Pre-configured database connections:
 
 #### `inspectionProfiles/Project_Default.xml`
 
-Code inspection settings:
+Code inspection settings, shared via git so all developers get the same
+warnings:
 
 - MessDetector validation (WEAK WARNING)
 - PHP CS Fixer validation (WEAK WARNING)
 - PHPStan global validation (WEAK WARNING)
+
+#### `scopes/`
+
+Named scopes for targeted inspection rules (shared via git). `Tests.xml`
+defines the test file pattern:
+
+```xml
+<component name="DependencyValidationManager">
+  <scope name="Tests" pattern="file:tests//*" />
+</component>
+```
+
+The inspection profile references scopes to relax rules for specific file
+sets. Example: "Variable only used in closure" is disabled for the Tests
+scope, because defining test data at method start improves readability even
+when it is only used in closures:
+
+```xml
+<inspection_tool class="PhpVariableUsedOnlyInClosureInspection" enabled="true">
+  <scope name="Tests" level="INFORMATION" enabled="false" />
+</inspection_tool>
+```
 
 ### Run Configurations (`runConfigurations/`)
 
@@ -202,6 +225,29 @@ Alternatively, use Run Configuration: `Quality: CS Fix`
 
 - `Ctrl+Alt+L`: Reformat file
 - `Ctrl+Alt+Shift+L`: Reformat dialog with options
+
+### Suppressing Inspections
+
+File-wide inspections (e.g. DuplicatedCode) are NOT suppressed by
+`@noinspection` in the class DocBlock. Place the suppression as a single-line
+`/* */` comment (not a DocBlock) directly after the opening PHP tag:
+
+```php
+<?php
+/* @noinspection DuplicatedCode Reason for the suppression */
+
+declare(strict_types=1);
+```
+
+Distinction:
+
+- **File-level**: single-line comment at file start — affects the entire file
+  (DuplicatedCode, UnusedMethod, ...)
+- **Class-level**: `@noinspection` in the class DocBlock — only affects class
+  members
+
+This keeps the class DocBlock clean for API documentation. Every suppression
+must state its reason.
 
 ### Format on Save
 

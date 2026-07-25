@@ -46,6 +46,25 @@ base-uri 'self';
 form-action 'self';
 ```
 
+##### Why `'unsafe-inline'` for Styles in Development
+
+Vite injects CSS dynamically via JavaScript in development mode. The dynamically
+created `<style>` tags cannot carry nonces (JavaScript cannot add nonces to DOM
+elements in CSP-protected contexts), so styles fail to load even when `<script>`
+tags are properly nonced. The development CSP therefore allows `'unsafe-inline'`
+in `style-src`.
+
+This is safe because:
+
+- The development environment is local only (localhost)
+- Nonces are still required for styles in templates
+- Vite's production build output does not use dynamic style injection, so the
+  production CSP stays strict (no `unsafe-inline`)
+
+`style-src-elem` was considered as an alternative to separate inline from
+external styles, but Vite's injection pattern requires `unsafe-inline` either
+way.
+
 #### Production CSP
 
 Strict policy without unsafe directives:

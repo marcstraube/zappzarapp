@@ -6,6 +6,29 @@ Most targets require running containers. Start with `make up` if containers are
 not running. After Docker config changes: `make build-*` +
 `make down && make up`.
 
+## Shell Compatibility
+
+- Use `SHELL := bash` (not `/bin/bash`): PATH-based lookup works on Linux,
+  macOS, WSL, and Git Bash.
+- Brace expansion `{a,b}` requires Bash — POSIX sh does not support it. The
+  Makefile sets Bash explicitly.
+- Windows support requires WSL or Git Bash. Native cmd.exe/PowerShell are not
+  supported.
+
+## Sourcing Multiple .env Files
+
+Recipes that read configuration must source `.env` and the optional `.env.local`
+overrides:
+
+```makefile
+. ./.env && [ -f .env.local ] && . ./.env.local; \
+if [ "${ENABLE_MAILPIT:-false}" = "true" ]; then ...
+```
+
+**Note:** The semicolon after the `.env.local` sourcing is important —
+`[ -f .env.local ]` returns false if the file doesn't exist, which would stop an
+`&&` chain otherwise.
+
 ## By File Type
 
 | File Type   | Check Targets                                      | Fix Targets                     | Test Targets |
@@ -166,6 +189,18 @@ make pnpm-install-local
 | Add Node package    | `make pnpm CMD="add pkg"`                | `make pnpm-install-local`     |
 | Remove PHP package  | `make composer CMD="remove vendor/pkg"`  | `make composer-install-local` |
 | Remove Node package | `make pnpm CMD="remove pkg"`             | `make pnpm-install-local`     |
+
+### Sync, Update, and Install Targets
+
+- **`*-install` targets**: Use `--frozen-lockfile` for CI/production
+  reproducibility. They fail if the lockfile doesn't match the manifest.
+- **`*-sync` targets**: Install from the existing lockfile inside the container.
+  `pnpm-sync` runs with `CI=true`, so pnpm enforces `--frozen-lockfile` there as
+  well; `composer-sync` runs `composer install`. Use when the lockfile already
+  matches the manifest (e.g. branch switches).
+- **`*-update` targets**: Re-resolve the lockfile after `package.json` /
+  `composer.json` changes (scaffolds, new constraints). Run the matching
+  `*-sync` target afterwards to install from the updated lockfile.
 
 ## Release Workflow
 

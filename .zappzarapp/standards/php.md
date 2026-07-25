@@ -63,6 +63,9 @@ Options:
 - **FilesystemIterator::SKIP_DOTS**: Use directly, not via child class
 - **RandomException**: In PHP 8.2+ `random_bytes()` can throw — catch in tests
   or document with `@throws`
+- **No network I/O in unit tests**: Mock all external connections. Tests that
+  attempt real connections (e.g., `redis://nonexistent:9999`) generate warnings
+  and are actually integration tests
 - **Extract Helper Methods**: For code duplication, create private helpers
   (reduces maintenance and improves readability)
 
@@ -71,6 +74,25 @@ Options:
 - Level: `max` (9)
 - Baseline: `phpstan-baseline.neon` for legacy issues
 - Never add new errors to baseline without justification
+
+### "Dead catch" Is Only Dead Under Default Error Handling
+
+PHPStan flags `try/catch (Throwable)` around functions like
+`file_get_contents()` or `unserialize()` as `catch.neverThrown` — these
+functions don't throw, they emit `E_WARNING` and return `false`. But library
+code cannot assume default error handling: a consumer may install
+`set_error_handler()` that converts warnings into `ErrorException` (this
+boilerplate's `App\Http\ExceptionHandler` does exactly that). Under such a
+handler the "dead" catch is live — a failed file read or malformed unserialize
+input throws and breaks the request.
+
+**Rule:** In extracted packages, keep the catch and suppress the finding with a
+reasoned inline ignore:
+
+```php
+// @phpstan-ignore catch.neverThrown (consumer error handlers may convert E_WARNING to ErrorException)
+} catch (Throwable) {
+```
 
 ### Security Rules (ekino/phpstan-banned-code)
 
