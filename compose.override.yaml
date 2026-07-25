@@ -371,6 +371,7 @@ services:
       - ./.zappzarapp:/app/.zappzarapp
       - ./.claude:/app/.claude
       - ./.github:/app/.github
+      - ./AGENTS.md:/app/AGENTS.md
       - ./README.md:/app/README.md
       - ./CHANGELOG.md:/app/CHANGELOG.md
       - ./CONTRIBUTING.md:/app/CONTRIBUTING.md

@@ -9,6 +9,17 @@ Fixes) **Version:** 3.79
 
 ### Unreleased
 
+#### Added
+
+- **Root `AGENTS.md`**: tool-neutral agent guidance (commands, standards,
+  workflow, documentation entry points) — makes the documented `AGENTS.md`
+  convention (ADR 0007) real instead of prescribed-only. Follows the
+  customizable-file pattern: boilerplate marker, swapped by `make setup`
+  (original preserved as `.zappzarapp/ai/AGENTS.md`, generic template from
+  `.zappzarapp/ai/templates/`), restored by `make reset-full`, excluded from
+  `boilerplate-sync`. Mounted into dev-tools for linting; covered by
+  change-watch doc reminders
+
 #### Removed
 
 - **Knowledge Files DECISIONS.md / REFERENCES.md**: the monolithic

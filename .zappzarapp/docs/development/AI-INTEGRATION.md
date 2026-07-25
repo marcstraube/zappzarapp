@@ -12,8 +12,8 @@ assistants are supported through the tool-neutral `AGENTS.md` convention.
 
 Most current AI coding assistants (Codex CLI, Gemini CLI / Antigravity, Cursor,
 GitHub Copilot, OpenCode, Cline, Roo Code, ...) read a root-level `AGENTS.md`
-file natively. If your team uses one of these tools, maintain an `AGENTS.md`
-with your project rules — no sync tooling required.
+file natively. The boilerplate ships a starter `AGENTS.md` in the project root —
+customize it with your project rules; no sync tooling required.
 
 ## Knowledge Architecture
 
@@ -165,9 +165,11 @@ The industry has converged on `AGENTS.md` as the tool-neutral rules file: Codex
 CLI, Gemini CLI / Antigravity, Cursor, GitHub Copilot, OpenCode, Cline, Roo Code
 and others read it natively.
 
-If your team uses tools besides Claude Code:
+The boilerplate ships a starter `AGENTS.md` in the project root (commands,
+standards, workflow, documentation entry points). If your team uses tools
+besides Claude Code:
 
-1. Create an `AGENTS.md` in the project root with your shared project rules
+1. Customize the root `AGENTS.md` with your shared project rules
 2. Keep tool-specific configuration (e.g. `.gemini/`, `.cursor/`) personal and
    uncommitted (see [CONTRIBUTING.md](../CONTRIBUTING.md))
 

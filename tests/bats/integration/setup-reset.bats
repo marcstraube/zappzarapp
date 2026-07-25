@@ -155,6 +155,15 @@ setup() {
     assert_failure
 }
 
+@test "[Phase 2] Verify: AGENTS.md replaced (no boilerplate marker)" {
+    run grep -q "zappzarapp-boilerplate-agents" AGENTS.md
+    assert_failure
+}
+
+@test "[Phase 2] Verify: .zappzarapp/ai/AGENTS.md created (boilerplate moved)" {
+    [[ -f ".zappzarapp/ai/AGENTS.md" ]]
+}
+
 @test "[Phase 2] Verify: CHANGELOG.md replaced (no boilerplate marker)" {
     # After setup, CHANGELOG.md should NOT contain the boilerplate marker
     run grep -q "zappzarapp - Changelog" CHANGELOG.md
@@ -220,6 +229,11 @@ setup() {
 @test "[Phase 3] Verify: README.md restored to boilerplate (contains marker)" {
     # After reset-full, README.md should contain the boilerplate marker
     run grep -q "zappzarapp-boilerplate-readme" README.md
+    assert_success
+}
+
+@test "[Phase 3] Verify: AGENTS.md restored to boilerplate (contains marker)" {
+    run grep -q "zappzarapp-boilerplate-agents" AGENTS.md
     assert_success
 }
 

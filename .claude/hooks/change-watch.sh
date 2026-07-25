@@ -39,6 +39,7 @@ DOC_SEARCH_PATHS=(
     ".zappzarapp/docs/"
     ".claude/CLAUDE.md"
     ".zappzarapp/ai/templates/CLAUDE.md"
+    "AGENTS.md"
     "README.md"
 )
 

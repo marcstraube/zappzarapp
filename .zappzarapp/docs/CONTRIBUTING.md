@@ -31,6 +31,7 @@ swaps these files:
 | ------------------- | ----------------------------------------------- |
 | `README.md`         | Replaced with `.zappzarapp/README.template.md`  |
 | `.claude/CLAUDE.md` | Moved to `.zappzarapp/`, replaced with template |
+| `AGENTS.md`         | Moved to `.zappzarapp/`, replaced with template |
 | `CHANGELOG.md`      | Moved to `.zappzarapp/`, replaced with template |
 
 This gives boilerplate users a clean starting point while preserving the
