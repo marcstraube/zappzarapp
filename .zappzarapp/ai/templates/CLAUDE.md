@@ -1,81 +1,26 @@
 # Claude Instructions
 
-## Session Auto-Start
-
-**At conversation start (first user message), automatically:**
-
-1. Find and read last session:
-   `find .claude/sessions -name "session-*.md" -type f | xargs ls -1t | head -1`
-2. Extract: Goal, Summary, References
-3. Run `/tasks --list` for open items (respects configured storage mode)
-4. Create new session from `.zappzarapp/ai/templates/SESSION-TEMPLATE.md`
-
-**If fresh context (new conversation):**
-
-1. Brief user on context (previous session, tasks)
-2. Ask: "What would you like to work on?"
-
-**If continued from context compression:**
-
-1. Find and continue previous session file (same task-slug)
-2. Continue working silently
-
-**Skip steps 5-6 if:** User's first message is a direct task (then create
-session silently and start working).
-
-## Context Overflow / Continued Sessions
-
-**When a session is "continued from previous conversation" after context
-overflow:**
-
-1. **Find previous session by task-slug from Summary:**
-
-   ```bash
-   find .claude/sessions -name "session-*<slug>*.md" -type f | xargs ls -1t | head -1
-   ```
-
-2. **Fallback if unclear:**
-   - Filter by current branch:
-     `grep -rl "Branch.*$(git branch --show-current)" .claude/sessions/`
-   - Filter by time window (last 2h)
-   - If still ambiguous: Ask user which session to continue
-3. **Create continuation session file** in current year/month with same slug
-4. Continue with normal session logging
-
-**This is NOT optional** — the summarized context loses session file updates!
-
-## Session Log Updates
-
-**Update DURING work, not just at the end:**
-
-- After each significant change: add to Changes table
-- After each decision: add to Decisions section
-- After each commit: note commit hash in Changes or Summary
-- After discovering something: add to Learnings
-
-**Rule of thumb:** If you completed a todo item, update the session log.
-
-**Subagents:** Do NOT update session file directly. Report changes back to main
-agent, who updates centrally (prevents conflicts).
-
-### Knowledge File Updates
+## Knowledge Files
 
 **Write learnings, decisions, and references IMMEDIATELY when discovered:**
 
-| Discovery                       | Action                    |
-| ------------------------------- | ------------------------- |
-| New insight / gotcha / pattern  | Append to `LEARNINGS.md`  |
-| Architecture decision made      | Add ADR to `DECISIONS.md` |
-| Useful documentation link found | Add to `REFERENCES.md`    |
+| Discovery                      | Action                             |
+| ------------------------------ | ---------------------------------- |
+| New insight / gotcha / pattern | Append to `.ai/LEARNINGS.md`       |
+| Architecture decision made     | New ADR document under `docs/adr/` |
 
-Session files are not committed (lost on context overflow). Knowledge files are
-committed (persistent).
+`LEARNINGS.md` is a fast-capture inbox: mature entries graduate into the regular
+documentation during periodic triage (`/optimize --learnings`).
 
-### Ending a Session
+Knowledge files are committed and team-shared — they are the project's
+persistent memory. Do not defer these writes to "later"; context may be
+compacted at any time.
 
-1. Complete session log: Fill in `## Summary`
-2. Verify learnings/decisions were written to knowledge files
-3. Tell user: "Please enter `/clear` for fresh context."
+**Subagents:** Do NOT write knowledge files directly. Report findings back to
+the Main Agent, who writes them centrally (prevents conflicts).
+
+**On fresh conversations:** brief the user on open tasks (`/tasks --list`) and
+ask what to work on.
 
 ---
 
@@ -135,8 +80,9 @@ See `.zappzarapp/standards/` for language-specific rules:
 <!-- TODO: Customize for your project -->
 
 ```text
-.ai/                → Project AI knowledge (LEARNINGS, DECISIONS, etc.)
-.claude/            → Claude tooling (agents, commands, sessions)
+.ai/                → Project AI knowledge (LEARNINGS inbox)
+docs/adr/           → Architecture Decision Records (one file per ADR)
+.claude/            → Claude tooling (agents, skills, hooks)
 .zappzarapp/        → Boilerplate config & docs
 docker/             → Docker configurations
 src/                → Source code
@@ -145,13 +91,12 @@ tests/              → Test files
 
 **Claude-specific folders:**
 
-| Folder              | Purpose                      | Committed |
-| ------------------- | ---------------------------- | --------- |
-| `.claude/agents/`   | Agent workflow documentation | Yes       |
-| `.claude/skills/`   | Skills (slash commands)      | Yes       |
-| `.claude/sessions/` | Session logs (YYYY/MM/)      | No        |
-| `.ai/`              | Project knowledge files      | Yes       |
-| `.zappzarapp/ai/`   | Boilerplate knowledge        | Yes       |
+| Folder            | Purpose                      | Committed |
+| ----------------- | ---------------------------- | --------- |
+| `.claude/agents/` | Agent workflow documentation | Yes       |
+| `.claude/skills/` | Skills (slash commands)      | Yes       |
+| `.ai/`            | Project knowledge files      | Yes       |
+| `.zappzarapp/ai/` | Boilerplate knowledge        | Yes       |
 
 ## Key Make Targets
 
@@ -169,12 +114,15 @@ make test              → Run all tests
 
 Available skills in `.claude/skills/`:
 
-| Skill        | Purpose                                                    |
-| ------------ | ---------------------------------------------------------- |
-| `/status`    | Project overview (Git, Docker, tasks)                      |
-| `/tasks`     | Task management (4-tier: zappzarapp/upstream/repo/private) |
-| `/commit`    | Guided commit workflow with quality checks                 |
-| `/learnings` | View and manage project learnings                          |
+| Skill         | Purpose                                                    |
+| ------------- | ---------------------------------------------------------- |
+| `/tasks`      | Task management (4-tier: zappzarapp/upstream/repo/private) |
+| `/sync-check` | Verify related config files stay in sync                   |
+| `/optimize`   | Self-optimization of Claude configuration                  |
+
+Built-in Claude Code skills (e.g. code review, security review, research)
+complement these — the project only ships skills for workflows the built-ins do
+not cover.
 
 ---
 
@@ -197,7 +145,7 @@ User reviews → Merge → `/tasks --close <id>`
 ### Commit Rules
 
 - Commit regularly on feature branches (intermediate commits encouraged)
-- Use `/commit` for the guided commit workflow
+- Conventional commit format is enforced via commitlint (CaptainHook)
 - Never commit directly to develop or master — only via feature branch merges
 
 ## Error Prevention
@@ -210,12 +158,15 @@ package manager usage. Direct package manager commands are blocked via
 
 ## Knowledge File Paths
 
-**LEARNINGS, DECISIONS, REFERENCES — 2 Layer:**
+**LEARNINGS - 2 Layer:**
 
 | Priority | Path              | Condition                 |
 | -------- | ----------------- | ------------------------- |
 | 1        | `.ai/`            | `.ai/LEARNINGS.md` exists |
 | 2        | `.zappzarapp/ai/` | fallback                  |
+
+**ADRs:** one document per decision under `docs/adr/` (`0000-template.md` is the
+template).
 
 **Note:** Task management is handled via `/tasks` command with 4-tier model:
 

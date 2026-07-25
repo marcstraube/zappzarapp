@@ -36,7 +36,7 @@ esac
 
 # Helper: Check if service container is running
 is_running() {
-    docker compose ps -q "$1" 2>/dev/null | grep -q .
+    docker compose ps -q --status running "$1" 2>/dev/null | grep -q .
 }
 
 # Helper: Ensure container is running (with smart startup)
@@ -87,6 +87,7 @@ to_container_path() {
 }
 
 # Fast syntax checks using container environment
+run_checks() {
 case "$FILE" in
   *.php)
     # PHP syntax check using container PHP version (matches CI/production)
@@ -152,5 +153,14 @@ case "$FILE" in
     fi
     ;;
 esac
+}
+
+FINDINGS=$(run_checks)
+if [[ -n "$FINDINGS" ]]; then
+    # PostToolUse contract: exit 2 feeds stderr back to Claude as actionable
+    # feedback - plain stdout with exit 0 never reaches the model
+    echo "$FINDINGS" >&2
+    exit 2
+fi
 
 exit 0

@@ -12,25 +12,20 @@ assistants are supported through the tool-neutral `AGENTS.md` convention.
 
 Most current AI coding assistants (Codex CLI, Gemini CLI / Antigravity, Cursor,
 GitHub Copilot, OpenCode, Cline, Roo Code, ...) read a root-level `AGENTS.md`
-file natively. If your team uses one of these tools, maintain an `AGENTS.md`
-with your project rules — no sync tooling required.
+file natively. The boilerplate ships a starter `AGENTS.md` in the project root —
+customize it with your project rules; no sync tooling required.
 
-## 2-Layer Architecture
+## Knowledge Architecture
 
-AI knowledge files are organized in two layers:
+| Artifact  | Location (project / boilerplate)      | Purpose                                |
+| --------- | ------------------------------------- | -------------------------------------- |
+| LEARNINGS | `.ai/` / `.zappzarapp/ai/`            | Fast-capture inbox for gotchas         |
+| ADRs      | `docs/adr/` / `.zappzarapp/docs/adr/` | One document per architecture decision |
 
-| Layer        | Location          | Committed | Purpose                 |
-| ------------ | ----------------- | --------- | ----------------------- |
-| `project`    | `.ai/`            | Yes       | Team-shared knowledge   |
-| `zappzarapp` | `.zappzarapp/ai/` | Yes       | Boilerplate development |
-
-### Knowledge Files
-
-| File       | Layers | Available In        |
-| ---------- | ------ | ------------------- |
-| LEARNINGS  | 2      | project, zappzarapp |
-| DECISIONS  | 2      | project, zappzarapp |
-| REFERENCES | 2      | project, zappzarapp |
+`LEARNINGS.md` is an inbox: mature entries graduate into the regular
+documentation during periodic triage (`/optimize --learnings`). ADRs follow the
+common one-document-per-decision practice with an index README and a status
+lifecycle (see `.zappzarapp/docs/adr/0009-one-document-per-adr.md`).
 
 **Task Management:** Handled via `/tasks` command with automatic storage
 detection (GitHub Issues, GitLab Issues, or local `.ai/TASKS.md`).
@@ -49,7 +44,6 @@ detection (GitHub Issues, GitLab Issues, or local `.ai/TASKS.md`).
 ├── settings.json       # Shared permissions & hooks
 ├── settings.local.json # Personal overrides (gitignored)
 ├── context/            # Project context (gitignored)
-├── sessions/           # Session logs (gitignored)
 ├── state/              # Persistent state (gitignored)
 ├── cache/              # Temporary data (gitignored)
 ├── temp/               # Agent work files (gitignored)
@@ -87,7 +81,7 @@ See: <https://code.claude.com/docs/en/settings#hook-configuration>
 
 #### Hooks Configuration
 
-Hooks automate session management and provide contextual reminders.
+Hooks provide immediate feedback and contextual reminders during work.
 
 **Available Hook Events:**
 
@@ -103,26 +97,31 @@ Hooks automate session management and provide contextual reminders.
 
 **Project Hooks (`.claude/settings.json`):**
 
-| Hook                | Script                  | Purpose                                             |
-| ------------------- | ----------------------- | --------------------------------------------------- |
-| `SessionStart`      | `session-start.sh`      | Creates pending session file                        |
-| `SessionEnd`        | `session-end.sh`        | Reminds about Summary, Learnings                    |
-| `UserPromptSubmit`  | `user-prompt-submit.sh` | Detects context continuation + implementation tasks |
-| `PreCompact`        | (inline)                | Reminds to update session before compression        |
-| `PostToolUse(Edit)` | `post-edit-lint.sh`     | Runs linters after file edits                       |
+| Hook                | Script                  | Purpose                                      |
+| ------------------- | ----------------------- | -------------------------------------------- |
+| `UserPromptSubmit`  | `user-prompt-submit.sh` | Branch check + doc/test change watch         |
+| `PostToolUse(Edit)` | `post-edit-lint.sh`     | Syntax checks; feeds errors back via exit 2  |
+| `PostToolUse(Edit)` | `post-edit-autofix.sh`  | Auto-applies formatting (CS-Fixer/Prettier)  |
+| `PostToolUse`       | (inline)                | Contextual reminders via `additionalContext` |
+
+**Hook output contract:** plain stdout only reaches Claude for
+`UserPromptSubmit`/`SessionStart`. `PostToolUse` hooks must either exit 2
+(stderr becomes feedback) or emit
+`{"hookSpecificOutput": {"hookEventName": "PostToolUse", "additionalContext": "..."}}`.
+Custom JSON shapes like `{"message": ...}` are silently dropped.
 
 **Hook Format:**
 
 ```json
 {
   "hooks": {
-    "SessionStart": [
+    "UserPromptSubmit": [
       {
         "matcher": "",
         "hooks": [
           {
             "type": "command",
-            "command": "./.claude/hooks/session-start.sh"
+            "command": "./.claude/hooks/user-prompt-submit.sh"
           }
         ]
       }
@@ -150,19 +149,15 @@ Hooks automate session management and provide contextual reminders.
 }
 ```
 
-#### UserPromptSubmit Detection Examples
+#### UserPromptSubmit Checks
 
-When detecting a continued session:
+On every prompt the hook checks (plain stdout becomes context):
 
-```text
-[Context Continuation] Previous session: session-2026-01-24-1827-tls-verification.md
-```
-
-When detecting an implementation task:
-
-```text
-[Implementation Task] Check .claude/agents/workflow.md for scope before starting.
-```
+- **Branch check** — implementation-style prompt while on develop/main/master
+  produces a reminder to create a feature branch or worktree
+- **Change watch** — uncommitted changes to Makefile targets, compose services,
+  skills or `.env.example` trigger a doc/test update reminder (deduplicated
+  between prompts via `.claude/cache/`)
 
 ### Other Tools (`AGENTS.md` Convention)
 
@@ -170,9 +165,11 @@ The industry has converged on `AGENTS.md` as the tool-neutral rules file: Codex
 CLI, Gemini CLI / Antigravity, Cursor, GitHub Copilot, OpenCode, Cline, Roo Code
 and others read it natively.
 
-If your team uses tools besides Claude Code:
+The boilerplate ships a starter `AGENTS.md` in the project root (commands,
+standards, workflow, documentation entry points). If your team uses tools
+besides Claude Code:
 
-1. Create an `AGENTS.md` in the project root with your shared project rules
+1. Customize the root `AGENTS.md` with your shared project rules
 2. Keep tool-specific configuration (e.g. `.gemini/`, `.cursor/`) personal and
    uncommitted (see [CONTRIBUTING.md](../CONTRIBUTING.md))
 

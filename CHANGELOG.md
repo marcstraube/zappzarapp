@@ -9,7 +9,35 @@ Fixes) **Version:** 3.79
 
 ### Unreleased
 
+#### Added
+
+- **Root `AGENTS.md`**: tool-neutral agent guidance (commands, standards,
+  workflow, documentation entry points) — makes the documented `AGENTS.md`
+  convention (ADR 0007) real instead of prescribed-only. Follows the
+  customizable-file pattern: boilerplate marker, swapped by `make setup`
+  (original preserved as `.zappzarapp/ai/AGENTS.md`, generic template from
+  `.zappzarapp/ai/templates/`), restored by `make reset-full`, excluded from
+  `boilerplate-sync`. Mounted into dev-tools for linting; covered by
+  change-watch doc reminders
+
 #### Removed
+
+- **Knowledge Files DECISIONS.md / REFERENCES.md**: the monolithic
+  `DECISIONS.md` was migrated to one-document-per-ADR under
+  `.zappzarapp/docs/adr/` (index README, status lifecycle; user projects get
+  `docs/adr/` scaffolded by `make setup`); `REFERENCES.md` (generic tool
+  bookmarks) was retired. `LEARNINGS.md` stays as fast-capture inbox whose
+  mature entries graduate into the regular documentation via
+  `/optimize --learnings` (new triage phase). See ADR 0009
+
+- **Claude Session-File System**: removed the custom session lifecycle
+  (`session-start.sh`, `session-end.sh`, `session-cleanup.sh`, SESSION-TEMPLATE,
+  SessionStart/SessionEnd/PreCompact hook wiring) — built-in Claude Code memory
+  and context compaction cover continuity, and session files were never
+  committed. Knowledge files (LEARNINGS/DECISIONS/ REFERENCES) remain the
+  committed, team-shared memory. Also removed the PreToolUse branch/worktree
+  echo hooks whose output never reached the model (wrong exit-code/output
+  contract)
 
 - **AI Sync Tooling**: Removed `make ai-sync`, `ai-commands-sync` and
   `ai-rules-sync` targets along with the `rulesync` and `ai-command-converter`
@@ -26,6 +54,16 @@ Fixes) **Version:** 3.79
     `knip.config.js`, `tests/bats/make-targets-dryrun.bats`, docs
 
 #### Fixed
+
+- **Hook Output Contract**: hook feedback never reached the model — custom
+  `{"message": ...}` JSON is silently dropped by Claude Code.
+  `user-prompt-submit.sh` now emits plain stdout (becomes context; branch check
+  runs on every prompt instead of only the first), `post-edit-lint.sh` reports
+  syntax errors via exit 2 + stderr, and the inline PostToolUse reminders emit
+  `hookSpecificOutput.additionalContext`. The package-manager reminder patterns
+  also failed on JSON-escaped quotes in the tool input; the container checks in
+  the edit hooks use `--status running` now, and change-watch tracks the new
+  `.claude/skills/*/SKILL.md` layout
 
 - **Prettier ARGS Selectivity**: `make prettier-check`/`prettier-fix` with
   `ARGS` appended the given files to the full format globs (formatting
@@ -53,6 +91,13 @@ Fixes) **Version:** 3.79
   definitions now carry a mandatory "no state-destroying git commands" section
   (no stash/reset/restore/clean, no commits — Main Agent owns git), so every
   spawned agent inherits the rule structurally
+- **Skill Polish After Audit**: `/optimize` gained `Bash(find:*)` and
+  `AskUserQuestion` in allowed-tools (the `--sessions` phase and the documented
+  approval flow needed them), its stale session glob and template path were
+  corrected; `/sync-check` documents that `compose.ci.yaml` is intentionally
+  excluded from parity checks; the user project template
+  (`.zappzarapp/ai/templates/CLAUDE.md`) now lists the curated skill set instead
+  of removed skills
 - **Claude Skills Curated Down to Three**: removed `/status`, `/commit`,
   `/audit`, `/learnings`, `/research` and `/worktree` — their function is
   covered by built-in Claude Code capabilities (native commit flow plus

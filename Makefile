@@ -273,6 +273,12 @@ setup: ## Create directories, install dependencies (BOILERPLATE=1 to force file 
 			cp .zappzarapp/ai/templates/CLAUDE.md .claude/CLAUDE.md; \
 			echo -e "\033[0;32mCLAUDE.md replaced with generic template.\033[0m"; \
 		fi; \
+		if grep -q "zappzarapp-boilerplate-agents" AGENTS.md 2>/dev/null; then \
+			echo -e "\033[0;33mSetting up AGENTS.md...\033[0m"; \
+			mv AGENTS.md .zappzarapp/ai/AGENTS.md; \
+			cp .zappzarapp/ai/templates/AGENTS.md AGENTS.md; \
+			echo -e "\033[0;32mAGENTS.md replaced with generic template.\033[0m"; \
+		fi; \
 		if grep -q "zappzarapp - Changelog" CHANGELOG.md 2>/dev/null; then \
 			echo -e "\033[0;33mSetting up CHANGELOG...\033[0m"; \
 			mv CHANGELOG.md .zappzarapp/CHANGELOG.md; \
@@ -283,9 +289,14 @@ setup: ## Create directories, install dependencies (BOILERPLATE=1 to force file 
 			echo -e "\033[0;33mSetting up project AI knowledge directory...\033[0m"; \
 			mkdir -p .ai; \
 			[ ! -f .ai/LEARNINGS.md ] && cp .zappzarapp/ai/templates/LEARNINGS.md .ai/; \
-			[ ! -f .ai/DECISIONS.md ] && cp .zappzarapp/ai/templates/DECISIONS.md .ai/; \
-			[ ! -f .ai/REFERENCES.md ] && cp .zappzarapp/ai/templates/REFERENCES.md .ai/; \
-			echo -e "\033[0;32m.ai/ created with knowledge templates.\033[0m"; \
+			echo -e "\033[0;32m.ai/ created with LEARNINGS inbox.\033[0m"; \
+		fi; \
+		if [ ! -d docs/adr ]; then \
+			echo -e "\033[0;33mSetting up ADR directory...\033[0m"; \
+			mkdir -p docs/adr; \
+			cp .zappzarapp/ai/templates/adr/0000-template.md docs/adr/; \
+			cp .zappzarapp/ai/templates/adr/README.md docs/adr/; \
+			echo -e "\033[0;32mdocs/adr/ created (one document per ADR).\033[0m"; \
 		fi; \
 	fi; \
 	if [ -n "$$IS_CONTRIBUTOR_MODE" ]; then \
@@ -2551,15 +2562,18 @@ reset-full: ## Full factory reset - removes EVERYTHING including secrets (DANGER
 	@echo -e "\033[0;33mResetting source code to boilerplate defaults...\033[0m"
 	@git checkout -- src/ tests/ resources/ config/ templates/ public/index.php 2>/dev/null || \
 		echo -e "\033[0;31m  ⚠ git checkout failed - source code not reset\033[0m"
-	@echo -e "\033[0;33mResetting README.md, CLAUDE.md, and CHANGELOG.md to boilerplate state...\033[0m"
+	@echo -e "\033[0;33mResetting README.md, CLAUDE.md, AGENTS.md, and CHANGELOG.md to boilerplate state...\033[0m"
 	@git checkout -- README.md 2>/dev/null || \
 		echo -e "\033[0;31m  ⚠ README.md not reset (not tracked or modified)\033[0m"
 	@git checkout -- .claude/CLAUDE.md 2>/dev/null || \
 		echo -e "\033[0;31m  ⚠ CLAUDE.md not reset (not tracked or modified)\033[0m"
+	@git checkout -- AGENTS.md 2>/dev/null || \
+		echo -e "\033[0;31m  ⚠ AGENTS.md not reset (not tracked or modified)\033[0m"
 	@git checkout -- CHANGELOG.md 2>/dev/null || \
 		echo -e "\033[0;31m  ⚠ CHANGELOG.md not reset (not tracked or modified)\033[0m"
 	@rm -f .zappzarapp/CHANGELOG.md 2>/dev/null || true
 	@rm -f .zappzarapp/ai/CLAUDE.md 2>/dev/null || true
+	@rm -f .zappzarapp/ai/AGENTS.md 2>/dev/null || true
 	@echo -e "\033[0;32m✓ Full factory reset complete! Project is now in boilerplate state.\033[0m"
 
 # =============================================================================
@@ -2590,7 +2604,8 @@ BOILERPLATE_SYNC_PATHS := \
 # Files to NEVER sync (project-specific, even if in sync paths)
 BOILERPLATE_EXCLUDE := \
 	.zappzarapp/CHANGELOG.md \
-	.zappzarapp/ai/CLAUDE.md
+	.zappzarapp/ai/CLAUDE.md \
+	.zappzarapp/ai/AGENTS.md
 
 boilerplate-sync: ## Sync infrastructure from zappzarapp upstream (preserves project files)
 	@echo -e "\033[0;36m╔════════════════════════════════════════════════════════════╗\033[0m"

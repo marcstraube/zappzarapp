@@ -2,62 +2,24 @@
 
 # Claude Instructions
 
-## Session Management
-
-**Hooks handle session lifecycle automatically:**
-
-| Hook               | Action                                                   |
-| ------------------ | -------------------------------------------------------- |
-| `SessionStart`     | Creates `.claude/sessions/YYYY/MM/session-...-<slug>.md` |
-| `UserPromptSubmit` | Detects context continuation, shows previous session     |
-| `SessionEnd`       | Reminds about Summary, Learnings, Decisions              |
-| `PreCompact`       | Reminds before context compaction                        |
-
-**Session naming is automatic:**
-
-- Slug is derived from branch name (e.g., `feature/add-auth` -> `add-auth`)
-- Falls back to changed file directory if on develop/main/master
-- Falls back to `pending` only if no context available
-
-**Your tasks:**
-
-1. **Fresh conversation:** Brief user on previous session, ask what to work on
-2. **Context continuation:** Hook shows previous session - read and continue it
-
-## Session Log Updates
-
-**Update DURING work, not just at the end:**
-
-- After each significant change: add to Changes table
-- After each decision: add to Decisions section
-- After each commit: note commit hash in Changes or Summary
-- After discovering something: add to Learnings
-
-**Rule of thumb:** If you completed a todo item, update the session log.
-
-**Subagents:** Do NOT update session file directly. Report changes back to main
-agent, who updates centrally (prevents conflicts).
-
-### Knowledge File Updates
+## Knowledge Files
 
 **Write learnings, decisions, and references IMMEDIATELY when discovered:**
 
-| Discovery                       | Action                    |
-| ------------------------------- | ------------------------- |
-| New insight / gotcha / pattern  | Append to `LEARNINGS.md`  |
-| Architecture decision made      | Add ADR to `DECISIONS.md` |
-| Useful documentation link found | Add to `REFERENCES.md`    |
+| Discovery                      | Action                             |
+| ------------------------------ | ---------------------------------- |
+| New insight / gotcha / pattern | Append to `LEARNINGS.md` (inbox)   |
+| Architecture decision made     | New ADR document under `docs/adr/` |
 
-Session files are not committed (lost on context overflow). Knowledge files are
-committed (persistent). In session file, only note "Added learning: <title>".
+`LEARNINGS.md` is a fast-capture inbox: mature entries graduate into the regular
+documentation during periodic triage (`/optimize --learnings`).
 
-### Ending a Session
+Knowledge files are committed and team-shared — they are the project's
+persistent memory. Do not defer these writes to "later"; context may be
+compacted at any time.
 
-`SessionEnd` hook reminds you. Checklist:
-
-1. Fill in `## Summary`
-2. Verify learnings/decisions written to knowledge files
-3. Tell user: "Bitte `/clear` eingeben."
+**Subagents:** Do NOT write knowledge files directly. Report findings back to
+the Main Agent, who writes them centrally (prevents conflicts).
 
 ---
 
@@ -133,12 +95,19 @@ Different files have different layer support:
 | `--zappzarapp` | marcstraube/zappzarapp | Boilerplate feature requests |
 | `--private`    | ~/.local/share/        | Personal, offline tasks      |
 
-**LEARNINGS, DECISIONS, REFERENCES - 2 Layer:**
+**LEARNINGS - 2 Layer:**
 
 | Priority | Path              | Condition                 |
 | -------- | ----------------- | ------------------------- |
 | 1        | `.ai/`            | `.ai/LEARNINGS.md` exists |
 | 2        | `.zappzarapp/ai/` | fallback                  |
+
+**ADRs - one document per decision:**
+
+| Scope                   | Path                    |
+| ----------------------- | ----------------------- |
+| Boilerplate development | `.zappzarapp/docs/adr/` |
+| User project            | `docs/adr/`             |
 
 **CHANGELOG - Root level:**
 
@@ -179,6 +148,9 @@ For all lint/test/fix targets: See `.zappzarapp/standards/make-targets.md`
 ## Skills
 
 Skills in `.claude/skills/`: `/tasks`, `/sync-check`, `/optimize`
+
+Built-in Claude Code skills (code review, security review, research, ...)
+complement these — the project only ships skills the built-ins do not cover.
 
 ## Git & Commits
 

@@ -122,7 +122,7 @@ Thumbs.db
 # - docs/ (boilerplate documentation)
 # - CHANGELOG.md (boilerplate version history)
 # - README.template.md, CLAUDE.template.md (templates for user projects)
-# - README.md, CLAUDE.md (moved here by make setup)
+# - README.md, CLAUDE.md, AGENTS.md (moved here by make setup)
 # - ai/config.local.md.example (example for personal config)
 .zappzarapp/ai/config.local.md
 

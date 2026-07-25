@@ -160,7 +160,7 @@ Requirements:
 - No architectural changes
 - Report back: files changed, any issues encountered
 
-DO NOT: Update session files, tasks, or CHANGELOG (Main Agent handles this)
+DO NOT: Update knowledge files, tasks, or CHANGELOG (Main Agent handles this)
 ```
 
 ### Validation Before Batch
@@ -342,7 +342,7 @@ Trigger Security Agent if changed files match these patterns:
 
 ### Session File (centralized)
 
-- **Only Main Agent** updates session file
+- **Only Main Agent** updates knowledge files and CHANGELOG
 - Subagents report back, don't write directly
 - Prevents conflicts
 
@@ -361,15 +361,14 @@ When new insights are discovered:
 After task completion, Main Agent updates knowledge files based on Completion
 Report:
 
-| Completion Report Section | Target File     | Action                |
-| ------------------------- | --------------- | --------------------- |
-| Learnings                 | `LEARNINGS.md`  | Append new entries    |
-| Decisions (if any)        | `DECISIONS.md`  | Add ADR if applicable |
-| References (if any)       | `REFERENCES.md` | Add new links         |
+| Completion Report Section | Target                 | Action                     |
+| ------------------------- | ---------------------- | -------------------------- |
+| Learnings                 | `LEARNINGS.md` (inbox) | Append new entries         |
+| Decisions (if any)        | `docs/adr/`            | New ADR document per entry |
 
-**Path:** Use 2-layer resolution (`.ai/` if exists, otherwise
-`.zappzarapp/ai/`). Note: LEARNINGS, DECISIONS, REFERENCES have no personal
-layer (tasks are managed via `/tasks` command).
+**Path:** LEARNINGS uses 2-layer resolution (`.ai/` if exists, otherwise
+`.zappzarapp/ai/`). ADRs: `docs/adr/` in user projects, `.zappzarapp/docs/adr/`
+for boilerplate development.
 
 **Timing:** After Completion Report, before "Branch ready for review" message.
 

@@ -31,7 +31,7 @@ fi
 DOC_EXTRACTORS=(
     'Makefile|(?<=^\+)[a-z][-a-z0-9_]+(?=:\s)|make {1}|false'
     'compose.yaml|(?<=^\+  )[a-z][-a-z0-9_]+(?=:$)|{1}|false'
-    '.claude/skills/*.md||/{1}|true'
+    '.claude/skills/*/SKILL.md||/{1}|dirname'
     '.env.example|(?<=^\+)[A-Z][A-Z0-9_]+(?==)|{1}|false'
 )
 
@@ -39,6 +39,7 @@ DOC_SEARCH_PATHS=(
     ".zappzarapp/docs/"
     ".claude/CLAUDE.md"
     ".zappzarapp/ai/templates/CLAUDE.md"
+    "AGENTS.md"
     "README.md"
 )
 

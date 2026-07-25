@@ -43,7 +43,7 @@ esac
 
 # Helper: Check if service container is running
 is_running() {
-    docker compose ps -q "$1" 2>/dev/null | grep -q .
+    docker compose ps -q --status running "$1" 2>/dev/null | grep -q .
 }
 
 # Convert absolute path to relative path from project root
