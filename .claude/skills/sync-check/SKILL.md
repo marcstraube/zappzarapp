@@ -261,13 +261,6 @@ grep -E '^[A-Z_]+=|^#[A-Z_]+=' .env.example | grep -oE '^#?[A-Z_]+'
 grep -E '^[A-Z_]+=' .env | grep -oE '^[A-Z_]+'
 ```
 
-## Integration with Other Commands
-
-This command is designed to be quick (<30 seconds). For deeper analysis:
-
-- Use `/audit` for comprehensive config parity checks
-- Use `/docs-review` to verify documentation matches configs
-
 ## Notes
 
 - Run this before commits that touch configuration files

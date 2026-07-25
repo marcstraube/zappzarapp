@@ -131,3 +131,13 @@ Max 2 attempts on errors, then escalate to Main Agent.
 - Do NOT close tasks (Main Agent handles this)
 - Focus only on SQL implementation
 - **Always implement both up AND down migrations**
+
+## Git Constraints (MANDATORY)
+
+- NEVER run state-destroying git commands: `git stash`, `git reset`,
+  `git restore`, `git checkout -- <file>`, `git clean`. They can discard
+  uncommitted work far outside this agent's scope.
+- NEVER commit, merge, rebase, or push — the Main Agent owns all git state
+  changes and performs them centrally.
+- Read-only git commands are fine: `git status`, `git diff`, `git log`,
+  `git show`.
