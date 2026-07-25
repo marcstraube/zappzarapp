@@ -53,6 +53,13 @@ Fixes) **Version:** 3.79
   definitions now carry a mandatory "no state-destroying git commands" section
   (no stash/reset/restore/clean, no commits — Main Agent owns git), so every
   spawned agent inherits the rule structurally
+- **Skill Polish After Audit**: `/optimize` gained `Bash(find:*)` and
+  `AskUserQuestion` in allowed-tools (the `--sessions` phase and the documented
+  approval flow needed them), its stale session glob and template path were
+  corrected; `/sync-check` documents that `compose.ci.yaml` is intentionally
+  excluded from parity checks; the user project template
+  (`.zappzarapp/ai/templates/CLAUDE.md`) now lists the curated skill set instead
+  of removed skills
 - **Claude Skills Curated Down to Three**: removed `/status`, `/commit`,
   `/audit`, `/learnings`, `/research` and `/worktree` — their function is
   covered by built-in Claude Code capabilities (native commit flow plus

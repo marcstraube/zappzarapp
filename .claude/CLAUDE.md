@@ -180,6 +180,9 @@ For all lint/test/fix targets: See `.zappzarapp/standards/make-targets.md`
 
 Skills in `.claude/skills/`: `/tasks`, `/sync-check`, `/optimize`
 
+Built-in Claude Code skills (code review, security review, research, ...)
+complement these — the project only ships skills the built-ins do not cover.
+
 ## Git & Commits
 
 See `.claude/agents/workflow.md` (Branch Naming, Commit Strategy, Branch

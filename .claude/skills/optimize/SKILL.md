@@ -14,6 +14,8 @@ allowed-tools:
   - Bash(wc:*)
   - Bash(ls:*)
   - Bash(jq:*)
+  - Bash(find:*)
+  - AskUserQuestion
 argument-hint:
   '[--config | --template | --terminology | --docs | --learnings | --skills |
   --sessions | --settings | --all]'
@@ -28,7 +30,7 @@ Analyze and improve Claude's own configuration for better effectiveness.
 Parse `$ARGUMENTS`:
 
 - `--config`: Optimize CLAUDE.md (structure, clarity, redundancy)
-- `--template`: Sync check CLAUDE.md <-> CLAUDE.template.md
+- `--template`: Sync check CLAUDE.md <-> `.zappzarapp/ai/templates/CLAUDE.md`
 - `--terminology`: Find outdated terms across all AI config files
 - `--docs`: Check AI-INTEGRATION.md consistency with actual config
 - `--learnings`: Clean up and reorganize LEARNINGS.md
@@ -160,7 +162,7 @@ Scan session logs for skill usage:
 
 ```bash
 # Count skill invocations in sessions
-grep -rh "^/[a-z-]*" .claude/sessions/*.md | sort | uniq -c | sort -rn
+grep -rh "^/[a-z-]*" .claude/sessions/ | sort | uniq -c | sort -rn
 ```
 
 Output:

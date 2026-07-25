@@ -169,12 +169,15 @@ make test              → Run all tests
 
 Available skills in `.claude/skills/`:
 
-| Skill        | Purpose                                                    |
-| ------------ | ---------------------------------------------------------- |
-| `/status`    | Project overview (Git, Docker, tasks)                      |
-| `/tasks`     | Task management (4-tier: zappzarapp/upstream/repo/private) |
-| `/commit`    | Guided commit workflow with quality checks                 |
-| `/learnings` | View and manage project learnings                          |
+| Skill         | Purpose                                                    |
+| ------------- | ---------------------------------------------------------- |
+| `/tasks`      | Task management (4-tier: zappzarapp/upstream/repo/private) |
+| `/sync-check` | Verify related config files stay in sync                   |
+| `/optimize`   | Self-optimization of Claude configuration                  |
+
+Built-in Claude Code skills (e.g. code review, security review, research)
+complement these — the project only ships skills for workflows the built-ins do
+not cover.
 
 ---
 
@@ -197,7 +200,7 @@ User reviews → Merge → `/tasks --close <id>`
 ### Commit Rules
 
 - Commit regularly on feature branches (intermediate commits encouraged)
-- Use `/commit` for the guided commit workflow
+- Conventional commit format is enforced via commitlint (CaptainHook)
 - Never commit directly to develop or master — only via feature branch merges
 
 ## Error Prevention

@@ -53,6 +53,9 @@ Docker configuration files that must stay synchronized:
 | `compose.yaml` | `compose.override.yaml`   |
 | `compose.yaml` | `compose.production.yaml` |
 
+`compose.ci.yaml` is intentionally excluded from parity checks: the CI
+environment is a deliberately minimal subset and may diverge freely.
+
 Check for:
 
 - Services defined in one but missing in others
