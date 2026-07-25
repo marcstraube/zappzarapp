@@ -137,6 +137,7 @@ hooks-install: ## Install Git hooks using CaptainHook
 	fi
 	@echo -e "\033[0;33mInstalling Git hooks with CaptainHook...\033[0m"
 	@vendor/bin/captainhook install
+	@./docker/hooks/install-worktree-guard.sh
 	@echo -e "\033[0;32mGit hooks installed successfully in .git/hooks/!\033[0m"
 
 init: ## Initialize project (create .env.local for local overrides) - Run this first!

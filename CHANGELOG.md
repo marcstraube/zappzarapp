@@ -38,8 +38,28 @@ Fixes) **Version:** 3.79
 - **hook-runner Service Detection**: `is_running()` now checks
   `docker compose ps -q --status running` — plain `ps -q` also lists
   created/exited containers and routed into `exec` against dead containers
+- **Claude Skills Not Loading**: migrated the project skills from the legacy
+  flat layout (`.claude/skills/<name>.md`) to the supported directory layout
+  (`.claude/skills/<name>/SKILL.md`) — the flat files were silently ignored by
+  current Claude Code versions
+- **Git Hooks in Fresh Worktrees**: CaptainHook-generated hooks hard-failed in
+  worktrees without `vendor/` (even `git commit --no-verify` dies in
+  prepare-commit-msg); `make hooks-install` now injects a guard that skips
+  gracefully with a notice (`docker/hooks/install-worktree-guard.sh`)
 
 #### Changed
+
+- **Coder Agent Git Constraints**: all four `.claude/agents/coder-*.md`
+  definitions now carry a mandatory "no state-destroying git commands" section
+  (no stash/reset/restore/clean, no commits — Main Agent owns git), so every
+  spawned agent inherits the rule structurally
+- **Claude Skills Curated Down to Three**: removed `/status`, `/commit`,
+  `/audit`, `/learnings`, `/research` and `/worktree` — their function is
+  covered by built-in Claude Code capabilities (native commit flow plus
+  commitlint/CaptainHook enforcement, built-in code/security review and
+  research, native worktree support). Remaining set: `/tasks` (GitHub/GitLab
+  task workflow), `/sync-check` (project config parity), `/optimize` (Claude
+  config maintenance). Docs and hook hints updated accordingly
 
 - **js-yaml Override Split**: The blanket `js-yaml@<4.3.0 -> >=4.3.0` pnpm
   override force-upgraded js-yaml 3.x consumers (e.g. `gray-matter`) to the 4.x

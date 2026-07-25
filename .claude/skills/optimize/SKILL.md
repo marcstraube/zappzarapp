@@ -169,14 +169,13 @@ Output:
 Skill Usage (from session logs)
 ===============================
 
-  15  /commit
-  12  /status
    8  /tasks
-   5  /learnings
-   3  /audit
-   1  /research
+   2  /optimize
    0  /sync-check       <- Never used
 ```
+
+Also flag skills whose function has since been covered by built-in Claude Code
+capabilities — prefer removing them over maintaining duplicates.
 
 ### 6.2 Redundancy Check
 

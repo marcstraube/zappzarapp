@@ -106,7 +106,7 @@ You are on '$CURRENT_BRANCH' but starting an implementation task.
 ACTION REQUIRED BEFORE PROCEEDING:
 1. Create feature branch: git checkout -b feature/<slug>
    (or: git checkout -b fix/<slug> for bug fixes)
-2. Alternative: /worktree --create feature/<slug>
+2. Alternative: git worktree add ../<project>-wt-<slug> -b feature/<slug> develop
 
 See: .claude/CLAUDE.md (Feature-Branch Workflow)
 See: .claude/agents/workflow.md:54-85 (Detailed Workflow)")

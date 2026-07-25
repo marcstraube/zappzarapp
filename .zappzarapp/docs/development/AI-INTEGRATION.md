@@ -195,19 +195,15 @@ This creates:
 
 ## Skills
 
-Available skills in `.claude/skills/`:
+Available skills in `.claude/skills/` (one directory per skill, entry point
+`SKILL.md`). The set is deliberately small: skills exist only for workflows that
+built-in Claude Code capabilities do not cover.
 
 | Skill         | Purpose                                        | Model  |
 | ------------- | ---------------------------------------------- | ------ |
-| `/status`     | Project overview (Git, Docker, tasks)          | haiku  |
 | `/tasks`      | Task management with GitHub/GitLab integration | sonnet |
-| `/commit`     | Guided commit workflow with quality checks     | sonnet |
-| `/audit`      | Project audit (quality, security, docs)        | sonnet |
-| `/learnings`  | View and manage project learnings              | haiku  |
-| `/research`   | Research topics and generate documentation     | sonnet |
 | `/sync-check` | Verify config file synchronization             | haiku  |
 | `/optimize`   | Self-optimization of config, docs, terminology | sonnet |
-| `/worktree`   | Manage git worktrees for parallel development  | sonnet |
 
 ### Skill Structure
 
@@ -215,24 +211,24 @@ Skills use YAML frontmatter for metadata:
 
 ```yaml
 ---
-name: status
-description: Quick project status overview showing git, docker, session info
+name: sync-check
+description: Check synchronization between related configuration files
 model: haiku # haiku (fast), sonnet (balanced), opus (complex)
 context: fork # Inherit conversation context
 allowed-tools: # Explicit tool permissions
   - Read
+  - Grep
   - Glob
-  - Bash(git:*)
-  - Bash(docker:*)
-argument-hint: '[--git | --docker | --todo | --all]'
+  - Bash(make:*)
+argument-hint: '[--fix] [--category <name>]'
 ---
 # Skill content follows...
 ```
 
 **Model Selection:**
 
-- `haiku`: Quick tasks, simple queries (status, learnings)
-- `sonnet`: Balanced tasks, moderate complexity (tasks, commit, audit)
+- `haiku`: Quick tasks, simple queries (sync-check)
+- `sonnet`: Balanced tasks, moderate complexity (tasks, optimize)
 - `opus`: Complex planning, architecture decisions (currently unused)
 
 ### Task Management with /tasks

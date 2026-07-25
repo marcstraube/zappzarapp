@@ -178,8 +178,7 @@ For all lint/test/fix targets: See `.zappzarapp/standards/make-targets.md`
 
 ## Skills
 
-Skills in `.claude/skills/`: `/status`, `/tasks`, `/commit`, `/audit`,
-`/learnings`, `/research`, `/optimize`, `/worktree`
+Skills in `.claude/skills/`: `/tasks`, `/sync-check`, `/optimize`
 
 ## Git & Commits
 
