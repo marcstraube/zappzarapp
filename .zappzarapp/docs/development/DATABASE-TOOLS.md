@@ -68,6 +68,29 @@ Lightweight, single-file database manager supporting multiple database types.
 - Password: See `secrets/db_password.txt`
 - Database: `app` (from .env `DB_NAME`)
 
+#### Pre-configured Server Dropdown
+
+The server dropdown on the login page is pre-filled via Adminer's
+`login-servers` plugin (`docker/adminer/login-servers.php`):
+
+```php
+require_once('/var/www/html/plugins/login-servers.php');
+
+return new AdminerLoginServers([
+    'PostgreSQL (local)' => [
+        'server' => 'postgres',
+        'driver' => 'pgsql',
+    ],
+    'MariaDB (local)' => [
+        'server' => 'mariadb',
+        'driver' => 'server',  // 'server' = MySQL/MariaDB
+    ],
+]);
+```
+
+The Dockerfile copies the file to `/var/www/html/plugins-enabled/`. The plugin
+file must RETURN the plugin instance — returning a plain array does not work.
+
 ### pgAdmin
 
 Full-featured PostgreSQL administration tool.
@@ -87,6 +110,33 @@ time you access pgAdmin, you'll need to log in with:
 
 - Email: `admin@localhost`
 - Password: See `secrets/pgadmin_password.txt`
+
+#### CSRF Protection with Reverse Proxy
+
+pgAdmin runs behind nginx under `/_dev/pgadmin/`. In this setup CSRF token
+validation fails ("Failed to load Preferences") because cookie path and origin
+headers do not match. CSRF protection is therefore disabled via environment
+variables in `compose.yaml`:
+
+```yaml
+environment:
+  PGADMIN_CONFIG_WTF_CSRF_ENABLED: 'False'
+  PGADMIN_CONFIG_ENHANCED_COOKIE_PROTECTION: 'False'
+  SCRIPT_NAME: /_dev/pgadmin
+```
+
+**Security note:** This is acceptable only because these tools are
+development-only (see [Security](#security)). A production pgAdmin must keep
+proper CSRF protection enabled.
+
+#### Dockerfile UID
+
+The pgAdmin image has no `pgadmin` group, so `chown pgadmin:pgadmin` fails
+during image builds. Use the numeric UID instead (5050 is the pgadmin user):
+
+```dockerfile
+RUN chown 5050:0 /pgadmin4/servers.json
+```
 
 ## CLI Tools
 

@@ -35,6 +35,13 @@ Options:
 
 ## ESLint Rules
 
+**Type-aware rules require `parserOptions.project`:**
+
+Rules like `@typescript-eslint/no-unnecessary-condition` need
+`project: './tsconfig.json'` in `parserOptions` — without type information they
+cannot run. `no-unnecessary-condition` catches redundant typeof checks and
+always-true/false conditions.
+
 **Special configuration for tests:**
 
 ```typescript
@@ -131,6 +138,29 @@ import { ElasticsearchService } from '../../../../../src/node/backend/services/E
 - **Extract Helper Methods**: For code duplication (3+ occurrences), create
   private helpers. For service patterns with repetitive try/catch, consider a
   generic wrapper like `withClient<T>(operation, fallback)`.
+
+## IDE vs. Linter Parity
+
+PHPStorm/WebStorm show warnings that ESLint doesn't catch by default. Use
+`eslint-plugin-sonarjs` for IDE parity:
+
+```javascript
+// eslint.config.js
+import sonarjsPlugin from 'eslint-plugin-sonarjs';
+
+// In plugins:
+sonarjs: sonarjsPlugin,
+
+// In rules:
+'sonarjs/prefer-immediate-return': 'warn',
+```
+
+**Mapping:**
+
+| IDE Warning                | ESLint Rule                          |
+| -------------------------- | ------------------------------------ |
+| "Redundant local variable" | `sonarjs/prefer-immediate-return`    |
+| "Can be simplified"        | Various `@typescript-eslint/*` rules |
 
 ## Test Mocks
 

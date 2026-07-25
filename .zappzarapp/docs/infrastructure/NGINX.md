@@ -51,6 +51,19 @@ SvelteKit):
 | `server-defaults.conf`  | Rate limiting zones, access/error logging         |
 | `ssl-settings.conf`     | TLS 1.2/1.3, modern ciphers, session cache        |
 
+## Dynamic Configuration
+
+The nginx entrypoint adapts the configuration at container start:
+
+- **`ENABLE_PHP` affects routing**: The entrypoint sets `INDEX_DIRECTIVE` and
+  `TRY_FILES_FALLBACK` dynamically, so the same template serves both PHP and
+  non-PHP stacks.
+- **Generated snippets go to tmpfs**: Health check snippets are written to
+  `/run/nginx/snippets/` because `/etc/nginx/snippets/` is read-only in the
+  container.
+- **Production uses the same mechanism**: Templates are processed with
+  `envsubst` at runtime, identical to development.
+
 ## Development vs Production
 
 ### Key Differences
@@ -228,6 +241,72 @@ Include in template:
 ```nginx
 include /etc/nginx/snippets/custom-api.conf;
 ```
+
+## Routing Behavior
+
+### Location Block Priority
+
+Regex location blocks (e.g. `location ~* \.(js|css|png)$`) can override prefix
+match locations even when the prefix is more specific. Use the `^~` modifier to
+give a prefix location higher priority than regex blocks:
+
+```nginx
+# Without ^~, a regex block for static files might intercept this
+location ^~ /_dev/adminer/ {
+    proxy_pass http://adminer:8080;
+}
+```
+
+Priority order (highest to lowest):
+
+1. Exact match `location = /path`
+2. Preferential prefix `location ^~ /path`
+3. Regex `location ~* \.ext$`
+4. Prefix match `location /path`
+
+### error_page Scope
+
+An `error_page` directive at server level does not apply to proxied locations
+that define their own error handling. Put `error_page` inside the location
+block:
+
+```nginx
+location ^~ /_dev/pgadmin/ {
+    error_page 502 503 504 @db_tool_not_running;
+    proxy_pass http://pgadmin:80;
+}
+```
+
+### Proxy Path Rewriting (Trailing Slash)
+
+A trailing slash in `proxy_pass` triggers path rewriting:
+
+- `proxy_pass http://upstream` → forwards to `http://upstream/original/path`
+- `proxy_pass http://upstream/` → forwards to `http://upstream/` (path
+  rewritten)
+
+```nginx
+location /vite-hmr-ws {
+    proxy_pass http://node:5173/;  # WITH trailing slash
+}
+# Request: /vite-hmr-ws?token=abc → Proxied to: /?token=abc
+
+location /vite-hmr-ws {
+    proxy_pass http://node:5173;   # WITHOUT trailing slash
+}
+# Request: /vite-hmr-ws?token=abc → Proxied to: /vite-hmr-ws?token=abc
+```
+
+Use case: rewriting custom client paths to backend root paths.
+
+### Vite HMR WebSocket Path
+
+The Vite HMR WebSocket uses a custom client path (`/vite-hmr-ws`) that nginx
+rewrites to Vite's root path via the trailing-slash pattern above. See
+[ADR 0004](../adr/0004-vite-hmr-websocket-custom-path-routing.md) for the full
+decision and configuration. Key gotcha: Vite's `hmr.path` option only changes
+the **client-side** connection path — the WebSocket server always listens on `/`
+on its dev server port (5173), which is why the nginx rewrite is required.
 
 ## Graceful Degradation
 

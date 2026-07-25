@@ -218,6 +218,9 @@ Ensure certificate paths in `CADDY_SERVER_EXTRA_DIRECTIVES` are correct.
      mounts do not remap ownership, and the production preset runs services
      unprivileged with `cap_drop: ALL`, so without the ACLs those containers
      could not read a 600 key.
+   - Before tightening permissions on any bind-mounted file, enumerate every
+     consuming container's effective UID (including `user:` directives,
+     privilege drops, and root entrypoints running with dropped capabilities).
    - Not committed to version control
    - In production, use Docker Secrets or external secret management
 

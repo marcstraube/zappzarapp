@@ -107,6 +107,136 @@ Error: Bind for 0.0.0.0:8080 failed: port is already allocated
    make restart
    ```
 
+### Docker Creates Directories Instead of Files
+
+#### Symptom
+
+- `Error: EISDIR: illegal operation on a directory, read` when Node tries to
+  read a lockfile
+- `cannot load certificate: ... is a directory` from nginx
+- Container restart loops
+
+#### Cause
+
+Bind mounts like `./file.txt:/container/file.txt` create the host path as a
+**directory** if `./file.txt` doesn't exist when the container starts. Commonly
+affected files: `composer.lock` / `pnpm-lock.yaml` (deleted or never created),
+`docker/certs/nginx/` and `docker/certs/internal/` (not generated), `secrets/*`
+files (not generated).
+
+#### Solutions
+
+1. **Ensure files exist before `docker compose up`**
+
+   ```bash
+   # For lockfiles that became directories
+   docker run --rm -v ./:/app alpine sh -c "rm -rf /app/composer.lock && touch /app/composer.lock"
+
+   # For certs/secrets: run the make targets
+   make ssl-generate
+   make secrets
+   ```
+
+2. **Prevention**: Run `make setup` on a fresh clone or after deleting generated
+   files (it runs all generation steps).
+
+### Symlinks in Bind Mounts Don't Resolve
+
+#### Symptom
+
+When linking local packages for development:
+
+- `composer install` fails with "url supplied for path repository does not
+  exist"
+- `pnpm install` cannot find the linked package
+- `ls -la packages/` inside the container shows broken symlinks
+
+#### Cause
+
+Symlinks inside a bind-mounted directory point to host paths (e.g.
+`../../other-repo`) that don't exist inside the container.
+
+#### Solution
+
+Mount the actual package directories directly instead of the symlink parent:
+
+```yaml
+# WRONG: symlinks in packages/ don't resolve
+volumes:
+  - ./packages:/var/www/html/packages:ro
+
+# CORRECT: mount actual directories
+volumes:
+  - ../my-package:/var/www/html/packages/my-package:ro
+```
+
+Host-side symlinks in `packages/` remain useful for IDE resolution and local
+tooling — only Docker needs the direct mounts.
+
+### Single-File Bind Mounts Serve Stale Content
+
+#### Symptom
+
+A host file is updated, but tools inside the container still see the old version
+(e.g. PHPUnit failing on a testsuite directory that was already removed from the
+mounted config).
+
+#### Cause
+
+Files mounted individually (e.g.
+`./phpunit.xml.dist:/var/www/html/phpunit.xml.dist:ro`) are bound by inode.
+Editors and tools that write via replace-and-rename (most IDEs, `sed -i`) create
+a new inode — the container keeps reading the old one.
+
+#### Solution
+
+Recreate the container after editing a single-file-mounted config:
+
+```bash
+docker compose up -d --force-recreate <service>
+```
+
+A plain `restart` is not reliable.
+
+### Volume Errors After Switching Dev ↔ Prod
+
+#### Symptom
+
+Containers fail with permission errors on named volumes after switching between
+development and production environments.
+
+#### Cause
+
+Development and production images run services with different UIDs (dev: 1000,
+prod: postgres=70, redis=999). Volumes initialized by one environment are not
+readable by the other.
+
+#### Solution
+
+Delete the project volumes when switching environments:
+
+```bash
+make down
+docker volume rm $(docker volume ls -q | grep zappzarapp)
+# Update .env for the target environment
+make build && make up
+```
+
+### Cannot Write Files in Production Containers
+
+#### Symptom
+
+Copying binaries or writing files at runtime fails in production containers.
+
+#### Cause
+
+Production containers run with a read-only root filesystem.
+
+#### Solution
+
+Install binaries and static files at build time in the Dockerfile instead of
+copying them at runtime.
+
 ## Permission Issues
 
 ### Linux: Permission Denied Errors
@@ -165,6 +295,28 @@ git reset --hard
 ```
 
 See [WINDOWS.md](setup/WINDOWS.md) for detailed Windows setup.
+
+### Elasticsearch Rejects Secret File Permissions
+
+#### Symptom
+
+```text
+ERROR: File ... must have file permissions 400 or 600, but actually has: 644
+```
+
+#### Cause
+
+Elasticsearch enforces stricter permissions on secret files than other services.
+While Redis/RabbitMQ work with 644, Elasticsearch rejects it and requires 400
+or 600.
+
+#### Solution
+
+```bash
+chmod 600 secrets/<elasticsearch-secret-file>
+```
+
+Restart the Elasticsearch container afterwards.
 
 ## PHP Issues
 
@@ -320,6 +472,40 @@ See [XDEBUG.md](development/XDEBUG.md) for detailed configuration.
    rm pnpm-lock.yaml
    docker compose exec node pnpm install
    ```
+
+### `pnpm prune --prod` Breaks Workspace Symlinks
+
+#### Symptom
+
+Workspace packages are missing or their symlinks are broken after pruning dev
+dependencies.
+
+#### Solution
+
+Don't use `pnpm prune --prod` in workspaces. Reinstall instead:
+
+```bash
+rm -rf node_modules && pnpm install --prod
+```
+
+### EBUSY Error on pnpm-lock.yaml
+
+#### Symptom
+
+```text
+EBUSY: resource busy or locked, rename ... pnpm-lock.yaml
+```
+
+#### Cause
+
+Docker bind mounts don't support the atomic rename pnpm uses to write the
+lockfile.
+
+#### Solutions
+
+1. Use `--no-install` flags for commands that would rewrite the lockfile
+2. Run `make pnpm-update` separately — it resolves the lockfile in a temp
+   location inside the container and copies it back, avoiding the rename
 
 ### HMR (Hot Module Replacement) Not Working
 
@@ -562,6 +748,31 @@ Browser shows certificate expiration error.
    docker compose build php  # or node, nginx, etc.
    ```
 
+### Nginx Production Build Fails: node-backend Image Missing
+
+#### Symptom
+
+Building the nginx `production` stage fails because
+`zappzarapp-node-backend:latest` doesn't exist.
+
+#### Cause
+
+The nginx Dockerfile `production` stage contains
+`COPY --from=zappzarapp-node-backend:latest`, so that image must exist before
+nginx is built. Development mode uses a different target and skips this.
+
+#### Solution
+
+For CI/production builds, build and tag node-backend first:
+
+```bash
+# Build and tag node-backend first
+docker compose --profile node-backend build node-backend
+docker tag <project>-node-backend:api zappzarapp-node-backend:latest
+# Then build nginx with DOCKER_BUILDKIT=0 (sees local images)
+DOCKER_BUILDKIT=0 docker compose build nginx
+```
+
 ### Out of Disk Space
 
 #### Symptom
@@ -634,6 +845,30 @@ See [NETWORK.md](infrastructure/NETWORK.md) for network architecture details.
    docker compose exec php php -r "echo getenv('DATABASE_URL');"
    ```
 
+### PHPUnit Fails With "No tests executed!"
+
+#### Symptom
+
+A PHPUnit run using `--filter`, `--group`, or `--testsuite` exits with a
+non-zero code and "No tests executed!" although nothing is broken.
+
+#### Cause
+
+Since PHPUnit 12.5.18
+([#6276](https://github.com/sebastianbergmann/phpunit/issues/6276)), an explicit
+selection that matches zero tests is treated as a failure. Scripts that treat an
+empty match as success break.
+
+Because lockfiles are not tracked in this repo, CI resolves fresh dependencies
+and picks up such behavior changes before local environments do — the same drift
+pattern as `latest`-tagged linter images (see the sqlfluff case in
+[sql.md](../standards/sql.md)).
+
+#### Solution
+
+Make sure explicit selections match at least one test, or explicitly tolerate
+the empty-selection exit code in scripts.
+
 ### Vitest Tests Failing
 
 #### Solutions
@@ -649,6 +884,49 @@ See [NETWORK.md](infrastructure/NETWORK.md) for network architecture details.
    ```bash
    docker compose exec node pnpm test -- -u
    ```
+
+## Git Hook Issues
+
+### Staged Files Recorded as Deleted After Pre-Commit
+
+#### Symptom
+
+After a failed pre-commit run, files staged as modifications are suddenly
+recorded as **deleted** in the index (and end up deleted in the next commit),
+while the files still exist on disk. Typically affects `.idea/` and `.vscode/`
+files.
+
+#### Cause
+
+The pre-commit hook runs lint-staged inside the dev-tools container with
+`--no-stash`. Files staged on the host but not mounted into the container don't
+exist from the container's point of view. When lint-staged applies task
+modifications, its index sync records those invisible files as deletions — the
+"might result in data loss" warning is literal.
+
+#### Detection
+
+Watch the commit output for unexpected `delete mode` lines, and check
+`git show --stat` after committing. Affected files reappear as untracked (`??`).
+
+#### Recovery
+
+The files are still on disk:
+
+```bash
+git add <files>
+git commit --amend --no-verify
+```
+
+`--no-verify` avoids the same hook clobbering the index again, and skips
+lint-staged's empty-commit guard, which also fires when the only staged files
+are container-invisible.
+
+#### Prevention
+
+The lint-staged markdown glob filters `.idea/`/`.vscode/` via a function entry
+in `lint-staged.config.js`. Commits touching only IDE-directory markdown still
+need `--no-verify` (empty-commit guard edge case).
 
 ## Getting More Help
 

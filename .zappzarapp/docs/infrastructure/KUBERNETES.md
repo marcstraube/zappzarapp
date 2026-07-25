@@ -187,6 +187,26 @@ ingress:
         - example.com
 ```
 
+## Kubernetes vs Docker Compose
+
+Behavior that differs from the Docker Compose setup:
+
+### Networking
+
+- **Nginx → PHP-FPM uses TCP**: Unix sockets do not work across pods. Nginx
+  connects to PHP-FPM via TCP (`php:9000`) instead of the shared socket volume.
+
+### Volume Permissions
+
+- **PostgreSQL StatefulSet needs `fsGroup: 70`** in the podSecurityContext so
+  the postgres user can write to the persistent volume.
+
+### Service Configuration
+
+- **nginx.conf and php-fpm.conf must be ConfigMaps**: The Docker-specific
+  entrypoint templating is not available in K8s; configuration is rendered into
+  ConfigMaps instead.
+
 ## Secrets Management
 
 ### Development
@@ -231,6 +251,9 @@ In production, NetworkPolicies restrict traffic:
 - PHP/Node: Accepts from Nginx, talks to Database/Redis
 - Database/Redis: Only accepts from PHP/Node
 
+When adding a new service, add matching NetworkPolicies for it (e.g.
+`node-backend` required its own policies).
+
 ### Security Contexts
 
 All containers run with:
@@ -238,6 +261,8 @@ All containers run with:
 - `readOnlyRootFilesystem: true` (where possible)
 - Dropped capabilities (`ALL`)
 - Minimal required capabilities added explicitly
+- `SETUID`/`SETGID` capabilities where the container uses `su-exec` to drop
+  privileges
 
 ## Monitoring
 

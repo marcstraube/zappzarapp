@@ -55,6 +55,17 @@ if [ -f "$file" ]; then
 if [[ -f "$file" ]]; then
 ```
 
+### Arithmetic Increment Under `set -e`
+
+```bash
+# Bad: ((var++)) returns the pre-increment value — when var=0 the
+# expression evaluates to 0 (exit status 1) and aborts under set -e
+((var++))
+
+# Good: plain assignment always succeeds
+var=$((var + 1))
+```
+
 ### Read User Input
 
 ```bash

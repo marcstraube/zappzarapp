@@ -132,6 +132,17 @@ nginx → http://node:3000 → Express API
 nginx → http://node:5173 → Vite Dev Server (development)
 ```
 
+## Dependency Injection
+
+The PHP application uses PHP-DI as its dependency injection container:
+
+- **Interface bindings are mandatory**: Autowiring cannot guess which
+  implementation to use for an interface. Register every interface→class mapping
+  in `config/container.php`.
+- **Autowiring handles the rest**: Once `InterfaceA => ClassA` is bound, any
+  class with an `InterfaceA` constructor parameter is resolved automatically —
+  no explicit `constructorParameter()` definitions needed.
+
 ## Docker Architecture
 
 ### Multi-Stage Builds

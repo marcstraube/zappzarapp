@@ -131,6 +131,22 @@ if (filePath && existsSync(filePath)) {
 return process.env[name] ?? fallback;
 ```
 
+### 4. Compose Limitations and Hardened Containers
+
+Docker Compose handles secrets differently from Docker Swarm, which matters for
+the hardened container setup:
+
+- **Compose ignores `mode`, `uid`, and `gid` on secrets** — these options only
+  work in Docker Swarm. Under Compose, secrets are effectively bind mounts:
+  ownership and permissions come from the host files.
+- **`cap_drop: ALL` affects root too** — it removes all capabilities, including
+  from a root entrypoint. Without `DAC_OVERRIDE`, even root cannot read files
+  owned by other users.
+- **`no-new-privileges` blocks `su-exec`** — privilege transitions are denied.
+  Run containers as the target user directly via `user: "UID:GID"` instead.
+- **Secrets flow**: the entrypoint (running as root) copies secrets to
+  `/tmp/secrets/` with mode 0444; application processes read them from there.
+
 ## Security Considerations
 
 ### Development

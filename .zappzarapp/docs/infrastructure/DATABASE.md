@@ -89,6 +89,11 @@ DB_SSL_CA=
 
 PostgreSQL auto-negotiates SSL. MariaDB requires explicit configuration.
 
+For PHP connections this means MariaDB needs explicit PDO SSL options — use
+`DatabaseConfig::getPdoSslOptions()` when building the connection. Health checks
+(`HealthCheck.php`) must use the same SSL configuration as the application,
+otherwise they fail against an SSL-required server.
+
 ### PaaS/Production (Optional)
 
 For PaaS providers (Heroku, Railway, Render), use `DATABASE_URL`:
