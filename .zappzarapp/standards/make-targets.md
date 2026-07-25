@@ -194,13 +194,15 @@ make pnpm-install-local
 
 - **`*-install` targets**: Use `--frozen-lockfile` for CI/production
   reproducibility. They fail if the lockfile doesn't match the manifest.
-- **`*-sync` targets**: Install from the existing lockfile inside the container.
-  `pnpm-sync` runs with `CI=true`, so pnpm enforces `--frozen-lockfile` there as
-  well; `composer-sync` runs `composer install`. Use when the lockfile already
-  matches the manifest (e.g. branch switches).
-- **`*-update` targets**: Re-resolve the lockfile after `package.json` /
-  `composer.json` changes (scaffolds, new constraints). Run the matching
-  `*-sync` target afterwards to install from the updated lockfile.
+- **`pnpm-sync`**: Re-resolves the lockfile to match changed manifests (resolved
+  in a temp location — bind-mounted lockfiles cannot be rewritten in place),
+  then installs from it. Use after `package.json` changes (scaffolds, branch
+  switches). Does not upgrade unchanged dependencies.
+- **`composer-sync`**: Runs `composer install` from the existing lockfile; it
+  needs a matching lockfile. After `composer.json` changes, use
+  `make composer-update` first.
+- **`*-update` targets**: Update the lockfile, upgrading dependencies within
+  their manifest ranges.
 
 ## Release Workflow
 
