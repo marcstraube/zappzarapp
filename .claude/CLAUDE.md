@@ -6,11 +6,13 @@
 
 **Write learnings, decisions, and references IMMEDIATELY when discovered:**
 
-| Discovery                       | Action                    |
-| ------------------------------- | ------------------------- |
-| New insight / gotcha / pattern  | Append to `LEARNINGS.md`  |
-| Architecture decision made      | Add ADR to `DECISIONS.md` |
-| Useful documentation link found | Add to `REFERENCES.md`    |
+| Discovery                      | Action                             |
+| ------------------------------ | ---------------------------------- |
+| New insight / gotcha / pattern | Append to `LEARNINGS.md` (inbox)   |
+| Architecture decision made     | New ADR document under `docs/adr/` |
+
+`LEARNINGS.md` is a fast-capture inbox: mature entries graduate into the regular
+documentation during periodic triage (`/optimize --learnings`).
 
 Knowledge files are committed and team-shared — they are the project's
 persistent memory. Do not defer these writes to "later"; context may be
@@ -93,12 +95,19 @@ Different files have different layer support:
 | `--zappzarapp` | marcstraube/zappzarapp | Boilerplate feature requests |
 | `--private`    | ~/.local/share/        | Personal, offline tasks      |
 
-**LEARNINGS, DECISIONS, REFERENCES - 2 Layer:**
+**LEARNINGS - 2 Layer:**
 
 | Priority | Path              | Condition                 |
 | -------- | ----------------- | ------------------------- |
 | 1        | `.ai/`            | `.ai/LEARNINGS.md` exists |
 | 2        | `.zappzarapp/ai/` | fallback                  |
+
+**ADRs - one document per decision:**
+
+| Scope                   | Path                    |
+| ----------------------- | ----------------------- |
+| Boilerplate development | `.zappzarapp/docs/adr/` |
+| User project            | `docs/adr/`             |
 
 **CHANGELOG - Root level:**
 

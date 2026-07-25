@@ -1,7 +1,7 @@
 # Project Learnings
 
-Aggregated knowledge from development sessions. Reference to avoid repeating
-mistakes.
+Fast-capture inbox for gotchas, patterns, and insights. Mature entries graduate
+into the regular documentation during periodic triage (`/optimize --learnings`).
 
 ---
 

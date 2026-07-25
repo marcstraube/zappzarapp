@@ -33,7 +33,7 @@ Parse `$ARGUMENTS`:
 - `--template`: Sync check CLAUDE.md <-> `.zappzarapp/ai/templates/CLAUDE.md`
 - `--terminology`: Find outdated terms across all AI config files
 - `--docs`: Check AI-INTEGRATION.md consistency with actual config
-- `--learnings`: Clean up and reorganize LEARNINGS.md
+- `--learnings`: Triage LEARNINGS.md (graduate mature entries into docs)
 - `--skills`: Audit skills (usefulness, gaps, redundancy)
 - `--sessions`: Archive old sessions, clean up session directory
 - `--settings`: Analyze and optimize settings.json and settings.local.json
@@ -151,6 +151,21 @@ When learnings overlap:
 2. **Preserve unique context from others**
 3. **Update "Last Updated" with merge date**
 4. **Archive originals to `.claude/archive/learnings-{date}.md`**
+
+### 5.5 Graduation into Documentation
+
+LEARNINGS.md is a fast-capture inbox, not a permanent home. For each mature
+entry, check whether it belongs in the regular documentation:
+
+- Gotcha with a stable workaround → `TROUBLESHOOTING.md` or the topic's doc page
+  (e.g. Docker learnings → infrastructure docs)
+- Rule every contributor must follow → the matching `.zappzarapp/standards/*.md`
+  file
+- Architectural rationale → a new ADR under `docs/adr/`
+
+Graduated entries are REMOVED from LEARNINGS.md (with user approval) — the
+documentation is now their single source of truth. Entries that are only
+relevant to in-flight work stay in the inbox.
 
 ---
 

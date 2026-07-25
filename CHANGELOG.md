@@ -11,6 +11,14 @@ Fixes) **Version:** 3.79
 
 #### Removed
 
+- **Knowledge Files DECISIONS.md / REFERENCES.md**: the monolithic
+  `DECISIONS.md` was migrated to one-document-per-ADR under
+  `.zappzarapp/docs/adr/` (index README, status lifecycle; user projects get
+  `docs/adr/` scaffolded by `make setup`); `REFERENCES.md` (generic tool
+  bookmarks) was retired. `LEARNINGS.md` stays as fast-capture inbox whose
+  mature entries graduate into the regular documentation via
+  `/optimize --learnings` (new triage phase). See ADR 0009
+
 - **Claude Session-File System**: removed the custom session lifecycle
   (`session-start.sh`, `session-end.sh`, `session-cleanup.sh`, SESSION-TEMPLATE,
   SessionStart/SessionEnd/PreCompact hook wiring) — built-in Claude Code memory

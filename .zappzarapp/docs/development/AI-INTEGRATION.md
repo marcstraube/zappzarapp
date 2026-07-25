@@ -15,22 +15,17 @@ GitHub Copilot, OpenCode, Cline, Roo Code, ...) read a root-level `AGENTS.md`
 file natively. If your team uses one of these tools, maintain an `AGENTS.md`
 with your project rules — no sync tooling required.
 
-## 2-Layer Architecture
+## Knowledge Architecture
 
-AI knowledge files are organized in two layers:
+| Artifact  | Location (project / boilerplate)      | Purpose                                |
+| --------- | ------------------------------------- | -------------------------------------- |
+| LEARNINGS | `.ai/` / `.zappzarapp/ai/`            | Fast-capture inbox for gotchas         |
+| ADRs      | `docs/adr/` / `.zappzarapp/docs/adr/` | One document per architecture decision |
 
-| Layer        | Location          | Committed | Purpose                 |
-| ------------ | ----------------- | --------- | ----------------------- |
-| `project`    | `.ai/`            | Yes       | Team-shared knowledge   |
-| `zappzarapp` | `.zappzarapp/ai/` | Yes       | Boilerplate development |
-
-### Knowledge Files
-
-| File       | Layers | Available In        |
-| ---------- | ------ | ------------------- |
-| LEARNINGS  | 2      | project, zappzarapp |
-| DECISIONS  | 2      | project, zappzarapp |
-| REFERENCES | 2      | project, zappzarapp |
+`LEARNINGS.md` is an inbox: mature entries graduate into the regular
+documentation during periodic triage (`/optimize --learnings`). ADRs follow the
+common one-document-per-decision practice with an index README and a status
+lifecycle (see `.zappzarapp/docs/adr/0009-one-document-per-adr.md`).
 
 **Task Management:** Handled via `/tasks` command with automatic storage
 detection (GitHub Issues, GitLab Issues, or local `.ai/TASKS.md`).

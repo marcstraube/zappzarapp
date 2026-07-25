@@ -283,9 +283,14 @@ setup: ## Create directories, install dependencies (BOILERPLATE=1 to force file 
 			echo -e "\033[0;33mSetting up project AI knowledge directory...\033[0m"; \
 			mkdir -p .ai; \
 			[ ! -f .ai/LEARNINGS.md ] && cp .zappzarapp/ai/templates/LEARNINGS.md .ai/; \
-			[ ! -f .ai/DECISIONS.md ] && cp .zappzarapp/ai/templates/DECISIONS.md .ai/; \
-			[ ! -f .ai/REFERENCES.md ] && cp .zappzarapp/ai/templates/REFERENCES.md .ai/; \
-			echo -e "\033[0;32m.ai/ created with knowledge templates.\033[0m"; \
+			echo -e "\033[0;32m.ai/ created with LEARNINGS inbox.\033[0m"; \
+		fi; \
+		if [ ! -d docs/adr ]; then \
+			echo -e "\033[0;33mSetting up ADR directory...\033[0m"; \
+			mkdir -p docs/adr; \
+			cp .zappzarapp/ai/templates/adr/0000-template.md docs/adr/; \
+			cp .zappzarapp/ai/templates/adr/README.md docs/adr/; \
+			echo -e "\033[0;32mdocs/adr/ created (one document per ADR).\033[0m"; \
 		fi; \
 	fi; \
 	if [ -n "$$IS_CONTRIBUTOR_MODE" ]; then \

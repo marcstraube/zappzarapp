@@ -4,11 +4,13 @@
 
 **Write learnings, decisions, and references IMMEDIATELY when discovered:**
 
-| Discovery                       | Action                    |
-| ------------------------------- | ------------------------- |
-| New insight / gotcha / pattern  | Append to `LEARNINGS.md`  |
-| Architecture decision made      | Add ADR to `DECISIONS.md` |
-| Useful documentation link found | Add to `REFERENCES.md`    |
+| Discovery                      | Action                             |
+| ------------------------------ | ---------------------------------- |
+| New insight / gotcha / pattern | Append to `.ai/LEARNINGS.md`       |
+| Architecture decision made     | New ADR document under `docs/adr/` |
+
+`LEARNINGS.md` is a fast-capture inbox: mature entries graduate into the regular
+documentation during periodic triage (`/optimize --learnings`).
 
 Knowledge files are committed and team-shared — they are the project's
 persistent memory. Do not defer these writes to "later"; context may be
@@ -78,7 +80,8 @@ See `.zappzarapp/standards/` for language-specific rules:
 <!-- TODO: Customize for your project -->
 
 ```text
-.ai/                → Project AI knowledge (LEARNINGS, DECISIONS, etc.)
+.ai/                → Project AI knowledge (LEARNINGS inbox)
+docs/adr/           → Architecture Decision Records (one file per ADR)
 .claude/            → Claude tooling (agents, skills, hooks)
 .zappzarapp/        → Boilerplate config & docs
 docker/             → Docker configurations
@@ -155,12 +158,15 @@ package manager usage. Direct package manager commands are blocked via
 
 ## Knowledge File Paths
 
-**LEARNINGS, DECISIONS, REFERENCES — 2 Layer:**
+**LEARNINGS - 2 Layer:**
 
 | Priority | Path              | Condition                 |
 | -------- | ----------------- | ------------------------- |
 | 1        | `.ai/`            | `.ai/LEARNINGS.md` exists |
 | 2        | `.zappzarapp/ai/` | fallback                  |
+
+**ADRs:** one document per decision under `docs/adr/` (`0000-template.md` is the
+template).
 
 **Note:** Task management is handled via `/tasks` command with 4-tier model:
 

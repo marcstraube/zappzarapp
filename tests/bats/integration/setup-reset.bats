@@ -83,12 +83,10 @@ setup() {
     [[ -f ".ai/LEARNINGS.md" ]]
 }
 
-@test "[Phase 2] Verify: .ai/DECISIONS.md created" {
-    [[ -f ".ai/DECISIONS.md" ]]
-}
-
-@test "[Phase 2] Verify: .ai/REFERENCES.md created" {
-    [[ -f ".ai/REFERENCES.md" ]]
+@test "[Phase 2] Verify: docs/adr/ created with template and index" {
+    [[ -d "docs/adr" ]]
+    [[ -f "docs/adr/0000-template.md" ]]
+    [[ -f "docs/adr/README.md" ]]
 }
 
 @test "[Phase 2] Verify: storage/ directory created" {

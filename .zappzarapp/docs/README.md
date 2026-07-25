@@ -39,6 +39,7 @@ Tools and configurations for local development.
 
 | Document                                                       | Description                                   |
 | -------------------------------------------------------------- | --------------------------------------------- |
+| [adr/README.md](adr/README.md)                                 | Architecture Decision Records (index)         |
 | [MAKEFILE-REFERENCE.md](development/MAKEFILE-REFERENCE.md)     | Complete reference for all Make commands      |
 | [DEPENDENCIES.md](development/DEPENDENCIES.md)                 | Dependency management (Composer, pnpm, Watch) |
 | [DEV-DASHBOARD.md](development/DEV-DASHBOARD.md)               | Development dashboard for monitoring          |
@@ -103,15 +104,14 @@ directories):
 ```text
 .zappzarapp/
 ├── ai/                       # AI knowledge files
-│   ├── DECISIONS.md
-│   ├── LEARNINGS.md
-│   └── REFERENCES.md
+│   └── LEARNINGS.md          # Fast-capture inbox for gotchas
 ├── CHANGELOG.md              # Boilerplate version history
 ├── docs/                     # This documentation
 │   ├── README.md             # This file (index)
 │   ├── CONTRIBUTING.md
 │   ├── QUICKSTART.md
 │   ├── TROUBLESHOOTING.md
+│   ├── adr/                  # Architecture Decision Records (one per file)
 │   ├── development/
 │   │   ├── AI-INTEGRATION.md
 │   │   ├── DATABASE-TOOLS.md
