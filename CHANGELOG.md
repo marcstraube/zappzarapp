@@ -11,6 +11,15 @@ Fixes) **Version:** 3.79
 
 #### Removed
 
+- **Claude Session-File System**: removed the custom session lifecycle
+  (`session-start.sh`, `session-end.sh`, `session-cleanup.sh`, SESSION-TEMPLATE,
+  SessionStart/SessionEnd/PreCompact hook wiring) — built-in Claude Code memory
+  and context compaction cover continuity, and session files were never
+  committed. Knowledge files (LEARNINGS/DECISIONS/ REFERENCES) remain the
+  committed, team-shared memory. Also removed the PreToolUse branch/worktree
+  echo hooks whose output never reached the model (wrong exit-code/output
+  contract)
+
 - **AI Sync Tooling**: Removed `make ai-sync`, `ai-commands-sync` and
   `ai-rules-sync` targets along with the `rulesync` and `ai-command-converter`
   dependencies
@@ -26,6 +35,16 @@ Fixes) **Version:** 3.79
     `knip.config.js`, `tests/bats/make-targets-dryrun.bats`, docs
 
 #### Fixed
+
+- **Hook Output Contract**: hook feedback never reached the model — custom
+  `{"message": ...}` JSON is silently dropped by Claude Code.
+  `user-prompt-submit.sh` now emits plain stdout (becomes context; branch check
+  runs on every prompt instead of only the first), `post-edit-lint.sh` reports
+  syntax errors via exit 2 + stderr, and the inline PostToolUse reminders emit
+  `hookSpecificOutput.additionalContext`. The package-manager reminder patterns
+  also failed on JSON-escaped quotes in the tool input; the container checks in
+  the edit hooks use `--status running` now, and change-watch tracks the new
+  `.claude/skills/*/SKILL.md` layout
 
 - **Prettier ARGS Selectivity**: `make prettier-check`/`prettier-fix` with
   `ARGS` appended the given files to the full format globs (formatting

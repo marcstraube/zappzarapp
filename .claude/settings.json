@@ -9,11 +9,9 @@
       "WebSearch",
       "Write",
       "mcp__ide__getDiagnostics",
-
       "Bash(ENABLE_ELASTICSEARCH=true make:*)",
       "Bash(VERBOSE=1 make:*)",
       "Bash(make:*)",
-
       "Bash(./docker/hooks/hook-runner.sh:*)",
       "Bash(./docker/hooks/php-hooks.sh:*)",
       "Bash(./.claude/hooks/post-edit-autofix.sh:*)",
@@ -21,22 +19,17 @@
       "Bash(./tests/goss/runtime-tests.sh:*)",
       "Bash(HOOK_RUNNER_VERBOSE=1 ./docker/hooks/hook-runner.sh:*)",
       "Bash(VERBOSE=1 ./tests/goss/preset-runner.sh:*)",
-
       "Bash(docker:*)",
-
       "Bash(gh:*)",
       "Bash(git:*)",
       "Bash(glab:*)",
-
       "Bash(helm:*)",
       "Bash(kubectl:*)",
       "Bash(minikube:*)",
-
       "Bash(dgoss:*)",
       "Bash(goss:*)",
       "Bash(shellcheck:*)",
       "Bash(vendor/bin/captainhook install:*)",
-
       "Bash(basename:*)",
       "Bash(cat:*)",
       "Bash(chmod:*)",
@@ -57,7 +50,6 @@
       "Bash(touch:*)",
       "Bash(tree:*)",
       "Bash(unlink:*)",
-
       "Bash(awk:*)",
       "Bash(cut:*)",
       "Bash(diff:*)",
@@ -71,15 +63,12 @@
       "Bash(uniq:*)",
       "Bash(wc:*)",
       "Bash(xargs:*)",
-
       "Bash(curl:*)",
       "Bash(ping:*)",
       "Bash(wget:*)",
-
       "Bash(lsof:*)",
       "Bash(pgrep:*)",
       "Bash(ps:*)",
-
       "Bash(date:*)",
       "Bash(echo:*)",
       "Bash(env:*)",
@@ -97,7 +86,6 @@
       "Bash(type:*)",
       "Bash(uname:*)",
       "Bash(which:*)",
-
       "Bash(base64:*)",
       "Bash(jq:*)",
       "Bash(md5sum:*)",
@@ -107,7 +95,6 @@
     ],
     "deny": [
       "Read(./secrets/**)",
-
       "Bash(make clean:*)",
       "Bash(make down-all:*)",
       "Bash(make fresh:*)",
@@ -119,22 +106,18 @@
       "Bash(make secrets-rotate-passwords:*)",
       "Bash(make secrets-rotate:*)",
       "Bash(make ssl-clean:*)",
-
       "Bash(bats:*)",
-
       "Bash(composer exec:*)",
       "Bash(composer install:*)",
       "Bash(composer remove:*)",
       "Bash(composer require:*)",
       "Bash(composer update:*)",
-
       "Bash(npm add:*)",
       "Bash(npm exec:*)",
       "Bash(npm install:*)",
       "Bash(npm remove:*)",
       "Bash(npm update:*)",
       "Bash(npx:*)",
-
       "Bash(pnpm add:*)",
       "Bash(pnpm dlx:*)",
       "Bash(pnpm exec:*)",
@@ -144,28 +127,6 @@
     ]
   },
   "hooks": {
-    "SessionStart": [
-      {
-        "matcher": "",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "./.claude/hooks/session-start.sh"
-          }
-        ]
-      }
-    ],
-    "SessionEnd": [
-      {
-        "matcher": "",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "./.claude/hooks/session-end.sh"
-          }
-        ]
-      }
-    ],
     "UserPromptSubmit": [
       {
         "matcher": "",
@@ -173,41 +134,6 @@
           {
             "type": "command",
             "command": "./.claude/hooks/user-prompt-submit.sh"
-          }
-        ]
-      }
-    ],
-    "PreCompact": [
-      {
-        "matcher": "auto|manual",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "echo '[PreCompact] Context compaction imminent! Update session file (Summary, Changes) and write pending knowledge to LEARNINGS.md, DECISIONS.md, REFERENCES.md'"
-          }
-        ]
-      }
-    ],
-    "PreToolUse": [
-      {
-        "matcher": "Edit|Write",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "BRANCH=$(git branch --show-current 2>/dev/null); if [[ \"$BRANCH\" == \"develop\" || \"$BRANCH\" == \"main\" || \"$BRANCH\" == \"master\" ]]; then TOOL_INPUT=$(cat); FILE=$(echo \"$TOOL_INPUT\" | jq -r '.file_path // empty' 2>/dev/null); if [[ \"$FILE\" != *\"/.claude/sessions/\"* && \"$FILE\" != *\"/.claude/temp/\"* && \"$FILE\" != *\"/.claude/state/\"* ]]; then echo \"[Branch Check] ⚠️  Working on '$BRANCH' - consider feature branch (see .claude/CLAUDE.md)\"; fi; fi"
-          },
-          {
-            "type": "command",
-            "command": "BRANCH=$(git branch --show-current 2>/dev/null); if [[ \"$BRANCH\" =~ ^(feature|fix|refactor)/ ]]; then TOOL_INPUT=$(cat); FILE=$(echo \"$TOOL_INPUT\" | jq -r '.file_path // empty' 2>/dev/null); if [[ \"$FILE\" != *\"/.claude/sessions/\"* && \"$FILE\" != *\"/.claude/temp/\"* && \"$FILE\" != *\"/.claude/state/\"* ]]; then echo \"[Worktree] 💡 On branch '$BRANCH' - for parallel work use git worktree:\"; echo \"   git worktree add ../zappzarapp-wt-<name> -b <branch> develop\"; echo \"   cd ../zappzarapp-wt-<name>\"; fi; fi"
-          }
-        ]
-      },
-      {
-        "matcher": "Bash",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "TOOL_INPUT=$(cat); CMD=$(echo \"$TOOL_INPUT\" | jq -r '.command // empty' 2>/dev/null); if echo \"$CMD\" | grep -qE 'git\\s+(checkout|switch)'; then WORKTREES=$(git worktree list 2>/dev/null | wc -l); if [[ $WORKTREES -gt 1 ]]; then echo \"[WORKTREE PROTECTION] ❌ Cannot change branch in main directory - active worktrees detected:\"; git worktree list; echo \"\"; echo \"⚠️  Work in your worktree, not in main directory!\"; echo \"   Each worktree is isolated - changing branches here breaks parallel work.\"; exit 1; fi; fi"
           }
         ]
       }
@@ -226,11 +152,11 @@
           },
           {
             "type": "command",
-            "command": "TOOL_INPUT=$(cat); if echo \"$TOOL_INPUT\" | grep -qE '(Dockerfile|compose\\.yaml|compose\\.override|compose\\.production|\\.env\\.example|entrypoint|php\\.ini|nginx\\.conf)'; then echo '[Hook] Config file changed. Remember: make build && make down && make up'; fi"
+            "command": "TOOL_INPUT=$(cat); if echo \"$TOOL_INPUT\" | grep -qE '(Dockerfile|compose\\.yaml|compose\\.override|compose\\.production|\\.env\\.example|entrypoint|php\\.ini|nginx\\.conf)'; then jq -n --arg m '[Hook] Config file changed. Remember: make build && make down && make up' '{hookSpecificOutput:{hookEventName:\"PostToolUse\",additionalContext:$m}}'; fi"
           },
           {
             "type": "command",
-            "command": "TOOL_INPUT=$(cat); if echo \"$TOOL_INPUT\" | grep -qE '\\.claude/skills/.*\\.md'; then echo '[Hook] Claude skill updated.'; fi"
+            "command": "TOOL_INPUT=$(cat); if echo \"$TOOL_INPUT\" | grep -qE '\\.claude/skills/.*\\.md'; then jq -n --arg m '[Hook] Claude skill updated.' '{hookSpecificOutput:{hookEventName:\"PostToolUse\",additionalContext:$m}}'; fi"
           }
         ]
       },
@@ -239,11 +165,11 @@
         "hooks": [
           {
             "type": "command",
-            "command": "TOOL_INPUT=$(cat); if echo \"$TOOL_INPUT\" | grep -qE 'make composer CMD=\"?(require|remove)'; then echo '[Hook] PHP package changed. Run: make composer-install-local'; fi"
+            "command": "TOOL_INPUT=$(cat); if echo \"$TOOL_INPUT\" | grep -qE 'make composer CMD=.{0,2}(require|remove)'; then jq -n --arg m '[Hook] PHP package changed. Run: make composer-install-local' '{hookSpecificOutput:{hookEventName:\"PostToolUse\",additionalContext:$m}}'; fi"
           },
           {
             "type": "command",
-            "command": "TOOL_INPUT=$(cat); if echo \"$TOOL_INPUT\" | grep -qE 'make pnpm CMD=\"?(add|remove)'; then echo '[Hook] Node package changed. Run: make pnpm-install-local'; fi"
+            "command": "TOOL_INPUT=$(cat); if echo \"$TOOL_INPUT\" | grep -qE 'make pnpm CMD=.{0,2}(add|remove)'; then jq -n --arg m '[Hook] Node package changed. Run: make pnpm-install-local' '{hookSpecificOutput:{hookEventName:\"PostToolUse\",additionalContext:$m}}'; fi"
           }
         ]
       }

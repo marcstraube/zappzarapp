@@ -1,64 +1,6 @@
 # Claude Instructions
 
-## Session Auto-Start
-
-**At conversation start (first user message), automatically:**
-
-1. Find and read last session:
-   `find .claude/sessions -name "session-*.md" -type f | xargs ls -1t | head -1`
-2. Extract: Goal, Summary, References
-3. Run `/tasks --list` for open items (respects configured storage mode)
-4. Create new session from `.zappzarapp/ai/templates/SESSION-TEMPLATE.md`
-
-**If fresh context (new conversation):**
-
-1. Brief user on context (previous session, tasks)
-2. Ask: "What would you like to work on?"
-
-**If continued from context compression:**
-
-1. Find and continue previous session file (same task-slug)
-2. Continue working silently
-
-**Skip steps 5-6 if:** User's first message is a direct task (then create
-session silently and start working).
-
-## Context Overflow / Continued Sessions
-
-**When a session is "continued from previous conversation" after context
-overflow:**
-
-1. **Find previous session by task-slug from Summary:**
-
-   ```bash
-   find .claude/sessions -name "session-*<slug>*.md" -type f | xargs ls -1t | head -1
-   ```
-
-2. **Fallback if unclear:**
-   - Filter by current branch:
-     `grep -rl "Branch.*$(git branch --show-current)" .claude/sessions/`
-   - Filter by time window (last 2h)
-   - If still ambiguous: Ask user which session to continue
-3. **Create continuation session file** in current year/month with same slug
-4. Continue with normal session logging
-
-**This is NOT optional** — the summarized context loses session file updates!
-
-## Session Log Updates
-
-**Update DURING work, not just at the end:**
-
-- After each significant change: add to Changes table
-- After each decision: add to Decisions section
-- After each commit: note commit hash in Changes or Summary
-- After discovering something: add to Learnings
-
-**Rule of thumb:** If you completed a todo item, update the session log.
-
-**Subagents:** Do NOT update session file directly. Report changes back to main
-agent, who updates centrally (prevents conflicts).
-
-### Knowledge File Updates
+## Knowledge Files
 
 **Write learnings, decisions, and references IMMEDIATELY when discovered:**
 
@@ -68,14 +10,15 @@ agent, who updates centrally (prevents conflicts).
 | Architecture decision made      | Add ADR to `DECISIONS.md` |
 | Useful documentation link found | Add to `REFERENCES.md`    |
 
-Session files are not committed (lost on context overflow). Knowledge files are
-committed (persistent).
+Knowledge files are committed and team-shared — they are the project's
+persistent memory. Do not defer these writes to "later"; context may be
+compacted at any time.
 
-### Ending a Session
+**Subagents:** Do NOT write knowledge files directly. Report findings back to
+the Main Agent, who writes them centrally (prevents conflicts).
 
-1. Complete session log: Fill in `## Summary`
-2. Verify learnings/decisions were written to knowledge files
-3. Tell user: "Please enter `/clear` for fresh context."
+**On fresh conversations:** brief the user on open tasks (`/tasks --list`) and
+ask what to work on.
 
 ---
 
@@ -136,7 +79,7 @@ See `.zappzarapp/standards/` for language-specific rules:
 
 ```text
 .ai/                → Project AI knowledge (LEARNINGS, DECISIONS, etc.)
-.claude/            → Claude tooling (agents, commands, sessions)
+.claude/            → Claude tooling (agents, skills, hooks)
 .zappzarapp/        → Boilerplate config & docs
 docker/             → Docker configurations
 src/                → Source code
@@ -145,13 +88,12 @@ tests/              → Test files
 
 **Claude-specific folders:**
 
-| Folder              | Purpose                      | Committed |
-| ------------------- | ---------------------------- | --------- |
-| `.claude/agents/`   | Agent workflow documentation | Yes       |
-| `.claude/skills/`   | Skills (slash commands)      | Yes       |
-| `.claude/sessions/` | Session logs (YYYY/MM/)      | No        |
-| `.ai/`              | Project knowledge files      | Yes       |
-| `.zappzarapp/ai/`   | Boilerplate knowledge        | Yes       |
+| Folder            | Purpose                      | Committed |
+| ----------------- | ---------------------------- | --------- |
+| `.claude/agents/` | Agent workflow documentation | Yes       |
+| `.claude/skills/` | Skills (slash commands)      | Yes       |
+| `.ai/`            | Project knowledge files      | Yes       |
+| `.zappzarapp/ai/` | Boilerplate knowledge        | Yes       |
 
 ## Key Make Targets
 

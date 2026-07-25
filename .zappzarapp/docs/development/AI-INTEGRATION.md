@@ -49,7 +49,6 @@ detection (GitHub Issues, GitLab Issues, or local `.ai/TASKS.md`).
 ├── settings.json       # Shared permissions & hooks
 ├── settings.local.json # Personal overrides (gitignored)
 ├── context/            # Project context (gitignored)
-├── sessions/           # Session logs (gitignored)
 ├── state/              # Persistent state (gitignored)
 ├── cache/              # Temporary data (gitignored)
 ├── temp/               # Agent work files (gitignored)
@@ -87,7 +86,7 @@ See: <https://code.claude.com/docs/en/settings#hook-configuration>
 
 #### Hooks Configuration
 
-Hooks automate session management and provide contextual reminders.
+Hooks provide immediate feedback and contextual reminders during work.
 
 **Available Hook Events:**
 
@@ -103,26 +102,31 @@ Hooks automate session management and provide contextual reminders.
 
 **Project Hooks (`.claude/settings.json`):**
 
-| Hook                | Script                  | Purpose                                             |
-| ------------------- | ----------------------- | --------------------------------------------------- |
-| `SessionStart`      | `session-start.sh`      | Creates pending session file                        |
-| `SessionEnd`        | `session-end.sh`        | Reminds about Summary, Learnings                    |
-| `UserPromptSubmit`  | `user-prompt-submit.sh` | Detects context continuation + implementation tasks |
-| `PreCompact`        | (inline)                | Reminds to update session before compression        |
-| `PostToolUse(Edit)` | `post-edit-lint.sh`     | Runs linters after file edits                       |
+| Hook                | Script                  | Purpose                                      |
+| ------------------- | ----------------------- | -------------------------------------------- |
+| `UserPromptSubmit`  | `user-prompt-submit.sh` | Branch check + doc/test change watch         |
+| `PostToolUse(Edit)` | `post-edit-lint.sh`     | Syntax checks; feeds errors back via exit 2  |
+| `PostToolUse(Edit)` | `post-edit-autofix.sh`  | Auto-applies formatting (CS-Fixer/Prettier)  |
+| `PostToolUse`       | (inline)                | Contextual reminders via `additionalContext` |
+
+**Hook output contract:** plain stdout only reaches Claude for
+`UserPromptSubmit`/`SessionStart`. `PostToolUse` hooks must either exit 2
+(stderr becomes feedback) or emit
+`{"hookSpecificOutput": {"hookEventName": "PostToolUse", "additionalContext": "..."}}`.
+Custom JSON shapes like `{"message": ...}` are silently dropped.
 
 **Hook Format:**
 
 ```json
 {
   "hooks": {
-    "SessionStart": [
+    "UserPromptSubmit": [
       {
         "matcher": "",
         "hooks": [
           {
             "type": "command",
-            "command": "./.claude/hooks/session-start.sh"
+            "command": "./.claude/hooks/user-prompt-submit.sh"
           }
         ]
       }
@@ -150,19 +154,15 @@ Hooks automate session management and provide contextual reminders.
 }
 ```
 
-#### UserPromptSubmit Detection Examples
+#### UserPromptSubmit Checks
 
-When detecting a continued session:
+On every prompt the hook checks (plain stdout becomes context):
 
-```text
-[Context Continuation] Previous session: session-2026-01-24-1827-tls-verification.md
-```
-
-When detecting an implementation task:
-
-```text
-[Implementation Task] Check .claude/agents/workflow.md for scope before starting.
-```
+- **Branch check** — implementation-style prompt while on develop/main/master
+  produces a reminder to create a feature branch or worktree
+- **Change watch** — uncommitted changes to Makefile targets, compose services,
+  skills or `.env.example` trigger a doc/test update reminder (deduplicated
+  between prompts via `.claude/cache/`)
 
 ### Other Tools (`AGENTS.md` Convention)
 

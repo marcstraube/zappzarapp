@@ -160,7 +160,7 @@ Requirements:
 - No architectural changes
 - Report back: files changed, any issues encountered
 
-DO NOT: Update session files, tasks, or CHANGELOG (Main Agent handles this)
+DO NOT: Update knowledge files, tasks, or CHANGELOG (Main Agent handles this)
 ```
 
 ### Validation Before Batch
@@ -342,7 +342,7 @@ Trigger Security Agent if changed files match these patterns:
 
 ### Session File (centralized)
 
-- **Only Main Agent** updates session file
+- **Only Main Agent** updates knowledge files and CHANGELOG
 - Subagents report back, don't write directly
 - Prevents conflicts
 
