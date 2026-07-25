@@ -16,6 +16,19 @@ teardown_file() {
     integration_teardown
 }
 
+# Manifest backup used by the pnpm-sync test below. Restored in teardown()
+# (which BATS runs even when an assert fails) so a failed sync test cannot
+# leave a modified package.json behind.
+PNPM_SYNC_MANIFEST_BAK="package.json.pnpm-sync-test.bak"
+
+# Overrides teardown() from helpers/setup.bash - keep its cd restore
+teardown() {
+    cd "${PROJECT_ROOT}" || true
+    if [[ -f "${PNPM_SYNC_MANIFEST_BAK}" ]]; then
+        mv "${PNPM_SYNC_MANIFEST_BAK}" package.json
+    fi
+}
+
 # =============================================================================
 # Core Services
 # =============================================================================
@@ -133,6 +146,39 @@ teardown_file() {
     run timeout 180 make pnpm-install
     assert_success
     [[ -d "node_modules" ]]
+}
+
+@test "[Integration] make pnpm-sync re-resolves lockfile after package.json change" {
+    require_service "node"
+    require_dependencies
+    # In CI the lockfile is not bind-mounted (compose.ci.yaml) and does not
+    # exist on the host; this covers the dev preset, where the regression
+    # lived (frozen-lockfile abort on outdated lockfile).
+    [[ -s "pnpm-lock.yaml" ]] || skip "No host lockfile (CI mode)"
+    grep -q "pino-pretty" pnpm-lock.yaml || skip "pino-pretty not in lockfile"
+
+    cp package.json "${PNPM_SYNC_MANIFEST_BAK}"
+    local checksum_before
+    checksum_before=$(cksum pnpm-lock.yaml | cut -d' ' -f1)
+
+    # Drop a devDependency so the lockfile no longer matches the manifest.
+    # Line-based removal is safe: Prettier keeps one dependency per line and
+    # pino-pretty is not the last entry (no dangling comma).
+    sed -i '/"pino-pretty":/d' package.json
+
+    # Regression guard: this aborted with ERR_PNPM_OUTDATED_LOCKFILE before
+    # pnpm-sync learned the temp-location lockfile re-resolve
+    run timeout 300 make pnpm-sync
+    assert_success
+
+    # The lockfile must actually have been re-resolved
+    [[ "$(cksum pnpm-lock.yaml | cut -d' ' -f1)" != "${checksum_before}" ]]
+
+    # Round-trip: restore the manifest, sync back
+    mv "${PNPM_SYNC_MANIFEST_BAK}" package.json
+    run timeout 300 make pnpm-sync
+    assert_success
+    grep -q "pino-pretty" pnpm-lock.yaml
 }
 
 # =============================================================================

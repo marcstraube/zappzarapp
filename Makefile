@@ -1755,7 +1755,22 @@ pnpm-install-local: ## Install Node.js dependencies (Local - IDE code completion
 
 pnpm-sync: ## Sync Node.js dependencies (after package.json changes, e.g., frontend scaffold)
 	@echo -e "\033[0;33mSyncing Node.js dependencies...\033[0m"
-	@$(DC_RUN) run --rm --no-TTY --user root --entrypoint "" -e CI=true node pnpm install
+	@# Re-resolve the lockfile to match changed manifests, then install from it.
+	@# Docker bind mounts don't support atomic rename (EBUSY error when pnpm
+	@# writes the lockfile), so resolve in a temp location and copy back via cat.
+	@# --no-frozen-lockfile overrides the frozen default that CI=true implies;
+	@# unlike pnpm-update this does not upgrade dependencies within their ranges.
+	@$(DC_RUN) run --rm --no-TTY --user root --entrypoint "" -e CI=true node sh -c ' \
+		mkdir -p /tmp/pnpm-sync/src/node/backend /tmp/pnpm-sync/src/node/frontend && \
+		cp /app/package.json /tmp/pnpm-sync/package.json && \
+		cp /app/pnpm-workspace.yaml /tmp/pnpm-sync/pnpm-workspace.yaml && \
+		{ [ -s /app/pnpm-lock.yaml ] && cp /app/pnpm-lock.yaml /tmp/pnpm-sync/pnpm-lock.yaml || true; } && \
+		cp /app/src/node/backend/package.json /tmp/pnpm-sync/src/node/backend/package.json && \
+		cp /app/src/node/frontend/package.json /tmp/pnpm-sync/src/node/frontend/package.json && \
+		cd /tmp/pnpm-sync && pnpm install --no-frozen-lockfile --lockfile-only && \
+		cat /tmp/pnpm-sync/pnpm-lock.yaml > /app/pnpm-lock.yaml && \
+		cd /app && pnpm install --frozen-lockfile \
+	'
 	@echo -e "\033[0;32mDependencies synced!\033[0m"
 
 pnpm-upgrade: ## Upgrade pnpm package manager to latest version
@@ -3360,7 +3375,7 @@ bats-test-integration: ## Run BATS integration tests (requires running container
 			--network host \
 			--user root \
 			-e INTEGRATION_PRESET=$(INTEGRATION_PRESET) \
-			-e COMPOSE_FILE=$${COMPOSE_FILE:-} \
+			$${COMPOSE_FILE:+-e COMPOSE_FILE=$$COMPOSE_FILE} \
 			$(BATS_IMAGE) tests/bats/integration/; \
 	else \
 		docker run --rm \
@@ -3371,7 +3386,7 @@ bats-test-integration: ## Run BATS integration tests (requires running container
 			--user "$$(id -u):$$(id -g)" \
 			--group-add "$$(stat -c %g /var/run/docker.sock)" \
 			-e INTEGRATION_PRESET=$(INTEGRATION_PRESET) \
-			-e COMPOSE_FILE=$${COMPOSE_FILE:-} \
+			$${COMPOSE_FILE:+-e COMPOSE_FILE=$$COMPOSE_FILE} \
 			$(BATS_IMAGE) tests/bats/integration/; \
 	fi
 	@echo -e "\033[0;32m✓ BATS integration tests complete\033[0m"
@@ -3392,7 +3407,7 @@ bats-test-integration-file: ## Run specific BATS integration test file (FILE=lin
 			--user root \
 			-e INTEGRATION_PRESET=$(INTEGRATION_PRESET) \
 			-e BATS_ENABLE_DESTRUCTIVE=$(BATS_ENABLE_DESTRUCTIVE) \
-			-e COMPOSE_FILE=$${COMPOSE_FILE:-} \
+			$${COMPOSE_FILE:+-e COMPOSE_FILE=$$COMPOSE_FILE} \
 			$(BATS_IMAGE) "tests/bats/integration/$(FILE)"; \
 	else \
 		docker run --rm \
@@ -3404,7 +3419,7 @@ bats-test-integration-file: ## Run specific BATS integration test file (FILE=lin
 			--group-add "$$(stat -c %g /var/run/docker.sock)" \
 			-e INTEGRATION_PRESET=$(INTEGRATION_PRESET) \
 			-e BATS_ENABLE_DESTRUCTIVE=$(BATS_ENABLE_DESTRUCTIVE) \
-			-e COMPOSE_FILE=$${COMPOSE_FILE:-} \
+			$${COMPOSE_FILE:+-e COMPOSE_FILE=$$COMPOSE_FILE} \
 			$(BATS_IMAGE) "tests/bats/integration/$(FILE)"; \
 	fi
 
@@ -3436,7 +3451,7 @@ bats-test-destructive: ## Run BATS destructive tests (⚠️ WARNING: modifies d
 			--network host \
 			--user root \
 			-e BATS_ENABLE_DESTRUCTIVE=true \
-			-e COMPOSE_FILE=$${COMPOSE_FILE:-} \
+			$${COMPOSE_FILE:+-e COMPOSE_FILE=$$COMPOSE_FILE} \
 			$(BATS_IMAGE) tests/bats/integration/destructive.bats; \
 	else \
 		docker run --rm \
@@ -3447,7 +3462,7 @@ bats-test-destructive: ## Run BATS destructive tests (⚠️ WARNING: modifies d
 			--user "$$(id -u):$$(id -g)" \
 			--group-add "$$(stat -c %g /var/run/docker.sock)" \
 			-e BATS_ENABLE_DESTRUCTIVE=true \
-			-e COMPOSE_FILE=$${COMPOSE_FILE:-} \
+			$${COMPOSE_FILE:+-e COMPOSE_FILE=$$COMPOSE_FILE} \
 			$(BATS_IMAGE) tests/bats/integration/destructive.bats; \
 	fi
 

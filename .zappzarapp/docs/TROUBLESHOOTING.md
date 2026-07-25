@@ -504,8 +504,9 @@ lockfile.
 #### Solutions
 
 1. Use `--no-install` flags for commands that would rewrite the lockfile
-2. Run `make pnpm-update` separately — it resolves the lockfile in a temp
-   location inside the container and copies it back, avoiding the rename
+2. Use the make targets (`make pnpm-sync`, `make pnpm-update`) — they resolve
+   the lockfile in a temp location inside the container and copy it back,
+   avoiding the rename
 
 ### HMR (Hot Module Replacement) Not Working
 
