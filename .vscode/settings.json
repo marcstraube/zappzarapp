@@ -7,7 +7,9 @@
   "editor.defaultFormatter": "esbenp.prettier-vscode",
   "editor.tabSize": 4,
   "editor.insertSpaces": true,
-  "editor.rulers": [120],
+  "editor.rulers": [
+    120
+  ],
   "editor.wordWrap": "off",
   "editor.renderWhitespace": "boundary",
   "editor.trimAutoWhitespace": true,
@@ -137,7 +139,9 @@
     "typescript",
     "typescriptreact"
   ],
-  "eslint.workingDirectories": ["${workspaceFolder}"],
+  "eslint.workingDirectories": [
+    "${workspaceFolder}"
+  ],
   "prettier.enable": true,
   "prettier.requireConfig": true,
   "prettier.configPath": "${workspaceFolder}/.prettierrc.json",
@@ -197,7 +201,14 @@
       "askForPassword": true
     }
   ],
-  "todo-tree.general.tags": ["TODO", "FIXME", "BUG", "HACK", "NOTE", "@TODO"],
+  "todo-tree.general.tags": [
+    "TODO",
+    "FIXME",
+    "BUG",
+    "HACK",
+    "NOTE",
+    "@TODO"
+  ],
   "todo-tree.highlights.defaultHighlight": {
     "icon": "alert",
     "type": "text",
@@ -379,7 +390,11 @@
     "dotenv": true,
     "yaml": true
   },
-  "ltex.enabled": ["markdown", "latex", "restructuredtext"],
+  "ltex.enabled": [
+    "markdown",
+    "latex",
+    "restructuredtext"
+  ],
   "ltex.language": "en-US",
   "ltex.additionalRules.enablePickyRules": false,
   "ltex.files.include": [

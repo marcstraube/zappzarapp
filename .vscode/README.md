@@ -38,6 +38,12 @@ Recommended extensions for optimal development experience:
 
 ### `settings.json`
 
+> **Formatting note:** `make ide-config` rewrites this file through `jq`, so
+> it is committed in jq's canonical style (2-space indent, one array element
+> per line). Do not reformat it manually — Prettier does not cover `.vscode/`
+> (the directory is not mounted into containers), and any other style would
+> reappear as diff noise on the next `make ide-config` run.
+
 Workspace settings including:
 
 **PHP Configuration:**
