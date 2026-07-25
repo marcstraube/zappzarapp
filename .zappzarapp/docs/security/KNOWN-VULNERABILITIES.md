@@ -68,6 +68,64 @@ Justification:
 | ----------- | ------------ | --------------------------- |
 | 2026-01-22  | Claude Agent | Accepted - no fix available |
 
+### brace-expansion - CVE-2026-14257 (DoS)
+
+| Field    | Value                                                               |
+| -------- | ------------------------------------------------------------------- |
+| Package  | `brace-expansion` (transitive via `depcheck > minimatch`)           |
+| Version  | 1.x (resolved through minimatch 3.x)                                |
+| CVE      | [CVE-2026-14257](https://github.com/advisories/GHSA-mh99-v99m-4gvg) |
+| Type     | Denial of Service (unbounded expansion length, out-of-memory crash) |
+| Severity | **HIGH** (CVSS 7.5)                                                 |
+| Affected | All versions ≤5.0.7 (every major line)                              |
+| Patched  | 5.0.8 only - no per-major backports available yet                   |
+
+**Vulnerability Details:**
+
+A crafted brace pattern can expand to an unbounded number of results, causing
+excessive memory allocation and an out-of-memory process crash.
+
+**Risk Assessment:**
+
+| Factor         | Assessment                                                |
+| -------------- | --------------------------------------------------------- |
+| Scope          | Development only (transitive of `devDependency` depcheck) |
+| Impact         | Availability (DoS), no data breach                        |
+| Exploitability | Requires attacker-controlled glob patterns; depcheck only |
+|                | processes local repository configuration                  |
+| CVSS Score     | 7.5 (High) - context-adjusted to low                      |
+
+#### Decision: ACCEPTED (temporary)
+
+Justification:
+
+1. **Development-only**: brace-expansion is reached only through depcheck, a
+   `devDependency` that never ships to production
+2. **No safe fix**: the only patched release is 5.0.8; forcing 1.x consumers
+   onto 5.x via a pnpm override would cross semver majors - such an override is
+   a compatibility rewrite, not a security floor (one floor per major line is
+   the project rule)
+3. **No untrusted input**: depcheck expands globs from local project
+   configuration, not from external sources
+4. **Backports expected**: the previous brace-expansion advisory
+   (GHSA-v6h2-p8h4-qcjw) received per-major backports (1.1.12, 2.0.2, 3.0.1,
+   4.0.1) after initial publication
+
+**Mitigation:**
+
+- Ignored via `pnpm.auditConfig.ignoreGhsas` in the root `package.json`
+- depcheck runs only in trusted development and CI environments
+
+**Monitoring:**
+
+- Advisory page: <https://github.com/advisories/GHSA-mh99-v99m-4gvg>
+- When per-major backports appear: remove `GHSA-mh99-v99m-4gvg` from
+  `ignoreGhsas` and add per-major override floors instead
+
+| Review Date | Reviewer     | Status                                    |
+| ----------- | ------------ | ----------------------------------------- |
+| 2026-07-25  | Claude Agent | Accepted (temporary) - awaiting backports |
+
 ---
 
 ## Review Process
