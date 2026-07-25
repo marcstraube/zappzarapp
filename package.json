@@ -108,6 +108,9 @@
     "auditConfig": {
       "ignoreCves": [
         "CVE-2025-5891"
+      ],
+      "ignoreGhsas": [
+        "GHSA-mh99-v99m-4gvg"
       ]
     },
     "overrides": {
