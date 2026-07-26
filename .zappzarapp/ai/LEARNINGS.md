@@ -183,6 +183,32 @@ notifications (e.g., ntfy notifications after agent completion).
 
 ---
 
+## Nginx
+
+### Static proxy_pass poisons same-string variable proxy_pass
+
+**Symptom:** Locations using the runtime-resolution pattern
+(`set $upstream_node node:5173; proxy_pass http://$upstream_node;` plus a
+`resolver` directive) still connect to a stale IP after the upstream container
+is recreated — 502 with `connect() failed` to an IP that now belongs to a
+different container.
+
+**Cause:** A single STATIC `proxy_pass http://node:5173;` elsewhere in the
+config creates an implicit upstream group named `node:5173`, resolved once at
+config load. Variable-based `proxy_pass` first checks whether the value matches
+a defined upstream name — the same string matches the implicit group, so nginx
+routes into the frozen boot-time IP and never consults the resolver. One static
+occurrence disables runtime resolution for every location using the same
+host:port string.
+
+**Fix:** Use the variable pattern in ALL locations sharing the upstream (no
+static occurrence may remain), or reload nginx after recreating the upstream
+container. Found 2026-07-26: `development-vite-hmr.conf` had one static
+`proxy_pass` in the `/__vite_hmr__` location, breaking Vite HMR and asset
+proxying after the node container was recreated.
+
+---
+
 ## Last Updated
 
-2026-07-25 (first graduation round: 44 entries moved into permanent docs)
+2026-07-26 (added: static proxy_pass poisons variable proxy_pass)
