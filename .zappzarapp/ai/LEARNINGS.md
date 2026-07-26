@@ -209,6 +209,26 @@ proxying after the node container was recreated.
 
 ---
 
+## PHP-FPM
+
+### putenv() persists across requests in the same worker
+
+**Symptom:** A per-request `putenv('X=...')` is still visible via `getenv('X')`
+in later requests served by the same FPM worker. A guard like "only set if not
+already set" then mistakes the worker's own previous value for an external
+override and freezes it until the worker recycles.
+
+**Rule:** To detect EXTERNALLY provided environment values (FPM pool config,
+container env), check `$_SERVER` / `$_ENV` — `putenv()` does not modify those.
+When self-setting per-request values, overwrite (or clear via `putenv('X')`) on
+every request instead of guarding on `getenv()`.
+
+Found 2026-07-26 while diagnosing the DevToolbar branch display (resolver cwd
+bug, tracked as zappzarapp-php-devtoolbar#4 — the consumer-side workaround
+documented there relies on exactly this distinction).
+
+---
+
 ## Last Updated
 
-2026-07-26 (added: static proxy_pass poisons variable proxy_pass)
+2026-07-26 (added: putenv persists across FPM requests)
