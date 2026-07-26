@@ -151,10 +151,13 @@ teardown() {
 @test "[Integration] make pnpm-sync re-resolves lockfile after package.json change" {
     require_service "node"
     require_dependencies
-    # In CI the lockfile is not bind-mounted (compose.ci.yaml) and does not
-    # exist on the host; this covers the dev preset, where the regression
-    # lived (frozen-lockfile abort on outdated lockfile).
-    [[ -s "pnpm-lock.yaml" ]] || skip "No host lockfile (CI mode)"
+    # In CI (compose.ci.yaml) the lockfile is intentionally not bind-mounted
+    # (single-file mounts cannot be atomically replaced), so pnpm-sync writes
+    # the re-resolved lockfile only inside the ephemeral container and the
+    # host file never changes. This test covers the dev preset, where the
+    # lockfile IS bind-mounted and where the regression lived.
+    [[ "${COMPOSE_FILE:-}" != *"compose.ci.yaml"* ]] || skip "CI mode: lockfile not bind-mounted"
+    [[ -s "pnpm-lock.yaml" ]] || skip "No host lockfile"
     grep -q "pino-pretty" pnpm-lock.yaml || skip "pino-pretty not in lockfile"
 
     cp package.json "${PNPM_SYNC_MANIFEST_BAK}"
