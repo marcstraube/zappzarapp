@@ -345,8 +345,45 @@ making the Node coverage gate green.
 
 ---
 
+### Mocking a `new`-ed class (net.Socket) in Vitest needs a real function
+
+**Symptom:** `vi.mocked(net.Socket).mockImplementationOnce(() => {...})` makes
+`new net.Socket()` throw `... is not a constructor`, so the code-under-test
+catches it and every probe reports failure.
+
+**Cause:** Vitest/tinyspy constructs mocks via `Reflect.construct`, which
+requires the implementation to be constructable. An **arrow function is not
+constructable**, so it throws.
+
+**Fix:** Use a named `function` expression as the implementation
+(`mockImplementationOnce(function mockSocket() { ...; return socket; })`) — or a
+`class`. Found 2026-07-27 while adding the RabbitMQ TCP probe to the Node
+HealthCheckService.
+
+---
+
+### The node-backend service passes no optional-service ENV (health checks dormant)
+
+**Observation:** `compose.yaml`'s `node-backend` service only receives DB/Redis
+env — none of the `ENABLE_MEILISEARCH/ELASTICSEARCH/RABBITMQ/SEAWEEDFS` flags or
+their URLs that `HealthCheckService` reads. So every optional-service check in
+the Node health endpoint (including the pre-existing Meilisearch one) defaults
+to `disabled` and never actually runs, even when those containers are up. The
+PHP `php` service _does_ get all the flags.
+
+**Also:** Elasticsearch runs internal **HTTPS with xpack.security enabled**
+(`xpack.security.http.ssl.enabled: true`), so an unauthenticated
+`/_cluster/health` GET returns 401 — the PHP check even uses `http://` against
+it and would fail outright. Any real ES health probe needs TLS **and** an API
+key/basic auth. Meilisearch `/health` and the SeaweedFS master `/cluster/status`
+are auth-free. Noted 2026-07-27; wiring the node-backend env (and ES auth) left
+as an explicit decision, not silently changed.
+
+---
+
 ## Last Updated
 
 2026-07-27 (added: import-time listeners in tests, lint:fix glob drift, node
 coverage baseline, single-file bind-mount stale inode, @vitest/ui coverage
-ENOENT)
+ENOENT, vitest constructor-mock needs real function, node-backend optional-svc
+env dormant + ES internal HTTPS/auth)

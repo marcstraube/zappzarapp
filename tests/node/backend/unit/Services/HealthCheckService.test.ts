@@ -9,6 +9,7 @@ import { Pool, PoolClient } from 'pg';
 import { createClient } from 'redis';
 import * as http from 'http';
 import * as https from 'https';
+import * as net from 'net';
 
 // Mock the redis module
 vi.mock('redis', () => ({
@@ -27,6 +28,37 @@ vi.mock('http', () => ({
 vi.mock('https', () => ({
   request: vi.fn(),
 }));
+
+// Mock net module (used for the RabbitMQ TCP reachability probe)
+vi.mock('net', () => ({
+  Socket: vi.fn(),
+}));
+
+/**
+ * Install a one-shot net.Socket mock that either accepts the connection or
+ * emits an error/timeout, mirroring the health check's checkTcp contract.
+ */
+function mockSocketOnce(behavior: 'connect' | 'error' | 'timeout'): void {
+  vi.mocked(net.Socket).mockImplementationOnce(function mockSocket(): net.Socket {
+    const socket = new EventEmitter() as EventEmitter & {
+      setTimeout: () => void;
+      destroy: () => void;
+      end: () => void;
+      connect: (port: number, host: string, cb: () => void) => void;
+    };
+    socket.setTimeout = (): void => undefined;
+    socket.destroy = (): void => undefined;
+    socket.end = (): void => undefined;
+    socket.connect = (_port: number, _host: string, cb: () => void): void => {
+      queueMicrotask(() => {
+        if (behavior === 'connect') cb();
+        else if (behavior === 'error') socket.emit('error', new Error('connection refused'));
+        else socket.emit('timeout');
+      });
+    };
+    return socket as unknown as net.Socket;
+  });
+}
 
 /**
  * Build a fake ClientRequest whose paired response emits `body` once the
@@ -412,6 +444,180 @@ describe('HealthCheckService', () => {
       const result = await service.checkReadiness();
 
       expect(result.checks['meilisearch']?.status).toBe('ok');
+    });
+  });
+
+  describe('elasticsearch checks', () => {
+    it('should return disabled when ENABLE_ELASTICSEARCH is false', async () => {
+      process.env.ENABLE_ELASTICSEARCH = 'false';
+
+      const service = new HealthCheckService();
+      const result = await service.checkReadiness();
+
+      expect(result.checks['elasticsearch']?.status).toBe('disabled');
+    });
+
+    it('should return ok when the cluster reports green', async () => {
+      process.env.ENABLE_ELASTICSEARCH = 'true';
+      process.env.ELASTICSEARCH_URL = 'https://elasticsearch:9200';
+      mockRequestOnce(https.request, JSON.stringify({ status: 'green' }));
+
+      const service = new HealthCheckService();
+      const result = await service.checkReadiness();
+
+      expect(result.checks['elasticsearch']?.status).toBe('ok');
+      expect(result.checks['elasticsearch']?.latency_ms).toBeDefined();
+    });
+
+    it('should treat yellow as healthy (single-node dev cluster)', async () => {
+      process.env.ENABLE_ELASTICSEARCH = 'true';
+      process.env.ELASTICSEARCH_URL = 'http://elasticsearch:9200';
+      mockRequestOnce(http.request, JSON.stringify({ status: 'yellow' }));
+
+      const service = new HealthCheckService();
+      const result = await service.checkReadiness();
+
+      expect(result.checks['elasticsearch']?.status).toBe('ok');
+    });
+
+    it('should return unhealthy and degrade overall when the cluster is red', async () => {
+      process.env.ENABLE_ELASTICSEARCH = 'true';
+      process.env.ELASTICSEARCH_URL = 'https://elasticsearch:9200';
+      mockRequestOnce(https.request, JSON.stringify({ status: 'red' }));
+
+      const service = new HealthCheckService();
+      const result = await service.checkReadiness();
+
+      expect(result.checks['elasticsearch']?.status).toBe('unhealthy');
+      expect(result.status).toBe('degraded');
+    });
+
+    it('should return unhealthy on invalid JSON', async () => {
+      process.env.ENABLE_ELASTICSEARCH = 'true';
+      process.env.ELASTICSEARCH_URL = 'https://elasticsearch:9200';
+      mockRequestOnce(https.request, 'not-json');
+
+      const service = new HealthCheckService();
+      const result = await service.checkReadiness();
+
+      expect(result.checks['elasticsearch']?.status).toBe('unhealthy');
+    });
+  });
+
+  describe('rabbitmq checks', () => {
+    it('should return disabled when ENABLE_RABBITMQ is false', async () => {
+      process.env.ENABLE_RABBITMQ = 'false';
+
+      const service = new HealthCheckService();
+      const result = await service.checkReadiness();
+
+      expect(result.checks['rabbitmq']?.status).toBe('disabled');
+    });
+
+    it('should return ok when the TCP connection succeeds', async () => {
+      process.env.ENABLE_RABBITMQ = 'true';
+      mockSocketOnce('connect');
+
+      const service = new HealthCheckService();
+      const result = await service.checkReadiness();
+
+      expect(result.checks['rabbitmq']?.status).toBe('ok');
+      expect(result.checks['rabbitmq']?.latency_ms).toBeDefined();
+    });
+
+    it('should return unhealthy and degrade overall on connection error', async () => {
+      process.env.ENABLE_RABBITMQ = 'true';
+      mockSocketOnce('error');
+
+      const service = new HealthCheckService();
+      const result = await service.checkReadiness();
+
+      expect(result.checks['rabbitmq']?.status).toBe('unhealthy');
+      expect(result.checks['rabbitmq']?.message).toBe('connection refused');
+      expect(result.status).toBe('degraded');
+    });
+
+    it('should return unhealthy on connection timeout', async () => {
+      process.env.ENABLE_RABBITMQ = 'true';
+      mockSocketOnce('timeout');
+
+      const service = new HealthCheckService();
+      const result = await service.checkReadiness();
+
+      expect(result.checks['rabbitmq']?.status).toBe('unhealthy');
+      expect(result.checks['rabbitmq']?.message).toBe('Connection timeout');
+    });
+
+    it('should parse host and port from RABBITMQ_URL', async () => {
+      process.env.ENABLE_RABBITMQ = 'true';
+      process.env.RABBITMQ_URL = 'amqps://user:pass@broker.example:5671/vhost';
+      mockSocketOnce('connect');
+
+      const service = new HealthCheckService();
+      const result = await service.checkReadiness();
+
+      expect(result.checks['rabbitmq']?.status).toBe('ok');
+    });
+  });
+
+  describe('seaweedfs checks', () => {
+    it('should return disabled when ENABLE_SEAWEEDFS is false', async () => {
+      process.env.ENABLE_SEAWEEDFS = 'false';
+
+      const service = new HealthCheckService();
+      const result = await service.checkReadiness();
+
+      expect(result.checks['seaweedfs']?.status).toBe('disabled');
+    });
+
+    it('should return ok when the master reports a leader', async () => {
+      process.env.ENABLE_SEAWEEDFS = 'true';
+      process.env.SEAWEEDFS_MASTER_URL = 'http://seaweedfs:9333';
+      mockRequestOnce(http.request, JSON.stringify({ IsLeader: true }));
+
+      const service = new HealthCheckService();
+      const result = await service.checkReadiness();
+
+      expect(result.checks['seaweedfs']?.status).toBe('ok');
+      expect(result.checks['seaweedfs']?.latency_ms).toBeDefined();
+    });
+
+    it('should return unhealthy when the leader flag is absent', async () => {
+      process.env.ENABLE_SEAWEEDFS = 'true';
+      process.env.SEAWEEDFS_MASTER_URL = 'http://seaweedfs:9333';
+      mockRequestOnce(http.request, JSON.stringify({ error: 'no master' }));
+
+      const service = new HealthCheckService();
+      const result = await service.checkReadiness();
+
+      expect(result.checks['seaweedfs']?.status).toBe('unhealthy');
+      expect(result.status).toBe('degraded');
+    });
+
+    it('should return unhealthy on invalid JSON', async () => {
+      process.env.ENABLE_SEAWEEDFS = 'true';
+      process.env.SEAWEEDFS_MASTER_URL = 'http://seaweedfs:9333';
+      mockRequestOnce(http.request, 'not-json');
+
+      const service = new HealthCheckService();
+      const result = await service.checkReadiness();
+
+      expect(result.checks['seaweedfs']?.status).toBe('unhealthy');
+    });
+  });
+
+  describe('checkStatus includes new optional services', () => {
+    it('should report elasticsearch, rabbitmq and seaweedfs as disabled by default', async () => {
+      process.env.ENABLE_DATABASE = 'false';
+      process.env.ENABLE_REDIS = 'false';
+      process.env.NODE_MODE = 'backend';
+
+      const service = new HealthCheckService();
+      const result = await service.checkStatus();
+
+      expect(result.services['elasticsearch']?.status).toBe('disabled');
+      expect(result.services['rabbitmq']?.status).toBe('disabled');
+      expect(result.services['seaweedfs']?.status).toBe('disabled');
     });
   });
 
