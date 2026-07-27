@@ -31,7 +31,7 @@ clone, configure, and go.
 | Category        | Scope                                                                  |
 | --------------- | ---------------------------------------------------------------------- |
 | Docker Services | 16 pre-configured (Nginx, PHP, Node, databases, cache, search, queue…) |
-| Make Targets    | 257 across 17 categories (`make help`)                                 |
+| Make Targets    | 258 across 17 categories (`make help`)                                 |
 | Stack Presets   | 7 modes, from full-stack to static                                     |
 | Kubernetes      | Helm chart for production deployment                                   |
 | Documentation   | 40+ guides in [`.zappzarapp/docs/`](.zappzarapp/docs/)                 |
@@ -124,7 +124,7 @@ The application is available at:
 
 - **HTTP:** <http://localhost:8080>
 - **HTTPS:** <https://localhost:8443>
-- **Dev Dashboard:** <http://localhost:8080/\_dev>
+- **Dev Dashboard:** <https://localhost:8443/_dev>
 
 Prerequisites: Docker 20.10+, Docker Compose V2, Make, Git.
 
@@ -188,6 +188,7 @@ Detailed documentation is available in [`.zappzarapp/docs/`](.zappzarapp/docs/):
 
 - [PHP Testing](.zappzarapp/docs/testing/TESTING-PHP.md)
 - [Node.js Testing](.zappzarapp/docs/testing/TESTING-NODE.md)
+- [Shell & Makefile Testing (BATS/GOSS)](.zappzarapp/docs/testing/TESTING-SHELL.md)
 - [GOSS Container Tests](tests/goss/README.md)
 
 ### Infrastructure
@@ -219,14 +220,10 @@ Detailed documentation is available in [`.zappzarapp/docs/`](.zappzarapp/docs/):
 - [JetBrains (PhpStorm/WebStorm)](.idea/README.md)
 - [VS Code](.vscode/README.md)
 
-### Components
-
-- [Node.js Frontend](src/node/frontend/README.md)
-
 ### Other
 
 - [Contributing](.zappzarapp/docs/CONTRIBUTING.md)
-- [Changelog](.zappzarapp/CHANGELOG.md)
+- [Changelog](CHANGELOG.md)
 
 ## Make Commands
 
@@ -243,7 +240,7 @@ make open-app      # Open the application in the browser
 ```
 
 See the [Makefile Reference](.zappzarapp/docs/development/MAKEFILE-REFERENCE.md)
-for all 257 targets.
+for all 258 targets.
 
 ## Git Hooks
 
