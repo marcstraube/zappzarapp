@@ -61,6 +61,20 @@ static analysis and tests on push
 **Security scanning:** composer audit, pnpm audit, Trivy (images + SBOM), OWASP
 ZAP, Semgrep (CI)
 
+## Ecosystem Packages
+
+The boilerplate ships pre-wired with zappzarapp's standalone packages — each
+independently maintained and usable in any project via `composer require` /
+`pnpm add`:
+
+| Package                                                                                     | Registry                                                            | Purpose                                                                 |
+| ------------------------------------------------------------------------------------------- | ------------------------------------------------------------------- | ----------------------------------------------------------------------- |
+| [`zappzarapp/security`](https://github.com/marcstraube/zappzarapp-php-security)             | [Packagist](https://packagist.org/packages/zappzarapp/security)     | CSP, security headers, CSRF, cookies, input sanitization, rate limiting |
+| [`zappzarapp/devtoolbar`](https://github.com/marcstraube/zappzarapp-php-devtoolbar)         | [Packagist](https://packagist.org/packages/zappzarapp/devtoolbar)   | In-app developer toolbar: timeline, query analyzer, exception tracking  |
+| [`zappzarapp/audit-logger`](https://github.com/marcstraube/zappzarapp-php-audit-logger)     | [Packagist](https://packagist.org/packages/zappzarapp/audit-logger) | GDPR-compliant audit logging with tamper-proof checksums (PHP)          |
+| [`@zappzarapp/audit-logger`](https://github.com/marcstraube/zappzarapp-node-audit-logger)   | [npm](https://www.npmjs.com/package/@zappzarapp/audit-logger)       | GDPR-compliant audit logging with tamper-proof checksums (Node)         |
+| [`@zappzarapp/browser-utils`](https://github.com/marcstraube/zappzarapp-node-browser-utils) | [npm](https://www.npmjs.com/package/@zappzarapp/browser-utils)      | Type-safe, zero-dependency browser/Node utilities (storage, request, …) |
+
 ## IDE Integration
 
 | Feature         | PHPStorm/WebStorm          | VS Code                  |
