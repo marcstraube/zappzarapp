@@ -48,7 +48,9 @@
             "#test-secret-access-key#",
             "#key:/usr/share/elasticsearch#",
             "#\\.zappzarapp/ai/templates/#",
-            "#\\.claude/sessions/#"
+            "#\\.claude/sessions/#",
+            "#querySelectorAll<HTMLElement>#",
+            "#fetchMock\\.mock\\.calls#"
           ]
         },
         "config": {

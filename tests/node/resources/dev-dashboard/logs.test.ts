@@ -31,7 +31,23 @@ function setupDom(): void {
       <select id="logLinesSelect"><option value="100" selected>100</option></select>
       <pre id="logModalContent"></pre>
     </div>
+    <button id="copyBtn" data-action="copy-cmd" data-cmd="make logs">Copy</button>
+    <button id="openBtn" data-action="open-log" data-logfile="app.log">app.log</button>
+    <button id="closeBtn" data-action="close-log">Close</button>
+    <button id="refreshBtn" data-action="refresh-log">Refresh</button>
   `;
+}
+
+function click(id: string): void {
+  document
+    .getElementById(id)
+    ?.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
+}
+
+function jsonResponse(body: unknown): Response {
+  return new Response(JSON.stringify(body), {
+    headers: { 'Content-Type': 'application/json' },
+  });
 }
 
 describe('DevDashboard logs page', () => {
@@ -125,6 +141,17 @@ describe('DevDashboard logs page', () => {
       expect(meta).toContain('100 lines');
     });
 
+    it('renders (empty file) and fallback metadata for a minimal response', async () => {
+      vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse({ content: '' })));
+
+      await loadLogContent('app.log');
+
+      expect(document.getElementById('logModalContent')?.textContent).toBe('(empty file)');
+      const meta = document.getElementById('logModalMeta')?.textContent ?? '';
+      expect(meta).toContain('0.0 KB');
+      expect(meta).toContain('100 lines');
+    });
+
     it('renders an API error message', async () => {
       vi.stubGlobal(
         'fetch',
@@ -157,6 +184,76 @@ describe('DevDashboard logs page', () => {
 
       expect(formatted.length).toBeGreaterThan(8);
       expect(formatted).toContain('2023');
+    });
+  });
+
+  describe('event delegation', () => {
+    it('opens the log modal when an open-log element is clicked', () => {
+      vi.stubGlobal(
+        'fetch',
+        vi.fn().mockResolvedValue(jsonResponse({ content: 'x', size: 1, modified: 0, lines: 100 }))
+      );
+
+      click('openBtn');
+
+      expect(document.getElementById('logModal')?.style.display).toBe('block');
+      expect(document.getElementById('logModalTitle')?.textContent).toBe('app.log');
+    });
+
+    it('closes the log modal when a close-log element is clicked', () => {
+      const modal = document.getElementById('logModal');
+      if (modal) modal.style.display = 'block';
+
+      click('closeBtn');
+
+      expect(document.getElementById('logModal')?.style.display).toBe('none');
+    });
+
+    it('copies the command when a copy-cmd element is clicked', async () => {
+      const writeText = vi.fn().mockResolvedValue(undefined);
+      vi.stubGlobal('navigator', { clipboard: { writeText } });
+
+      click('copyBtn');
+      await vi.waitFor(() => {
+        expect(document.getElementById('copyBtn')?.textContent).toBe('Copied!');
+      });
+
+      expect(writeText).toHaveBeenCalledWith('make logs');
+    });
+
+    // The line-count select change is covered in page-init.test.ts: its
+    // listener binds to the select element at import time.
+    it('reloads the current log when a refresh-log element is clicked', async () => {
+      const fetchMock = vi
+        .fn()
+        .mockResolvedValue(jsonResponse({ content: 'x', size: 1, modified: 0, lines: 100 }));
+      vi.stubGlobal('fetch', fetchMock);
+
+      click('openBtn');
+      click('refreshBtn');
+
+      await vi.waitFor(() => {
+        expect(fetchMock).toHaveBeenCalledTimes(2);
+      });
+    });
+
+    it('ignores clicks outside data-action elements', () => {
+      const fetchMock = vi.fn();
+      vi.stubGlobal('fetch', fetchMock);
+
+      document.body.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
+
+      expect(fetchMock).not.toHaveBeenCalled();
+      expect(document.getElementById('logModal')?.style.display).toBe('none');
+    });
+
+    it('closes the modal on Escape', () => {
+      const modal = document.getElementById('logModal');
+      if (modal) modal.style.display = 'block';
+
+      document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+
+      expect(document.getElementById('logModal')?.style.display).toBe('none');
     });
   });
 });

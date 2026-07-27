@@ -252,6 +252,56 @@ DevDashboard integration.
 
 ---
 
+## Frontend Testing (Addendum)
+
+### Import-time element listeners need the DOM before a fresh import
+
+**Symptom:** A happy-dom test simulates a click on a nav link (or a `change` on
+a select) and nothing happens, although the same wiring works in the browser.
+
+**Cause:** DevDashboard page modules run `init()` at import time. Listeners
+attached to `document` (event delegation, keydown) survive any later `innerHTML`
+reset — but listeners bound to concrete elements (`initTabs()` nav links,
+`getElementById(...).addEventListener`) bind to whatever exists at import time.
+With the usual static test import, that is an empty DOM, so those listeners are
+never attached.
+
+**Fix:** Test element-bound wiring in a separate test file that builds the DOM
+first and then does `await import('...')` (fresh module graph per test file).
+Everything document-delegated can keep the normal static import. See
+tests/node/resources/dev-dashboard/page-init.test.ts.
+
+Found 2026-07-27 migrating the remaining DevDashboard templates to Vite modules.
+
+---
+
+### lint:fix globs drift from lint globs silently
+
+**Symptom:** `make lint-node` reports Prettier errors that `make lint-node-fix`
+does not fix.
+
+**Cause:** package.json `lint` and `lint:fix` maintain their file globs
+separately; `resources/js/**/*.ts` had been added to `lint` only. Anything
+covered by check-globs but not fix-globs produces exactly this loop.
+
+**Fix:** Keep both script globs identical (fixed 2026-07-27). When adding a new
+source root to one lint script, grep for the sibling scripts.
+
+---
+
+### Node coverage thresholds are a red baseline, not a CI gate
+
+**Observation (2026-07-27):** `make test-coverage-node` exits non-zero on a
+clean develop checkout — the global Vitest thresholds (80% incl. branches) are
+not met by the existing backend code. CI only enforces the PHP gate
+(`make coverage-check-php`); the Node coverage step runs solely on pushes to the
+dead `master` ref. `make check` does not include the Node coverage gate either.
+Do not chase the global branch threshold when adding well-tested files; treat
+fixing the baseline (or rightsizing the thresholds) as its own task.
+
+---
+
 ## Last Updated
 
-2026-07-27 (added: new root config files need compose mounts)
+2026-07-27 (added: import-time listeners in tests, lint:fix glob drift, node
+coverage baseline)
