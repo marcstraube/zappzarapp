@@ -3956,14 +3956,24 @@ docs-node: docs-node-backend docs-node-frontend ## Generate all Node/TypeScript 
 docs-node-backend: ## Generate Node.js Backend API documentation using TypeDoc
 	@echo -e "\033[0;33mGenerating Node.js Backend API documentation...\033[0m"
 	@# Ensure output directory exists with proper permissions (cross-UID in CI)
-	@mkdir -p docs/api/node-backend && chmod 777 docs/api docs/api/node-backend 2>/dev/null || true
+	@mkdir -p docs/api/node-backend build/tmp && chmod 777 docs/api docs/api/node-backend 2>/dev/null || true
+	@# Normalize ownership BEFORE generating: files left behind by another UID
+	@# block TypeDoc's output cleaning and the sed post-processing silently
+	@$(LOAD_ENV) && docker run --rm -v "$$(pwd)/docs:/docs" $(ALPINE_IMAGE) chown -R $${USER_ID:-1000}:$${GROUP_ID:-1000} /docs/api/node-backend
+	@touch build/tmp/.docs-node-backend.stamp
 	@$(DC_RUN) run --rm node pnpm run docs:backend
+	@# TypeDoc can report success without having written - verify freshness
+	@if [ ! docs/api/node-backend/index.html -nt build/tmp/.docs-node-backend.stamp ]; then \
+		echo -e "\033[0;31mError: docs/api/node-backend/index.html was not regenerated\033[0m"; \
+		exit 1; \
+	fi
 	@echo -e "\033[0;33mSetting dynamic title...\033[0m"
 	@$(DC_RUN) run --rm node sh -c '\
+		set -e; \
 		PROJECT_NAME=$$(node -e "console.log(require(\"/app/package.json\").name.split(\"/\").pop().replace(/^./, c => c.toUpperCase()))"); \
 		PROJECT_VERSION=$$(node -e "console.log(require(\"/app/package.json\").version || \"0.0.0\")"); \
-		find /app/docs/api/node-backend -name "*.html" -exec sed -i "s|<title>Node Backend API - v$$PROJECT_VERSION</title>|<title>$$PROJECT_NAME - Backend API - v$$PROJECT_VERSION</title>|g" {} \; ; \
-		find /app/docs/api/node-backend -name "*.html" -exec sed -i "s|>Node Backend API - v$$PROJECT_VERSION</a>|>$$PROJECT_NAME - Backend API</a>|g" {} \;'
+		find /app/docs/api/node-backend -name "*.html" -print0 | xargs -0 sed -i "s|<title>Node Backend API - v$$PROJECT_VERSION</title>|<title>$$PROJECT_NAME - Backend API - v$$PROJECT_VERSION</title>|g"; \
+		find /app/docs/api/node-backend -name "*.html" -print0 | xargs -0 sed -i "s|>Node Backend API - v$$PROJECT_VERSION</a>|>$$PROJECT_NAME - Backend API</a>|g"'
 	@# Fix ownership (docs may be generated with different UID)
 	@$(LOAD_ENV) && docker run --rm -v "$$(pwd)/docs:/docs" $(ALPINE_IMAGE) chown -R $${USER_ID:-1000}:$${GROUP_ID:-1000} /docs/api/node-backend
 	@echo -e "\033[0;32mBackend documentation generated in docs/api/node-backend/\033[0m"
@@ -3973,14 +3983,21 @@ docs-node-frontend: ## Generate Node.js Frontend documentation using TypeDoc
 		echo -e "\033[0;33mNo TypeScript files in src/node/frontend/ - skipping frontend docs\033[0m"; \
 	else \
 		echo -e "\033[0;33mGenerating Node.js Frontend documentation...\033[0m"; \
-		mkdir -p docs/api/node-frontend && chmod 777 docs/api docs/api/node-frontend 2>/dev/null || true; \
+		mkdir -p docs/api/node-frontend build/tmp && chmod 777 docs/api docs/api/node-frontend 2>/dev/null || true; \
+		$(LOAD_ENV) && docker run --rm -v "$$(pwd)/docs:/docs" $(ALPINE_IMAGE) chown -R $${USER_ID:-1000}:$${GROUP_ID:-1000} /docs/api/node-frontend; \
+		touch build/tmp/.docs-node-frontend.stamp; \
 		$(DC_RUN) run --rm node pnpm run docs:frontend; \
+		if [ ! docs/api/node-frontend/index.html -nt build/tmp/.docs-node-frontend.stamp ]; then \
+			echo -e "\033[0;31mError: docs/api/node-frontend/index.html was not regenerated\033[0m"; \
+			exit 1; \
+		fi; \
 		echo -e "\033[0;33mSetting dynamic title...\033[0m"; \
 		$(DC_RUN) run --rm node sh -c '\
+			set -e; \
 			PROJECT_NAME=$$(node -e "console.log(require(\"/app/package.json\").name.split(\"/\").pop().replace(/^./, c => c.toUpperCase()))"); \
 			PROJECT_VERSION=$$(node -e "console.log(require(\"/app/package.json\").version || \"0.0.0\")"); \
-			find /app/docs/api/node-frontend -name "*.html" -exec sed -i "s|<title>Node Frontend - v$$PROJECT_VERSION</title>|<title>$$PROJECT_NAME - Frontend - v$$PROJECT_VERSION</title>|g" {} \; ; \
-			find /app/docs/api/node-frontend -name "*.html" -exec sed -i "s|>Node Frontend - v$$PROJECT_VERSION</a>|>$$PROJECT_NAME - Frontend</a>|g" {} \;'; \
+			find /app/docs/api/node-frontend -name "*.html" -print0 | xargs -0 sed -i "s|<title>Node Frontend - v$$PROJECT_VERSION</title>|<title>$$PROJECT_NAME - Frontend - v$$PROJECT_VERSION</title>|g"; \
+			find /app/docs/api/node-frontend -name "*.html" -print0 | xargs -0 sed -i "s|>Node Frontend - v$$PROJECT_VERSION</a>|>$$PROJECT_NAME - Frontend</a>|g"'; \
 		$(LOAD_ENV) && docker run --rm -v "$$(pwd)/docs:/docs" $(ALPINE_IMAGE) chown -R $${USER_ID:-1000}:$${GROUP_ID:-1000} /docs/api/node-frontend; \
 		echo -e "\033[0;32mFrontend documentation generated in docs/api/node-frontend/\033[0m"; \
 	fi

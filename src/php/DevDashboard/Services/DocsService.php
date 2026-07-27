@@ -6,8 +6,10 @@ namespace DevDashboard\Services;
 
 use Exception;
 use FilesystemIterator;
+use RecursiveCallbackFilterIterator;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
+use SplFileInfo;
 
 /**
  * Service for checking documentation availability and freshness
@@ -149,8 +151,15 @@ readonly class DocsService
         $extPattern  = '/\.(' . implode('|', $extensions) . ')$/i';
 
         try {
-            $iterator = new RecursiveIteratorIterator(
+            // Skip node_modules: dependency installs would otherwise bump the
+            // newest source mtime and mark freshly generated docs as outdated
+            $files = new RecursiveCallbackFilterIterator(
                 new RecursiveDirectoryIterator($directory, FilesystemIterator::SKIP_DOTS),
+                static fn (SplFileInfo $current): bool => $current->getFilename() !== 'node_modules',
+            );
+
+            $iterator = new RecursiveIteratorIterator(
+                $files,
                 RecursiveIteratorIterator::LEAVES_ONLY,
             );
 
