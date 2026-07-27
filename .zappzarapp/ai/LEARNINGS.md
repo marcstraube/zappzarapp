@@ -301,7 +301,52 @@ fixing the baseline (or rightsizing the thresholds) as its own task.
 
 ---
 
+## Docker & Containers (Addendum 2)
+
+### Single-file bind mounts serve a stale inode after an atomic-replace edit
+
+**Symptom:** You edit a bind-mounted root config file on the host (e.g.
+`vitest.config.ts`), but a long-running container keeps reading the OLD content
+— `grep` inside the container shows different line numbers/values than the host
+file.
+
+**Cause:** Editors (and the Edit tool) write a temp file and `rename()` it over
+the target, which changes the file's inode. Docker binds a SINGLE file by its
+inode at container start; when the host inode is replaced, the container's mount
+still points at the now-orphaned old inode. (Directory bind mounts are immune —
+they resolve names live.)
+
+**Fix:** Restart the affected long-running container
+(`docker compose restart <svc>`) to re-bind the current inode. Ephemeral
+`compose run --rm` containers are immune — they re-resolve the mount on each
+start. Found 2026-07-27: a `vitest.config.ts` threshold change was invisible to
+the running `node` container until restart.
+
+---
+
+## Frontend Testing (Addendum 2)
+
+### The @vitest/ui html reporter crashes coverage runs (ENOENT cp)
+
+**Symptom:** `make test-coverage-node` fails with an unhandled
+`ENOENT: lstat '/app/build/coverage/node'` and a non-zero exit, even when every
+test passes and thresholds are met. The stack points at
+`HTMLReporter.onFinishedReportCoverage` → `node:fs/cp`.
+
+**Cause:** The test `reporters: ['verbose', 'html']` include the `@vitest/ui`
+HTML reporter, whose `onFinishedReportCoverage` `cp`s the coverage report dir
+into its UI bundle. During a coverage run it races/mismatches on that path and
+throws. A CI coverage gate does not need the interactive UI report at all.
+
+**Fix:** Scope coverage runs to a non-UI reporter — `test:coverage` is
+`vitest run --coverage --reporter=verbose`. Regular `make test-node` keeps the
+html reporter (it never triggers the coverage-copy path). Found 2026-07-27 while
+making the Node coverage gate green.
+
+---
+
 ## Last Updated
 
 2026-07-27 (added: import-time listeners in tests, lint:fix glob drift, node
-coverage baseline)
+coverage baseline, single-file bind-mount stale inode, @vitest/ui coverage
+ENOENT)

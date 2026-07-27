@@ -335,6 +335,32 @@ describe('ElasticsearchService', () => {
     });
   });
 
+  describe('createIndex edge cases', () => {
+    it('should pass only settings when no mappings are given', async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        text: () => Promise.resolve(JSON.stringify({ acknowledged: true })),
+      });
+
+      const service = new ElasticsearchService({ url: 'http://localhost:9200' });
+      await service.createIndex('new-index', undefined, { number_of_shards: 2 });
+
+      const [, options] = mockFetch.mock.calls[0] as [string, RequestInit];
+      const body = options.body as string;
+      expect(body).toContain('"settings"');
+      expect(body).not.toContain('"mappings"');
+    });
+
+    it('should return false on error', async () => {
+      mockFetch.mockRejectedValueOnce(new Error('Network error'));
+
+      const service = new ElasticsearchService({ url: 'http://localhost:9200' });
+      const result = await service.createIndex('new-index');
+
+      expect(result).toBe(false);
+    });
+  });
+
   describe('deleteIndex', () => {
     it('should return true on success', async () => {
       mockFetch.mockResolvedValueOnce({
@@ -346,6 +372,15 @@ describe('ElasticsearchService', () => {
       const result = await service.deleteIndex('test-index');
 
       expect(result).toBe(true);
+    });
+
+    it('should return false on error', async () => {
+      mockFetch.mockRejectedValueOnce(new Error('Network error'));
+
+      const service = new ElasticsearchService({ url: 'http://localhost:9200' });
+      const result = await service.deleteIndex('test-index');
+
+      expect(result).toBe(false);
     });
   });
 
@@ -364,6 +399,26 @@ describe('ElasticsearchService', () => {
 
       const service = new ElasticsearchService({ url: 'http://localhost:9200' });
       const result = await service.indexExists('non-existent');
+
+      expect(result).toBe(false);
+    });
+
+    it('should return false on network error', async () => {
+      mockFetch.mockRejectedValueOnce(new Error('Network error'));
+
+      const service = new ElasticsearchService({ url: 'http://localhost:9200' });
+      const result = await service.indexExists('test-index');
+
+      expect(result).toBe(false);
+    });
+  });
+
+  describe('delete error handling', () => {
+    it('should return false on network error', async () => {
+      mockFetch.mockRejectedValueOnce(new Error('Network error'));
+
+      const service = new ElasticsearchService({ url: 'http://localhost:9200' });
+      const result = await service.delete('test-index', 'doc-1');
 
       expect(result).toBe(false);
     });
@@ -446,6 +501,223 @@ describe('ElasticsearchService', () => {
       const result = await service.isAvailable();
 
       expect(result).toBe(false);
+    });
+  });
+
+  describe('API key authentication', () => {
+    it('should send the ApiKey Authorization header when a key is configured', async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        text: () => Promise.resolve(JSON.stringify({ status: 'green' })),
+      });
+
+      const service = new ElasticsearchService({ url: 'http://localhost:9200', apiKey: 'secret' });
+      await service.getClusterHealth();
+
+      const [, options] = mockFetch.mock.calls[0] as [string, RequestInit];
+      expect((options.headers as Record<string, string>)['Authorization']).toBe('ApiKey secret');
+    });
+
+    it('should send the ApiKey header on HEAD requests too', async () => {
+      mockFetch.mockResolvedValueOnce({ ok: true });
+
+      const service = new ElasticsearchService({ url: 'http://localhost:9200', apiKey: 'secret' });
+      await service.indexExists('test-index');
+
+      const [, options] = mockFetch.mock.calls[0] as [string, RequestInit];
+      expect((options.headers as Record<string, string>)['Authorization']).toBe('ApiKey secret');
+    });
+
+    it('should omit the Authorization header when no key is configured', async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        text: () => Promise.resolve(JSON.stringify({ status: 'green' })),
+      });
+
+      const service = new ElasticsearchService({ url: 'http://localhost:9200' });
+      await service.getClusterHealth();
+
+      const [, options] = mockFetch.mock.calls[0] as [string, RequestInit];
+      expect((options.headers as Record<string, string>)['Authorization']).toBeUndefined();
+    });
+  });
+
+  describe('request error handling', () => {
+    it('should return null when the response is not ok', async () => {
+      mockFetch.mockResolvedValueOnce({ ok: false });
+
+      const service = new ElasticsearchService({ url: 'http://localhost:9200' });
+      const result = await service.search('test-index', { match_all: {} });
+
+      expect(result).toBeNull();
+    });
+
+    it('should treat an empty response body as an empty object', async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        text: () => Promise.resolve(''),
+      });
+
+      const service = new ElasticsearchService({ url: 'http://localhost:9200' });
+      const result = await service.refresh('test-index');
+
+      expect(result).toBe(true);
+    });
+  });
+
+  describe('update', () => {
+    it('should return true when the update reports a result', async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        text: () => Promise.resolve(JSON.stringify({ result: 'updated' })),
+      });
+
+      const service = new ElasticsearchService({ url: 'http://localhost:9200' });
+      const result = await service.update('test-index', 'doc-1', { name: 'Updated' });
+
+      expect(result).toBe(true);
+    });
+
+    it('should return false when the response has no result field', async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        text: () => Promise.resolve(JSON.stringify({})),
+      });
+
+      const service = new ElasticsearchService({ url: 'http://localhost:9200' });
+      const result = await service.update('test-index', 'doc-1', { name: 'Updated' });
+
+      expect(result).toBe(false);
+    });
+
+    it('should return false on error', async () => {
+      mockFetch.mockRejectedValueOnce(new Error('Network error'));
+
+      const service = new ElasticsearchService({ url: 'http://localhost:9200' });
+      const result = await service.update('test-index', 'doc-1', { name: 'Updated' });
+
+      expect(result).toBe(false);
+    });
+  });
+
+  describe('deleteByQuery', () => {
+    it('should return the deleted count on success', async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        text: () => Promise.resolve(JSON.stringify({ deleted: 4 })),
+      });
+
+      const service = new ElasticsearchService({ url: 'http://localhost:9200' });
+      const result = await service.deleteByQuery('test-index', { match_all: {} });
+
+      expect(result).toBe(4);
+    });
+
+    it('should return -1 when the response is not ok', async () => {
+      mockFetch.mockResolvedValueOnce({ ok: false });
+
+      const service = new ElasticsearchService({ url: 'http://localhost:9200' });
+      const result = await service.deleteByQuery('test-index', { match_all: {} });
+
+      expect(result).toBe(-1);
+    });
+
+    it('should return -1 on error', async () => {
+      mockFetch.mockRejectedValueOnce(new Error('Network error'));
+
+      const service = new ElasticsearchService({ url: 'http://localhost:9200' });
+      const result = await service.deleteByQuery('test-index', { match_all: {} });
+
+      expect(result).toBe(-1);
+    });
+  });
+
+  describe('refresh', () => {
+    it('should return false on error', async () => {
+      mockFetch.mockRejectedValueOnce(new Error('Network error'));
+
+      const service = new ElasticsearchService({ url: 'http://localhost:9200' });
+      const result = await service.refresh('test-index');
+
+      expect(result).toBe(false);
+    });
+  });
+
+  describe('get error handling', () => {
+    it('should return null on error', async () => {
+      mockFetch.mockRejectedValueOnce(new Error('Network error'));
+
+      const service = new ElasticsearchService({ url: 'http://localhost:9200' });
+      const result = await service.get('test-index', 'doc-1');
+
+      expect(result).toBeNull();
+    });
+  });
+
+  describe('aggregate', () => {
+    it('should pass an optional query alongside the aggregations', async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        text: () => Promise.resolve(JSON.stringify({ aggregations: { count: { value: 3 } } })),
+      });
+
+      const service = new ElasticsearchService({ url: 'http://localhost:9200' });
+      await service.aggregate(
+        'test-index',
+        { count: { value_count: { field: 'id' } } },
+        { term: { active: true } }
+      );
+
+      const [, options] = mockFetch.mock.calls[0] as [string, RequestInit];
+      expect(options.body as string).toContain('"query"');
+    });
+
+    it('should return null on error', async () => {
+      mockFetch.mockRejectedValueOnce(new Error('Network error'));
+
+      const service = new ElasticsearchService({ url: 'http://localhost:9200' });
+      const result = await service.aggregate('test-index', {
+        count: { value_count: { field: 'id' } },
+      });
+
+      expect(result).toBeNull();
+    });
+  });
+
+  describe('bulkIndex edge cases', () => {
+    it('should count all documents as errors when the response is not ok', async () => {
+      mockFetch.mockResolvedValueOnce({ ok: false });
+
+      const service = new ElasticsearchService({ url: 'http://localhost:9200' });
+      const result = await service.bulkIndex('test-index', [{ id: '1' }, { id: '2' }]);
+
+      expect(result).toEqual({ indexed: 0, errors: 2 });
+    });
+
+    it('should accept numeric ids and documents without an id field', async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        text: () =>
+          Promise.resolve(
+            JSON.stringify({ items: [{ index: { status: 201 } }, { index: { status: 201 } }] })
+          ),
+      });
+
+      const service = new ElasticsearchService({ url: 'http://localhost:9200' });
+      const result = await service.bulkIndex('test-index', [{ id: 7, name: 'A' }, { name: 'B' }]);
+
+      expect(result.indexed).toBe(2);
+      const [, options] = mockFetch.mock.calls[0] as [string, RequestInit];
+      expect(options.body as string).toContain('"_id":"7"');
+    });
+
+    it('should return errors on network failure', async () => {
+      mockFetch.mockRejectedValueOnce(new Error('Network error'));
+
+      const service = new ElasticsearchService({ url: 'http://localhost:9200' });
+      const result = await service.bulkIndex('test-index', [{ id: '1' }]);
+
+      expect(result).toEqual({ indexed: 0, errors: 1 });
     });
   });
 });
