@@ -144,14 +144,17 @@ the hardened container setup:
   owned by other users.
 - **`no-new-privileges` blocks `su-exec`** — privilege transitions are denied.
   Run containers as the target user directly via `user: "UID:GID"` instead.
-- **Secrets flow**: the entrypoint (running as root) copies secrets to
-  `/tmp/secrets/` with mode 0444; application processes read them from there.
+- **Secrets flow**: PHP reads secrets directly from the `/run/secrets` bind
+  mount (files are world-readable, mode 0644). The Node development entrypoint
+  additionally copies them to `/tmp/secrets/` with mode 0444, because the Node
+  credential loader looks up `<name>.txt` secrets there.
 
 ## Security Considerations
 
 ### Development
 
-- Secrets are stored in `./secrets/` with `chmod 600` permissions
+- Secrets are stored in `./secrets/` with mode 0644 (world-readable, so
+  unprivileged container users can read them through the bind mount)
 - Directory is excluded from Git via `.gitignore`
 - Auto-generated with cryptographically secure random values
 

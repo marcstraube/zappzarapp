@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Infrastructure\Search;
 
+use App\Infrastructure\Config\CredentialLoader;
+
 /**
  * Meilisearch Configuration
  *
@@ -11,7 +13,7 @@ namespace App\Infrastructure\Search;
  * - Direct URL parameter
  * - MEILISEARCH_URL environment variable
  * - Individual environment variables (MEILISEARCH_HOST, MEILISEARCH_PORT)
- * - Docker secrets for master key
+ * - Docker secrets for master key (via CredentialLoader)
  *
  * Priority order for URL:
  * 1. URL parameter (constructor)
@@ -22,7 +24,7 @@ namespace App\Infrastructure\Search;
  * Priority order for master key:
  * 1. Docker secret (/run/secrets/meilisearch_master_key.txt)
  * 2. MEILISEARCH_MASTER_KEY environment variable
- * 3. Empty string (for development without authentication)
+ * 3. Empty string (development without authentication)
  *
  * @package Infrastructure\Search
  *
@@ -30,14 +32,18 @@ namespace App\Infrastructure\Search;
  */
 final readonly class MeilisearchConfig
 {
+    private CredentialLoader $credentials;
+
     public string $url;
 
     public string $masterKey;
 
     public bool $useTls;
 
-    public function __construct(?string $url = null)
+    public function __construct(?string $url = null, ?CredentialLoader $credentials = null)
     {
+        $this->credentials = $credentials ?? CredentialLoader::docker();
+
         $config = $this->parseConfig($url);
 
         $this->url       = $config['url'];
@@ -59,7 +65,7 @@ final readonly class MeilisearchConfig
         }
 
         $useTls    = str_starts_with($url, 'https://');
-        $masterKey = $this->loadCredential('meilisearch_master_key', 'MEILISEARCH_MASTER_KEY', '');
+        $masterKey = $this->credentials->tryLoad('meilisearch_master_key', 'MEILISEARCH_MASTER_KEY') ?? '';
 
         return [
             'url'       => $url,
@@ -126,44 +132,4 @@ final readonly class MeilisearchConfig
         return $default;
     }
 
-    /**
-     * Load credential from Docker secret or environment variable
-     *
-     * @noinspection PhpSameParameterValueInspection Config class - called with fixed defaults
-     */
-    private function loadCredential(string $secretName, string $envName, string $default): string
-    {
-        // Try Docker secret with .txt extension
-        $value = $this->readSecret(sprintf('/run/secrets/%s.txt', $secretName));
-        if ($value !== null) {
-            return $value;
-        }
-
-        // Try Docker secret without extension
-        $value = $this->readSecret('/run/secrets/' . $secretName);
-        if ($value !== null) {
-            return $value;
-        }
-
-        // Try environment variable
-        return $this->getEnvString($envName, $default);
-    }
-
-    /**
-     * Read a secret file if it exists
-     */
-    private function readSecret(string $path): ?string
-    {
-        if (!file_exists($path)) {
-            return null;
-        }
-
-        $value = file_get_contents($path);
-
-        if ($value === false) {
-            return null;
-        }
-
-        return trim($value);
-    }
 }

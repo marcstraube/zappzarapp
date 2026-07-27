@@ -37,7 +37,9 @@ if [ "$(id -u)" = "0" ]; then
 
     fix_workspace_permissions
 
-    # Copy secrets to readable location (as root, for all users)
+    # Copy secrets to /tmp/secrets (as root, for all users): the Node
+    # credential loader (Shared/Config/credentials.ts) looks up "<name>.txt"
+    # secrets there - /run/secrets is only checked for extension-less names
     if [ -d "/run/secrets" ]; then
         mkdir -p /tmp/secrets
         chmod 755 /tmp/secrets

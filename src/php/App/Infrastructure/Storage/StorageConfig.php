@@ -4,13 +4,15 @@ declare(strict_types=1);
 
 namespace App\Infrastructure\Storage;
 
+use App\Infrastructure\Config\CredentialLoader;
+
 /**
  * S3-Compatible Storage Configuration
  *
  * Handles parsing of connection configuration from:
  * - Direct parameters (constructor)
  * - Environment variables
- * - Docker secrets for credentials
+ * - Docker secrets for credentials (via CredentialLoader)
  *
  * Priority order for endpoint:
  * 1. Endpoint parameter (constructor)
@@ -22,7 +24,7 @@ namespace App\Infrastructure\Storage;
  * 1. Docker secrets (/run/secrets/seaweedfs_access_key.txt, etc.)
  * 2. S3_ACCESS_KEY / S3_SECRET_KEY environment variables
  * 3. SEAWEEDFS_S3_ACCESS_KEY / SEAWEEDFS_S3_SECRET_KEY environment variables
- * 4. Default: admin/admin (development)
+ * 4. Insecure development default: admin/admin
  *
  * @package Infrastructure\Storage
  *
@@ -30,6 +32,8 @@ namespace App\Infrastructure\Storage;
  */
 final readonly class StorageConfig
 {
+    private CredentialLoader $credentials;
+
     public string $endpoint;
 
     public string $accessKey;
@@ -51,8 +55,11 @@ final readonly class StorageConfig
         ?string $accessKey = null,
         ?string $secretKey = null,
         ?string $region = null,
-        ?string $bucket = null
+        ?string $bucket = null,
+        ?CredentialLoader $credentials = null
     ) {
+        $this->credentials = $credentials ?? CredentialLoader::docker();
+
         $config = $this->parseConfig($endpoint, $accessKey, $secretKey, $region, $bucket);
 
         $this->endpoint     = $config['endpoint'];
@@ -80,13 +87,13 @@ final readonly class StorageConfig
         $endpoint ??= $this->getEnvString('S3_ENDPOINT_URL', null)
             ?? $this->getEnvString('SEAWEEDFS_ENDPOINT', 'http://seaweedfs:8333');
 
-        $accessKey ??= $this->loadCredential(
+        $accessKey ??= $this->credentials->loadWithInsecureDefault(
             'seaweedfs_access_key',
             ['S3_ACCESS_KEY', 'SEAWEEDFS_S3_ACCESS_KEY'],
             'admin'
         );
 
-        $secretKey ??= $this->loadCredential(
+        $secretKey ??= $this->credentials->loadWithInsecureDefault(
             'seaweedfs_secret_key',
             ['S3_SECRET_KEY', 'SEAWEEDFS_S3_SECRET_KEY'],
             'admin'
@@ -149,55 +156,4 @@ final readonly class StorageConfig
         return $default;
     }
 
-    /**
-     * Load credential from Docker secret or environment variables
-     *
-     * @param string $secretName Name of the Docker secret file
-     * @param array<string> $envNames Environment variable names to try (in order)
-     * @param string $default Default value
-     *
-     * @noinspection PhpSameParameterValueInspection - Default kept for API flexibility
-     */
-    private function loadCredential(string $secretName, array $envNames, string $default): string
-    {
-        // Try Docker secret with .txt extension
-        $value = $this->readSecret(sprintf('/run/secrets/%s.txt', $secretName));
-        if ($value !== null) {
-            return $value;
-        }
-
-        // Try Docker secret without extension
-        $value = $this->readSecret('/run/secrets/' . $secretName);
-        if ($value !== null) {
-            return $value;
-        }
-
-        // Try environment variables in order
-        foreach ($envNames as $envName) {
-            $envValue = $this->getEnvString($envName, null);
-            if ($envValue !== null) {
-                return $envValue;
-            }
-        }
-
-        return $default;
-    }
-
-    /**
-     * Read a secret file if it exists
-     */
-    private function readSecret(string $path): ?string
-    {
-        if (!file_exists($path)) {
-            return null;
-        }
-
-        $value = file_get_contents($path);
-
-        if ($value === false) {
-            return null;
-        }
-
-        return trim($value);
-    }
 }

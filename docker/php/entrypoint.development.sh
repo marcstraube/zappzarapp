@@ -5,20 +5,8 @@
 
 set -e
 
-# Copy secrets to readable location (development only)
-# Host files stay secure at 600, copies at /tmp/secrets are 444
-# Application code checks /tmp/secrets first, falls back to /run/secrets
-if [ -d "/run/secrets" ]; then
-    mkdir -p /tmp/secrets
-    chmod 755 /tmp/secrets
-    for secret in /run/secrets/*; do
-        if [ -f "$secret" ]; then
-            name=$(basename "$secret")
-            cp "$secret" "/tmp/secrets/$name" && chmod 444 "/tmp/secrets/$name"
-        fi
-    done
-    echo "[entrypoint.development] Secrets copied to /tmp/secrets (readable)"
-fi
+# Secrets are read directly from the /run/secrets bind mount
+# (mode 0644 via 'make setup', readable by www-data)
 
 # Configure PHP timezone from TZ environment variable
 # Note: PHP does NOT automatically use the TZ env var for date.timezone
