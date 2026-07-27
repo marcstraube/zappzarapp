@@ -31,6 +31,7 @@ import { Pool } from 'pg';
 import { createClient, RedisClientType } from 'redis';
 import * as http from 'http';
 import * as https from 'https';
+import * as net from 'net';
 import { getHttpsTlsOptions, getTlsSocketOptions } from '../Config/TlsConfig';
 
 /**
@@ -87,12 +88,19 @@ interface HealthCheckConfig {
   enableDatabase: boolean;
   enableRedis: boolean;
   enableMeilisearch: boolean;
+  enableElasticsearch: boolean;
+  enableRabbitmq: boolean;
+  enableSeaweedfs: boolean;
   enableNodeFrontend: boolean;
   nodeMode: string;
   environment: string;
   redisUrl: string;
   databaseType: string;
   meilisearchUrl: string;
+  elasticsearchUrl: string;
+  rabbitmqHost: string;
+  rabbitmqPort: number;
+  seaweedfsMasterUrl: string;
 }
 
 // Timeouts
@@ -118,6 +126,33 @@ function getEnv(name: string, fallback: string): string {
 }
 
 /**
+ * Resolve the RabbitMQ host/port for a plain TCP reachability probe.
+ *
+ * Prefers RABBITMQ_URL (amqp:// or amqps://) and falls back to the discrete
+ * RABBITMQ_HOST / RABBITMQ_PORT variables, mirroring QueueService.
+ */
+function resolveRabbitmqTarget(): { host: string; port: number } {
+  const url = process.env.RABBITMQ_URL;
+
+  if (url !== undefined && url !== '') {
+    try {
+      const parsed = new URL(url);
+      return {
+        host: parsed.hostname,
+        port: parsed.port !== '' ? Number(parsed.port) : 5672,
+      };
+    } catch {
+      // Fall through to discrete host/port variables
+    }
+  }
+
+  return {
+    host: getEnv('RABBITMQ_HOST', 'rabbitmq'),
+    port: Number(getEnv('RABBITMQ_PORT', '5672')),
+  };
+}
+
+/**
  * Load health check configuration from environment
  */
 function loadConfig(): HealthCheckConfig {
@@ -126,16 +161,25 @@ function loadConfig(): HealthCheckConfig {
   // Node frontend is enabled if NODE_MODE includes 'framework'
   const enableNodeFrontend = nodeMode.includes('framework');
 
+  const rabbitmq = resolveRabbitmqTarget();
+
   return {
     enableDatabase: parseBool(process.env.ENABLE_DATABASE, false),
     enableRedis: parseBool(process.env.ENABLE_REDIS, false),
     enableMeilisearch: parseBool(process.env.ENABLE_MEILISEARCH, false),
+    enableElasticsearch: parseBool(process.env.ENABLE_ELASTICSEARCH, false),
+    enableRabbitmq: parseBool(process.env.ENABLE_RABBITMQ, false),
+    enableSeaweedfs: parseBool(process.env.ENABLE_SEAWEEDFS, false),
     enableNodeFrontend,
     nodeMode,
     environment: getEnv('NODE_ENV', 'production'),
     redisUrl: getEnv('REDIS_URL', 'redis://redis:6379'),
     databaseType: getEnv('DB_TYPE', 'postgres'),
     meilisearchUrl: getEnv('MEILISEARCH_URL', 'https://meilisearch:7700'),
+    elasticsearchUrl: getEnv('ELASTICSEARCH_URL', 'https://elasticsearch:9200'),
+    rabbitmqHost: rabbitmq.host,
+    rabbitmqPort: rabbitmq.port,
+    seaweedfsMasterUrl: getEnv('SEAWEEDFS_MASTER_URL', 'http://seaweedfs:9333'),
   };
 }
 
@@ -209,6 +253,27 @@ export class HealthCheckService {
       overallStatus = 'degraded';
     }
 
+    // Check Elasticsearch
+    const elasticsearchCheck = await this.checkElasticsearch();
+    checks.elasticsearch = elasticsearchCheck;
+    if (elasticsearchCheck.status === 'unhealthy') {
+      overallStatus = 'degraded';
+    }
+
+    // Check RabbitMQ
+    const rabbitmqCheck = await this.checkRabbitmq();
+    checks.rabbitmq = rabbitmqCheck;
+    if (rabbitmqCheck.status === 'unhealthy') {
+      overallStatus = 'degraded';
+    }
+
+    // Check SeaweedFS
+    const seaweedfsCheck = await this.checkSeaweedfs();
+    checks.seaweedfs = seaweedfsCheck;
+    if (seaweedfsCheck.status === 'unhealthy') {
+      overallStatus = 'degraded';
+    }
+
     // Check Node Frontend (if applicable)
     if (this.config.enableNodeFrontend) {
       const frontendCheck = await this.checkNodeFrontend();
@@ -242,6 +307,15 @@ export class HealthCheckService {
 
     // Meilisearch
     services.meilisearch = await this.checkMeilisearch();
+
+    // Elasticsearch
+    services.elasticsearch = await this.checkElasticsearch();
+
+    // RabbitMQ
+    services.rabbitmq = await this.checkRabbitmq();
+
+    // SeaweedFS
+    services.seaweedfs = await this.checkSeaweedfs();
 
     // Node Frontend
     services['node-frontend'] = this.config.enableNodeFrontend
@@ -349,6 +423,70 @@ export class HealthCheckService {
   }
 
   /**
+   * Perform a simple HTTP(S) GET and resolve with status code and body.
+   *
+   * Honors internal TLS options and the shared request timeout. Used by the
+   * HTTP-based service probes (Meilisearch, Elasticsearch, SeaweedFS).
+   */
+  private httpGet(rawUrl: string): Promise<{ statusCode: number; body: string }> {
+    return new Promise((resolve, reject) => {
+      const url = new URL(rawUrl);
+      const isHttps = url.protocol === 'https:';
+      const options = {
+        hostname: url.hostname,
+        port: url.port || (isHttps ? 443 : 80),
+        path: `${url.pathname}${url.search}`,
+        method: 'GET',
+        timeout: HTTP_TIMEOUT_MS,
+        ...getHttpsTlsOptions(),
+      };
+
+      const transport = isHttps ? https : http;
+      const req = transport.request(options, (res) => {
+        let data = '';
+        res.on('data', (chunk: Buffer) => {
+          data += chunk.toString();
+        });
+        res.on('end', () => resolve({ statusCode: res.statusCode ?? 0, body: data }));
+      });
+
+      req.on('error', (err) => reject(err));
+      req.on('timeout', () => {
+        req.destroy();
+        reject(new Error('Request timeout'));
+      });
+
+      req.end();
+    });
+  }
+
+  /**
+   * Probe a plain TCP connection to a host/port.
+   *
+   * Verifies the port is accepting connections without speaking the wire
+   * protocol — the same reachability signal the PHP health check uses for
+   * RabbitMQ.
+   */
+  private checkTcp(host: string, port: number): Promise<void> {
+    return new Promise((resolve, reject) => {
+      const socket = new net.Socket();
+
+      const fail = (err: Error): void => {
+        socket.destroy();
+        reject(err);
+      };
+
+      socket.setTimeout(CHECK_TIMEOUT_MS);
+      socket.once('error', fail);
+      socket.once('timeout', () => fail(new Error('Connection timeout')));
+      socket.connect(port, host, () => {
+        socket.end();
+        resolve();
+      });
+    });
+  }
+
+  /**
    * Check Meilisearch connection via health endpoint
    */
   private async checkMeilisearch(): Promise<ServiceCheckResult> {
@@ -357,48 +495,115 @@ export class HealthCheckService {
     }
 
     try {
-      const { latency_ms } = await measureLatency(async () => {
-        return new Promise<void>((resolve, reject) => {
-          const url = new URL(this.config.meilisearchUrl);
-          const isHttps = url.protocol === 'https:';
-          const options = {
-            hostname: url.hostname,
-            port: url.port || (isHttps ? 443 : 80),
-            path: '/health',
-            method: 'GET',
-            timeout: HTTP_TIMEOUT_MS,
-            ...getHttpsTlsOptions(),
-          };
+      const { result, latency_ms } = await measureLatency(() =>
+        this.httpGet(`${this.config.meilisearchUrl}/health`)
+      );
 
-          const transport = isHttps ? https : http;
-          const req = transport.request(options, (res) => {
-            let data = '';
-            res.on('data', (chunk: Buffer) => {
-              data += chunk.toString();
-            });
-            res.on('end', () => {
-              try {
-                const json = JSON.parse(data) as { status?: string };
-                if (json.status === 'available') {
-                  resolve();
-                } else {
-                  reject(new Error(`Meilisearch status: ${json.status ?? 'unknown'}`));
-                }
-              } catch {
-                reject(new Error('Invalid JSON response'));
-              }
-            });
-          });
+      const json = JSON.parse(result.body) as { status?: string };
+      if (json.status !== 'available') {
+        return {
+          status: 'unhealthy',
+          message: `Meilisearch status: ${json.status ?? 'unknown'}`,
+        };
+      }
 
-          req.on('error', (err) => reject(err));
-          req.on('timeout', () => {
-            req.destroy();
-            reject(new Error('Request timeout'));
-          });
+      return {
+        status: 'ok',
+        latency_ms,
+      };
+    } catch (error) {
+      return {
+        status: 'unhealthy',
+        message: error instanceof Error ? error.message : 'Unknown error',
+      };
+    }
+  }
 
-          req.end();
-        });
-      });
+  /**
+   * Check Elasticsearch connection via cluster health endpoint.
+   *
+   * A green or yellow cluster status is treated as healthy (yellow is normal
+   * for a single-node dev cluster with unassigned replica shards).
+   */
+  private async checkElasticsearch(): Promise<ServiceCheckResult> {
+    if (!this.config.enableElasticsearch) {
+      return { status: 'disabled' };
+    }
+
+    try {
+      const { result, latency_ms } = await measureLatency(() =>
+        this.httpGet(`${this.config.elasticsearchUrl}/_cluster/health`)
+      );
+
+      const json = JSON.parse(result.body) as { status?: string };
+      const clusterStatus = json.status ?? 'unknown';
+      if (clusterStatus !== 'green' && clusterStatus !== 'yellow') {
+        return {
+          status: 'unhealthy',
+          message: `Elasticsearch cluster status: ${clusterStatus}`,
+        };
+      }
+
+      return {
+        status: 'ok',
+        latency_ms,
+      };
+    } catch (error) {
+      return {
+        status: 'unhealthy',
+        message: error instanceof Error ? error.message : 'Unknown error',
+      };
+    }
+  }
+
+  /**
+   * Check RabbitMQ reachability via a plain TCP connect to the AMQP port.
+   */
+  private async checkRabbitmq(): Promise<ServiceCheckResult> {
+    if (!this.config.enableRabbitmq) {
+      return { status: 'disabled' };
+    }
+
+    try {
+      const { latency_ms } = await measureLatency(() =>
+        this.checkTcp(this.config.rabbitmqHost, this.config.rabbitmqPort)
+      );
+
+      return {
+        status: 'ok',
+        latency_ms,
+      };
+    } catch (error) {
+      return {
+        status: 'unhealthy',
+        message: error instanceof Error ? error.message : 'Unknown error',
+      };
+    }
+  }
+
+  /**
+   * Check SeaweedFS connection via the master cluster status endpoint.
+   *
+   * The master reports the elected leader via `IsLeader`; its presence
+   * signals a functioning cluster.
+   */
+  private async checkSeaweedfs(): Promise<ServiceCheckResult> {
+    if (!this.config.enableSeaweedfs) {
+      return { status: 'disabled' };
+    }
+
+    try {
+      const { result, latency_ms } = await measureLatency(() =>
+        this.httpGet(`${this.config.seaweedfsMasterUrl}/cluster/status`)
+      );
+
+      const json = JSON.parse(result.body) as { IsLeader?: boolean };
+      if (json.IsLeader === undefined) {
+        return {
+          status: 'unhealthy',
+          message: 'SeaweedFS cluster status unavailable',
+        };
+      }
 
       return {
         status: 'ok',
