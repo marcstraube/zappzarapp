@@ -25,6 +25,7 @@ export default defineConfig({
       input: {
         // Main entry points
         app: resolve(__dirname, 'resources/js/app.js'),
+        'dev-dashboard-logs': resolve(__dirname, 'resources/js/dev-dashboard/logs.ts'),
         // Add more entry points as needed:
         // admin: resolve(__dirname, 'resources/js/admin.js'),
       },

@@ -61,6 +61,7 @@ services:
       # Build config files (needed for Vite, TypeScript)
       - ./vite.config.js:/app/vite.config.js:ro
       - ./tsconfig.json:/app/tsconfig.json:ro
+      - ./tsconfig.resources.json:/app/tsconfig.resources.json:ro
       - ./tsconfig.base.json:/app/tsconfig.base.json:ro
       - ./tsconfig.build.json:/app/tsconfig.build.json:ro
       - ./tsconfig.vitest.json:/app/tsconfig.vitest.json:ro
@@ -306,6 +307,7 @@ services:
 
       # TypeScript config (for type-check)
       - ./tsconfig.json:/app/tsconfig.json:ro
+      - ./tsconfig.resources.json:/app/tsconfig.resources.json:ro
       - ./tsconfig.base.json:/app/tsconfig.base.json:ro
       - ./tsconfig.build.json:/app/tsconfig.build.json:ro
       - ./tsconfig.vitest.json:/app/tsconfig.vitest.json:ro

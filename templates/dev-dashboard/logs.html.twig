@@ -114,9 +114,8 @@
                                             <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.5rem 0.75rem; background: white; border: 1px solid #e5e7eb; border-radius: 0.25rem; transition: all 0.15s;">
                                                 <button
                                                     data-action="open-log" data-logfile="{{ file.name }}"
+                                                    class="log-file-btn"
                                                     style="font-family: ui-monospace, monospace; font-size: 0.8125rem; color: #2563eb; background: none; border: none; cursor: pointer; text-align: left; padding: 0;"
-                                                    onmouseover="this.style.color='#1d4ed8'; this.style.textDecoration='underline';"
-                                                    onmouseout="this.style.color='#2563eb'; this.style.textDecoration='none';"
                                                 >
                                                     {{ file.name }}
                                                 </button>
@@ -207,7 +206,7 @@
                 <p id="logModalMeta" style="font-size: 0.75rem; color: #6b7280; margin-top: 0.25rem;"></p>
             </div>
             <div style="display: flex; align-items: center; gap: 0.75rem;">
-                <select id="logLinesSelect" onchange="refreshLog()">
+                <select id="logLinesSelect">
                     <option value="50">Last 50 lines</option>
                     <option value="100" selected>Last 100 lines</option>
                     <option value="200">Last 200 lines</option>
@@ -240,118 +239,10 @@
 <style>
 .sub-nav-link.active { color: #2563eb !important; border-bottom-color: #2563eb !important; }
 .sub-nav-link:hover { color: #374151; border-bottom-color: #d1d5db; }
+.log-file-btn:hover { color: #1d4ed8 !important; text-decoration: underline; }
 </style>
 
-<script nonce="{{ nonce() }}">
-function switchTab(tabId) {
-    document.querySelectorAll('.sub-nav-link').forEach(l => l.classList.remove('active'));
-    document.querySelector(`.sub-nav-link[data-tab="${tabId}"]`)?.classList.add('active');
-
-    document.querySelectorAll('.tab-panel').forEach(p => p.classList.add('hidden'));
-    document.getElementById('tab-' + tabId)?.classList.remove('hidden');
-
-    history.replaceState(null, '', '#' + tabId);
-}
-
-document.querySelectorAll('.sub-nav-link').forEach(link => {
-    link.addEventListener('click', (e) => {
-        e.preventDefault();
-        switchTab(link.dataset.tab);
-    });
-});
-
-// Event delegation for data-action clicks (CSP-compliant)
-document.addEventListener('click', (e) => {
-    const target = e.target.closest('[data-action]');
-    if (!target) return;
-
-    const action = target.dataset.action;
-    switch (action) {
-        case 'copy-cmd':
-            copyCmd(target.dataset.cmd, target);
-            break;
-        case 'open-log':
-            openLogModal(target.dataset.logfile);
-            break;
-        case 'close-log':
-            closeLogModal();
-            break;
-        case 'refresh-log':
-            refreshLog();
-            break;
-    }
-});
-
-const hash = window.location.hash.slice(1);
-if (hash && document.getElementById('tab-' + hash)) {
-    switchTab(hash);
-}
-
-function copyCmd(cmd, btn) {
-    navigator.clipboard.writeText(cmd).then(() => {
-        const orig = btn.textContent;
-        btn.textContent = 'Copied!';
-        btn.classList.add('bg-green-100');
-        setTimeout(() => { btn.textContent = orig; btn.classList.remove('bg-green-100'); }, 1500);
-    });
-}
-
-let currentLogFile = '';
-
-function openLogModal(filename) {
-    currentLogFile = filename;
-    document.getElementById('logModal').style.display = 'block';
-    document.getElementById('logModalTitle').textContent = filename;
-    document.body.style.overflow = 'hidden';
-    loadLogContent(filename);
-}
-
-function closeLogModal() {
-    document.getElementById('logModal').style.display = 'none';
-    document.body.style.overflow = '';
-    currentLogFile = '';
-}
-
-function refreshLog() {
-    if (currentLogFile) {
-        loadLogContent(currentLogFile);
-    }
-}
-
-async function loadLogContent(filename) {
-    const contentEl = document.getElementById('logModalContent');
-    const metaEl = document.getElementById('logModalMeta');
-    const lines = document.getElementById('logLinesSelect').value;
-
-    contentEl.textContent = 'Loading...';
-    contentEl.style.color = '#4ade80';
-
-    try {
-        const response = await fetch(`/_dev/api/logs?file=${encodeURIComponent(filename)}&lines=${lines}`);
-        const data = await response.json();
-
-        if (data.error) {
-            contentEl.textContent = `Error: ${data.error}`;
-            contentEl.style.color = '#f87171';
-            metaEl.textContent = '';
-        } else {
-            contentEl.textContent = data.content || '(empty file)';
-            contentEl.style.color = '#4ade80';
-            const sizeKb = (data.size / 1024).toFixed(1);
-            const modified = new Date(data.modified * 1000).toLocaleString();
-            metaEl.textContent = `${sizeKb} KB • Last modified: ${modified} • Showing last ${data.lines} lines`;
-        }
-    } catch (error) {
-        contentEl.textContent = `Failed to load log: ${error.message}`;
-        contentEl.style.color = '#f87171';
-        metaEl.textContent = '';
-    }
-}
-
-document.addEventListener('keydown', function(e) {
-    if (e.key === 'Escape' && document.getElementById('logModal').style.display !== 'none') {
-        closeLogModal();
-    }
-});
-</script>
+{# Page logic lives in resources/js/dev-dashboard/logs.ts (built via Vite,
+   uses @zappzarapp/browser-utils for clipboard, request and intl handling) #}
+{{ vite.renderScriptTags('js/dev-dashboard/logs.ts')|raw }}
 {% endblock %}

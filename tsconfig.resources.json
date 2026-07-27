@@ -1,0 +1,15 @@
+{
+  "extends": "./tsconfig.base.json",
+  "compilerOptions": {
+    /* Browser code bundled by Vite: DOM APIs, no Node types */
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "types": [],
+    "noEmit": true,
+    "baseUrl": ".",
+    "paths": {
+      "@resources/*": ["./resources/*"]
+    }
+  },
+  "include": ["resources/js/**/*.ts", "tests/node/resources/**/*.ts"],
+  "exclude": ["node_modules", "vendor", "build", "dist"]
+}

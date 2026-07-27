@@ -6,8 +6,11 @@ export default defineConfig({
     // Test environment
     environment: 'node',
 
-    // Test file patterns (Node.js backend tests only in tests/node/backend/)
-    include: ['tests/node/backend/**/*.{test,spec}.{ts,js}'],
+    // Test file patterns (Node.js backend + browser resources)
+    include: [
+      'tests/node/backend/**/*.{test,spec}.{ts,js}',
+      'tests/node/resources/**/*.{test,spec}.{ts,js}',
+    ],
     exclude: ['**/node_modules/**', 'dist', 'build', 'vendor', 'tests/php', 'src/node/frontend'],
 
     // Coverage configuration (targeting 80% parity with PHPUnit)
@@ -52,6 +55,7 @@ export default defineConfig({
     alias: {
       '@': path.resolve(__dirname, './src'),
       '@backend': path.resolve(__dirname, './src/node/backend'),
+      '@resources': path.resolve(__dirname, './resources'),
       '@tests': path.resolve(__dirname, './tests/node/backend'),
     },
   },
