@@ -369,7 +369,7 @@ export class HealthCheckService {
       return {
         status: 'unhealthy',
         type: this.config.databaseType,
-        message: error instanceof Error ? error.message : 'Unknown error',
+        message: this.safeErrorMessage(error),
       };
     }
   }
@@ -408,7 +408,7 @@ export class HealthCheckService {
     } catch (error) {
       return {
         status: 'unhealthy',
-        message: error instanceof Error ? error.message : 'Unknown error',
+        message: this.safeErrorMessage(error),
       };
     } finally {
       // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- client is assigned in measureLatency callback
@@ -503,7 +503,10 @@ export class HealthCheckService {
       if (json.status !== 'available') {
         return {
           status: 'unhealthy',
-          message: `Meilisearch status: ${json.status ?? 'unknown'}`,
+          message:
+            this.config.environment === 'production'
+              ? 'Service unavailable'
+              : `Meilisearch status: ${json.status ?? 'unknown'}`,
         };
       }
 
@@ -514,7 +517,7 @@ export class HealthCheckService {
     } catch (error) {
       return {
         status: 'unhealthy',
-        message: error instanceof Error ? error.message : 'Unknown error',
+        message: this.safeErrorMessage(error),
       };
     }
   }
@@ -540,7 +543,10 @@ export class HealthCheckService {
       if (clusterStatus !== 'green' && clusterStatus !== 'yellow') {
         return {
           status: 'unhealthy',
-          message: `Elasticsearch cluster status: ${clusterStatus}`,
+          message:
+            this.config.environment === 'production'
+              ? 'Service unavailable'
+              : `Elasticsearch cluster status: ${clusterStatus}`,
         };
       }
 
@@ -551,7 +557,7 @@ export class HealthCheckService {
     } catch (error) {
       return {
         status: 'unhealthy',
-        message: error instanceof Error ? error.message : 'Unknown error',
+        message: this.safeErrorMessage(error),
       };
     }
   }
@@ -576,7 +582,7 @@ export class HealthCheckService {
     } catch (error) {
       return {
         status: 'unhealthy',
-        message: error instanceof Error ? error.message : 'Unknown error',
+        message: this.safeErrorMessage(error),
       };
     }
   }
@@ -612,7 +618,7 @@ export class HealthCheckService {
     } catch (error) {
       return {
         status: 'unhealthy',
-        message: error instanceof Error ? error.message : 'Unknown error',
+        message: this.safeErrorMessage(error),
       };
     }
   }
@@ -678,7 +684,7 @@ export class HealthCheckService {
     } catch (error) {
       return {
         status: 'unhealthy',
-        message: error instanceof Error ? error.message : 'Unknown error',
+        message: this.safeErrorMessage(error),
       };
     }
   }
@@ -695,5 +701,20 @@ export class HealthCheckService {
    */
   getConfig(): HealthCheckConfig {
     return { ...this.config };
+  }
+
+  /**
+   * Sanitize an error message for the API response: the real message in
+   * development, a generic string in production (the real error is logged
+   * server-side for diagnostics). Prevents leaking internal IPs/DNS/TLS
+   * detail through the unauthenticated readiness/status responses.
+   */
+  private safeErrorMessage(error: unknown): string {
+    const realMessage = error instanceof Error ? error.message : 'Unknown error';
+    if (this.config.environment !== 'production') {
+      return realMessage;
+    }
+    console.error('[HealthCheck] probe failed:', realMessage);
+    return 'Connection failed';
   }
 }

@@ -231,7 +231,12 @@ $router->get('/welcome', [$welcomeController, 'index']);   // Alias for /
 
 // Health Check Routes
 $router->get('/ready', [$statusController, 'ready']);      // Readiness probe (K8s)
-$router->get('/status', [$statusController, 'index']);     // Full status overview
+
+// /status is dev-only because it enumerates all services + feature flags (recon)
+if ($isDevelopment) {
+    $router->get('/status', [$statusController, 'index']); // Full status overview
+}
+
 $router->get('/api/health', [$exampleController, 'health']); // Aggregated PHP + Node health
 
 // Dispatch - Wrapped in exception handler for security (CWE-550)

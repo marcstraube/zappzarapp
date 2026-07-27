@@ -8,6 +8,7 @@ use ErrorException;
 use Exception;
 use PDO;
 use Redis;
+use Throwable;
 
 /**
  * HealthCheck - Centralized service health status checker
@@ -211,7 +212,7 @@ class HealthCheck
         } catch (Exception $exception) {
             $this->status['services']['node-backend'] = [
                 'status'  => 'error',
-                'message' => $exception->getMessage(),
+                'message' => $this->safeErrorMessage($exception),
                 'enabled' => true,
                 'mode'    => $this->env['NODE_MODE'],
             ];
@@ -238,7 +239,7 @@ class HealthCheck
             if ($conn['redis'] === null) {
                 $this->status['services']['redis'] = [
                     'status'  => 'error',
-                    'message' => $conn['error'],
+                    'message' => $this->env['ENV'] === 'production' ? 'Connection failed' : $conn['error'],
                     'enabled' => true,
                     'tls'     => $conn['useTls'],
                 ];
@@ -259,7 +260,7 @@ class HealthCheck
         } catch (Exception $exception) {
             $this->status['services']['redis'] = [
                 'status'  => 'error',
-                'message' => $exception->getMessage(),
+                'message' => $this->safeErrorMessage($exception),
                 'enabled' => true,
             ];
         }
@@ -308,7 +309,7 @@ class HealthCheck
             $this->status['services']['database'] = [
                 'status'  => 'error',
                 'type'    => $dbType,
-                'message' => $exception->getMessage(),
+                'message' => $this->safeErrorMessage($exception),
                 'enabled' => true,
             ];
         }
@@ -465,7 +466,7 @@ class HealthCheck
             return [
                 'status'  => 'unhealthy',
                 'type'    => $dbType,
-                'message' => $exception->getMessage(),
+                'message' => $this->safeErrorMessage($exception),
             ];
         }
     }
@@ -492,7 +493,7 @@ class HealthCheck
             if ($conn['redis'] === null) {
                 return [
                     'status'  => 'unhealthy',
-                    'message' => $conn['error'],
+                    'message' => $this->env['ENV'] === 'production' ? 'Connection failed' : $conn['error'],
                 ];
             }
 
@@ -508,7 +509,7 @@ class HealthCheck
         } catch (Exception $exception) {
             return [
                 'status'  => 'unhealthy',
-                'message' => $exception->getMessage(),
+                'message' => $this->safeErrorMessage($exception),
             ];
         }
     }
@@ -550,7 +551,7 @@ class HealthCheck
         } catch (Exception $exception) {
             return [
                 'status'  => 'unhealthy',
-                'message' => $exception->getMessage(),
+                'message' => $this->safeErrorMessage($exception),
             ];
         }
     }
@@ -593,7 +594,7 @@ class HealthCheck
         } catch (Exception $exception) {
             return [
                 'status'  => 'unhealthy',
-                'message' => $exception->getMessage(),
+                'message' => $this->safeErrorMessage($exception),
             ];
         }
     }
@@ -761,6 +762,10 @@ class HealthCheck
             return ['connected' => true];
         }
 
+        if ($this->env['ENV'] === 'production') {
+            return ['connected' => false, 'error' => 'Connection failed'];
+        }
+
         $errorMsg = $errstr ?: 'Connection failed';
         if ($errno > 0) {
             $errorMsg .= sprintf(' (errno: %d)', $errno);
@@ -804,6 +809,32 @@ class HealthCheck
         } finally {
             restore_error_handler();
         }
+    }
+
+    /**
+     * Return a sanitized error message: the real message in development, a
+     * generic string in production (the real error is logged server-side).
+     * Prevents leaking internal IPs/DNS/TLS detail through the health responses.
+     */
+    private function safeErrorMessage(Throwable $exception): string
+    {
+        if ($this->env['ENV'] === 'production') {
+            $this->logError('[HealthCheck] probe failed: ' . $exception->getMessage());
+            return 'Connection failed';
+        }
+
+        return $exception->getMessage();
+    }
+
+    /**
+     * Write a diagnostic line to the server-side error log (I/O seam).
+     *
+     * Overridable in tests so the production-path assertions do not emit
+     * output (beStrictAboutOutputDuringTests).
+     */
+    protected function logError(string $message): void
+    {
+        error_log($message);
     }
 
     /**

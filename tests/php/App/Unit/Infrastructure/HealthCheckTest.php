@@ -67,6 +67,14 @@ final class HealthCheckTest extends TestCase
             putenv($var);
             unset($_ENV[$var]);
         }
+
+        // Default to development so that existing detailed-message assertions keep
+        // passing after safeErrorMessage() was introduced (production returns generic
+        // 'Connection failed'; tests run in development to see real messages).
+        // Only putenv, not $_ENV: individual tests override ENV via putenv (e.g.
+        // 'staging', 'production'), and the constructor prefers $_ENV over getenv —
+        // setting $_ENV here would shadow those per-test putenv overrides.
+        putenv('ENV=development');
     }
 
     // =========================================================================
@@ -77,6 +85,11 @@ final class HealthCheckTest extends TestCase
     #[Test]
     public function testDefaultEnvironmentValues(): void
     {
+        // Unset ENV explicitly to exercise the constructor's 'production' fallback
+        // (clearEnvVars sets development as the test baseline for message assertions)
+        putenv('ENV');
+        unset($_ENV['ENV']);
+
         $check = new HealthCheck();
         $env   = $check->getEnvironment();
 
@@ -165,7 +178,7 @@ final class HealthCheckTest extends TestCase
         $result = $check->checkAll();
 
         $this->assertSame('ok', $result['overall_status']);
-        $this->assertSame('production', $result['environment']);
+        $this->assertSame('development', $result['environment']);
         $this->assertArrayHasKey('timestamp', $result);
         $this->assertArrayHasKey('services', $result);
         $this->assertArrayHasKey('features', $result);
@@ -676,7 +689,7 @@ final class HealthCheckTest extends TestCase
 
         $this->assertSame('ok', $result['status']);
         $this->assertSame('php-backend', $result['service']);
-        $this->assertSame('production', $result['environment']);
+        $this->assertSame('development', $result['environment']);
         $this->assertArrayHasKey('timestamp', $result);
         $this->assertArrayHasKey('uptime', $result);
         $this->assertIsInt($result['uptime']);
@@ -1203,6 +1216,220 @@ final class HealthCheckTest extends TestCase
     }
 
     // =========================================================================
+    // Production mode — safeErrorMessage() returns generic 'Connection failed'
+    // =========================================================================
+
+    #[RunInSeparateProcess]
+    #[Test]
+    public function testProductionNodeBackendExceptionReturnsGenericMessage(): void
+    {
+        putenv('ENV=production');
+        $_ENV['ENV'] = 'production';
+        putenv('ENABLE_NODE=true');
+        putenv('NODE_MODE=api');
+
+        $fake = new class extends HealthCheck {
+            protected function fetchUrl(string $url, mixed $context = null): string|false
+            {
+                unset($url, $context);
+                throw new RuntimeException('redis://internal-host:6379 TLS handshake failed');
+            }
+
+            protected function logError(string $message): void
+            {
+                unset($message);
+            }
+        };
+
+        $result = $fake->checkAll();
+
+        $this->assertSame('degraded', $result['overall_status']);
+        $nodeService = $result['services']['node-backend'];
+        $this->assertSame('error', $nodeService['status']);
+        $this->assertSame('Connection failed', $nodeService['message']);
+    }
+
+    #[RunInSeparateProcess]
+    #[Test]
+    public function testProductionNodeBackendWithLatencyExceptionReturnsGenericMessage(): void
+    {
+        putenv('ENV=production');
+        $_ENV['ENV'] = 'production';
+        putenv('ENABLE_NODE=true');
+        putenv('NODE_MODE=backend');
+
+        $fake = new class extends HealthCheck {
+            protected function fetchUrl(string $url, mixed $context = null): string|false
+            {
+                unset($url, $context);
+                throw new RuntimeException('10.0.0.5:3000 connection refused');
+            }
+
+            protected function logError(string $message): void
+            {
+                unset($message);
+            }
+        };
+
+        $result = $fake->checkReadiness();
+
+        $this->assertSame('degraded', $result['status']);
+        $nodeCheck = $result['checks']['node-backend'];
+        $this->assertSame('unhealthy', $nodeCheck['status']);
+        $this->assertSame('Connection failed', $nodeCheck['message']);
+    }
+
+    #[RunInSeparateProcess]
+    #[Test]
+    public function testProductionRedisExceptionReturnsGenericMessage(): void
+    {
+        putenv('ENV=production');
+        $_ENV['ENV'] = 'production';
+        putenv('ENABLE_REDIS=true');
+
+        $throwingRedis = $this->createStub(Redis::class);
+        $throwingRedis->method('ping')->willThrowException(new RuntimeException('redis://10.0.0.3:6379 auth failed'));
+
+        $fake = $this->makeFakeHealthCheck(redisConnectionReturn: [
+            'redis'  => $throwingRedis,
+            'host'   => 'redis',
+            'port'   => 6379,
+            'useTls' => false,
+            'error'  => null,
+        ]);
+
+        $result = $fake->checkAll();
+
+        $this->assertSame('degraded', $result['overall_status']);
+        $redisService = $result['services']['redis'];
+        $this->assertSame('error', $redisService['status']);
+        $this->assertSame('Connection failed', $redisService['message']);
+    }
+
+    #[RunInSeparateProcess]
+    #[Test]
+    public function testProductionRedisConnectionNullReturnsGenericMessage(): void
+    {
+        putenv('ENV=production');
+        $_ENV['ENV'] = 'production';
+        putenv('ENABLE_REDIS=true');
+
+        $fake = $this->makeFakeHealthCheck(redisConnectionReturn: [
+            'redis'  => null,
+            'host'   => 'redis',
+            'port'   => 6379,
+            'useTls' => true,
+            'error'  => 'Could not connect to Redis: 10.0.0.3 TLS verify failed',
+        ]);
+
+        $result = $fake->checkAll();
+
+        $this->assertSame('degraded', $result['overall_status']);
+        $redisService = $result['services']['redis'];
+        $this->assertSame('error', $redisService['status']);
+        $this->assertSame('Connection failed', $redisService['message']);
+    }
+
+    #[RunInSeparateProcess]
+    #[Test]
+    public function testProductionRedisWithLatencyConnectionNullReturnsGenericMessage(): void
+    {
+        putenv('ENV=production');
+        $_ENV['ENV'] = 'production';
+        putenv('ENABLE_REDIS=true');
+
+        $fake = $this->makeFakeHealthCheck(redisConnectionReturn: [
+            'redis'  => null,
+            'host'   => 'redis',
+            'port'   => 6379,
+            'useTls' => false,
+            'error'  => 'Could not connect to Redis: 10.0.0.3 connection refused',
+        ]);
+
+        $result = $fake->checkReadiness();
+
+        $this->assertSame('degraded', $result['status']);
+        $redisCheck = $result['checks']['redis'];
+        $this->assertSame('unhealthy', $redisCheck['status']);
+        $this->assertSame('Connection failed', $redisCheck['message']);
+    }
+
+    #[RunInSeparateProcess]
+    #[Test]
+    public function testProductionDatabaseExceptionReturnsGenericMessage(): void
+    {
+        putenv('ENV=production');
+        $_ENV['ENV'] = 'production';
+        putenv('ENABLE_DATABASE=true');
+        putenv('DB_TYPE=mysql');
+        putenv('DB_PASSWORD=testpass');
+        putenv('DB_HOST=127.0.0.1');
+        putenv('DB_PORT=1');
+
+        if (!extension_loaded('pdo_mysql')) {
+            $this->markTestSkipped('pdo_mysql extension is not loaded; this test requires it.');
+        }
+
+        $check = new class extends HealthCheck {
+            protected function logError(string $message): void
+            {
+                unset($message);
+            }
+        };
+        $result = $check->checkAll();
+
+        $this->assertSame('degraded', $result['overall_status']);
+        $dbService = $result['services']['database'];
+        $this->assertSame('error', $dbService['status']);
+        // In production the PDO exception message (which contains host/port) is hidden
+        $this->assertSame('Connection failed', $dbService['message']);
+    }
+
+    #[RunInSeparateProcess]
+    #[Test]
+    public function testProductionTcpSocketErrorReturnsGenericMessage(): void
+    {
+        putenv('ENV=production');
+        $_ENV['ENV'] = 'production';
+        putenv('ENABLE_MERCURE=true');
+
+        $fake = new class extends HealthCheck {
+            /**
+             * @param-out int $errno
+             * @param-out string $errstr
+             */
+            protected function safeSocketOpen(
+                string $host,
+                int $port,
+                ?int &$errno,
+                ?string &$errstr,
+                int $timeout = 1,
+            ): mixed {
+                unset($host, $port, $timeout);
+                $errno  = 111;
+                $errstr = 'Connection refused to 10.0.0.7';
+
+                return false;
+            }
+
+            protected function fetchUrl(string $url, mixed $context = null): string|false
+            {
+                unset($url, $context);
+
+                return false;
+            }
+        };
+
+        $result = $fake->checkAll();
+
+        $this->assertSame('degraded', $result['overall_status']);
+        $mercure = $result['services']['mercure'];
+        $this->assertSame('error', $mercure['status']);
+        // In production the OS-level errstr (containing internal IP) must be hidden
+        $this->assertSame('Connection failed', $mercure['message']);
+    }
+
+    // =========================================================================
     // Helpers
     // =========================================================================
     /**
@@ -1273,6 +1500,13 @@ final class HealthCheckTest extends TestCase
                 }
 
                 return false;
+            }
+
+            // No-op: keep the production error_log() out of the test output
+            // (beStrictAboutOutputDuringTests).
+            protected function logError(string $message): void
+            {
+                unset($message);
             }
         };
     }

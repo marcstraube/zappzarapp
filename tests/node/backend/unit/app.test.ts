@@ -200,13 +200,25 @@ describe('Express App Factory', () => {
       expect(response.body).toHaveProperty('timestamp');
     });
 
-    it('should respond to GET /status', async () => {
-      const response = await request(app).get('/status');
+    it('should respond to GET /status with 200 and service list in development', async () => {
+      // /status enumerates every backing service — it is gated to non-production
+      // to avoid topology recon through the unauthenticated endpoint.
+      process.env.NODE_ENV = 'development';
+      const devApp = createApp();
+      const response = await request(devApp).get('/status');
 
       expect(response.status).toBe(200);
       expect(response.body).toHaveProperty('timestamp');
       expect(response.body).toHaveProperty('environment');
       expect(response.body).toHaveProperty('services');
+    });
+
+    it('should return 404 for GET /status in production', async () => {
+      process.env.NODE_ENV = 'production';
+      const prodApp = createApp();
+      const response = await request(prodApp).get('/status');
+
+      expect(response.status).toBe(404);
     });
   });
 
