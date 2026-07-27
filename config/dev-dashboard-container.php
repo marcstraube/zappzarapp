@@ -2,8 +2,9 @@
 
 declare(strict_types=1);
 
-use Zappzarapp\Security\Csp\Nonce\NonceRegistry;
+use App\Infrastructure\ViteHelper;
 use DevDashboard\Infrastructure\TwigService;
+use Zappzarapp\Security\Csp\Nonce\NonceRegistry;
 
 /**
  * DevDashboard DI Container Configuration
@@ -27,6 +28,9 @@ return [
 
         // Register CSP nonce function
         $service->addFunction('nonce', NonceRegistry::get(...));
+
+        // Vite asset helper for pages with extracted TS modules (e.g. logs)
+        $service->addGlobal('vite', new ViteHelper());
 
         return $service;
     },

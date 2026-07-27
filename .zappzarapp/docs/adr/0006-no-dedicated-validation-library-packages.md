@@ -32,3 +32,15 @@ adopting such a library, not cloning it.
 - (+) Audit-logger zero-dependency promise preserved
 - (-) No cross-language schema parity (no real consumer required it)
 - (-) Validation stays scattered until the frontend work triggers adoption
+
+---
+
+## Amendment 2026-07-27
+
+The Node backend now uses `@zappzarapp/browser-utils/core` (`Validator`,
+`Result`) for primitive input validation in its demo endpoints. This does not
+conflict with this ADR: the decision above rules out building or adopting a
+dedicated validation _framework_ (Zod/Valibot stay the choice when real API
+schema validation arrives); browser-utils is an existing ecosystem package whose
+assert-style primitives replace hand-rolled checks, analogous to the
+`webmozart/assert` option on the PHP side.

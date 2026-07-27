@@ -229,6 +229,29 @@ documented there relies on exactly this distinction).
 
 ---
 
+## Docker & Containers (Addendum)
+
+### New root-level config files need explicit compose mounts
+
+**Symptom:** A tool inside a container fails with ENOENT for a config file that
+clearly exists on the host (e.g. `tsc -p tsconfig.resources.json` → "Cannot read
+file '/app/tsconfig.resources.json'").
+
+**Cause:** Root-level config files are bind-mounted INDIVIDUALLY into the
+containers (compose.override.yaml and compose.ci.yaml). A newly created config
+file is not covered by any existing mount — the container simply does not see
+it.
+
+**Fix:** Add the single-file mount next to its siblings in BOTH compose files
+(dev and CI) for every service that needs it, then validate with
+`docker compose config -q`. `compose run`-based targets pick the new mount up
+immediately; long-running services need a recreate at the next `make up`.
+
+Found 2026-07-27 adding tsconfig.resources.json for the browser-utils
+DevDashboard integration.
+
+---
+
 ## Last Updated
 
-2026-07-26 (added: putenv persists across FPM requests)
+2026-07-27 (added: new root config files need compose mounts)
