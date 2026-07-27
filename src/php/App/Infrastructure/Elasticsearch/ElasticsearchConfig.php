@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Infrastructure\Elasticsearch;
 
+use App\Infrastructure\Config\CredentialLoader;
+
 /**
  * Elasticsearch Configuration
  *
@@ -11,7 +13,7 @@ namespace App\Infrastructure\Elasticsearch;
  * - Direct URL parameter
  * - ELASTICSEARCH_URL environment variable
  * - Individual environment variables (ELASTICSEARCH_HOST, ELASTICSEARCH_PORT)
- * - Docker secrets for credentials
+ * - Docker secrets for credentials (via CredentialLoader)
  *
  * Priority order for URL:
  * 1. URL parameter (constructor)
@@ -22,7 +24,7 @@ namespace App\Infrastructure\Elasticsearch;
  * Priority order for API key:
  * 1. Docker secret (/run/secrets/elasticsearch_api_key.txt)
  * 2. ELASTICSEARCH_API_KEY environment variable
- * 3. Empty string (for development without authentication)
+ * 3. Empty string (development without authentication)
  *
  * @package Infrastructure\Elasticsearch
  *
@@ -30,6 +32,8 @@ namespace App\Infrastructure\Elasticsearch;
  */
 final readonly class ElasticsearchConfig
 {
+    private CredentialLoader $credentials;
+
     public string $url;
 
     public string $apiKey;
@@ -38,8 +42,10 @@ final readonly class ElasticsearchConfig
 
     public bool $verifySsl;
 
-    public function __construct(?string $url = null)
+    public function __construct(?string $url = null, ?CredentialLoader $credentials = null)
     {
+        $this->credentials = $credentials ?? CredentialLoader::docker();
+
         $config = $this->parseConfig($url);
 
         $this->url       = $config['url'];
@@ -62,7 +68,7 @@ final readonly class ElasticsearchConfig
         }
 
         $useTls    = str_starts_with($url, 'https://');
-        $apiKey    = $this->loadCredential('elasticsearch_api_key', 'ELASTICSEARCH_API_KEY', '');
+        $apiKey    = $this->credentials->tryLoad('elasticsearch_api_key', 'ELASTICSEARCH_API_KEY') ?? '';
         $verifySsl = $this->getEnvBool('ELASTICSEARCH_VERIFY_SSL', false);
 
         return [
@@ -147,44 +153,4 @@ final readonly class ElasticsearchConfig
         return $default;
     }
 
-    /**
-     * Load credential from Docker secret or environment variable
-     *
-     * @noinspection PhpSameParameterValueInspection Config class - called with fixed defaults
-     */
-    private function loadCredential(string $secretName, string $envName, string $default): string
-    {
-        // Try Docker secret with .txt extension
-        $value = $this->readSecret(sprintf('/run/secrets/%s.txt', $secretName));
-        if ($value !== null) {
-            return $value;
-        }
-
-        // Try Docker secret without extension
-        $value = $this->readSecret('/run/secrets/' . $secretName);
-        if ($value !== null) {
-            return $value;
-        }
-
-        // Try environment variable
-        return $this->getEnvString($envName, $default);
-    }
-
-    /**
-     * Read a secret file if it exists
-     */
-    private function readSecret(string $path): ?string
-    {
-        if (!file_exists($path)) {
-            return null;
-        }
-
-        $value = file_get_contents($path);
-
-        if ($value === false) {
-            return null;
-        }
-
-        return trim($value);
-    }
 }

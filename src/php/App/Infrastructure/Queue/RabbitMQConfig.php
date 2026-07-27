@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Infrastructure\Queue;
 
+use App\Infrastructure\Config\CredentialLoader;
+
 /**
  * RabbitMQ Configuration
  *
@@ -11,13 +13,13 @@ namespace App\Infrastructure\Queue;
  * - Direct URL parameter
  * - RABBITMQ_URL environment variable
  * - Individual environment variables (RABBITMQ_HOST, RABBITMQ_PORT, etc.)
- * - Docker secrets for credentials
+ * - Docker secrets for credentials (via CredentialLoader)
  *
  * Priority order for credentials:
  * 1. Credentials in URL (if provided)
  * 2. Docker secrets (/run/secrets/rabbitmq_user, etc.)
  * 3. Environment variables (RABBITMQ_USER, etc.)
- * 4. Default values (guest/guest)
+ * 4. Insecure development default: guest/guest
  *
  * @package Infrastructure\Queue
  *
@@ -25,6 +27,8 @@ namespace App\Infrastructure\Queue;
  */
 final readonly class RabbitMQConfig
 {
+    private CredentialLoader $credentials;
+
     public string $host;
 
     public int $port;
@@ -37,8 +41,10 @@ final readonly class RabbitMQConfig
 
     public bool $useTls;
 
-    public function __construct(?string $url = null)
+    public function __construct(?string $url = null, ?CredentialLoader $credentials = null)
     {
+        $this->credentials = $credentials ?? CredentialLoader::docker();
+
         $config = $this->parseConfig($url);
 
         $this->host     = $config['host'];
@@ -94,8 +100,8 @@ final readonly class RabbitMQConfig
 
         // Only load from secrets/environment if URL didn't provide credentials
         if (!$urlHasCredentials) {
-            $user     = $this->loadCredential('rabbitmq_user', 'RABBITMQ_USER', $user);
-            $password = $this->loadCredential('rabbitmq_password', 'RABBITMQ_PASSWORD', $password);
+            $user     = $this->credentials->loadWithInsecureDefault('rabbitmq_user', ['RABBITMQ_USER'], $user);
+            $password = $this->credentials->loadWithInsecureDefault('rabbitmq_password', ['RABBITMQ_PASSWORD'], $password);
         }
 
         return [
@@ -118,8 +124,8 @@ final readonly class RabbitMQConfig
         return [
             'host'     => $this->getEnvString('RABBITMQ_HOST', 'rabbitmq'),
             'port'     => $this->getEnvInt('RABBITMQ_PORT', 5672),
-            'user'     => $this->loadCredential('rabbitmq_user', 'RABBITMQ_USER', 'guest'),
-            'password' => $this->loadCredential('rabbitmq_password', 'RABBITMQ_PASSWORD', 'guest'),
+            'user'     => $this->credentials->loadWithInsecureDefault('rabbitmq_user', ['RABBITMQ_USER'], 'guest'),
+            'password' => $this->credentials->loadWithInsecureDefault('rabbitmq_password', ['RABBITMQ_PASSWORD'], 'guest'),
             'vhost'    => $this->getEnvString('RABBITMQ_VHOST', '/'),
             'useTls'   => false,
         ];
@@ -196,42 +202,4 @@ final readonly class RabbitMQConfig
         return $default;
     }
 
-    /**
-     * Load credential from Docker secret or environment variable
-     */
-    private function loadCredential(string $secretName, string $envName, string $default): string
-    {
-        // Try Docker secret with .txt extension
-        $value = $this->readSecret(sprintf('/run/secrets/%s.txt', $secretName));
-        if ($value !== null) {
-            return $value;
-        }
-
-        // Try Docker secret without extension
-        $value = $this->readSecret('/run/secrets/' . $secretName);
-        if ($value !== null) {
-            return $value;
-        }
-
-        // Try environment variable
-        return $this->getEnvString($envName, $default);
-    }
-
-    /**
-     * Read a secret file if it exists
-     */
-    private function readSecret(string $path): ?string
-    {
-        if (!file_exists($path)) {
-            return null;
-        }
-
-        $value = file_get_contents($path);
-
-        if ($value === false) {
-            return null;
-        }
-
-        return trim($value);
-    }
 }
