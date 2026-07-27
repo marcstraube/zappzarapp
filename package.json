@@ -59,6 +59,7 @@
     "@types/amqplib": "^0.10.8",
     "@types/express": "^5.0.6",
     "@types/node": "^24.13.3",
+    "@types/nodemailer": "^8.0.0",
     "@types/pg": "^8.20.0",
     "@types/supertest": "^6.0.3",
     "@types/ws": "^8.18.1",
@@ -103,6 +104,7 @@
     "amqplib": "^0.10.9",
     "meilisearch": "^0.55.0",
     "mysql2": "^3.23.1",
+    "nodemailer": "^9.0.0",
     "redis": "^5.12.1"
   },
   "pnpm": {
