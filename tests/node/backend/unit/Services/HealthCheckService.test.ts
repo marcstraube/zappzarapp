@@ -3,8 +3,12 @@
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { EventEmitter } from 'node:events';
 import { HealthCheckService } from '@backend/Shared/HealthCheck/HealthCheckService';
 import { Pool, PoolClient } from 'pg';
+import { createClient } from 'redis';
+import * as http from 'http';
+import * as https from 'https';
 
 // Mock the redis module
 vi.mock('redis', () => ({
@@ -23,6 +27,32 @@ vi.mock('http', () => ({
 vi.mock('https', () => ({
   request: vi.fn(),
 }));
+
+/**
+ * Build a fake ClientRequest whose paired response emits `body` once the
+ * request-body has been flushed via .end(). Mirrors the node http contract
+ * closely enough for the health-check request handlers.
+ */
+function mockRequestOnce(
+  target: typeof http.request | typeof https.request,
+  body: string,
+  statusCode = 200
+): void {
+  vi.mocked(target).mockImplementationOnce(((_options: unknown, cb: (res: unknown) => void) => {
+    const req = new EventEmitter() as EventEmitter & { end: () => void; destroy: () => void };
+    req.destroy = (): void => undefined;
+    req.end = (): void => {
+      const res = new EventEmitter() as EventEmitter & { statusCode: number };
+      res.statusCode = statusCode;
+      cb(res);
+      queueMicrotask(() => {
+        if (body !== '') res.emit('data', Buffer.from(body));
+        res.emit('end');
+      });
+    };
+    return req;
+  }) as unknown as typeof target);
+}
 
 describe('HealthCheckService', () => {
   const originalEnv = process.env;
@@ -247,6 +277,165 @@ describe('HealthCheckService', () => {
       const result = await service.checkReadiness();
 
       expect(result.status).toBe('degraded');
+    });
+  });
+
+  describe('redis error handling', () => {
+    it('should return unhealthy when the redis connection fails', async () => {
+      process.env.ENABLE_DATABASE = 'false';
+      process.env.ENABLE_REDIS = 'true';
+      process.env.REDIS_URL = 'redis://localhost:6379';
+
+      vi.mocked(createClient).mockReturnValueOnce({
+        connect: vi.fn().mockRejectedValue(new Error('Redis down')),
+        ping: vi.fn(),
+        quit: vi.fn().mockResolvedValue(undefined),
+      } as unknown as ReturnType<typeof createClient>);
+
+      const service = new HealthCheckService();
+      const result = await service.checkReadiness();
+
+      expect(result.checks['redis']?.status).toBe('unhealthy');
+      expect(result.checks['redis']?.message).toBe('Redis down');
+      expect(result.status).toBe('degraded');
+    });
+
+    it('should fall back to "Unknown error" for non-Error rejections', async () => {
+      process.env.ENABLE_DATABASE = 'false';
+      process.env.ENABLE_REDIS = 'true';
+      process.env.REDIS_URL = 'redis://localhost:6379';
+
+      vi.mocked(createClient).mockReturnValueOnce({
+        connect: vi.fn().mockRejectedValue('boom'),
+        ping: vi.fn(),
+        quit: vi.fn().mockResolvedValue(undefined),
+      } as unknown as ReturnType<typeof createClient>);
+
+      const service = new HealthCheckService();
+      const result = await service.checkReadiness();
+
+      expect(result.checks['redis']?.message).toBe('Unknown error');
+    });
+
+    it('should use TLS socket options for rediss:// urls', async () => {
+      process.env.ENABLE_DATABASE = 'false';
+      process.env.ENABLE_REDIS = 'true';
+      process.env.REDIS_URL = 'rediss://localhost:6379';
+
+      const service = new HealthCheckService();
+      const result = await service.checkReadiness();
+
+      expect(result.checks['redis']?.status).toBe('ok');
+    });
+  });
+
+  describe('meilisearch checks', () => {
+    it('should return ok when meilisearch reports available', async () => {
+      process.env.ENABLE_DATABASE = 'false';
+      process.env.ENABLE_REDIS = 'false';
+      process.env.ENABLE_MEILISEARCH = 'true';
+      process.env.MEILISEARCH_URL = 'http://meilisearch:7700';
+      mockRequestOnce(http.request, JSON.stringify({ status: 'available' }));
+
+      const service = new HealthCheckService();
+      const result = await service.checkReadiness();
+
+      expect(result.checks['meilisearch']?.status).toBe('ok');
+    });
+
+    it('should return unhealthy when meilisearch reports an unavailable status', async () => {
+      process.env.ENABLE_DATABASE = 'false';
+      process.env.ENABLE_REDIS = 'false';
+      process.env.ENABLE_MEILISEARCH = 'true';
+      process.env.MEILISEARCH_URL = 'https://meilisearch:7700';
+      mockRequestOnce(https.request, JSON.stringify({ status: 'indexing' }));
+
+      const service = new HealthCheckService();
+      const result = await service.checkReadiness();
+
+      expect(result.checks['meilisearch']?.status).toBe('unhealthy');
+      expect(result.status).toBe('degraded');
+    });
+
+    it('should return unhealthy on invalid JSON from meilisearch', async () => {
+      process.env.ENABLE_DATABASE = 'false';
+      process.env.ENABLE_REDIS = 'false';
+      process.env.ENABLE_MEILISEARCH = 'true';
+      process.env.MEILISEARCH_URL = 'http://meilisearch:7700';
+      mockRequestOnce(http.request, 'not-json');
+
+      const service = new HealthCheckService();
+      const result = await service.checkReadiness();
+
+      expect(result.checks['meilisearch']?.status).toBe('unhealthy');
+    });
+  });
+
+  describe('node-frontend checks', () => {
+    it('should return ok when the frontend responds below 500', async () => {
+      process.env.ENABLE_DATABASE = 'false';
+      process.env.ENABLE_REDIS = 'false';
+      process.env.ENABLE_MEILISEARCH = 'false';
+      process.env.NODE_MODE = 'framework-api';
+      mockRequestOnce(https.request, '', 200);
+
+      const service = new HealthCheckService();
+      const result = await service.checkReadiness();
+
+      expect(result.checks['node-frontend']?.status).toBe('ok');
+    });
+
+    it('should return unhealthy and degrade overall when the frontend returns 5xx', async () => {
+      process.env.ENABLE_DATABASE = 'false';
+      process.env.ENABLE_REDIS = 'false';
+      process.env.ENABLE_MEILISEARCH = 'false';
+      process.env.NODE_MODE = 'framework-api';
+      mockRequestOnce(https.request, '', 503);
+
+      const service = new HealthCheckService();
+      const result = await service.checkReadiness();
+
+      expect(result.checks['node-frontend']?.status).toBe('unhealthy');
+      expect(result.status).toBe('degraded');
+    });
+  });
+
+  describe('meilisearch default port', () => {
+    it('should handle a url without an explicit port', async () => {
+      process.env.ENABLE_DATABASE = 'false';
+      process.env.ENABLE_REDIS = 'false';
+      process.env.ENABLE_MEILISEARCH = 'true';
+      process.env.MEILISEARCH_URL = 'https://meilisearch';
+      mockRequestOnce(https.request, JSON.stringify({ status: 'available' }));
+
+      const service = new HealthCheckService();
+      const result = await service.checkReadiness();
+
+      expect(result.checks['meilisearch']?.status).toBe('ok');
+    });
+  });
+
+  describe('checkStatus with enabled services', () => {
+    it('should report ok services rather than disabled', async () => {
+      process.env.ENABLE_DATABASE = 'true';
+      process.env.ENABLE_REDIS = 'true';
+      process.env.ENABLE_MEILISEARCH = 'false';
+      process.env.REDIS_URL = 'redis://localhost:6379';
+      process.env.NODE_MODE = 'backend';
+
+      const mockClient = {
+        query: vi.fn().mockResolvedValue({ rows: [] }),
+        release: vi.fn(),
+      } as unknown as PoolClient;
+      const mockPool = {
+        connect: vi.fn().mockResolvedValue(mockClient),
+      } as unknown as Pool;
+
+      const service = new HealthCheckService(mockPool);
+      const result = await service.checkStatus();
+
+      expect(result.services['database']?.status).toBe('ok');
+      expect(result.services['redis']?.status).toBe('ok');
     });
   });
 

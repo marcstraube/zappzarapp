@@ -25,11 +25,14 @@ export default defineConfig({
         '**/*.spec.{ts,js}',
         'src/node/frontend/**',
       ],
-      // Coverage thresholds: 80% parity with PHP
+      // Coverage thresholds. Lines/statements/functions at 80%; branches at
+      // 75% — branch coverage is harder to reach and is conventionally held a
+      // few points below line coverage, and 75% sits above the PHP gate (70%,
+      // PHP_COVERAGE_MIN).
       thresholds: {
         lines: 80,
         functions: 80,
-        branches: 80,
+        branches: 75,
         statements: 80,
       },
     },

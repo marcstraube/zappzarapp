@@ -511,5 +511,169 @@ describe('AbstractRepository', () => {
         ['New', 'new@example.com']
       );
     });
+
+    it('should return null when MariaDB reports no insertId', async () => {
+      const mariaDbFactory = createMockFactory(false);
+      const mariaDbConnection = await mariaDbFactory.create();
+
+      const repo = new TestRepository({
+        connectionFactory: mariaDbFactory as never,
+        auditLogger: new NullAuditLogger(),
+      });
+
+      mariaDbConnection.execute.mockResolvedValueOnce({ affectedRows: 1 });
+
+      const result = await repo.insert({ name: 'New', email: 'new@example.com' });
+
+      expect(result).toBeNull();
+    });
+  });
+
+  describe('count edge cases', () => {
+    it('should parse a string count into a number', async () => {
+      const repo = new TestRepository({
+        connectionFactory: mockFactory as never,
+        auditLogger: new NullAuditLogger(),
+      });
+
+      mockConnection.query.mockResolvedValueOnce([{ count: '7' }]);
+
+      expect(await repo.count()).toBe(7);
+    });
+
+    it('should fall back to 0 for an unparseable count', async () => {
+      const repo = new TestRepository({
+        connectionFactory: mockFactory as never,
+        auditLogger: new NullAuditLogger(),
+      });
+
+      mockConnection.query.mockResolvedValueOnce([{ count: 'not-a-number' }]);
+
+      expect(await repo.count()).toBe(0);
+    });
+  });
+
+  describe('transaction error handling', () => {
+    it('should return false from beginTransaction when acquiring a connection throws', async () => {
+      const repo = new TestRepository({
+        connectionFactory: mockFactory as never,
+        auditLogger: new NullAuditLogger(),
+      });
+
+      mockFactory.create.mockRejectedValueOnce(new Error('no connection'));
+
+      expect(await repo.beginTransaction()).toBe(false);
+    });
+
+    it('should return false when committing without an active transaction', async () => {
+      const repo = new TestRepository({
+        connectionFactory: mockFactory as never,
+        auditLogger: new NullAuditLogger(),
+      });
+
+      expect(await repo.commit()).toBe(false);
+    });
+
+    it('should return false when rolling back without an active transaction', async () => {
+      const repo = new TestRepository({
+        connectionFactory: mockFactory as never,
+        auditLogger: new NullAuditLogger(),
+      });
+
+      expect(await repo.rollback()).toBe(false);
+    });
+
+    it('should return false when commit throws', async () => {
+      const repo = new TestRepository({
+        connectionFactory: mockFactory as never,
+        auditLogger: new NullAuditLogger(),
+      });
+
+      await repo.beginTransaction();
+      mockConnection.commit.mockRejectedValueOnce(new Error('commit failed'));
+
+      expect(await repo.commit()).toBe(false);
+    });
+
+    it('should return false when rollback throws', async () => {
+      const repo = new TestRepository({
+        connectionFactory: mockFactory as never,
+        auditLogger: new NullAuditLogger(),
+      });
+
+      await repo.beginTransaction();
+      mockConnection.rollback.mockRejectedValueOnce(new Error('rollback failed'));
+
+      expect(await repo.rollback()).toBe(false);
+    });
+  });
+
+  describe('encryption', () => {
+    class EncryptedRepository extends AbstractRepository<TestEntity> {
+      protected getTable(): string {
+        return 'test_table';
+      }
+      protected getEncryptedFields(): string[] {
+        return ['secret'];
+      }
+    }
+
+    it('should encrypt flagged fields on insert when a key is configured', async () => {
+      const repo = new EncryptedRepository({
+        connectionFactory: mockFactory as never,
+        auditLogger: new NullAuditLogger(),
+        encryptionKey: 'key',
+      });
+
+      // 1st query: encrypt_text; 2nd query: INSERT ... RETURNING id
+      mockConnection.query
+        .mockResolvedValueOnce([{ encrypted: 'ENC' }])
+        .mockResolvedValueOnce([{ id: 1 }]);
+
+      const result = await repo.insert({ name: 'N', email: 'e', secret: 'plain' });
+
+      expect(result).toBe(1);
+      expect(mockConnection.query).toHaveBeenNthCalledWith(
+        1,
+        expect.stringContaining('encrypt_text'),
+        ['plain', 'key']
+      );
+    });
+
+    it('should decrypt flagged fields when reading a row', async () => {
+      const repo = new EncryptedRepository({
+        connectionFactory: mockFactory as never,
+        auditLogger: new NullAuditLogger(),
+        encryptionKey: 'key',
+      });
+
+      mockConnection.query
+        .mockResolvedValueOnce([{ id: 1, name: 'N', email: 'e', secret: 'ENC' }])
+        .mockResolvedValueOnce([{ decrypted: 'plain' }]);
+
+      const row = await repo.find(1);
+
+      expect(row?.secret).toBe('plain');
+      expect(mockConnection.query).toHaveBeenNthCalledWith(
+        2,
+        expect.stringContaining('decrypt_text'),
+        ['ENC', 'key']
+      );
+    });
+
+    it('should leave flagged fields untouched when no key is configured', async () => {
+      const repo = new EncryptedRepository({
+        connectionFactory: mockFactory as never,
+        auditLogger: new NullAuditLogger(),
+      });
+
+      mockConnection.query.mockResolvedValueOnce([{ id: 1 }]);
+
+      const result = await repo.insert({ name: 'N', email: 'e', secret: 'plain' });
+
+      expect(result).toBe(1);
+      // Only the INSERT runs — no encrypt_text round-trip without a key
+      expect(mockConnection.query).toHaveBeenCalledTimes(1);
+    });
   });
 });

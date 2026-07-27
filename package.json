@@ -39,7 +39,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:ui": "vitest --ui",
-    "test:coverage": "vitest run --coverage",
+    "test:coverage": "vitest run --coverage --reporter=verbose",
     "lint": "eslint 'src/**/*.{ts,js}' 'tests/**/*.{ts,js}' 'resources/js/**/*.ts' --max-warnings=0",
     "lint:fix": "eslint 'src/**/*.{ts,js}' 'tests/**/*.{ts,js}' 'resources/js/**/*.ts' --fix",
     "lint:md": "markdownlint-cli2 '**/*.md' '#node_modules'",
