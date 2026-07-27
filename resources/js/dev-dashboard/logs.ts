@@ -1,17 +1,16 @@
 /**
  * DevDashboard Logs page
  *
- * Extracted from the former inline script in
- * templates/dev-dashboard/logs.html.twig. Uses @zappzarapp/browser-utils:
- * ClipboardManager for the copy buttons, RequestInterceptor for the log API
- * (timeout + content-type validation), formatDateResult for the modified-date
- * display, Result for explicit error handling.
+ * Tab navigation, copy buttons and the API interceptor come from the shared
+ * dev-dashboard modules; formatDateResult (modified-date display) and Result
+ * (explicit error handling) from @zappzarapp/browser-utils.
  */
 
 import { Result } from '@zappzarapp/browser-utils/core';
-import { ClipboardManager } from '@zappzarapp/browser-utils/clipboard';
-import { RequestInterceptor } from '@zappzarapp/browser-utils/request';
 import { formatDateResult } from '@zappzarapp/browser-utils/intl';
+import { createDashboardApi } from './shared/api';
+import { copyCmd } from './shared/copy';
+import { initTabs, switchTab } from './shared/tabs';
 
 interface LogApiResponse {
   error?: string;
@@ -21,41 +20,9 @@ interface LogApiResponse {
   lines?: number;
 }
 
-// The interceptor validates absolute URLs only — resolve the dashboard's
-// relative API paths against the current origin.
-const logApi = RequestInterceptor.create({
-  baseUrl: window.location.origin,
-  timeout: 10_000,
-  expectedContentType: 'application/json',
-});
+const logApi = createDashboardApi();
 
 let currentLogFile = '';
-
-function switchTab(tabId: string): void {
-  document.querySelectorAll('.sub-nav-link').forEach((l) => l.classList.remove('active'));
-  document.querySelector(`.sub-nav-link[data-tab="${tabId}"]`)?.classList.add('active');
-
-  document.querySelectorAll('.tab-panel').forEach((p) => p.classList.add('hidden'));
-  document.getElementById(`tab-${tabId}`)?.classList.remove('hidden');
-
-  history.replaceState(null, '', `#${tabId}`);
-}
-
-async function copyCmd(cmd: string, btn: HTMLElement): Promise<void> {
-  let copied = await ClipboardManager.writeText(cmd);
-  if (Result.isErr(copied)) {
-    // Async Clipboard API needs a secure context; fall back to execCommand
-    copied = ClipboardManager.writeTextFallback(cmd);
-  }
-
-  const orig = btn.textContent;
-  btn.textContent = Result.isOk(copied) ? 'Copied!' : 'Copy failed';
-  btn.classList.add(Result.isOk(copied) ? 'bg-green-100' : 'bg-red-100');
-  setTimeout(() => {
-    btn.textContent = orig;
-    btn.classList.remove('bg-green-100', 'bg-red-100');
-  }, 1500);
-}
 
 function openLogModal(filename: string): void {
   currentLogFile = filename;
@@ -126,13 +93,7 @@ async function loadLogContent(filename: string): Promise<void> {
 }
 
 function init(): void {
-  document.querySelectorAll<HTMLElement>('.sub-nav-link').forEach((link) => {
-    link.addEventListener('click', (e) => {
-      e.preventDefault();
-      const tab = link.dataset.tab;
-      if (tab !== undefined) switchTab(tab);
-    });
-  });
+  initTabs();
 
   // Event delegation for data-action clicks (CSP-compliant)
   document.addEventListener('click', (e) => {
@@ -164,11 +125,6 @@ function init(): void {
       closeLogModal();
     }
   });
-
-  const hash = window.location.hash.slice(1);
-  if (hash && document.getElementById(`tab-${hash}`)) {
-    switchTab(hash);
-  }
 }
 
 init();

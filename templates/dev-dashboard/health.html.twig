@@ -215,28 +215,7 @@
 .sub-nav-link:hover { color: #374151; border-bottom-color: #d1d5db; }
 </style>
 
-<!--suppress JSUnresolvedFunction, JSUnresolvedVariable -->
-<script nonce="{{ nonce() }}">
-function switchTab(tabId) {
-    document.querySelectorAll('.sub-nav-link').forEach(l => l.classList.remove('active'));
-    document.querySelector(`.sub-nav-link[data-tab="${tabId}"]`)?.classList.add('active');
-
-    document.querySelectorAll('.tab-panel').forEach(p => p.classList.add('hidden'));
-    document.getElementById('tab-' + tabId)?.classList.remove('hidden');
-
-    history.replaceState(null, '', '#' + tabId);
-}
-
-document.querySelectorAll('.sub-nav-link').forEach(link => {
-    link.addEventListener('click', (e) => {
-        e.preventDefault();
-        switchTab(link.dataset.tab);
-    });
-});
-
-const hash = window.location.hash.slice(1);
-if (hash && document.getElementById('tab-' + hash)) {
-    switchTab(hash);
-}
-</script>
+{# Page logic lives in resources/js/dev-dashboard/health.ts (built via Vite,
+   shared tab navigation only) #}
+{{ vite.renderScriptTags('js/dev-dashboard/health.ts')|raw }}
 {% endblock %}
