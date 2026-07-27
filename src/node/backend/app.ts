@@ -159,11 +159,15 @@ export function createApp(options: AppOptions = {}): Express {
     res.status(statusCode).json(result);
   });
 
-  // Status overview - all services including disabled ones
-  app.get('/status', async (_req: Request, res: Response): Promise<void> => {
-    const result = await healthCheckService.checkStatus();
-    res.json(result);
-  });
+  // Status overview - development/staging only.
+  // Enumerates every backing service by name, which aids topology recon;
+  // orchestrators only need /health and /ready in production.
+  if (NODE_ENV !== 'production') {
+    app.get('/status', async (_req: Request, res: Response): Promise<void> => {
+      const result = await healthCheckService.checkStatus();
+      res.json(result);
+    });
+  }
 
   // App API routes
   app.use('/api', createAppRouter());

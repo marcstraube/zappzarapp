@@ -92,6 +92,9 @@ describe('HealthCheckService', () => {
   beforeEach(() => {
     vi.resetModules();
     process.env = { ...originalEnv };
+    // Ensure we are in a non-production environment so existing message
+    // assertions see the real (detailed) error text via safeErrorMessage.
+    process.env.NODE_ENV = 'test';
   });
 
   afterEach(() => {
@@ -675,6 +678,92 @@ describe('HealthCheckService', () => {
 
       expect(config1).not.toBe(config2);
       expect(config1).toEqual(config2);
+    });
+  });
+
+  describe('production error sanitization', () => {
+    // These tests set NODE_ENV=production to exercise the safeErrorMessage
+    // path that swaps real error detail for a generic string and logs
+    // server-side. Each test restores the env via the outer afterEach.
+
+    it('should return "Connection failed" for a rejected database pool in production', async () => {
+      process.env.NODE_ENV = 'production';
+      process.env.ENABLE_DATABASE = 'true';
+
+      const mockPool = {
+        connect: vi.fn().mockRejectedValue(new Error('ECONNREFUSED 10.0.0.1:5432')),
+      } as unknown as Pool;
+
+      const service = new HealthCheckService(mockPool);
+      const result = await service.checkReadiness();
+
+      expect(result.checks['database']?.status).toBe('unhealthy');
+      expect(result.checks['database']?.message).toBe('Connection failed');
+    });
+
+    it('should return "Connection failed" for a redis connect rejection in production', async () => {
+      process.env.NODE_ENV = 'production';
+      process.env.ENABLE_DATABASE = 'false';
+      process.env.ENABLE_REDIS = 'true';
+      process.env.REDIS_URL = 'redis://localhost:6379';
+
+      vi.mocked(createClient).mockReturnValueOnce({
+        connect: vi.fn().mockRejectedValue(new Error('ECONNREFUSED 10.0.0.2:6379')),
+        ping: vi.fn(),
+        quit: vi.fn().mockResolvedValue(undefined),
+      } as unknown as ReturnType<typeof createClient>);
+
+      const service = new HealthCheckService();
+      const result = await service.checkReadiness();
+
+      expect(result.checks['redis']?.status).toBe('unhealthy');
+      expect(result.checks['redis']?.message).toBe('Connection failed');
+    });
+
+    it('should return "Connection failed" for an elasticsearch HTTP error in production', async () => {
+      process.env.NODE_ENV = 'production';
+      process.env.ENABLE_DATABASE = 'false';
+      process.env.ENABLE_REDIS = 'false';
+      process.env.ENABLE_ELASTICSEARCH = 'true';
+      process.env.ELASTICSEARCH_URL = 'https://elasticsearch:9200';
+      // Return invalid JSON so JSON.parse throws — this exercises the catch branch
+      mockRequestOnce(https.request, 'not-json');
+
+      const service = new HealthCheckService();
+      const result = await service.checkReadiness();
+
+      expect(result.checks['elasticsearch']?.status).toBe('unhealthy');
+      expect(result.checks['elasticsearch']?.message).toBe('Connection failed');
+    });
+
+    it('should return "Service unavailable" for meilisearch non-available status in production', async () => {
+      process.env.NODE_ENV = 'production';
+      process.env.ENABLE_DATABASE = 'false';
+      process.env.ENABLE_REDIS = 'false';
+      process.env.ENABLE_MEILISEARCH = 'true';
+      process.env.MEILISEARCH_URL = 'http://meilisearch:7700';
+      mockRequestOnce(http.request, JSON.stringify({ status: 'indexing' }));
+
+      const service = new HealthCheckService();
+      const result = await service.checkReadiness();
+
+      expect(result.checks['meilisearch']?.status).toBe('unhealthy');
+      expect(result.checks['meilisearch']?.message).toBe('Service unavailable');
+    });
+
+    it('should return "Service unavailable" for elasticsearch red-cluster status in production', async () => {
+      process.env.NODE_ENV = 'production';
+      process.env.ENABLE_DATABASE = 'false';
+      process.env.ENABLE_REDIS = 'false';
+      process.env.ENABLE_ELASTICSEARCH = 'true';
+      process.env.ELASTICSEARCH_URL = 'https://elasticsearch:9200';
+      mockRequestOnce(https.request, JSON.stringify({ status: 'red' }));
+
+      const service = new HealthCheckService();
+      const result = await service.checkReadiness();
+
+      expect(result.checks['elasticsearch']?.status).toBe('unhealthy');
+      expect(result.checks['elasticsearch']?.message).toBe('Service unavailable');
     });
   });
 
