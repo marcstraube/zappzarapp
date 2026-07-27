@@ -30,6 +30,7 @@
     "monolog/monolog": "^3.9",
     "php-amqplib/php-amqplib": "^3.7",
     "php-di/php-di": "^7.1",
+    "symfony/mailer": "^8.0",
     "twig/twig": "^3.0",
     "zappzarapp/audit-logger": "^1.1.0",
     "zappzarapp/devtoolbar": "^1.0.0",
