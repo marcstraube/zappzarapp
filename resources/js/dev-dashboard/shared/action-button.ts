@@ -8,13 +8,13 @@
 
 import type { RequestInterceptorInstance } from '@zappzarapp/browser-utils/request';
 
-export interface ActionResponse {
+interface ActionResponse {
   success?: boolean;
   message?: string;
   output?: string;
 }
 
-export interface ButtonActionOptions {
+interface ButtonActionOptions {
   /** Button label while the request is running, e.g. "Generating...". */
   busyLabel: string;
   /** Idle button class swapped for btn-success/btn-danger. */
