@@ -209,6 +209,36 @@ final class DocsServiceTest extends TestCase
         $this->assertFalse($status['allFresh']);
     }
 
+    #[Test]
+    public function testGetApiDocsStatusIgnoresNodeModulesForFreshness(): void
+    {
+        // Old backend source, docs generated afterwards
+        $backendSrcDir = $this->srcDir . '/node/backend';
+        mkdir($backendSrcDir, 0755, recursive: true);
+        file_put_contents($backendSrcDir . '/server.ts', '// test');
+        touch($backendSrcDir . '/server.ts', time() - 7200); // 2 hours ago
+
+        $backendDocsDir = $this->docsDir . '/api/node-backend';
+        mkdir($backendDocsDir, 0755, recursive: true);
+        file_put_contents($backendDocsDir . '/index.html', '<html>docs</html>');
+        touch($backendDocsDir . '/index.html', time() - 3600); // 1 hour ago
+
+        // A dependency installed AFTER docs generation must not flip freshness
+        $nodeModulesDir = $backendSrcDir . '/node_modules/some-package';
+        mkdir($nodeModulesDir, 0755, recursive: true);
+        file_put_contents($nodeModulesDir . '/index.js', '// dependency');
+        touch($nodeModulesDir . '/index.js', time() - 60); // newer than docs
+
+        $service = new DocsService($this->docsDir, $this->srcDir);
+        $status  = $service->getApiDocsStatus();
+
+        $this->assertTrue($status['node_backend']['exists']);
+        $this->assertFalse(
+            $status['node_backend']['outdated'],
+            'node_modules mtimes must not mark docs as outdated'
+        );
+    }
+
     // ===== getApiDocsStatus() — node-specific commands =====
 
     #[Test]
