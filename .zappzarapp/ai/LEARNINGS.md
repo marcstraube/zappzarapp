@@ -381,7 +381,106 @@ as an explicit decision, not silently changed.
 
 ---
 
+## CI / GitHub Actions
+
+### Path-based job gating (dorny/paths-filter)
+
+- A `changes` job runs `dorny/paths-filter@v3` and exposes per-area boolean
+  outputs (`php`/`node`/`infra`/`ci`); every other job `needs: [changes]` and
+  gates via `if: needs.changes.outputs.<area> == 'true'`. Filter values are the
+  strings `'true'`/`'false'` — compare against `'true'`, not a bare truthiness.
+- The filter mirrors `docker/hooks/change-detector.sh` intent. `ci` (any change
+  under `.github/`) is an override that forces every downstream job to run.
+- `dorny/paths-filter` needs `actions/checkout` before it (to diff against the
+  base/before-SHA) — works for both `push` and `pull_request`.
+- **Skip cascades through `needs`**: a skipped needed job skips its dependents
+  automatically (their `if` doesn't use `always()`). So gating `bats-quick` on
+  `infra||ci` also gates the expensive `bats-integration` (`needs: bats-quick`).
+  We still repeat the path condition on `bats-integration` for explicitness and
+  to AND it with the existing event/branch condition.
+- `markdownlint` lives inside `node-quality`, so `**/*.md` is in the `node`
+  filter — a pure docs change still gets linted (slight over-trigger, but keeps
+  coverage). Same reason `resources/**` is under `node`.
+- `ci-summary` (`if: always()`) also `needs: [changes]`: if the `changes` job
+  itself fails, all downstream jobs skip, and without this the summary would go
+  green on a broken filter. `contains(needs.*.result, 'failure')` ignores
+  `skipped`, so gated-out jobs don't fail the summary.
+- **Branch-protection caveat:** a job skipped via job-level `if:` counts as
+  _passing_ for required status checks — path-gated jobs won't block merges when
+  legitimately skipped. Verify required-check names still resolve if enabled.
+
+### Pin the latest action major — verify, don't assume
+
+- `dorny/paths-filter` latest is **v4** (v4.0.2), not the habitual v3 — v4 only
+  bumps the Node runtime, API identical. Verify via
+  `curl -fsSL api.github.com/repos/<owner>/<repo>/releases/latest`. All other
+  actions in `.github/workflows/` are already on current majors (checkout@v7,
+  setup-buildx-action@v4, upload-artifact@v7, codecov-action@v7,
+  github-script@v9, codeql-action@v4).
+
+### GitLab CI mirrors the same gating (native rules:changes)
+
+- `.gitlab-ci.yml` ships for boilerplate users who use GitLab — keep it in sync
+  with `.github/workflows/ci.yml`. GitLab needs no detector job: each job gets
+  `rules: - changes: *<paths>` where `*<paths>` is a YAML anchor holding a FLAT
+  list of globs. You cannot splice two sequence anchors into one `changes:` list
+  (nested arrays are rejected), so each `*-paths` anchor embeds the CI-config
+  paths (`.gitlab-ci.yml`, `.gitlab/**/*`) directly — that's the `ci` override.
+- GitLab directory globs need the `/*` suffix: `docker/**/*`, not `docker/**`.
+- `only:` and `rules:` are mutually exclusive per job — the
+  `only: [master, develop, merge_requests]` jobs (coverage, bats:integration,
+  build:production) were fully converted to `rules` with an `if:` branch/MR
+  guard AND `changes:`.
+- Concurrency equivalent: `workflow.auto_cancel.on_new_commit: interruptible`
+  (GitLab 15.3+) + `default: interruptible: true`; `build:production` overrides
+  `interruptible: false` so the deployable-artifact validation always finishes
+  (the GitLab analogue of the GitHub master-exemption).
+- `workflow.rules` added the canonical "skip branch pipeline when an MR is open"
+  guard to avoid duplicate MR+branch pipelines.
+- Pre-existing image pins `docker:24-{cli,dind}` / `python:3.12-alpine` are
+  dated but left unchanged (out of scope; GitLab CI is not actively run here).
+  Bump if GitLab CI is ever reactivated.
+- **Drift caught by the first live GitLab run:** `.docker-setup` before_script
+  (and build:production) called `make ssl-selfsigned`, a target that no longer
+  exists — it was renamed to `ssl-internal` (what GitHub CI uses). Every
+  docker-setup job failed at before_script. Undetected because GitLab CI had
+  never run. Lesson: when porting/editing a never-run CI config, grep every
+  `make <target>` / `pnpm run <script>` reference against the Makefile/package
+  scripts before pushing, rather than discovering drift one failed job at a
+  time.
+
+### concurrency: exempt master from cancellation
+
+- `concurrency.cancel-in-progress: ${{ github.ref != 'refs/heads/master' }}` —
+  cancels superseded PR/develop runs (saves minutes) but lets master runs finish
+  since they validate the deployable artifact.
+
+### change-detector.sh `compose` pattern misses `compose.yaml` (latent, unfixed)
+
+- `docker/hooks/change-detector.sh` `compose` type matches `docker-compose.*`
+  only; the repo uses `compose.yaml`/`compose.*.yaml`, so the pre-push hook does
+  NOT detect compose changes. The CI `infra` filter uses `compose*.yaml` and is
+  correct. Flagged during the CI refactor 2026-07-28; hook fix left out of
+  scope.
+
+### docs-php had the same cross-UID staleness bug as docs-node
+
+- Same root cause fixed for `docs-node-backend`/`-frontend` in `40a97d7`:
+  phpDocumentor runs as `www-data` (UID 82) and cannot overwrite output files
+  owned by a different UID (host root in CI). Unlike docs-node, `docs-php` had
+  no freshness check, so it _silently shipped stale docs_. Fix: empty
+  `docs/api/php` as root via the alpine helper BEFORE generating, `touch` a
+  stamp, then assert `docs/api/php/index.html -nt stamp` after `composer docs`.
+  Verified 2026-07-28.
+
+---
+
 ## Last Updated
+
+2026-07-28 (added: CI path-based job gating + skip-cascade semantics,
+concurrency master-exempt, change-detector compose-pattern gap, docs-php
+cross-UID staleness fix, paths-filter v4 version-check, GitLab CI mirror via
+native rules:changes + auto_cancel)
 
 2026-07-27 (added: import-time listeners in tests, lint:fix glob drift, node
 coverage baseline, single-file bind-mount stale inode, @vitest/ui coverage

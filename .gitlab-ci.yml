@@ -10,6 +10,102 @@ variables:
   # Use CI-specific compose file (no lockfile bind mounts)
   COMPOSE_FILE: compose.yaml:compose.ci.yaml
 
+# ============================================================================
+# PIPELINE CONTROL
+# ============================================================================
+# - auto_cancel: cancel superseded runs whose jobs are interruptible (saves
+#   runner minutes). build:production is marked interruptible:false so the
+#   deployable-artifact validation always completes (mirrors the GitHub
+#   Actions concurrency master-exemption).
+# - workflow rules: run MR pipelines; skip the redundant branch pipeline when
+#   an MR is open for that branch (avoids duplicate pipelines).
+# ============================================================================
+workflow:
+  auto_cancel:
+    on_new_commit: interruptible
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+    - if: '$CI_COMMIT_BRANCH && $CI_OPEN_MERGE_REQUESTS'
+      when: never
+    - if: '$CI_COMMIT_BRANCH'
+
+default:
+  interruptible: true
+
+# ============================================================================
+# PATH FILTERS (rules:changes) - only run the jobs a change needs.
+# Mirrors .github/workflows/ci.yml. Every set includes the CI config itself,
+# so a pipeline-config change re-runs the full suite (the `ci` override).
+# ============================================================================
+.ci-paths: &ci-paths
+  - .gitlab-ci.yml
+  - .gitlab/**/*
+
+.php-paths: &php-paths
+  - "**/*.php"
+  - composer.json
+  - composer.lock
+  - phpstan*.neon
+  - phpunit.xml*
+  - phpdoc.xml
+  - phpmd.xml*
+  - rector.php
+  - .php-cs-fixer*.php
+  - .gitlab-ci.yml
+  - .gitlab/**/*
+
+.node-paths: &node-paths
+  - "**/*.ts"
+  - "**/*.tsx"
+  - "**/*.js"
+  - "**/*.cjs"
+  - "**/*.md"
+  - resources/**/*
+  - package.json
+  - pnpm-lock.yaml
+  - pnpm-workspace.yaml
+  - tsconfig*.json
+  - eslint.config.*
+  - .prettier*
+  - .markdownlint*
+  - vitest.config.*
+  - .gitlab-ci.yml
+  - .gitlab/**/*
+
+.infra-paths: &infra-paths
+  - "**/Dockerfile*"
+  - docker/**/*
+  - compose*.yaml
+  - compose*.yml
+  - Makefile
+  - "**/*.sh"
+  - tests/**/*
+  - goss*.yaml
+  - .gitlab-ci.yml
+  - .gitlab/**/*
+
+# php + node + infra combined (production build and cross-language scans)
+.app-paths: &app-paths
+  - "**/*.php"
+  - composer.json
+  - composer.lock
+  - "**/*.ts"
+  - "**/*.tsx"
+  - "**/*.js"
+  - "**/*.cjs"
+  - "**/*.md"
+  - resources/**/*
+  - package.json
+  - pnpm-lock.yaml
+  - "**/Dockerfile*"
+  - docker/**/*
+  - compose*.yaml
+  - compose*.yml
+  - Makefile
+  - "**/*.sh"
+  - .gitlab-ci.yml
+  - .gitlab/**/*
+
 # Define pipeline stages
 stages:
   - build
@@ -31,7 +127,7 @@ stages:
     # Initialize environment and generate secrets
     - make init
     - make secrets
-    - make ssl-selfsigned
+    - make ssl-internal
     # Create lockfile for bind mount (compose.ci.yaml)
     - "[ -f pnpm-lock.yaml ] || touch pnpm-lock.yaml"
   after_script:
@@ -44,6 +140,8 @@ stages:
 build:php:
   <<: *docker-setup
   stage: build
+  rules:
+    - changes: *php-paths
   script:
     - docker compose build php
   artifacts:
@@ -57,6 +155,8 @@ build:php:
 build:node:
   <<: *docker-setup
   stage: build
+  rules:
+    - changes: *node-paths
   script:
     - docker compose build node
   cache:
@@ -68,6 +168,8 @@ build:node:
 build:nginx:
   <<: *docker-setup
   stage: build
+  rules:
+    - changes: *app-paths
   script:
     - docker compose build nginx
 
@@ -77,6 +179,8 @@ build:nginx:
 php:coding-standards:
   <<: *docker-setup
   stage: quality
+  rules:
+    - changes: *php-paths
   dependencies:
     - build:php
   script:
@@ -92,6 +196,8 @@ php:coding-standards:
 php:static-analysis:
   <<: *docker-setup
   stage: quality
+  rules:
+    - changes: *php-paths
   dependencies:
     - build:php
   script:
@@ -107,6 +213,8 @@ php:static-analysis:
 php:mess-detector:
   <<: *docker-setup
   stage: quality
+  rules:
+    - changes: *php-paths
   dependencies:
     - build:php
   script:
@@ -119,6 +227,8 @@ php:mess-detector:
 php:rector-check:
   <<: *docker-setup
   stage: quality
+  rules:
+    - changes: *php-paths
   dependencies:
     - build:php
   script:
@@ -131,6 +241,8 @@ php:rector-check:
 php:composer-validate:
   <<: *docker-setup
   stage: quality
+  rules:
+    - changes: *php-paths
   dependencies:
     - build:php
   script:
@@ -145,6 +257,8 @@ php:composer-validate:
 php:unit-tests:
   <<: *docker-setup
   stage: test
+  rules:
+    - changes: *php-paths
   dependencies:
     - build:php
   script:
@@ -165,11 +279,11 @@ php:unit-tests:
 php:coverage:
   <<: *docker-setup
   stage: test
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "master" || $CI_COMMIT_BRANCH == "develop"'
+      changes: *php-paths
   dependencies:
     - build:php
-  only:
-    - master
-    - develop
   script:
     - docker compose --profile postgres up -d php postgres
     - sleep 5
@@ -186,6 +300,8 @@ php:coverage:
 node:lint:
   <<: *docker-setup
   stage: quality
+  rules:
+    - changes: *node-paths
   dependencies:
     - build:node
   script:
@@ -197,6 +313,8 @@ node:lint:
 node:format-check:
   <<: *docker-setup
   stage: quality
+  rules:
+    - changes: *node-paths
   dependencies:
     - build:node
   script:
@@ -208,6 +326,8 @@ node:format-check:
 node:type-check:
   <<: *docker-setup
   stage: quality
+  rules:
+    - changes: *node-paths
   dependencies:
     - build:node
   script:
@@ -219,6 +339,8 @@ node:type-check:
 node:markdownlint:
   <<: *docker-setup
   stage: quality
+  rules:
+    - changes: *node-paths
   dependencies:
     - build:node
   script:
@@ -230,6 +352,8 @@ node:markdownlint:
 node:package-validate:
   <<: *docker-setup
   stage: quality
+  rules:
+    - changes: *node-paths
   dependencies:
     - build:node
   script:
@@ -244,6 +368,8 @@ node:package-validate:
 node:tests:
   <<: *docker-setup
   stage: test
+  rules:
+    - changes: *node-paths
   dependencies:
     - build:node
   script:
@@ -264,11 +390,11 @@ node:tests:
 node:coverage:
   <<: *docker-setup
   stage: test
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "master" || $CI_COMMIT_BRANCH == "develop"'
+      changes: *node-paths
   dependencies:
     - build:node
-  only:
-    - master
-    - develop
   script:
     - docker compose --profile redis up -d node redis
     - sleep 5
@@ -285,6 +411,8 @@ node:coverage:
 bats:quick:
   <<: *docker-setup
   stage: test
+  rules:
+    - changes: *infra-paths
   script:
     - make bats-build
     - make bats-test-junit
@@ -296,12 +424,15 @@ bats:quick:
 bats:integration:
   <<: *docker-setup
   stage: test
+  # Expensive (~30 min): only on MRs and master/develop, and only when
+  # Docker/Compose/Shell/Makefile/tests actually changed.
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+      changes: *infra-paths
+    - if: '$CI_COMMIT_BRANCH == "master" || $CI_COMMIT_BRANCH == "develop"'
+      changes: *infra-paths
   needs:
     - bats:quick
-  only:
-    - master
-    - develop
-    - merge_requests
   script:
     - make bats-build
     # Create empty lockfiles (Dockerfile COPY needs them)
@@ -337,6 +468,8 @@ bats:integration:
 sast:semgrep:
   image: python:3.12-alpine
   stage: security
+  rules:
+    - changes: *app-paths
   before_script:
     - apk add --no-cache git
     - pip install semgrep
@@ -369,6 +502,8 @@ sast:semgrep:
 dependency-audit:
   <<: *docker-setup
   stage: security
+  rules:
+    - changes: *app-paths
   dependencies:
     - build:php
     - build:node
@@ -387,12 +522,14 @@ dependency-audit:
 build:production:
   <<: *docker-setup
   stage: deploy
-  only:
-    - master
-    - develop
+  # Validates the deployable artifact - must complete, so never interrupted.
+  interruptible: false
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "master" || $CI_COMMIT_BRANCH == "develop"'
+      changes: *app-paths
   script:
     # Generate SSL certificates for nginx
-    - make ssl-selfsigned
+    - make ssl-internal
     # Create empty lockfiles for production build (Dockerfile COPY needs them)
     - "[ -f composer.lock ] || echo '{}' > composer.lock"
     - "[ -f pnpm-lock.yaml ] || touch pnpm-lock.yaml"
