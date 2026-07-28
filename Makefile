@@ -3957,9 +3957,11 @@ docs-node-backend: ## Generate Node.js Backend API documentation using TypeDoc
 	@echo -e "\033[0;33mGenerating Node.js Backend API documentation...\033[0m"
 	@# Ensure output directory exists with proper permissions (cross-UID in CI)
 	@mkdir -p docs/api/node-backend build/tmp && chmod 777 docs/api docs/api/node-backend 2>/dev/null || true
-	@# Normalize ownership BEFORE generating: files left behind by another UID
-	@# block TypeDoc's output cleaning and the sed post-processing silently
-	@$(LOAD_ENV) && docker run --rm -v "$$(pwd)/docs:/docs" $(ALPINE_IMAGE) chown -R $${USER_ID:-1000}:$${GROUP_ID:-1000} /docs/api/node-backend
+	@# Empty the output dir as root BEFORE generating: a cross-UID chown here
+	@# leaves subdirectories that TypeDoc (running as a different UID in the node
+	@# container, e.g. host root in CI vs node:1000) cannot delete, so it silently
+	@# keeps a stale index.html. Removing as root always succeeds.
+	@docker run --rm -v "$$(pwd)/docs:/docs" $(ALPINE_IMAGE) sh -c 'rm -rf /docs/api/node-backend/* /docs/api/node-backend/.[!.]* 2>/dev/null || true'
 	@touch build/tmp/.docs-node-backend.stamp
 	@$(DC_RUN) run --rm node pnpm run docs:backend
 	@# TypeDoc can report success without having written - verify freshness
@@ -3984,7 +3986,7 @@ docs-node-frontend: ## Generate Node.js Frontend documentation using TypeDoc
 	else \
 		echo -e "\033[0;33mGenerating Node.js Frontend documentation...\033[0m"; \
 		mkdir -p docs/api/node-frontend build/tmp && chmod 777 docs/api docs/api/node-frontend 2>/dev/null || true; \
-		$(LOAD_ENV) && docker run --rm -v "$$(pwd)/docs:/docs" $(ALPINE_IMAGE) chown -R $${USER_ID:-1000}:$${GROUP_ID:-1000} /docs/api/node-frontend; \
+		docker run --rm -v "$$(pwd)/docs:/docs" $(ALPINE_IMAGE) sh -c 'rm -rf /docs/api/node-frontend/* /docs/api/node-frontend/.[!.]* 2>/dev/null || true'; \
 		touch build/tmp/.docs-node-frontend.stamp; \
 		$(DC_RUN) run --rm node pnpm run docs:frontend; \
 		if [ ! docs/api/node-frontend/index.html -nt build/tmp/.docs-node-frontend.stamp ]; then \
