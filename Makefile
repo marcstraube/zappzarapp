@@ -3933,7 +3933,20 @@ docs-php: ## Generate PHP API documentation using phpDocumentor
 	@# Download phpdoc.phar inside PHP container if not present (run as root for bind mount permissions)
 	@docker compose exec -u root php sh -c '[ -f tools/phpdoc.phar ] || (mkdir -p tools && curl -fsSL "https://github.com/phpDocumentor/phpDocumentor/releases/download/v$(PHPDOC_VERSION)/phpDocumentor.phar" -o tools/phpdoc.phar && chmod +x tools/phpdoc.phar && echo "phpDocumentor v$(PHPDOC_VERSION) downloaded")'
 	@echo -e "\033[0;33mGenerating PHP API documentation...\033[0m"
+	@# Ensure output directory exists with proper permissions (cross-UID in CI)
+	@mkdir -p docs/api/php build/tmp && chmod 777 docs/api docs/api/php 2>/dev/null || true
+	@# Empty the output dir as root BEFORE generating: a cross-UID chown here
+	@# leaves subdirectories that phpDocumentor (running as www-data in the php
+	@# container, e.g. host root in CI vs www-data:82) cannot delete, so it
+	@# silently keeps a stale index.html. Removing as root always succeeds.
+	@docker run --rm -v "$$(pwd)/docs:/docs" $(ALPINE_IMAGE) sh -c 'rm -rf /docs/api/php/* /docs/api/php/.[!.]* 2>/dev/null || true'
+	@touch build/tmp/.docs-php.stamp
 	@docker compose exec php composer docs
+	@# phpDocumentor can report success without having written - verify freshness
+	@if [ ! docs/api/php/index.html -nt build/tmp/.docs-php.stamp ]; then \
+		echo -e "\033[0;31mError: docs/api/php/index.html was not regenerated\033[0m"; \
+		exit 1; \
+	fi
 	@echo -e "\033[0;33mApplying custom theme...\033[0m"
 	@docker compose exec php sh -c '\
 		CSS_CONTENT=$$(cat /var/www/html/.zappzarapp/docs/assets/custom-phpdoc.css | tr "\n" " " | sed "s/  */ /g"); \
