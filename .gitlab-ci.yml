@@ -107,8 +107,10 @@ default:
   - .gitlab/**/*
 
 # Define pipeline stages
+# Stages are cosmetic groupings only: every job declares `needs:` (a DAG), so
+# execution order follows dependencies, not stage order. This mirrors the
+# GitHub Actions workflow, where jobs run in parallel gated only by `changes`.
 stages:
-  - build
   - test
   - quality
   - security
@@ -135,121 +137,34 @@ stages:
     - docker system prune -f || true
 
 # ============================================================================
-# BUILD STAGE
+# PHP QUALITY CHECKS
 # ============================================================================
-build:php:
+# Single job builds the PHP image once and runs every static check in sequence,
+# mirroring the GitHub Actions `php-quality` job. phpmd and rector-check are
+# blocking here (as on GitHub) rather than allow_failure — the codebase already
+# passes them on the authoritative GitHub pipeline.
+php:quality:
   <<: *docker-setup
-  stage: build
+  stage: quality
+  needs: []
   rules:
     - changes: *php-paths
   script:
     - docker compose build php
-  artifacts:
-    reports:
-      dotenv: build.env
-  cache:
-    key: php-vendor-$CI_COMMIT_REF_SLUG
-    paths:
-      - vendor/
-
-build:node:
-  <<: *docker-setup
-  stage: build
-  rules:
-    - changes: *node-paths
-  script:
-    - docker compose build node
-  cache:
-    key: node-modules-$CI_COMMIT_REF_SLUG
-    paths:
-      - node_modules/
-      - .pnpm-store/
-
-build:nginx:
-  <<: *docker-setup
-  stage: build
-  rules:
-    - changes: *app-paths
-  script:
-    - docker compose build nginx
-
-# ============================================================================
-# PHP QUALITY CHECKS
-# ============================================================================
-php:coding-standards:
-  <<: *docker-setup
-  stage: quality
-  rules:
-    - changes: *php-paths
-  dependencies:
-    - build:php
-  script:
     - docker compose up -d php
     - sleep 5
     - docker compose exec -T php composer install --no-progress --no-interaction
     - docker compose exec -T php composer cs-check
-  artifacts:
-    reports:
-      codequality: php-cs-report.json
-    when: always
-
-php:static-analysis:
-  <<: *docker-setup
-  stage: quality
-  rules:
-    - changes: *php-paths
-  dependencies:
-    - build:php
-  script:
-    - docker compose up -d php
-    - sleep 5
-    - docker compose exec -T php composer install --no-progress --no-interaction
     - docker compose exec -T php composer analyse
+    - docker compose exec -T php composer phpmd
+    - docker compose exec -T php composer rector-check
+    - docker compose exec -T php composer validate
   artifacts:
     reports:
-      codequality: phpstan-report.json
+      codequality:
+        - php-cs-report.json
+        - phpstan-report.json
     when: always
-
-php:mess-detector:
-  <<: *docker-setup
-  stage: quality
-  rules:
-    - changes: *php-paths
-  dependencies:
-    - build:php
-  script:
-    - docker compose up -d php
-    - sleep 5
-    - docker compose exec -T php composer install --no-progress --no-interaction
-    - docker compose exec -T php composer phpmd || true
-  allow_failure: true
-
-php:rector-check:
-  <<: *docker-setup
-  stage: quality
-  rules:
-    - changes: *php-paths
-  dependencies:
-    - build:php
-  script:
-    - docker compose up -d php
-    - sleep 5
-    - docker compose exec -T php composer install --no-progress --no-interaction
-    - docker compose exec -T php composer rector-check
-  allow_failure: true
-
-php:composer-validate:
-  <<: *docker-setup
-  stage: quality
-  rules:
-    - changes: *php-paths
-  dependencies:
-    - build:php
-  script:
-    - docker compose up -d php
-    - sleep 5
-    - docker compose exec -T php composer install --no-progress --no-interaction
-    - docker compose exec -T php composer validate
 
 # ============================================================================
 # PHP TESTS
@@ -257,10 +172,9 @@ php:composer-validate:
 php:unit-tests:
   <<: *docker-setup
   stage: test
+  needs: []
   rules:
     - changes: *php-paths
-  dependencies:
-    - build:php
   script:
     - docker compose --profile postgres up -d php postgres
     - sleep 5
@@ -279,11 +193,10 @@ php:unit-tests:
 php:coverage:
   <<: *docker-setup
   stage: test
+  needs: []
   rules:
     - if: '$CI_COMMIT_BRANCH == "master" || $CI_COMMIT_BRANCH == "develop"'
       changes: *php-paths
-  dependencies:
-    - build:php
   script:
     - docker compose --profile postgres up -d php postgres
     - sleep 5
@@ -297,70 +210,24 @@ php:coverage:
 # ============================================================================
 # NODE.JS QUALITY CHECKS
 # ============================================================================
-node:lint:
+# Single job builds the Node image once and runs every check in sequence,
+# mirroring the GitHub Actions `node-quality` job.
+node:quality:
   <<: *docker-setup
   stage: quality
+  needs: []
   rules:
     - changes: *node-paths
-  dependencies:
-    - build:node
   script:
-    - docker compose up -d node
-    - sleep 5
-    - docker compose exec -T node pnpm install
-    - docker compose exec -T node pnpm run lint
-
-node:format-check:
-  <<: *docker-setup
-  stage: quality
-  rules:
-    - changes: *node-paths
-  dependencies:
-    - build:node
-  script:
-    - docker compose up -d node
-    - sleep 5
-    - docker compose exec -T node pnpm install
-    - docker compose exec -T node pnpm run format:check
-
-node:type-check:
-  <<: *docker-setup
-  stage: quality
-  rules:
-    - changes: *node-paths
-  dependencies:
-    - build:node
-  script:
+    - docker compose build node
     - docker compose up -d node
     - sleep 5
     - docker compose exec -T node pnpm install
     - docker compose exec -T node pnpm run type-check
-
-node:markdownlint:
-  <<: *docker-setup
-  stage: quality
-  rules:
-    - changes: *node-paths
-  dependencies:
-    - build:node
-  script:
-    - docker compose up -d node
-    - sleep 5
-    - docker compose exec -T node pnpm install
-    - docker compose exec -T node pnpm run lint:md
-
-node:package-validate:
-  <<: *docker-setup
-  stage: quality
-  rules:
-    - changes: *node-paths
-  dependencies:
-    - build:node
-  script:
-    - docker compose up -d node
-    - sleep 5
-    - docker compose exec -T node pnpm install
+    - docker compose exec -T node pnpm run lint
+    - docker compose exec -T node pnpm run format:check
     - docker compose exec -T node pnpm run quality
+    - docker compose exec -T node pnpm run lint:md
 
 # ============================================================================
 # NODE.JS TESTS
@@ -368,10 +235,9 @@ node:package-validate:
 node:tests:
   <<: *docker-setup
   stage: test
+  needs: []
   rules:
     - changes: *node-paths
-  dependencies:
-    - build:node
   script:
     - docker compose --profile redis up -d node redis
     - sleep 5
@@ -390,11 +256,10 @@ node:tests:
 node:coverage:
   <<: *docker-setup
   stage: test
+  needs: []
   rules:
     - if: '$CI_COMMIT_BRANCH == "master" || $CI_COMMIT_BRANCH == "develop"'
       changes: *node-paths
-  dependencies:
-    - build:node
   script:
     - docker compose --profile redis up -d node redis
     - sleep 5
@@ -411,6 +276,7 @@ node:coverage:
 bats:quick:
   <<: *docker-setup
   stage: test
+  needs: []
   rules:
     - changes: *infra-paths
   script:
@@ -474,6 +340,7 @@ bats:integration:
 sast:semgrep:
   image: python:3.12-alpine
   stage: security
+  needs: []
   rules:
     - changes: *app-paths
   before_script:
@@ -508,12 +375,11 @@ sast:semgrep:
 dependency-audit:
   <<: *docker-setup
   stage: security
+  needs: []
   rules:
     - changes: *app-paths
-  dependencies:
-    - build:php
-    - build:node
   script:
+    - docker compose build php node
     - docker compose up -d php node
     - sleep 5
     - docker compose exec -T php composer install --no-progress --no-interaction
@@ -528,6 +394,7 @@ dependency-audit:
 build:production:
   <<: *docker-setup
   stage: deploy
+  needs: []
   # Validates the deployable artifact - must complete, so never interrupted.
   interruptible: false
   rules:
