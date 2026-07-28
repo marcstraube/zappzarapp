@@ -531,6 +531,13 @@ build:production:
   # Validates the deployable artifact - must complete, so never interrupted.
   interruptible: false
   rules:
+    # Opt-out for resource-limited runners: set the CI/CD variable
+    # SKIP_PRODUCTION_BUILD=true to skip this job. It boots the full production
+    # stack (nginx+php+node+db); on shared runners nginx cannot read the
+    # cross-UID-owned SSL key. Where skipped, the production build is validated
+    # in a stronger environment (e.g. GitHub CI).
+    - if: '$SKIP_PRODUCTION_BUILD == "true"'
+      when: never
     - if: '$CI_COMMIT_BRANCH == "master" || $CI_COMMIT_BRANCH == "develop"'
       changes: *app-paths
   script:
