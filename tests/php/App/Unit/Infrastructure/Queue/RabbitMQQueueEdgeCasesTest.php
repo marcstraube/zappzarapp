@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\App\Unit\Infrastructure\Queue;
 
+use App\Infrastructure\Config\CredentialLoader;
 use App\Infrastructure\Queue\RabbitMQConfig;
 use App\Infrastructure\Queue\RabbitMQQueue;
 use Exception;
@@ -17,6 +18,7 @@ use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\MockObject\Stub;
 use PHPUnit\Framework\TestCase;
 use ReflectionClass;
+use ReflectionException;
 
 /**
  * Edge case tests for RabbitMQQueue — error paths and branches not covered by
@@ -25,6 +27,7 @@ use ReflectionClass;
  * @SuppressWarnings("PHPMD.CouplingBetweenObjects") Required mocks for AMQP testing
  */
 #[CoversClass(RabbitMQQueue::class)]
+#[UsesClass(CredentialLoader::class)]
 #[UsesClass(RabbitMQConfig::class)]
 final class RabbitMQQueueEdgeCasesTest extends TestCase
 {
@@ -115,6 +118,9 @@ final class RabbitMQQueueEdgeCasesTest extends TestCase
         ]));
     }
 
+    /**
+     * @throws ReflectionException
+     */
     #[Test]
     public function testConsumerCallbackAcksMessageOnSuccessfulCallback(): void
     {
@@ -144,6 +150,9 @@ final class RabbitMQQueueEdgeCasesTest extends TestCase
         $this->assertSame('hello', $receivedBody);
     }
 
+    /**
+     * @throws ReflectionException
+     */
     #[Test]
     public function testConsumerCallbackNacksMessageOnFailedCallback(): void
     {
@@ -173,6 +182,9 @@ final class RabbitMQQueueEdgeCasesTest extends TestCase
         $this->assertSame('bad', $receivedBody);
     }
 
+    /**
+     * @throws ReflectionException
+     */
     #[Test]
     public function testConsumerCallbackSkipsAckNackWhenNoAck(): void
     {
@@ -204,6 +216,8 @@ final class RabbitMQQueueEdgeCasesTest extends TestCase
      * Invoke the private createConsumerCallback method via reflection.
      *
      * @param callable(string): bool $callback
+     *
+     * @throws ReflectionException
      */
     private function invokeCreateConsumerCallback(
         RabbitMQQueue $queue,

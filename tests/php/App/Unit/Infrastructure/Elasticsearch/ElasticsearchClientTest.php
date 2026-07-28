@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\App\Unit\Infrastructure\Elasticsearch;
 
+use App\Infrastructure\Config\CredentialLoader;
 use App\Infrastructure\Elasticsearch\ElasticsearchClient;
 use App\Infrastructure\Elasticsearch\ElasticsearchConfig;
 use PHPUnit\Framework\Attributes\CoversClass;
@@ -21,6 +22,7 @@ use stdClass;
  * or a mock server - see tests/php/App/Feature/.
  */
 #[CoversClass(ElasticsearchClient::class)]
+#[UsesClass(CredentialLoader::class)]
 #[UsesClass(ElasticsearchConfig::class)]
 final class ElasticsearchClientTest extends TestCase
 {

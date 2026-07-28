@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\App\Unit\Infrastructure\Search;
 
+use App\Infrastructure\Config\CredentialLoader;
 use App\Infrastructure\Search\MeilisearchConfig;
 use App\Infrastructure\Search\MeilisearchSearch;
 use DateTime;
@@ -28,6 +29,7 @@ use ReflectionClass;
  * @SuppressWarnings("PHPMD.CouplingBetweenObjects")
  */
 #[CoversClass(MeilisearchSearch::class)]
+#[UsesClass(CredentialLoader::class)]
 #[UsesClass(MeilisearchConfig::class)]
 final class MeilisearchSearchTest extends TestCase
 {

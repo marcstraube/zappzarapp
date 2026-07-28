@@ -4,11 +4,13 @@ declare(strict_types=1);
 
 namespace Tests\App\Unit\Infrastructure\Elasticsearch;
 
+use App\Infrastructure\Config\CredentialLoader;
 use App\Infrastructure\Elasticsearch\ElasticsearchConfig;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\RunInSeparateProcess;
 use PHPUnit\Framework\Attributes\Test;
+use PHPUnit\Framework\Attributes\UsesClass;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -18,6 +20,7 @@ use PHPUnit\Framework\TestCase;
  * @SuppressWarnings("PHPMD.TooManyPublicMethods")
  */
 #[CoversClass(ElasticsearchConfig::class)]
+#[UsesClass(CredentialLoader::class)]
 final class ElasticsearchConfigTest extends TestCase
 {
     protected function setUp(): void

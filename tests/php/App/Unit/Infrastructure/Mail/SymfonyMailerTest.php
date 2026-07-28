@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\App\Unit\Infrastructure\Mail;
 
+use App\Infrastructure\Config\CredentialLoader;
 use App\Infrastructure\Mail\EmailMessage;
 use App\Infrastructure\Mail\MailConfig;
 use App\Infrastructure\Mail\MailException;
@@ -19,8 +20,9 @@ use Symfony\Component\Mime\Email;
  * connection is made.
  */
 #[CoversClass(SymfonyMailer::class)]
-#[UsesClass(MailConfig::class)]
+#[UsesClass(CredentialLoader::class)]
 #[UsesClass(EmailMessage::class)]
+#[UsesClass(MailConfig::class)]
 final class SymfonyMailerTest extends TestCase
 {
     private function config(): MailConfig

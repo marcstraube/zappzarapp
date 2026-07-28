@@ -662,18 +662,34 @@ describe('AbstractRepository', () => {
     });
 
     it('should leave flagged fields untouched when no key is configured', async () => {
-      const repo = new EncryptedRepository({
-        connectionFactory: mockFactory as never,
-        auditLogger: new NullAuditLogger(),
-      });
+      // Force "no key" deterministically: without an explicit key the repository
+      // falls back to loadEncryptionKey(), which reads ENCRYPTION_KEY / the secret
+      // file. CI sets those, which would enable encryption and change the flow —
+      // so clear the env var and point the key file at a non-existent path.
+      const originalKey = process.env.ENCRYPTION_KEY;
+      const originalKeyFile = process.env.ENCRYPTION_KEY_FILE;
+      delete process.env.ENCRYPTION_KEY;
+      process.env.ENCRYPTION_KEY_FILE = '/nonexistent/encryption_key.txt';
 
-      mockConnection.query.mockResolvedValueOnce([{ id: 1 }]);
+      try {
+        const repo = new EncryptedRepository({
+          connectionFactory: mockFactory as never,
+          auditLogger: new NullAuditLogger(),
+        });
 
-      const result = await repo.insert({ name: 'N', email: 'e', secret: 'plain' });
+        mockConnection.query.mockResolvedValueOnce([{ id: 1 }]);
 
-      expect(result).toBe(1);
-      // Only the INSERT runs — no encrypt_text round-trip without a key
-      expect(mockConnection.query).toHaveBeenCalledTimes(1);
+        const result = await repo.insert({ name: 'N', email: 'e', secret: 'plain' });
+
+        expect(result).toBe(1);
+        // Only the INSERT runs — no encrypt_text round-trip without a key
+        expect(mockConnection.query).toHaveBeenCalledTimes(1);
+      } finally {
+        if (originalKey === undefined) delete process.env.ENCRYPTION_KEY;
+        else process.env.ENCRYPTION_KEY = originalKey;
+        if (originalKeyFile === undefined) delete process.env.ENCRYPTION_KEY_FILE;
+        else process.env.ENCRYPTION_KEY_FILE = originalKeyFile;
+      }
     });
   });
 });

@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 namespace Tests\App\Unit\Infrastructure\Search;
 
+use App\Infrastructure\Config\CredentialLoader;
 use App\Infrastructure\Search\MeilisearchConfig;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
+use PHPUnit\Framework\Attributes\UsesClass;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -17,6 +19,7 @@ use PHPUnit\Framework\TestCase;
  * @SuppressWarnings("PHPMD.TooManyPublicMethods") Comprehensive config testing requires many test methods
  */
 #[CoversClass(MeilisearchConfig::class)]
+#[UsesClass(CredentialLoader::class)]
 final class MeilisearchConfigTest extends TestCase
 {
     /** @var array<string, string|null> */

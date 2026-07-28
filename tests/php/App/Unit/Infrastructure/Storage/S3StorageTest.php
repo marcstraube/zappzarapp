@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\App\Unit\Infrastructure\Storage;
 
+use App\Infrastructure\Config\CredentialLoader;
 use App\Infrastructure\Storage\S3Storage;
 use App\Infrastructure\Storage\StorageConfig;
 use PHPUnit\Framework\Attributes\CoversClass;
@@ -21,6 +22,7 @@ use ReflectionClass;
  * @SuppressWarnings("PHPMD.TooManyPublicMethods")
  */
 #[CoversClass(S3Storage::class)]
+#[UsesClass(CredentialLoader::class)]
 #[UsesClass(StorageConfig::class)]
 final class S3StorageTest extends TestCase
 {

@@ -4,11 +4,13 @@ declare(strict_types=1);
 
 namespace Tests\App\Unit\Infrastructure\Queue;
 
+use App\Infrastructure\Config\CredentialLoader;
 use App\Infrastructure\Queue\RabbitMQConfig;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\RunInSeparateProcess;
 use PHPUnit\Framework\Attributes\Test;
+use PHPUnit\Framework\Attributes\UsesClass;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -24,6 +26,7 @@ use PHPUnit\Framework\TestCase;
  * @SuppressWarnings("PHPMD.TooManyPublicMethods")
  */
 #[CoversClass(RabbitMQConfig::class)]
+#[UsesClass(CredentialLoader::class)]
 final class RabbitMQConfigTest extends TestCase
 {
     protected function setUp(): void

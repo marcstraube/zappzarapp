@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\App\Unit\Infrastructure\Queue;
 
+use App\Infrastructure\Config\CredentialLoader;
 use App\Infrastructure\Queue\RabbitMQConfig;
 use App\Infrastructure\Queue\RabbitMQQueue;
 use Exception;
@@ -29,6 +30,7 @@ use ReflectionClass;
  * @SuppressWarnings("PHPMD.CouplingBetweenObjects") Required mocks for AMQP testing
  */
 #[CoversClass(RabbitMQQueue::class)]
+#[UsesClass(CredentialLoader::class)]
 #[UsesClass(RabbitMQConfig::class)]
 final class RabbitMQQueueTest extends TestCase
 {
