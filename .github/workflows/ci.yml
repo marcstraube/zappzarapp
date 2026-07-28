@@ -87,13 +87,59 @@ jobs:
               - '.github/actions/**'
 
   # ============================================================================
+  # BUILD & CACHE IMAGES
+  # ============================================================================
+  # Build the PHP and Node dev images once and export their layers to the
+  # BuildKit `gha` cache (mode=max). Downstream jobs rebuild with cache-from and
+  # get a near-instant cache hit instead of recompiling PHP extensions / the Node
+  # toolchain. This is the GitHub-native equivalent of the GitLab Container
+  # Registry reuse in .gitlab-ci.yml (build:php/build:node -> downstream pull).
+  build-images:
+    name: Build & Cache Images
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    needs: [changes]
+    if: needs.changes.outputs.php == 'true' || needs.changes.outputs.node == 'true' || needs.changes.outputs.ci == 'true'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v4
+
+      - name: Build & cache PHP dev image
+        if: needs.changes.outputs.php == 'true' || needs.changes.outputs.ci == 'true'
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: docker/php/Dockerfile
+          target: development
+          tags: zappzarapp-php:development
+          cache-from: type=gha,scope=php
+          cache-to: type=gha,scope=php,mode=max
+          load: false
+
+      - name: Build & cache Node dev image
+        if: needs.changes.outputs.node == 'true' || needs.changes.outputs.ci == 'true'
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: docker/node/Dockerfile
+          target: development
+          tags: zappzarapp-node:development
+          cache-from: type=gha,scope=node
+          cache-to: type=gha,scope=node,mode=max
+          load: false
+
+  # ============================================================================
   # PHP QUALITY CHECKS
   # ============================================================================
   php-quality:
     name: PHP Quality Checks
     runs-on: ubuntu-latest
     timeout-minutes: 15
-    needs: [changes]
+    needs: [changes, build-images]
     if: needs.changes.outputs.php == 'true' || needs.changes.outputs.ci == 'true'
 
     steps:
@@ -108,9 +154,18 @@ jobs:
           make init
           make secrets
 
-      - name: Build PHP container
+      - name: Load PHP image from cache
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: docker/php/Dockerfile
+          target: development
+          tags: zappzarapp-php:development
+          cache-from: type=gha,scope=php
+          load: true
+
+      - name: Start PHP container
         run: |
-          docker compose build php
           docker compose up -d php
           # Wait for container to be ready (entrypoint initialization)
           sleep 5
@@ -143,7 +198,7 @@ jobs:
     name: PHP Tests (PHPUnit)
     runs-on: ubuntu-latest
     timeout-minutes: 15
-    needs: [changes]
+    needs: [changes, build-images]
     if: needs.changes.outputs.php == 'true' || needs.changes.outputs.ci == 'true'
 
     steps:
@@ -158,6 +213,16 @@ jobs:
           make init
           make secrets
           make ssl-internal
+
+      - name: Load PHP image from cache
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: docker/php/Dockerfile
+          target: development
+          tags: zappzarapp-php:development
+          cache-from: type=gha,scope=php
+          load: true
 
       - name: Start services (PHP + Database)
         run: |
@@ -205,7 +270,7 @@ jobs:
     name: Node.js Quality Checks
     runs-on: ubuntu-latest
     timeout-minutes: 15
-    needs: [changes]
+    needs: [changes, build-images]
     if: needs.changes.outputs.node == 'true' || needs.changes.outputs.ci == 'true'
 
     steps:
@@ -221,11 +286,20 @@ jobs:
           make secrets
           make ssl-internal
 
-      - name: Build Node container
+      - name: Load Node image from cache
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: docker/node/Dockerfile
+          target: development
+          tags: zappzarapp-node:development
+          cache-from: type=gha,scope=node
+          load: true
+
+      - name: Start Node container
         run: |
           # Create lockfile for bind mount (compose.ci.yaml)
           [ -f pnpm-lock.yaml ] || touch pnpm-lock.yaml
-          docker compose build node
           docker compose up -d node
           # Wait for container to be ready (entrypoint initialization)
           sleep 5
@@ -258,7 +332,7 @@ jobs:
     name: Node.js Tests (Vitest)
     runs-on: ubuntu-latest
     timeout-minutes: 15
-    needs: [changes]
+    needs: [changes, build-images]
     if: needs.changes.outputs.node == 'true' || needs.changes.outputs.ci == 'true'
 
     steps:
@@ -273,6 +347,16 @@ jobs:
           make init
           make secrets
           make ssl-internal
+
+      - name: Load Node image from cache
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: docker/node/Dockerfile
+          target: development
+          tags: zappzarapp-node:development
+          cache-from: type=gha,scope=node
+          load: true
 
       - name: Start services (Node + Redis)
         run: |
@@ -317,7 +401,7 @@ jobs:
     name: Dependency Audit
     runs-on: ubuntu-latest
     timeout-minutes: 10
-    needs: [changes]
+    needs: [changes, build-images]
     if: needs.changes.outputs.php == 'true' || needs.changes.outputs.node == 'true' || needs.changes.outputs.ci == 'true'
 
     steps:
@@ -327,20 +411,36 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v4
 
-      - name: Build goss utility image (dependency)
-        run: docker build -t zappzarapp-goss:latest -f docker/goss/Dockerfile .
-
       - name: Initialize environment
         run: |
           make init
           make secrets
           make ssl-internal
 
-      - name: Build containers
+      - name: Load PHP image from cache
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: docker/php/Dockerfile
+          target: development
+          tags: zappzarapp-php:development
+          cache-from: type=gha,scope=php
+          load: true
+
+      - name: Load Node image from cache
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: docker/node/Dockerfile
+          target: development
+          tags: zappzarapp-node:development
+          cache-from: type=gha,scope=node
+          load: true
+
+      - name: Start containers
         run: |
           # Create lockfile for bind mount (compose.ci.yaml)
           [ -f pnpm-lock.yaml ] || touch pnpm-lock.yaml
-          docker compose build php node
           docker compose up -d php node
           # Wait for containers to be ready (entrypoint initialization)
           sleep 5
@@ -630,7 +730,7 @@ jobs:
   ci-summary:
     name: CI Summary
     runs-on: ubuntu-latest
-    needs: [changes, php-quality, php-tests, node-quality, node-tests, dependency-audit, sast-scan, bats-quick, bats-integration, build-production]
+    needs: [changes, build-images, php-quality, php-tests, node-quality, node-tests, dependency-audit, sast-scan, bats-quick, bats-integration, build-production]
     if: always()
 
     steps:
@@ -641,6 +741,7 @@ jobs:
           echo "| Job | Status |" >> $GITHUB_STEP_SUMMARY
           echo "|-----|--------|" >> $GITHUB_STEP_SUMMARY
           echo "| Detect Changes | ${{ needs.changes.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Build & Cache Images | ${{ needs.build-images.result }} |" >> $GITHUB_STEP_SUMMARY
           echo "| PHP Quality | ${{ needs.php-quality.result }} |" >> $GITHUB_STEP_SUMMARY
           echo "| PHP Tests | ${{ needs.php-tests.result }} |" >> $GITHUB_STEP_SUMMARY
           echo "| Node.js Quality | ${{ needs.node-quality.result }} |" >> $GITHUB_STEP_SUMMARY
