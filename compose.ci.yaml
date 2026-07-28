@@ -290,6 +290,9 @@ services:
       - ./src:/app/src
       - ./tests:/app/tests
       - ./templates:/app/templates
+      # Frontend asset sources — the dev-dashboard vitest suites import
+      # @resources/js/dev-dashboard/*; without this mount they fail to resolve.
+      - ./resources:/app/resources
 
       # Workspace node_modules (MUST be after ./src mount)
       - ./src/node/backend/node_modules:/app/src/node/backend/node_modules
