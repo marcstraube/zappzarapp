@@ -427,6 +427,12 @@ bats:integration:
   # Expensive (~30 min): only on MRs and master/develop, and only when
   # Docker/Compose/Shell/Makefile/tests actually changed.
   rules:
+    # Opt-out for resource-limited runners: set the CI/CD variable
+    # SKIP_INTEGRATION_TESTS=true to skip this job. The full stack + make-target
+    # suite is sensitive to weak shared runners; where it is skipped, integration
+    # coverage is expected to come from a stronger environment (e.g. GitHub CI).
+    - if: '$SKIP_INTEGRATION_TESTS == "true"'
+      when: never
     - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
       changes: *infra-paths
     - if: '$CI_COMMIT_BRANCH == "master" || $CI_COMMIT_BRANCH == "develop"'
