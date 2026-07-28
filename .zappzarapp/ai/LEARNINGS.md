@@ -473,6 +473,31 @@ as an explicit decision, not silently changed.
   stamp, then assert `docs/api/php/index.html -nt stamp` after `composer docs`.
   Verified 2026-07-28.
 
+### CI image reuse: use a layer cache, not a per-SHA image push
+
+- Every CI job rebuilt the app image from scratch (recompiling PHP extensions /
+  the Node toolchain) — the dominant per-job cost. Three tiers were measured on
+  the GitLab mirror (feature-branch run, same job set):
+  - **Job consolidation + `needs:` DAG** (10 quality jobs → 2, all parallel):
+    6.5 min wall / 24 compute.
+  - **SHA-tagged whole-image push+pull** (a `build:*` job pushes
+    `$CI_REGISTRY_IMAGE/<svc>:$SHA`, downstream pull + `up`): a REGRESSION —
+    7.7 min wall, compute a wash. On dind every job runs in parallel, so the
+    "redundant" compiles already overlap; a serial build job REMOVES that
+    parallelism, and a per-SHA tag never serves as cache for the next pipeline.
+  - **BuildKit registry LAYER cache** (`docker buildx bake` on a docker-container
+    builder, `cache-from/to type=registry` with a STABLE ref
+    `$CI_REGISTRY_IMAGE/cache:<svc>`, `--load`): warm 3.8 min wall / 16 compute
+    (−42% / −34% vs consolidation), cold (Dockerfile/deps change) 8.8 min.
+    Parallel, and persists across pipelines even on ephemeral shared runners.
+- Takeaways: (1) reuse via a _layer cache_, not a whole-image artifact; (2) stable
+  cache ref, not per-commit; (3) `cache-to ...,ignore-error=true` so an instance
+  without a registry degrades to uncached instead of failing; (4) do NOT set the
+  docker-container builder as default, or compose's implicit builds of
+  postgres/redis won't `--load` into the dind daemon; (5) exact analogue of GitHub
+  Actions `type=gha` (a `build-images` job warms it, downstream `cache-from`).
+  Works on free gitlab.com (dind + free-tier registry). Verified 2026-07-28.
+
 ---
 
 ## Last Updated
@@ -480,7 +505,8 @@ as an explicit decision, not silently changed.
 2026-07-28 (added: CI path-based job gating + skip-cascade semantics,
 concurrency master-exempt, change-detector compose-pattern gap, docs-php
 cross-UID staleness fix, paths-filter v4 version-check, GitLab CI mirror via
-native rules:changes + auto_cancel)
+native rules:changes + auto_cancel, CI image reuse via BuildKit registry/gha
+layer cache — not per-SHA image push)
 
 2026-07-27 (added: import-time listeners in tests, lint:fix glob drift, node
 coverage baseline, single-file bind-mount stale inode, @vitest/ui coverage
