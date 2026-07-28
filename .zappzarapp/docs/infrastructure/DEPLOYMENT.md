@@ -25,6 +25,25 @@ Both pipelines provide identical functionality:
 **Note:** Both pipelines are synchronized to ensure consistent CI/CD experience
 across platforms.
 
+## Mirroring between GitHub and GitLab
+
+Pick one platform as your source of truth and use the other as a mirror — or use
+just one and ignore the other config. The boilerplate ships **no mirroring
+workflow**; use each platform's built-in repository mirroring, which needs no CI
+file to maintain and works in either direction:
+
+- **GitHub is primary, run GitLab CI too** — in GitLab: _Settings → Repository →
+  Mirroring repositories_, add a **pull** mirror from your GitHub URL. GitLab
+  pulls new commits automatically and runs `.gitlab-ci.yml`.
+- **GitLab is primary, keep a GitHub copy** — in GitLab: same screen, add a
+  **push** mirror to your GitHub URL (with a GitHub token). Pushes to GitLab are
+  forwarded to GitHub, where `.github/workflows/ci.yml` runs.
+
+Both directions require credentials (a personal/deploy token) on the mirroring
+side; store it in the platform's secret store, never in the repo. If you only
+use one platform, simply delete the other's config (`.gitlab-ci.yml` or
+`.github/workflows/`).
+
 ## GitLab CI/CD
 
 ### Pipeline Stages
