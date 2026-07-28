@@ -107,8 +107,16 @@ default:
   - .gitlab/**/*
 
 # Define pipeline stages
+# Stages are cosmetic groupings only: every job declares `needs:` (a DAG), so
+# execution order follows dependencies, not stage order. This mirrors the
+# GitHub Actions workflow, where jobs run in parallel gated only by `changes`.
+# Image reuse works WITHOUT a serial build job: each job builds its dev image
+# with a BuildKit registry layer cache (cache-from/to type=registry). The cache
+# lives in the registry, not on the (ephemeral) runner, so it persists across
+# pipelines — a warm cache skips the PHP-extension / Node-toolchain compile even
+# on gitlab.com shared runners. This is the direct analogue of GitHub's
+# `type=gha` layer cache (see .github/workflows/ci.yml).
 stages:
-  - build
   - test
   - quality
   - security
@@ -135,121 +143,58 @@ stages:
     - docker system prune -f || true
 
 # ============================================================================
-# BUILD STAGE
+# BUILDKIT REGISTRY LAYER CACHE (hidden helper scripts, inlined via !reference)
 # ============================================================================
-build:php:
-  <<: *docker-setup
-  stage: build
-  rules:
-    - changes: *php-paths
+# Each job builds its dev image on a docker-container buildx builder with a
+# persistent registry layer cache. cache-from pulls warm layers from a previous
+# pipeline (stable ref $CI_REGISTRY_IMAGE/cache:<svc>, NOT per-commit), so the
+# expensive PHP-extension / Node-toolchain compile is skipped on warm runs; the
+# fresh image is --load'ed into the dind daemon so `docker compose up` reuses it.
+# `ignore-error=true` on cache-to means a disabled/absent registry (some
+# self-hosted instances) degrades to an uncached build instead of failing.
+# The builder is NOT set as default, so `docker compose`'s implicit builds of
+# dependency services (postgres, redis) still use the default docker builder.
+.buildx-php:
   script:
-    - docker compose build php
-  artifacts:
-    reports:
-      dotenv: build.env
-  cache:
-    key: php-vendor-$CI_COMMIT_REF_SLUG
-    paths:
-      - vendor/
+    - docker login -u gitlab-ci-token -p "$CI_JOB_TOKEN" "$CI_REGISTRY"
+    - docker buildx inspect ci >/dev/null 2>&1 || docker buildx create --name ci --driver docker-container
+    - docker buildx bake --builder ci -f compose.yaml -f compose.ci.yaml php --set "php.cache-from=type=registry,ref=$CI_REGISTRY_IMAGE/cache:php" --set "php.cache-to=type=registry,ref=$CI_REGISTRY_IMAGE/cache:php,mode=max,ignore-error=true" --load
 
-build:node:
-  <<: *docker-setup
-  stage: build
-  rules:
-    - changes: *node-paths
+.buildx-node:
   script:
-    - docker compose build node
-  cache:
-    key: node-modules-$CI_COMMIT_REF_SLUG
-    paths:
-      - node_modules/
-      - .pnpm-store/
-
-build:nginx:
-  <<: *docker-setup
-  stage: build
-  rules:
-    - changes: *app-paths
-  script:
-    - docker compose build nginx
+    - docker login -u gitlab-ci-token -p "$CI_JOB_TOKEN" "$CI_REGISTRY"
+    - docker buildx inspect ci >/dev/null 2>&1 || docker buildx create --name ci --driver docker-container
+    - docker buildx bake --builder ci -f compose.yaml -f compose.ci.yaml node --set "node.cache-from=type=registry,ref=$CI_REGISTRY_IMAGE/cache:node" --set "node.cache-to=type=registry,ref=$CI_REGISTRY_IMAGE/cache:node,mode=max,ignore-error=true" --load
 
 # ============================================================================
 # PHP QUALITY CHECKS
 # ============================================================================
-php:coding-standards:
+# Single job builds the PHP image once and runs every static check in sequence,
+# mirroring the GitHub Actions `php-quality` job. phpmd and rector-check are
+# blocking here (as on GitHub) rather than allow_failure — the codebase already
+# passes them on the authoritative GitHub pipeline.
+php:quality:
   <<: *docker-setup
   stage: quality
+  needs: []
   rules:
     - changes: *php-paths
-  dependencies:
-    - build:php
   script:
+    - !reference [.buildx-php, script]
     - docker compose up -d php
     - sleep 5
     - docker compose exec -T php composer install --no-progress --no-interaction
     - docker compose exec -T php composer cs-check
-  artifacts:
-    reports:
-      codequality: php-cs-report.json
-    when: always
-
-php:static-analysis:
-  <<: *docker-setup
-  stage: quality
-  rules:
-    - changes: *php-paths
-  dependencies:
-    - build:php
-  script:
-    - docker compose up -d php
-    - sleep 5
-    - docker compose exec -T php composer install --no-progress --no-interaction
     - docker compose exec -T php composer analyse
+    - docker compose exec -T php composer phpmd
+    - docker compose exec -T php composer rector-check
+    - docker compose exec -T php composer validate
   artifacts:
     reports:
-      codequality: phpstan-report.json
+      codequality:
+        - php-cs-report.json
+        - phpstan-report.json
     when: always
-
-php:mess-detector:
-  <<: *docker-setup
-  stage: quality
-  rules:
-    - changes: *php-paths
-  dependencies:
-    - build:php
-  script:
-    - docker compose up -d php
-    - sleep 5
-    - docker compose exec -T php composer install --no-progress --no-interaction
-    - docker compose exec -T php composer phpmd || true
-  allow_failure: true
-
-php:rector-check:
-  <<: *docker-setup
-  stage: quality
-  rules:
-    - changes: *php-paths
-  dependencies:
-    - build:php
-  script:
-    - docker compose up -d php
-    - sleep 5
-    - docker compose exec -T php composer install --no-progress --no-interaction
-    - docker compose exec -T php composer rector-check
-  allow_failure: true
-
-php:composer-validate:
-  <<: *docker-setup
-  stage: quality
-  rules:
-    - changes: *php-paths
-  dependencies:
-    - build:php
-  script:
-    - docker compose up -d php
-    - sleep 5
-    - docker compose exec -T php composer install --no-progress --no-interaction
-    - docker compose exec -T php composer validate
 
 # ============================================================================
 # PHP TESTS
@@ -257,11 +202,11 @@ php:composer-validate:
 php:unit-tests:
   <<: *docker-setup
   stage: test
+  needs: []
   rules:
     - changes: *php-paths
-  dependencies:
-    - build:php
   script:
+    - !reference [.buildx-php, script]
     - docker compose --profile postgres up -d php postgres
     - sleep 5
     - docker compose exec -T php composer install --no-progress --no-interaction
@@ -279,12 +224,12 @@ php:unit-tests:
 php:coverage:
   <<: *docker-setup
   stage: test
+  needs: []
   rules:
     - if: '$CI_COMMIT_BRANCH == "master" || $CI_COMMIT_BRANCH == "develop"'
       changes: *php-paths
-  dependencies:
-    - build:php
   script:
+    - !reference [.buildx-php, script]
     - docker compose --profile postgres up -d php postgres
     - sleep 5
     - docker compose exec -T php composer install --no-progress --no-interaction
@@ -297,70 +242,24 @@ php:coverage:
 # ============================================================================
 # NODE.JS QUALITY CHECKS
 # ============================================================================
-node:lint:
+# Single job builds the Node image once and runs every check in sequence,
+# mirroring the GitHub Actions `node-quality` job.
+node:quality:
   <<: *docker-setup
   stage: quality
+  needs: []
   rules:
     - changes: *node-paths
-  dependencies:
-    - build:node
   script:
-    - docker compose up -d node
-    - sleep 5
-    - docker compose exec -T node pnpm install
-    - docker compose exec -T node pnpm run lint
-
-node:format-check:
-  <<: *docker-setup
-  stage: quality
-  rules:
-    - changes: *node-paths
-  dependencies:
-    - build:node
-  script:
-    - docker compose up -d node
-    - sleep 5
-    - docker compose exec -T node pnpm install
-    - docker compose exec -T node pnpm run format:check
-
-node:type-check:
-  <<: *docker-setup
-  stage: quality
-  rules:
-    - changes: *node-paths
-  dependencies:
-    - build:node
-  script:
+    - !reference [.buildx-node, script]
     - docker compose up -d node
     - sleep 5
     - docker compose exec -T node pnpm install
     - docker compose exec -T node pnpm run type-check
-
-node:markdownlint:
-  <<: *docker-setup
-  stage: quality
-  rules:
-    - changes: *node-paths
-  dependencies:
-    - build:node
-  script:
-    - docker compose up -d node
-    - sleep 5
-    - docker compose exec -T node pnpm install
-    - docker compose exec -T node pnpm run lint:md
-
-node:package-validate:
-  <<: *docker-setup
-  stage: quality
-  rules:
-    - changes: *node-paths
-  dependencies:
-    - build:node
-  script:
-    - docker compose up -d node
-    - sleep 5
-    - docker compose exec -T node pnpm install
+    - docker compose exec -T node pnpm run lint
+    - docker compose exec -T node pnpm run format:check
     - docker compose exec -T node pnpm run quality
+    - docker compose exec -T node pnpm run lint:md
 
 # ============================================================================
 # NODE.JS TESTS
@@ -368,11 +267,11 @@ node:package-validate:
 node:tests:
   <<: *docker-setup
   stage: test
+  needs: []
   rules:
     - changes: *node-paths
-  dependencies:
-    - build:node
   script:
+    - !reference [.buildx-node, script]
     - docker compose --profile redis up -d node redis
     - sleep 5
     - docker compose exec -T node pnpm install
@@ -390,12 +289,12 @@ node:tests:
 node:coverage:
   <<: *docker-setup
   stage: test
+  needs: []
   rules:
     - if: '$CI_COMMIT_BRANCH == "master" || $CI_COMMIT_BRANCH == "develop"'
       changes: *node-paths
-  dependencies:
-    - build:node
   script:
+    - !reference [.buildx-node, script]
     - docker compose --profile redis up -d node redis
     - sleep 5
     - docker compose exec -T node pnpm install
@@ -411,6 +310,7 @@ node:coverage:
 bats:quick:
   <<: *docker-setup
   stage: test
+  needs: []
   rules:
     - changes: *infra-paths
   script:
@@ -474,6 +374,7 @@ bats:integration:
 sast:semgrep:
   image: python:3.12-alpine
   stage: security
+  needs: []
   rules:
     - changes: *app-paths
   before_script:
@@ -508,12 +409,12 @@ sast:semgrep:
 dependency-audit:
   <<: *docker-setup
   stage: security
+  needs: []
   rules:
     - changes: *app-paths
-  dependencies:
-    - build:php
-    - build:node
   script:
+    - !reference [.buildx-php, script]
+    - !reference [.buildx-node, script]
     - docker compose up -d php node
     - sleep 5
     - docker compose exec -T php composer install --no-progress --no-interaction
@@ -528,6 +429,7 @@ dependency-audit:
 build:production:
   <<: *docker-setup
   stage: deploy
+  needs: []
   # Validates the deployable artifact - must complete, so never interrupted.
   interruptible: false
   rules:

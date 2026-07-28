@@ -29,36 +29,50 @@ across platforms.
 
 ### Pipeline Stages
 
+Stages are cosmetic groupings only. Every job declares an explicit `needs:` DAG,
+so jobs run in parallel gated by path filters (`rules:changes`), independent of
+stage order.
+
 ```text
-build → test → quality → security → deploy
+test · quality · security · deploy   (a DAG, not a sequence)
 ```
 
 ### Jobs Overview
 
-| Stage        | Job                     | Description                                  |
-| ------------ | ----------------------- | -------------------------------------------- |
-| **build**    | `build:php`             | Build PHP container                          |
-| **build**    | `build:node`            | Build Node container                         |
-| **build**    | `build:nginx`           | Build Nginx container                        |
-| **test**     | `php:unit-tests`        | Run PHPUnit tests                            |
-| **test**     | `php:coverage`          | Generate PHP coverage (master/develop only)  |
-| **test**     | `node:tests`            | Run Vitest tests                             |
-| **test**     | `node:coverage`         | Generate Node coverage (master/develop only) |
-| **test**     | `bats:quick`            | BATS Makefile validation (dry-run)           |
-| **test**     | `bats:integration`      | BATS integration tests (master/develop/MR)   |
-| **quality**  | `php:coding-standards`  | PHP-CS-Fixer check                           |
-| **quality**  | `php:static-analysis`   | PHPStan Level 5                              |
-| **quality**  | `php:mess-detector`     | PHPMD (allow_failure)                        |
-| **quality**  | `php:rector-check`      | Rector dry-run (allow_failure)               |
-| **quality**  | `php:composer-validate` | Composer.json/lock validation                |
-| **quality**  | `node:lint`             | ESLint                                       |
-| **quality**  | `node:format-check`     | Prettier check                               |
-| **quality**  | `node:type-check`       | TypeScript type checking                     |
-| **quality**  | `node:markdownlint`     | Markdown linting                             |
-| **quality**  | `node:package-validate` | Package.json validation                      |
-| **security** | `sast:semgrep`          | Static analysis (Semgrep)                    |
-| **security** | `dependency-audit`      | Composer + pnpm audit                        |
-| **deploy**   | `build:production`      | Test production build (master/develop only)  |
+Each PHP and Node quality job bundles all its checks (mirroring the GitHub
+Actions `php-quality` / `node-quality` jobs).
+
+| Stage        | Job                | Description                                              |
+| ------------ | ------------------ | -------------------------------------------------------- |
+| **quality**  | `php:quality`      | PHP-CS-Fixer, PHPStan, PHPMD, Rector, composer validate  |
+| **quality**  | `node:quality`     | TypeScript, ESLint, Prettier, package validate, Markdown |
+| **test**     | `php:unit-tests`   | PHPUnit tests                                            |
+| **test**     | `php:coverage`     | PHP coverage (master/develop only)                       |
+| **test**     | `node:tests`       | Vitest tests                                             |
+| **test**     | `node:coverage`    | Node coverage (master/develop only)                      |
+| **test**     | `bats:quick`       | BATS Makefile validation (dry-run)                       |
+| **test**     | `bats:integration` | BATS integration tests (master/develop/MR)               |
+| **security** | `sast:semgrep`     | Static analysis (Semgrep)                                |
+| **security** | `dependency-audit` | Composer + pnpm audit                                    |
+| **deploy**   | `build:production` | Production build test (master/develop only)              |
+
+### Image Reuse (BuildKit Registry Cache)
+
+Each job builds its dev image with `docker buildx bake` on a `docker-container`
+builder using a persistent registry layer cache:
+
+```text
+cache-from / cache-to:
+  type=registry,ref=$CI_REGISTRY_IMAGE/cache:php    # php jobs
+  type=registry,ref=$CI_REGISTRY_IMAGE/cache:node   # node jobs
+```
+
+The cache uses a **stable ref** (not per-commit) and lives in the Container
+Registry, so it persists across pipelines — a warm cache skips the PHP-extension
+/ Node-toolchain compile even on ephemeral shared runners. `cache-to` sets
+`ignore-error=true`, so an instance without a Container Registry degrades to an
+uncached build instead of failing. This is the direct analogue of the GitHub
+Actions `type=gha` layer cache.
 
 ### Configuration
 
@@ -109,31 +123,33 @@ See [SECURITY-SCANNING.md](../security/SECURITY-SCANNING.md) for details.
 
 ### Workflow Structure
 
+Jobs are gated by a `changes` (path-filter) job and otherwise run in parallel.
+`build-images` warms the BuildKit `type=gha` layer cache; the quality/test/audit
+jobs then build from that cache (near-instant on a warm cache).
+
 ```text
-┌──────────────────┐  ┌──────────────────┐
-│   php-quality    │  │   node-quality   │
-└────────┬─────────┘  └────────┬─────────┘
-         │                     │
-         ▼                     ▼
-┌──────────────────┐  ┌──────────────────┐
-│    php-tests     │  │    node-tests    │
-└────────┬─────────┘  └────────┬─────────┘
-         │                     │
-         └─────────┬───────────┘
-                   ▼
-         ┌──────────────────┐
-         │ dependency-audit │
-         └────────┬─────────┘
-                  ▼
-         ┌──────────────────┐
-         │ build-production │
-         └──────────────────┘
+                    ┌──────────┐
+                    │ changes  │  (dorny/paths-filter)
+                    └────┬─────┘
+                         ▼
+                  ┌──────────────┐
+                  │ build-images │  (cache-to type=gha)
+                  └──────┬───────┘
+        ┌────────────┬───┴────┬────────────┐
+        ▼            ▼        ▼             ▼
+  ┌───────────┐┌──────────┐┌──────────┐┌──────────────────┐
+  │php-quality││php-tests ││node-*    ││ dependency-audit │  (all cache-from gha)
+  └───────────┘└──────────┘└──────────┘└──────────────────┘
+
+  independent: sast-scan · bats-quick → bats-integration · build-production
 ```
 
 ### Jobs Overview
 
 | Job                | Description                                | Timeout |
 | ------------------ | ------------------------------------------ | ------- |
+| `changes`          | Path-filter gate (dorny/paths-filter)      | 5 min   |
+| `build-images`     | Build php+node dev images, warm gha cache  | 15 min  |
 | `php-quality`      | CS-Fixer, PHPStan, PHPMD, Rector, Validate | 15 min  |
 | `php-tests`        | PHPUnit + Coverage (master only)           | 15 min  |
 | `node-quality`     | TypeScript, ESLint, Prettier, Markdown     | 15 min  |
@@ -141,7 +157,7 @@ See [SECURITY-SCANNING.md](../security/SECURITY-SCANNING.md) for details.
 | `dependency-audit` | Composer + pnpm audit                      | 10 min  |
 | `sast-scan`        | Semgrep static analysis                    | 15 min  |
 | `bats-quick`       | BATS Makefile validation (dry-run)         | 10 min  |
-| `bats-integration` | BATS integration tests (PR/master/develop) | 30 min  |
+| `bats-integration` | BATS integration tests (PR/master/develop) | 45 min  |
 | `build-production` | Production build test (master/develop)     | 20 min  |
 
 ### Triggers
