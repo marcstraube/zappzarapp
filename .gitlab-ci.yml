@@ -110,12 +110,13 @@ default:
 # Stages are cosmetic groupings only: every job declares `needs:` (a DAG), so
 # execution order follows dependencies, not stage order. This mirrors the
 # GitHub Actions workflow, where jobs run in parallel gated only by `changes`.
-# The build stage produces the dev images ONCE and pushes them to the GitLab
-# Container Registry; every downstream job pulls instead of recompiling the PHP
-# extensions / Node toolchain (the dominant per-job cost). GitHub achieves the
-# same reuse via BuildKit `type=gha` layer caching (see .github/workflows/ci.yml).
+# Image reuse works WITHOUT a serial build job: each job builds its dev image
+# with a BuildKit registry layer cache (cache-from/to type=registry). The cache
+# lives in the registry, not on the (ephemeral) runner, so it persists across
+# pipelines — a warm cache skips the PHP-extension / Node-toolchain compile even
+# on gitlab.com shared runners. This is the direct analogue of GitHub's
+# `type=gha` layer cache (see .github/workflows/ci.yml).
 stages:
-  - build
   - test
   - quality
   - security
@@ -142,53 +143,28 @@ stages:
     - docker system prune -f || true
 
 # ============================================================================
-# REGISTRY IMAGE REUSE (hidden helper scripts, inlined via !reference)
+# BUILDKIT REGISTRY LAYER CACHE (hidden helper scripts, inlined via !reference)
 # ============================================================================
-# The build:* jobs push the dev images to $CI_REGISTRY_IMAGE tagged with the
-# commit SHA. Downstream jobs pull that image and re-tag it under the name
-# `docker compose` expects (zappzarapp-<svc>:development), so a subsequent
-# `docker compose up` reuses it instead of rebuilding. Dependency services
-# (postgres, redis) still build locally — they are cheap and not the bottleneck.
-.registry-login:
+# Each job builds its dev image on a docker-container buildx builder with a
+# persistent registry layer cache. cache-from pulls warm layers from a previous
+# pipeline (stable ref $CI_REGISTRY_IMAGE/cache:<svc>, NOT per-commit), so the
+# expensive PHP-extension / Node-toolchain compile is skipped on warm runs; the
+# fresh image is --load'ed into the dind daemon so `docker compose up` reuses it.
+# `ignore-error=true` on cache-to means a disabled/absent registry (some
+# self-hosted instances) degrades to an uncached build instead of failing.
+# The builder is NOT set as default, so `docker compose`'s implicit builds of
+# dependency services (postgres, redis) still use the default docker builder.
+.buildx-php:
   script:
     - docker login -u gitlab-ci-token -p "$CI_JOB_TOKEN" "$CI_REGISTRY"
+    - docker buildx inspect ci >/dev/null 2>&1 || docker buildx create --name ci --driver docker-container
+    - docker buildx bake --builder ci -f compose.yaml -f compose.ci.yaml php --set "php.cache-from=type=registry,ref=$CI_REGISTRY_IMAGE/cache:php" --set "php.cache-to=type=registry,ref=$CI_REGISTRY_IMAGE/cache:php,mode=max,ignore-error=true" --load
 
-.use-php-image:
+.buildx-node:
   script:
-    - docker pull "$CI_REGISTRY_IMAGE/php:$CI_COMMIT_SHA"
-    - docker tag "$CI_REGISTRY_IMAGE/php:$CI_COMMIT_SHA" "$(docker compose config --images php | head -1)"
-
-.use-node-image:
-  script:
-    - docker pull "$CI_REGISTRY_IMAGE/node:$CI_COMMIT_SHA"
-    - docker tag "$CI_REGISTRY_IMAGE/node:$CI_COMMIT_SHA" "$(docker compose config --images node | head -1)"
-
-# ============================================================================
-# BUILD STAGE — build each dev image once, push to the Container Registry
-# ============================================================================
-build:php:
-  <<: *docker-setup
-  stage: build
-  needs: []
-  rules:
-    - changes: *php-paths
-  script:
-    - !reference [.registry-login, script]
-    - docker compose build php
-    - docker tag "$(docker compose config --images php | head -1)" "$CI_REGISTRY_IMAGE/php:$CI_COMMIT_SHA"
-    - docker push "$CI_REGISTRY_IMAGE/php:$CI_COMMIT_SHA"
-
-build:node:
-  <<: *docker-setup
-  stage: build
-  needs: []
-  rules:
-    - changes: *node-paths
-  script:
-    - !reference [.registry-login, script]
-    - docker compose build node
-    - docker tag "$(docker compose config --images node | head -1)" "$CI_REGISTRY_IMAGE/node:$CI_COMMIT_SHA"
-    - docker push "$CI_REGISTRY_IMAGE/node:$CI_COMMIT_SHA"
+    - docker login -u gitlab-ci-token -p "$CI_JOB_TOKEN" "$CI_REGISTRY"
+    - docker buildx inspect ci >/dev/null 2>&1 || docker buildx create --name ci --driver docker-container
+    - docker buildx bake --builder ci -f compose.yaml -f compose.ci.yaml node --set "node.cache-from=type=registry,ref=$CI_REGISTRY_IMAGE/cache:node" --set "node.cache-to=type=registry,ref=$CI_REGISTRY_IMAGE/cache:node,mode=max,ignore-error=true" --load
 
 # ============================================================================
 # PHP QUALITY CHECKS
@@ -200,12 +176,11 @@ build:node:
 php:quality:
   <<: *docker-setup
   stage: quality
-  needs: [build:php]
+  needs: []
   rules:
     - changes: *php-paths
   script:
-    - !reference [.registry-login, script]
-    - !reference [.use-php-image, script]
+    - !reference [.buildx-php, script]
     - docker compose up -d php
     - sleep 5
     - docker compose exec -T php composer install --no-progress --no-interaction
@@ -227,12 +202,11 @@ php:quality:
 php:unit-tests:
   <<: *docker-setup
   stage: test
-  needs: [build:php]
+  needs: []
   rules:
     - changes: *php-paths
   script:
-    - !reference [.registry-login, script]
-    - !reference [.use-php-image, script]
+    - !reference [.buildx-php, script]
     - docker compose --profile postgres up -d php postgres
     - sleep 5
     - docker compose exec -T php composer install --no-progress --no-interaction
@@ -250,13 +224,12 @@ php:unit-tests:
 php:coverage:
   <<: *docker-setup
   stage: test
-  needs: [build:php]
+  needs: []
   rules:
     - if: '$CI_COMMIT_BRANCH == "master" || $CI_COMMIT_BRANCH == "develop"'
       changes: *php-paths
   script:
-    - !reference [.registry-login, script]
-    - !reference [.use-php-image, script]
+    - !reference [.buildx-php, script]
     - docker compose --profile postgres up -d php postgres
     - sleep 5
     - docker compose exec -T php composer install --no-progress --no-interaction
@@ -274,12 +247,11 @@ php:coverage:
 node:quality:
   <<: *docker-setup
   stage: quality
-  needs: [build:node]
+  needs: []
   rules:
     - changes: *node-paths
   script:
-    - !reference [.registry-login, script]
-    - !reference [.use-node-image, script]
+    - !reference [.buildx-node, script]
     - docker compose up -d node
     - sleep 5
     - docker compose exec -T node pnpm install
@@ -295,12 +267,11 @@ node:quality:
 node:tests:
   <<: *docker-setup
   stage: test
-  needs: [build:node]
+  needs: []
   rules:
     - changes: *node-paths
   script:
-    - !reference [.registry-login, script]
-    - !reference [.use-node-image, script]
+    - !reference [.buildx-node, script]
     - docker compose --profile redis up -d node redis
     - sleep 5
     - docker compose exec -T node pnpm install
@@ -318,13 +289,12 @@ node:tests:
 node:coverage:
   <<: *docker-setup
   stage: test
-  needs: [build:node]
+  needs: []
   rules:
     - if: '$CI_COMMIT_BRANCH == "master" || $CI_COMMIT_BRANCH == "develop"'
       changes: *node-paths
   script:
-    - !reference [.registry-login, script]
-    - !reference [.use-node-image, script]
+    - !reference [.buildx-node, script]
     - docker compose --profile redis up -d node redis
     - sleep 5
     - docker compose exec -T node pnpm install
@@ -443,7 +413,8 @@ dependency-audit:
   rules:
     - changes: *app-paths
   script:
-    - docker compose build php node
+    - !reference [.buildx-php, script]
+    - !reference [.buildx-node, script]
     - docker compose up -d php node
     - sleep 5
     - docker compose exec -T php composer install --no-progress --no-interaction
