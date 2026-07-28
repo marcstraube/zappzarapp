@@ -298,6 +298,12 @@ setup: ## Create directories, install dependencies (BOILERPLATE=1 to force file 
 			cp .zappzarapp/ai/templates/adr/README.md docs/adr/; \
 			echo -e "\033[0;32mdocs/adr/ created (one document per ADR).\033[0m"; \
 		fi; \
+		for maint in $(BOILERPLATE_MAINTAINER_ONLY); do \
+			if [ -f "$$maint" ]; then \
+				rm -f "$$maint"; \
+				echo -e "\033[0;32mRemoved maintainer-only file: $$maint\033[0m"; \
+			fi; \
+		done; \
 	fi; \
 	if [ -n "$$IS_CONTRIBUTOR_MODE" ]; then \
 		$(MAKE) --silent ide-unlock; \
@@ -2622,6 +2628,14 @@ BOILERPLATE_EXCLUDE := \
 	.zappzarapp/ai/CLAUDE.md \
 	.zappzarapp/ai/AGENTS.md
 
+# Maintainer-only files: useful only in the zappzarapp boilerplate repo itself
+# (e.g. the GitHub->GitLab push-mirror used to live-test the shipped .gitlab-ci.yml
+# against a real GitLab instance). They are removed for derived projects by
+# `make setup` (boilerplate mode) and stripped again after `boilerplate-sync`,
+# so a user's repo never carries a workflow that needs the maintainer's secret.
+BOILERPLATE_MAINTAINER_ONLY := \
+	.github/workflows/gitlab-mirror.yml
+
 boilerplate-sync: ## Sync infrastructure from zappzarapp upstream (preserves project files)
 	@echo -e "\033[0;36m╔════════════════════════════════════════════════════════════╗\033[0m"
 	@echo -e "\033[0;36m║           Boilerplate Sync - Infrastructure Update         ║\033[0m"
@@ -2682,6 +2696,14 @@ boilerplate-sync: ## Sync infrastructure from zappzarapp upstream (preserves pro
 	@# Restore excluded files (project-specific that may have been in synced dirs)
 	@for excluded in $(BOILERPLATE_EXCLUDE); do \
 		git checkout HEAD -- "$$excluded" 2>/dev/null || true; \
+	done
+	@# Strip maintainer-only files pulled in via the .github/ sync (this target
+	@# already refuses to run on the zappzarapp repo itself, so removal is safe)
+	@for maint in $(BOILERPLATE_MAINTAINER_ONLY); do \
+		if [ -f "$$maint" ]; then \
+			rm -f "$$maint"; \
+			echo -e "\033[0;34m  Stripped maintainer-only file: $$maint\033[0m"; \
+		fi; \
 	done
 	@# Show files that need manual review (not auto-synced)
 	@echo ""
