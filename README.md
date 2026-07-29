@@ -107,24 +107,26 @@ SeaweedFS, RabbitMQ — are pre-configured and one `.env` toggle away.
 ## Quick Start
 
 ```bash
-# 1. Initialize project (creates .env from example)
+# 1. Initialize local config (auto-detects your host UID/GID -> .env.local)
 make init
 
-# 2. Configure environment
-#    Edit .env and adjust settings (ports, user IDs, etc.)
+# 2. (Optional) Adjust ports, enabled services, etc. in .env
 
-# 3. Setup project (builds images, installs dependencies, creates directories)
+# 3. Build images, install dependencies, and start everything
 make setup
-
-# 4. Start containers
-make up
 ```
+
+`make setup` already builds the images, installs dependencies, runs migrations
+and **starts the containers** — no separate `make up` needed the first time.
 
 The application is available at:
 
 - **HTTP:** <http://localhost:8080>
 - **HTTPS:** <https://localhost:8443>
 - **Dev Dashboard:** <https://localhost:8443/_dev>
+
+For daily work afterwards, use `make up` / `make down` to start and stop the
+environment.
 
 Prerequisites: Docker 20.10+, Docker Compose V2, Make, Git.
 
@@ -229,9 +231,9 @@ Detailed documentation is available in [`.zappzarapp/docs/`](.zappzarapp/docs/):
 
 ```bash
 make help          # Show all available commands (FILTER=<category> to filter)
-make init          # Initialize project (create .env)
-make setup         # Full project setup
-make up            # Start containers
+make init          # Initialize local config (create .env.local)
+make setup         # Full setup: build, install, migrate, start (first time)
+make up            # Start containers (daily use)
 make down          # Stop containers
 make logs          # Show logs (make logs php nginx for specific services)
 make test          # Run all tests

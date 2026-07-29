@@ -5,11 +5,12 @@
 ## Quick Start
 
 ```bash
-make setup    # First-time setup
-make up       # Start development environment
+make setup    # First-time setup: build, install, migrate, and start
 ```
 
 Open [https://localhost:8443](https://localhost:8443) in your browser.
+
+For daily use, `make up` / `make down` start and stop the environment.
 
 ## Development
 
