@@ -483,6 +483,11 @@ jobs:
 
       - name: Run Semgrep
         run: |
+          # No --error flag on purpose: it makes semgrep exit non-zero when there
+          # are findings, which sets executionSuccessful=false in the SARIF and
+          # makes GitHub code scanning report "Semgrep OSS is reporting errors"
+          # on the tool-status page. Findings still surface as Security-tab alerts
+          # via the SARIF upload below; CI gating stays off (continue-on-error).
           semgrep scan \
             --config p/security-audit \
             --config p/secrets \
@@ -490,7 +495,6 @@ jobs:
             --config p/typescript \
             --sarif \
             --output semgrep.sarif \
-            --error \
             .
         continue-on-error: true
 
