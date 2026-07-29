@@ -88,6 +88,16 @@ periodic triage (`/optimize --learnings`) and are removed from this file.
   nginx (Production Build Test + BATS Integration + Dockle/Image Scan) stayed
   red. Always grep `--chmod` position-independently:
   `grep -rnE '^\s*(COPY|ADD)\b.*--chmod' docker/`.
+- **`RUN chmod` runs as the active USER (cost a third CI round)**: unlike
+  `COPY --chmod` (applied atomically by the builder regardless of USER), a
+  post-COPY `RUN chmod` executes as the image's current USER. `dpage/pgadmin4`
+  defaults to `USER pgadmin` (uid 5050), so `RUN chmod 0755 …` on a root-owned
+  COPYed file failed with exit 1 (`target pgadmin: failed to solve`). Fix: run
+  the chmod under an explicit `USER root` block (pgadmin already had one for a
+  `chown` — fold the chmod in), then switch back. php/node/nginx base images
+  default to root, so only pgadmin was affected. When converting `COPY --chmod`
+  → `RUN chmod`, check the base image's default USER. pgadmin builds ONLY in the
+  BATS integration preset (not the scan/prod-build jobs), so it surfaced last.
 
 ---
 

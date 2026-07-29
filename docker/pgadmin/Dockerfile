@@ -7,19 +7,22 @@
 
 FROM dpage/pgadmin4:9
 
-# Copy server pre-configuration
+# Copy server pre-configuration and the entrypoint wrapper (sets the password
+# from Docker secrets)
 COPY docker/pgadmin/servers.json /pgadmin4/servers.json
-# Explicit absolute-mode chmod after COPY (not `chmod +x`): the container runs as
-# the unprivileged pgadmin user (uid 5050), and a bare `chmod +x` on a umask-077
-# source (mode 700, root-owned) yields 711 (execute-only, no read) → pgadmin
-# cannot open the script. `chmod 0755` guarantees world read+execute and is
-# umask-safe. (COPY --chmod is avoided: it is BuildKit-only and other project
-# images must build under the classic builder for local `COPY --from` refs.)
 COPY docker/pgadmin/entrypoint.sh /entrypoint-wrapper.sh
-RUN chmod 0755 /entrypoint-wrapper.sh
 
+# Normalise ownership/permissions as root. The dpage/pgadmin4 base image defaults
+# to USER pgadmin (uid 5050), which cannot chmod/chown the root-owned COPYed
+# files — so the chmod must run here, under USER root, NOT as a bare post-COPY
+# RUN. `chmod 0755` (absolute mode) is umask-safe: a bare `chmod +x` on a
+# umask-077 source would yield 711 (execute-only, no read) and pgadmin could not
+# read the script. (COPY --chmod would set the mode atomically and dodge the USER
+# issue, but it is BuildKit-only and other project images must build under the
+# classic builder for local `COPY --from` refs — so we normalise as root instead.)
 USER root
-RUN chown 5050:0 /pgadmin4/servers.json
+RUN chmod 0755 /entrypoint-wrapper.sh \
+    && chown 5050:0 /pgadmin4/servers.json
 
 USER pgadmin
 
