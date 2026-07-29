@@ -107,21 +107,25 @@ COPY --from=php-builder /usr/local/lib/php/extensions/ /usr/local/lib/php/extens
 # Copy extension configuration files (production-ready defaults)
 # Note: development.ini and xdebug.ini are NOT copied here (dev-only, mounted via volumes)
 # Note: curl is statically compiled into PHP and cannot be disabled via INI
-COPY docker/php/conf.d/amqp.ini /usr/local/etc/php/conf.d/
-COPY docker/php/conf.d/bcmath.ini /usr/local/etc/php/conf.d/
-COPY docker/php/conf.d/exif.ini /usr/local/etc/php/conf.d/
-COPY docker/php/conf.d/gd.ini /usr/local/etc/php/conf.d/
-COPY docker/php/conf.d/gmagick.ini /usr/local/etc/php/conf.d/
-COPY docker/php/conf.d/intl.ini /usr/local/etc/php/conf.d/
-COPY docker/php/conf.d/opcache.ini /usr/local/etc/php/conf.d/
-COPY docker/php/conf.d/pcntl.ini /usr/local/etc/php/conf.d/
-COPY docker/php/conf.d/pdo_mysql.ini /usr/local/etc/php/conf.d/
-COPY docker/php/conf.d/pdo_pgsql.ini /usr/local/etc/php/conf.d/
-COPY docker/php/conf.d/redis.ini /usr/local/etc/php/conf.d/
-COPY docker/php/conf.d/soap.ini /usr/local/etc/php/conf.d/
-COPY docker/php/conf.d/sockets.ini /usr/local/etc/php/conf.d/
-COPY docker/php/conf.d/sodium.ini /usr/local/etc/php/conf.d/
-COPY docker/php/conf.d/zip.ini /usr/local/etc/php/conf.d/
+# Explicit --chmod=0644: php-fpm workers run as www-data (non-root), but a COPY
+# without --chmod keeps the umask-077 source mode 600 root-owned, so www-data
+# cannot read the INIs and the extensions silently fail to load. In production
+# (no bind mounts) this drops ALL extensions; 0644 guarantees world-read.
+COPY --chmod=0644 docker/php/conf.d/amqp.ini /usr/local/etc/php/conf.d/
+COPY --chmod=0644 docker/php/conf.d/bcmath.ini /usr/local/etc/php/conf.d/
+COPY --chmod=0644 docker/php/conf.d/exif.ini /usr/local/etc/php/conf.d/
+COPY --chmod=0644 docker/php/conf.d/gd.ini /usr/local/etc/php/conf.d/
+COPY --chmod=0644 docker/php/conf.d/gmagick.ini /usr/local/etc/php/conf.d/
+COPY --chmod=0644 docker/php/conf.d/intl.ini /usr/local/etc/php/conf.d/
+COPY --chmod=0644 docker/php/conf.d/opcache.ini /usr/local/etc/php/conf.d/
+COPY --chmod=0644 docker/php/conf.d/pcntl.ini /usr/local/etc/php/conf.d/
+COPY --chmod=0644 docker/php/conf.d/pdo_mysql.ini /usr/local/etc/php/conf.d/
+COPY --chmod=0644 docker/php/conf.d/pdo_pgsql.ini /usr/local/etc/php/conf.d/
+COPY --chmod=0644 docker/php/conf.d/redis.ini /usr/local/etc/php/conf.d/
+COPY --chmod=0644 docker/php/conf.d/soap.ini /usr/local/etc/php/conf.d/
+COPY --chmod=0644 docker/php/conf.d/sockets.ini /usr/local/etc/php/conf.d/
+COPY --chmod=0644 docker/php/conf.d/sodium.ini /usr/local/etc/php/conf.d/
+COPY --chmod=0644 docker/php/conf.d/zip.ini /usr/local/etc/php/conf.d/
 
 # Health Check (Unix Socket)
 HEALTHCHECK --interval=30s --timeout=3s --start-period=40s --retries=3 \
@@ -173,17 +177,18 @@ RUN pie install xdebug/xdebug \
     && rm -f /usr/local/etc/php/conf.d/50-xdebug.ini
 
 # Copy configuration files (same as production for consistency)
+# Explicit --chmod (not umask-dependent): read by the php-fpm master and, in
+# production, by the www-data user. See conf.d note above.
 # Use www.conf to override the default pool configuration
-COPY docker/php/php-fpm.conf /usr/local/etc/php-fpm.d/www.conf
+COPY --chmod=0644 docker/php/php-fpm.conf /usr/local/etc/php-fpm.d/www.conf
 # Override zz-docker.conf to use Unix socket instead of TCP
-COPY docker/php/zz-docker.conf /usr/local/etc/php-fpm.d/zz-docker.conf
+COPY --chmod=0644 docker/php/zz-docker.conf /usr/local/etc/php-fpm.d/zz-docker.conf
 
 # Note: Source code, configs, and dependencies are provided via bind mounts
 # in development (see compose.override.yaml). No COPY needed here.
 
-# Copy development entrypoint script
-COPY docker/php/entrypoint.development.sh /entrypoint.development.sh
-RUN chmod +x /entrypoint.development.sh
+# Copy development entrypoint script (0755: executed by the container user)
+COPY --chmod=0755 docker/php/entrypoint.development.sh /entrypoint.development.sh
 
 ENTRYPOINT ["/entrypoint.development.sh"]
 CMD ["php-fpm"]
@@ -192,15 +197,16 @@ CMD ["php-fpm"]
 FROM base AS production-base
 
 # Copy configuration files
-COPY docker/php/php.ini /usr/local/etc/php/php.ini
+# Explicit --chmod (not umask-dependent): the production stage runs as www-data,
+# so the php-fpm master and CLI must be able to read php.ini and the pool config.
+COPY --chmod=0644 docker/php/php.ini /usr/local/etc/php/php.ini
 # Use www.conf to override the default pool configuration
-COPY docker/php/php-fpm.conf /usr/local/etc/php-fpm.d/www.conf
+COPY --chmod=0644 docker/php/php-fpm.conf /usr/local/etc/php-fpm.d/www.conf
 # Override zz-docker.conf to use Unix socket instead of TCP
-COPY docker/php/zz-docker.conf /usr/local/etc/php-fpm.d/zz-docker.conf
+COPY --chmod=0644 docker/php/zz-docker.conf /usr/local/etc/php-fpm.d/zz-docker.conf
 
-# Copy production entrypoint script
-COPY docker/php/entrypoint.production.sh /entrypoint.production.sh
-RUN chmod +x /entrypoint.production.sh
+# Copy production entrypoint script (0755: executed by the www-data user)
+COPY --chmod=0755 docker/php/entrypoint.production.sh /entrypoint.production.sh
 
 # Install Composer temporarily for dependency installation
 COPY --from=composer-image /usr/bin/composer /usr/bin/composer

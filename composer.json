@@ -50,13 +50,7 @@
   },
   "config": {
     "platform": {
-      "php": "8.4",
-      "ext-exif": "1",
-      "ext-gd": "1",
-      "ext-gmagick": "1",
-      "ext-intl": "1",
-      "ext-opcache": "1",
-      "ext-zip": "1"
+      "php": "8.4.1"
     },
     "allow-plugins": {
       "php-http/discovery": true

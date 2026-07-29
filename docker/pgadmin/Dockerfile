@@ -9,11 +9,14 @@ FROM dpage/pgadmin4:9
 
 # Copy server pre-configuration
 COPY docker/pgadmin/servers.json /pgadmin4/servers.json
-COPY docker/pgadmin/entrypoint.sh /entrypoint-wrapper.sh
+# Explicit --chmod (not `chmod +x`): the container runs as the unprivileged
+# pgadmin user (uid 5050), but a COPY without --chmod keeps the umask-077 source
+# mode 700 root-owned, and a bare `chmod +x` makes it 711 (execute-only, no read)
+# → pgadmin cannot open the script. 0755 guarantees world read+execute.
+COPY --chmod=0755 docker/pgadmin/entrypoint.sh /entrypoint-wrapper.sh
 
 USER root
-RUN chmod +x /entrypoint-wrapper.sh && \
-    chown 5050:0 /pgadmin4/servers.json
+RUN chown 5050:0 /pgadmin4/servers.json
 
 USER pgadmin
 
