@@ -73,7 +73,7 @@ periodic triage (`/optimize --learnings`) and are removed from this file.
   can't use ANY BuildKit-only syntax.
 - **Fix (tactical)**: replace `COPY --chmod=MODE src dst` with `COPY src dst` +
   `RUN chmod MODE dst` (absolute octal mode — umask-safe like `--chmod`, but
-  works under BOTH builders). 26 lines across php/node/pgadmin.
+  works under BOTH builders). 27 COPYs across php/node/pgadmin/nginx.
 - **Fix (strategic, see todo.md)**: make cross-image sharing BuildKit-native via
   `docker buildx bake` (goss/node-backend/php/nginx as targets in one graph, as
   the GitLab side already does) → retire every `DOCKER_BUILDKIT=0`, regain gha
@@ -82,6 +82,12 @@ periodic triage (`/optimize --learnings`) and are removed from this file.
   a Dockerfile that ALSO gets built with `DOCKER_BUILDKIT=0` will fail. Grep
   both before adding BuildKit syntax: `grep -rn 'DOCKER_BUILDKIT=0' .github/` vs
   the Dockerfiles built there. Not caught locally because `make` uses BuildKit.
+- **Grep gotcha (cost a second CI round)**: `--chmod` can appear AFTER other
+  flags — `COPY --chown=nginx:nginx --chmod=0755 …`. A first sweep grepped
+  `COPY --chmod` (anchored) and missed nginx's line, so php/node went green but
+  nginx (Production Build Test + BATS Integration + Dockle/Image Scan) stayed
+  red. Always grep `--chmod` position-independently:
+  `grep -rnE '^\s*(COPY|ADD)\b.*--chmod' docker/`.
 
 ---
 
