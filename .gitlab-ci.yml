@@ -379,7 +379,7 @@ sast:semgrep:
     - changes: *app-paths
   before_script:
     - apk add --no-cache git
-    - pip install semgrep
+    - pip install semgrep==1.172.0
   script:
     - |
       semgrep scan \
