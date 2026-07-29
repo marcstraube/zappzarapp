@@ -47,8 +47,10 @@ RUN apk add --no-cache su-exec && \
     chown -R node:node /home/node /app /usr/local/bin/pnpm
 
 # Copy development entrypoint
-COPY docker/node/entrypoint.development.sh /usr/local/bin/entrypoint.development.sh
-RUN chmod +x /usr/local/bin/entrypoint.development.sh
+# Explicit --chmod (not umask-dependent): the production stages run as the
+# unprivileged `node` user, so a bare `chmod +x` on a umask-077 source yields 711
+# (execute-only, no read) and node cannot read the script. 0755 is umask-safe.
+COPY --chmod=0755 docker/node/entrypoint.development.sh /usr/local/bin/entrypoint.development.sh
 
 # Note: Config files, source code, and dependencies are provided via bind mounts
 # in development (see compose.override.yaml). No COPY needed here.
@@ -141,8 +143,7 @@ RUN apk add --no-cache --virtual .user-deps shadow && \
     chown -R node:node /home/node /app /usr/local/bin/pnpm
 
 # Copy production entrypoint (sets up secret file paths)
-COPY docker/node/entrypoint.production.sh /usr/local/bin/entrypoint.production.sh
-RUN chmod +x /usr/local/bin/entrypoint.production.sh
+COPY --chmod=0755 docker/node/entrypoint.production.sh /usr/local/bin/entrypoint.production.sh
 
 # Build as node user for security
 USER node
@@ -187,8 +188,7 @@ RUN mkdir -p /home/node/.cache/node/corepack && \
     chown -R 50000:50000 /home/node
 
 # Copy production entrypoint (sets up secret file paths)
-COPY docker/node/entrypoint.production.sh /usr/local/bin/entrypoint.production.sh
-RUN chmod +x /usr/local/bin/entrypoint.production.sh
+COPY --chmod=0755 docker/node/entrypoint.production.sh /usr/local/bin/entrypoint.production.sh
 
 # Health Check: Pings the running Node.js HTTPS server to ensure it is responsive.
 HEALTHCHECK --interval=15s --timeout=3s --start-period=10s --retries=3 \
