@@ -35,6 +35,18 @@ periodic triage (`/optimize --learnings`) and are removed from this file.
 - **Better error handling**: Single commands allow precise error handling
   instead of entire chain aborting.
 
+### `make -n` is NOT side-effect-free with recursive make
+
+- GNU make executes any recipe line containing the string `$(MAKE)` even under
+  `-n`/`--dry-run` (the recursive-make exception, so sub-makes recurse and
+  report). If a destructive block shares ONE continued recipe line (`\`-joined)
+  with a `$(MAKE)` call, `-n` runs the whole line for real. The `setup` target's
+  boilerplate file-swap block (`mv`/`cp`/`rm` of README/CLAUDE.md/AGENTS.md/
+  CHANGELOG.md) is one recipe line that also calls `$(MAKE) --silent ide-unlock`
+  — so `make -n setup BOILERPLATE=1` actually performed the swaps. Do NOT use
+  `make -n` to "preview" a recipe containing `$(MAKE)`; read the recipe, or test
+  in a throwaway worktree. (2026-07-29)
+
 ---
 
 ## Claude Workflow
