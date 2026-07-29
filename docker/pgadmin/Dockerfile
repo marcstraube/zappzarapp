@@ -9,11 +9,14 @@ FROM dpage/pgadmin4:9
 
 # Copy server pre-configuration
 COPY docker/pgadmin/servers.json /pgadmin4/servers.json
-# Explicit --chmod (not `chmod +x`): the container runs as the unprivileged
-# pgadmin user (uid 5050), but a COPY without --chmod keeps the umask-077 source
-# mode 700 root-owned, and a bare `chmod +x` makes it 711 (execute-only, no read)
-# → pgadmin cannot open the script. 0755 guarantees world read+execute.
-COPY --chmod=0755 docker/pgadmin/entrypoint.sh /entrypoint-wrapper.sh
+# Explicit absolute-mode chmod after COPY (not `chmod +x`): the container runs as
+# the unprivileged pgadmin user (uid 5050), and a bare `chmod +x` on a umask-077
+# source (mode 700, root-owned) yields 711 (execute-only, no read) → pgadmin
+# cannot open the script. `chmod 0755` guarantees world read+execute and is
+# umask-safe. (COPY --chmod is avoided: it is BuildKit-only and other project
+# images must build under the classic builder for local `COPY --from` refs.)
+COPY docker/pgadmin/entrypoint.sh /entrypoint-wrapper.sh
+RUN chmod 0755 /entrypoint-wrapper.sh
 
 USER root
 RUN chown 5050:0 /pgadmin4/servers.json

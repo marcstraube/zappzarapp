@@ -55,6 +55,34 @@ periodic triage (`/optimize --learnings`) and are removed from this file.
 - **Fix**: bump `config.platform.php` to `"8.4.1"` (the actual dependency floor)
   so resolution and install agree. `require.php` `^8.4` already allows it.
 
+### `COPY --chmod` is BuildKit-only → breaks `DOCKER_BUILDKIT=0` CI builds
+
+- **Symptom**: `Production Build Test` / `Security Scan` fail at
+  `Step 13/63 : COPY --chmod=0644 docker/php/conf.d/amqp.ini …` with exit 1. The
+  `Step N/M` + `---> Running in` output = the CLASSIC (non-BuildKit) builder.
+- **Root cause**: `COPY --chmod=` is a BuildKit-only directive; the classic
+  builder rejects it. Several CI steps force `DOCKER_BUILDKIT=0` (ci.yml build
+  jobs, security-scan.yml, zap-scan.yml). The umask-safe fresh-clone fix had
+  introduced `COPY --chmod` in php/node/pgadmin — invisible locally (`make`
+  builds default to BuildKit) but fatal on the `DOCKER_BUILDKIT=0` paths.
+- **Why those jobs pin the classic builder**: the `production`/`test` stages do
+  `COPY --from=zappzarapp-node-backend:latest` / `zappzarapp-goss:latest` —
+  references to separately-built LOCAL images. BuildKit resolves `--from=<tag>`
+  against a registry and can't see local images, so those builds must use the
+  classic builder (which reads the local image store). Net: shared base stages
+  can't use ANY BuildKit-only syntax.
+- **Fix (tactical)**: replace `COPY --chmod=MODE src dst` with `COPY src dst` +
+  `RUN chmod MODE dst` (absolute octal mode — umask-safe like `--chmod`, but
+  works under BOTH builders). 26 lines across php/node/pgadmin.
+- **Fix (strategic, see todo.md)**: make cross-image sharing BuildKit-native via
+  `docker buildx bake` (goss/node-backend/php/nginx as targets in one graph, as
+  the GitLab side already does) → retire every `DOCKER_BUILDKIT=0`, regain gha
+  layer cache for prod builds, and `--chmod` could return.
+- **Lesson**: any `COPY --chmod`/`RUN --mount`/other BuildKit-only directive in
+  a Dockerfile that ALSO gets built with `DOCKER_BUILDKIT=0` will fail. Grep
+  both before adding BuildKit syntax: `grep -rn 'DOCKER_BUILDKIT=0' .github/` vs
+  the Dockerfiles built there. Not caught locally because `make` uses BuildKit.
+
 ---
 
 ## Development Workflow
