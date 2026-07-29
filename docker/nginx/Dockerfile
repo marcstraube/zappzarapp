@@ -36,8 +36,12 @@ COPY --chown=nginx:nginx docker/nginx/snippets/ /etc/nginx/snippets/
 COPY --chown=nginx:nginx docker/nginx/errors/ /usr/share/nginx/html/errors/
 
 # Copy Entrypoint Script for SSL template processing
-COPY --chown=nginx:nginx docker/nginx/entrypoint.sh /docker-entrypoint.sh
-RUN chmod +x /docker-entrypoint.sh
+# Explicit --chmod (not `chmod +x`): the dev stage remaps the nginx user to the
+# host UID, so the runtime user differs from the baked file owner and reads it as
+# "other". A bare `chmod +x` on a umask-077 source yields 711 (execute-only, no
+# read) → the shell cannot open the script. 0755 guarantees world read+execute
+# regardless of host umask.
+COPY --chown=nginx:nginx --chmod=0755 docker/nginx/entrypoint.sh /docker-entrypoint.sh
 
 # Set Working Directory
 WORKDIR /var/www/html

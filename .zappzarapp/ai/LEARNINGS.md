@@ -15,6 +15,46 @@ periodic triage (`/optimize --learnings`) and are removed from this file.
 - **Asset source for nginx/php**: Changed from `zappzarapp-node:latest` to
   `zappzarapp-node-backend:latest` for Vite assets.
 
+### Restrictive host `umask 077` crash-loops nginx + pgadmin (baked entrypoints)
+
+- **Symptom** (fresh clone + `make setup` on a host with `umask 077`): `nginx`
+  and `pgadmin` restart-loop with
+  `/bin/sh: can't open '/…entrypoint…sh': Permission denied`
+  (postgres/redis/node stay healthy).
+- **Root cause**: `umask 077` makes every git-checked-out file owner-only
+  (`700`). Dockerfiles bake the entrypoint via `COPY` (no `--chmod`) + a bare
+  `RUN chmod +x`, which adds execute for all classes but NOT read → source `700`
+  becomes `711` = execute-only for non-owner. The baked file is owned by the
+  build-time image uid (nginx `100`, pgadmin `root`), but the container runs as
+  a DIFFERENT uid (nginx remapped to `1000` via `usermod` in the dev stage;
+  pgadmin `5050`) → the runtime user hits "other" perms `--x` (no read) → a
+  shell cannot open/read the script. Under the assumed `umask 022` sources are
+  `755` (world-readable), which masks the uid mismatch — so it only breaks on
+  restrictive-umask hosts.
+- **Fix**: umask-independent baked scripts — `COPY --chmod=0755 …` (BuildKit) on
+  the entrypoint, drop the bare `RUN chmod +x`. Applied to nginx + pgadmin
+  Dockerfiles. (mariadb/postgres entrypoints are bind-mounted from the host
+  owned by uid 1000 and their containers run as uid 1000 → owner match → NOT
+  affected; verified healthy.) Do NOT blanket `chmod -R a+rX` the tree — would
+  expose `docker/certs` private keys + docker secrets (keep those `600`).
+
+### `config.platform.php` floor too low → composer install aborts, php_vendor stays empty
+
+- **Symptom**: php restart-loops with
+  `ERROR: Composer dependencies not installed!`. NOT a permission issue — the
+  `php_vendor` NAMED volume (not the host `vendor/`, which is the separate
+  `composer-install-local` IDE copy) is genuinely empty because
+  `make composer-install` aborted.
+- **Root cause**: `composer.json` `config.platform.php` is `"8.4"`, which
+  composer reads as `8.4.0`. Locked deps (symfony 8.1.x → `symfony/process`,
+  `string`, `var-dumper`, event-dispatcher via php-cs-fixer …) require
+  `php >=8.4.1`. `composer install` validates locked packages against the
+  platform override (`8.4.0`), fails all of them (`Error 2`), installs nothing.
+  Real runtime PHP is 8.4.23 and would satisfy it — the too-low _pin_ is the
+  bug.
+- **Fix**: bump `config.platform.php` to `"8.4.1"` (the actual dependency floor)
+  so resolution and install agree. `require.php` `^8.4` already allows it.
+
 ---
 
 ## Development Workflow
