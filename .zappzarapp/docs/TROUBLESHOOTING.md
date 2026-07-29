@@ -133,7 +133,7 @@ files (not generated).
    docker run --rm -v ./:/app alpine sh -c "rm -rf /app/composer.lock && touch /app/composer.lock"
 
    # For certs/secrets: run the make targets
-   make ssl-generate
+   make ssl-internal
    make secrets
    ```
 
@@ -694,7 +694,7 @@ Browser shows "Your connection is not private".
 2. **Regenerate certificates**
 
    ```bash
-   make ssl-selfsigned
+   make ssl-internal
    make restart
    ```
 
@@ -724,10 +724,10 @@ Browser shows certificate expiration error.
    make ssl-renew
    ```
 
-3. **Regenerate self-signed**
+3. **Regenerate internal certificates**
 
    ```bash
-   make ssl-selfsigned
+   make ssl-internal
    make restart
    ```
 

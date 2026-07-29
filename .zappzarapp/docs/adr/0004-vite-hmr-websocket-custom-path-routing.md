@@ -11,9 +11,9 @@ on WebSocket headers were complex and unreliable.
 
 **Decision:** Use custom WebSocket path with Nginx path rewriting:
 
-- Configure Vite `hmr.path: '/vite-hmr-ws'` (client connects to custom path)
-- Configure Nginx to proxy `/vite-hmr-ws` to `http://node:5173/` (trailing slash
-  rewrites path)
+- Configure Vite `hmr.path: '/__vite_hmr__'` (client connects to custom path)
+- Configure Nginx to proxy `/__vite_hmr__` to `http://node:5173/` (trailing
+  slash rewrites path)
 - Vite's WebSocket server listens on default root path `/` (no server-side
   changes needed)
 
@@ -30,7 +30,7 @@ on WebSocket headers were complex and unreliable.
 **Negative:**
 
 - (-) Non-standard Vite HMR path (developers might be surprised by
-  `/vite-hmr-ws`)
+  `/__vite_hmr__`)
 - (-) Requires understanding of Nginx path rewriting behavior
 
 **Alternatives considered:**

@@ -117,11 +117,7 @@ If you need to allow additional origins during development:
 
 ## Production Setup
 
-1. Create `.env.production` from the example:
-
-   ```bash
-   cp .env.production.example .env.production
-   ```
+1. Edit the committed `.env.production` template for your deployment.
 
 2. Set your actual domain(s):
 
@@ -130,7 +126,9 @@ If you need to allow additional origins during development:
    CORS_ORIGINS=https://your-domain.com
    ```
 
-3. Never commit `.env.production` (it's gitignored by default)
+3. Keep real secrets out of `.env.production` — it holds non-secret production
+   config only; inject credentials via Docker secrets (see
+   [SECRETS.md](SECRETS.md))
 
 ## Troubleshooting
 

@@ -38,8 +38,8 @@ Client (HTTPS) → Node.js (HTTPS)
 Use the same certificates as Nginx:
 
 ```bash
-# Self-signed (development)
-make ssl-selfsigned
+# Internal CA (development)
+make ssl-internal
 
 # Let's Encrypt (production)
 make ssl-letsencrypt

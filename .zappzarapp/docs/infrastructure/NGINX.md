@@ -286,22 +286,22 @@ A trailing slash in `proxy_pass` triggers path rewriting:
   rewritten)
 
 ```nginx
-location /vite-hmr-ws {
+location /__vite_hmr__ {
     proxy_pass http://node:5173/;  # WITH trailing slash
 }
-# Request: /vite-hmr-ws?token=abc → Proxied to: /?token=abc
+# Request: /__vite_hmr__?token=abc → Proxied to: /?token=abc
 
-location /vite-hmr-ws {
+location /__vite_hmr__ {
     proxy_pass http://node:5173;   # WITHOUT trailing slash
 }
-# Request: /vite-hmr-ws?token=abc → Proxied to: /vite-hmr-ws?token=abc
+# Request: /__vite_hmr__?token=abc → Proxied to: /__vite_hmr__?token=abc
 ```
 
 Use case: rewriting custom client paths to backend root paths.
 
 ### Vite HMR WebSocket Path
 
-The Vite HMR WebSocket uses a custom client path (`/vite-hmr-ws`) that nginx
+The Vite HMR WebSocket uses a custom client path (`/__vite_hmr__`) that nginx
 rewrites to Vite's root path via the trailing-slash pattern above. See
 [ADR 0004](../adr/0004-vite-hmr-websocket-custom-path-routing.md) for the full
 decision and configuration. Key gotcha: Vite's `hmr.path` option only changes

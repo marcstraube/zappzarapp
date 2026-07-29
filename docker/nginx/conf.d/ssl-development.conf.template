@@ -11,7 +11,7 @@
 #
 # Configuration:
 # - Change HTTPS port: Edit NGINX_SSL_PORT in .env (default: 8443)
-# - Regenerate certificates: make ssl-selfsigned
+# - Regenerate certificates: make ssl-internal
 # - Production setup: Use 'make ssl-prod-enable' + Let's Encrypt
 #
 # Note: Browser will show certificate warning for self-signed certs (expected)

@@ -81,16 +81,11 @@
 
 ### 1. Run Migration
 
-**PostgreSQL:**
+Apply all pending migrations (for the configured database — `002_audit_logs.sql`
+among them):
 
 ```bash
-docker compose exec postgres psql -U app -d app -f /docker-entrypoint-initdb.d/001_audit_logs.sql
-```
-
-**MariaDB:**
-
-```bash
-docker compose exec mariadb mysql -u app -p app < /docker-entrypoint-initdb.d/001_audit_logs.sql
+make db-migrations
 ```
 
 This creates the `audit_logs` table (append-only, encrypted, tamper-proof).
@@ -103,8 +98,8 @@ This creates the `audit_logs` table (append-only, encrypted, tamper-proof).
 
 ```php
 <?php
-use App\Infrastructure\Audit\AuditLogger;
-use App\Infrastructure\Audit\AuditLoggerInterface;
+use Zappzarapp\AuditLogger\AuditLogger;
+use Zappzarapp\AuditLogger\AuditLoggerInterface;
 
 // In your dependency injection container
 $auditLogger = new AuditLogger(
@@ -122,7 +117,7 @@ $userService = new UserService($auditLogger);
 ```php
 <?php
 use App\Infrastructure\Audit\HasAuditLogging;
-use App\Infrastructure\Audit\AuditLoggerInterface;
+use Zappzarapp\AuditLogger\AuditLoggerInterface;
 
 class UserService
 {

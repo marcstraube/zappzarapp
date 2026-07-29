@@ -80,14 +80,10 @@ CALL get_retention_status();
 
 ### 1. Apply the Migration
 
-```bash
-# PostgreSQL
-make db-cli DB=postgres
-\i /docker-entrypoint-initdb.d/migrations/002_retention_policies.sql
+Apply all pending migrations (`003_retention_policies.sql` among them):
 
-# MariaDB
-make db-cli DB=mariadb
-SOURCE /docker-entrypoint-initdb.d/migrations/002_retention_policies.sql;
+```bash
+make db-migrations
 ```
 
 ### 2. Customize `anonymize_user()`
@@ -416,8 +412,8 @@ END IF;
 
 ## Migration Files
 
-- **PostgreSQL:** `migrations/postgresql/002_retention_policies.sql`
-- **MariaDB:** `migrations/mariadb/002_retention_policies.sql`
+- **PostgreSQL:** `migrations/postgresql/003_retention_policies.sql`
+- **MariaDB:** `migrations/mariadb/003_retention_policies.sql`
 
 ---
 

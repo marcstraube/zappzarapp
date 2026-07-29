@@ -52,9 +52,9 @@ architecture, including components, data flows, and design decisions.
 | ------------ | ----------------- | --------------------------------------------- | ----------------- |
 | **nginx**    | Nginx 1.28 Alpine | Reverse proxy, SSL termination, static assets | frontend, backend |
 | **php**      | PHP 8.4-FPM       | Backend application server                    | backend, database |
-| **node**     | Node.js 24.12 LTS | Frontend (Vite) + Backend (Express)           | backend, database |
-| **postgres** | PostgreSQL 16+    | Primary database (default)                    | database          |
-| **mariadb**  | MariaDB 11+       | Alternative database                          | database          |
+| **node**     | Node.js 24.13 LTS | Frontend (Vite) + Backend (Express)           | backend, database |
+| **postgres** | PostgreSQL 17+    | Primary database (default)                    | database          |
+| **mariadb**  | MariaDB 12+       | Alternative database                          | database          |
 | **redis**    | Redis + TLS       | Caching, sessions, job queues                 | database          |
 
 ### Network Segmentation (3-Tier)
