@@ -99,6 +99,12 @@ SARIF results are uploaded to GitHub's Security tab:
 2. Click "Security" tab
 3. Select "Code scanning alerts"
 
+> **Note:** Code scanning (SARIF upload) requires a **public** repository or
+> GitHub Advanced Security. On private repositories without it, the SARIF-upload
+> steps are skipped automatically so they don't fail the job — the scans still
+> run, and results remain available as job artifacts and in the workflow
+> summary.
+
 ### Workflow Summary
 
 Each run generates a summary with pass/fail status for each scan type.
@@ -390,9 +396,15 @@ authentication flaws.
 
 **Triggers:**
 
-- Push to `develop` branch
 - Weekly schedule (Sunday 3 AM UTC, after Trivy scans)
-- Manual via `workflow_dispatch`
+- Manual via `workflow_dispatch` (choose scan mode per run)
+
+There is no push trigger: a ~45 min DAST on every push is too heavy as a
+default. Run it weekly or on demand.
+
+**Scan mode:** defaults to `normal` (respects `.env`). Set the repository
+variable `ZAP_SCAN_MODE=full` for a comprehensive scan of all services, or pick
+the mode per run via `workflow_dispatch`.
 
 **Key Configuration:**
 
