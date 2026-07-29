@@ -24,8 +24,9 @@ name: Project Board Sync
 
 on:
   schedule:
-    # Run every 5 minutes for near-real-time sync
-    - cron: '*/5 * * * *'
+    # Run every 30 minutes (sync is opt-in via PROJECT_NUMBER; a label sync does
+    # not need higher frequency, and it avoids skipped-run noise when unconfigured)
+    - cron: '*/30 * * * *'
   workflow_dispatch:
     inputs:
       dry_run:
