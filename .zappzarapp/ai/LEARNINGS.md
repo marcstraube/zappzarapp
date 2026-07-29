@@ -553,7 +553,49 @@ as an explicit decision, not silently changed.
 
 ---
 
+## Documentation Audit (pre-v1.0 sweep)
+
+### Doc-vs-code drift found across `.zappzarapp/docs/` (2026-07-29)
+
+- **Dead `make` targets outlive their rename in docs.** `ssl-selfsigned` /
+  `ssl-generate` were renamed to `ssl-internal` long ago (CI caught it once, see
+  CI section) but the string still lingered in TROUBLESHOOTING, MAKEFILE-
+  REFERENCE, NODE-SSL, INTERNAL-TLS, a dev-dashboard template, and even a
+  shipped `docker/nginx/conf.d/ssl-development.conf.template` comment.
+  `make db-cli` never existed at all (real: `postgres-cli` / `mariadb-cli`).
+  Lesson: grep every `make <target>` reference in docs against the live Makefile
+  — a rename fixes code + CI but rarely the prose.
+- **DB migrations do NOT live at `/docker-entrypoint-initdb.d/<file>.sql` at
+  runtime.** Only `init-db.sh` is baked to that path; the project isn't mounted
+  into postgres/mariadb, so
+  `docker compose exec … -f /docker-entrypoint-initdb.d/ 001_audit_logs.sql`
+  fails. Migrations apply ONLY via `make db-migrations` (loops
+  `migrations/<engine>/*.sql` through stdin). Several security docs also had the
+  file numbers off by one (`001_audit_logs`→`002`, `002_retention`→`003` —
+  there's a `000_encryption_helpers` + `001_users` ahead of them).
+- **`AuditLogger` is `Zappzarapp\AuditLogger\…` (extracted package), not
+  `App\Infrastructure\Audit\…`.** Only the `HasAuditLogging` trait is local;
+  `AuditLogger` + `AuditLoggerInterface` come from the package. Doc examples had
+  the interface under the wrong namespace.
+- **`.env.production` is committed and NOT gitignored** (a template like
+  `.env`). CORS.md both told users to `cp .env.production.example` (no such
+  file) and claimed the file is gitignored. Secrets belong in Docker secrets,
+  not this file.
+- **Pinned version numbers in ARCHITECTURE.md rot silently** — Node 24.12→24.13,
+  PostgreSQL 16+→17, MariaDB 11+→12 all lagged the Dockerfiles. Prefer
+  major-only floors (`17+`) over exact minors in prose.
+- **`make setup` already runs `up`** — its completion banner still said "Next
+  steps: make up" (same redundancy the README had). Reworded to open-app /
+  down·up daily use.
+
+---
+
 ## Last Updated
+
+2026-07-29 (added: pre-v1.0 documentation audit sweep — dead `make` targets in
+prose, migrations only via `make db-migrations`, AuditLogger package namespace,
+`.env.production` committed-not-gitignored, ARCHITECTURE version rot, redundant
+setup banner)
 
 2026-07-28 (added: CI path-based job gating + skip-cascade semantics,
 concurrency master-exempt, change-detector compose-pattern gap, docs-php

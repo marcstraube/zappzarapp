@@ -10,7 +10,7 @@ This document describes the optional services available in zappzarapp.
 | Meilisearch   | `meilisearch`   | 7700        | database | Lightweight search engine        |
 | Elasticsearch | `elasticsearch` | 9200, 9300  | database | Full-featured search & analytics |
 | Mailpit       | `mailpit`       | 1025, 8025  | backend  | Email testing (SMTP catch-all)   |
-| SeaweedFS     | `seaweedfs`     | 8333, 8888  | backend  | S3-compatible object storage     |
+| SeaweedFS     | `seaweedfs`     | 8333        | backend  | S3-compatible object storage     |
 | RabbitMQ      | `rabbitmq`      | 5672, 15672 | backend  | Enterprise message broker        |
 
 ## Enabling Services

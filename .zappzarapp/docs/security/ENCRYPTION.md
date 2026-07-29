@@ -115,17 +115,10 @@ This boilerplate provides **3 encryption options**:
 
 #### 1. Enable pgcrypto Extension
 
-Run migration:
+Apply all pending migrations (`000_encryption_helpers.sql` runs first):
 
 ```bash
-docker compose exec postgres psql -U app -d app -f /docker-entrypoint-initdb.d/000_encryption_helpers.sql
-```
-
-Or manually:
-
-```sql
-\c app
-\i /docker-entrypoint-initdb.d/000_encryption_helpers.sql
+make db-migrations
 ```
 
 The migration creates two functions:
@@ -193,10 +186,10 @@ FROM users;
 
 #### 1. Enable Encryption Functions
 
-Run migration:
+Apply all pending migrations (`000_encryption_helpers.sql` runs first):
 
 ```bash
-docker compose exec mariadb mysql -u app -p app < /docker-entrypoint-initdb.d/000_encryption_helpers.sql
+make db-migrations
 ```
 
 The migration creates two functions:

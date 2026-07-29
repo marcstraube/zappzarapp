@@ -375,8 +375,9 @@ setup: ## Create directories, install dependencies (BOILERPLATE=1 to force file 
 	@echo -e "\033[0;32m╔════════════════════════════════════════════════════════════╗\033[0m"
 	@echo -e "\033[0;32m║ Setup complete!                                            ║\033[0m"
 	@echo -e "\033[0;32m╠════════════════════════════════════════════════════════════╣\033[0m"
-	@echo -e "\033[0;32m║\033[0m Next steps:                                                \033[0;32m║\033[0m"
-	@echo -e "\033[0;32m║\033[0m   make up          \033[0;34mStart development environment\033[0m         \033[0;32m║\033[0m"
+	@echo -e "\033[0;32m║\033[0m Your environment is up and running. Next steps:            \033[0;32m║\033[0m"
+	@echo -e "\033[0;32m║\033[0m   make open-app     \033[0;34mOpen the app in your browser\033[0m           \033[0;32m║\033[0m"
+	@echo -e "\033[0;32m║\033[0m   make down / up    \033[0;34mStop / start it later\033[0m                  \033[0;32m║\033[0m"
 	@echo -e "\033[0;32m╚════════════════════════════════════════════════════════════╝\033[0m"
 
 ide-config: ## Configure all IDE database connections (PHPStorm + VS Code)

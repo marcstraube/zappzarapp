@@ -600,13 +600,13 @@ Code quality, testing, and validation commands.
 
 ### Combined Checks
 
-| Command                 | Description                                                                                                                                                      |
-| ----------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `make check`            | Run ALL checks (cs-check, analyse-php, phpmd, rector-check, prettier-check, analyse-node, lint-node, test, deps-validate, compose-validate, lint-md, lint-shell) |
-| `make test`             | Run all tests (PHP + Node.js)                                                                                                                                    |
-| `make test-coverage`    | Generate coverage reports for PHP and Node.js                                                                                                                    |
-| `make deps-validate`    | Validate dependency lockfiles (composer.lock, pnpm-lock.yaml)                                                                                                    |
-| `make compose-validate` | Validate Docker Compose configuration files                                                                                                                      |
+| Command                 | Description                                                                                                                                                                                           |
+| ----------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `make check`            | Run ALL checks (cs-check, analyse-php, phpmd, rector-check, prettier-check, analyse-node, lint-node, test, deps-validate, compose-validate, validate-env, lint-md, lint-sql, lint-docker, lint-shell) |
+| `make test`             | Run all tests (PHP + Node.js)                                                                                                                                                                         |
+| `make test-coverage`    | Generate coverage reports for PHP and Node.js                                                                                                                                                         |
+| `make deps-validate`    | Validate dependency lockfiles (composer.lock, pnpm-lock.yaml)                                                                                                                                         |
+| `make compose-validate` | Validate Docker Compose configuration files                                                                                                                                                           |
 
 ### PHP Quality Tools
 
@@ -740,12 +740,16 @@ See `tests/goss/README.md` for detailed GOSS testing documentation.
 
 ### Linting
 
-| Command            | Description                             |
-| ------------------ | --------------------------------------- |
-| `make lint-config` | Validate YAML configuration files       |
-| `make lint-md`     | Check Markdown files for style issues   |
-| `make lint-md-fix` | Fix Markdown style issues automatically |
-| `make lint-shell`  | Lint shell scripts with ShellCheck      |
+| Command             | Description                                         |
+| ------------------- | --------------------------------------------------- |
+| `make lint-config`  | Validate YAML configuration files                   |
+| `make lint-md`      | Check Markdown files for style issues               |
+| `make lint-md-fix`  | Fix Markdown style issues automatically             |
+| `make lint-shell`   | Lint shell scripts with ShellCheck                  |
+| `make lint-sql`     | Check SQL files for style issues (Postgres/MariaDB) |
+| `make lint-sql-fix` | Fix SQL style issues automatically                  |
+| `make lint-docker`  | Lint Dockerfiles with hadolint                      |
+| `make validate-env` | Validate `.env` configuration for production        |
 
 ### Coverage Reports
 
@@ -821,7 +825,6 @@ SSL certificate management.
 
 | Command                    | Description                                                    |
 | -------------------------- | -------------------------------------------------------------- |
-| `make ssl-selfsigned`      | Generate self-signed SSL certificate for development           |
 | `make ssl-internal`        | Generate CA + all certificates (default for development)       |
 | `make ssl-trust-ca`        | Trust internal CA in system (auto-detects OS, requires sudo)   |
 | `make ssl-trust-ca-help`   | Show manual instructions to trust CA for all OSes              |

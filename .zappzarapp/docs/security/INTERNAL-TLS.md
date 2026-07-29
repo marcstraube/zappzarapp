@@ -152,10 +152,10 @@ docker exec meilisearch wget -qO- --no-check-certificate https://localhost:7700/
 ### Certificate Not Found
 
 ```text
-TLS certificates not found. Run "make ssl-selfsigned" to generate them.
+TLS certificates not found. Run "make ssl-internal" to generate them.
 ```
 
-**Solution:** Generate certificates with `make ssl-selfsigned`.
+**Solution:** Generate certificates with `make ssl-internal`.
 
 ### Connection Refused
 
