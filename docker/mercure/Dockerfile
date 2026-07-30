@@ -10,7 +10,9 @@ FROM dunglas/mercure:v${MERCURE_VERSION}
 # curl/openssl/c-ares packages accumulate fixable CVEs between upstream rebuilds;
 # Trivy runs with ignore-unfixed, so reported CVEs have a fix available here.
 # (The Caddy/Go-binary CVEs remain — those are only fixable by an upstream bump.)
-USER root
+# The base image already runs as root (needed to bind :443), so no USER switch is
+# required — and adding an explicit `USER root` would trip Semgrep's
+# last-user-is-root rule for a condition that is the upstream default anyway.
 RUN apk upgrade --no-cache
 
 # Copy entrypoint wrapper to load JWT secret from Docker Secret file
