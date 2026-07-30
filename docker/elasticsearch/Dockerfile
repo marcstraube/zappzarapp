@@ -6,6 +6,16 @@ ARG ELASTICSEARCH_VERSION=8.19.19
 
 FROM docker.elastic.co/elasticsearch/elasticsearch:${ELASTICSEARCH_VERSION}
 
+# Apply available OS security patches. The Elasticsearch image is Ubuntu-based;
+# it ships as uid 1000, so switch to root only for the upgrade, then restore.
+# Trivy runs with ignore-unfixed, so reported OS-package CVEs have a fix here.
+# (The bundled Java JARs — netty, jackson-databind, ... — remain; only an
+# upstream Elasticsearch release can update those.)
+USER root
+RUN apt-get update && apt-get upgrade -y \
+    && rm -rf /var/lib/apt/lists/*
+USER 1000:0
+
 # Health check for Elasticsearch (HTTPS with bootstrap password authentication)
 # Uses bootstrap password from secrets (available before API key generation)
 HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=5 \

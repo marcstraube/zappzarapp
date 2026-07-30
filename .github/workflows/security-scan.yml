@@ -27,6 +27,14 @@ on:
       - 'composer.lock'
       - 'package.json'
       - 'pnpm-lock.yaml'
+      # Env templates (secret scanning) and the scan config / baselines itself,
+      # so changing a baseline or the workflow re-runs the scan (otherwise the
+      # new config never gets exercised on push).
+      - '.env'
+      - '.env.*.example'
+      - '.trivyignore.yaml'
+      - '.dockleignore'
+      - '.github/workflows/security-scan.yml'
 
 env:
   COMPOSE_PROJECT_NAME: zappzarapp-security

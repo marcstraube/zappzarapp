@@ -23,6 +23,14 @@ ARG MARIADB_PATCH=2
 
 FROM mariadb:${MARIADB_VERSION}.${MARIADB_PATCH}
 
+# Apply available OS security patches. The MariaDB image is Debian/Ubuntu-based,
+# so its libc/krb5/pam/ncurses/... apt packages accumulate fixable CVEs between
+# upstream rebuilds; Trivy runs with ignore-unfixed, so reported CVEs have a fix
+# available here. (The Go stdlib CVEs in the bundled gosu binary remain — those
+# are only fixable by an upstream image rebuild.) The image already runs as root.
+RUN apt-get update && apt-get upgrade -y \
+    && rm -rf /var/lib/apt/lists/*
+
 # Create certs directory (owned by root, entrypoint will chown files after copy)
 RUN mkdir -p /etc/mysql/certs
 
