@@ -68,6 +68,12 @@ COPY docker/postgres/init-db.sh /docker-entrypoint-initdb.d/10-init-db.sh
 
 RUN chmod +x /entrypoint-wrapper.sh /docker-entrypoint-initdb.d/10-init-db.sh
 
+# Baked liveness check (Dockle CIS-DI-0006). Compose overrides this with its own
+# test; it applies when the image runs standalone. pg_isready reports readiness
+# via the local socket without needing auth or SSL.
+HEALTHCHECK --interval=10s --timeout=3s --start-period=30s --retries=3 \
+    CMD pg_isready -U "${POSTGRES_USER:-postgres}" -d "${POSTGRES_DB:-postgres}" || exit 1
+
 ENTRYPOINT ["/entrypoint-wrapper.sh"]
 CMD ["postgres"]
 

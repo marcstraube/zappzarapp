@@ -13,7 +13,10 @@ FROM docker.elastic.co/elasticsearch/elasticsearch:${ELASTICSEARCH_VERSION}
 # upstream Elasticsearch release can update those.)
 USER root
 RUN apt-get update && apt-get upgrade -y \
-    && rm -rf /var/lib/apt/lists/*
+    && rm -rf /var/lib/apt/lists/* \
+    # Strip setuid/setgid bits (Dockle CIS-DI-0008); Elasticsearch does not use
+    # the base image's OS PAM/shadow helpers.
+    && find / -xdev -type f \( -perm -4000 -o -perm -2000 \) -exec chmod -s {} \;
 USER 1000:0
 
 # Health check for Elasticsearch (HTTPS with bootstrap password authentication)

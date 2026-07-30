@@ -14,7 +14,11 @@ FROM chrislusf/seaweedfs:${SEAWEEDFS_VERSION}
 
 # Install su-exec for privilege dropping (Alpine-based image)
 USER root
-RUN apk add --no-cache su-exec
+RUN apk add --no-cache su-exec \
+    # Strip setuid/setgid bits (Dockle CIS-DI-0008): the only setuid binary is
+    # fusermount, and the S3 server mode does not use FUSE mounts. su-exec is not
+    # setuid (it drops privileges from root via the entrypoint).
+    && find / -xdev -type f \( -perm -4000 -o -perm -2000 \) -exec chmod -s {} \;
 
 # Create directories with correct permissions
 # Base image uses UID/GID 1000 for the existing user, we use numeric IDs for portability

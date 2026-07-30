@@ -29,7 +29,13 @@ FROM mariadb:${MARIADB_VERSION}.${MARIADB_PATCH}
 # available here. (The Go stdlib CVEs in the bundled gosu binary remain — those
 # are only fixable by an upstream image rebuild.) The image already runs as root.
 RUN apt-get update && apt-get upgrade -y \
-    && rm -rf /var/lib/apt/lists/*
+    && rm -rf /var/lib/apt/lists/* \
+    # Strip setuid/setgid bits (Dockle CIS-DI-0008): a DB server needs none of
+    # the base image's setuid OS tools (mount/su/passwd/...). This also clears
+    # the optional MariaDB PAM auth plugin's setuid (auth_pam_tool) and the PAM
+    # helpers - re-add them only if you enable `pam` authentication; the default
+    # here is native password auth via Docker secrets.
+    && find / -xdev -type f \( -perm -4000 -o -perm -2000 \) -exec chmod -s {} \;
 
 # Create certs directory (owned by root, entrypoint will chown files after copy)
 RUN mkdir -p /etc/mysql/certs
