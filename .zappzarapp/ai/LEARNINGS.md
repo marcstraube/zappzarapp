@@ -634,7 +634,75 @@ as an explicit decision, not silently changed.
 
 ---
 
+## Security / Dependency Scanning
+
+### Container-CVE triage: ignore-unfixed was already on → the flood was fixable, not noise
+
+- **Context**: ~1174 open Trivy code-scanning alerts before v1.0. The working
+  assumption (todo.md) was "mostly no-fix OS noise, `--ignore-unfixed` will
+  crush it." **Wrong premise**: `ignore-unfixed: true` was already set in every
+  Trivy scan step. So all 1174 were _fixable_ HIGH/CRITICAL CVEs, not noise.
+- **Where they came from**: dominated by stale upstream image tags pinned back
+  in Dec/Jan (elasticsearch 244, mercure 180, seaweedfs 173, mariadb 172,
+  mailpit 154, meilisearch 72) plus self-built Alpine images that **never ran
+  `apk upgrade`** (node 107, postgres 92, php 17). nginx/redis/rabbitmq were 0
+  because they install few/no extra apk packages.
+- **Two-lever fix (got 1174 → ~69, −94%, all real fixes)**: (1)
+  `apk upgrade --no-cache` in the base stage of every self-built Alpine image
+  (php/node/ postgres/nginx/redis) — since ignore-unfixed only reports fixable
+  CVEs, the fix is by definition in the Alpine repo the upgrade pulls. Also
+  applies to Alpine-based _upstream_ images that expose apk packages (mercure:
+  curl/openssl → 14→7). (2) Bump every upstream tag to newest patch/minor within
+  its major.
+- **The irreducible residual (~69) is upstream-only**: Go `stdlib` compiled into
+  bundled `gosu`/Caddy binaries (postgres/mariadb/mercure), netty JARs inside
+  the ES distribution, Go modules in Caddy/SeaweedFS binaries, and npm/undici
+  bundled in the Node image. None fixable by us → documented `.trivyignore.yaml`
+  baseline with per-group `statement` + `expired-at` (forces re-review). Wired
+  via `TRIVY_IGNOREFILE: .trivyignore.yaml` env in both GitHub `env:` and GitLab
+  `variables:` (Trivy honours it; entries match vuln IDs only, so config/secret
+  scans are unaffected).
+- **Measure locally without CI**:
+  `docker run --rm -v /var/run/docker.sock:…  aquasec/trivy image --scanners vuln --severity HIGH,CRITICAL --ignore-unfixed <img>`.
+  Trivy vendor-severity (its HIGH,CRITICAL filter) ≠ GitHub's CVSS bucketing — a
+  distro-HIGH CVE with CVSS 5 shows as "MEDIUM" in the Security tab. Same
+  finding, different label; don't chase the discrepancy.
+
+### pnpm 11 is NOT a drop-in: it stops reading `pnpm.*` fields from package.json
+
+- **Blocker found by build-testing a pnpm 10→11 bump**: pnpm 11 emits
+  `[WARN] The "pnpm" field in package.json is no longer read by pnpm. The following keys were ignored: "pnpm.auditConfig", "pnpm.overrides".`
+  This project drives its security override floors (KNOWN-VULNERABILITIES.md)
+  **and** the brace-expansion audit exception (`GHSA-mh99-v99m-4gvg`) through
+  exactly those fields → a blind bump silently disables both.
+- **Second breaking change (found after fixing the first)**: with the config
+  moved, `pnpm install` resolves fine but pnpm 11 then **hard-fails**
+  (`ERR_PNPM_IGNORED_BUILDS`, non-zero exit) on dependencies whose install/build
+  scripts are not explicitly approved — here `esbuild` + `@parcel/watcher`. pnpm
+  10 only warned. Needs an `onlyBuiltDependencies` allow-list in
+  pnpm-workspace.yaml; in a quick test the allow-list did NOT take on the first
+  attempt, so this needs proper debugging + validation, not a one-liner.
+- **Consequence / effort verdict**: pnpm 11 is a real migration with ≥2
+  behavioural breaks, not a version bump — decoupled into its own PR (validate
+  node build + both CIs on the mirror). The 6 residual pnpm HIGH/CRIT CVEs
+  (fixed only in 11.x) stay baselined; kept PNPM_VERSION at 10.34.0 (newest
+  10.x). For the migration: (1) move `pnpm.overrides` + `pnpm.auditConfig` from
+  package.json to `pnpm-workspace.yaml` top-level keys, (2) add
+  `onlyBuiltDependencies: [esbuild, '@parcel/watcher']` and verify it actually
+  suppresses ERR_PNPM_IGNORED_BUILDS, (3) green both CIs.
+- **Also**: `--frozen-lockfile` fails locally with
+  `ERR_PNPM_LOCKFILE_CONFIG_MISMATCH` when the lockfile was made by another pnpm
+  line — harmless in CI (no committed lockfile → non-frozen install), but it
+  will bite anyone testing a pnpm-major bump against a stale local lockfile.
+
+---
+
 ## Last Updated
+
+2026-07-30 (added: container-CVE triage — ignore-unfixed already on so the 1174
+were fixable; apk upgrade + tag bumps got −94%; upstream-only residual baselined
+via .trivyignore.yaml + TRIVY_IGNOREFILE; pnpm 11 drops pnpm.* package.json
+fields so it needs a config migration, not a bump)
 
 2026-07-29 (added: pre-v1.0 documentation audit sweep — dead `make` targets in
 prose, migrations only via `make db-migrations`, AuditLogger package namespace,

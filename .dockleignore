@@ -1,0 +1,20 @@
+# Dockle baseline — accepted best-practice findings, with rationale.
+# Dockle runs non-gating (exit-code 0); this keeps the Security tab honest by
+# suppressing only findings that are intentional or upstream-only. The rabbitmq
+# CIS-DI-0010 finding is NOT ignored here — it is handled surgically via
+# DOCKLE_ACCEPT_KEYS in the workflow so the credential check stays active
+# everywhere else.
+
+# CIS-DI-0001 "Create a user for the container" / "last user should not be root"
+# Intentional across every image. The scanned dev targets (php/node/nginx) and
+# the database/broker images require root at startup and drop privileges at
+# RUNTIME via their entrypoint (su-exec / gosu) or the compose `user:` directive
+# — a privilege drop Dockle cannot observe from static image metadata.
+CIS-DI-0001
+
+# DKL-DI-0004 "Use apk add with --no-cache"
+# False positive on the UPSTREAM redis:*-alpine build layer (the official image
+# compiles redis with `apk add --no-cache` and Dockle misattributes it). Our
+# Dockerfile adds only `apk upgrade --no-cache`; /var/cache/apk is empty in the
+# final image. Not fixable by us — it is the base image's own layer.
+DKL-DI-0004

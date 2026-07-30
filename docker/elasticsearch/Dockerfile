@@ -2,7 +2,7 @@
 # Elasticsearch - Distributed search and analytics engine
 # https://www.elastic.co/elasticsearch/
 
-ARG ELASTICSEARCH_VERSION=8.17.0
+ARG ELASTICSEARCH_VERSION=8.19.19
 
 FROM docker.elastic.co/elasticsearch/elasticsearch:${ELASTICSEARCH_VERSION}
 

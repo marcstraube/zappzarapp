@@ -3,7 +3,7 @@
 # Catches all outgoing emails and displays them in a web UI
 # https://mailpit.axllent.org/
 
-ARG MAILPIT_VERSION=1.21
+ARG MAILPIT_VERSION=1.30
 
 FROM axllent/mailpit:v${MAILPIT_VERSION}
 

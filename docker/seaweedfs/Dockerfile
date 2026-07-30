@@ -6,9 +6,9 @@
 # Version Pinning:
 # - To update: check https://hub.docker.com/r/chrislusf/seaweedfs/tags
 # - For SHA digest pinning in production, use:
-#   FROM chrislusf/seaweedfs:4.07@sha256:<digest>
+#   FROM chrislusf/seaweedfs:4.40@sha256:<digest>
 
-ARG SEAWEEDFS_VERSION=4.07
+ARG SEAWEEDFS_VERSION=4.40
 
 FROM chrislusf/seaweedfs:${SEAWEEDFS_VERSION}
 

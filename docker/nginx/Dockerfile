@@ -17,7 +17,10 @@ FROM alpine:${ALPINE_VERSION} AS base
 
 # Install Nginx with Brotli module & envsubst for template processing & Setup
 # All directories owned by nginx user for unprivileged operation
-RUN apk add --no-cache \
+# apk upgrade first applies available OS security patches within the pinned
+# Alpine line (Trivy runs with ignore-unfixed → reported CVEs have a fix here).
+RUN apk upgrade --no-cache && \
+    apk add --no-cache \
         nginx \
         nginx-mod-http-brotli \
         wget \

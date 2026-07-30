@@ -79,8 +79,11 @@ RUN apk add --no-cache \
 # --- 2. BASE STAGE (Shared Runtime Image - Small & Fast) ---
 FROM php:${PHP_VERSION}-fpm-alpine${ALPINE_VERSION} AS base
 
-# Install only the system dependencies required at runtime.
-RUN apk add --no-cache \
+# Apply available OS security patches within the pinned Alpine line, then
+# install the runtime dependencies. Trivy runs with ignore-unfixed, so every
+# CVE it reports has a fix available in the Alpine repo that this pulls in.
+RUN apk upgrade --no-cache && \
+    apk add --no-cache \
     fcgi \
     openssl \
     libgomp \

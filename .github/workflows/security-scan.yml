@@ -31,6 +31,14 @@ on:
 env:
   COMPOSE_PROJECT_NAME: zappzarapp-security
   SEVERITY: ${{ inputs.severity || 'HIGH,CRITICAL' }}
+  # Baseline of upstream-only, not-fixable-by-us CVEs (see .trivyignore.yaml).
+  # Trivy honours TRIVY_IGNOREFILE; entries only match vuln IDs, so config/
+  # secret scans are unaffected.
+  TRIVY_IGNOREFILE: .trivyignore.yaml
+  # Dockle: accept the rabbitmq image's public PGP key-id ENV (used for package
+  # verification, not a credential) so CIS-DI-0010 stays active everywhere else.
+  # Code-level ignores (CIS-DI-0001, DKL-DI-0004) live in .dockleignore.
+  DOCKLE_ACCEPT_KEYS: RABBITMQ_PGP_KEY_ID
 
 permissions:
   contents: read
