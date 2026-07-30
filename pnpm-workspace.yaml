@@ -25,8 +25,6 @@ overrides:
 # .zappzarapp/docs/security/KNOWN-VULNERABILITIES.md). pnpm 11 reads
 # `auditConfig` from here, no longer from package.json's `pnpm` key.
 auditConfig:
-  ignoreCves:
-    - CVE-2025-5891
   ignoreGhsas:
     - GHSA-mh99-v99m-4gvg
 

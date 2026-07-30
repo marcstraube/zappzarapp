@@ -1,0 +1,11 @@
+# Semgrep ignore patterns (gitignore syntax).
+# Semgrep already skips .gitignore'd paths (node_modules, dist, vendor, ...).
+# We only add tracked paths that Semgrep's parser genuinely cannot read, which
+# otherwise surface as warning-level SARIF notifications and make GitHub report
+# "Semgrep OSS is reporting errors".
+
+# Kubernetes manifests are Helm templates ({{ .Values.* }}) — not valid
+# standalone YAML, so Semgrep's YAML parser fails on every file. This exclusion
+# is inherent to Helm templating, not a workaround for a fixable file. Nothing
+# else lints them either (yamllint's lint-config does not recurse this deep).
+kubernetes/templates/

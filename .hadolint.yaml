@@ -35,6 +35,12 @@ ignored:
   # temporary directory changes that don't affect subsequent layers.
   - DL3003
 
+  # DL3025: Use arguments JSON notation for CMD and ENTRYPOINT
+  # Rationale: hadolint >= 2.15 also applies DL3025 to `HEALTHCHECK CMD`,
+  # where shell form is required (env vars, pipes, `|| exit 1`). The real
+  # container ENTRYPOINT/CMD instructions already use exec (JSON) form.
+  - DL3025
+
 # Treat these shells as acceptable (Alpine uses ash/busybox)
 trustedRegistries:
   - docker.io

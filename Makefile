@@ -2886,23 +2886,25 @@ cs-fix-all: ## Fix coding style aggressively on all files (uses config from .php
 
 lint-config: ## Validate YAML configuration files
 	@echo -e "\033[0;33mValidating YAML configuration...\033[0m"
-	@docker run --rm -v $$(pwd):/app -w /app cytopia/yamllint:latest ./**/*.yaml
+	@# Lint every YAML file in the repo. yamllint auto-discovers .yamllint
+	@# (rules + ignores). Image major is pinned to avoid `:latest` drift.
+	@docker run --rm -v $$(pwd):/app -w /app cytopia/yamllint:1 .
 	@echo -e "\033[0;32mYAML configuration check completed!\033[0m"
 
 lint-docker: ## Lint Dockerfiles with hadolint
 	@echo -e "\033[0;33mLinting Dockerfiles with hadolint...\033[0m"
-	@docker run --rm -v $$(pwd)/.hadolint.yaml:/.config/hadolint.yaml -i hadolint/hadolint < docker/php/Dockerfile
-	@docker run --rm -v $$(pwd)/.hadolint.yaml:/.config/hadolint.yaml -i hadolint/hadolint < docker/node/Dockerfile
-	@docker run --rm -v $$(pwd)/.hadolint.yaml:/.config/hadolint.yaml -i hadolint/hadolint < docker/nginx/Dockerfile
-	@docker run --rm -v $$(pwd)/.hadolint.yaml:/.config/hadolint.yaml -i hadolint/hadolint < docker/postgres/Dockerfile
-	@docker run --rm -v $$(pwd)/.hadolint.yaml:/.config/hadolint.yaml -i hadolint/hadolint < docker/mariadb/Dockerfile
-	@docker run --rm -v $$(pwd)/.hadolint.yaml:/.config/hadolint.yaml -i hadolint/hadolint < docker/redis/Dockerfile
-	@docker run --rm -v $$(pwd)/.hadolint.yaml:/.config/hadolint.yaml -i hadolint/hadolint < docker/mercure/Dockerfile
-	@docker run --rm -v $$(pwd)/.hadolint.yaml:/.config/hadolint.yaml -i hadolint/hadolint < docker/meilisearch/Dockerfile
-	@docker run --rm -v $$(pwd)/.hadolint.yaml:/.config/hadolint.yaml -i hadolint/hadolint < docker/elasticsearch/Dockerfile
-	@docker run --rm -v $$(pwd)/.hadolint.yaml:/.config/hadolint.yaml -i hadolint/hadolint < docker/mailpit/Dockerfile
-	@docker run --rm -v $$(pwd)/.hadolint.yaml:/.config/hadolint.yaml -i hadolint/hadolint < docker/seaweedfs/Dockerfile
-	@docker run --rm -v $$(pwd)/.hadolint.yaml:/.config/hadolint.yaml -i hadolint/hadolint < docker/rabbitmq/Dockerfile
+	@docker run --rm -v $$(pwd)/.hadolint.yaml:/.config/hadolint.yaml -i hadolint/hadolint:v2.15.0 < docker/php/Dockerfile
+	@docker run --rm -v $$(pwd)/.hadolint.yaml:/.config/hadolint.yaml -i hadolint/hadolint:v2.15.0 < docker/node/Dockerfile
+	@docker run --rm -v $$(pwd)/.hadolint.yaml:/.config/hadolint.yaml -i hadolint/hadolint:v2.15.0 < docker/nginx/Dockerfile
+	@docker run --rm -v $$(pwd)/.hadolint.yaml:/.config/hadolint.yaml -i hadolint/hadolint:v2.15.0 < docker/postgres/Dockerfile
+	@docker run --rm -v $$(pwd)/.hadolint.yaml:/.config/hadolint.yaml -i hadolint/hadolint:v2.15.0 < docker/mariadb/Dockerfile
+	@docker run --rm -v $$(pwd)/.hadolint.yaml:/.config/hadolint.yaml -i hadolint/hadolint:v2.15.0 < docker/redis/Dockerfile
+	@docker run --rm -v $$(pwd)/.hadolint.yaml:/.config/hadolint.yaml -i hadolint/hadolint:v2.15.0 < docker/mercure/Dockerfile
+	@docker run --rm -v $$(pwd)/.hadolint.yaml:/.config/hadolint.yaml -i hadolint/hadolint:v2.15.0 < docker/meilisearch/Dockerfile
+	@docker run --rm -v $$(pwd)/.hadolint.yaml:/.config/hadolint.yaml -i hadolint/hadolint:v2.15.0 < docker/elasticsearch/Dockerfile
+	@docker run --rm -v $$(pwd)/.hadolint.yaml:/.config/hadolint.yaml -i hadolint/hadolint:v2.15.0 < docker/mailpit/Dockerfile
+	@docker run --rm -v $$(pwd)/.hadolint.yaml:/.config/hadolint.yaml -i hadolint/hadolint:v2.15.0 < docker/seaweedfs/Dockerfile
+	@docker run --rm -v $$(pwd)/.hadolint.yaml:/.config/hadolint.yaml -i hadolint/hadolint:v2.15.0 < docker/rabbitmq/Dockerfile
 	@echo -e "\033[0;32mDockerfile linting completed!\033[0m"
 
 lint-md: ## Check Markdown files for style issues

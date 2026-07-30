@@ -742,6 +742,75 @@ as an explicit decision, not silently changed.
 - Doc: the triage table lives in
   `.zappzarapp/docs/security/SECURITY-SCANNING.md` ("Semgrep (SAST)
   Suppressions").
+- **CORRECTION (verified against GitHub): `nosemgrep` does NOT close the alert
+  on its own.** `--json` omits suppressed findings (looks like 0), but `--sarif`
+  (what CI uploads) INCLUDES them with `suppressions: [{state: accepted}]`.
+  GitHub code scanning does NOT auto-dismiss from SARIF in-source suppressions,
+  so the alerts stay **open**. The `advanced-security/dismiss-alerts@v2` action
+  must run after `upload-sarif` (reads the sarif-id + sarif-file, dismisses the
+  suppressed ones as "won't fix"). Lesson: verify against the actual GitHub
+  alert state (`gh api .../code-scanning/alerts?state=open`), never just the
+  local `--json`.
+
+### "Semgrep OSS is reporting errors" = parse-warning notifications, not a real failure
+
+- GitHub's tool-status error is triggered by **warning-level
+  `toolExecutionNotifications`** in the SARIF, not only by
+  `executionSuccessful:false`. Semgrep emits one per file its parser cannot
+  read.
+- Here: 36 warnings — 35 from `kubernetes/templates/*.yaml` (Helm templates
+  `{{ .Values.* }}` are not valid standalone YAML) + 1 from a stray invalid-YAML
+  file. Fix = `.semgrepignore` for `kubernetes/templates/` (inherent to Helm,
+  not a workaround). `executionSuccessful` was `true` the whole time.
+- **Diagnosis gotcha**: the SARIF downloaded via `code-scanning/analyses/{id}`
+  is GitHub's REPROCESSED copy — it strips `invocations`. To see the real
+  notifications, inspect the RAW semgrep output (`semgrep ... --sarif` locally
+  with the CI-pinned version). Don't exclude committed source to silence
+  warnings: `.claude/hooks/*.sh` stayed in SAST scope; only the unparseable
+  files were excluded.
+
+### hadolint `:latest` drift → DL3025 now fires on HEALTHCHECK CMD
+
+- `make lint-docker` used `hadolint/hadolint` (implicit `:latest`). A newer
+  hadolint applies **DL3025** ("JSON notation for CMD/ENTRYPOINT") to
+  `HEALTHCHECK CMD` too, where shell form is required (env vars, pipes,
+  `|| exit 1`) → `.hadolint.yaml`'s `failure-threshold: warning` failed the job.
+- Fix: pin `hadolint/hadolint:v2.15.0` + ignore `DL3025` (the real container
+  ENTRYPOINT/CMD already use exec form). Same `:latest`-linter-drift pattern as
+  the other pinned tools — pin mutable linter images.
+
+### pnpm audit matches advisories by GHSA, not CVE
+
+- `auditConfig.ignoreCves: [CVE-2025-5891]` did NOT suppress the pm2 ReDoS,
+  because pnpm reports/matches it by its GHSA (`GHSA-x5gf-qvw8-r2rm`) — the two
+  IDs are the SAME advisory. Use `ignoreGhsas` for pnpm-audit exceptions.
+- Resolved properly instead: bumped pm2 `^6 → ^7.0.3` (fixes the ReDoS at the
+  root, on Node 24 which satisfies pm2 7's `>=18`; v7's breaking changes are
+  internal dependency internalization) → both ignore entries removed, the
+  KNOWN-VULNERABILITIES pm2 entry deleted. pm2 is dev-only (prod runs `node`
+  directly), validated pm2 7 + ecosystem.config.cjs still load.
+
+### `make lint-config` yamllint glob did not recurse — plus a config was missing
+
+- `cytopia/yamllint ./**/*.yaml` only matched the TOP level (`sh` has no
+  globstar, so `**` == `*`), so nested YAML (kubernetes, docker/*, .github/…)
+  was never linted. Fix: pass `.` (recurse) + pin `cytopia/yamllint:1`.
+- Recursing surfaced 232 `line-length` hits (long CI/compose lines are fine) and
+  needed a `.yamllint`: `extends: relaxed`, `line-length: disable`, `ignore:`
+  Helm templates + `pnpm-lock.yaml` + build dirs. yamllint auto-discovers
+  `.yamllint` from cwd.
+
+### A non-consumed `.yaml` doc file drifts and misleads — delete it, document at the code
+
+- `.claude/hooks/change-watch.yaml` was a "reference" mirroring the hard-coded
+  `DOC_EXTRACTORS` array in `change-watch.sh`. Nothing read it, it was invalid
+  YAML, and it had ALREADY drifted (documented an old skills pattern the script
+  no longer uses). A drifted reference is worse than none.
+- Fix: delete it; the one bit not already in the script (the `use_filename`
+  value meanings) moved into a comment next to the array. Documentation belongs
+  WITH the code it describes, in one place, so it cannot drift. Distinguish this
+  (a fixable format/design smell) from a legitimate exclusion like the Helm
+  templates. See [[feedback_flag_suboptimal_dont_bandaid]].
 
 ### Container-CVE triage: ignore-unfixed was already on → the flood was fixable, not noise
 

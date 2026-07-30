@@ -26,6 +26,9 @@ fi
 
 # Format: file_pattern|regex_pattern|search_template|use_filename
 # Note: regex uses lookbehind/lookahead since grep -oP returns matches only
+# use_filename: "false" = extract via regex, "true" = use the file name,
+#               "dirname" = use the parent directory name
+# search_template: {1} is replaced with the extracted value
 
 # --- Documentation Extractors ---
 DOC_EXTRACTORS=(

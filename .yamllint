@@ -1,0 +1,19 @@
+# yamllint configuration — https://yamllint.readthedocs.io/
+#
+# Applied by `make lint-config`, which runs yamllint recursively over the repo.
+extends: relaxed
+
+ignore: |
+  node_modules/
+  vendor/
+  packages/
+  build/
+  dist/
+  # Generated lockfile.
+  pnpm-lock.yaml
+  # Helm templates ({{ .Values.* }}) are not valid standalone YAML.
+  kubernetes/templates/
+
+rules:
+  # YAML in CI/compose files legitimately has long lines (shell commands, URLs).
+  line-length: disable

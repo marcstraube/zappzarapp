@@ -499,12 +499,26 @@ jobs:
         continue-on-error: true
 
       - name: Upload SARIF results
+        id: upload-sarif
         uses: github/codeql-action/upload-sarif@v4
         # Code scanning (SARIF upload) requires a public repo or GitHub Advanced
         # Security; skip on private forks so they do not fail the job.
         if: always() && github.event.repository.visibility == 'public'
         with:
           sarif_file: semgrep.sarif
+
+      # GitHub does not auto-dismiss alerts from SARIF in-source suppressions
+      # (`# nosemgrep`). This action reads the suppression data from the SARIF
+      # and dismisses the matching alerts (reason: won't fix), so nosemgrep'd
+      # findings do not linger as open code-scanning alerts.
+      - name: Dismiss nosemgrep-suppressed alerts
+        uses: advanced-security/dismiss-alerts@v2 # v2.0.3
+        if: always() && github.event.repository.visibility == 'public'
+        with:
+          sarif-id: ${{ steps.upload-sarif.outputs.sarif-id }}
+          sarif-file: semgrep.sarif
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
 
   # ============================================================================
   # BATS TESTS (Makefile Validation)
