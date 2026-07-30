@@ -31,13 +31,11 @@ on:
 env:
   COMPOSE_PROJECT_NAME: zappzarapp-security
   SEVERITY: ${{ inputs.severity || 'HIGH,CRITICAL' }}
-  # Baseline of upstream-only, not-fixable-by-us CVEs (see .trivyignore.yaml).
-  # Trivy honours TRIVY_IGNOREFILE; entries only match vuln IDs, so config/
-  # secret scans are unaffected.
-  TRIVY_IGNOREFILE: .trivyignore.yaml
   # Dockle: accept the rabbitmq image's public PGP key-id ENV (used for package
   # verification, not a credential) so CIS-DI-0010 stays active everywhere else.
   # Code-level ignores (CIS-DI-0001, DKL-DI-0004) live in .dockleignore.
+  # (Trivy's baseline is passed via the `trivyignores:` input on each scan step —
+  # the action does not honour a TRIVY_IGNOREFILE env.)
   DOCKLE_ACCEPT_KEYS: RABBITMQ_PGP_KEY_ID
 
 permissions:
@@ -129,6 +127,10 @@ jobs:
           output: trivy-${{ matrix.image.name }}-results.sarif
           severity: ${{ env.SEVERITY }}
           ignore-unfixed: true
+          # Apply the upstream-only baseline. The trivy-action does NOT honour the
+          # TRIVY_IGNOREFILE env, and Trivy only auto-loads a plain `.trivyignore`
+          # (not the .yaml variant) from cwd — so the file must be passed here.
+          trivyignores: .trivyignore.yaml
 
       - name: Upload Trivy results (${{ matrix.image.name }})
         uses: github/codeql-action/upload-sarif@v4
@@ -240,6 +242,7 @@ jobs:
           output: trivy-fs-results.sarif
           severity: ${{ env.SEVERITY }}
           ignore-unfixed: true
+          trivyignores: .trivyignore.yaml
 
       - name: Upload filesystem scan results
         uses: github/codeql-action/upload-sarif@v4
