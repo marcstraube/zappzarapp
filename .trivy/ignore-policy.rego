@@ -15,9 +15,10 @@
 # *packages*, by contrast, are stable — so a package-level filter holds without
 # a treadmill. See .zappzarapp/docs/security/KNOWN-VULNERABILITIES.md.
 #
-# NOTE: `pnpm` is deliberately NOT listed — it is our pinned tool and the
-# residual CVEs are fixable by the (separately tracked) pnpm 11 migration, so we
-# keep those alerts visible as a reminder.
+# NOTE: `pnpm` is deliberately NOT listed — it is our pinned tool. The pnpm 11
+# migration has bumped the bundled pnpm to 11.18.0, so its residual CVEs are
+# expected to clear on the next image rebuild + re-scan; keeping pnpm un-filtered
+# lets that reduction stay visible.
 
 package trivy
 

@@ -113,14 +113,16 @@ Justification:
 
 **Mitigation:**
 
-- Ignored via `pnpm.auditConfig.ignoreGhsas` in the root `package.json`
+- Ignored via `auditConfig.ignoreGhsas` in `pnpm-workspace.yaml` (pnpm 11 no
+  longer reads the `pnpm` field from `package.json`)
 - depcheck runs only in trusted development and CI environments
 
 **Monitoring:**
 
 - Advisory page: <https://github.com/advisories/GHSA-mh99-v99m-4gvg>
 - When per-major backports appear: remove `GHSA-mh99-v99m-4gvg` from
-  `ignoreGhsas` and add per-major override floors instead
+  `ignoreGhsas` (now in `pnpm-workspace.yaml`) and add per-major override floors
+  instead
 
 | Review Date | Reviewer     | Status                                    |
 | ----------- | ------------ | ----------------------------------------- |
@@ -150,7 +152,7 @@ changes it:
 | ----------------------------------------------------------------------------------------------------------------------------------- | --------------------------------- | ----------------------------------------------------------- |
 | Bundled Java JARs in the Elasticsearch distribution (netty, jackson-databind, jakarta.mail, commons-lang3, reactor-netty, lz4-java) | `trivy-elasticsearch`             | Elastic release (already on newest maintained 8.x, 8.19.19) |
 | Go stdlib / modules compiled into upstream `gosu` / Caddy binaries                                                                  | `trivy-postgres`, `trivy-mercure` | Upstream image rebuild                                      |
-| Node.js runtime + bundled npm (`undici`, `tar`) and `pnpm`                                                                          | `trivy-node`                      | Node release / pnpm 11 migration (tracked separately)       |
+| Node.js runtime + bundled npm (`undici`, `tar`) and `pnpm`                                                                          | `trivy-node`                      | Node release; pnpm bumped to 11.18.0 (re-scan pending)      |
 
 ### Decision: ACCEPTED (filtered by package at scan time)
 
@@ -173,8 +175,10 @@ Trade-off (accepted): the filter is package-granular — it also suppresses any
 _future_ CVE in those packages. That is acceptable here because we cannot patch
 these packages regardless of the CVE; the review trigger below re-checks the
 whole set. `pnpm` is intentionally **excluded** from the policy so its CVEs stay
-visible as a reminder for the (separately tracked) pnpm 11 migration. A VEX
-document (`--vex`) is the standards-track upgrade path if per-CVE exploitability
+visible: the pnpm 11 migration has now bumped the bundled pnpm to 11.18.0, so
+those residual CVEs are expected to clear on the next image rebuild + Trivy
+re-scan — keeping them un-filtered lets that reduction show. A VEX document
+(`--vex`) is the standards-track upgrade path if per-CVE exploitability
 statements are wanted later.
 
 **Monitoring / review trigger:**

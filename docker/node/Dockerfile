@@ -19,7 +19,7 @@ FROM node:${NODE_VERSION}-alpine${ALPINE_VERSION} AS base
 # PNPM_VERSION mirrors the packageManager pin in package.json - `make
 # pnpm-upgrade` updates both. Pinned so image builds are reproducible and do
 # not depend on the npm registry resolving "latest" at build time.
-ARG PNPM_VERSION=10.34.0
+ARG PNPM_VERSION=11.18.0
 ENV PNPM_HOME="/usr/local/bin/pnpm"
 ENV PATH="$PNPM_HOME:$PATH"
 ENV COREPACK_ENABLE_DOWNLOAD_PROMPT=0

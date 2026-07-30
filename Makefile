@@ -1078,14 +1078,22 @@ logs-save: ## Export container logs to timestamped directory (SERVICES=php,node 
 	ls -la "$$OUTPUT_DIR"
 
 pnpm: ## Execute pnpm command (e.g. make pnpm CMD="add -D vue")
-	@# Docker bind mounts don't support atomic rename (EBUSY error)
-	@# Solution: Run pnpm with lock file in temp location, then copy back
+	@# Docker bind mounts don't support atomic rename (EBUSY error), so run pnpm
+	@# in a temp workspace and copy the results back. pnpm-workspace.yaml must be
+	@# present because pnpm 11 reads overrides/allowBuilds/auditConfig from it -
+	@# which means the workspace package dirs it lists must exist there too.
 	@$(DC_RUN) run --rm --no-TTY node sh -c ' \
-		cp /app/package.json /tmp/package.json && \
-		cp /app/pnpm-lock.yaml /tmp/pnpm-lock.yaml 2>/dev/null || true && \
-		cd /tmp && pnpm $(CMD) && \
-		cat /tmp/package.json > /app/package.json && \
-		cat /tmp/pnpm-lock.yaml > /app/pnpm-lock.yaml \
+		rm -rf /tmp/pnpm-cmd && \
+		mkdir -p /tmp/pnpm-cmd/src/node/backend /tmp/pnpm-cmd/src/node/frontend && \
+		cp /app/package.json /tmp/pnpm-cmd/package.json && \
+		cp /app/pnpm-workspace.yaml /tmp/pnpm-cmd/pnpm-workspace.yaml && \
+		cp /app/.npmrc /tmp/pnpm-cmd/.npmrc 2>/dev/null || true; \
+		{ [ -s /app/pnpm-lock.yaml ] && cp /app/pnpm-lock.yaml /tmp/pnpm-cmd/pnpm-lock.yaml || true; } && \
+		cp /app/src/node/backend/package.json /tmp/pnpm-cmd/src/node/backend/package.json && \
+		cp /app/src/node/frontend/package.json /tmp/pnpm-cmd/src/node/frontend/package.json && \
+		cd /tmp/pnpm-cmd && pnpm $(CMD) && \
+		cat /tmp/pnpm-cmd/package.json > /app/package.json && \
+		{ [ -s /tmp/pnpm-cmd/pnpm-lock.yaml ] && cat /tmp/pnpm-cmd/pnpm-lock.yaml > /app/pnpm-lock.yaml || true; } \
 	'
 
 prune: ## Remove untagged/dangling images related to this project

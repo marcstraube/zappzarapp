@@ -131,6 +131,63 @@ periodic triage (`/optimize --learnings`) and are removed from this file.
   `make -n` to "preview" a recipe containing `$(MAKE)`; read the recipe, or test
   in a throwaway worktree. (2026-07-29)
 
+### pnpm 10 → 11 migration is NOT a drop-in — three breaking changes (verified against pnpm docs)
+
+- **Version bump**: `packageManager` in `package.json` (10.34.0 → 11.18.0),
+  `ARG PNPM_VERSION` in `docker/node/Dockerfile`, and `engines.pnpm` (→
+  `>=11.0.0`). `make pnpm-upgrade` bumps the first two automatically (to
+  `npm view pnpm version`), but NOT `engines`. Corepack auto-fetches the pinned
+  version from `packageManager`, so the running container uses pnpm 11 the
+  moment the field changes — no image rebuild needed for local validation.
+- **(1) The `pnpm` field in `package.json` is no longer read.** `overrides`,
+  `auditConfig` (and everything else under `pnpm.*`) must move to top-level keys
+  in `pnpm-workspace.yaml`. Verified: after the move the lockfile still carries
+  the override floors and `pnpm audit` still reports "1 ignored". `overrides`
+  may only live at the workspace root.
+- **(2) `onlyBuiltDependencies` was REMOVED in v11 → replaced by `allowBuilds`**
+  (a map `package -> boolean`, not a list). Setting the old
+  `onlyBuiltDependencies` list does nothing; pnpm 11 hard-fails install with
+  `ERR_PNPM_IGNORED_BUILDS` and auto-appends
+  `allowBuilds: { pkg: "set this to true or false" }` placeholders to
+  `pnpm-workspace.yaml`. The fix is
+  `allowBuilds: { '@parcel/watcher': true, esbuild: true }` (this project's only
+  two build-script deps — read them off the install error). Docs also removed
+  `onlyBuiltDependenciesFile`, `neverBuiltDependencies`,
+  `ignoredBuiltDependencies`, `ignoreDepScripts`. Codemod:
+  `pnpx codemod run pnpm-v10-to-v11`.
+- **(3) `verifyDepsBeforeRun` defaults to `install` in v11** → before every
+  `pnpm run`/`pnpm exec`, pnpm auto-verifies deps and (on mismatch) tries to
+  purge + reinstall `node_modules`. In a non-TTY container that aborts with
+  `ERR_PNPM_ABORTED_REMOVE_MODULES_DIR_NO_TTY` (breaks `make analyse-node` /
+  `lint-node` / `test-node`). Fix: `verifyDepsBeforeRun: false` — installs are
+  managed explicitly via `make pnpm-install` / `pnpm-sync`, and `node_modules`
+  is a Docker named volume. **GOTCHA (confirmed by docs + trial): this setting
+  is NOT read from `.npmrc` — `pnpm config get verify-deps-before-run` returns
+  `undefined`. It MUST live in `pnpm-workspace.yaml` (camelCase).**
+- **Dockerfile must COPY `pnpm-workspace.yaml` before `pnpm install`** (pnpm 11
+  Pitfall 2) — else the build sees no `allowBuilds` and fails. The main build
+  stage already does (`COPY package.json pnpm-workspace.yaml ./`); the framework
+  stage installs the user's frontend standalone (default frontend has zero deps,
+  so no build scripts → safe).
+- **`make pnpm CMD=...` had to become workspace-aware.** It copies the manifest
+  to `/tmp` and runs there (bind-mount atomic-rename EBUSY workaround). Pre-
+  migration that carried `overrides` (they were in `package.json`, which IS
+  copied); post-migration the config is in `pnpm-workspace.yaml`, so the target
+  now also copies `pnpm-workspace.yaml` + `.npmrc` + creates the workspace
+  package dirs (`src/node/backend`, `src/node/frontend` — else pnpm errors on
+  the missing workspace projects). Do NOT copy `pnpm-workspace.yaml` back: it is
+  mounted `:ro` in dev compose, and `make pnpm` should never rewrite it.
+- **Trivy tie-in**: the 6 residual "pnpm-only" Trivy CVEs (kept un-filtered in
+  `.trivy/ignore-policy.rego` as the migration reminder) should clear once the
+  node image rebuilds with pnpm 11.18.0 — re-scan on the next develop push to
+  confirm before claiming them gone.
+- **Method note**: the pnpm-11 config API was *researched against
+  pnpm.io/settings
+  - the v11.0 release notes*, not reverse-engineered from error messages alone —
+    the error-driven guesses (`onlyBuiltDependencies`, `.npmrc` verify-deps)
+    were BOTH the wrong pnpm-10 API and only the doc confirmed the v11
+    replacements.
+
 ---
 
 ## Claude Workflow

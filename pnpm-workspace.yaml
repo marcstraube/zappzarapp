@@ -10,3 +10,39 @@ packages:
   - 'src/node/backend'
   # Node.js Frontend (User's choice: Nuxt, Next.js, SvelteKit, etc.)
   - 'src/node/frontend'
+
+# Dependency version floors for transitive security fixes.
+# pnpm 11 reads `overrides` from here, no longer from package.json's `pnpm` key.
+# Floors must not cross a semver major — one entry per major line with that
+# line's backport fix.
+overrides:
+  'smol-toml@<1.6.1': '>=1.6.1'
+  'js-yaml@<3.15.0': '>=3.15.0 <4.0.0'
+  'js-yaml@>=4.0.0 <4.3.0': '>=4.3.0 <5.0.0'
+  'js-yaml@>=5.0.0 <5.2.2': '>=5.2.2'
+
+# `pnpm audit` exceptions (documented in
+# .zappzarapp/docs/security/KNOWN-VULNERABILITIES.md). pnpm 11 reads
+# `auditConfig` from here, no longer from package.json's `pnpm` key.
+auditConfig:
+  ignoreCves:
+    - CVE-2025-5891
+  ignoreGhsas:
+    - GHSA-mh99-v99m-4gvg
+
+# Build-script approvals. pnpm blocks dependency build scripts by default and
+# pnpm 11 hard-fails (ERR_PNPM_IGNORED_BUILDS) on unapproved ones. pnpm 11
+# replaced the pnpm-10 `onlyBuiltDependencies` list with this `allowBuilds` map
+# (package -> boolean). These two ship prebuilt binaries, so their scripts are
+# safe to run.
+allowBuilds:
+  '@parcel/watcher': true
+  esbuild: true
+
+# Don't auto-verify/-install dependencies before every `pnpm run` (a pnpm 11
+# default that is not read from .npmrc — it must live here). Dependencies are
+# installed explicitly via `make pnpm-install` / `make pnpm-sync`, and
+# node_modules lives in a Docker named volume. Without this, pnpm 11 tries to
+# purge + reinstall node_modules before each script and aborts on the non-TTY
+# container run (ERR_PNPM_ABORTED_REMOVE_MODULES_DIR_NO_TTY).
+verifyDepsBeforeRun: false
