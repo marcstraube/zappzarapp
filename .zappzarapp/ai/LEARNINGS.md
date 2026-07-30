@@ -647,26 +647,53 @@ as an explicit decision, not silently changed.
   mailpit 154, meilisearch 72) plus self-built Alpine images that **never ran
   `apk upgrade`** (node 107, postgres 92, php 17). nginx/redis/rabbitmq were 0
   because they install few/no extra apk packages.
-- **Two-lever fix (got 1174 → ~69, −94%, all real fixes)**: (1)
-  `apk upgrade --no-cache` in the base stage of every self-built Alpine image
-  (php/node/ postgres/nginx/redis) — since ignore-unfixed only reports fixable
-  CVEs, the fix is by definition in the Alpine repo the upgrade pulls. Also
-  applies to Alpine-based _upstream_ images that expose apk packages (mercure:
-  curl/openssl → 14→7). (2) Bump every upstream tag to newest patch/minor within
-  its major.
-- **The irreducible residual (~69) is upstream-only**: Go `stdlib` compiled into
-  bundled `gosu`/Caddy binaries (postgres/mariadb/mercure), netty JARs inside
-  the ES distribution, Go modules in Caddy/SeaweedFS binaries, and npm/undici
-  bundled in the Node image. None fixable by us → documented `.trivyignore.yaml`
-  baseline with per-group `statement` + `expired-at` (forces re-review). Wired
-  via `TRIVY_IGNOREFILE: .trivyignore.yaml` env in both GitHub `env:` and GitLab
-  `variables:` (Trivy honours it; entries match vuln IDs only, so config/secret
-  scans are unaffected).
-- **Measure locally without CI**:
-  `docker run --rm -v /var/run/docker.sock:…  aquasec/trivy image --scanners vuln --severity HIGH,CRITICAL --ignore-unfixed <img>`.
-  Trivy vendor-severity (its HIGH,CRITICAL filter) ≠ GitHub's CVSS bucketing — a
-  distro-HIGH CVE with CVSS 5 shows as "MEDIUM" in the Security tab. Same
-  finding, different label; don't chase the discrepancy.
+- **Real fixes (permanent, got 1174 → 6)**: (1) `apk upgrade --no-cache` in the
+  base stage of every self-built Alpine image (php/node/postgres/nginx/redis) +
+  the Alpine-based mercure — ignore-unfixed only reports fixable CVEs, so the
+  fix is by definition in the repo the upgrade pulls. (2) **`apt-get upgrade` in
+  mariadb + elasticsearch** — BOTH are Debian/Ubuntu-based (not "unpatchable
+  upstream monoliths"!); apt cleared the OS-package bulk (mariadb 70→0). ES
+  ships as uid 1000:0 → `USER root` for the upgrade then restore `USER 1000:0`
+  (else root-regression + Semgrep last-user-is-root). (3) Bump every image tag
+  to newest patch/minor in major. (4) setuid/setgid strip
+  (`find / -xdev -type f \( -perm -4000 -o -perm -2000 \) -exec chmod -s {} \;`)
+  for Dockle CIS-DI-0008.
+- **The irreducible residual is upstream-only**: Go `stdlib`/modules compiled
+  into bundled `gosu`/Caddy binaries (postgres/mariadb/mercure/seaweedfs), Java
+  JARs bundled in the ES distribution (netty, jackson-databind, ...), and
+  npm/undici/ tar/glob-libs bundled in the Node image. None fixable by us.
+- **ENDGAME — three approaches, only the last works. This is the key lesson:**
+  1. **`.trivyignore` CVE-ID list — FAILS.** A list built from a LOCAL scan does
+     not match CI: the local Trivy DB was stale vs CI's (0 CVE-ID overlap on
+     mariadb). And `TRIVY_IGNOREFILE` **env is ignored by
+     aquasecurity/trivy-action** — you must use its `trivyignores:` input. Even
+     wired, CVE IDs drift as the DB updates (same image, different IDs hours
+     apart).
+  2. **Per-alert GitHub dismissal — CHURNS.** Dismissals stick for an UNCHANGED
+     image, but every image rebuild re-fingerprints Trivy's SARIF → GitHub
+     creates NEW open alerts for the same CVEs (dismissed 80, then 54 new
+     appeared after Dockerfile edits).
+  3. **Package-level Trivy `--ignore-policy` (Rego) — WORKS.** The vulnerable
+     PACKAGES are stable even as CVE IDs churn. `.trivy/ignore-policy.rego`
+     lists the upstream-only package names (Go stdlib+modules, `io.netty:*`,
+     jackson-databind, undici, tar, brace-expansion, minimatch, picomatch);
+     `default ignore = false` + `ignore { ignore_packages[input.PkgName] }` +
+     `startswith(input.PkgName, "io.netty:")`. Wired via `ignore-policy:`
+     (GitHub) / `--ignore-policy` (GitLab). Alerts are never created → no
+     treadmill. `pnpm` EXCLUDED (fixable via pnpm 11 → kept visible). VEX
+     (`--vex`) is the standards-track upgrade path.
+- **Measure locally, but trust CI for counts**: local Trivy
+  (`aquasec/trivy:latest`) uses a different DB snapshot than the CI trivy-action
+  → different/more CVEs. Local is fine for "does the fix reduce it" but the
+  authoritative count is CI. Also: Trivy vendor-severity (its HIGH,CRITICAL
+  filter) ≠ GitHub CVSS bucketing — a distro-HIGH CVE with CVSS 5 shows as
+  "MEDIUM"; same finding, don't chase it.
+- **Dockle**: `.dockleignore` for rule-level accepts — CIS-DI-0001 (intentional
+  runtime root-drop via su-exec/gosu), DKL-DI-0004 (upstream redis-layer FP),
+  CIS-DI-0010 (build-ENV FP — this project passes secrets via Docker secret
+  FILES, never ENV, so every flagged key is a non-secret base-image var). Real
+  fixes: setuid strip (CIS-DI-0008), baked postgres `pg_isready` HEALTHCHECK
+  (CIS-DI-0006).
 
 ### pnpm 11 is NOT a drop-in: it stops reading `pnpm.*` fields from package.json
 
