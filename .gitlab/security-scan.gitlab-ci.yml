@@ -149,8 +149,11 @@ scan:filesystem:
   image: aquasec/trivy:0.72.0
   stage: scan
   script:
-    - trivy fs --severity ${SEVERITY} --ignore-unfixed --format table .
-    - trivy fs --severity ${SEVERITY} --ignore-unfixed --format json --output trivy-fs-report.json . || true
+    # vuln only: secret scanning is handled by scan:secrets + scan:gitleaks, so
+    # the default vuln,secret scanners would surface the dummy example tokens in
+    # the committed .env template as findings here.
+    - trivy fs --scanners vuln --severity ${SEVERITY} --ignore-unfixed --format table .
+    - trivy fs --scanners vuln --severity ${SEVERITY} --ignore-unfixed --format json --output trivy-fs-report.json . || true
   artifacts:
     paths:
       - trivy-fs-report.json

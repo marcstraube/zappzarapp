@@ -231,6 +231,11 @@ jobs:
         with:
           scan-type: fs
           scan-ref: .
+          # vuln only: this SARIF is uploaded to code scanning. Secret scanning is
+          # handled by the dedicated secret-scan job + TruffleHog (which do not
+          # upload SARIF), so the default vuln,secret scanners would surface the
+          # dummy example tokens in the committed .env template as CRITICAL alerts.
+          scanners: vuln
           format: sarif
           output: trivy-fs-results.sarif
           severity: ${{ env.SEVERITY }}
