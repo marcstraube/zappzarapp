@@ -128,6 +128,58 @@ Justification:
 
 ---
 
+## Container Image Vulnerabilities (Upstream-Only)
+
+**Policy: "secure by default" extends as far as we can influence.** Every
+container image is scanned by Trivy
+(`--severity HIGH,CRITICAL --ignore-unfixed`, so only _fixable_ CVEs are
+reported). Everything we can fix ourselves, we do:
+
+- **Image tags** are bumped to the newest patch/minor within the pinned major
+  line.
+- **OS packages** are upgraded at build time — `apk upgrade` on the self-built
+  Alpine images (php/node/nginx/redis/postgres) and the Alpine-based mercure
+  image, `apt-get upgrade` on the Debian/Ubuntu images (mariadb, elasticsearch).
+
+After those in-scope fixes, the Trivy findings that remain are **not fixable by
+us** — the vulnerable component is a compiled binary, a bundled library, or a
+language runtime baked into an upstream image, and only an upstream release
+changes it:
+
+| Source                                                                                                                              | Category                          | Fixable by                                                  |
+| ----------------------------------------------------------------------------------------------------------------------------------- | --------------------------------- | ----------------------------------------------------------- |
+| Bundled Java JARs in the Elasticsearch distribution (netty, jackson-databind, jakarta.mail, commons-lang3, reactor-netty, lz4-java) | `trivy-elasticsearch`             | Elastic release (already on newest maintained 8.x, 8.19.19) |
+| Go stdlib / modules compiled into upstream `gosu` / Caddy binaries                                                                  | `trivy-postgres`, `trivy-mercure` | Upstream image rebuild                                      |
+| Node.js runtime + bundled npm (`undici`, `tar`) and `pnpm`                                                                          | `trivy-node`                      | Node release / pnpm 11 migration (tracked separately)       |
+
+### Decision: ACCEPTED (dismissed as "won't fix")
+
+These findings are dismissed in GitHub code scanning with the reason **"won't
+fix"** and a per-category justification. Dismissal keeps them **fully
+auditable** (visible under the _Closed / Dismissed_ filter with their rationale)
+while the default _Open_ view reflects only what we can act on. Crucially, a
+**genuinely new** upstream CVE still appears as **Open** — dismissal is
+per-alert, not a blanket rule-level mute — so real new signal is never hidden.
+
+A static `.trivyignore` CVE-ID allowlist was deliberately **not** used: Trivy's
+vulnerability database updates continuously, so the residual CVE-ID set drifts
+(the same image scanned hours apart yields different IDs). Per-alert dismissal
+is stable across that drift; an ID list would be a constant-maintenance
+treadmill that also risks over-suppressing IDs that later become fixable by us.
+
+**Monitoring / review trigger:**
+
+- Re-evaluate when the relevant upstream ships a release (Elasticsearch, the
+  base images, Node.js, pnpm 11).
+- New **Open** container alerts = a CVE not covered by an existing dismissal →
+  triage it (fix if it is ours, dismiss with rationale if upstream-only).
+
+| Review Date | Reviewer     | Status                                            |
+| ----------- | ------------ | ------------------------------------------------- |
+| 2026-07-30  | Claude Agent | Accepted - upstream-only after all in-scope fixes |
+
+---
+
 ## Review Process
 
 1. **Quarterly Review**: Check all accepted vulnerabilities for available
