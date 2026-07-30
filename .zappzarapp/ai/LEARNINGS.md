@@ -536,6 +536,22 @@ as an explicit decision, not silently changed.
 
 ## CI / GitHub Actions
 
+### Auditing the Node.js 20 action deprecation
+
+- GitHub runners force node20 actions onto node24 with a deprecation warning
+  (removal pending). To audit which actions are affected, check each ref's
+  `runs.using` in its `action.yml`:
+  `gh api repos/<owner>/<repo>/contents/action.yml?ref=<tag> --jq .content | base64 -d | grep using`.
+- Bumped `docker/build-push-action@v6 → @v7` (v7's only workflow-relevant
+  breaking change is the removed `DOCKER_BUILD_NO_SUMMARY` /
+  `DOCKER_BUILD_EXPORT_RETENTION_DAYS` envs — unused here) and
+  `zaproxy/action-baseline@v0.14.0 → @v0.15.0` (node24 + deps only).
+- **`advanced-security/dismiss-alerts@v2` (v2.0.3) is still node20 with no
+  node24 release** — nothing to bump; it carries the deprecation warning until
+  upstream updates. Don't try to "fix" it. (checkout@v7, github-script@v9,
+  upload-artifact@v7, codeql-action@v4, setup-buildx@v4, paths-filter@v4,
+  azure/setup-*@v5 are already node24.)
+
 ### Path-based job gating (dorny/paths-filter)
 
 - A `changes` job runs `dorny/paths-filter@v3` and exposes per-area boolean
