@@ -152,27 +152,37 @@ changes it:
 | Go stdlib / modules compiled into upstream `gosu` / Caddy binaries                                                                  | `trivy-postgres`, `trivy-mercure` | Upstream image rebuild                                      |
 | Node.js runtime + bundled npm (`undici`, `tar`) and `pnpm`                                                                          | `trivy-node`                      | Node release / pnpm 11 migration (tracked separately)       |
 
-### Decision: ACCEPTED (dismissed as "won't fix")
+### Decision: ACCEPTED (filtered by package at scan time)
 
-These findings are dismissed in GitHub code scanning with the reason **"won't
-fix"** and a per-category justification. Dismissal keeps them **fully
-auditable** (visible under the _Closed / Dismissed_ filter with their rationale)
-while the default _Open_ view reflects only what we can act on. Crucially, a
-**genuinely new** upstream CVE still appears as **Open** — dismissal is
-per-alert, not a blanket rule-level mute — so real new signal is never hidden.
+These findings are filtered out of the Trivy scans by a **package-level ignore
+policy** — [`.trivy/ignore-policy.rego`](../../../.trivy/ignore-policy.rego),
+wired via `ignore-policy:` (GitHub) / `--ignore-policy` (GitLab). The policy
+matches the upstream-only **packages** (Go `stdlib` and modules, the
+`io.netty:*` family, `jackson-databind`, `undici`, `tar`, ...), so the alerts
+are never created in the first place.
 
-A static `.trivyignore` CVE-ID allowlist was deliberately **not** used: Trivy's
+Why filter by **package**, not CVE ID or per-alert dismissal: Trivy's
 vulnerability database updates continuously, so the residual CVE-ID set drifts
-(the same image scanned hours apart yields different IDs). Per-alert dismissal
-is stable across that drift; an ID list would be a constant-maintenance
-treadmill that also risks over-suppressing IDs that later become fixable by us.
+(the same image scanned hours apart yields different IDs), and every image
+rebuild re-fingerprints the SARIF results into fresh code-scanning alerts. A
+`.trivyignore` CVE-ID allowlist or per-alert dismissal therefore needs constant
+maintenance. The vulnerable **packages** are stable, so a package filter holds
+without a treadmill.
+
+Trade-off (accepted): the filter is package-granular — it also suppresses any
+_future_ CVE in those packages. That is acceptable here because we cannot patch
+these packages regardless of the CVE; the review trigger below re-checks the
+whole set. `pnpm` is intentionally **excluded** from the policy so its CVEs stay
+visible as a reminder for the (separately tracked) pnpm 11 migration. A VEX
+document (`--vex`) is the standards-track upgrade path if per-CVE exploitability
+statements are wanted later.
 
 **Monitoring / review trigger:**
 
-- Re-evaluate when the relevant upstream ships a release (Elasticsearch, the
-  base images, Node.js, pnpm 11).
-- New **Open** container alerts = a CVE not covered by an existing dismissal →
-  triage it (fix if it is ours, dismiss with rationale if upstream-only).
+- Re-evaluate the package list when the relevant upstream ships a release
+  (Elasticsearch, the base images, Node.js) or quarterly.
+- A container CVE in a package **not** on the list appears as a normal Open
+  alert → triage it (fix if it is ours, add to the policy if upstream-only).
 
 | Review Date | Reviewer     | Status                                            |
 | ----------- | ------------ | ------------------------------------------------- |

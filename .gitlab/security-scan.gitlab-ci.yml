@@ -71,8 +71,10 @@ build:images:
   needs:
     - build:images
   script:
-    - trivy image --severity ${SEVERITY} --ignore-unfixed --format table ${IMAGE_NAME}
-    - trivy image --severity ${SEVERITY} --ignore-unfixed --format json --output trivy-${IMAGE_SHORT}-report.json ${IMAGE_NAME} || true
+    # --ignore-policy: package-level filter for upstream-only components we
+    # cannot patch (bundled binaries/JARs/runtime); see .trivy/ignore-policy.rego.
+    - trivy image --severity ${SEVERITY} --ignore-unfixed --ignore-policy .trivy/ignore-policy.rego --format table ${IMAGE_NAME}
+    - trivy image --severity ${SEVERITY} --ignore-unfixed --ignore-policy .trivy/ignore-policy.rego --format json --output trivy-${IMAGE_SHORT}-report.json ${IMAGE_NAME} || true
   artifacts:
     paths:
       - trivy-${IMAGE_SHORT}-report.json
@@ -152,8 +154,8 @@ scan:filesystem:
     # vuln only: secret scanning is handled by scan:secrets + scan:gitleaks, so
     # the default vuln,secret scanners would surface the dummy example tokens in
     # the committed .env template as findings here.
-    - trivy fs --scanners vuln --severity ${SEVERITY} --ignore-unfixed --format table .
-    - trivy fs --scanners vuln --severity ${SEVERITY} --ignore-unfixed --format json --output trivy-fs-report.json . || true
+    - trivy fs --scanners vuln --severity ${SEVERITY} --ignore-unfixed --ignore-policy .trivy/ignore-policy.rego --format table .
+    - trivy fs --scanners vuln --severity ${SEVERITY} --ignore-unfixed --ignore-policy .trivy/ignore-policy.rego --format json --output trivy-fs-report.json . || true
   artifacts:
     paths:
       - trivy-fs-report.json
