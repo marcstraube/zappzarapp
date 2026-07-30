@@ -41,6 +41,9 @@ ignore_packages := {
 	# Bundled with the Node.js runtime / npm (npm is unused at runtime; we use pnpm).
 	"undici",
 	"tar",
+	"brace-expansion",
+	"minimatch",
+	"picomatch",
 }
 
 default ignore = false

@@ -32,7 +32,7 @@ on:
       # new config never gets exercised on push).
       - '.env'
       - '.env.*.example'
-      - '.trivyignore.yaml'
+      - '.trivy/**'
       - '.dockleignore'
       - '.github/workflows/security-scan.yml'
 
