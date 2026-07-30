@@ -39,13 +39,9 @@ on:
 env:
   COMPOSE_PROJECT_NAME: zappzarapp-security
   SEVERITY: ${{ inputs.severity || 'HIGH,CRITICAL' }}
-  # Dockle: accept the rabbitmq image's public PGP key-id ENV (used for package
-  # verification, not a credential) so CIS-DI-0010 stays active everywhere else.
-  # Code-level ignores (CIS-DI-0001, DKL-DI-0004) live in .dockleignore.
-  # Upstream-only container CVEs are handled by dismissing the code-scanning
-  # alerts as "won't fix" (see docs/security/KNOWN-VULNERABILITIES.md), not by a
-  # drifting .trivyignore CVE-ID list.
-  DOCKLE_ACCEPT_KEYS: RABBITMQ_PGP_KEY_ID
+  # Dockle rule-level ignores (CIS-DI-0001, DKL-DI-0004, CIS-DI-0010) live in
+  # .dockleignore. Upstream-only container CVEs are filtered by package in
+  # .trivy/ignore-policy.rego (see docs/security/KNOWN-VULNERABILITIES.md).
 
 permissions:
   contents: read
