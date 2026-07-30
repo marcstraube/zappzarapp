@@ -215,6 +215,7 @@
 
                     <div class="flex gap-2">
                         {% if tool.enabled %}
+                            {# nosemgrep: var-in-href -- dev-only DevDashboard; tool.url is a server-defined internal tool URL, not user input. #}
                             <a href="{{ tool.url }}" target="_blank" class="btn btn-primary text-sm" style="flex: 1; text-align: center;">Open</a>
                             <button type="button" data-action="copy-cmd" data-cmd="{{ tool.stop_cmd }}" class="btn btn-secondary text-sm">Stop</button>
                         {% else %}

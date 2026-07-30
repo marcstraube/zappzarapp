@@ -68,6 +68,7 @@ readonly class DashboardController
         // Process phpinfo if requested
         if ($showPhpInfo) {
             ob_start();
+            // nosemgrep: phpinfo-use -- intentional: DevDashboard is a dev-only tool and this renders the system-info page.
             phpinfo(); // @phpstan-ignore ekinoBannedCode.function (Legitimate use in DevDashboard for system info display)
             // ob_get_clean() cannot return false here: the matching ob_start()
             // is right above, so a buffer is always active.

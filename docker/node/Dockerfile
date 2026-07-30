@@ -223,6 +223,7 @@ CMD ["node", "src/node/backend/dist/server.js"]
 # Usage: docker build --target test-api -f docker/node/Dockerfile .
 FROM api AS test-api
 
+# nosemgrep: last-user-is-root -- CI-only GOSS test stage, never deployed; the runtime `api` stage ends as USER node.
 USER root
 
 # Copy GOSS binary from centralized image
@@ -240,6 +241,7 @@ RUN goss -g /goss.yaml validate --format documentation
 # Usage: docker build --target test-framework -f docker/node/Dockerfile .
 FROM framework AS test-framework
 
+# nosemgrep: last-user-is-root -- CI-only GOSS test stage, never deployed; the runtime `framework` stage ends as USER node.
 USER root
 
 # Copy GOSS binary from centralized image

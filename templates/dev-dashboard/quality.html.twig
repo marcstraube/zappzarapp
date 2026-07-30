@@ -284,6 +284,7 @@
 
                 <div class="flex gap-2">
                     {% if phpAvailable %}
+                        {# nosemgrep: var-in-href -- dev-only DevDashboard; report_path is a server-computed coverage-report path, not user input. #}
                         <a href="{{ test_coverage.php.report_path }}"
                            target="_blank"
                            class="btn btn-primary text-sm" style="flex: 1; text-align: center;">
@@ -366,6 +367,7 @@
 
                 <div class="flex gap-2">
                     {% if nodeAvailable %}
+                        {# nosemgrep: var-in-href -- dev-only DevDashboard; report_path is a server-computed coverage-report path, not user input. #}
                         <a href="{{ test_coverage.node.report_path }}"
                            target="_blank"
                            class="btn btn-primary text-sm" style="flex: 1; text-align: center;">

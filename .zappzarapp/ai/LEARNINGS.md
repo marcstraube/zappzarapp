@@ -636,6 +636,56 @@ as an explicit decision, not silently changed.
 
 ## Security / Dependency Scanning
 
+### Semgrep SAST triage: inline `nosemgrep` beats a central ignore list (and placement is strict)
+
+- **Context**: 27 open "Semgrep OSS" code-scanning alerts before v1.0 (the
+  non-container remainder after the Trivy/Dockle triage). Breakdown: 18 nginx
+  (`dynamic-proxy-host` 9 + `missing-internal` 9, both firing on the SAME 9
+  `proxy_pass` lines), 3 `last-user-is-root`, 3 `var-in-href`, 1
+  `cors-misconfiguration`, 1 `phpinfo-use`, 1 `gcm-no-tag-length`.
+- **Verdict**: 26 were false-positives / intentional, 1 was a real (cheap) fix.
+  - **nginx** — both rules are systematic FPs for a reverse proxy:
+    `proxy_pass https://$upstream_*` uses a variable that is a **hardcoded**
+    `set $upstream_* service:port` on the line above (the variable only defers
+    DNS resolution to runtime — a documented nginx idiom), never user input →
+    `dynamic-proxy-host` is moot; and the proxied locations ARE the app's
+    intentionally public routes, so `missing-internal` is wrong by design.
+  - **`last-user-is-root`** — node Dockerfile hits are the CI-only GOSS
+    `test-api`/`test-framework` stages (never deployed; runtime stages end
+    `USER node`); seaweedfs is the documented root→su-exec drop in the
+    entrypoint (same intentional pattern as Dockle CIS-DI-0001).
+  - **`var-in-href` / `phpinfo-use`** — dev-only DevDashboard, server-controlled
+    values.
+  - **`cors-misconfiguration`** — origin is reflected only after passing the
+    allowlist check; the wildcard is an explicit `CORS_ORIGINS=*` opt-in.
+  - **`gcm-no-tag-length` (the real one)** — FIXED not suppressed: pass
+    `{ authTagLength: TAG_LENGTH }` to `createCipheriv`/`createDecipheriv`. The
+    decrypt path already validated the tag length, so this is defence-in-depth,
+    but it clears the rule at the crypto-API level (the "secure by default"
+    call).
+- **Method (mirrors the Trivy endgame but simpler)**: suppress **inline at the
+  source** with `nosemgrep`, NOT a central list. Rationale: self-documenting,
+  survives re-scans without churn (unlike per-alert GitHub dismissal, which
+  re-opens on every SARIF re-fingerprint), and puts the reason next to the code.
+  Every suppression states a reason; rule IDs may be shortened to the last
+  segment (`nosemgrep: var-in-href -- ...` works, verified).
+- **GOTCHA — placement is one line, exactly**: `nosemgrep` is honored only on
+  the **same line as the finding** or the **single line immediately above** it.
+  A two-line comment where the `nosemgrep` keyword sits on the FIRST line and a
+  continuation on the second pushes the keyword TWO lines up → NOT honored (the
+  cors alert survived the first pass exactly this way). Fix: keyword on the line
+  directly above the flagged line; put any extra prose ABOVE the keyword line.
+- **VERIFY LOCALLY — Semgrep matches CI (unlike Trivy)**:
+  `pip install semgrep==1.172.0` (the CI-pinned version) in a venv, run the
+  exact CI config
+  (`--config p/security-audit --config p/secrets --config p/php --config p/typescript`)
+  → reproduced all 27 findings byte-for-byte, and confirmed 0 after suppression.
+  Registry rules download fresh + version-pinned, so no stale-DB divergence like
+  the local Trivy DB had. Always re-scan to prove placement before pushing.
+- Doc: the triage table lives in
+  `.zappzarapp/docs/security/SECURITY-SCANNING.md` ("Semgrep (SAST)
+  Suppressions").
+
 ### Container-CVE triage: ignore-unfixed was already on → the flood was fixable, not noise
 
 - **Context**: ~1174 open Trivy code-scanning alerts before v1.0. The working

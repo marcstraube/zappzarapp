@@ -13,6 +13,7 @@ ARG SEAWEEDFS_VERSION=4.40
 FROM chrislusf/seaweedfs:${SEAWEEDFS_VERSION}
 
 # Install su-exec for privilege dropping (Alpine-based image)
+# nosemgrep: last-user-is-root -- intentional: the entrypoint reads secrets as root, then drops to the seaweedfs user via su-exec (see ENTRYPOINT note below).
 USER root
 RUN apk add --no-cache su-exec \
     # Strip setuid/setgid bits (Dockle CIS-DI-0008): the only setuid binary is

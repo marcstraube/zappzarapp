@@ -84,8 +84,9 @@ export class EncryptionService {
     // Derive 256-bit key from the provided key using SHA-256
     const derivedKey = createHash('sha256').update(key).digest();
 
-    // Create cipher
-    const cipher = createCipheriv(this.CIPHER, derivedKey, iv);
+    // Create cipher — pin the GCM auth-tag length so a truncated tag can never
+    // be negotiated (defence against tag-truncation attacks).
+    const cipher = createCipheriv(this.CIPHER, derivedKey, iv, { authTagLength: this.TAG_LENGTH });
 
     // Encrypt
     let ciphertext = cipher.update(plaintext, 'utf8');
@@ -143,8 +144,11 @@ export class EncryptionService {
     // Derive 256-bit key (must match encryption)
     const derivedKey = createHash('sha256').update(key).digest();
 
-    // Create decipher
-    const decipher = createDecipheriv(this.CIPHER, derivedKey, iv);
+    // Create decipher — pin the GCM auth-tag length (defence against
+    // tag-truncation attacks); the tag length is also validated above.
+    const decipher = createDecipheriv(this.CIPHER, derivedKey, iv, {
+      authTagLength: this.TAG_LENGTH,
+    });
     decipher.setAuthTag(tag);
 
     // Decrypt

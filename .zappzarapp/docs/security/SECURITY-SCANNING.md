@@ -255,6 +255,34 @@ For Dockerfile misconfigurations:
 USER root  # Required for specific operation
 ```
 
+### Semgrep (SAST) Suppressions
+
+Semgrep findings are suppressed **inline at the source**, never via a central
+ignore list. Each suppression is a `nosemgrep` comment placed on the flagged
+line (or the line directly above it) and MUST state the reason:
+
+```ts
+// nosemgrep: rule-id -- why this is safe here
+```
+
+Rule IDs may be shortened to the last path segment (e.g. `var-in-href`). Inline
+suppression is preferred over path/rule exclusion because it is
+self-documenting, survives re-scans without churn, and keeps the reason next to
+the code a reader would question.
+
+The boilerplate ships the following triaged Semgrep findings (all false
+positives or intentional patterns, one real fix applied):
+
+| Rule                    | Where                             | Why suppressed                                                        |
+| ----------------------- | --------------------------------- | --------------------------------------------------------------------- |
+| `dynamic-proxy-host`    | `docker/nginx/snippets/*.conf`    | `proxy_pass $upstream_*` uses a hardcoded `service:port`, not input.  |
+| `missing-internal`      | `docker/nginx/snippets/*.conf`    | Proxied locations are the app's intentionally public routes.          |
+| `last-user-is-root`     | `docker/node`, `docker/seaweedfs` | CI-only test stages / documented root→su-exec drop in the entrypoint. |
+| `var-in-href`           | `templates/dev-dashboard/*`       | Dev-only dashboard; hrefs are server-controlled, not user input.      |
+| `phpinfo-use`           | `DevDashboard` controller         | Intentional dev-only system-info page.                                |
+| `cors-misconfiguration` | `src/node/backend/app.ts`         | Origin reflected only after an allowlist check; wildcard is opt-in.   |
+| `gcm-no-tag-length`     | `EncryptionService.ts`            | **Fixed**, not suppressed: `authTagLength` now pinned explicitly.     |
+
 ---
 
 ## Best Practices

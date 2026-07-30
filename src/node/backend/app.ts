@@ -113,6 +113,9 @@ export function createApp(options: AppOptions = {}): Express {
 
     // Check if origin is allowed (or if wildcard is used)
     if (CORS_ORIGINS === '*' || allowedOrigins.includes(origin)) {
+      // The origin is reflected only after it passed the allowlist check above;
+      // the wildcard ('*') is an explicit opt-in via CORS_ORIGINS.
+      // nosemgrep: cors-misconfiguration
       res.header('Access-Control-Allow-Origin', CORS_ORIGINS === '*' ? '*' : origin);
     }
 
