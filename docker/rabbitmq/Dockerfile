@@ -11,14 +11,14 @@
 # The official entrypoint drops privileges to the rabbitmq user (uid 999)
 # via su-exec before starting the Erlang VM.
 
-ARG RABBITMQ_VERSION=4.0
+ARG RABBITMQ_VERSION=4.3
 
 # Version Pinning:
 # - Major version pinned for stability
 # - Alpine version follows RabbitMQ official image (currently 3.23)
 # - To update: check https://hub.docker.com/_/rabbitmq/tags
 # - For SHA digest pinning in production, use:
-#   FROM rabbitmq:4.0-management-alpine@sha256:<digest>
+#   FROM rabbitmq:4.3-management-alpine@sha256:<digest>
 
 FROM rabbitmq:${RABBITMQ_VERSION}-management-alpine
 

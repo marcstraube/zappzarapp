@@ -21,6 +21,10 @@ variables:
   SEVERITY: "HIGH,CRITICAL"
   DOCKER_DRIVER: overlay2
   DOCKER_TLS_CERTDIR: ""
+  # Baseline of upstream-only, not-fixable-by-us CVEs (see .trivyignore.yaml).
+  # Trivy honours TRIVY_IGNOREFILE; entries only match vuln IDs, so config/
+  # secret scans are unaffected.
+  TRIVY_IGNOREFILE: ".trivyignore.yaml"
 
 stages:
   - build

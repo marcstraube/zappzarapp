@@ -97,7 +97,7 @@
     "node": ">=24.0.0",
     "pnpm": ">=10.0.0"
   },
-  "packageManager": "pnpm@10.28.1",
+  "packageManager": "pnpm@10.34.0",
   "dependencies": {
     "@zappzarapp/audit-logger": "^1.0.0",
     "@zappzarapp/browser-utils": "^2.1.0",

@@ -1,6 +1,6 @@
 # Node.js Multi-Stage Dockerfile
 
-ARG NODE_VERSION=24.13
+ARG NODE_VERSION=24.18
 ARG ALPINE_VERSION=3.23
 
 # Version Pinning:
@@ -8,7 +8,7 @@ ARG ALPINE_VERSION=3.23
 # - Alpine version pinned for consistency across services
 # - To update: check https://hub.docker.com/_/node/tags
 # - For SHA digest pinning in production, use:
-#   FROM node:24.13-alpine3.23@sha256:<digest>
+#   FROM node:24.18-alpine3.23@sha256:<digest>
 
 # --- 1. BASE STAGE (Shared Foundation) ---
 # Installs pnpm and curl.
@@ -19,11 +19,14 @@ FROM node:${NODE_VERSION}-alpine${ALPINE_VERSION} AS base
 # PNPM_VERSION mirrors the packageManager pin in package.json - `make
 # pnpm-upgrade` updates both. Pinned so image builds are reproducible and do
 # not depend on the npm registry resolving "latest" at build time.
-ARG PNPM_VERSION=10.28.1
+ARG PNPM_VERSION=10.34.0
 ENV PNPM_HOME="/usr/local/bin/pnpm"
 ENV PATH="$PNPM_HOME:$PATH"
 ENV COREPACK_ENABLE_DOWNLOAD_PROMPT=0
-RUN corepack enable && corepack prepare "pnpm@${PNPM_VERSION}" --activate && \
+# Apply available OS security patches within the pinned Alpine line (Trivy runs
+# with ignore-unfixed, so reported CVEs have a fix available here).
+RUN apk upgrade --no-cache && \
+    corepack enable && corepack prepare "pnpm@${PNPM_VERSION}" --activate && \
     apk add --no-cache curl git
 
 # Set Working Directory

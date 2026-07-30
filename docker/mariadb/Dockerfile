@@ -16,9 +16,9 @@
 # - Minor version pinned for stability
 # - To update: check https://hub.docker.com/_/mariadb/tags
 # - For SHA digest pinning in production, use:
-#   FROM mariadb:12.1.2@sha256:<digest>
+#   FROM mariadb:12.3.2@sha256:<digest>
 
-ARG MARIADB_VERSION=12.1
+ARG MARIADB_VERSION=12.3
 ARG MARIADB_PATCH=2
 
 FROM mariadb:${MARIADB_VERSION}.${MARIADB_PATCH}

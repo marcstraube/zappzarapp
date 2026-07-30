@@ -2,7 +2,7 @@
 # Meilisearch - Lightning fast, typo-tolerant search engine
 # https://www.meilisearch.com/
 
-ARG MEILISEARCH_VERSION=1.12
+ARG MEILISEARCH_VERSION=1.51
 
 FROM getmeili/meilisearch:v${MEILISEARCH_VERSION}
 

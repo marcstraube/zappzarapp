@@ -2,9 +2,16 @@
 # Mercure Hub - Real-time messaging server using Server-Sent Events (SSE)
 # https://mercure.rocks/
 
-ARG MERCURE_VERSION=0.16
+ARG MERCURE_VERSION=0.24
 
 FROM dunglas/mercure:v${MERCURE_VERSION}
+
+# Apply available OS security patches. The Mercure image is Alpine-based, so its
+# curl/openssl/c-ares packages accumulate fixable CVEs between upstream rebuilds;
+# Trivy runs with ignore-unfixed, so reported CVEs have a fix available here.
+# (The Caddy/Go-binary CVEs remain — those are only fixable by an upstream bump.)
+USER root
+RUN apk upgrade --no-cache
 
 # Copy entrypoint wrapper to load JWT secret from Docker Secret file
 COPY docker/mercure/entrypoint.sh /entrypoint.sh
