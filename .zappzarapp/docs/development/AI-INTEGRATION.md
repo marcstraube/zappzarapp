@@ -97,11 +97,10 @@ Hooks provide immediate feedback and contextual reminders during work.
 
 **Project Hooks (`.claude/settings.json`):**
 
-| Hook                | Script                  | Purpose                                                                  |
-| ------------------- | ----------------------- | ------------------------------------------------------------------------ |
-| `UserPromptSubmit`  | `user-prompt-submit.sh` | Branch check (reminder when on a protected branch)                       |
-| `PostToolUse(Edit)` | (inline)                | Reminds to rebuild containers on config-file edits (matches `file_path`) |
-| `PostToolUse(Bash)` | (inline)                | Reminds to sync deps after `make composer/pnpm CMD=add/remove`           |
+| Hook                | Script   | Purpose                                                                  |
+| ------------------- | -------- | ------------------------------------------------------------------------ |
+| `PostToolUse(Edit)` | (inline) | Reminds to rebuild containers on config-file edits (matches `file_path`) |
+| `PostToolUse(Bash)` | (inline) | Reminds to sync deps after `make composer/pnpm CMD=add/remove`           |
 
 **Hook output contract:** plain stdout only reaches Claude for
 `UserPromptSubmit`/`SessionStart`. `PostToolUse` hooks must either exit 2
@@ -114,14 +113,11 @@ Custom JSON shapes like `{"message": ...}` are silently dropped.
 ```json
 {
   "hooks": {
-    "UserPromptSubmit": [
+    "PostToolUse": [
       {
-        "matcher": "",
+        "matcher": "Edit|Write",
         "hooks": [
-          {
-            "type": "command",
-            "command": "./.claude/hooks/user-prompt-submit.sh"
-          }
+          { "type": "command", "command": "…inline snippet or ./script.sh" }
         ]
       }
     ]
@@ -129,31 +125,33 @@ Custom JSON shapes like `{"message": ...}` are silently dropped.
 }
 ```
 
-**Hook Input (stdin JSON):**
+**Hook Input (stdin JSON, `PostToolUse`):**
 
 ```json
 {
   "session_id": "uuid",
-  "transcript_path": "/path/to/conversation.jsonl",
-  "prompt": "user message text",
-  "hook_event_name": "UserPromptSubmit"
+  "hook_event_name": "PostToolUse",
+  "tool_name": "Edit",
+  "tool_input": { "file_path": "/path/to/file", "…": "…" },
+  "tool_response": { "…": "…" }
 }
 ```
+
+Extract fields with `jq` — the payload nests tool arguments under `tool_input`
+(e.g. `.tool_input.file_path`, `.tool_input.command`), **not** at the top level.
+Grepping the raw payload also matches file _content_ / command _output_, which
+causes false positives; always match the extracted field.
 
 **Hook Output (stdout JSON):**
 
 ```json
 {
-  "message": "[Hook Name] Message shown to Claude"
+  "hookSpecificOutput": {
+    "hookEventName": "PostToolUse",
+    "additionalContext": "[Hook Name] Message shown to Claude"
+  }
 }
 ```
-
-#### UserPromptSubmit Check
-
-On every prompt the hook checks (plain stdout becomes context):
-
-- **Branch check** — implementation-style prompt while on develop/main/master
-  produces a reminder to create a feature branch or worktree
 
 ### Other Tools (`AGENTS.md` Convention)
 

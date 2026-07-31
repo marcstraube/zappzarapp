@@ -67,7 +67,17 @@ Fixes) **Version:** 3.79
   "mentioned here" references, loudest for the most-used targets — and it fired
   mid-work before a feature was done. Doc/test drift is covered better by the
   `docs-auditor` agent, CI (GOSS/BATS) and the standing "write knowledge files
-  immediately" rule. `user-prompt-submit.sh` keeps only the branch check
+  immediately" rule
+
+- **Branch-check prompt hook** (`user-prompt-submit.sh`, the last
+  `UserPromptSubmit` hook): grepped each prompt for English action keywords
+  while on `develop`/`main`/`master` and reminded to branch. Not shareable for a
+  boilerplate — keyword matching is language-bound (fails for non-English
+  prompts) and the protected-branch set / "trivial change is fine" exception are
+  team-specific. The feature-branch discipline stays as an adaptable convention
+  in `CLAUDE.md` / `AGENTS.md`, which the model follows in any language. Removes
+  the whole `UserPromptSubmit` wiring; only the two generic `PostToolUse`
+  reminders remain
 
 #### Fixed
 
