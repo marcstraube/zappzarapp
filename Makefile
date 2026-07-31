@@ -239,9 +239,10 @@ setup: ## Create directories, install dependencies (BOILERPLATE=1 to force file 
 	# Project AI knowledge directory - created in boilerplate mode only (see below)
 	# Contributors use .zappzarapp/ai/ directly
 
-	# Claude context directory (project-specific agent context)
+	# Claude context directory (agent context)
+	# zappzarapp.md = platform context (tracked, synced from upstream — never edited)
+	# project.md    = app context (swapped for a clean template in boilerplate mode below)
 	@mkdir -p .claude/context
-	@if [ ! -f .claude/context/project.md ]; then cp .zappzarapp/ai/templates/PROJECT.md .claude/context/project.md; fi
 
 	# Config example (personal_knowledge_path)
 	@if [ ! -f .claude/config.local.md.example ]; then \
@@ -285,6 +286,12 @@ setup: ## Create directories, install dependencies (BOILERPLATE=1 to force file 
 			mv AGENTS.md .zappzarapp/ai/AGENTS.md; \
 			cp .zappzarapp/ai/templates/AGENTS.md AGENTS.md; \
 			echo -e "\033[0;32mAGENTS.md replaced with generic template.\033[0m"; \
+		fi; \
+		if grep -q "zappzarapp-boilerplate-context" .claude/context/project.md 2>/dev/null; then \
+			echo -e "\033[0;33mSetting up project context...\033[0m"; \
+			mv .claude/context/project.md .zappzarapp/ai/context-project.md; \
+			cp .zappzarapp/ai/templates/PROJECT.md .claude/context/project.md; \
+			echo -e "\033[0;32mproject.md replaced with app-context template.\033[0m"; \
 		fi; \
 		if grep -q "zappzarapp - Changelog" CHANGELOG.md 2>/dev/null; then \
 			echo -e "\033[0;33mSetting up CHANGELOG...\033[0m"; \
@@ -2610,9 +2617,12 @@ reset-full: ## Full factory reset - removes EVERYTHING including secrets (DANGER
 		echo -e "\033[0;31m  ⚠ AGENTS.md not reset (not tracked or modified)\033[0m"
 	@git checkout -- CHANGELOG.md 2>/dev/null || \
 		echo -e "\033[0;31m  ⚠ CHANGELOG.md not reset (not tracked or modified)\033[0m"
+	@git checkout -- .claude/context/project.md .claude/context/zappzarapp.md 2>/dev/null || \
+		echo -e "\033[0;31m  ⚠ Claude context not reset (not tracked or modified)\033[0m"
 	@rm -f .zappzarapp/CHANGELOG.md 2>/dev/null || true
 	@rm -f .zappzarapp/ai/CLAUDE.md 2>/dev/null || true
 	@rm -f .zappzarapp/ai/AGENTS.md 2>/dev/null || true
+	@rm -f .zappzarapp/ai/context-project.md 2>/dev/null || true
 	@echo -e "\033[0;32m✓ Full factory reset complete! Project is now in boilerplate state.\033[0m"
 
 # =============================================================================
@@ -2625,6 +2635,7 @@ ZAPPZARAPP_BRANCH ?= master
 # Files/directories to sync from upstream (infrastructure)
 BOILERPLATE_SYNC_PATHS := \
 	.zappzarapp \
+	.claude/context/zappzarapp.md \
 	docker \
 	.github \
 	.gitlab-ci.yml \
@@ -2644,7 +2655,8 @@ BOILERPLATE_SYNC_PATHS := \
 BOILERPLATE_EXCLUDE := \
 	.zappzarapp/CHANGELOG.md \
 	.zappzarapp/ai/CLAUDE.md \
-	.zappzarapp/ai/AGENTS.md
+	.zappzarapp/ai/AGENTS.md \
+	.zappzarapp/ai/context-project.md
 
 # Maintainer-only files: useful only in the zappzarapp boilerplate repo itself
 # (e.g. the GitHub->GitLab push-mirror that live-tests the shipped .gitlab-ci.yml
@@ -2678,8 +2690,8 @@ boilerplate-sync: ## Sync infrastructure from zappzarapp upstream (preserves pro
 	@git fetch zappzarapp $(ZAPPZARAPP_BRANCH)
 	@echo ""
 	@echo -e "\033[0;33mFiles to sync:\033[0m"
-	@echo -e "\033[0;34m  Infrastructure: .zappzarapp/, docker/, .github/, config files\033[0m"
-	@echo -e "\033[0;34m  Excluded: README.md, CHANGELOG.md, .claude/CLAUDE.md, src/, tests/\033[0m"
+	@echo -e "\033[0;34m  Infrastructure: .zappzarapp/, .claude/context/zappzarapp.md, docker/, .github/, config files\033[0m"
+	@echo -e "\033[0;34m  Excluded: README.md, CHANGELOG.md, .claude/CLAUDE.md, .claude/context/project.md, src/, tests/\033[0m"
 	@echo ""
 	@# Show what would change
 	@echo -e "\033[0;33mChanges from upstream:\033[0m"

@@ -1,19 +1,31 @@
 # Project Context
 
-Project-specific information for all agents.
+Application-specific context for all agents. Describe YOUR application here —
+its domain, custom modules, and business rules. Platform-wide context (tech
+stack, architecture, test conventions) lives in `zappzarapp.md` and is kept in
+sync with upstream; do not duplicate it here.
 
-## Architecture
+## Application Overview
 
-<!-- TODO: Document your project's architecture -->
+<!-- TODO: What does your app do? Target users, business domain. -->
+<!-- e.g. "B2B SaaS for inventory management" / "E-commerce for sustainable fashion" -->
 
-- Main application structure
-- Frontend build system (e.g., Vite: resources/ → public/build/)
-- Database setup (PostgreSQL, MariaDB, etc.)
+## Custom Modules
 
-## Test Conventions
+<!-- TODO: App-specific modules and their responsibilities. -->
+<!-- e.g. Shop (products, cart, checkout), Blog (articles, comments) -->
 
-- PHP: tests/php/{Module}/Unit/ and tests/php/{Module}/Feature/
-- Node: tests/node/backend/unit/ and tests/node/backend/integration/
-- Test class suffix: `*_Test.php` / `*.test.ts`
-- Coverage reports: build/coverage/
-- New code always requires corresponding tests (Unit/Feature)
+## Business Logic
+
+<!-- TODO: Key business rules, workflows, domain concepts. -->
+<!-- e.g. "Orders require email verification before processing" -->
+
+## External Services
+
+<!-- TODO: APIs, third-party services, integrations. -->
+<!-- e.g. Stripe for payments, SendGrid for transactional email -->
+
+## Special Requirements
+
+<!-- TODO: Performance, compliance, data-handling requirements. -->
+<!-- e.g. "GDPR right-to-be-forgotten", "99.9% uptime SLA for checkout" -->

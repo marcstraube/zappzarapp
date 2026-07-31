@@ -128,7 +128,8 @@ Suggested agent workflow (adapt as needed): `.claude/agents/workflow.md`
 specialist coder agents in parallel (see `.claude/agents/workflow.md`) instead
 of working through them serially.
 
-Project context: `.claude/context/project.md`
+Project context: `.claude/context/zappzarapp.md` (platform — synced from
+upstream, do not edit) + `.claude/context/project.md` (this application)
 
 ## Code Standards
 

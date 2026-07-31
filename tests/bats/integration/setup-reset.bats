@@ -164,6 +164,19 @@ setup() {
     [[ -f ".zappzarapp/ai/AGENTS.md" ]]
 }
 
+@test "[Phase 2] Verify: context/zappzarapp.md exists (platform context)" {
+    [[ -f ".claude/context/zappzarapp.md" ]]
+}
+
+@test "[Phase 2] Verify: context/project.md replaced (no boilerplate marker)" {
+    run grep -q "zappzarapp-boilerplate-context" .claude/context/project.md
+    assert_failure
+}
+
+@test "[Phase 2] Verify: .zappzarapp/ai/context-project.md created (boilerplate moved)" {
+    [[ -f ".zappzarapp/ai/context-project.md" ]]
+}
+
 @test "[Phase 2] Verify: CHANGELOG.md replaced (no boilerplate marker)" {
     # After setup, CHANGELOG.md should NOT contain the boilerplate marker
     run grep -q "zappzarapp - Changelog" CHANGELOG.md
@@ -246,6 +259,16 @@ setup() {
 @test "[Phase 3] Verify: .zappzarapp/CHANGELOG.md removed" {
     # The moved boilerplate changelog should be removed
     [[ ! -f ".zappzarapp/CHANGELOG.md" ]]
+}
+
+@test "[Phase 3] Verify: context/project.md restored to boilerplate (contains marker)" {
+    run grep -q "zappzarapp-boilerplate-context" .claude/context/project.md
+    assert_success
+}
+
+@test "[Phase 3] Verify: .zappzarapp/ai/context-project.md removed" {
+    # The moved boilerplate context should be removed
+    [[ ! -f ".zappzarapp/ai/context-project.md" ]]
 }
 
 # =============================================================================

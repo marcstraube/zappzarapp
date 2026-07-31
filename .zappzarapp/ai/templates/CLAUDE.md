@@ -57,8 +57,9 @@ workflow. The workflow.md contains scope detection and agent roles.
 — or a large change spanning many files or multiple languages — dispatch the
 specialist coder agents in parallel instead of working through them serially.
 
-**Project context:** See `.claude/context/project.md` for architecture and test
-conventions.
+**Project context:** `.claude/context/zappzarapp.md` holds platform context
+(tech stack, architecture, test conventions) and is synced from upstream — do
+not edit it. Describe YOUR application in `.claude/context/project.md`.
 
 ## Code Standards
 
