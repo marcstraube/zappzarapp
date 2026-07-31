@@ -53,17 +53,32 @@ Fixes) **Version:** 3.79
     `compose.override.yaml`, `.claude/settings.json`, `.depcheckrc.json`,
     `knip.config.js`, `tests/bats/make-targets-dryrun.bats`, docs
 
+- **Broken PostToolUse edit hooks**: removed `post-edit-lint.sh` (syntax checks)
+  and `post-edit-autofix.sh` (CS-Fixer/Prettier formatting). Both read
+  `.file_path` from the hook payload, but PostToolUse nests it under
+  `.tool_input.file_path`, so they silently no-op'd on every edit. Their intent
+  is fully covered by the pre-commit gate (`lint-staged` +
+  `php-hooks.sh lint/fix`)
+
 #### Fixed
 
+- **Inline PostToolUse reminders matched the raw payload**: the config-file and
+  package-manager reminders grepped the entire hook JSON (including file content
+  and command output), so they fired on any file that merely _mentioned_
+  `Dockerfile`/`entrypoint`/`.claude/skills`. They now extract
+  `.tool_input.file_path` / `.tool_input.command` and match on that; the
+  low-value "skill updated" reminder was dropped
+- **Claude tooling doc-drift**: `.claude/CLAUDE.md` referenced a non-existent
+  `PreToolUse` hook (only `UserPromptSubmit` + `PostToolUse` are wired);
+  `.claude/agents/workflow.md` used `main` instead of the `develop` base branch
+  and stale `Task()` / Session-Log vocabulary
 - **Hook Output Contract**: hook feedback never reached the model — custom
   `{"message": ...}` JSON is silently dropped by Claude Code.
   `user-prompt-submit.sh` now emits plain stdout (becomes context; branch check
-  runs on every prompt instead of only the first), `post-edit-lint.sh` reports
-  syntax errors via exit 2 + stderr, and the inline PostToolUse reminders emit
-  `hookSpecificOutput.additionalContext`. The package-manager reminder patterns
-  also failed on JSON-escaped quotes in the tool input; the container checks in
-  the edit hooks use `--status running` now, and change-watch tracks the new
-  `.claude/skills/*/SKILL.md` layout
+  runs on every prompt instead of only the first) and the inline PostToolUse
+  reminders emit `hookSpecificOutput.additionalContext`. The package-manager
+  reminder patterns also failed on JSON-escaped quotes in the tool input, and
+  change-watch tracks the new `.claude/skills/*/SKILL.md` layout
 
 - **Prettier ARGS Selectivity**: `make prettier-check`/`prettier-fix` with
   `ARGS` appended the given files to the full format globs (formatting

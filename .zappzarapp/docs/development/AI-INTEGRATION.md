@@ -85,24 +85,23 @@ Hooks provide immediate feedback and contextual reminders during work.
 
 **Available Hook Events:**
 
-| Event              | When                       | Use Case                           |
-| ------------------ | -------------------------- | ---------------------------------- |
-| `SessionStart`     | Session begins             | Create session files, load context |
-| `SessionEnd`       | Session ends               | Remind about cleanup tasks         |
-| `UserPromptSubmit` | User sends message         | Analyze input, detect patterns     |
-| `PreCompact`       | Before context compression | Save work before context loss      |
-| `PreToolUse`       | Before tool execution      | Validate, block, or modify         |
-| `PostToolUse`      | After tool execution       | Lint, notify, log                  |
-| `Stop`             | Claude finishes responding | Post-response actions              |
+| Event              | When                       | Use Case                         |
+| ------------------ | -------------------------- | -------------------------------- |
+| `SessionStart`     | Session begins             | Load context, environment checks |
+| `SessionEnd`       | Session ends               | Remind about cleanup tasks       |
+| `UserPromptSubmit` | User sends message         | Analyze input, detect patterns   |
+| `PreCompact`       | Before context compression | Save work before context loss    |
+| `PreToolUse`       | Before tool execution      | Validate, block, or modify       |
+| `PostToolUse`      | After tool execution       | Lint, notify, log                |
+| `Stop`             | Claude finishes responding | Post-response actions            |
 
 **Project Hooks (`.claude/settings.json`):**
 
-| Hook                | Script                  | Purpose                                      |
-| ------------------- | ----------------------- | -------------------------------------------- |
-| `UserPromptSubmit`  | `user-prompt-submit.sh` | Branch check + doc/test change watch         |
-| `PostToolUse(Edit)` | `post-edit-lint.sh`     | Syntax checks; feeds errors back via exit 2  |
-| `PostToolUse(Edit)` | `post-edit-autofix.sh`  | Auto-applies formatting (CS-Fixer/Prettier)  |
-| `PostToolUse`       | (inline)                | Contextual reminders via `additionalContext` |
+| Hook                | Script                  | Purpose                                                                  |
+| ------------------- | ----------------------- | ------------------------------------------------------------------------ |
+| `UserPromptSubmit`  | `user-prompt-submit.sh` | Branch check + doc/test change watch                                     |
+| `PostToolUse(Edit)` | (inline)                | Reminds to rebuild containers on config-file edits (matches `file_path`) |
+| `PostToolUse(Bash)` | (inline)                | Reminds to sync deps after `make composer/pnpm CMD=add/remove`           |
 
 **Hook output contract:** plain stdout only reaches Claude for
 `UserPromptSubmit`/`SessionStart`. `PostToolUse` hooks must either exit 2

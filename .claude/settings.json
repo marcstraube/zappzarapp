@@ -14,7 +14,6 @@
       "Bash(make:*)",
       "Bash(./docker/hooks/hook-runner.sh:*)",
       "Bash(./docker/hooks/php-hooks.sh:*)",
-      "Bash(./.claude/hooks/post-edit-autofix.sh:*)",
       "Bash(./tests/goss/preset-runner.sh:*)",
       "Bash(./tests/goss/runtime-tests.sh:*)",
       "Bash(HOOK_RUNNER_VERBOSE=1 ./docker/hooks/hook-runner.sh:*)",
@@ -144,19 +143,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "./.claude/hooks/post-edit-lint.sh"
-          },
-          {
-            "type": "command",
-            "command": "./.claude/hooks/post-edit-autofix.sh"
-          },
-          {
-            "type": "command",
-            "command": "TOOL_INPUT=$(cat); if echo \"$TOOL_INPUT\" | grep -qE '(Dockerfile|compose\\.yaml|compose\\.override|compose\\.production|\\.env\\.example|entrypoint|php\\.ini|nginx\\.conf)'; then jq -n --arg m '[Hook] Config file changed. Remember: make build && make down && make up' '{hookSpecificOutput:{hookEventName:\"PostToolUse\",additionalContext:$m}}'; fi"
-          },
-          {
-            "type": "command",
-            "command": "TOOL_INPUT=$(cat); if echo \"$TOOL_INPUT\" | grep -qE '\\.claude/skills/.*\\.md'; then jq -n --arg m '[Hook] Claude skill updated.' '{hookSpecificOutput:{hookEventName:\"PostToolUse\",additionalContext:$m}}'; fi"
+            "command": "FILE=$(cat | jq -r '.tool_input.file_path // empty'); if echo \"$FILE\" | grep -qE '(Dockerfile|compose\\.yaml|compose\\.override|compose\\.production|\\.env\\.example|entrypoint|php\\.ini|nginx\\.conf)'; then jq -n --arg m '[Hook] Config file changed. Remember: make build && make down && make up' '{hookSpecificOutput:{hookEventName:\"PostToolUse\",additionalContext:$m}}'; fi"
           }
         ]
       },
@@ -165,11 +152,11 @@
         "hooks": [
           {
             "type": "command",
-            "command": "TOOL_INPUT=$(cat); if echo \"$TOOL_INPUT\" | grep -qE 'make composer CMD=.{0,2}(require|remove)'; then jq -n --arg m '[Hook] PHP package changed. Run: make composer-install-local' '{hookSpecificOutput:{hookEventName:\"PostToolUse\",additionalContext:$m}}'; fi"
+            "command": "CMD=$(cat | jq -r '.tool_input.command // empty'); if echo \"$CMD\" | grep -qE 'make composer CMD=.{0,2}(require|remove)'; then jq -n --arg m '[Hook] PHP package changed. Run: make composer-install-local' '{hookSpecificOutput:{hookEventName:\"PostToolUse\",additionalContext:$m}}'; fi"
           },
           {
             "type": "command",
-            "command": "TOOL_INPUT=$(cat); if echo \"$TOOL_INPUT\" | grep -qE 'make pnpm CMD=.{0,2}(add|remove)'; then jq -n --arg m '[Hook] Node package changed. Run: make pnpm-install-local' '{hookSpecificOutput:{hookEventName:\"PostToolUse\",additionalContext:$m}}'; fi"
+            "command": "CMD=$(cat | jq -r '.tool_input.command // empty'); if echo \"$CMD\" | grep -qE 'make pnpm CMD=.{0,2}(add|remove)'; then jq -n --arg m '[Hook] Node package changed. Run: make pnpm-install-local' '{hookSpecificOutput:{hookEventName:\"PostToolUse\",additionalContext:$m}}'; fi"
           }
         ]
       }
