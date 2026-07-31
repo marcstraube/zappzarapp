@@ -17,8 +17,7 @@ Fixes) **Version:** 3.79
   customizable-file pattern: boilerplate marker, swapped by `make setup`
   (original preserved as `.zappzarapp/ai/AGENTS.md`, generic template from
   `.zappzarapp/ai/templates/`), restored by `make reset-full`, excluded from
-  `boilerplate-sync`. Mounted into dev-tools for linting; covered by
-  change-watch doc reminders
+  `boilerplate-sync`. Mounted into dev-tools for linting
 
 #### Removed
 
@@ -60,6 +59,16 @@ Fixes) **Version:** 3.79
   is fully covered by the pre-commit gate (`lint-staged` +
   `php-hooks.sh lint/fix`)
 
+- **Change-watch drift detector** (`change-watch.sh`, ~280 lines, plus the
+  `UserPromptSubmit` check that ran it): a prompt-time heuristic that grepped
+  the working-tree diff for new/changed Makefile targets, compose services and
+  env vars and pointed at every doc/test line mentioning them. Signal was poor —
+  touching a common target (`make up`/`make test`) dumped a wall of tautological
+  "mentioned here" references, loudest for the most-used targets — and it fired
+  mid-work before a feature was done. Doc/test drift is covered better by the
+  `docs-auditor` agent, CI (GOSS/BATS) and the standing "write knowledge files
+  immediately" rule. `user-prompt-submit.sh` keeps only the branch check
+
 #### Fixed
 
 - **Inline PostToolUse reminders matched the raw payload**: the config-file and
@@ -77,8 +86,7 @@ Fixes) **Version:** 3.79
   `user-prompt-submit.sh` now emits plain stdout (becomes context; branch check
   runs on every prompt instead of only the first) and the inline PostToolUse
   reminders emit `hookSpecificOutput.additionalContext`. The package-manager
-  reminder patterns also failed on JSON-escaped quotes in the tool input, and
-  change-watch tracks the new `.claude/skills/*/SKILL.md` layout
+  reminder patterns also failed on JSON-escaped quotes in the tool input
 
 - **Prettier ARGS Selectivity**: `make prettier-check`/`prettier-fix` with
   `ARGS` appended the given files to the full format globs (formatting

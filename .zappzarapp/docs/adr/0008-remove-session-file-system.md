@@ -17,9 +17,8 @@ model, so the automation was inert in practice.
 **Decision:** Remove the session-file system entirely (lifecycle hooks, session
 template, SessionStart/SessionEnd/PreCompact wiring). Continuity relies on
 built-in Claude Code memory and context compaction. The committed knowledge
-files remain the team-shared, persistent project memory, and the remaining hooks
-(branch check, change watch, syntax feedback, contextual reminders) use output
-contracts that actually reach the model.
+files remain the team-shared, persistent project memory, and the hooks that
+remain use output contracts that actually reach the model.
 
 **Consequences:**
 

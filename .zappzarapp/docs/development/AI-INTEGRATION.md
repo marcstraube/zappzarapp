@@ -99,7 +99,7 @@ Hooks provide immediate feedback and contextual reminders during work.
 
 | Hook                | Script                  | Purpose                                                                  |
 | ------------------- | ----------------------- | ------------------------------------------------------------------------ |
-| `UserPromptSubmit`  | `user-prompt-submit.sh` | Branch check + doc/test change watch                                     |
+| `UserPromptSubmit`  | `user-prompt-submit.sh` | Branch check (reminder when on a protected branch)                       |
 | `PostToolUse(Edit)` | (inline)                | Reminds to rebuild containers on config-file edits (matches `file_path`) |
 | `PostToolUse(Bash)` | (inline)                | Reminds to sync deps after `make composer/pnpm CMD=add/remove`           |
 
@@ -148,15 +148,12 @@ Custom JSON shapes like `{"message": ...}` are silently dropped.
 }
 ```
 
-#### UserPromptSubmit Checks
+#### UserPromptSubmit Check
 
 On every prompt the hook checks (plain stdout becomes context):
 
 - **Branch check** — implementation-style prompt while on develop/main/master
   produces a reminder to create a feature branch or worktree
-- **Change watch** — uncommitted changes to Makefile targets, compose services,
-  skills or `.env.example` trigger a doc/test update reminder (deduplicated
-  between prompts via `.claude/cache/`)
 
 ### Other Tools (`AGENTS.md` Convention)
 
