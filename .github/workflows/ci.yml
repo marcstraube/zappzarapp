@@ -37,6 +37,7 @@ jobs:
     outputs:
       php: ${{ steps.filter.outputs.php }}
       node: ${{ steps.filter.outputs.node }}
+      docs: ${{ steps.filter.outputs.docs }}
       infra: ${{ steps.filter.outputs.infra }}
       ci: ${{ steps.filter.outputs.ci }}
     steps:
@@ -63,7 +64,6 @@ jobs:
               - '**/*.tsx'
               - '**/*.js'
               - '**/*.cjs'
-              - '**/*.md'
               - 'resources/**'
               - 'package.json'
               - 'pnpm-lock.yaml'
@@ -71,8 +71,15 @@ jobs:
               - 'tsconfig*.json'
               - 'eslint.config.*'
               - '.prettier*'
-              - '.markdownlint*'
               - 'vitest.config.*'
+            # Markdown and Prettier-config changes gate the standalone docs-lint
+            # job. .prettier* sits in both node and docs: a Prettier config change
+            # gates source formatting (node-quality) and Markdown formatting
+            # (docs-lint).
+            docs:
+              - '**/*.md'
+              - '.markdownlint*'
+              - '.prettier*'
             infra:
               - '**/Dockerfile*'
               - 'docker/**'
@@ -319,11 +326,40 @@ jobs:
       - name: Validate package.json
         run: docker compose exec -T node pnpm run quality
 
-      - name: Markdownlint
-        run: docker compose exec -T node pnpm run lint:md
-
       - name: Cleanup
         uses: ./.github/actions/docker-cleanup
+
+  # ============================================================================
+  # DOCS LINT (Markdown)
+  # ============================================================================
+  # Lints Markdown on the runner: markdownlint plus Prettier's Markdown format
+  # check. Runs natively via pinned npx invocations on the runner's Node, with
+  # no dependency on build-images. Tool versions mirror package.json so results
+  # match a local run. prettier-plugin-toml is declared in .prettierrc.json, so
+  # both packages install into one prefix for the plugin to resolve.
+  # .markdownlint-cli2.jsonc / .prettierrc.json / .prettierignore are
+  # auto-discovered from the repo root.
+  # ============================================================================
+  docs-lint:
+    name: Docs Lint (Markdown)
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    needs: [changes]
+    if: needs.changes.outputs.docs == 'true' || needs.changes.outputs.ci == 'true'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+
+      - name: Markdownlint
+        run: npx --yes markdownlint-cli2@0.23.1 '**/*.md' '#node_modules'
+
+      - name: Prettier Check (Markdown)
+        run: >-
+          npx --yes
+          --package prettier@3.9.6
+          --package prettier-plugin-toml@2.0.6
+          prettier --check '**/*.md' '!node_modules/**'
 
   # ============================================================================
   # NODE.JS TESTS
@@ -750,7 +786,7 @@ jobs:
   ci-summary:
     name: CI Summary
     runs-on: ubuntu-latest
-    needs: [changes, build-images, php-quality, php-tests, node-quality, node-tests, dependency-audit, sast-scan, bats-quick, bats-integration, build-production]
+    needs: [changes, build-images, php-quality, php-tests, node-quality, node-tests, docs-lint, dependency-audit, sast-scan, bats-quick, bats-integration, build-production]
     if: always()
 
     steps:
@@ -766,6 +802,7 @@ jobs:
           echo "| PHP Tests | ${{ needs.php-tests.result }} |" >> $GITHUB_STEP_SUMMARY
           echo "| Node.js Quality | ${{ needs.node-quality.result }} |" >> $GITHUB_STEP_SUMMARY
           echo "| Node.js Tests | ${{ needs.node-tests.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Docs Lint (Markdown) | ${{ needs.docs-lint.result }} |" >> $GITHUB_STEP_SUMMARY
           echo "| Dependency Audit | ${{ needs.dependency-audit.result }} |" >> $GITHUB_STEP_SUMMARY
           echo "| SAST (Semgrep) | ${{ needs.sast-scan.result }} |" >> $GITHUB_STEP_SUMMARY
           echo "| BATS Quick | ${{ needs.bats-quick.result }} |" >> $GITHUB_STEP_SUMMARY

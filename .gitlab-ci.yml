@@ -59,7 +59,6 @@ default:
   - "**/*.tsx"
   - "**/*.js"
   - "**/*.cjs"
-  - "**/*.md"
   - resources/**/*
   - package.json
   - pnpm-lock.yaml
@@ -67,8 +66,17 @@ default:
   - tsconfig*.json
   - eslint.config.*
   - .prettier*
-  - .markdownlint*
   - vitest.config.*
+  - .gitlab-ci.yml
+  - .gitlab/**/*
+
+# Markdown and Prettier-config changes gate the standalone docs:lint job.
+# .prettier* sits in both node and docs: a Prettier config change gates source
+# formatting (node:quality) and Markdown formatting (docs:lint).
+.docs-paths: &docs-paths
+  - "**/*.md"
+  - .markdownlint*
+  - .prettier*
   - .gitlab-ci.yml
   - .gitlab/**/*
 
@@ -93,7 +101,6 @@ default:
   - "**/*.tsx"
   - "**/*.js"
   - "**/*.cjs"
-  - "**/*.md"
   - resources/**/*
   - package.json
   - pnpm-lock.yaml
@@ -259,7 +266,30 @@ node:quality:
     - docker compose exec -T node pnpm run lint
     - docker compose exec -T node pnpm run format:check
     - docker compose exec -T node pnpm run quality
-    - docker compose exec -T node pnpm run lint:md
+
+# ============================================================================
+# DOCS LINT (Markdown)
+# ============================================================================
+# Lints Markdown on the runner: markdownlint plus Prettier's Markdown format
+# check. Runs on a plain Node image via pinned npx invocations. Tool versions
+# mirror package.json; prettier-plugin-toml is declared in .prettierrc.json, so
+# both packages install into one prefix for the plugin to resolve.
+# .markdownlint-cli2.jsonc / .prettierrc.json / .prettierignore are
+# auto-discovered from the repo root.
+# ============================================================================
+docs:lint:
+  stage: quality
+  image: node:24-alpine
+  needs: []
+  rules:
+    - changes: *docs-paths
+  script:
+    - npx --yes markdownlint-cli2@0.23.1 '**/*.md' '#node_modules'
+    - >-
+      npx --yes
+      --package prettier@3.9.6
+      --package prettier-plugin-toml@2.0.6
+      prettier --check '**/*.md' '!node_modules/**'
 
 # ============================================================================
 # NODE.JS TESTS
