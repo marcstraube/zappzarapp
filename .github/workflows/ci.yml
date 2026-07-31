@@ -332,13 +332,11 @@ jobs:
   # ============================================================================
   # DOCS LINT (Markdown)
   # ============================================================================
-  # Lints Markdown on the runner: markdownlint plus Prettier's Markdown format
-  # check. Runs on the runner's Node with no dependency on build-images. Tool
-  # versions mirror package.json so results match a local run. The pinned tools
-  # install into the parent directory, so Prettier resolves prettier-plugin-toml
-  # (declared in .prettierrc.json) via ESM lookup from the repo root while the
-  # repo tree stays free of node_modules. .markdownlint-cli2.jsonc /
-  # .prettierrc.json / .prettierignore are auto-discovered from the repo root.
+  # Lints Markdown: markdownlint plus Prettier's Markdown format check. The pinned
+  # tools install into the parent directory so Prettier resolves prettier-plugin-toml
+  # (declared in .prettierrc.json) via ESM lookup from the repo root.
+  # .markdownlint-cli2.jsonc / .prettierrc.json / .prettierignore are
+  # auto-discovered from the repo root.
   # ============================================================================
   docs-lint:
     name: Docs Lint (Markdown)

@@ -24,8 +24,8 @@ Claude can assume in any zappzarapp repo.
 
 ## Architecture
 
-- Modular design: application code is organised into self-contained modules
-  (own routes, controllers, services)
+- Modular design: application code is organised into self-contained modules (own
+  routes, controllers, services)
 - Network segmentation: internal / external / secure Docker networks
 - Vite build pipeline: `resources/` → `public/build/`
 - Multi-DB support selected via `DB_TYPE`

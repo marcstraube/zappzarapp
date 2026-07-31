@@ -2947,14 +2947,30 @@ lint-docker: ## Lint Dockerfiles with hadolint
 	@docker run --rm -v $$(pwd)/.hadolint.yaml:/.config/hadolint.yaml -i hadolint/hadolint:v2.15.0 < docker/rabbitmq/Dockerfile
 	@echo -e "\033[0;32mDockerfile linting completed!\033[0m"
 
-lint-md: ## Check Markdown files for style issues
-	@echo -e "\033[0;33mChecking Markdown files...\033[0m"
-	@$(DC) run --rm -T dev-tools pnpm run lint:md
+## Lints the repo's git-tracked Markdown (markdownlint + Prettier) in a pinned
+## node image, matching the lint-docker/lint-config pattern. Scope is every
+## tracked .md, including .claude/ tooling docs. The pinned tools install into a
+## cached parent dir (build/tmp/doclint) so Prettier resolves prettier-plugin-toml
+## (declared in .prettierrc.json) via ESM lookup from the repo root. --user keeps
+## written files owned by the caller.
+DOCLINT_SETUP = cd /work && npm init -y >/dev/null 2>&1 && npm install --no-audit --no-fund --loglevel=error markdownlint-cli2@0.23.1 prettier@3.9.6 prettier-plugin-toml@2.0.6 >/dev/null && cd /work/repo
+
+lint-md: ## Check Markdown across the whole repo (markdownlint + Prettier)
+	@echo -e "\033[0;33mChecking Markdown (markdownlint + Prettier)...\033[0m"
+	@mkdir -p build/tmp/doclint
+	@docker run --rm --user $$(id -u):$$(id -g) -e HOME=/work \
+		-e MDFILES="$$(git ls-files -- '*.md' | tr '\n' ' ')" \
+		-v $$(pwd)/build/tmp/doclint:/work -v $$(pwd):/work/repo:ro -w /work/repo node:24-alpine \
+		sh -c '$(DOCLINT_SETUP) && ../node_modules/.bin/markdownlint-cli2 $$MDFILES && ../node_modules/.bin/prettier --check $$MDFILES'
 	@echo -e "\033[0;32mMarkdown check completed!\033[0m"
 
-lint-md-fix: ## Fix Markdown style issues automatically
-	@echo -e "\033[0;33mFixing Markdown files...\033[0m"
-	@$(DC) run --rm -T dev-tools pnpm run lint:md:fix
+lint-md-fix: ## Fix Markdown across the whole repo (markdownlint + Prettier)
+	@echo -e "\033[0;33mFixing Markdown (markdownlint + Prettier)...\033[0m"
+	@mkdir -p build/tmp/doclint
+	@docker run --rm --user $$(id -u):$$(id -g) -e HOME=/work \
+		-e MDFILES="$$(git ls-files -- '*.md' | tr '\n' ' ')" \
+		-v $$(pwd)/build/tmp/doclint:/work -v $$(pwd):/work/repo -w /work/repo node:24-alpine \
+		sh -c '$(DOCLINT_SETUP) && ../node_modules/.bin/markdownlint-cli2 --fix $$MDFILES ; ../node_modules/.bin/prettier --write $$MDFILES'
 	@echo -e "\033[0;32mMarkdown files fixed!\033[0m"
 
 lint-sql: ## Check SQL files for style issues (PostgreSQL + MariaDB)
