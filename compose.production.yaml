@@ -33,11 +33,10 @@ services:
     build:
       target: production
       # Vite assets are copied from the node-backend image via the tagless
-      # `node-backend-assets` context (COPY --from=node-backend-assets). Declaring
-      # it as a docker-image context makes BuildKit load the already-built LOCAL
-      # image (the `make` production targets build + tag it as :latest first)
-      # instead of trying to pull it — no DOCKER_BUILDKIT=0, no registry lookup.
-      # CI resolves the same tagless ref via bake `contexts` (see docker-bake.hcl).
+      # `node-backend-assets` context (COPY --from=node-backend-assets). As a
+      # docker-image context, BuildKit loads the local node-backend image that the
+      # `make` production targets build + tag :latest first. CI resolves the same
+      # tagless ref via bake `contexts` (see docker-bake.hcl).
       additional_contexts:
         - "node-backend-assets=docker-image://zappzarapp-node-backend:latest"
     # Run as nginx user (uid 101) - completely unprivileged

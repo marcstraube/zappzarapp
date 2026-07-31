@@ -17,9 +17,7 @@ COPY docker/pgadmin/entrypoint.sh /entrypoint-wrapper.sh
 # files — so the chmod must run here, under USER root, NOT as a bare post-COPY
 # RUN. `chmod 0755` (absolute mode) is umask-safe: a bare `chmod +x` on a
 # umask-077 source would yield 711 (execute-only, no read) and pgadmin could not
-# read the script. (COPY --chmod would set the mode atomically and dodge the USER
-# issue, but it is BuildKit-only and other project images must build under the
-# classic builder for local `COPY --from` refs — so we normalise as root instead.)
+# read the script.
 USER root
 RUN chmod 0755 /entrypoint-wrapper.sh \
     && chown 5050:0 /pgadmin4/servers.json

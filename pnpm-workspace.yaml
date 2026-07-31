@@ -12,7 +12,7 @@ packages:
   - 'src/node/frontend'
 
 # Dependency version floors for transitive security fixes.
-# pnpm 11 reads `overrides` from here, no longer from package.json's `pnpm` key.
+# pnpm 11 reads `overrides` from here (not from package.json's `pnpm` key).
 # Floors must not cross a semver major — one entry per major line with that
 # line's backport fix.
 overrides:
@@ -23,7 +23,7 @@ overrides:
 
 # `pnpm audit` exceptions (documented in
 # .zappzarapp/docs/security/KNOWN-VULNERABILITIES.md). pnpm 11 reads
-# `auditConfig` from here, no longer from package.json's `pnpm` key.
+# `auditConfig` from here (not from package.json's `pnpm` key).
 auditConfig:
   ignoreGhsas:
     - GHSA-mh99-v99m-4gvg
