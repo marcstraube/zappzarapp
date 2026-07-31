@@ -50,11 +50,12 @@ In practice this means:
 ## Agent-Workflow
 
 **Before any implementation task:** Read `.claude/agents/workflow.md` to
-determine scope (Trivial/Small/Medium/Large) and select appropriate workflow.
+determine scope (Trivial/Small/Medium/Large) and select the appropriate
+workflow. The workflow.md contains scope detection and agent roles.
 
-Agents are selected automatically based on file count, complexity, and
-languages. The workflow.md contains scope detection, agent roles, pre-flight
-checks, and user checkpoints.
+**Use parallel agents when it pays off:** for ≥2 independent, pre-planned tasks
+— or a large change spanning many files or multiple languages — dispatch the
+specialist coder agents in parallel instead of working through them serially.
 
 **Project context:** See `.claude/context/project.md` for architecture and test
 conventions.

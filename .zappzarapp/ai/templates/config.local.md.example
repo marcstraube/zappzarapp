@@ -3,17 +3,6 @@
 Copy to `.claude/config.local.md` and customize.
 This file is gitignored - do not commit personal settings.
 
-## ntfy Notifications
-
-Get notified when long-running tasks complete:
-
-```
-NTFY_TOPIC=your-secret-topic
-```
-
-Install ntfy app and subscribe to your topic.
-See: https://ntfy.sh
-
 ## Personal Storage Path
 
 Override default path for `--private` tasks and personal knowledge:

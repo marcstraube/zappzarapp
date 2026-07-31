@@ -120,6 +120,11 @@ Different files have different layer support:
 
 Suggested agent workflow (adapt as needed): `.claude/agents/workflow.md`
 
+**Use parallel agents when it pays off:** for ≥2 independent, pre-planned tasks
+— or a large change spanning many files or multiple languages — dispatch the
+specialist coder agents in parallel (see `.claude/agents/workflow.md`) instead
+of working through them serially.
+
 Project context: `.claude/context/project.md`
 
 ## Code Standards

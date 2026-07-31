@@ -243,7 +243,7 @@ setup: ## Create directories, install dependencies (BOILERPLATE=1 to force file 
 	@mkdir -p .claude/context
 	@if [ ! -f .claude/context/project.md ]; then cp .zappzarapp/ai/templates/PROJECT.md .claude/context/project.md; fi
 
-	# Config example (for ntfy, personal_knowledge_path)
+	# Config example (personal_knowledge_path)
 	@if [ ! -f .claude/config.local.md.example ]; then \
 		cp .zappzarapp/ai/templates/config.local.md.example .claude/; \
 	fi
