@@ -12,261 +12,122 @@ allowed-tools:
   - Bash(diff:*)
   - Bash(ls:*)
   - AskUserQuestion
-argument-hint: '[--fix] [--category <name>]'
+argument-hint: '[--fix] [--category <docker|env|all>]'
 ---
 
 # Sync Check
 
-Quick verification that related configuration files are synchronized.
+Verify that related configuration files stay in sync.
 
 ## Purpose
 
-Configuration files in this project often come in pairs or groups that must stay
-in sync. This command identifies discrepancies before they cause issues.
+This project ships several **dev/prod configuration pairs and overlays** —
+compose files, nginx SSL templates, entrypoints, env files. When you change one
+side (add a service, a path, an env var), its counterpart usually has to change
+too, or an environment silently drifts.
+
+It helps both when developing zappzarapp and when building a project **on top
+of** it: after customizing the config, run it to catch a service you renamed in
+`compose.yaml` that a CI/prod overlay still references, or a variable you added
+to `.env` but not `.env.production`.
 
 ## Arguments
 
 Parse `$ARGUMENTS`:
 
-- `--fix`: Attempt to fix simple sync issues (with confirmation)
-- `--category <name>`: Only check specific category (docker, ide, env, all)
-
-Examples:
+- `--fix`: Offer to fix simple, safe gaps (with confirmation)
+- `--category <name>`: Only check one category (`docker`, `env`, `all`)
 
 ```bash
-/sync-check                    # Check all categories
+/sync-check                    # Check everything
 /sync-check --category docker  # Only Docker configs
-/sync-check --category ide     # Only IDE configs
 /sync-check --fix              # Check and offer fixes
 ```
 
-## Synchronization Categories
+## Category: docker
 
-### Category: docker
+### Compose overlays (subset check)
 
-Docker configuration files that must stay synchronized:
+`compose.override.yaml` (dev), `compose.production.yaml` (prod) and
+`compose.ci.yaml` (CI) are all **overlays** merged on top of `compose.yaml`
+(`docker compose -f compose.yaml -f <overlay> …`). They are subsets by design —
+each redeclares only the services it needs to tune.
 
-#### Compose Files
+- **Check:** every service an overlay declares **must exist in `compose.yaml`**.
+  An overlay entry for a renamed or removed base service silently does nothing —
+  this is the drift to catch.
+- **Do NOT flag:** base services an overlay omits. They still run in that
+  environment with base config unchanged (`compose.ci.yaml` is the most
+  minimal).
+- Where an overlay explicitly copies base config (e.g. `compose.ci.yaml` marks
+  `# === FROM compose.yaml (base config, must be included) ===` mounts), that
+  copy should still match the base — flag it if the base path changed.
 
-| Primary        | Must Sync With            |
-| -------------- | ------------------------- |
-| `compose.yaml` | `compose.override.yaml`   |
-| `compose.yaml` | `compose.production.yaml` |
+### Standalone dev/prod pairs
 
-`compose.ci.yaml` is intentionally excluded from parity checks: the CI
-environment is a deliberately minimal subset and may diverge freely.
+| Pair                                                                                                     | Expectation                                                          |
+| -------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------- |
+| `docker/nginx/conf.d/ssl-development.conf.template` ↔ `docker/nginx/conf.d/ssl-production.conf.template` | Same location blocks / proxy targets; SSL hardening may differ       |
+| `docker/php/entrypoint.development.sh` ↔ `docker/php/entrypoint.production.sh`                           | Prod is dev minus dev-only steps (permission fixes, secrets copying) |
+| `docker/node/entrypoint.development.sh` ↔ `docker/node/entrypoint.production.sh`                         | Same as above                                                        |
 
-Check for:
+Diff each pair and flag: location blocks / proxy targets present on one side but
+missing from the other; entrypoint steps in prod that are absent from dev (prod
+should be a subset of dev, not the reverse).
 
-- Services defined in one but missing in others
-- Environment variables inconsistent
-- Volume mounts differing unexpectedly
-- Port mappings misaligned
+## Category: env
 
-#### Nginx Configs
+| Pair                       | Expectation                                   |
+| -------------------------- | --------------------------------------------- |
+| `.env` ↔ `.env.production` | Same variable **keys**; values differ per env |
 
-| Primary                                             | Must Sync With                                     |
-| --------------------------------------------------- | -------------------------------------------------- |
-| `docker/nginx/conf.d/ssl-development.conf.template` | `docker/nginx/conf.d/ssl-production.conf.template` |
+`.env` and `.env.production` are alternative full env files (not overlays), so
+both should define the same set of keys. `.env.local.example` documents optional
+local overrides — it is not a parity target.
 
-Check for:
+Flag: keys in `.env` missing from `.env.production` (or vice versa). Values are
+expected to differ.
 
-- Location blocks present in one but not other
-- SSL settings diverging inappropriately
-- Proxy pass targets matching
-
-#### PHP Configs
-
-| Primary              | Must Sync With                      |
-| -------------------- | ----------------------------------- |
-| `docker/php/php.ini` | `docker/php/conf.d/development.ini` |
-
-Check for:
-
-- Settings that should differ (xdebug, display_errors)
-- Settings that should match (timezone, memory_limit base)
-
-#### Entrypoints
-
-| Primary                               | Must Sync With                         |
-| ------------------------------------- | -------------------------------------- |
-| `docker/php/entrypoint.production.sh` | `docker/php/entrypoint.development.sh` |
-
-Check for:
-
-- PHP: Production minimal, development has full logic
-- Node: Only `entrypoint.development.sh` exists (production uses direct CMD)
-- Development-only additions (permission fixes, secrets copying)
-
-#### Dockerfiles
-
-For each Dockerfile with multiple targets:
-
-- `docker/php/Dockerfile`: development vs production targets
-- `docker/nginx/Dockerfile`: development vs production targets
-- `docker/node/Dockerfile`: development vs production targets
-
-Check for:
-
-- Base image versions matching
-- Shared layers identical
-- Only final stage differs appropriately
-
-### Category: env
-
-Environment configuration synchronization:
-
-#### .env Files
-
-| Primary        | Must Sync With |
-| -------------- | -------------- |
-| `.env.example` | `.env`         |
-
-Check for:
-
-- Variables in `.env.example` missing from `.env`
-- Variables in `.env` not documented in `.env.example`
-- Default values that should match
-
-### Category: ide
-
-IDE configuration synchronization:
-
-#### VS Code
-
-| Primary              | Reference  |
-| -------------------- | ---------- |
-| `.vscode/tasks.json` | `Makefile` |
-
-Check for:
-
-- Makefile targets not in tasks.json
-- Tasks referencing removed targets
-- Task labels matching target descriptions
-
-#### JetBrains (IntelliJ/PhpStorm)
-
-| Primary                         | Reference  |
-| ------------------------------- | ---------- |
-| `.idea/runConfigurations/*.xml` | `Makefile` |
-
-Check for:
-
-- Makefile targets without run configurations
-- Run configurations for removed targets
-- Names matching target descriptions
-
-Also check `.idea/workspace.xml`:
-
-- RunManager list alphabetically sorted?
-- All run configurations listed?
-
-## Output Format
-
-### Summary Table
+## Output
 
 ```text
 Sync Check Results
 ==================
 
-| Category | Pairs Checked | In Sync | Issues |
-| -------- | ------------- | ------- | ------ |
-| docker   | 8             | 6       | 2      |
-| env      | 1             | 0       | 1      |
-| ide      | 2             | 2       | 0      |
-| Total    | 11            | 8       | 3      |
+| Category | Checks | OK  | Issues |
+| -------- | ------ | --- | ------ |
+| docker   | 5      | 4   | 1      |
+| env      | 1      | 0   | 1      |
+
+[WARN] docker: compose.production.yaml declares service 'mercury' — not in compose.yaml (renamed to 'mercure'?)
+  -> fix the overlay service name to match the base
+[WARN] env: 'NEW_FEATURE_FLAG' in .env missing from .env.production
+  -> add NEW_FEATURE_FLAG to .env.production
 ```
 
-### Issue Details
+Severity: `[CRIT]` breaks the environment · `[WARN]` should be fixed · `[INFO]`
+minor.
 
-For each issue found:
+## Auto-Fix (`--fix`)
 
-```text
-[WARN] docker/compose: Service 'mercure' in compose.yaml missing from compose.production.yaml
-  -> Add mercure service to compose.production.yaml or mark as dev-only
+Offer to auto-fix only safe, mechanical gaps, each with confirmation:
 
-[WARN] env: Variable 'NEW_FEATURE_FLAG' in .env missing from .env.example
-  -> Add NEW_FEATURE_FLAG to .env.example with documentation
+- Add a missing env key to the other file with a placeholder value
 
-[INFO] ide/vscode: New Makefile target 'build-assets' not in tasks.json
-  -> Run: Add task for 'build-assets' target
-```
+Never auto-fix: differing values, an overlay service name (could be an
+intentional rename either way), structural differences, security-relevant config
+— report those for manual review.
 
-Severity levels:
-
-- `[CRIT]`: Breaking inconsistency (production will fail)
-- `[WARN]`: Should be fixed soon
-- `[INFO]`: Nice to have, low priority
-
-## Auto-Fix Capabilities (--fix)
-
-When `--fix` is enabled, offer to fix these automatically:
-
-### Safe to Auto-Fix
-
-| Issue                       | Fix Action                  |
-| --------------------------- | --------------------------- |
-| Missing var in .env.example | Add with placeholder value  |
-| Missing task in tasks.json  | Generate task from Makefile |
-| Missing run configuration   | Generate XML from Makefile  |
-| Unsorted workspace.xml      | Sort alphabetically         |
-
-### Requires Confirmation
-
-| Issue                           | Action                          |
-| ------------------------------- | ------------------------------- |
-| Missing service in compose file | Show diff, ask to copy          |
-| Different config values         | Show both, ask which is correct |
-
-### Never Auto-Fix
-
-| Issue                    | Action                            |
-| ------------------------ | --------------------------------- |
-| Structural differences   | Report only, manual review needed |
-| Security-related configs | Report only, manual review needed |
-
-## Detailed Checks
-
-### Compose File Comparison
+## Extraction Helpers
 
 ```bash
-# Extract service names from each file
-grep -E '^\s{2}[a-z]' compose.yaml | awk '{print $1}' | tr -d ':'
-grep -E '^\s{2}[a-z]' compose.override.yaml | awk '{print $1}' | tr -d ':'
-grep -E '^\s{2}[a-z]' compose.production.yaml | awk '{print $1}' | tr -d ':'
+# Service names declared in a compose overlay vs the base
+grep -E '^  [a-z][-a-z0-9_]*:' compose.production.yaml | tr -d ' :' | sort
+grep -E '^  [a-z][-a-z0-9_]*:' compose.yaml            | tr -d ' :' | sort
+
+# Variable keys per env file
+grep -E '^[A-Z_]+=' .env            | cut -d= -f1 | sort
+grep -E '^[A-Z_]+=' .env.production | cut -d= -f1 | sort
 ```
 
-Compare lists and identify:
-
-- Services only in development
-- Services only in production
-- Services in both (should have same structure)
-
-### Makefile Target Extraction
-
-```bash
-# Get all targets with descriptions
-grep -E '^[a-zA-Z_-]+:.*##' Makefile | awk -F':.*##' '{print $1, $2}'
-```
-
-Compare against:
-
-- `.vscode/tasks.json` task labels
-- `.idea/runConfigurations/*.xml` filenames
-
-### Environment Variable Extraction
-
-```bash
-# From .env.example (skip comments)
-grep -E '^[A-Z_]+=|^#[A-Z_]+=' .env.example | grep -oE '^#?[A-Z_]+'
-
-# From .env
-grep -E '^[A-Z_]+=' .env | grep -oE '^[A-Z_]+'
-```
-
-## Notes
-
-- Run this before commits that touch configuration files
-- Part of the recommended pre-commit workflow
-- Helps prevent "works on my machine" issues
-- Quick enough to run frequently during development
+Run this after changing any paired/overlaid config, before opening a PR.

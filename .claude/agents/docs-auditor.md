@@ -27,7 +27,7 @@ Check which documentation might be affected:
 | ----------------- | ----------------------------------------------------------------- |
 | New API endpoints | `.zappzarapp/docs/API.md`                                         |
 | New make targets  | `.zappzarapp/docs/development/MAKEFILE-REFERENCE.md`, `README.md` |
-| Config changes    | `.zappzarapp/docs/CONFIGURATION.md`, `.env.example`               |
+| Config changes    | `.zappzarapp/docs/CONFIGURATION.md`, `.env.local.example`         |
 | Docker changes    | `.zappzarapp/docs/infrastructure/`, `QUICKSTART.md`               |
 | New services      | `.zappzarapp/docs/SERVICES.md`                                    |
 | CLI commands      | `.zappzarapp/docs/CLI.md`, `README.md`                            |

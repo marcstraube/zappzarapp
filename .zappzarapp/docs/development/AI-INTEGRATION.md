@@ -208,7 +208,7 @@ allowed-tools: # Explicit tool permissions
   - Grep
   - Glob
   - Bash(make:*)
-argument-hint: '[--fix] [--category <name>]'
+argument-hint: '[--fix] [--category <docker|env|all>]'
 ---
 # Skill content follows...
 ```
