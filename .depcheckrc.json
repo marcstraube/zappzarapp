@@ -33,7 +33,6 @@
     "depcheck",
     "knip",
     "@faker-js/faker",
-    "standard-version",
     "amqplib",
     "meilisearch",
     "redis",
