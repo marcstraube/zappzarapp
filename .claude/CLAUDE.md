@@ -21,6 +21,9 @@ compacted at any time.
 **Subagents:** Do NOT write knowledge files directly. Report findings back to
 the Main Agent, who writes them centrally (prevents conflicts).
 
+**On fresh conversations:** brief the user on open tasks (`/tasks --list`) and
+ask what to work on.
+
 ---
 
 ## Feature-Branch Workflow
@@ -53,7 +56,7 @@ develop.
 - Rollback: Simply delete branch if needed
 - Clean history: One merge per feature
 
-See `.claude/agents/workflow.md:54-85` for detailed workflow.
+See `.claude/agents/workflow.md` for the detailed workflow.
 
 ---
 
@@ -156,8 +159,8 @@ complement these — the project only ships skills the built-ins do not cover.
 
 ## Git & Commits
 
-See `.claude/agents/workflow.md` (Branch Naming, Commit Strategy, Branch
-Management)
+See `.claude/agents/workflow.md` for the feature-branch workflow and branch
+naming.
 
 ## Error Prevention
 

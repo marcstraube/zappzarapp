@@ -133,7 +133,7 @@ not cover.
 ```text
 git checkout -b feature/<task-slug>
     ↓
-[Development + Commits + CHANGELOG entries]
+[Development + Commits]
     ↓
 Claude: "Branch ready for review"
     ↓
@@ -146,7 +146,8 @@ User reviews → Merge → `/tasks --close <id>`
 
 - Commit regularly on feature branches (intermediate commits encouraged)
 - Conventional commit format is enforced via commitlint (CaptainHook)
-- Never commit directly to develop or master — only via feature branch merges
+- Never commit directly to your protected/default branch(es) — only via feature
+  branch merges
 
 ## Error Prevention
 

@@ -30,7 +30,7 @@ Read the matching file in `.zappzarapp/standards/` before writing code:
 ## Workflow
 
 - Feature branches: `<type>/<slug>` (`feature/`, `fix/`, `chore/`, `docs/`);
-  never commit directly to develop or master
+  never commit directly to your protected/default branch(es)
 - Conventional commit format, enforced via commitlint (CaptainHook)
 - Record gotchas in `.zappzarapp/ai/LEARNINGS.md`
 - Record architecture decisions as one ADR document per decision under
