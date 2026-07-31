@@ -407,35 +407,6 @@ load 'helpers/setup'
 }
 
 # =============================================================================
-# Release Targets
-# =============================================================================
-
-@test "make release --dry-run validates" {
-    run make -n release
-    assert_success
-}
-
-@test "make release-minor --dry-run validates" {
-    run make -n release-minor
-    assert_success
-}
-
-@test "make release-major --dry-run validates" {
-    run make -n release-major
-    assert_success
-}
-
-@test "make release-dry --dry-run validates" {
-    run make -n release-dry
-    assert_success
-}
-
-@test "make release-first --dry-run validates" {
-    run make -n release-first
-    assert_success
-}
-
-# =============================================================================
 # Security Targets
 # =============================================================================
 

@@ -580,32 +580,6 @@ ide-unlock: ## Unlock IDE config files for committing (zappzarapp contributors o
 		echo -e "\033[0;33m.idea/php.xml not tracked or not found\033[0m"; \
 	fi
 
-##@ Release
-
-release: ## Create a new patch release (bump version, update CHANGELOG, create tag)
-	@echo -e "\033[0;33mCreating patch release...\033[0m"
-	@$(DC_RUN) run --rm --no-TTY node npx standard-version
-	@echo -e "\033[0;32mRelease created! Don't forget to push with tags: git push --follow-tags\033[0m"
-
-release-minor: ## Create a new minor release
-	@echo -e "\033[0;33mCreating minor release...\033[0m"
-	@$(DC_RUN) run --rm --no-TTY node npx standard-version --release-as minor
-	@echo -e "\033[0;32mRelease created! Don't forget to push with tags: git push --follow-tags\033[0m"
-
-release-major: ## Create a new major release
-	@echo -e "\033[0;33mCreating major release...\033[0m"
-	@$(DC_RUN) run --rm --no-TTY node npx standard-version --release-as major
-	@echo -e "\033[0;32mRelease created! Don't forget to push with tags: git push --follow-tags\033[0m"
-
-release-dry: ## Preview next release without making changes
-	@echo -e "\033[0;33mPreviewing next release...\033[0m"
-	@$(DC_RUN) run --rm --no-TTY node npx standard-version --dry-run
-
-release-first: ## Create first release (0.1.0) for new projects
-	@echo -e "\033[0;33mCreating first release (0.1.0)...\033[0m"
-	@$(DC_RUN) run --rm --no-TTY node npx standard-version --first-release
-	@echo -e "\033[0;32mFirst release created! Don't forget to push with tags: git push --follow-tags\033[0m"
-
 ##@ Docker
 
 build: ## Build Docker images (optionally specify service names: make build php nginx)
