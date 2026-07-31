@@ -22,6 +22,13 @@ the Main Agent, who writes them centrally (prevents conflicts).
 **On fresh conversations:** brief the user on open tasks (`/tasks --list`) and
 ask what to work on.
 
+<!-- zappzarapp:first-run-help -->
+
+**First run:** also run `make customize`. If it lists templates that still
+contain placeholders, offer to help the user fill them in. Once `make customize`
+reports that everything is customized, this guidance has done its job — remove
+this paragraph and its `zappzarapp:first-run-help` marker above.
+
 ---
 
 ## Solution Principles
@@ -79,7 +86,7 @@ See `.zappzarapp/standards/` for language-specific rules:
 
 ## Project Structure
 
-<!-- TODO: Customize for your project -->
+<!-- zappzarapp:customize: adjust this tree to your project's real layout -->
 
 ```text
 .ai/                → Project AI knowledge (LEARNINGS inbox)
@@ -102,7 +109,7 @@ tests/              → Test files
 
 ## Key Make Targets
 
-<!-- TODO: Customize for your project -->
+<!-- zappzarapp:customize: list the make targets your team uses most -->
 
 ```bash
 make up / make down    → Start/stop containers

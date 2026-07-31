@@ -5,7 +5,8 @@
 ## Quick Start
 
 ```bash
-make setup    # First-time setup: build, install, migrate, and start
+make setup      # First-time setup: build, install, migrate, and start
+make customize  # List template files that still need your input
 ```
 
 Open [https://localhost:8443](https://localhost:8443) in your browser.
@@ -37,5 +38,7 @@ tests/             # Test suites
 ```
 
 ## License
+
+<!-- zappzarapp:customize: set your project's license -->
 
 [Your License]

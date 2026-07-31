@@ -57,6 +57,7 @@ Commands for initial project setup and configuration.
 | Command                         | Description                                                               |
 | ------------------------------- | ------------------------------------------------------------------------- |
 | `make setup`                    | Full setup (directories, secrets, build, install) - entry point           |
+| `make customize`                | List shipped templates that still contain customization placeholders      |
 | `make init`                     | Create `.env.local` with USER_ID/GROUP_ID (called interactively by setup) |
 | `make composer-install`         | Install/update Composer dependencies via Docker (guaranteed consistency)  |
 | `make composer-install-local`   | Install Composer dependencies locally (for IDE code completion)           |

@@ -69,6 +69,19 @@ Open in browser:
 
 ## First Steps After Setup
 
+### Customize the Templates
+
+`make setup` replaces the README and agent-context files with project templates
+that still contain placeholders. See what is left to fill in:
+
+```bash
+make customize
+```
+
+Replace each `zappzarapp:customize` marker with your content and re-run until it
+reports all templates are customized. See
+[CUSTOMIZATION.md](getting-started/CUSTOMIZATION.md) for the full list.
+
 ### Start Development
 
 ```bash

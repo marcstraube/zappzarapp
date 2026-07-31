@@ -7,25 +7,25 @@ sync with upstream; do not duplicate it here.
 
 ## Application Overview
 
-<!-- TODO: What does your app do? Target users, business domain. -->
+<!-- zappzarapp:customize: what does your app do? target users, business domain -->
 <!-- e.g. "B2B SaaS for inventory management" / "E-commerce for sustainable fashion" -->
 
 ## Custom Modules
 
-<!-- TODO: App-specific modules and their responsibilities. -->
+<!-- zappzarapp:customize: app-specific modules and their responsibilities -->
 <!-- e.g. Shop (products, cart, checkout), Blog (articles, comments) -->
 
 ## Business Logic
 
-<!-- TODO: Key business rules, workflows, domain concepts. -->
+<!-- zappzarapp:customize: key business rules, workflows, domain concepts -->
 <!-- e.g. "Orders require email verification before processing" -->
 
 ## External Services
 
-<!-- TODO: APIs, third-party services, integrations. -->
+<!-- zappzarapp:customize: APIs, third-party services, integrations -->
 <!-- e.g. Stripe for payments, SendGrid for transactional email -->
 
 ## Special Requirements
 
-<!-- TODO: Performance, compliance, data-handling requirements. -->
+<!-- zappzarapp:customize: performance, compliance, data-handling requirements -->
 <!-- e.g. "GDPR right-to-be-forgotten", "99.9% uptime SLA for checkout" -->

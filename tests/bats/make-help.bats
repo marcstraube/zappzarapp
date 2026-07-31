@@ -33,6 +33,12 @@ load 'helpers/setup'
     assert_output --partial "GOSS Container Tests"
 }
 
+@test "make help lists the customize target" {
+    run make help
+    assert_success
+    assert_output --partial "customize"
+}
+
 @test "make help shows BATS category" {
     run make help
     assert_success

@@ -4,7 +4,7 @@ Guidance for AI coding agents working in this repository. Claude Code
 additionally reads `.claude/` (skills, hooks, agent definitions); every other
 tool should start here.
 
-<!-- TODO: Customize the project description for your project -->
+<!-- zappzarapp:customize: describe your project for AI agents -->
 
 ## Project
 

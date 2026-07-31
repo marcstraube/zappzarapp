@@ -2,14 +2,35 @@
 
 After cloning zappzarapp, customize these files to make it your own project.
 
+## Find What Still Needs Customization
+
+The shipped documentation templates (README, agent context, …) contain
+placeholder markers. Run:
+
+```bash
+make customize
+```
+
+It lists every template that still holds a `zappzarapp:customize` placeholder,
+with a count per file. Replace each marker with your content and re-run until it
+reports that all templates are customized. (Claude Code offers to help with this
+automatically on a fresh conversation.)
+
 ## Quick Checklist
 
 - [ ] `composer.json` - PHP package metadata
 - [ ] `package.json` - Node.js package metadata
 - [ ] `LICENSE` - Copyright holder
+- [ ] `README.md` - Project name, description, license
+- [ ] `.claude/context/project.md` - Your application's context for AI agents
+- [ ] `.claude/CLAUDE.md` - Project structure & key make targets
+- [ ] `AGENTS.md` - Project description for AI agents
 - [ ] `.env` - Team environment defaults (committed)
 - [ ] `.env.local` - Your local overrides (created by `make setup`)
 - [ ] `public/favicon.svg` - App icon
+
+> **Tip:** `make customize` tracks the README and agent-context files above via
+> their placeholder markers — run it any time to see what is left.
 
 ## Package Files
 

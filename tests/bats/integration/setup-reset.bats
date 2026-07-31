@@ -177,6 +177,13 @@ setup() {
     [[ -f ".zappzarapp/ai/context-project.md" ]]
 }
 
+@test "[Phase 2] Verify: make customize reports the swapped-in templates" {
+    # After the swap, the active templates carry customization placeholders
+    run make customize
+    assert_success
+    assert_output --partial "needing customization"
+}
+
 @test "[Phase 2] Verify: CHANGELOG.md replaced (no boilerplate marker)" {
     # After setup, CHANGELOG.md should NOT contain the boilerplate marker
     run grep -q "zappzarapp - Changelog" CHANGELOG.md

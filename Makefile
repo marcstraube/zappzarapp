@@ -2781,6 +2781,25 @@ boilerplate-diff: ## Show diff between local and zappzarapp upstream (dry-run)
 	done
 	@echo -e "\033[0;34mFor full diff: git diff HEAD...zappzarapp/$(ZAPPZARAPP_BRANCH) -- <path>\033[0m"
 
+customize: ## List shipped templates that still contain customization placeholders
+	@marker="zappzarapp:customize"; \
+	if git rev-parse --git-dir >/dev/null 2>&1; then \
+		files=$$(git grep -lI "$$marker" -- '*.md' ':(exclude).zappzarapp/' 2>/dev/null || true); \
+	else \
+		files=$$(grep -rlI --include='*.md' --exclude-dir=.zappzarapp --exclude-dir=node_modules --exclude-dir=vendor --exclude-dir=build "$$marker" . 2>/dev/null || true); \
+	fi; \
+	if [ -z "$$files" ]; then \
+		echo -e "\033[0;32m✓ All shipped templates are customized (no placeholders left).\033[0m"; \
+	else \
+		echo -e "\033[0;33mTemplates still needing customization:\033[0m"; \
+		for f in $$files; do \
+			n=$$(grep -c "$$marker" "$$f" 2>/dev/null || echo 0); \
+			echo -e "  \033[0;36m$$f\033[0m — $$n placeholder(s)"; \
+		done; \
+		echo ""; \
+		echo -e "Replace each '$$marker' marker with your content, then re-run \033[0;36mmake customize\033[0m."; \
+	fi
+
 ai-setup: ## Initialize labels and milestones for /tasks command (auto-detects GitHub/GitLab)
 	@REMOTE_URL=$$(git remote get-url origin 2>/dev/null); \
 	if echo "$$REMOTE_URL" | grep -qE 'github\.com'; then \
