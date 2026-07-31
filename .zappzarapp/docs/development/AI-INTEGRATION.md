@@ -23,9 +23,9 @@ customize it with your project rules; no sync tooling required.
 | ADRs      | `docs/adr/` / `.zappzarapp/docs/adr/` | One document per architecture decision |
 
 `LEARNINGS.md` is an inbox: mature entries graduate into the regular
-documentation during periodic triage (`/optimize --learnings`). ADRs follow the
-common one-document-per-decision practice with an index README and a status
-lifecycle (see `.zappzarapp/docs/adr/0009-one-document-per-adr.md`).
+documentation during periodic triage. ADRs follow the common
+one-document-per-decision practice with an index README and a status lifecycle
+(see `.zappzarapp/docs/adr/0009-one-document-per-adr.md`).
 
 **Task Management:** Handled via `/tasks` command with automatic storage
 detection (GitHub Issues, GitLab Issues, or local `.ai/TASKS.md`).
@@ -192,7 +192,6 @@ built-in Claude Code capabilities do not cover.
 | ------------- | ---------------------------------------------- | ------ |
 | `/tasks`      | Task management with GitHub/GitLab integration | sonnet |
 | `/sync-check` | Verify config file synchronization             | haiku  |
-| `/optimize`   | Self-optimization of config, docs, terminology | sonnet |
 
 ### Skill Structure
 
@@ -217,7 +216,7 @@ argument-hint: '[--fix] [--category <name>]'
 **Model Selection:**
 
 - `haiku`: Quick tasks, simple queries (sync-check)
-- `sonnet`: Balanced tasks, moderate complexity (tasks, optimize)
+- `sonnet`: Balanced tasks, moderate complexity (tasks)
 - `opus`: Complex planning, architecture decisions (currently unused)
 
 ### Task Management with /tasks
@@ -261,31 +260,6 @@ Issues, plus local file fallback.
 ```bash
 make ai-setup  # Auto-detects GitHub/GitLab, creates labels + milestones
 ```
-
-### Self-Optimization with /optimize
-
-The `/optimize` command analyzes and improves Claude's configuration.
-
-**Phases:**
-
-| Phase | Argument        | Purpose                                   |
-| ----- | --------------- | ----------------------------------------- |
-| 1     | `--config`      | CLAUDE.md structure, redundancy, clarity  |
-| 2     | `--template`    | Sync CLAUDE.md ↔ CLAUDE.template.md       |
-| 3     | `--terminology` | Find outdated terms across all files      |
-| 4     | `--docs`        | Sync AI-INTEGRATION.md with actual config |
-| 5     | `--learnings`   | Clean up LEARNINGS.md                     |
-| 6     | `--skills`      | Audit skills (slash commands)             |
-| 7     | `--sessions`    | Archive old sessions                      |
-| 8     | `--settings`    | Optimize settings.json                    |
-| 9     | `--all`         | Run all phases                            |
-
-**Key Features:**
-
-- **Template drift detection**: Finds when CLAUDE.md changes aren't in template
-- **Terminology registry**: Tracks deprecated terms and naming conventions
-- **Language check**: Finds non-English terms in English-only files
-- **Cross-file consistency**: Verifies docs match actual configuration
 
 ## Agent Workflow
 

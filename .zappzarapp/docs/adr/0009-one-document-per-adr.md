@@ -18,7 +18,7 @@ value over linking sources directly where they are used.
 location is `.zappzarapp/docs/adr/`; projects created from the boilerplate use
 `docs/adr/`. `REFERENCES.md` is retired. `LEARNINGS.md` stays as the
 fast-capture inbox for gotchas; mature entries graduate into the regular
-documentation during periodic triage (`/optimize --learnings`).
+documentation during periodic triage.
 
 **Consequences:**
 

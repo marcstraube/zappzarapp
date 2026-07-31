@@ -10,7 +10,7 @@
 | Architecture decision made     | New ADR document under `docs/adr/` |
 
 `LEARNINGS.md` is a fast-capture inbox: mature entries graduate into the regular
-documentation during periodic triage (`/optimize --learnings`).
+documentation during periodic triage.
 
 Knowledge files are committed and team-shared — they are the project's
 persistent memory. Do not defer these writes to "later"; context may be
@@ -119,7 +119,6 @@ Available skills in `.claude/skills/`:
 | ------------- | ---------------------------------------------------------- |
 | `/tasks`      | Task management (4-tier: zappzarapp/upstream/repo/private) |
 | `/sync-check` | Verify related config files stay in sync                   |
-| `/optimize`   | Self-optimization of Claude configuration                  |
 
 Built-in Claude Code skills (e.g. code review, security review, research)
 complement these — the project only ships skills for workflows the built-ins do
