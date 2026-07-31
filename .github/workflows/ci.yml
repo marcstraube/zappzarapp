@@ -595,11 +595,11 @@ jobs:
           # Also include vendor and node_modules so BATS tests can rm -rf them and
           # containers can recreate them (cross-UID ownership requires 777)
           chmod -R 777 vendor node_modules tools docs public
-          # BuildKit-native build of the development stack via docker buildx bake
-          # (docker-bake.hcl). No DOCKER_BUILDKIT=0: dev-target stages have no
-          # cross-image COPY, and --load exports the images to the local Docker
-          # daemon so `make up` finds them. gha layer cache warms across runs.
-          # node-backend is built too (some BATS checks expect the :latest tag).
+          # Build the development stack via docker buildx bake (docker-bake.hcl).
+          # dev-target stages have no cross-image COPY; --load exports the images
+          # to the local Docker daemon so `make up` finds them, and the gha layer
+          # cache warms across runs. node-backend is built too (some BATS checks
+          # expect the :latest tag).
           docker buildx bake -f docker-bake.hcl --load \
             --set "*.cache-from=type=gha" \
             --set "*.cache-to=type=gha,mode=max" \
@@ -674,11 +674,11 @@ jobs:
           [ -f composer.lock ] || echo '{}' > composer.lock
           [ -f pnpm-lock.yaml ] || touch pnpm-lock.yaml
 
-          # BuildKit-native production build via docker buildx bake (docker-bake.hcl).
-          # The php/nginx production stages COPY Vite assets from node-backend through
-          # the tagless `node-backend-assets` context (bake links target:node-backend),
-          # so there is no DOCKER_BUILDKIT=0 and no manual tag dance. --load exports
-          # the images for `make test-production`; gha cache warms this heavy build.
+          # Production build via docker buildx bake (docker-bake.hcl). The php/nginx
+          # production stages COPY Vite assets from node-backend through the tagless
+          # `node-backend-assets` context (bake links target:node-backend). --load
+          # exports the images for `make test-production`; the gha cache warms this
+          # heavy build.
           docker buildx bake -f docker-bake.hcl --load \
             --set "*.cache-from=type=gha" \
             --set "*.cache-to=type=gha,mode=max" \

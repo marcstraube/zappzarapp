@@ -346,10 +346,10 @@ bats:integration:
     - "[ -f pnpm-lock.yaml ] || touch pnpm-lock.yaml"
     # Create dependency directories (compose.ci.yaml uses bind mounts for BATS tests)
     - mkdir -p vendor node_modules src/node/backend/node_modules src/node/frontend/node_modules backups/db docs/api/php docs/api/node-backend docs/api/node-frontend tools
-    # BuildKit-native build of the dev stack via docker buildx bake (docker-bake.hcl).
-    # No DOCKER_BUILDKIT=0: dev-target stages have no cross-image COPY, and --load
-    # exports the images to the daemon so `make up` finds them. node-backend is built
-    # too (:latest tag expected by some BATS checks). Mirrors the GitHub integration job.
+    # Build the dev stack via docker buildx bake (docker-bake.hcl). dev-target
+    # stages have no cross-image COPY; --load exports the images to the daemon so
+    # `make up` finds them. node-backend is built too (:latest tag expected by some
+    # BATS checks). Mirrors the GitHub integration job.
     - docker buildx inspect ci >/dev/null 2>&1 || docker buildx create --name ci --driver docker-container
     - docker buildx bake --builder ci -f docker-bake.hcl --load dev node-backend
     - make up
@@ -442,10 +442,9 @@ build:production:
     # Create empty lockfiles for production build (Dockerfile COPY needs them)
     - "[ -f composer.lock ] || echo '{}' > composer.lock"
     - "[ -f pnpm-lock.yaml ] || touch pnpm-lock.yaml"
-    # BuildKit-native production build via docker buildx bake (docker-bake.hcl).
-    # php/nginx production COPY the Vite assets from node-backend through the tagless
-    # `node-backend-assets` context (bake links target:node-backend) — no
-    # DOCKER_BUILDKIT=0, no manual tag dance. --load exports the images for
+    # Production build via docker buildx bake (docker-bake.hcl). php/nginx production
+    # COPY the Vite assets from node-backend through the tagless `node-backend-assets`
+    # context (bake links target:node-backend). --load exports the images for
     # `make test-production`. Mirrors the GitHub build-production job.
     - docker buildx inspect ci >/dev/null 2>&1 || docker buildx create --name ci --driver docker-container
     - docker buildx bake --builder ci -f docker-bake.hcl --load production

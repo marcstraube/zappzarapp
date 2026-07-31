@@ -1,22 +1,17 @@
 # docker-bake.hcl
 #
-# Single BuildKit-native build graph for every image that participates in
-# cross-image file copies (goss binary, Vite assets from node-backend).
+# Single build graph for every image that participates in cross-image file
+# copies (goss binary, Vite assets from node-backend). The php/nginx/postgres/
+# redis/node test + production stages COPY files from other images; bake builds
+# all targets in one graph and wires the copies via named `contexts`
+# (`target:<name>`), so BuildKit links the source target's rootfs directly and
+# the gha/registry layer cache applies.
 #
-# WHY: the php/nginx/postgres/redis/node test + production stages COPY files from
-# other images. Referencing those as LOCAL tagged images
-# (`COPY --from=zappzarapp-goss:latest`) forced the CLASSIC builder
-# (`DOCKER_BUILDKIT=0`) because BuildKit cannot see the local image store. Bake
-# builds every target in ONE graph and wires the copies via named `contexts`
-# (`target:<name>`), so BuildKit links the source target's rootfs directly — no
-# local image store, no `DOCKER_BUILDKIT=0`, and the gha/registry layer cache works.
-#
-# GOTCHA: a bake `contexts` map key containing a COLON (e.g. "foo:latest") is
-# parsed (`bake --print` shows it) but SILENTLY NOT applied at solve time — the
-# build falls back to pulling the key as a registry image and fails. Only the
-# CLI `--build-context` flag tolerates colon keys. The `COPY --from=` references
-# and the context keys below are therefore TAGLESS (`goss`, `node-backend-assets`)
-# so BuildKit matches them to the linked targets. Verified on buildx 0.33.
+# The `COPY --from=` references and the context keys below are TAGLESS (`goss`,
+# `node-backend-assets`): a bake `contexts` map key that contains a colon is
+# silently ignored at solve time (only the CLI `--build-context` flag accepts
+# colon keys), so a tagless key is what BuildKit matches to the linked target.
+# Verified on buildx 0.33.
 #
 # Usage:
 #   docker buildx bake --load <target|group>          # local / --load into docker
@@ -186,11 +181,10 @@ group "default" {
   targets = ["test"]
 }
 
-# Build-time GOSS validation (replaces `make goss-test-build`). Includes
-# node-test-framework: its node-frontend.yaml spec is framework-agnostic, so the
-# frontend Docker stage is now actually validated in CI (it was never built
-# before) and stays green on the bare boilerplate and after any framework is
-# installed. Framework-specific build output is checked at runtime instead.
+# Build-time GOSS validation — the target that `make goss-test-build` builds.
+# Includes node-test-framework: its node-frontend.yaml spec is framework-agnostic,
+# so the frontend Docker stage stays green on the bare boilerplate and after any
+# framework is installed. Framework-specific build output is checked at runtime.
 group "test" {
   targets = [
     "php-test", "nginx-test", "postgres-test",

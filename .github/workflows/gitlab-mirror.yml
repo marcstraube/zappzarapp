@@ -2,7 +2,7 @@ name: Mirror to GitLab
 
 # Push-mirror GitHub -> GitLab so the GitLab CI pipeline runs on the same
 # commits. GitHub stays the single source of truth (Issues/PRs); GitLab is a
-# read-only downstream mirror used to exercise .gitlab-ci.yml.
+# read-only downstream mirror that exercises .gitlab-ci.yml.
 on:
   push:
     branches: [master, develop]

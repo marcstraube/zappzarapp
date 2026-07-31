@@ -8,10 +8,10 @@ DC := docker compose --progress=plain
 # This ensures make pnpm/composer/etc. work regardless of .env settings
 DC_RUN := COMPOSE_PROFILES=php,node,node-backend,dev-tools $(DC)
 
-# BuildKit-native multi-image builds via docker buildx bake (docker-bake.hcl).
-# Retires DOCKER_BUILDKIT=0: cross-image `COPY --from` resolves through named
-# contexts (target:<name>) on a docker-container builder, so no local image
-# store is needed. The builder is auto-created on first use by `.buildx-ensure`.
+# Multi-image builds via docker buildx bake (docker-bake.hcl). Cross-image
+# `COPY --from` resolves through named contexts (target:<name>) on a
+# docker-container builder. The builder is auto-created on first use by
+# `.buildx-ensure`.
 BUILDX_BUILDER ?= zappbake
 BAKE := docker buildx bake -f docker-bake.hcl --builder $(BUILDX_BUILDER)
 
@@ -2647,7 +2647,7 @@ BOILERPLATE_EXCLUDE := \
 	.zappzarapp/ai/AGENTS.md
 
 # Maintainer-only files: useful only in the zappzarapp boilerplate repo itself
-# (e.g. the GitHub->GitLab push-mirror used to live-test the shipped .gitlab-ci.yml
+# (e.g. the GitHub->GitLab push-mirror that live-tests the shipped .gitlab-ci.yml
 # against a real GitLab instance). They are removed for derived projects by
 # `make setup` (boilerplate mode) and stripped again after `boilerplate-sync`,
 # so a user's repo never carries a workflow that needs the maintainer's secret.
@@ -3149,7 +3149,7 @@ goss-build: ## Build GOSS testing tool image (required for build-time tests)
 	@docker buildx inspect $(BUILDX_BUILDER) >/dev/null 2>&1 || \
 		docker buildx create --name $(BUILDX_BUILDER) --driver docker-container >/dev/null
 
-goss-test-build: .buildx-ensure ## Run GOSS build-time tests for all images (BuildKit-native bake)
+goss-test-build: .buildx-ensure ## Run GOSS build-time tests for all images (docker buildx bake)
 	@echo -e "\033[0;33mRunning GOSS build-time tests (docker buildx bake)...\033[0m"
 	@# The `test` group builds goss + node-backend as linked contexts and runs
 	@# `RUN goss validate` inside every test stage — a green build IS the passing
