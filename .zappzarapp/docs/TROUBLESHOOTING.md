@@ -749,29 +749,36 @@ Browser shows certificate expiration error.
    docker compose build php  # or node, nginx, etc.
    ```
 
-### Nginx Production Build Fails: node-backend Image Missing
+### Nginx/PHP Production Build Fails: node-backend Assets Missing
 
 #### Symptom
 
-Building the nginx `production` stage fails because
-`zappzarapp-node-backend:latest` doesn't exist.
+Building the nginx or php `production` stage fails to resolve the
+`node-backend-assets` context (e.g. `zappzarapp-node-backend:latest` not found).
 
 #### Cause
 
-The nginx Dockerfile `production` stage contains
-`COPY --from=zappzarapp-node-backend:latest`, so that image must exist before
-nginx is built. Development mode uses a different target and skips this.
+The nginx/php `production` stages copy the built Vite assets from the
+node-backend image via a tagless named context:
+`COPY --from=node-backend-assets …`. That image must be built before php/nginx.
+Development targets don't copy it and skip this. (The context is tagless because
+a `docker buildx bake` contexts key with a colon is silently ignored — see
+`docker-bake.hcl`.)
 
 #### Solution
 
-For CI/production builds, build and tag node-backend first:
+`make build` with `ENV=production` builds and tags node-backend before
+php/nginx, so this is normally automatic. To build manually, pick one:
 
 ```bash
-# Build and tag node-backend first
+# Option A — docker buildx bake links node-backend as a target (CI uses this):
+docker buildx bake -f docker-bake.hcl --load production
+
+# Option B — build + tag node-backend, then compose resolves it via the
+# additional_contexts declared in compose.production.yaml:
 docker compose --profile node-backend build node-backend
 docker tag <project>-node-backend:api zappzarapp-node-backend:latest
-# Then build nginx with DOCKER_BUILDKIT=0 (sees local images)
-DOCKER_BUILDKIT=0 docker compose build nginx
+ENV=production docker compose -f compose.yaml -f compose.production.yaml build php nginx
 ```
 
 ### Out of Disk Space

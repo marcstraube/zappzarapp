@@ -41,7 +41,7 @@ HEALTHCHECK --interval=10s --timeout=3s --start-period=5s --retries=3 \
 FROM base AS test
 
 # Copy GOSS binary from centralized image
-COPY --from=zappzarapp-goss:latest /usr/bin/goss /usr/local/bin/goss
+COPY --from=goss /usr/bin/goss /usr/local/bin/goss
 RUN chmod +x /usr/local/bin/goss
 
 # Copy test specification

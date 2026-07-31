@@ -595,16 +595,15 @@ jobs:
           # Also include vendor and node_modules so BATS tests can rm -rf them and
           # containers can recreate them (cross-UID ownership requires 777)
           chmod -R 777 vendor node_modules tools docs public
-          # IMPORTANT: Use DOCKER_BUILDKIT=0 for all builds to ensure images are
-          # available to local Docker daemon (setup-buildx-action creates a builder
-          # that stores images in BuildKit cache, not local Docker)
-          # Build node-backend first for nginx COPY --from dependency
-          # Note: Uses COMPOSE_PROJECT_NAME=zappzarapp from .env
-          DOCKER_BUILDKIT=0 docker compose --profile node-backend build node-backend || true
-          docker tag zappzarapp-node-backend:api zappzarapp-node-backend:latest 2>/dev/null || true
-          # Build all remaining images (nginx needs NGINX_TARGET=development for :development tag)
-          # Include postgres for make up image check, dev-tools for Node linting/testing
-          DOCKER_BUILDKIT=0 NGINX_TARGET=development docker compose --profile postgres build php node nginx postgres dev-tools
+          # BuildKit-native build of the development stack via docker buildx bake
+          # (docker-bake.hcl). No DOCKER_BUILDKIT=0: dev-target stages have no
+          # cross-image COPY, and --load exports the images to the local Docker
+          # daemon so `make up` finds them. gha layer cache warms across runs.
+          # node-backend is built too (some BATS checks expect the :latest tag).
+          docker buildx bake -f docker-bake.hcl --load \
+            --set "*.cache-from=type=gha" \
+            --set "*.cache-to=type=gha,mode=max" \
+            dev node-backend
 
       - name: Start containers
         run: make up
@@ -651,7 +650,7 @@ jobs:
 
       - name: Build goss utility image (dependency)
         run: |
-          DOCKER_BUILDKIT=0 docker build -t zappzarapp-goss:latest -f docker/goss/Dockerfile .
+          docker build -t zappzarapp-goss:latest -f docker/goss/Dockerfile .
 
       - name: Initialize environment
         run: |
@@ -675,14 +674,15 @@ jobs:
           [ -f composer.lock ] || echo '{}' > composer.lock
           [ -f pnpm-lock.yaml ] || touch pnpm-lock.yaml
 
-          # Build node-backend first, then tag for cross-image COPY compatibility
-          # BuildKit in compose build can't see external local images, so we build
-          # node-backend separately and tag it, then build php/nginx with DOCKER_BUILDKIT=0
-          # Note: Uses COMPOSE_PROJECT_NAME=zappzarapp from .env
-          docker compose -f compose.yaml -f compose.production.yaml --profile node-backend build node-backend
-          docker tag zappzarapp-node-backend:api zappzarapp-node-backend:latest
-          # Disable BuildKit for php/nginx build so they can see the local tagged image
-          DOCKER_BUILDKIT=0 ENV=production docker compose -f compose.yaml -f compose.production.yaml --profile php --profile postgres build php nginx postgres
+          # BuildKit-native production build via docker buildx bake (docker-bake.hcl).
+          # The php/nginx production stages COPY Vite assets from node-backend through
+          # the tagless `node-backend-assets` context (bake links target:node-backend),
+          # so there is no DOCKER_BUILDKIT=0 and no manual tag dance. --load exports
+          # the images for `make test-production`; gha cache warms this heavy build.
+          docker buildx bake -f docker-bake.hcl --load \
+            --set "*.cache-from=type=gha" \
+            --set "*.cache-to=type=gha,mode=max" \
+            production
 
       - name: Test production build
         run: |

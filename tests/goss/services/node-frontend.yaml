@@ -21,10 +21,15 @@ file:
     exists: true
     filetype: directory
 
-  # Nuxt specific (adjust for other frameworks)
-  /app/.output:
-    exists: true
-    filetype: directory
+  # NOTE: build-time checks here are intentionally framework-AGNOSTIC so this
+  # stage stays green on the bare boilerplate (no framework installed) AND after
+  # a user runs `make node-frontend-nuxt|next|sveltekit|remix`. The
+  # framework-specific build output dir varies (Nuxt `.output/`, Next `.next/`,
+  # SvelteKit `build/`|`.svelte-kit/`, Remix `build/`), so asserting one here
+  # would wrongly fail the other three. Validate that the framework actually
+  # BUILT + SERVES at runtime instead (tests/goss/runtime-tests.sh node-frontend),
+  # where the running server exercises the real output. See todo.md for the
+  # optional scaffold-driven per-framework output check.
 
   # Entrypoint
   /usr/local/bin/entrypoint.production.sh:

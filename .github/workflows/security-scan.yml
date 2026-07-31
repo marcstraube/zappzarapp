@@ -107,19 +107,20 @@ jobs:
 
       - name: Build goss utility image (dependency)
         run: |
-          # Build without BuildKit so image is available to local Docker daemon
-          DOCKER_BUILDKIT=0 docker build -t zappzarapp-goss:latest -f docker/goss/Dockerfile .
+          # --load exports the image to the local Docker daemon for the scanners.
+          docker buildx build --load -t zappzarapp-goss:latest -f docker/goss/Dockerfile .
 
       - name: Build ${{ matrix.image.name }} image
         run: |
-          # Disable BuildKit for images that use COPY --from local images (node, php, nginx)
-          # Target specific stage to avoid GOSS validation (which requires runtime dependencies)
-          # Security scan focuses on base image vulnerabilities, not runtime config
+          # Scan only cross-image-COPY-free stages (dev/base/final/single-stage) so
+          # no goss/node-backend context is needed; --load makes the :scan image
+          # available to Trivy. Target a specific stage to skip GOSS validation
+          # (needs runtime deps); the scan focuses on base-image vulnerabilities.
           TARGET_ARG=""
           if [ -n "${{ matrix.image.target }}" ]; then
             TARGET_ARG="--target ${{ matrix.image.target }}"
           fi
-          DOCKER_BUILDKIT=0 docker build -t ${{ env.COMPOSE_PROJECT_NAME }}-${{ matrix.image.name }}:scan \
+          docker buildx build --load -t ${{ env.COMPOSE_PROJECT_NAME }}-${{ matrix.image.name }}:scan \
             $TARGET_ARG \
             -f ${{ matrix.image.dockerfile }} \
             .
@@ -174,7 +175,7 @@ jobs:
 
       - name: Build goss utility image (dependency)
         run: |
-          DOCKER_BUILDKIT=0 docker build -t zappzarapp-goss:latest -f docker/goss/Dockerfile .
+          docker buildx build --load -t zappzarapp-goss:latest -f docker/goss/Dockerfile .
 
       - name: Initialize environment
         run: |
@@ -186,8 +187,8 @@ jobs:
           # Create empty lockfiles for Dockerfile COPY
           [ -f composer.lock ] || echo '{}' > composer.lock
           [ -f pnpm-lock.yaml ] || touch pnpm-lock.yaml
-          # Disable BuildKit for cross-image COPY --from compatibility
-          DOCKER_BUILDKIT=0 docker compose build php node
+          # php/node development stages have no cross-image COPY → plain BuildKit.
+          docker compose build php node
           docker compose up -d php node
           sleep 5
 
@@ -355,7 +356,7 @@ jobs:
       - name: Build goss utility image (dependency)
         if: matrix.image.name != 'goss'
         run: |
-          DOCKER_BUILDKIT=0 docker build -t zappzarapp-goss:latest -f docker/goss/Dockerfile .
+          docker buildx build --load -t zappzarapp-goss:latest -f docker/goss/Dockerfile .
 
       - name: Build ${{ matrix.image.name }} image
         run: |
@@ -363,7 +364,7 @@ jobs:
           if [ -n "${{ matrix.image.target }}" ]; then
             TARGET_ARG="--target ${{ matrix.image.target }}"
           fi
-          DOCKER_BUILDKIT=0 docker build -t ${{ env.COMPOSE_PROJECT_NAME }}-${{ matrix.image.name }}:scan \
+          docker buildx build --load -t ${{ env.COMPOSE_PROJECT_NAME }}-${{ matrix.image.name }}:scan \
             $TARGET_ARG \
             -f ${{ matrix.image.dockerfile }} \
             .

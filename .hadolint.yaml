@@ -41,6 +41,15 @@ ignored:
   # container ENTRYPOINT/CMD instructions already use exec (JSON) form.
   - DL3025
 
+  # DL3022: `COPY --from` should reference a previously defined `FROM` alias
+  # Rationale: the test/production stages copy from TAGLESS named build contexts
+  # (`COPY --from=goss`, `COPY --from=node-backend-assets`) that are wired at
+  # build time by `docker buildx bake` (contexts = target:…) or compose
+  # `additional_contexts`. hadolint cannot see those, so it flags them as if they
+  # were undefined FROM aliases. Genuine intra-Dockerfile aliases (`--from=build`,
+  # `--from=composer-image`) reference defined stages and never triggered DL3022.
+  - DL3022
+
 # Treat these shells as acceptable (Alpine uses ash/busybox)
 trustedRegistries:
   - docker.io

@@ -15,6 +15,53 @@ periodic triage (`/optimize --learnings`) and are removed from this file.
 - **Asset source for nginx/php**: Changed from `zappzarapp-node:latest` to
   `zappzarapp-node-backend:latest` for Vite assets.
 
+### `docker buildx bake` cross-target file copy: context keys must be TAGLESS
+
+- **Goal**: retire `DOCKER_BUILDKIT=0`. The prod/test image builds are pinned to
+  the classic builder because they `COPY --from=zappzarapp-goss:latest` /
+  `zappzarapp-node-backend:latest` — references to LOCAL tagged images the
+  BuildKit builder can't see. Native fix: build everything in ONE `bake` graph
+  and wire cross-image copies via bake **named contexts**
+  (`contexts = { <key> = "target:<other-target>" }`), so BuildKit links the
+  source target's rootfs directly — no local image store, gha cache works.
+- **GOTCHA (cost me the first PoC)**: a bake `contexts` map key that contains a
+  COLON — e.g. `"zappzarapp-goss:latest" = "target:goss"` — is PARSED
+  (`bake --print` shows it) but SILENTLY NOT APPLIED at solve time; the build
+  falls back to pulling `docker.io/library/zappzarapp-goss:latest` from the
+  registry → `insufficient_scope: authorization failed`. The CLI
+  `--build-context "zappzarapp-goss:latest=docker-image://…"` DOES handle the
+  colon; only the HCL/compose `contexts` map fails on colon keys.
+- **Fix**: make the `COPY --from=` reference (and thus the context key) TAGLESS.
+  Change `COPY --from=zappzarapp-goss:latest` → `COPY --from=goss` and wire
+  `contexts = { goss = "target:goss" }`. Proven end-to-end on buildx 0.33 /
+  docker 29.4 (docker-container driver): goss v0.4.9 binary copied + executed,
+  `EXIT 0`. Isolation that pinned the cause: colon key `gossbin`-vs-`x:latest`
+  A/B on a throwaway Dockerfile.
+- **Scope note**: all 6 goss `COPY --from` refs live in CI-only `test` stages
+  (php/nginx/postgres/redis/node) → safe. The 2 node-backend refs live in
+  php/nginx `production` stages → they also feed the USER-FACING
+  `docker compose build` prod path, which can't use bake `target:` links.
+- **Compose side (the other half)**: the make/compose production path resolves
+  the SAME tagless ref via compose `build.additional_contexts`:
+  `node-backend-assets=docker-image://zappzarapp-node-backend:latest`. Two key
+  facts: (a) a `docker-image://` context pointing at a LOCAL tagged image IS
+  resolved from the local store by the default docker-buildkit builder (no
+  registry pull) — this is exactly what a bare `COPY --from=<local-image>` could
+  NOT do (it tried to pull); the explicit context declaration is the difference.
+  So the existing `docker tag …node-backend:latest` dance in the `make`
+  production targets now feeds the context — no DOCKER_BUILDKIT=0, no make
+  restructuring. (b) `additional_contexts=service:<name>` was rejected: it
+  forces the referenced service's PROFILE active for EVERY production compose
+  command (even nginx validates it), which would wrongly start node-backend in
+  modes that don't need it. Put additional_contexts in compose.production.yaml
+  ONLY (never base) — declaring it in base makes dev builds fail with "unknown
+  service … as additional context".
+- **Two mechanisms, one tagless ref**: CI/bake → `contexts=target:node-backend`;
+  make/compose → `additional_contexts=docker-image://…:latest`. Scan matrices
+  build only cross-ref-free stages (dev/base/final) so they need NO context —
+  just `docker buildx build --load` (—load exports to the daemon for
+  Trivy/Dockle).
+
 ### Restrictive host `umask 077` crash-loops nginx + pgadmin (baked entrypoints)
 
 - **Symptom** (fresh clone + `make setup` on a host with `umask 077`): `nginx`

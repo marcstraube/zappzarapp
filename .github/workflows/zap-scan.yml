@@ -45,8 +45,9 @@ jobs:
 
       - name: Build goss utility image (dependency)
         run: |
-          # Use legacy builder for goss (GOSS validation requires image in daemon)
-          DOCKER_BUILDKIT=0 docker build -t zappzarapp-goss:latest -f docker/goss/Dockerfile .
+          # No setup-buildx step here, so `docker build` uses the default
+          # docker-buildkit builder, which loads the image into the daemon.
+          docker build -t zappzarapp-goss:latest -f docker/goss/Dockerfile .
 
       - name: Initialize environment
         run: |
