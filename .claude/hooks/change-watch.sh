@@ -6,7 +6,7 @@
 # 1. Documentation - code changes that might need doc updates
 # 2. Tests - infrastructure changes that might need GOSS/BATS updates
 #
-# Usage: doc-watch.sh [project_dir]
+# Usage: change-watch.sh [project_dir]
 # Output: Markdown-formatted list of affected files
 
 set -euo pipefail

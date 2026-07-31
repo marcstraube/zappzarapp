@@ -47,7 +47,7 @@ make test
 | ---------------------- | ---------------------------- |
 | Containers not running | `make up`                    |
 | Uncommitted changes    | Commit or stash              |
-| Wrong branch           | `git checkout main`          |
+| Wrong branch           | `git checkout develop`       |
 | Tests failing          | Fix before starting new task |
 | Merge conflicts        | Resolve first                |
 
@@ -87,11 +87,10 @@ Use Conventional Commits types (defined in `commitlint.config.js`):
 
 ### Why Feature Branches?
 
-- **Isolation:** Changes don't affect main during development
+- **Isolation:** Changes don't affect develop during development
 - **Review:** Entire feature in one review
-- **History:** Clean main history (one merge per feature)
+- **History:** Clean develop history (one merge per feature)
 - **Rollback:** Simply delete branch if needed
-- **Session-Log:** Branch field has clear meaning
 
 ## Quick Wins Batch Processing
 
@@ -138,10 +137,10 @@ Each Quick Win task gets its own Coder agent:
 
 ```text
 Main Agent spawns (parallel):
-├── Task("Implement: Make Integrations in setup", subagent_type="general-purpose")
-├── Task("Implement: Make Setup API Docs", subagent_type="general-purpose")
-├── Task("Implement: IDE Tasks Reduction", subagent_type="general-purpose")
-└── Task("Implement: PhpStorm/VSCode Sync", subagent_type="general-purpose")
+├── Agent("Implement: Make Integrations in setup", subagent_type="coder-infra")
+├── Agent("Implement: Make Setup API Docs", subagent_type="coder-infra")
+├── Agent("Implement: IDE Tasks Reduction", subagent_type="coder-infra")
+└── Agent("Implement: PhpStorm/VSCode Sync", subagent_type="coder-infra")
 ```
 
 **Agent prompt template:**
@@ -340,7 +339,7 @@ Trigger Security Agent if changed files match these patterns:
 - Collects results from all agents
 - **Important:** Subagents are coordinated subprocesses, not separate contexts
 
-### Session File (centralized)
+### Knowledge Files (centralized)
 
 - **Only Main Agent** updates knowledge files and CHANGELOG
 - Subagents report back, don't write directly

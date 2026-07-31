@@ -31,7 +31,7 @@ FILE=$(echo "$TOOL_INPUT" | jq -r '.file_path // empty' 2>/dev/null || echo "")
 case "$FILE" in
   *.lock|*.sum|*.map|*.min.*) exit 0 ;;
   */node_modules/*|*/vendor/*|*/build/*) exit 0 ;;
-  */.claude/sessions/*|*/.claude/temp/*|*/.claude/state/*) exit 0 ;;
+  */.claude/temp/*) exit 0 ;;
 esac
 
 # Helper: Check if service container is running

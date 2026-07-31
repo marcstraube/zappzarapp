@@ -43,7 +43,9 @@ the Main Agent, who writes them centrally (prevents conflicts).
    # Work in isolated environment
    ```
 
-   Note: PreToolUse hook will remind you automatically when appropriate.
+   Note: the `UserPromptSubmit` hook prints a reminder when an
+   implementation-style prompt arrives while you are on a protected branch
+   (develop/main/master). It is a passive reminder — it cannot block.
 
 **Exception:** Trivial tasks (1 file, typo/config/one-liner) can stay on
 develop.
