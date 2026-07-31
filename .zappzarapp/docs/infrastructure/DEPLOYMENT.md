@@ -61,19 +61,20 @@ test · quality · security · deploy   (a DAG, not a sequence)
 Each PHP and Node quality job bundles all its checks (mirroring the GitHub
 Actions `php-quality` / `node-quality` jobs).
 
-| Stage        | Job                | Description                                              |
-| ------------ | ------------------ | -------------------------------------------------------- |
-| **quality**  | `php:quality`      | PHP-CS-Fixer, PHPStan, PHPMD, Rector, composer validate  |
-| **quality**  | `node:quality`     | TypeScript, ESLint, Prettier, package validate, Markdown |
-| **test**     | `php:unit-tests`   | PHPUnit tests                                            |
-| **test**     | `php:coverage`     | PHP coverage (master/develop only)                       |
-| **test**     | `node:tests`       | Vitest tests                                             |
-| **test**     | `node:coverage`    | Node coverage (master/develop only)                      |
-| **test**     | `bats:quick`       | BATS Makefile validation (dry-run)                       |
-| **test**     | `bats:integration` | BATS integration tests (master/develop/MR)               |
-| **security** | `sast:semgrep`     | Static analysis (Semgrep)                                |
-| **security** | `dependency-audit` | Composer + pnpm audit                                    |
-| **deploy**   | `build:production` | Production build test (master/develop only)              |
+| Stage        | Job                | Description                                             |
+| ------------ | ------------------ | ------------------------------------------------------- |
+| **quality**  | `php:quality`      | PHP-CS-Fixer, PHPStan, PHPMD, Rector, composer validate |
+| **quality**  | `node:quality`     | TypeScript, ESLint, Prettier, package validate          |
+| **quality**  | `docs:lint`        | Markdown lint (markdownlint + Prettier)                 |
+| **test**     | `php:unit-tests`   | PHPUnit tests                                           |
+| **test**     | `php:coverage`     | PHP coverage (master/develop only)                      |
+| **test**     | `node:tests`       | Vitest tests                                            |
+| **test**     | `node:coverage`    | Node coverage (master/develop only)                     |
+| **test**     | `bats:quick`       | BATS Makefile validation (dry-run)                      |
+| **test**     | `bats:integration` | BATS integration tests (master/develop/MR)              |
+| **security** | `sast:semgrep`     | Static analysis (Semgrep)                               |
+| **security** | `dependency-audit` | Composer + pnpm audit                                   |
+| **deploy**   | `build:production` | Production build test (master/develop only)             |
 
 ### Image Reuse (BuildKit Registry Cache)
 
@@ -160,7 +161,7 @@ jobs then build from that cache (near-instant on a warm cache).
   │php-quality││php-tests ││node-*    ││ dependency-audit │  (all cache-from gha)
   └───────────┘└──────────┘└──────────┘└──────────────────┘
 
-  independent: sast-scan · bats-quick → bats-integration · build-production
+  independent: sast-scan · docs-lint · bats-quick → bats-integration · build-production
 ```
 
 ### Jobs Overview
@@ -171,8 +172,9 @@ jobs then build from that cache (near-instant on a warm cache).
 | `build-images`     | Build php+node dev images, warm gha cache  | 15 min  |
 | `php-quality`      | CS-Fixer, PHPStan, PHPMD, Rector, Validate | 15 min  |
 | `php-tests`        | PHPUnit + Coverage (master only)           | 15 min  |
-| `node-quality`     | TypeScript, ESLint, Prettier, Markdown     | 15 min  |
+| `node-quality`     | TypeScript, ESLint, Prettier, package.json | 15 min  |
 | `node-tests`       | Vitest + Coverage (master only)            | 15 min  |
+| `docs-lint`        | Markdown lint (markdownlint + Prettier)    | 5 min   |
 | `dependency-audit` | Composer + pnpm audit                      | 10 min  |
 | `sast-scan`        | Semgrep static analysis                    | 15 min  |
 | `bats-quick`       | BATS Makefile validation (dry-run)         | 10 min  |

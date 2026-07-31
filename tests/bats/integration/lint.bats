@@ -95,7 +95,8 @@ teardown_file() {
 @test "[Integration] make lint-md runs successfully" {
     require_node
     require_dependencies
-    run timeout 60 make lint-md
+    # Pulls node:24-alpine and installs the pinned linters on first run.
+    run timeout 180 make lint-md
     assert_success
 }
 
