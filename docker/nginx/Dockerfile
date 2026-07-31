@@ -43,9 +43,7 @@ COPY --chown=nginx:nginx docker/nginx/errors/ /usr/share/nginx/html/errors/
 # the nginx user to the host UID, so the runtime user differs from the baked file
 # owner and reads it as "other". A bare `chmod +x` on a umask-077 source yields
 # 711 (execute-only, no read) → the shell cannot open the script. `chmod 0755`
-# guarantees world read+execute regardless of host umask. (COPY --chmod would
-# also work but is BuildKit-only, and this image must build under the classic
-# builder for the production stage's local `COPY --from=zappzarapp-*` refs.)
+# guarantees world read+execute regardless of host umask.
 COPY --chown=nginx:nginx docker/nginx/entrypoint.sh /docker-entrypoint.sh
 RUN chmod 0755 /docker-entrypoint.sh
 
@@ -94,12 +92,13 @@ FROM base AS production
 # Copy Public Assets (as nginx user)
 COPY --chown=nginx:nginx public/ /var/www/html/public/
 
-# Copy built frontend assets from Node backend build stage
-# This allows NGINX to serve production-built Vite assets directly
-# Note: node-backend image must be built first (see Makefile build order)
-# Note: :latest tag is an alias created by Makefile during production build
-#       for cross-image COPY compatibility (BuildKit doesn't support variables in --from)
-COPY --from=zappzarapp-node-backend:latest --chown=nginx:nginx /app/public/build/ /var/www/html/public/build/
+# Copy production-built Vite assets from the node-backend image so NGINX serves
+# them directly. `node-backend-assets` is a TAGLESS named context, NOT an image:
+# CI/bake resolve it via `docker buildx bake` (contexts = target:node-backend),
+# the compose production build via `additional_contexts`
+# (docker-image://…node-backend:latest). Tagless is required because a bake
+# contexts key with a colon is silently ignored. See docker-bake.hcl.
+COPY --from=node-backend-assets --chown=nginx:nginx /app/public/build/ /var/www/html/public/build/
 
 # Harden permissions (read-only for content, nginx user owns it)
 USER root
@@ -115,7 +114,7 @@ FROM production AS test
 
 # Copy GOSS binary from centralized image (needs root temporarily)
 USER root
-COPY --from=zappzarapp-goss:latest /usr/bin/goss /usr/local/bin/goss
+COPY --from=goss /usr/bin/goss /usr/local/bin/goss
 RUN chmod +x /usr/local/bin/goss
 
 # Copy test specification

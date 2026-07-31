@@ -114,9 +114,7 @@ COPY --from=php-builder /usr/local/lib/php/extensions/ /usr/local/lib/php/extens
 # (non-root), but a COPY without an explicit chmod keeps the umask-077 source
 # mode 600 root-owned, so www-data cannot read the INIs and the extensions
 # silently fail to load. In production (no bind mounts) this drops ALL
-# extensions; `chmod 0644` guarantees world-read. (COPY --chmod would also work
-# but is BuildKit-only, and these stages must build under the classic builder
-# for their local `COPY --from=zappzarapp-*` refs — so no BuildKit-only syntax.)
+# extensions; `chmod 0644` guarantees world-read regardless of host umask.
 COPY docker/php/conf.d/amqp.ini /usr/local/etc/php/conf.d/
 COPY docker/php/conf.d/bcmath.ini /usr/local/etc/php/conf.d/
 COPY docker/php/conf.d/exif.ini /usr/local/etc/php/conf.d/
@@ -244,12 +242,13 @@ COPY --chown=www-data:www-data templates ./templates
 # Security: Runs entirely as www-data user - NO capabilities needed
 FROM production-base AS production
 
-# Copy built frontend assets from Node backend build stage
-# This allows serving production-built Vite assets via NGINX
-# Note: node-backend image must be built first (see Makefile build order)
-# Note: :latest tag is an alias created by Makefile during production build
-#       for cross-image COPY compatibility (BuildKit doesn't support variables in --from)
-COPY --from=zappzarapp-node-backend:latest --chown=www-data:www-data /app/public/build/ ./public/build/
+# Copy built frontend assets (production-built Vite output, served via NGINX)
+# from the node-backend image. `node-backend-assets` is a TAGLESS named context,
+# NOT an image: CI/`make goss-test-build` resolve it via `docker buildx bake`
+# (contexts = target:node-backend), and the compose production build resolves it
+# via compose `additional_contexts` (docker-image://…node-backend:latest). Tagless
+# is required because a bake contexts key with a colon is silently ignored.
+COPY --from=node-backend-assets --chown=www-data:www-data /app/public/build/ ./public/build/
 
 # Optimize Autoloader, Cleanup & Permission Hardening
 RUN composer dump-autoload --optimize --no-dev --classmap-authoritative && \
@@ -287,7 +286,7 @@ FROM production-base AS test
 RUN composer dump-autoload --optimize --no-dev --classmap-authoritative
 
 # Copy GOSS binary from centralized image
-COPY --from=zappzarapp-goss:latest /usr/bin/goss /usr/local/bin/goss
+COPY --from=goss /usr/bin/goss /usr/local/bin/goss
 RUN chmod +x /usr/local/bin/goss
 
 # Copy test specification

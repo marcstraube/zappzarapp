@@ -83,7 +83,7 @@ CMD ["postgres"]
 FROM final AS test
 
 # Copy GOSS binary from centralized image
-COPY --from=zappzarapp-goss:latest /usr/bin/goss /usr/local/bin/goss
+COPY --from=goss /usr/bin/goss /usr/local/bin/goss
 RUN chmod +x /usr/local/bin/goss
 
 # Copy test specification

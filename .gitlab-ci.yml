@@ -346,18 +346,12 @@ bats:integration:
     - "[ -f pnpm-lock.yaml ] || touch pnpm-lock.yaml"
     # Create dependency directories (compose.ci.yaml uses bind mounts for BATS tests)
     - mkdir -p vendor node_modules src/node/backend/node_modules src/node/frontend/node_modules backups/db docs/api/php docs/api/node-backend docs/api/node-frontend tools
-    # IMPORTANT: Use DOCKER_BUILDKIT=0 for all builds to ensure images are
-    # available to local Docker daemon (GitLab CI runners use BuildKit by default)
-    # Build node-backend first for nginx COPY --from dependency
-    # Note: Uses COMPOSE_PROJECT_NAME=zappzarapp from .env
-    - echo "Building node-backend image first..."
-    - DOCKER_BUILDKIT=0 docker compose --profile node-backend build node-backend
-    - echo "Tagging node-backend image as :latest for nginx COPY..."
-    - docker tag zappzarapp-node-backend:api zappzarapp-node-backend:latest
-    - echo "✓ node-backend image tagged successfully"
-    # Build all remaining images (nginx needs NGINX_TARGET=development for :development tag)
-    # Include postgres for make up image check
-    - DOCKER_BUILDKIT=0 NGINX_TARGET=development docker compose --profile postgres build php node nginx postgres
+    # BuildKit-native build of the dev stack via docker buildx bake (docker-bake.hcl).
+    # No DOCKER_BUILDKIT=0: dev-target stages have no cross-image COPY, and --load
+    # exports the images to the daemon so `make up` finds them. node-backend is built
+    # too (:latest tag expected by some BATS checks). Mirrors the GitHub integration job.
+    - docker buildx inspect ci >/dev/null 2>&1 || docker buildx create --name ci --driver docker-container
+    - docker buildx bake --builder ci -f docker-bake.hcl --load dev node-backend
     - make up
     - make composer-install
     - make pnpm-install
@@ -448,15 +442,13 @@ build:production:
     # Create empty lockfiles for production build (Dockerfile COPY needs them)
     - "[ -f composer.lock ] || echo '{}' > composer.lock"
     - "[ -f pnpm-lock.yaml ] || touch pnpm-lock.yaml"
-    # Build node-backend first, then tag for cross-image COPY compatibility
-    # Note: Uses COMPOSE_PROJECT_NAME=zappzarapp from .env
-    - echo "Building node-backend image first..."
-    - docker compose -f compose.yaml -f compose.production.yaml --profile node-backend build node-backend
-    - echo "Tagging node-backend image as :latest for nginx COPY..."
-    - docker tag zappzarapp-node-backend:api zappzarapp-node-backend:latest
-    - echo "✓ node-backend image tagged successfully"
-    # Disable BuildKit for php/nginx build so they can see the local tagged image
-    - DOCKER_BUILDKIT=0 ENV=production docker compose -f compose.yaml -f compose.production.yaml --profile php --profile postgres build php nginx postgres
+    # BuildKit-native production build via docker buildx bake (docker-bake.hcl).
+    # php/nginx production COPY the Vite assets from node-backend through the tagless
+    # `node-backend-assets` context (bake links target:node-backend) — no
+    # DOCKER_BUILDKIT=0, no manual tag dance. --load exports the images for
+    # `make test-production`. Mirrors the GitHub build-production job.
+    - docker buildx inspect ci >/dev/null 2>&1 || docker buildx create --name ci --driver docker-container
+    - docker buildx bake --builder ci -f docker-bake.hcl --load production
     # Stop any existing containers before production test (prevent port/name conflicts)
     - docker compose down -v || true
     # Test production build using ENV-aware target

@@ -8,6 +8,13 @@ DC := docker compose --progress=plain
 # This ensures make pnpm/composer/etc. work regardless of .env settings
 DC_RUN := COMPOSE_PROFILES=php,node,node-backend,dev-tools $(DC)
 
+# BuildKit-native multi-image builds via docker buildx bake (docker-bake.hcl).
+# Retires DOCKER_BUILDKIT=0: cross-image `COPY --from` resolves through named
+# contexts (target:<name>) on a docker-container builder, so no local image
+# store is needed. The builder is auto-created on first use by `.buildx-ensure`.
+BUILDX_BUILDER ?= zappbake
+BAKE := docker buildx bake -f docker-bake.hcl --builder $(BUILDX_BUILDER)
+
 # Browser opener: xdg-open (Linux), open (macOS), start (Windows/Git Bash)
 OPEN_CMD := $(shell command -v xdg-open || command -v open || echo start)
 
@@ -2472,8 +2479,10 @@ fresh: ## Complete clean slate rebuild, removing all data volumes (DANGEROUS!)
 	@if [ -f .env ]; then \
 		. ./.env && if [ "$$ENV" = "production" ]; then \
 			$(DC) -f compose.yaml -f compose.production.yaml --profile php --profile node --profile redis --profile postgres --profile mariadb --profile mercure --profile meilisearch --profile elasticsearch --profile mailpit --profile seaweedfs --profile rabbitmq --profile adminer --profile pgadmin down -v --rmi all && \
-			echo -e "\033[0;34mBuilding Node image first (required by PHP and NGINX)...\033[0m" && \
-			$(DC) -f compose.yaml -f compose.production.yaml --profile php --profile node --profile redis --profile postgres --profile mariadb --profile mercure --profile meilisearch --profile elasticsearch --profile mailpit --profile seaweedfs --profile rabbitmq --profile adminer --profile pgadmin build --no-cache node && \
+			echo -e "\033[0;34mBuilding Node images first (node-backend supplies Vite assets to PHP + NGINX)...\033[0m" && \
+			NODE_BACKEND_TARGET="$${NODE_BACKEND_TARGET:-api}"; \
+			$(DC) -f compose.yaml -f compose.production.yaml --profile php --profile node --profile redis --profile postgres --profile mariadb --profile mercure --profile meilisearch --profile elasticsearch --profile mailpit --profile seaweedfs --profile rabbitmq --profile adminer --profile pgadmin build --no-cache node node-backend && \
+			docker tag $${COMPOSE_PROJECT_NAME:-zappzarapp}-node-backend:$$NODE_BACKEND_TARGET zappzarapp-node-backend:latest && \
 			echo -e "\033[0;34mBuilding remaining images...\033[0m" && \
 			$(DC) -f compose.yaml -f compose.production.yaml --profile php --profile node --profile redis --profile postgres --profile mariadb --profile mercure --profile meilisearch --profile elasticsearch --profile mailpit --profile seaweedfs --profile rabbitmq --profile adminer --profile pgadmin build --no-cache; \
 		else \
@@ -3135,21 +3144,19 @@ goss-build: ## Build GOSS testing tool image (required for build-time tests)
 	@echo -e "\033[0;34mBuilding GOSS image...\033[0m"
 	@docker build -t zappzarapp-goss:latest -f docker/goss/Dockerfile . >/dev/null
 
-goss-test-build: goss-build ## Run GOSS build-time tests for all images
-	@echo -e "\033[0;33mRunning GOSS build-time tests...\033[0m"
-	@echo -e "\033[0;34mBuilding PHP with test stage...\033[0m"
-	@docker build --target test -f docker/php/Dockerfile . >/dev/null && echo -e "\033[0;32m✓ PHP tests passed\033[0m" || echo -e "\033[0;31m✗ PHP tests failed\033[0m"
-	@echo -e "\033[0;34mBuilding node-backend api stage (required for nginx)...\033[0m"
-	@docker build --target api -f docker/node/Dockerfile -t zappzarapp-node-backend:latest . >/dev/null
-	@echo -e "\033[0;34mBuilding node-backend with test stage...\033[0m"
-	@docker build --target test-api -f docker/node/Dockerfile . >/dev/null && echo -e "\033[0;32m✓ node-backend tests passed\033[0m" || echo -e "\033[0;31m✗ node-backend tests failed\033[0m"
-	@echo -e "\033[0;34mBuilding nginx with test stage...\033[0m"
-	@docker build --target test -f docker/nginx/Dockerfile . >/dev/null && echo -e "\033[0;32m✓ nginx tests passed\033[0m" || echo -e "\033[0;31m✗ nginx tests failed\033[0m"
-	@echo -e "\033[0;34mBuilding postgres with test stage...\033[0m"
-	@docker build --target test -f docker/postgres/Dockerfile . >/dev/null && echo -e "\033[0;32m✓ postgres tests passed\033[0m" || echo -e "\033[0;31m✗ postgres tests failed\033[0m"
-	@echo -e "\033[0;34mBuilding redis with test stage...\033[0m"
-	@docker build --target test -f docker/redis/Dockerfile . >/dev/null && echo -e "\033[0;32m✓ redis tests passed\033[0m" || echo -e "\033[0;31m✗ redis tests failed\033[0m"
-	@echo -e "\033[0;32m✓ All build-time tests completed!\033[0m"
+.PHONY: .buildx-ensure
+.buildx-ensure:
+	@docker buildx inspect $(BUILDX_BUILDER) >/dev/null 2>&1 || \
+		docker buildx create --name $(BUILDX_BUILDER) --driver docker-container >/dev/null
+
+goss-test-build: .buildx-ensure ## Run GOSS build-time tests for all images (BuildKit-native bake)
+	@echo -e "\033[0;33mRunning GOSS build-time tests (docker buildx bake)...\033[0m"
+	@# The `test` group builds goss + node-backend as linked contexts and runs
+	@# `RUN goss validate` inside every test stage — a green build IS the passing
+	@# suite. Any failing stage fails the whole bake (real gating).
+	@$(BAKE) test && \
+		echo -e "\033[0;32m✓ All build-time tests passed!\033[0m" || \
+		{ echo -e "\033[0;31m✗ Build-time tests failed\033[0m"; exit 1; }
 
 goss-test-all: goss-test-build goss-test ## Run both build-time and runtime tests
 	@echo -e "\033[0;32m✓ All GOSS tests (build + runtime) completed!\033[0m"

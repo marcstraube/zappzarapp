@@ -53,9 +53,7 @@ RUN apk add --no-cache su-exec && \
 # Explicit absolute-mode chmod after COPY: the stages run as the unprivileged
 # `node` user, so a bare `chmod +x` on a umask-077 source yields 711
 # (execute-only, no read) and node cannot read the script. `chmod 0755` is
-# umask-safe. (COPY --chmod would also work but is BuildKit-only, and the
-# production/test stages must build under the classic builder for their local
-# `COPY --from=zappzarapp-*` image references — so we avoid BuildKit-only syntax.)
+# umask-safe.
 COPY docker/node/entrypoint.development.sh /usr/local/bin/entrypoint.development.sh
 RUN chmod 0755 /usr/local/bin/entrypoint.development.sh
 
@@ -227,7 +225,7 @@ FROM api AS test-api
 USER root
 
 # Copy GOSS binary from centralized image
-COPY --from=zappzarapp-goss:latest /usr/bin/goss /usr/local/bin/goss
+COPY --from=goss /usr/bin/goss /usr/local/bin/goss
 RUN chmod +x /usr/local/bin/goss
 
 # Copy test specification
@@ -245,7 +243,7 @@ FROM framework AS test-framework
 USER root
 
 # Copy GOSS binary from centralized image
-COPY --from=zappzarapp-goss:latest /usr/bin/goss /usr/local/bin/goss
+COPY --from=goss /usr/bin/goss /usr/local/bin/goss
 RUN chmod +x /usr/local/bin/goss
 
 # Copy test specification

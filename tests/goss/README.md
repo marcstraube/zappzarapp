@@ -59,19 +59,21 @@ tests/goss/
 
 ### Phase 1: Build-Time Tests (GOSS in Dockerfile)
 
-Tests run during `docker build --target test`:
+Tests run inside the build-time `test` stages, built via `make goss-test-build`
+(`docker buildx bake test`):
 
 - **File existence**: Config files, application code, entrypoints
 - **Commands**: Version checks, config validation, extension loading
 - **Permissions**: Correct file modes
 
 ```dockerfile
-# GOSS version is centralized in docker/goss/Dockerfile
-# Build it first: make goss-build
+# GOSS version is centralized in docker/goss/Dockerfile. bake links it as a
+# named context, so the COPY uses the tagless context key `goss`, not an image
+# tag (a bake contexts key with a colon is silently ignored — see docker-bake.hcl).
 
 # Example from docker/php/Dockerfile
 FROM production-base AS test
-COPY --from=zappzarapp-goss:latest /usr/bin/goss /usr/local/bin/goss
+COPY --from=goss /usr/bin/goss /usr/local/bin/goss
 RUN chmod +x /usr/local/bin/goss
 COPY tests/goss/services/php.yaml /goss.yaml
 RUN goss -g /goss.yaml validate --format documentation

@@ -87,6 +87,22 @@ Fixes) **Version:** 3.79
 
 #### Changed
 
+- **BuildKit-native cross-image builds (`docker buildx bake`)**: retired every
+  `DOCKER_BUILDKIT=0`. A new root `docker-bake.hcl` builds goss / node-backend /
+  dev / production / test targets in one graph; the cross-image `COPY --from`
+  references are now the tagless named contexts `goss` and `node-backend-assets`
+  (a bake contexts key containing a colon is silently ignored, so a `:latest`
+  tag can't be used). One tagless ref resolves two ways: CI and
+  `make goss-test-build` link targets via bake `contexts=target:…`, while the
+  `make`/compose production path resolves it via compose
+  `additional_contexts= docker-image://…node-backend:latest` in
+  `compose.production.yaml`. Production CI builds now get the gha layer cache;
+  `make goss-test-build` runs the whole build-time GOSS suite through bake. The
+  `node-frontend.yaml` GOSS spec was made framework-agnostic (dropped the
+  hardcoded Nuxt `/app/.output` assertion), so the `node-test-framework` stage
+  is validated in CI for the first time. Touches `docker-bake.hcl`, `ci.yml`,
+  `security-scan.yml`, `zap-scan.yml`, `.gitlab-ci.yml`, `Makefile`,
+  `compose.production.yaml`, and the php/nginx/node/postgres/redis Dockerfiles
 - **Coder Agent Git Constraints**: all four `.claude/agents/coder-*.md`
   definitions now carry a mandatory "no state-destroying git commands" section
   (no stash/reset/restore/clean, no commits — Main Agent owns git), so every
