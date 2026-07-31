@@ -39,15 +39,13 @@ detection (GitHub Issues, GitLab Issues, or local `.ai/TASKS.md`).
 ```text
 .claude/
 ├── CLAUDE.md           # Instructions (swapped by make setup)
-├── agents/             # Agent workflow definitions
+├── agents/             # Coder + docs-auditor agent definitions
 ├── skills/             # Skills (slash commands, source of truth)
 ├── settings.json       # Shared permissions & hooks
 ├── settings.local.json # Personal overrides (gitignored)
-├── context/            # Project context (gitignored)
-├── state/              # Persistent state (gitignored)
-├── cache/              # Temporary data (gitignored)
-├── temp/               # Agent work files (gitignored)
-└── reports/            # Generated reports (gitignored)
+├── context/            # Project context
+├── cache/              # Hook cache (gitignored)
+└── temp/               # Agent work files (gitignored)
 ```
 
 #### Settings Structure
@@ -291,56 +289,36 @@ The `/optimize` command analyzes and improves Claude's configuration.
 
 ## Agent Workflow
 
-For complex tasks, Claude Code uses specialized agents based on task scope:
+Claude Code picks a workflow by task scope — from a direct edit for a one-liner
+up to the full agent workflow for large changes. The project ships **coder**
+agents (they encode its standards); planning, review and security use built-in
+Claude Code capabilities.
 
-| Scope      | Trigger                    | Workflow                                     |
-| ---------- | -------------------------- | -------------------------------------------- |
-| Trivial    | 1 file, simple change      | Direct (typo, config, one-liner)             |
-| Small      | 1-3 files, code changes    | Coder Agent → Lint → Test                    |
-| Medium     | 3-10 files                 | Plan Mode → Coder → Lint → Test              |
-| Large      | >10 files                  | 4-Agent-Model (Architect→Coder→Reviewer→Doc) |
-| Quick Wins | Multiple independent tasks | Parallel Coder agents → Single commit        |
-| Ad-hoc Fix | ≥2 languages, independent  | Parallel Fixer → Language-specific agents    |
+| Scope      | Trigger                       | Workflow                              |
+| ---------- | ----------------------------- | ------------------------------------- |
+| Trivial    | 1 file, typo/config/one-liner | Direct edit                           |
+| Small      | 1–3 files, code changes       | Coder agent → lint → test             |
+| Medium     | 3–10 files                    | `/plan` → coder → lint → test         |
+| Large      | >10 files or multi-language   | Full workflow (below)                 |
+| Quick Wins | ≥2 independent small tasks    | Parallel coder agents → single commit |
 
-### 4-Agent-Model
-
-```text
-Main Agent
-    ↓
-Agent A (Architect) — Analysis & planning
-    ↓
-Agent B1-B4 (Coder) — PHP/Node/Infra/SQL implementation (parallel if independent)
-    ↓
-Agent C1-C6 (Reviewer) — Quality checks per language (parallel)
-    ↓
-Agent D (Documenter) — Documentation updates
-```
-
-### Quick Wins Batch
-
-For multiple small, independent tasks:
+### Full Workflow (Large tasks)
 
 ```text
-Main Agent validates independence
+Plan (/plan)
     ↓
-Spawn parallel Coder agents (one per task)
+coder-php / coder-node / coder-sql / coder-infra   (parallel when independent)
     ↓
-Collect results → Run lint → Single commit
+/review  +  /security-review (when relevant)  +  docs-auditor
+    ↓
+Main agent commits on a feature branch and reports back
 ```
 
-### Parallel Fixer
+Custom agents: `coder-php`, `coder-node`, `coder-sql`, `coder-infra`,
+`docs-auditor`. Planning, review and security are the built-in `/plan`,
+`/review` and `/security-review`.
 
-For ad-hoc fix requests involving multiple languages:
-
-```text
-Main Agent detects: PHP + Node files
-    ↓
-Spawn parallel Fixer agents (one per language)
-    ↓
-Collect results → Run lint
-```
-
-See `.claude/agents/workflow.md` for detailed documentation.
+See `.claude/agents/workflow.md` for the full workflow.
 
 ## make setup Behavior
 

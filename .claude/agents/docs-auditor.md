@@ -136,7 +136,7 @@ Load only:
 
 Do NOT:
 
-- Review code (code-reviewer agent)
+- Review code (`/review`)
 - Write tests (coder agent)
-- Maintain CHANGELOG (main agent / /commit skill)
+- Maintain the CHANGELOG (it is generated from Conventional Commits)
 - Update tasks (main agent)

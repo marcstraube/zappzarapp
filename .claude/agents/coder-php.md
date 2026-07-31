@@ -116,7 +116,7 @@ Max 2 attempts on errors, then escalate to Main Agent.
 
 ## Important
 
-- Do NOT update session files or CHANGELOG (Main Agent handles this)
+- Do NOT hand-edit the CHANGELOG (it is generated from Conventional Commits)
 - Do NOT close tasks (Main Agent handles this)
 - Focus only on PHP implementation
 
