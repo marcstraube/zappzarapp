@@ -333,12 +333,12 @@ jobs:
   # DOCS LINT (Markdown)
   # ============================================================================
   # Lints Markdown on the runner: markdownlint plus Prettier's Markdown format
-  # check. Runs natively via pinned npx invocations on the runner's Node, with
-  # no dependency on build-images. Tool versions mirror package.json so results
-  # match a local run. prettier-plugin-toml is declared in .prettierrc.json, so
-  # both packages install into one prefix for the plugin to resolve.
-  # .markdownlint-cli2.jsonc / .prettierrc.json / .prettierignore are
-  # auto-discovered from the repo root.
+  # check. Runs on the runner's Node with no dependency on build-images. Tool
+  # versions mirror package.json so results match a local run. The pinned tools
+  # install into the parent directory, so Prettier resolves prettier-plugin-toml
+  # (declared in .prettierrc.json) via ESM lookup from the repo root while the
+  # repo tree stays free of node_modules. .markdownlint-cli2.jsonc /
+  # .prettierrc.json / .prettierignore are auto-discovered from the repo root.
   # ============================================================================
   docs-lint:
     name: Docs Lint (Markdown)
@@ -351,15 +351,18 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v7
 
+      - name: Install lint tools
+        run: |
+          cd ..
+          npm init -y >/dev/null 2>&1
+          npm install --no-audit --no-fund \
+            markdownlint-cli2@0.23.1 prettier@3.9.6 prettier-plugin-toml@2.0.6
+
       - name: Markdownlint
-        run: npx --yes markdownlint-cli2@0.23.1 '**/*.md' '#node_modules'
+        run: ../node_modules/.bin/markdownlint-cli2 '**/*.md' '#node_modules'
 
       - name: Prettier Check (Markdown)
-        run: >-
-          npx --yes
-          --package prettier@3.9.6
-          --package prettier-plugin-toml@2.0.6
-          prettier --check '**/*.md' '!node_modules/**'
+        run: ../node_modules/.bin/prettier --check '**/*.md' '!node_modules/**'
 
   # ============================================================================
   # NODE.JS TESTS

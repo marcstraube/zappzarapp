@@ -271,11 +271,12 @@ node:quality:
 # DOCS LINT (Markdown)
 # ============================================================================
 # Lints Markdown on the runner: markdownlint plus Prettier's Markdown format
-# check. Runs on a plain Node image via pinned npx invocations. Tool versions
-# mirror package.json; prettier-plugin-toml is declared in .prettierrc.json, so
-# both packages install into one prefix for the plugin to resolve.
-# .markdownlint-cli2.jsonc / .prettierrc.json / .prettierignore are
-# auto-discovered from the repo root.
+# check. Runs on a plain Node image. Tool versions mirror package.json so
+# results match a local run. The pinned tools install into the parent
+# directory, so Prettier resolves prettier-plugin-toml (declared in
+# .prettierrc.json) via ESM lookup from the repo root while the repo tree stays
+# free of node_modules. .markdownlint-cli2.jsonc / .prettierrc.json /
+# .prettierignore are auto-discovered from the repo root.
 # ============================================================================
 docs:lint:
   stage: quality
@@ -284,12 +285,9 @@ docs:lint:
   rules:
     - changes: *docs-paths
   script:
-    - npx --yes markdownlint-cli2@0.23.1 '**/*.md' '#node_modules'
-    - >-
-      npx --yes
-      --package prettier@3.9.6
-      --package prettier-plugin-toml@2.0.6
-      prettier --check '**/*.md' '!node_modules/**'
+    - (cd .. && npm init -y >/dev/null 2>&1 && npm install --no-audit --no-fund markdownlint-cli2@0.23.1 prettier@3.9.6 prettier-plugin-toml@2.0.6)
+    - ../node_modules/.bin/markdownlint-cli2 '**/*.md' '#node_modules'
+    - ../node_modules/.bin/prettier --check '**/*.md' '!node_modules/**'
 
 # ============================================================================
 # NODE.JS TESTS
