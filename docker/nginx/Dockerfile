@@ -39,13 +39,12 @@ COPY --chown=nginx:nginx docker/nginx/snippets/ /etc/nginx/snippets/
 COPY --chown=nginx:nginx docker/nginx/errors/ /usr/share/nginx/html/errors/
 
 # Copy Entrypoint Script for SSL template processing
-# Explicit absolute-mode chmod after COPY (not `chmod +x`): the dev stage remaps
-# the nginx user to the host UID, so the runtime user differs from the baked file
-# owner and reads it as "other". A bare `chmod +x` on a umask-077 source yields
-# 711 (execute-only, no read) → the shell cannot open the script. `chmod 0755`
+# Explicit absolute-mode --chmod (not `chmod +x`): the dev stage remaps the nginx
+# user to the host UID, so the runtime user differs from the baked file owner and
+# reads it as "other". A bare `chmod +x` on a umask-077 source yields 711
+# (execute-only, no read) → the shell cannot open the script. `--chmod=0755`
 # guarantees world read+execute regardless of host umask.
-COPY --chown=nginx:nginx docker/nginx/entrypoint.sh /docker-entrypoint.sh
-RUN chmod 0755 /docker-entrypoint.sh
+COPY --chown=nginx:nginx --chmod=0755 docker/nginx/entrypoint.sh /docker-entrypoint.sh
 
 # Set Working Directory
 WORKDIR /var/www/html
@@ -114,8 +113,7 @@ FROM production AS test
 
 # Copy GOSS binary from centralized image (needs root temporarily)
 USER root
-COPY --from=goss /usr/bin/goss /usr/local/bin/goss
-RUN chmod +x /usr/local/bin/goss
+COPY --from=goss --chmod=0755 /usr/bin/goss /usr/local/bin/goss
 
 # Copy test specification
 COPY --chown=nginx:nginx tests/goss/services/nginx.yaml /goss.yaml

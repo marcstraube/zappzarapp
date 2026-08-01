@@ -20,12 +20,10 @@ FROM redis:${REDIS_VERSION}-alpine${ALPINE_VERSION} AS base
 RUN apk upgrade --no-cache
 
 # Copy entrypoint script for SSL certificate validation
-COPY docker/redis/entrypoint.sh /usr/local/bin/entrypoint.sh
-RUN chmod +x /usr/local/bin/entrypoint.sh
+COPY --chmod=0755 docker/redis/entrypoint.sh /usr/local/bin/entrypoint.sh
 
 # Copy health check script that handles both dev and prod cert paths
-COPY docker/redis/healthcheck.sh /usr/local/bin/healthcheck.sh
-RUN chmod +x /usr/local/bin/healthcheck.sh
+COPY --chmod=0755 docker/redis/healthcheck.sh /usr/local/bin/healthcheck.sh
 
 # Use custom entrypoint that validates SSL before starting redis-server
 ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
@@ -41,8 +39,7 @@ HEALTHCHECK --interval=10s --timeout=3s --start-period=5s --retries=3 \
 FROM base AS test
 
 # Copy GOSS binary from centralized image
-COPY --from=goss /usr/bin/goss /usr/local/bin/goss
-RUN chmod +x /usr/local/bin/goss
+COPY --from=goss --chmod=0755 /usr/bin/goss /usr/local/bin/goss
 
 # Copy test specification
 COPY tests/goss/services/redis.yaml /goss.yaml

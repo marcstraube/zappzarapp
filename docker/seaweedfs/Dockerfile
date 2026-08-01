@@ -27,8 +27,7 @@ RUN mkdir -p /data /etc/seaweedfs/certs /etc/seaweedfs/config && \
     chown -R 1000:1000 /data /etc/seaweedfs
 
 # Copy entrypoint script for loading credentials from secret files
-COPY docker/seaweedfs/entrypoint.sh /entrypoint.sh
-RUN chmod +x /entrypoint.sh
+COPY --chmod=0755 docker/seaweedfs/entrypoint.sh /entrypoint.sh
 
 # Set working directory
 WORKDIR /data

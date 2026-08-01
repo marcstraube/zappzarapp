@@ -7,8 +7,7 @@ ARG MEILISEARCH_VERSION=1.51
 FROM getmeili/meilisearch:v${MEILISEARCH_VERSION}
 
 # Copy entrypoint script for secrets handling
-COPY docker/meilisearch/entrypoint.sh /entrypoint.sh
-RUN chmod +x /entrypoint.sh
+COPY --chmod=0755 docker/meilisearch/entrypoint.sh /entrypoint.sh
 
 ENTRYPOINT ["/entrypoint.sh"]
 

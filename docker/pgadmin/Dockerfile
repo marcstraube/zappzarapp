@@ -8,21 +8,13 @@
 FROM dpage/pgadmin4:9
 
 # Copy server pre-configuration and the entrypoint wrapper (sets the password
-# from Docker secrets)
-COPY docker/pgadmin/servers.json /pgadmin4/servers.json
-COPY docker/pgadmin/entrypoint.sh /entrypoint-wrapper.sh
-
-# Normalise ownership/permissions as root. The dpage/pgadmin4 base image defaults
-# to USER pgadmin (uid 5050), which cannot chmod/chown the root-owned COPYed
-# files — so the chmod must run here, under USER root, NOT as a bare post-COPY
-# RUN. `chmod 0755` (absolute mode) is umask-safe: a bare `chmod +x` on a
-# umask-077 source would yield 711 (execute-only, no read) and pgadmin could not
-# read the script.
-USER root
-RUN chmod 0755 /entrypoint-wrapper.sh \
-    && chown 5050:0 /pgadmin4/servers.json
-
-USER pgadmin
+# from Docker secrets). Ownership/permissions are set at copy time via
+# --chown/--chmod: the dpage/pgadmin4 base runs as USER pgadmin (uid 5050), which
+# could not chmod/chown root-owned files in a post-COPY RUN. `--chmod=0755`
+# (absolute mode) is umask-safe — a bare `chmod +x` on a umask-077 source would
+# yield 711 (execute-only, no read) and pgadmin could not read the script.
+COPY --chown=5050:0 docker/pgadmin/servers.json /pgadmin4/servers.json
+COPY --chmod=0755 docker/pgadmin/entrypoint.sh /entrypoint-wrapper.sh
 
 # Labels for container identification
 LABEL org.opencontainers.image.title="Zappzarapp pgAdmin"

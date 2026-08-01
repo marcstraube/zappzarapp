@@ -60,13 +60,11 @@ COPY --from=builder /usr/local/share/postgresql/extension/pg_cron* /usr/local/sh
 
 # Copy custom entrypoint for SSL certificate setup
 # Path matches compose.override.yaml volume mount for development hot-reload
-COPY docker/postgres/entrypoint.sh /entrypoint-wrapper.sh
+COPY --chmod=0755 docker/postgres/entrypoint.sh /entrypoint-wrapper.sh
 
 # Copy database initialization script
 # Runs on first init AND on existing volumes (via entrypoint)
-COPY docker/postgres/init-db.sh /docker-entrypoint-initdb.d/10-init-db.sh
-
-RUN chmod +x /entrypoint-wrapper.sh /docker-entrypoint-initdb.d/10-init-db.sh
+COPY --chmod=0755 docker/postgres/init-db.sh /docker-entrypoint-initdb.d/10-init-db.sh
 
 # Baked liveness check (Dockle CIS-DI-0006). Compose overrides this with its own
 # test; it applies when the image runs standalone. pg_isready reports readiness
@@ -83,8 +81,7 @@ CMD ["postgres"]
 FROM final AS test
 
 # Copy GOSS binary from centralized image
-COPY --from=goss /usr/bin/goss /usr/local/bin/goss
-RUN chmod +x /usr/local/bin/goss
+COPY --from=goss --chmod=0755 /usr/bin/goss /usr/local/bin/goss
 
 # Copy test specification
 COPY tests/goss/services/postgres.yaml /goss.yaml

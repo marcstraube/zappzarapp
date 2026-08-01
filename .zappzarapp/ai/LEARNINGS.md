@@ -145,6 +145,23 @@ periodic triage (`/optimize --learnings`) and are removed from this file.
   default to root, so only pgadmin was affected. When converting `COPY --chmod`
   → `RUN chmod`, check the base image's default USER. pgadmin builds ONLY in the
   BATS integration preset (not the scan/prod-build jobs), so it surfaced last.
+- **RESOLVED — `--chmod` reintroduced (branch `chore/dockerfile-copy-chmod`)**:
+  the strategic fix landed — the `docker buildx bake` refactor retired every
+  `DOCKER_BUILDKIT=0` path, so BuildKit-only syntax is safe everywhere again.
+  All 24 `COPY x` + `RUN chmod` pairs across the 11 Dockerfiles were folded back
+  to `COPY --chmod=…` (incl. 6 goss `COPY --from=goss --chmod=0755`, which also
+  stops the `RUN chmod +x` copy-up that duplicated the ~10 MB goss binary per
+  test stage). pgadmin's `USER root … RUN chmod … USER pgadmin` dance is GONE —
+  the whole point of the sub-lesson above: `--chmod`/`--chown` apply atomically
+  at copy time regardless of the active USER. Deliberately NOT converted (kept
+  as `RUN`): recursive app-tree hardening (`chmod -R 555/770 /var/www/html…`,
+  `find … chmod 660`) and the setuid-strip `find … chmod -s` — none are 1:1 COPY
+  pairs. php conf.d stayed a per-line `--chmod=0644` list (NOT a `*.ini` glob):
+  `development.ini`/`xdebug.ini` are dev-only and must not be baked in. Verified
+  end-to-end: `stat` on the built postgres image reports `755` regardless of
+  host umask. The gotcha above still stands as a rule — never add BuildKit-only
+  syntax to a classic-builder path; it just no longer applies here because none
+  remain.
 
 ---
 

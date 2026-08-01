@@ -42,17 +42,15 @@ RUN mkdir -p /etc/mysql/certs
 
 # Copy custom entrypoint for SSL certificate setup
 # Path matches compose.override.yaml volume mount for development hot-reload
-COPY docker/mariadb/entrypoint.sh /entrypoint-wrapper.sh
+COPY --chmod=0755 docker/mariadb/entrypoint.sh /entrypoint-wrapper.sh
 
 # Copy database initialization script
 # Runs on first init AND on existing volumes (via entrypoint)
-COPY docker/mariadb/init-db.sh /docker-entrypoint-initdb.d/10-init-db.sh
+COPY --chmod=0755 docker/mariadb/init-db.sh /docker-entrypoint-initdb.d/10-init-db.sh
 
 # Copy custom healthcheck (uses gosu to run as mysql user)
 # This avoids needing DAC_OVERRIDE capability to read .my-healthcheck.cnf
-COPY docker/mariadb/healthcheck.sh /custom-healthcheck.sh
-
-RUN chmod +x /entrypoint-wrapper.sh /custom-healthcheck.sh /docker-entrypoint-initdb.d/10-init-db.sh
+COPY --chmod=0755 docker/mariadb/healthcheck.sh /custom-healthcheck.sh
 
 # Override default healthcheck to use gosu wrapper
 HEALTHCHECK --interval=10s --timeout=3s --start-period=10s --retries=3 \

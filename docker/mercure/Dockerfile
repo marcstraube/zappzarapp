@@ -16,8 +16,7 @@ FROM dunglas/mercure:v${MERCURE_VERSION}
 RUN apk upgrade --no-cache
 
 # Copy entrypoint wrapper to load JWT secret from Docker Secret file
-COPY docker/mercure/entrypoint.sh /entrypoint.sh
-RUN chmod +x /entrypoint.sh
+COPY --chmod=0755 docker/mercure/entrypoint.sh /entrypoint.sh
 
 # Health check for Mercure Hub (HTTPS for zero-trust internal TLS)
 # Mercure exposes a health endpoint at /healthz

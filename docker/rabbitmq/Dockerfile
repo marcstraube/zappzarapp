@@ -24,12 +24,10 @@ FROM rabbitmq:${RABBITMQ_VERSION}-management-alpine
 
 # Copy entrypoint wrapper to load credentials from Docker Secrets
 # (RABBITMQ_DEFAULT_USER_FILE and RABBITMQ_DEFAULT_PASS_FILE are deprecated in 4.0)
-COPY docker/rabbitmq/entrypoint.sh /entrypoint.sh
+COPY --chmod=0755 docker/rabbitmq/entrypoint.sh /entrypoint.sh
 
 # Copy healthcheck script (uses su-exec to run as rabbitmq user)
-COPY docker/rabbitmq/healthcheck.sh /healthcheck.sh
-
-RUN chmod +x /entrypoint.sh /healthcheck.sh
+COPY --chmod=0755 docker/rabbitmq/healthcheck.sh /healthcheck.sh
 
 # Health check for RabbitMQ
 # Uses su-exec to run rabbitmq-diagnostics as rabbitmq user
