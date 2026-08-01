@@ -6,13 +6,14 @@ namespace Tests\DevDashboard\Services;
 
 use DevDashboard\Services\DatabaseService;
 use PDO;
+use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
 /**
- * @covers \DevDashboard\Services\DatabaseService
  * @SuppressWarnings("PHPMD.TooManyPublicMethods")
  */
+#[CoversClass(DatabaseService::class)]
 class DatabaseServiceTest extends TestCase
 {
     private DatabaseService $service;
