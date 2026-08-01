@@ -38,7 +38,7 @@ jobs:
     timeout-minutes: 30
     steps:
       - name: Run Renovate
-        uses: renovatebot/github-action@v46
+        uses: renovatebot/github-action@v46.2.0 # only full tags published; Renovate bumps this
         with:
           token: ${{ secrets.RENOVATE_TOKEN }}
         env:
