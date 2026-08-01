@@ -4,10 +4,9 @@ This project ships a **Renovate** configuration (`renovate.json`) that manages
 dependency updates across PHP (Composer), Node.js (pnpm), Docker, and GitHub
 Actions.
 
-> **Status:** the config is present but the Renovate bot is **not yet active**
-> on this repository (no update PRs are created automatically). Activation is
-> planned for the v1.0 release. Until then, use `make renovate` to preview what
-> Renovate _would_ do (see [Local dry-run](#local-dry-run)).
+Renovate is activated via the self-hosted [workflow](#activation) shipped in
+`.github/workflows/renovate.yml`. Use [`make renovate`](#local-dry-run) to
+preview what it would do without opening PRs.
 
 ## Overview
 
@@ -30,6 +29,50 @@ The shipped `renovate.json` provides:
 
 For detailed options, see the
 [official Renovate documentation](https://docs.renovatebot.com/).
+
+---
+
+## Activation
+
+Two ways to run Renovate. **Pick one — running both opens duplicate PRs.**
+
+### Self-hosted workflow (shipped, cross-platform)
+
+`.github/workflows/renovate.yml` runs Renovate in CI (the same
+`renovate/renovate` used locally and drivable on GitLab). No third-party app
+gets repo access; you keep full control of the version and schedule. Setup:
+
+1. Create a **fine-grained PAT** scoped to this repository with permissions:
+   Contents **RW**, Pull requests **RW**, Issues **RW** (Dependency Dashboard),
+   Workflows **RW** (Renovate updates `.github/workflows/*`).
+2. Store it as a repository secret:
+
+   ```bash
+   gh secret set RENOVATE_TOKEN --body '<your-fine-grained-pat>'
+   ```
+
+3. Trigger the first run manually (Actions → Renovate → _Run workflow_, or
+   `gh workflow run renovate.yml`). Manual runs default to **automerge off** so
+   you can review the initial PRs; the weekly schedule then lets `renovate.json`
+   govern (automerge on). Renovate posts a **Dependency Dashboard** issue
+   summarising everything it sees.
+
+The workflow costs CI minutes and needs the PAT — that is the trade for not
+granting a hosted SaaS write access.
+
+### Mend Renovate GitHub App (zero-setup, GitHub only)
+
+For a GitHub-only project the fastest path is the hosted
+[Mend Renovate App](https://github.com/apps/renovate): install it on the repo
+and it reads `renovate.json` — no PAT, no CI minutes, native app auth. It does
+**not** cover GitLab. If you use the App, delete `renovate.yml` to avoid
+duplicate runs.
+
+### GitLab
+
+The App is GitHub-only; on GitLab run the same `renovate/renovate` image from a
+scheduled `.gitlab-ci.yml` job with a project access token — the mirror of the
+workflow above.
 
 ---
 
