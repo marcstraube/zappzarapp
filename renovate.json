@@ -2,7 +2,7 @@
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "description": "Renovate All-Purpose Config for PHP/Node/Docker projects. For detailed help and options, see: https://docs.renovatebot.com/",
   "extends": [
-    "config:base"
+    "config:recommended"
   ],
   "schedule": [
     "at any time"
@@ -12,6 +12,8 @@
     "dependencies"
   ],
   "automerge": true,
+  "platformAutomerge": true,
+  "minimumReleaseAge": "3 days",
   "packageRules": [
     {
       "description": "Docker Base Image Updates (Prefer stable versions)",
@@ -19,8 +21,6 @@
         "dockerfile"
       ],
       "groupName": "Docker Base Image Updates",
-      "groupLimit": 1,
-      "separateMajor": true,
       "automerge": true
     },
     {
@@ -61,8 +61,14 @@
       "schedule": [
         "at any time"
       ],
-      "groupLimit": 1,
       "automerge": true
+    },
+    {
+      "description": "Never automerge major updates - always require manual review (last rule wins).",
+      "matchUpdateTypes": [
+        "major"
+      ],
+      "automerge": false
     }
   ]
 }

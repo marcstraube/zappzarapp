@@ -2841,28 +2841,6 @@ rebuild: ## Complete rebuild
 	@$(MAKE) build
 	@$(MAKE) up SKIP_VALIDATION=1
 
-renovate: ## Run Renovate dependency scanner
-	@echo -e "\033[0;33mRunning Renovate dependency scanner...\033[0m"
-	@if [ ! -f .env ]; then echo -e "\033[0;31mError: .env not found. Run 'make init' first.\033[0m"; exit 1; fi
-	@. ./.env; \
-	RENOVATE_MANAGER=$${RENOVATE_PLATFORM:-filesystem}; \
-	RENOVATE_REPO=$${RENOVATE_REPO_SLUG}; \
-	RENOVATE_BASEDIR=/app; \
-	echo -e "\033[0;34mRenovate Mode: $${RENOVATE_MANAGER}\033[0m"; \
-	docker run \
-		--rm \
-		--volume "$$(pwd):$${RENOVATE_BASEDIR}" \
-		-e GITHUB_COM_TOKEN="$${GITHUB_COM_TOKEN}" \
-		-e GITLAB_COM_TOKEN="$${GITLAB_COM_TOKEN}" \
-		renovate/renovate \
-			--manager=$${RENOVATE_MANAGER} \
-			--baseDir="$${RENOVATE_BASEDIR}" \
-			--baseDirIs="$${RENOVATE_BASEDIR}" \
-			--hostRules=[] \
-			--dryRun=false \
-			$${RENOVATE_REPO}
-	@echo -e "\033[0;32mRenovate run completed.\033[0m"
-
 ##@ Quality Assurance
 
 analyse: analyse-php analyse-node  ## Run static analysis (PHP + Node)
@@ -3051,6 +3029,21 @@ outdated-node: ## Check for outdated pnpm packages (workspace-wide, informationa
 	# `pnpm outdated` exits non-zero when anything is outdated; this is an
 	# informational report (not a gate), so keep it from aborting the run.
 	@docker compose exec node pnpm -r outdated || true
+
+# Pinned Renovate image for the local dry-run (bump manually; Renovate itself is
+# not yet active on this repo — activation is planned for the v1.0 fresh repo).
+RENOVATE_VERSION ?= 44.5
+
+renovate: ## Dry-run Renovate locally (local platform, no PRs) — validates renovate.json + lists pending updates
+	@echo -e "\033[0;33mRunning Renovate dry-run (local platform, no PRs, LOG_LEVEL=$${LOG_LEVEL:-info})...\033[0m"
+	@docker run --rm \
+		-e RENOVATE_PLATFORM=local \
+		-e RENOVATE_DRY_RUN=full \
+		-e LOG_LEVEL="$${LOG_LEVEL:-info}" \
+		-v "$$(pwd):/usr/src/app" \
+		-w /usr/src/app \
+		renovate/renovate:$(RENOVATE_VERSION)
+	@echo -e "\033[0;32mRenovate dry-run completed (no changes made)!\033[0m"
 
 depcheck: ## Find unused Node.js dependencies
 	@echo -e "\033[0;33mChecking for unused dependencies...\033[0m"

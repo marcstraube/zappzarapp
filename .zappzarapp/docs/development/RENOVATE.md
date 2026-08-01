@@ -1,208 +1,155 @@
 # Dependency Management with Renovate
 
-This project uses **Renovate** to automatically manage dependency updates across
-PHP (Composer), Node.js (pnpm), and Docker ecosystems.
+This project ships a **Renovate** configuration (`renovate.json`) that manages
+dependency updates across PHP (Composer), Node.js (pnpm), Docker, and GitHub
+Actions.
+
+> **Status:** the config is present but the Renovate bot is **not yet active**
+> on this repository (no update PRs are created automatically). Activation is
+> planned for the v1.0 release. Until then, use `make renovate` to preview what
+> Renovate _would_ do (see [Local dry-run](#local-dry-run)).
 
 ## Overview
 
-Renovate is configured in `renovate.json` and provides:
+The shipped `renovate.json` provides:
 
-- **Grouping:** Multiple small updates are grouped into a single PR to reduce
-  noise
-- **Automerge:** Patch-level updates are automatically merged after CI passes
-- **Exclusions:** Critical components (major frameworks) are excluded for
-  individual review
+- **`config:recommended`** as the base preset (successor to the deprecated
+  `config:base`); enables the Dependency Dashboard and sensible defaults.
+- **Grouping:** updates are grouped per ecosystem (Docker / Composer / Node) to
+  reduce PR noise.
+- **Scoped automerge:** patch and minor updates automerge **after CI passes**
+  (`platformAutomerge`). **Major updates never automerge** — they always require
+  manual review (last package rule wins).
+- **`minimumReleaseAge: "3 days"`:** a freshly published version is not proposed
+  until it has aged 3 days — a supply-chain safeguard that matches the pnpm
+  `minimumReleaseAge` policy (1 day, strict) with an extra margin before
+  automerge.
+- **Exclusions:** major application frameworks (`laravel/framework`,
+  `symfony/framework-bundle`) are excluded from the grouped Composer PR for
+  individual review.
 
 For detailed options, see the
 [official Renovate documentation](https://docs.renovatebot.com/).
 
 ---
 
-## Running the Scanner
+## Local dry-run
 
-The `make renovate` command runs the Renovate scanner via Docker and
-automatically detects the mode based on environment variables in your `.env`
-file.
-
-### Platform Mode (CI/CD Automation)
-
-This mode connects to your Git host (GitHub, GitLab) and creates Pull Requests
-for updates. Intended for automated CI/CD pipelines.
-
-**Configuration in `.env`:**
-
-| Variable             | Example                 | Description                                  |
-| -------------------- | ----------------------- | -------------------------------------------- |
-| `RENOVATE_PLATFORM`  | `github`                | Git platform (`github`, `gitlab`, etc.)      |
-| `RENOVATE_REPO_SLUG` | `your-org/your-project` | Full repository name                         |
-| `GITHUB_COM_TOKEN`   | `ghp_...`               | Personal Access Token with repo write access |
-
-**Execution:**
+`make renovate` runs Renovate against the local checkout using the **`local`
+platform** in **full dry-run** mode:
 
 ```bash
-make renovate
+make renovate                 # LOG_LEVEL=info
+make renovate LOG_LEVEL=debug # verbose (per-dependency lookups)
 ```
 
-When these variables are set, Renovate authenticates and creates PRs
-automatically.
+What it does — and does not do:
 
----
+- ✅ Validates `renovate.json` (reports any configuration errors).
+- ✅ Extracts dependencies from all managers and logs the updates it _would_
+  propose.
+- ❌ Does **not** create branches or Pull Requests.
+- ❌ Does **not** modify `composer.json`, `package.json`, Dockerfiles, or any
+  other file.
 
-### Local Filesystem Mode (Manual Updates)
-
-This is the **default mode** when `RENOVATE_PLATFORM` and `RENOVATE_REPO_SLUG`
-are empty in `.env`.
-
-- Scanner runs against the local code
-- Modifies files directly (`composer.json`, `package.json`, etc.)
-- No Pull Requests are created
-
-**Workflow:**
-
-```bash
-# 1. Create a new branch
-git checkout -b renovate-updates
-
-# 2. Run Renovate locally
-make renovate
-
-# 3. Review changes
-git diff
-
-# 4. Commit and push manually
-git add -A && git commit -m "chore(deps): update dependencies"
-```
+Run it before enabling the bot (or after editing `renovate.json`) to confirm the
+config is valid and see the pending update set. The Renovate image is pinned via
+`RENOVATE_VERSION` in the `Makefile` (bump manually).
 
 ---
 
 ## Configuration
 
-### renovate.json
+The config lives in `renovate.json` at the project root. Its shape:
 
-The main configuration file at the project root:
+- Top-level: `extends: ["config:recommended"]`, `automerge: true`,
+  `platformAutomerge: true`, `minimumReleaseAge: "3 days"`, plus `labels` and a
+  `schedule`.
+- `packageRules` (order matters — later rules override earlier ones):
+  1. Docker base images — grouped, automerge.
+  2. Composer — grouped, automerge, framework majors excluded.
+  3. Node (pnpm) — grouped, automerge; dev dependencies grouped separately.
+  4. Patch updates — automerge at any time.
+  5. **Major updates — `automerge: false`** (final rule, applies across all
+     managers).
+
+### Common customizations
+
+**Turn off automerge entirely:**
+
+```json
+{ "automerge": false }
+```
+
+**Disable updates for a package:**
 
 ```json
 {
-  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
-  "extends": ["config:base"],
-  "packageRules": [
-    {
-      "matchUpdateTypes": ["patch"],
-      "automerge": true
-    },
-    {
-      "matchPackagePatterns": ["*"],
-      "groupName": "all dependencies",
-      "groupSlug": "all"
-    }
-  ]
+  "packageRules": [{ "matchPackageNames": ["php"], "enabled": false }]
 }
 ```
 
-### Common Customizations
-
-**Disable automerge:**
+**Restrict to off-hours:**
 
 ```json
-{
-  "automerge": false
-}
-```
-
-**Exclude specific packages:**
-
-```json
-{
-  "packageRules": [
-    {
-      "matchPackageNames": ["php", "node"],
-      "enabled": false
-    }
-  ]
-}
-```
-
-**Schedule updates:**
-
-```json
-{
-  "schedule": ["after 10pm every weekday", "before 5am every weekday"]
-}
+{ "schedule": ["after 10pm every weekday", "before 5am every weekday"] }
 ```
 
 ---
 
-## Supported Ecosystems
+## Supported ecosystems
 
-Renovate automatically detects and updates:
+Renovate detects and updates:
 
-| Ecosystem          | Files                            | Description           |
-| ------------------ | -------------------------------- | --------------------- |
-| **Composer**       | `composer.json`, `composer.lock` | PHP dependencies      |
-| **npm/pnpm**       | `package.json`, `pnpm-lock.yaml` | Node.js dependencies  |
-| **Docker**         | `Dockerfile`, `compose.yaml`     | Docker image versions |
-| **GitHub Actions** | `.github/workflows/*.yml`        | Action versions       |
+| Ecosystem          | Files                     | Notes                              |
+| ------------------ | ------------------------- | ---------------------------------- |
+| **Composer**       | `composer.json`           | PHP dependencies                   |
+| **npm/pnpm**       | `package.json`            | Node.js dependencies (+ workspace) |
+| **Docker**         | `docker/**/Dockerfile`    | Base image tags/digests            |
+| **GitHub Actions** | `.github/workflows/*.yml` | Action versions                    |
+
+> Lock files (`composer.lock`, `pnpm-lock.yaml`) are **not** tracked in this
+> repo — CI re-resolves them fresh each run, so in-range (`^`/`~`) patch/minor
+> updates are already picked up automatically. Renovate's value here is bumping
+> the version _floors_ in the manifests plus Docker/Actions pins.
 
 ---
 
-## Best Practices
+## Best practices
 
-1. **Always review major updates** - Don't automerge major version bumps
-2. **Run tests before merging** - Ensure CI passes on all update PRs
-3. **Group related updates** - Keep dependencies from the same ecosystem
-   together
-4. **Schedule during off-hours** - Avoid disruption during active development
-5. **Pin base images** - Use specific versions for Docker images
+1. **Always review major updates** — they never automerge by design.
+2. **Ensure CI passes** — automerge waits for green checks via
+   `platformAutomerge`.
+3. **Keep floors, not exact pins** in manifests so in-range updates flow through
+   CI without a PR.
+4. **Pin Docker base images** to specific versions so Renovate can track them.
 
 ---
 
 ## Troubleshooting
 
-### Renovate Not Detecting Updates
-
-**Check configuration:**
+**Validate the config** without a full run:
 
 ```bash
-# Validate renovate.json
-npx renovate-config-validator
+docker run --rm -v "$(pwd):/usr/src/app" -w /usr/src/app \
+  renovate/renovate renovate-config-validator
 ```
 
-**Check logs:**
+(or simply `make renovate` — it reports config errors at the top of its output).
+
+**Capture a full log:**
 
 ```bash
-make renovate 2>&1 | tee renovate.log
+make renovate LOG_LEVEL=debug 2>&1 | tee build/tmp/renovate.log
 ```
 
-### Authentication Errors
-
-**GitHub:**
-
-- Ensure `GITHUB_COM_TOKEN` has `repo` scope
-- Token must not be expired
-
-**GitLab:**
-
-- Use `GITLAB_TOKEN` instead
-- Token needs `api` and `write_repository` scopes
-
-### Local Mode Not Working
-
-**Check Docker:**
-
-```bash
-docker run --rm renovate/renovate --version
-```
-
-**Check file permissions:**
-
-```bash
-ls -la composer.json package.json
-```
+**Image won't run:** confirm Docker works and the pinned tag exists —
+`docker run --rm renovate/renovate:$(grep RENOVATE_VERSION Makefile | head -1 | awk '{print $3}') --version`.
 
 ---
 
 ## References
 
 - [Renovate Documentation](https://docs.renovatebot.com/)
-- [Renovate Configuration Options](https://docs.renovatebot.com/configuration-options/)
-- [GitHub: Renovate](https://github.com/renovatebot/renovate)
+- [Configuration Options](https://docs.renovatebot.com/configuration-options/)
+- [renovatebot/renovate](https://github.com/renovatebot/renovate)

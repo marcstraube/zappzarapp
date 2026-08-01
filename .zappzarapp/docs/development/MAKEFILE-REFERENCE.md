@@ -891,10 +891,10 @@ Documentation output:
 
 Common workflow combinations.
 
-| Command             | Description                                  |
-| ------------------- | -------------------------------------------- |
-| `make check-health` | Check application health by container status |
-| `make renovate`     | Run Renovate dependency scanner              |
+| Command             | Description                                                                         |
+| ------------------- | ----------------------------------------------------------------------------------- |
+| `make check-health` | Check application health by container status                                        |
+| `make renovate`     | Dry-run Renovate locally (no PRs; validates `renovate.json`, lists pending updates) |
 
 ## Command Patterns
 
