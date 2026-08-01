@@ -4,16 +4,26 @@ declare(strict_types=1);
 
 namespace Tests\DevDashboard\Services;
 
+use App\Infrastructure\DatabaseConfig;
+use DevDashboard\Services\DatabaseBackupService;
+use DevDashboard\Services\DatabaseCommandBuilder;
+use DevDashboard\Services\DatabaseMetricsService;
 use DevDashboard\Services\DatabaseService;
 use PDO;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
+use PHPUnit\Framework\Attributes\UsesClass;
 use PHPUnit\Framework\TestCase;
 
 /**
  * @SuppressWarnings("PHPMD.TooManyPublicMethods")
  */
 #[CoversClass(DatabaseService::class)]
+#[UsesClass(DatabaseConfig::class)]
+#[UsesClass(DatabaseBackupService::class)]
+#[UsesClass(DatabaseCommandBuilder::class)]
+#[UsesClass(\DevDashboard\Services\DatabaseConfig::class)]
+#[UsesClass(DatabaseMetricsService::class)]
 class DatabaseServiceTest extends TestCase
 {
     private DatabaseService $service;
