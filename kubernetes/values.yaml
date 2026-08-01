@@ -312,7 +312,7 @@ seaweedfs:
   replicaCount: 1
   image:
     repository: chrislusf/seaweedfs
-    tag: "4.07"
+    tag: "4.40"
   resources:
     limits:
       cpu: "1"
