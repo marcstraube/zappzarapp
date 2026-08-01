@@ -43,7 +43,7 @@
     "friendsofphp/php-cs-fixer": "^3.91",
     "phpmd/phpmd": "^2.15",
     "phpstan/phpstan": "^2.1",
-    "phpunit/phpunit": "^12.4",
+    "phpunit/phpunit": "^13.2",
     "rector/rector": "^2.3",
     "roave/security-advisories": "dev-latest",
     "symfony/var-dumper": "^8.0"

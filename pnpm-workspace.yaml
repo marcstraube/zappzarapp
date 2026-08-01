@@ -44,3 +44,14 @@ allowBuilds:
 # purge + reinstall node_modules before each script and aborts on the non-TTY
 # container run (ERR_PNPM_ABORTED_REMOVE_MODULES_DIR_NO_TTY).
 verifyDepsBeforeRun: false
+
+# Supply-chain hardening: delay installing freshly published versions (guards
+# against a compromised release being pulled in immediately). pnpm 11 applies a
+# minimum release age by default; declaring it here makes the policy explicit
+# and decoupled from any change to the pnpm default. `Strict: true` fails
+# resolution when a range can only be satisfied by a too-new version, instead of
+# silently falling back to it — so `pnpm add pkg@<fresh-only-range>` fails fast
+# rather than writing a pin that a later `pnpm install` rejects. Widen the range
+# floor (e.g. `^6` not `^6.31.0`) so pnpm picks the newest AGED version.
+minimumReleaseAge: 1440
+minimumReleaseAgeStrict: true

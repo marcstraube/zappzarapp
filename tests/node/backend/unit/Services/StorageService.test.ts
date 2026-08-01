@@ -229,7 +229,7 @@ describe('StorageService', () => {
 
       mockFetch.mockResolvedValueOnce({
         ok: true,
-        arrayBuffer: () => Promise.resolve(Buffer.from(xmlResponse).buffer),
+        arrayBuffer: () => Promise.resolve(new TextEncoder().encode(xmlResponse).buffer),
       });
 
       const service = new StorageService({ endpoint: 'http://localhost:8333' });

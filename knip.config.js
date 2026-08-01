@@ -46,9 +46,6 @@ export default {
     'autoprefixer',
     'postcss',
 
-    // CLI tools used via Make targets
-    'standard-version',
-
     // Analysis tools (self-referential, run via CLI)
     'depcheck',
   ],

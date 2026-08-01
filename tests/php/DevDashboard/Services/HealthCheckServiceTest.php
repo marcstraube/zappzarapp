@@ -4,14 +4,18 @@ declare(strict_types=1);
 
 namespace Tests\DevDashboard\Services;
 
+use App\Infrastructure\DatabaseConfig;
 use DevDashboard\Services\HealthCheckService;
+use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
+use PHPUnit\Framework\Attributes\UsesClass;
 use PHPUnit\Framework\TestCase;
 
 /**
- * @covers \DevDashboard\Services\HealthCheckService
  * @SuppressWarnings("PHPMD.TooManyPublicMethods")
  */
+#[CoversClass(HealthCheckService::class)]
+#[UsesClass(DatabaseConfig::class)]
 class HealthCheckServiceTest extends TestCase
 {
     private HealthCheckService $service;

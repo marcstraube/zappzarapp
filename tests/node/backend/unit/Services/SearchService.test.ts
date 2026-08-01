@@ -7,7 +7,7 @@ import { SearchService, type SearchServiceInterface } from '@backend/App/Service
 
 // Use vi.hoisted to define mocks before vi.mock hoisting
 const {
-  MockMeiliSearch,
+  MockMeilisearch,
   mockHealthFn,
   mockSearchFn,
   mockAddDocumentsFn,
@@ -32,8 +32,8 @@ const {
   const mockWaitForTaskFn = vi.fn();
   const mockIndexFn = vi.fn();
 
-  // Mock MeiliSearch class - properties accessed by SearchService during operations
-  class MockMeiliSearch {
+  // Mock Meilisearch class - properties accessed by SearchService during operations
+  class MockMeilisearch {
     // noinspection JSUnusedGlobalSymbols - Used by SearchService.index(), updateDocuments(), etc.
     tasks = {
       waitForTask: mockWaitForTaskFn,
@@ -69,7 +69,7 @@ const {
   }
 
   return {
-    MockMeiliSearch,
+    MockMeilisearch,
     mockHealthFn,
     mockSearchFn,
     mockAddDocumentsFn,
@@ -86,7 +86,7 @@ const {
 
 // Mock the meilisearch module
 vi.mock('meilisearch', () => ({
-  MeiliSearch: MockMeiliSearch,
+  Meilisearch: MockMeilisearch,
 }));
 
 describe('SearchService', () => {

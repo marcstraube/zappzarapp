@@ -62,7 +62,7 @@ export default [
     rules: {
       // TypeScript recommended rules
       ...tsPlugin.configs['recommended'].rules,
-      ...tsPlugin.configs['recommended-requiring-type-checking'].rules,
+      ...tsPlugin.configs['recommended-type-checked'].rules,
 
       // Prettier integration
       'prettier/prettier': 'error',

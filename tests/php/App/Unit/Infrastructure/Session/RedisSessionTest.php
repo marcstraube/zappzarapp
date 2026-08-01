@@ -384,7 +384,8 @@ final class RedisSessionTest extends TestCase
 
         $cache = $this->createMock(CacheInterface::class);
 
-        $cache->method('get')
+        $cache->expects($this->any())
+            ->method('get')
             ->with('user:123:sessions')
             ->willReturn(json_encode([$activeSession, $expiredSession]));
 
