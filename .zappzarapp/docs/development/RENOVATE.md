@@ -56,6 +56,27 @@ Run it before enabling the bot (or after editing `renovate.json`) to confirm the
 config is valid and see the pending update set. The Renovate image is pinned via
 `RENOVATE_VERSION` in the `Makefile` (bump manually).
 
+### GitHub token (better local fidelity)
+
+`minimumReleaseAge` needs a release timestamp per version. Locally, without a
+GitHub token, GitHub-datasource lookups (many Docker base images, tool releases,
+changelogs) return **without** timestamps and get rate-limited, so Renovate
+holds those updates as _pending_
+(`minimumReleaseAgeBehaviour=timestamp-required`, the safe default). Provide a
+**read-only** `GITHUB_COM_TOKEN` to fix most of this — `make renovate` picks it
+up from the environment or `.env.local`:
+
+```bash
+# in .env.local (gitignored — NEVER put tokens in the tracked .env)
+GITHUB_COM_TOKEN=ghp_your_readonly_token
+```
+
+Even with a token, a few update types (Docker digests, package pinning,
+replacements) still lack timestamps upstream and stay pending — that is a
+Renovate limitation, not a config problem. Do **not** work around it by setting
+`minimumReleaseAgeBehaviour: "timestamp-optional"` in `renovate.json`: that
+would let versions with no verifiable age bypass the supply-chain wait entirely.
+
 ---
 
 ## Configuration

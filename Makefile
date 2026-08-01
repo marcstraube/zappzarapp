@@ -3036,10 +3036,24 @@ RENOVATE_VERSION ?= 44.5
 
 renovate: ## Dry-run Renovate locally (local platform, no PRs) — validates renovate.json + lists pending updates
 	@echo -e "\033[0;33mRunning Renovate dry-run (local platform, no PRs, LOG_LEVEL=$${LOG_LEVEL:-info})...\033[0m"
-	@docker run --rm \
+	@# A GitHub token lets Renovate read GitHub-datasource release metadata
+	@# (timestamps) and avoids API rate limits, so far fewer updates are held as
+	@# "pending" by minimumReleaseAge. Read it from the env or .env.local; runs
+	@# fine without one (just less complete locally). NEVER put it in tracked .env.
+	@GH_TOKEN="$${GITHUB_COM_TOKEN:-}"; \
+	if [ -z "$$GH_TOKEN" ] && [ -f .env.local ]; then \
+		GH_TOKEN="$$(. ./.env.local >/dev/null 2>&1; printf '%s' "$${GITHUB_COM_TOKEN:-}")"; \
+	fi; \
+	if [ -n "$$GH_TOKEN" ]; then \
+		echo -e "\033[0;34m  Using GITHUB_COM_TOKEN for release-metadata lookups (fewer 'pending' updates)\033[0m"; \
+	else \
+		echo -e "\033[0;33m  No GITHUB_COM_TOKEN set — GitHub-datasource timestamps may be missing; set it in .env.local for better local fidelity\033[0m"; \
+	fi; \
+	docker run --rm \
 		-e RENOVATE_PLATFORM=local \
 		-e RENOVATE_DRY_RUN=full \
 		-e LOG_LEVEL="$${LOG_LEVEL:-info}" \
+		$${GH_TOKEN:+-e GITHUB_COM_TOKEN="$$GH_TOKEN"} \
 		-v "$$(pwd):/usr/src/app" \
 		-w /usr/src/app \
 		renovate/renovate:$(RENOVATE_VERSION)
