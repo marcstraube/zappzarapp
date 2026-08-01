@@ -9,7 +9,7 @@ including development setup, coding standards, and the review process.
 ## Quick Version
 
 ```bash
-make init        # create .env
+make init        # create .env.local (local USER_ID/GROUP_ID overrides)
 make setup       # build images, install dependencies, generate secrets/certs
 make up          # start the stack
 make check       # fast pre-check: static checks + tests (no coverage) for quick iteration

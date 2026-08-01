@@ -230,7 +230,7 @@ git clone <repo>
 cd <repo>
 
 # 2. Initialize project
-make init       # Creates .env from template
+make init       # Creates .env.local (local USER_ID/GROUP_ID overrides)
 
 # 3. Full setup (builds + installs dependencies)
 make setup      # Includes automatic lock file sync

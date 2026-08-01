@@ -3582,7 +3582,7 @@ validate-env: ## Validate .env configuration for production readiness
 	@echo -e "\033[0;33mValidating .env configuration...\033[0m"
 	@if [ ! -f .env ]; then \
 		echo -e "\033[0;31m  ✗ .env file not found\033[0m"; \
-		echo -e "\033[0;36m  Hint: Run 'make init' to create .env from .env.example\033[0m"; \
+		echo -e "\033[0;36m  Hint: .env ships committed in the repo; restore it with 'git restore .env'\033[0m"; \
 		exit 1; \
 	fi
 	@echo -e "\033[0;32m  ✓ .env file exists\033[0m"
