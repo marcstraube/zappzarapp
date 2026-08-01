@@ -613,17 +613,19 @@ Code quality, testing, and validation commands.
 
 ### PHP Quality Tools
 
-| Command             | Description                                             |
-| ------------------- | ------------------------------------------------------- |
-| `make analyse`      | Run static analysis (PHP + Node)                        |
-| `make analyse-php`  | Run PHPStan static analysis                             |
-| `make phpmd`        | Run PHPMD (PHP Mess Detector) for code quality analysis |
-| `make cs-check`     | Check coding style (dry-run)                            |
-| `make cs-fix`       | Fix coding style automatically                          |
-| `make cs-fix-all`   | Fix coding style aggressively on all files              |
-| `make rector-check` | Run Rector for automated refactoring analysis (dry-run) |
-| `make rector-fix`   | Apply Rector refactorings automatically                 |
-| `make outdated`     | Check for outdated Composer dependencies                |
+| Command              | Description                                             |
+| -------------------- | ------------------------------------------------------- |
+| `make analyse`       | Run static analysis (PHP + Node)                        |
+| `make analyse-php`   | Run PHPStan static analysis                             |
+| `make phpmd`         | Run PHPMD (PHP Mess Detector) for code quality analysis |
+| `make cs-check`      | Check coding style (dry-run)                            |
+| `make cs-fix`        | Fix coding style automatically                          |
+| `make cs-fix-all`    | Fix coding style aggressively on all files              |
+| `make rector-check`  | Run Rector for automated refactoring analysis (dry-run) |
+| `make rector-fix`    | Apply Rector refactorings automatically                 |
+| `make outdated`      | Check for outdated PHP + Node.js dependencies (both)    |
+| `make outdated-php`  | Check for outdated Composer packages                    |
+| `make outdated-node` | Check for outdated pnpm packages (workspace-wide)       |
 
 ### Node.js Quality Tools
 

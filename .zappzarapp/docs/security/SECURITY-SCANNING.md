@@ -310,9 +310,8 @@ docker compose exec php composer update
 # Node.js: Update within constraints
 docker compose exec node pnpm update
 
-# Check for outdated packages
-docker compose exec php composer outdated
-docker compose exec node pnpm outdated
+# Check for outdated packages (PHP + Node.js)
+make outdated
 ```
 
 ### 3. Pin Versions

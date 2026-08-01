@@ -288,17 +288,17 @@ npm test            # Incorrect (uses local node)
 
 ## Related Make Targets
 
-| Command                   | Description                                 |
-| ------------------------- | ------------------------------------------- |
-| `make composer-install`   | Install PHP deps (Docker) + sync lock file  |
-| `make pnpm-install`       | Install Node deps (Docker) + sync lock file |
-| `make composer-update`    | Update PHP deps + sync lock file            |
-| `make pnpm-update`        | Update Node deps + sync lock file           |
-| `make lockfiles-sync`     | Manually sync lock files from containers    |
-| `make composer CMD="..."` | Run arbitrary Composer command              |
-| `make pnpm CMD="..."`     | Run arbitrary pnpm command                  |
-| `make validate`           | Validate composer.json and package.json     |
-| `make outdated`           | Check for outdated PHP dependencies         |
+| Command                   | Description                                   |
+| ------------------------- | --------------------------------------------- |
+| `make composer-install`   | Install PHP deps (Docker) + sync lock file    |
+| `make pnpm-install`       | Install Node deps (Docker) + sync lock file   |
+| `make composer-update`    | Update PHP deps + sync lock file              |
+| `make pnpm-update`        | Update Node deps + sync lock file             |
+| `make lockfiles-sync`     | Manually sync lock files from containers      |
+| `make composer CMD="..."` | Run arbitrary Composer command                |
+| `make pnpm CMD="..."`     | Run arbitrary pnpm command                    |
+| `make validate`           | Validate composer.json and package.json       |
+| `make outdated`           | Check for outdated PHP + Node.js dependencies |
 
 ---
 

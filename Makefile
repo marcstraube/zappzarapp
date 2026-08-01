@@ -3040,10 +3040,17 @@ prettier-fix: ## Fix code formatting with Prettier (ARGS="path/to/file.ts" for s
 	@$(DC) run --rm -T dev-tools $(if $(ARGS),pnpm exec prettier --write $(ARGS),pnpm run format)
 	@echo -e "\033[0;32mPrettier formatting applied!\033[0m"
 
-outdated: ## Check for outdated Composer dependencies
+outdated: outdated-php outdated-node ## Check for outdated PHP + Node.js dependencies
+
+outdated-php: ## Check for outdated Composer packages
 	@echo -e "\033[0;33mChecking Composer for outdated packages...\033[0m"
 	@docker compose exec php composer outdated
-	@echo -e "\033[0;32mOutdated check completed!\033[0m"
+
+outdated-node: ## Check for outdated pnpm packages (workspace-wide, informational)
+	@echo -e "\033[0;33mChecking pnpm for outdated packages...\033[0m"
+	# `pnpm outdated` exits non-zero when anything is outdated; this is an
+	# informational report (not a gate), so keep it from aborting the run.
+	@docker compose exec node pnpm -r outdated || true
 
 depcheck: ## Find unused Node.js dependencies
 	@echo -e "\033[0;33mChecking for unused dependencies...\033[0m"
