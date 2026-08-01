@@ -24,15 +24,15 @@ export default defineConfig({
     rollupOptions: {
       input: {
         // Main entry points
-        app: resolve(__dirname, 'resources/js/app.js'),
-        'dev-dashboard-dashboard': resolve(__dirname, 'resources/js/dev-dashboard/dashboard.ts'),
-        'dev-dashboard-database': resolve(__dirname, 'resources/js/dev-dashboard/database.ts'),
-        'dev-dashboard-health': resolve(__dirname, 'resources/js/dev-dashboard/health.ts'),
-        'dev-dashboard-logs': resolve(__dirname, 'resources/js/dev-dashboard/logs.ts'),
-        'dev-dashboard-quality': resolve(__dirname, 'resources/js/dev-dashboard/quality.ts'),
-        'dev-dashboard-system': resolve(__dirname, 'resources/js/dev-dashboard/system.ts'),
+        app: resolve(import.meta.dirname, 'resources/js/app.js'),
+        'dev-dashboard-dashboard': resolve(import.meta.dirname, 'resources/js/dev-dashboard/dashboard.ts'),
+        'dev-dashboard-database': resolve(import.meta.dirname, 'resources/js/dev-dashboard/database.ts'),
+        'dev-dashboard-health': resolve(import.meta.dirname, 'resources/js/dev-dashboard/health.ts'),
+        'dev-dashboard-logs': resolve(import.meta.dirname, 'resources/js/dev-dashboard/logs.ts'),
+        'dev-dashboard-quality': resolve(import.meta.dirname, 'resources/js/dev-dashboard/quality.ts'),
+        'dev-dashboard-system': resolve(import.meta.dirname, 'resources/js/dev-dashboard/system.ts'),
         // Add more entry points as needed:
-        // admin: resolve(__dirname, 'resources/js/admin.js'),
+        // admin: resolve(import.meta.dirname, 'resources/js/admin.js'),
       },
     },
 
@@ -120,10 +120,10 @@ export default defineConfig({
   // Path aliases
   resolve: {
     alias: {
-      '@': resolve(__dirname, 'resources'),
-      '@js': resolve(__dirname, 'resources/js'),
-      '@css': resolve(__dirname, 'resources/css'),
-      '@img': resolve(__dirname, 'resources/images'),
+      '@': resolve(import.meta.dirname, 'resources'),
+      '@js': resolve(import.meta.dirname, 'resources/js'),
+      '@css': resolve(import.meta.dirname, 'resources/css'),
+      '@img': resolve(import.meta.dirname, 'resources/images'),
     },
   },
 

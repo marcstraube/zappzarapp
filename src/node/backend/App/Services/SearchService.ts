@@ -45,7 +45,7 @@
  * ```
  */
 
-import { MeiliSearch } from 'meilisearch';
+import { Meilisearch } from 'meilisearch';
 import { loadCredential } from '../../Shared/Config/credentials';
 
 /**
@@ -186,7 +186,7 @@ const DEFAULT_TIMEOUT = 5000;
  * Meilisearch Search Service Implementation
  */
 export class SearchService implements SearchServiceInterface {
-  private client: MeiliSearch | null = null;
+  private client: Meilisearch | null = null;
   private readonly url: string;
   private readonly masterKey: string;
   private readonly timeout: number;
@@ -204,7 +204,7 @@ export class SearchService implements SearchServiceInterface {
     }
 
     try {
-      this.client = new MeiliSearch({
+      this.client = new Meilisearch({
         host: this.url,
         apiKey: this.masterKey,
         timeout: this.timeout,
@@ -403,7 +403,7 @@ export class SearchService implements SearchServiceInterface {
    * Get the Meilisearch client instance
    * @returns Client or null if not connected
    */
-  private getClient(): MeiliSearch | null {
+  private getClient(): Meilisearch | null {
     return this.client;
   }
 
