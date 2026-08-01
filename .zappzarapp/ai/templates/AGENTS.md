@@ -15,7 +15,9 @@ Docker-based PHP/Node application. Key directories: `src/` (application code),
 ## Commands
 
 - `make up` / `make down` — start/stop the development environment
-- `make check` — full quality gate (run before pushing)
+- `make check` — fast pre-check (static checks + tests, no coverage)
+- `make ci` — faithful CI gate simulation (coverage strictness + dependency
+  audit); run before pushing
 - `make test` — run all tests
 - `make help` — list all targets by category
 

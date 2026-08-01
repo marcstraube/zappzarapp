@@ -2883,8 +2883,24 @@ rector-fix: ## Apply Rector refactorings automatically (ARGS="path/to/dir" for s
 	@echo -e "\033[0;33mApplying Rector refactorings...\033[0m"
 	@docker compose exec php composer rector-fix -- $(ARGS)
 
-check: cs-check analyse-php phpmd rector-check prettier-check analyse-node lint-node test deps-validate compose-validate validate-env lint-md lint-sql lint-docker lint-shell ## Run all checks (CI simulation)
+# Shared static-check set (no coverage, no audit) — the fast common core of
+# `check` and `ci`. Not exposed in `make help` (no `## ` comment) so it needs an
+# explicit .PHONY; the auto-.PHONY at the top only covers documented targets.
+.PHONY: _check-static
+_check-static: cs-check analyse-php phpmd rector-check prettier-check analyse-node lint-node deps-validate compose-validate validate-env lint-md lint-sql lint-docker lint-shell
+
+check: _check-static test ## Run static checks + tests without coverage (fast pre-check)
 	@echo -e "\033[0;32mAll checks passed!\033[0m"
+
+ci: _check-static test-coverage-php coverage-check-php test-coverage-node audit ## Faithful CI gate simulation (adds PHP coverage strictness + dependency audit)
+	@echo -e "\033[0;32mCI simulation passed!\033[0m"
+
+audit: ## Audit dependencies for known vulnerabilities (composer audit + pnpm audit, mirrors CI)
+	@echo -e "\033[0;33mAuditing Composer dependencies...\033[0m"
+	@docker compose exec php composer audit
+	@echo -e "\033[0;33mAuditing pnpm dependencies...\033[0m"
+	@docker compose exec node pnpm audit
+	@echo -e "\033[0;32mDependency audit passed!\033[0m"
 
 cs-check: ## Check coding style (ARGS="path/to/file.php" for specific files)
 	@echo -e "\033[0;33mChecking Coding Style...\033[0m"

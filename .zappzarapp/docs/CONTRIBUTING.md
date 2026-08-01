@@ -94,7 +94,18 @@ git ls-files -v .idea/php.xml
 
 ### Before Committing
 
-Run the full quality check suite:
+Run the faithful CI gate simulation:
+
+```bash
+make ci
+```
+
+This runs the static-check set plus `test-coverage-php` + `coverage-check-php`
+(PHP coverage strictness) + `test-coverage-node` + `audit` (`composer audit` +
+`pnpm audit`) — mirroring what CI enforces.
+
+For quick iteration, `make check` is the faster pre-check (same static checks +
+tests, but WITHOUT coverage or audit):
 
 ```bash
 make check

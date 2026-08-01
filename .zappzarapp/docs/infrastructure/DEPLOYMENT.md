@@ -285,7 +285,10 @@ See [Production Testing](#production-testing-1) section below for details.
 Test the CI pipeline locally before pushing:
 
 ```bash
-# Run all checks (same as CI)
+# Faithful CI gate: static checks + tests WITH coverage strictness + dependency audit
+make ci
+
+# Faster pre-check (no coverage/audit) for quick iteration
 make check
 
 # Individual checks

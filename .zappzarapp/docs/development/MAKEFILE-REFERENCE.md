@@ -601,13 +601,15 @@ Code quality, testing, and validation commands.
 
 ### Combined Checks
 
-| Command                 | Description                                                                                                                                                                                           |
-| ----------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `make check`            | Run ALL checks (cs-check, analyse-php, phpmd, rector-check, prettier-check, analyse-node, lint-node, test, deps-validate, compose-validate, validate-env, lint-md, lint-sql, lint-docker, lint-shell) |
-| `make test`             | Run all tests (PHP + Node.js)                                                                                                                                                                         |
-| `make test-coverage`    | Generate coverage reports for PHP and Node.js                                                                                                                                                         |
-| `make deps-validate`    | Validate dependency lockfiles (composer.lock, pnpm-lock.yaml)                                                                                                                                         |
-| `make compose-validate` | Validate Docker Compose configuration files                                                                                                                                                           |
+| Command                 | Description                                                                                                                                                                                                                                    |
+| ----------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `make check`            | Fast pre-check — static checks + tests WITHOUT coverage (cs-check, analyse-php, phpmd, rector-check, prettier-check, analyse-node, lint-node, test, deps-validate, compose-validate, validate-env, lint-md, lint-sql, lint-docker, lint-shell) |
+| `make ci`               | Faithful CI gate simulation — the static-check set plus `test-coverage-php` + `coverage-check-php` (PHP coverage strictness: `failOnRisky`/`beStrictAboutCoverageMetadata`) + `test-coverage-node` + `audit`. Run before pushing.              |
+| `make audit`            | Audit dependencies for known vulnerabilities (`composer audit` + `pnpm audit`, mirrors the CI Dependency Audit job)                                                                                                                            |
+| `make test`             | Run all tests (PHP + Node.js)                                                                                                                                                                                                                  |
+| `make test-coverage`    | Generate coverage reports for PHP and Node.js                                                                                                                                                                                                  |
+| `make deps-validate`    | Validate dependency lockfiles (composer.lock, pnpm-lock.yaml)                                                                                                                                                                                  |
+| `make compose-validate` | Validate Docker Compose configuration files                                                                                                                                                                                                    |
 
 ### PHP Quality Tools
 

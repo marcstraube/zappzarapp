@@ -144,7 +144,8 @@ Key: `.claude/` (tooling), `.ai/` (knowledge), `.zappzarapp/` (boilerplate),
 
 ```bash
 make up / make down    -> Start/stop containers
-make check             -> All quality checks
+make check             -> Fast pre-check (static checks + tests, no coverage)
+make ci                -> Faithful CI gate (coverage strictness + dependency audit)
 make test              -> Run all tests
 make fresh             -> Rebuild everything
 ```

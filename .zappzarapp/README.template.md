@@ -16,7 +16,8 @@ For daily use, `make up` / `make down` start and stop the environment.
 ## Development
 
 ```bash
-make check    # Run all quality checks
+make check    # Fast pre-check: static checks + tests (no coverage)
+make ci       # Faithful CI gate: adds coverage strictness + dependency audit
 make test     # Run all tests
 make help     # Show all available commands
 ```

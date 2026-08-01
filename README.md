@@ -237,7 +237,8 @@ make up            # Start containers (daily use)
 make down          # Stop containers
 make logs          # Show logs (make logs php nginx for specific services)
 make test          # Run all tests
-make check         # Full quality check (CI simulation)
+make check         # Static checks + tests, no coverage (fast pre-check)
+make ci            # Faithful CI gate: adds PHP coverage strictness + dependency audit
 make open-app      # Open the application in the browser
 ```
 
