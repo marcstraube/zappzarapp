@@ -74,6 +74,10 @@ spec:
         - name: rabbitmq-credentials
           secret:
             secretName: {{ .Values.secrets.existingSecrets.rabbitmqUser | default (printf "%s-rabbitmq-credentials" (include "zappzarapp.fullname" .)) }}
+        {{- if not .Values.rabbitmq.persistence.enabled }}
+        - name: data
+          emptyDir: {}
+        {{- end }}
   {{- if .Values.rabbitmq.persistence.enabled }}
   volumeClaimTemplates:
     - metadata:
@@ -86,9 +90,5 @@ spec:
         resources:
           requests:
             storage: {{ .Values.rabbitmq.persistence.size }}
-  {{- else }}
-      volumes:
-        - name: data
-          emptyDir: {}
   {{- end }}
 {{- end }}

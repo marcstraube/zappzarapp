@@ -94,6 +94,10 @@ spec:
         - name: db-root-password
           secret:
             secretName: {{ .Values.secrets.existingSecrets.dbRootPassword | default (printf "%s-db-root-password" (include "zappzarapp.fullname" .)) }}
+        {{- if not .Values.mariadb.persistence.enabled }}
+        - name: data
+          emptyDir: {}
+        {{- end }}
   {{- if .Values.mariadb.persistence.enabled }}
   volumeClaimTemplates:
     - metadata:
@@ -106,9 +110,5 @@ spec:
         resources:
           requests:
             storage: {{ .Values.mariadb.persistence.size }}
-  {{- else }}
-      volumes:
-        - name: data
-          emptyDir: {}
   {{- end }}
 {{- end }}

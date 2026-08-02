@@ -90,6 +90,10 @@ spec:
             items:
               - key: s3_config
                 path: s3_config.json
+        {{- if not .Values.seaweedfs.persistence.enabled }}
+        - name: data
+          emptyDir: {}
+        {{- end }}
   {{- if .Values.seaweedfs.persistence.enabled }}
   volumeClaimTemplates:
     - metadata:
@@ -102,8 +106,5 @@ spec:
         resources:
           requests:
             storage: {{ .Values.seaweedfs.persistence.size }}
-  {{- else }}
-        - name: data
-          emptyDir: {}
   {{- end }}
 {{- end }}

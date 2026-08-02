@@ -92,6 +92,10 @@ spec:
         - name: db-password
           secret:
             secretName: {{ .Values.secrets.existingSecrets.dbPassword | default (printf "%s-db-password" (include "zappzarapp.fullname" .)) }}
+        {{- if not .Values.postgres.persistence.enabled }}
+        - name: data
+          emptyDir: {}
+        {{- end }}
   {{- if .Values.postgres.persistence.enabled }}
   volumeClaimTemplates:
     - metadata:
@@ -104,9 +108,5 @@ spec:
         resources:
           requests:
             storage: {{ .Values.postgres.persistence.size }}
-  {{- else }}
-      volumes:
-        - name: data
-          emptyDir: {}
   {{- end }}
 {{- end }}
