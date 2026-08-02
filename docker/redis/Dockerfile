@@ -11,7 +11,7 @@ ARG REDIS_VERSION=8.8-alpine3.23
 #   multiple ARGs (version + alpine suffix)
 # - To update: check https://hub.docker.com/_/redis/tags
 # - For SHA digest pinning in production, use:
-#   FROM redis:8.6-alpine3.23@sha256:<digest>
+#   FROM redis:<tag>@sha256:<digest>
 
 FROM redis:${REDIS_VERSION} AS base
 

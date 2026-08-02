@@ -20,7 +20,7 @@ ARG RABBITMQ_VERSION=4.3-management-alpine
 #   an ARG plus a literal suffix
 # - To update: check https://hub.docker.com/_/rabbitmq/tags
 # - For SHA digest pinning in production, use:
-#   FROM rabbitmq:4.3-management-alpine@sha256:<digest>
+#   FROM rabbitmq:<tag>@sha256:<digest>
 
 FROM rabbitmq:${RABBITMQ_VERSION}
 

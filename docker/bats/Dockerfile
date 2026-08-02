@@ -8,7 +8,7 @@ ARG ALPINE_VERSION=3.24
 # - Alpine version pinned for consistency across services
 # - To update: check https://hub.docker.com/_/alpine/tags
 # - For SHA digest pinning in production, use:
-#   FROM alpine:3.23@sha256:<digest>
+#   FROM alpine:<tag>@sha256:<digest>
 
 FROM alpine:${ALPINE_VERSION} AS bats-builder
 

@@ -18,7 +18,7 @@
 #   from multiple ARGs (version + patch)
 # - To update: check https://hub.docker.com/_/mariadb/tags
 # - For SHA digest pinning in production, use:
-#   FROM mariadb:12.3.2@sha256:<digest>
+#   FROM mariadb:<tag>@sha256:<digest>
 
 ARG MARIADB_VERSION=12.3.2
 

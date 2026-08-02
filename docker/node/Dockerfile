@@ -8,7 +8,7 @@ ARG NODE_VERSION=24.18-alpine3.23
 #   multiple ARGs (version + alpine suffix)
 # - To update: check https://hub.docker.com/_/node/tags
 # - For SHA digest pinning in production, use:
-#   FROM node:24.18-alpine3.23@sha256:<digest>
+#   FROM node:<tag>@sha256:<digest>
 
 # --- 1. BASE STAGE (Shared Foundation) ---
 # Installs pnpm and curl.

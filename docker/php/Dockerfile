@@ -10,7 +10,7 @@ ARG COMPOSER_VERSION=2
 #   multiple ARGs (version + fpm/alpine suffix)
 # - To update: check https://hub.docker.com/_/php/tags
 # - For SHA digest pinning in production, use:
-#   FROM php:8.4-fpm-alpine3.23@sha256:<digest>
+#   FROM php:<tag>@sha256:<digest>
 
 # Alias stages for external images (BuildKit doesn't support variable expansion in --from)
 FROM composer:${COMPOSER_VERSION} AS composer-image

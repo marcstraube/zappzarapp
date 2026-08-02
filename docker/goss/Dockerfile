@@ -9,7 +9,7 @@
 # Version Pinning:
 # - Check https://github.com/goss-org/goss/releases for updates
 # - For SHA digest pinning in production, use:
-#   FROM ghcr.io/goss-org/goss:v0.4.9@sha256:<digest>
+#   FROM ghcr.io/goss-org/goss:<tag>@sha256:<digest>
 
 ARG GOSS_VERSION=v0.4.9
 

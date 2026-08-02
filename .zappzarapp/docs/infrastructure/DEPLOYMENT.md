@@ -101,9 +101,9 @@ The pipeline uses Docker-in-Docker (DinD):
 ```yaml
 # .gitlab-ci.yml
 .docker-setup: &docker-setup
-  image: docker:24-cli
+  image: docker:28-cli
   services:
-    - docker:24-dind
+    - docker:28-dind
 ```
 
 ### Triggers

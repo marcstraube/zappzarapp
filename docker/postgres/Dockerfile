@@ -1,4 +1,4 @@
-# PostgreSQL 17 Alpine with pg_cron extension
+# PostgreSQL Alpine image with the pg_cron extension
 # pg_cron enables scheduled jobs directly in PostgreSQL
 #
 # Usage: CREATE EXTENSION pg_cron;
@@ -23,7 +23,7 @@ ARG PG_CRON_VERSION=1.6.7
 #   multiple ARGs (version + alpine suffix)
 # - To update: check https://hub.docker.com/_/postgres/tags
 # - For SHA digest pinning in production, use:
-#   FROM postgres:18.4-alpine3.23@sha256:<digest>
+#   FROM postgres:<tag>@sha256:<digest>
 
 FROM postgres:${POSTGRES_VERSION} AS builder
 
