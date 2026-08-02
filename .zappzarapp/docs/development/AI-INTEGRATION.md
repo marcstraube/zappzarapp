@@ -237,6 +237,7 @@ Issues, plus local file fallback.
 | `--add-label <labels> <task>`  | Add labels                         |
 | `--remove-label <labels>`      | Remove labels                      |
 | `--reprioritize`               | Analyze and suggest changes        |
+| `--sync [--dry-run]`           | Board status → labels (GitHub)     |
 
 **Storage Modes:**
 
@@ -252,7 +253,9 @@ Issues, plus local file fallback.
 - **Milestones** instead of priority labels (v1.0, v1.1, Backlog)
 - **Prioritization** via Milestone → Type → Age
 - **Label typo detection** with "Did you mean...?" suggestions
-- **Bidirectional board sync** (GitHub Projects / GitLab Issue Boards)
+- **On-demand board sync** (`--sync` dispatches
+  `.github/workflows/project-sync.yml`; GitHub Projects V2 only — no schedule by
+  default, uncomment the daily cron in the workflow for background sync)
 - **Platform parity** between GitHub and GitLab
 
 **Setup:**

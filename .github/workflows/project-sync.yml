@@ -1,8 +1,14 @@
-# Sync GitHub Project Board status to Issue labels (opt-in)
+# Sync GitHub Project Board status to Issue labels (opt-in, on demand)
 #
-# This workflow enables bidirectional sync between GitHub Projects V2
-# and issue labels. It polls the project board periodically and updates
-# issue labels to match the board column (Status field).
+# This workflow syncs GitHub Projects V2 board columns (Status field) to issue
+# labels. Run it on demand via `/tasks --sync` or
+# `gh workflow run project-sync.yml`.
+#
+# There is no schedule by default: the status labels are only read when someone
+# looks at the issue list, so syncing at that moment is enough — and a
+# background job that closes issues (Done column) is too invasive to ship
+# enabled. Teams that do want periodic background sync can uncomment the
+# schedule block below (prefilled: daily).
 #
 # SETUP (opt-in):
 # 1. Create a GitHub Project (user or org level)
@@ -12,7 +18,7 @@
 #    (Settings → Secrets and variables → Actions → Variables)
 # 4. Optionally set PROJECT_OWNER if different from repository owner
 #
-# Without PROJECT_NUMBER set, this workflow does nothing.
+# Without PROJECT_NUMBER set, the job skips.
 #
 # Column → Label mapping:
 #   "To Do" / "Backlog"  → removes status labels
@@ -23,10 +29,6 @@
 name: Project Board Sync
 
 on:
-  schedule:
-    # Run every 30 minutes (sync is opt-in via PROJECT_NUMBER; a label sync does
-    # not need higher frequency, and it avoids skipped-run noise when unconfigured)
-    - cron: '*/30 * * * *'
   workflow_dispatch:
     inputs:
       dry_run:
@@ -34,6 +36,11 @@ on:
         required: false
         default: 'false'
         type: boolean
+  # Optional periodic background sync — uncomment to enable (daily 06:00 UTC).
+  # Note: scheduled runs still create skipped entries in the Actions list on
+  # repos without PROJECT_NUMBER.
+  # schedule:
+  #   - cron: '0 6 * * *'
 
 # Prevent concurrent runs
 concurrency:

@@ -20,6 +20,10 @@ allowed-tools:
   - Bash(gh project:*)
   - Bash(gh api:*)
   - Bash(gh auth:*)
+  - Bash(gh variable:*)
+  - Bash(gh workflow:*)
+  - Bash(gh run:*)
+  - Bash(sleep:*)
   - Bash(glab issue:*)
   - Bash(glab label:*)
   - Bash(glab milestone:*)
@@ -31,7 +35,7 @@ argument-hint:
   [--all|--zappzarapp|--upstream|--private] [--milestone <name>] | --choose
   [--plan|--no-plan] | --milestone <name> <task> | --defer <task> | --close
   <task> | --add-label <labels> <task> | --remove-label <labels> <task> |
-  --reprioritize'
+  --reprioritize | --sync [--dry-run]'
 ---
 
 # Task Management
@@ -166,6 +170,7 @@ Parse `$ARGUMENTS`:
 - `--add-label <labels> <task>`: Add labels to task
 - `--remove-label <labels> <task>`: Remove labels from task
 - `--reprioritize`: Analyze and suggest priority changes
+- `--sync [--dry-run]`: Sync project board status to issue labels (GitHub only)
 
 ---
 
@@ -380,6 +385,63 @@ glab issue note <number> --repo "$TARGET_REPO" --message "Closed: [reason]"
 1. Update status to `done` in task file
 2. Move file to `tasks/done/YYYY/MM/`
 3. Remove from active index, add to completed section
+
+---
+
+## Workflow: Board Sync (`--sync`)
+
+Trigger the Project Board → labels sync on demand. The sync logic lives in
+`.github/workflows/project-sync.yml` (single implementation — do NOT reimplement
+the column/label mapping here); this command only dispatches it and reports the
+result.
+
+**GitHub only** — the workflow uses the Projects V2 GraphQL API. On GitLab,
+explain that board sync is not available and stop.
+
+### Step 1: Check Preconditions
+
+```bash
+# Board must be configured (repository variable)
+gh variable get PROJECT_NUMBER --repo "$TARGET_REPO"
+```
+
+If the variable is missing, do not dispatch (the job would silently skip).
+Explain the setup instead:
+
+```text
+No project board configured (repository variable PROJECT_NUMBER is not set).
+
+Setup:
+1. Create a GitHub Project (user or org level) with a "Status"
+   single-select field ("To Do", "In Progress", "Review", "Done")
+2. gh variable set PROJECT_NUMBER --body '<number>' --repo <owner>/<repo>
+3. Optionally: gh variable set PROJECT_OWNER (if different from repo owner)
+
+Details: .github/workflows/project-sync.yml
+```
+
+### Step 2: Dispatch and Watch
+
+```bash
+# With --dry-run: add -f dry_run=true (logs changes without applying)
+gh workflow run project-sync.yml --repo "$TARGET_REPO"
+
+# The run takes a few seconds to register; retry until it appears
+sleep 5
+RUN_ID=$(gh run list --repo "$TARGET_REPO" --workflow=project-sync.yml \
+  --limit 1 --json databaseId,status \
+  -q '.[] | select(.status != "completed") | .databaseId')
+
+gh run watch "$RUN_ID" --repo "$TARGET_REPO" --exit-status
+```
+
+### Step 3: Report
+
+Summarise from the run log what changed (synced/skipped counts, closed issues):
+
+```bash
+gh run view "$RUN_ID" --repo "$TARGET_REPO" --log | grep -E 'Summary|→'
+```
 
 ---
 
