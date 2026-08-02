@@ -12,7 +12,7 @@
 # The official entrypoint (docker-entrypoint.sh) drops privileges to the
 # postgres user (uid 70 on Alpine) via gosu before starting postgres.
 
-ARG POSTGRES_VERSION=17.10-alpine3.23
+ARG POSTGRES_VERSION=18.4-alpine3.23
 ARG PG_CRON_VERSION=1.6.4
 
 # Version Pinning:
