@@ -65,6 +65,12 @@
       "matchPackageNames": ["typescript"],
       "matchUpdateTypes": ["major"],
       "enabled": false
+    },
+    {
+      "description": "The pnpm-workspace.yaml overrides are per-major security FLOORS (see the comment there: floors must not cross a semver major - a v3 consumer must never be handed v5). Never propose major bumps for them; within-major floor bumps stay enabled.",
+      "matchFileNames": ["pnpm-workspace.yaml"],
+      "matchUpdateTypes": ["major"],
+      "enabled": false
     }
   ]
 }
