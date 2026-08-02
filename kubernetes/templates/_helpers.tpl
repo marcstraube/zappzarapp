@@ -90,10 +90,18 @@ Get the image repository with optional registry prefix
 {{- end }}
 
 {{/*
-Get the image tag
+Get the image tag.
+In production the resolved tag must not be "latest": with
+imagePullPolicy Always the deployment would pull whatever the registry
+currently calls "latest" — unpredictable and unreproducible. Set
+global.imageTag (or the per-image tag) to a pinned release tag.
 */}}
 {{- define "zappzarapp.imageTag" -}}
-{{- .image.tag | default .global.imageTag | default .appVersion }}
+{{- $tag := .image.tag | default .global.imageTag | default .appVersion -}}
+{{- if and (eq .global.env "production") (eq $tag "latest") -}}
+{{- fail (printf "image %s resolves to tag \"latest\" in production. Set global.imageTag (or the service's image.tag) to a pinned release tag." .image.repository) -}}
+{{- end -}}
+{{- $tag }}
 {{- end }}
 
 {{/*

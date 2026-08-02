@@ -978,9 +978,73 @@ as an explicit decision, not silently changed.
   line — harmless in CI (no committed lockfile → non-frozen install), but it
   will bite anyone testing a pnpm-major bump against a stale local lockfile.
 
+## Kubernetes / Helm Chart
+
+### A template `{{- else }}` after volumeClaimTemplates emits a DUPLICATE pod `volumes:` key
+
+- **The bug (5 of 6 StatefulSets affected, latent until persistence is
+  disabled)**: the templates rendered the data-emptyDir fallback as an
+  `{{- else }}` branch of the `volumeClaimTemplates` conditional, indented at
+  pod-spec level. With persistence off, postgres/mariadb/meilisearch/rabbitmq
+  rendered a SECOND `volumes:` key in the pod spec — invalid YAML under strict
+  parsing; under last-wins parsing the pod silently loses its tmp/run/secret
+  volumes while volumeMounts still reference them → API server rejects the pod.
+  seaweedfs "worked" only because its branch emitted bare list items that
+  happened to continue the pod volumes list; elasticsearch only because it had
+  no other pod volumes.
+- **Fix pattern**: put the fallback INSIDE the pod volumes list as
+  `{{- if not .persistence.enabled }} - name: data / emptyDir {{- end }}` and
+  reduce volumeClaimTemplates to a plain `{{- if }}`.
+- **Detection gotcha**: `helm lint`/`helm template` never catch this (lint uses
+  default values = persistence on; template does not parse its own output), and
+  PyYAML's safe_load silently takes last-wins. Verify with a strict
+  duplicate-key loader over the FULL render matrix (all services on × all
+  persistence off).
+
+### `drop: [ALL]` breaks entrypoints that su-exec, even as root
+
+- A container that starts as root but drops privileges via `su-exec`/`gosu`
+  needs CAP_SETUID/CAP_SETGID — root does NOT bypass dropped capabilities. The
+  chart's hardcoded seaweedfs securityContext (`drop: [ALL]`, no adds) made the
+  service unstartable in k8s whenever enabled (entrypoint does
+  `exec su-exec 1000:1000 weed …`). redis/postgres/mariadb had the right caps in
+  values all along — the hardcoded optional-service blocks just never got them.
+  Values-driven securityContext per service (now uniform) makes this reviewable
+  in ONE file instead of six templates.
+- Only elasticsearch can run `runAsNonRoot: true` — its Dockerfile pins
+  `USER 1000:0`. All other optional-service images start as root (verified via
+  `docker buildx imagetools inspect <ref> --format '{{json .Image}}'` — fetches
+  remote Config.User without pulling layers).
+
+### Production renders now fail on a resolved `latest` tag
+
+- `zappzarapp.imageTag` helper `fail`s when `global.env == "production"` and the
+  resolved tag is `latest`: with `imagePullPolicy: Always` that would deploy
+  whatever the registry currently holds. Dev (`imagePullPolicy: Never`, local
+  images) is unaffected; the `make k8s-deploy` preflight guard stays dev-only,
+  this guard is its production counterpart. `make k8s-build`'s empty-SERVICES
+  error branch re-runs `helm template` visibly so the real helm error (e.g. this
+  guard) is not swallowed by the `2>/dev/null` derive.
+
+### `ENV=production make <target>` is CLOBBERED by `.env` sourcing (open, own task)
+
+- Every Makefile recipe sources `.env` (which sets `ENV=development`) AFTER the
+  caller's environment, so `ENV=production make k8s-build` (and `make build`, as
+  KUBERNETES.md suggests) silently runs the development path. The supported
+  switch is editing `ENV` in `.env` — but docs advertise the env-var form and
+  nothing warns. Found when a prod-guard verification unexpectedly kicked off a
+  full dev image build. Needs a Makefile-wide precedence decision (capture
+  caller ENV before sourcing, or fix the docs) — see todo.md.
+
 ---
 
 ## Last Updated
+
+2026-08-02 session 2 (added: k8s chart hardening — duplicate pod `volumes:` key
+from `{{- else }}` after volumeClaimTemplates; redis Deployment→StatefulSet;
+su-exec needs SETUID/SETGID despite drop:[ALL]; values-driven securityContext
+for optional services; production render fails on resolved `latest` tag;
+`ENV=production make …` clobbered by `.env` sourcing)
 
 2026-08-02 (added: k8s SSOT — Helm optional services (mariadb/redis/mercure/
 meilisearch/elasticsearch/seaweedfs/rabbitmq/mailpit) switched from raw upstream

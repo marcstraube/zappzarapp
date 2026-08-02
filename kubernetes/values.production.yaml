@@ -7,6 +7,10 @@ global:
   # Set your production domain
   domain: example.com
   imagePullPolicy: Always
+  # REQUIRED: pin the tag of your pushed release images. Rendering fails
+  # in production while the resolved tag is "latest" (with pull policy
+  # Always that would deploy whatever the registry currently holds).
+  # imageTag: "v1.0.0"
 
 # ============================================================================
 # CORE SERVICES - Production Settings

@@ -1374,6 +1374,7 @@ k8s-build: ## Build the images the Helm chart will deploy (enabled services deri
 	SERVICES=$$(helm template zappzarapp ./kubernetes -f "$$VALUES_FILE" 2>/dev/null | grep -E '^[[:space:]]*image:' | grep -oE 'zappzarapp-[a-z0-9-]+' | sed 's/^zappzarapp-//' | sort -u | tr '\n' ' '); \
 	if [ -z "$$(echo $$SERVICES | tr -d '[:space:]')" ]; then \
 		echo -e "\033[0;31mError: could not derive any services from the rendered chart\033[0m"; \
+		helm template zappzarapp ./kubernetes -f "$$VALUES_FILE" >/dev/null || true; \
 		exit 1; \
 	fi; \
 	echo -e "\033[0;33mChart-enabled services:\033[0m $$SERVICES"; \

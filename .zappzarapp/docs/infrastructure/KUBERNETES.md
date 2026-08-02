@@ -57,8 +57,8 @@ kubectl port-forward svc/zappzarapp-nginx 8080:80 -n zappzarapp
 ```bash
 # Build and push images to registry
 ENV=production make build
-docker tag zappzarapp-php:latest registry.example.com/myapp/php:v1.0.0
-docker push registry.example.com/myapp/php:v1.0.0
+docker tag zappzarapp-php:latest registry.example.com/myapp/zappzarapp-php:v1.0.0
+docker push registry.example.com/myapp/zappzarapp-php:v1.0.0
 # Repeat for nginx, node, etc.
 
 # Create secrets
@@ -72,8 +72,14 @@ helm upgrade --install zappzarapp ./kubernetes \
   --namespace zappzarapp \
   -f kubernetes/values.production.yaml \
   --set global.imageRegistry=registry.example.com/myapp \
+  --set global.imageTag=v1.0.0 \
   --set global.domain=your-domain.com
 ```
+
+> **Pinned tags only:** production rendering fails if any image resolves to the
+> tag `latest` — with `imagePullPolicy: Always` that would deploy whatever the
+> registry currently holds. Set `global.imageTag` (or a per-image `tag`) to the
+> release tag you pushed.
 
 ## Make Targets
 
@@ -103,7 +109,7 @@ kubernetes/
     ├── node-backend/       # Node.js Backend (Express API)
     ├── postgres/           # PostgreSQL statefulset, service
     ├── mariadb/            # MariaDB statefulset, service
-    ├── redis/              # Redis deployment, service, pvc
+    ├── redis/              # Redis statefulset, service
     ├── mercure/            # Mercure deployment, service
     ├── meilisearch/        # Meilisearch statefulset, service
     ├── elasticsearch/      # Elasticsearch statefulset, service
