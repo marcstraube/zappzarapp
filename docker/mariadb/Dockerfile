@@ -13,15 +13,16 @@
 # mysql user (uid 999) via gosu before starting mariadbd.
 #
 # Version Pinning:
-# - Minor version pinned for stability
+# - Exact version pinned for stability
+# - Full version lives in ONE ARG: Renovate cannot update a tag composed
+#   from multiple ARGs (version + patch)
 # - To update: check https://hub.docker.com/_/mariadb/tags
 # - For SHA digest pinning in production, use:
 #   FROM mariadb:12.3.2@sha256:<digest>
 
-ARG MARIADB_VERSION=12.3
-ARG MARIADB_PATCH=2
+ARG MARIADB_VERSION=12.3.2
 
-FROM mariadb:${MARIADB_VERSION}.${MARIADB_PATCH}
+FROM mariadb:${MARIADB_VERSION}
 
 # Apply available OS security patches. The MariaDB image is Debian/Ubuntu-based,
 # so its libc/krb5/pam/ncurses/... apt packages accumulate fixable CVEs between

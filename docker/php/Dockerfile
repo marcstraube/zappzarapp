@@ -1,13 +1,13 @@
 # PHP Multi-Stage Dockerfile
 
-ARG PHP_VERSION=8.4
-ARG ALPINE_VERSION=3.23
+ARG PHP_VERSION=8.4-fpm-alpine3.23
 ARG GMAGICK_VERSION=2.0.6RC1
 ARG COMPOSER_VERSION=2
 
 # Version Pinning:
 # - Minor version pinned for stability
-# - Alpine version pinned for consistency across services
+# - Full tag lives in ONE ARG: Renovate cannot update a tag composed from
+#   multiple ARGs (version + fpm/alpine suffix)
 # - To update: check https://hub.docker.com/_/php/tags
 # - For SHA digest pinning in production, use:
 #   FROM php:8.4-fpm-alpine3.23@sha256:<digest>
@@ -17,7 +17,7 @@ FROM composer:${COMPOSER_VERSION} AS composer-image
 
 # --- 1. PHP BUILDER STAGE (Compilation) ---
 # This stage installs all build dependencies and compiles the extensions.
-FROM php:${PHP_VERSION}-fpm-alpine${ALPINE_VERSION} AS php-builder
+FROM php:${PHP_VERSION} AS php-builder
 
 # Redeclare ARG (global scope ARGs don't persist after FROM)
 ARG GMAGICK_VERSION
@@ -77,7 +77,7 @@ RUN apk add --no-cache \
     && rm -f /usr/local/etc/php/conf.d/docker-php-ext-*.ini
 
 # --- 2. BASE STAGE (Shared Runtime Image - Small & Fast) ---
-FROM php:${PHP_VERSION}-fpm-alpine${ALPINE_VERSION} AS base
+FROM php:${PHP_VERSION} AS base
 
 # Apply available OS security patches within the pinned Alpine line, then
 # install the runtime dependencies. Trivy runs with ignore-unfixed, so every

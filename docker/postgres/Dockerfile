@@ -12,18 +12,18 @@
 # The official entrypoint (docker-entrypoint.sh) drops privileges to the
 # postgres user (uid 70 on Alpine) via gosu before starting postgres.
 
-ARG POSTGRES_VERSION=17.10
-ARG ALPINE_VERSION=3.23
+ARG POSTGRES_VERSION=17.10-alpine3.23
 ARG PG_CRON_VERSION=1.6.4
 
 # Version Pinning:
 # - Minor version pinned for stability
-# - Alpine version pinned for consistency across services
+# - Full tag lives in ONE ARG: Renovate cannot update a tag composed from
+#   multiple ARGs (version + alpine suffix)
 # - To update: check https://hub.docker.com/_/postgres/tags
 # - For SHA digest pinning in production, use:
 #   FROM postgres:17.10-alpine3.23@sha256:<digest>
 
-FROM postgres:${POSTGRES_VERSION}-alpine${ALPINE_VERSION} AS builder
+FROM postgres:${POSTGRES_VERSION} AS builder
 
 # Redeclare ARG (global scope ARGs don't persist after FROM)
 ARG PG_CRON_VERSION
@@ -48,7 +48,7 @@ RUN git clone --branch v${PG_CRON_VERSION} --depth 1 https://github.com/citusdat
     && make install
 
 # Final image
-FROM postgres:${POSTGRES_VERSION}-alpine${ALPINE_VERSION} AS final
+FROM postgres:${POSTGRES_VERSION} AS final
 
 # Apply available OS security patches within the pinned Alpine line (Trivy runs
 # with ignore-unfixed, so reported CVEs have a fix available here).

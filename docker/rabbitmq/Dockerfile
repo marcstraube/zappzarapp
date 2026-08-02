@@ -11,16 +11,18 @@
 # The official entrypoint drops privileges to the rabbitmq user (uid 999)
 # via su-exec before starting the Erlang VM.
 
-ARG RABBITMQ_VERSION=4.3
+ARG RABBITMQ_VERSION=4.3-management-alpine
 
 # Version Pinning:
-# - Major version pinned for stability
-# - Alpine version follows RabbitMQ official image (currently 3.23)
+# - Minor version pinned for stability; the Alpine base follows the official
+#   RabbitMQ image
+# - Full tag lives in ONE ARG: Renovate cannot update a tag composed from
+#   an ARG plus a literal suffix
 # - To update: check https://hub.docker.com/_/rabbitmq/tags
 # - For SHA digest pinning in production, use:
 #   FROM rabbitmq:4.3-management-alpine@sha256:<digest>
 
-FROM rabbitmq:${RABBITMQ_VERSION}-management-alpine
+FROM rabbitmq:${RABBITMQ_VERSION}
 
 # Copy entrypoint wrapper to load credentials from Docker Secrets
 # (RABBITMQ_DEFAULT_USER_FILE and RABBITMQ_DEFAULT_PASS_FILE are deprecated in 4.0)

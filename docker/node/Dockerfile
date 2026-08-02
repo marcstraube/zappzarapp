@@ -1,11 +1,11 @@
 # Node.js Multi-Stage Dockerfile
 
-ARG NODE_VERSION=24.18
-ARG ALPINE_VERSION=3.23
+ARG NODE_VERSION=24.18-alpine3.23
 
 # Version Pinning:
 # - Minor version pinned for stability (LTS)
-# - Alpine version pinned for consistency across services
+# - Full tag lives in ONE ARG: Renovate cannot update a tag composed from
+#   multiple ARGs (version + alpine suffix)
 # - To update: check https://hub.docker.com/_/node/tags
 # - For SHA digest pinning in production, use:
 #   FROM node:24.18-alpine3.23@sha256:<digest>
@@ -13,7 +13,7 @@ ARG ALPINE_VERSION=3.23
 # --- 1. BASE STAGE (Shared Foundation) ---
 # Installs pnpm and curl.
 # Use a recent Node.js LTS version on Alpine for a slim image
-FROM node:${NODE_VERSION}-alpine${ALPINE_VERSION} AS base
+FROM node:${NODE_VERSION} AS base
 
 # Install pnpm globally and add curl for health checks, git for commitlint
 # PNPM_VERSION mirrors the packageManager pin in package.json - `make
