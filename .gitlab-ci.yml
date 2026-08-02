@@ -392,7 +392,7 @@ bats:integration:
 # SAST ANALYSIS (Semgrep)
 # ============================================================================
 sast:semgrep:
-  image: python:3.12-alpine
+  image: python:3.14-alpine
   stage: security
   needs: []
   rules:
