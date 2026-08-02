@@ -750,6 +750,24 @@ as an explicit decision, not silently changed.
   `cache-from`). Works on free gitlab.com (dind + free-tier registry). Verified
   2026-07-28.
 
+### Shipped scheduled workflows: a job-level `if:` cannot suppress the run entry
+
+- A `schedule:` trigger ALWAYS creates a workflow run; a job-level
+  `if: vars.X != ''` only skips the job, so unconfigured repos still collect
+  "skipped" entries in the Actions list (observed 2026-08-02: board sync at
+  `*/30` = ~48 noise runs/day on this very repo). There is no workflow-level
+  `if:` — GitHub offers no way to conditionally schedule.
+- Boilerplate shipping defaults derived from this: (1) rare schedules (weekly
+  Renovate) keep the cron + opt-in gate — one skipped run/week is fine and the
+  gate turns a red failure into a skip; (2) frequent schedules should not ship
+  enabled at all — the board sync became on-demand (`/tasks --sync` →
+  `workflow_dispatch`) with a commented-out daily cron for teams that want
+  background sync. Also weigh what the job DOES: a scheduled job that closes
+  issues is too invasive for an enabled-by-default ship.
+- `gh workflow disable <file>` fully silences a scheduled workflow without
+  deleting it (counterpart: `gh workflow enable`) — the right hint for users who
+  keep an opt-in workflow they never plan to configure.
+
 ---
 
 ## Documentation Audit (pre-v1.0 sweep)
