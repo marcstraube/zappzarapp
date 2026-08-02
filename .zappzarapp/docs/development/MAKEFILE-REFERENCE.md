@@ -305,6 +305,10 @@ Keeps: `secrets/`, `docker/certs/`, source code.
 - `README.md`, `CHANGELOG.md`, `AGENTS.md`, `.claude/` docs reset to boilerplate
   state
 
+The system trust store is never touched: if you ran `make ssl-trust-ca`, the
+removed CA stays trusted until you run `make ssl-untrust-ca` (works even after
+the certificate files are gone).
+
 **Safety features:**
 
 - Mountpoint detection: Directories that are mountpoints (e.g., NFS) are skipped
@@ -860,6 +864,8 @@ SSL certificate management.
 | `make ssl-internal`        | Generate CA + all certificates (default for development)       |
 | `make ssl-trust-ca`        | Trust internal CA in system (auto-detects OS, requires sudo)   |
 | `make ssl-trust-ca-help`   | Show manual instructions to trust CA for all OSes              |
+| `make ssl-untrust-ca`      | Remove internal CA from system trust store (requires sudo)     |
+| `make ssl-untrust-ca-help` | Show manual instructions to remove CA for all OSes             |
 | `make ssl-letsencrypt`     | Setup Let's Encrypt SSL certificate (production)               |
 | `make ssl-renew`           | Renew Let's Encrypt certificate and reload all SSL services    |
 | `make ssl-reload-services` | Reload all SSL-dependent services after certificate renewal    |

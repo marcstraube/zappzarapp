@@ -529,6 +529,16 @@ load 'helpers/setup'
     assert_success
 }
 
+@test "make ssl-untrust-ca --dry-run validates" {
+    run make -n ssl-untrust-ca
+    assert_success
+}
+
+@test "make ssl-untrust-ca-help --dry-run validates" {
+    run make -n ssl-untrust-ca-help
+    assert_success
+}
+
 # =============================================================================
 # Node.js Service Targets
 # =============================================================================

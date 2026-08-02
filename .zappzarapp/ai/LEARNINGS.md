@@ -194,6 +194,12 @@ periodic triage (`/optimize --learnings`) and are removed from this file.
   — so `make -n setup BOILERPLATE=1` actually performed the swaps. Do NOT use
   `make -n` to "preview" a recipe containing `$(MAKE)`; read the recipe, or test
   in a throwaway worktree. (2026-07-29)
+- Third instance found 2026-08-02: `ssl-trust-ca`'s help delegation shared its
+  recipe line with the sudo install branches — `make -n ssl-trust-ca` on a
+  detected OS actually installed the CA into the trust store. Same fix as
+  k8s-build (2026-08-02): a literal `make` for the delegation keeps `-n` inert.
+  When ADDING a `$(MAKE)` call to an existing recipe line, check what else that
+  logical line executes under `-n`.
 
 ### pnpm 10 → 11 migration is NOT a drop-in — three breaking changes (verified against pnpm docs)
 

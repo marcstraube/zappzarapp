@@ -43,6 +43,12 @@ Supported auto-detection:
 - **openSUSE**: Uses `update-ca-certificates`
 - **Windows**: Manual import required (see `ssl-trust-ca-help`)
 
+To undo this later (e.g. after `make reset-full` or `make ssl-clean`), run
+`make ssl-untrust-ca` — it removes the CA from the system trust store and works
+even when the certificate files are already deleted (the Linux stores are
+addressed by the installed file name, macOS/Arch by the certificate name).
+Manual instructions: `make ssl-untrust-ca-help`.
+
 ### View Certificate Information
 
 ```bash
@@ -101,6 +107,8 @@ docker/certs/
 | `ssl-ca`              | Generate CA only                                         |
 | `ssl-trust-ca`        | Auto-detect OS and trust CA in system (requires sudo)    |
 | `ssl-trust-ca-help`   | Show manual instructions to trust CA                     |
+| `ssl-untrust-ca`      | Remove CA from the system trust store (requires sudo)    |
+| `ssl-untrust-ca-help` | Show manual instructions to remove the CA                |
 | `ssl-info`            | Show certificate information                             |
 | `ssl-clean`           | Remove all certificates                                  |
 | `ssl-letsencrypt`     | Setup Let's Encrypt (production)                         |

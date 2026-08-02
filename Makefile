@@ -2697,6 +2697,8 @@ reset-full: ## Full factory reset - removes EVERYTHING including secrets (DANGER
 	@echo -e "\033[0;33mRemoving generated certificates...\033[0m"
 	@rm -rf docker/certs/ca docker/certs/nginx docker/certs/internal 2>/dev/null || true
 	@rm -f docker/certs/*.srl 2>/dev/null || true
+	@echo -e "\033[0;36m  Hint: if you ran 'make ssl-trust-ca', the system trust store still\033[0m"
+	@echo -e "\033[0;36m  trusts the removed CA — run 'make ssl-untrust-ca' to clean it up.\033[0m"
 	@echo -e "\033[0;33mResetting source code to boilerplate defaults...\033[0m"
 	@git checkout -- src/ tests/ resources/ config/ templates/ public/index.php 2>/dev/null || \
 		echo -e "\033[0;31m  ⚠ git checkout failed - source code not reset\033[0m"
@@ -4245,6 +4247,10 @@ ssl-internal: ssl-ca ## Generate internal service certificates (signed by CA)
 	@chmod +x docker/certs/generate-internal.sh
 	@docker/certs/generate-internal.sh
 
+# NOTE: the help delegations in ssl-trust-ca/ssl-untrust-ca use a literal
+# `make` on purpose: GNU make executes recipe lines that reference the
+# recursive-make variable even under `make -n`, which would run the sudo
+# branches during a dry run. A literal `make` keeps the dry run inert.
 ssl-trust-ca: ## Trust internal CA in your system (auto-detects OS, requires sudo)
 	@if [ ! -f docker/certs/ca/ca.crt ]; then \
 		echo -e "\033[0;31mError: CA certificate not found at docker/certs/ca/ca.crt\033[0m"; \
@@ -4274,7 +4280,7 @@ ssl-trust-ca: ## Trust internal CA in your system (auto-detects OS, requires sud
 	fi; \
 	if [ -z "$$OS_TYPE" ] || [ "$$OS_TYPE" = "linux" -a -z "$$DISTRO" ]; then \
 		echo -e "\033[0;33mCould not detect OS automatically.\033[0m"; \
-		$(MAKE) --silent ssl-trust-ca-help; \
+		make --silent ssl-trust-ca-help; \
 		exit 0; \
 	fi; \
 	echo -e "\033[0;33mTrusting internal CA certificate...\033[0m"; \
@@ -4305,7 +4311,7 @@ ssl-trust-ca: ## Trust internal CA in your system (auto-detects OS, requires sud
 			echo -e "\033[0;32m✓ CA trusted in system store\033[0m";; \
 		*) \
 			echo -e "\033[0;33mUnsupported OS/distro combination.\033[0m"; \
-			$(MAKE) --silent ssl-trust-ca-help; \
+			make --silent ssl-trust-ca-help; \
 			exit 0;; \
 	esac
 	@echo ""
@@ -4338,6 +4344,130 @@ ssl-trust-ca-help: ## Show manual instructions to trust internal CA
 	@echo ""
 	@echo "Windows:"
 	@echo "  Import docker/certs/ca/ca.crt into 'Trusted Root Certification Authorities'"
+	@echo "============================================================================"
+
+# Works even after the CA files were deleted (reset-full/ssl-clean): the
+# Debian/RHEL/SUSE stores are addressed by the fixed installed file name,
+# macOS by the certificate CN, Arch by the p11-kit label. macOS/Arch loop
+# until every accumulated copy is gone — repeated trust/reset cycles leave
+# orphaned anchors behind (observed live: three on one host); Arch falls
+# back to file-based removal if the label URI is not supported.
+ssl-untrust-ca: ## Remove internal CA from your system trust store (auto-detects OS, requires sudo)
+	@OS_TYPE=""; \
+	DISTRO=""; \
+	if [ "$$(uname)" = "Darwin" ]; then \
+		OS_TYPE="macos"; \
+	elif [ "$$(uname)" = "Linux" ]; then \
+		OS_TYPE="linux"; \
+		if [ -f /etc/os-release ]; then \
+			. /etc/os-release; \
+			case "$$ID" in \
+				arch|manjaro|endeavouros) DISTRO="arch";; \
+				debian|ubuntu|linuxmint|pop) DISTRO="debian";; \
+				fedora|rhel|centos|rocky|alma) DISTRO="rhel";; \
+				opensuse*|sles) DISTRO="suse";; \
+				*) \
+					if [ -f /etc/debian_version ]; then DISTRO="debian"; \
+					elif [ -f /etc/redhat-release ]; then DISTRO="rhel"; \
+					elif command -v trust >/dev/null 2>&1; then DISTRO="arch"; \
+					fi;; \
+			esac; \
+		fi; \
+	fi; \
+	if [ -z "$$OS_TYPE" ] || [ "$$OS_TYPE" = "linux" -a -z "$$DISTRO" ]; then \
+		echo -e "\033[0;33mCould not detect OS automatically.\033[0m"; \
+		make --silent ssl-untrust-ca-help; \
+		exit 0; \
+	fi; \
+	echo -e "\033[0;33mRemoving internal CA from the system trust store...\033[0m"; \
+	echo -e "\033[0;34mDetected: $$OS_TYPE $${DISTRO:+($$DISTRO)}\033[0m"; \
+	case "$$OS_TYPE-$$DISTRO" in \
+		macos-) \
+			if ! security find-certificate -c "Zappzarapp Internal CA" /Library/Keychains/System.keychain >/dev/null 2>&1; then \
+				echo -e "\033[0;32m✓ No Zappzarapp CA in the System Keychain — nothing to remove\033[0m"; \
+			else \
+				echo -e "\033[0;34mRemoving CA from macOS System Keychain (requires sudo)...\033[0m"; \
+				N=0; \
+				while [ $$N -lt 10 ] && security find-certificate -c "Zappzarapp Internal CA" /Library/Keychains/System.keychain >/dev/null 2>&1; do \
+					sudo security delete-certificate -c "Zappzarapp Internal CA" /Library/Keychains/System.keychain || break; \
+					N=$$((N+1)); \
+				done; \
+				if security find-certificate -c "Zappzarapp Internal CA" /Library/Keychains/System.keychain >/dev/null 2>&1; then \
+					echo -e "\033[0;31m⚠ Some CA copies could not be removed\033[0m"; exit 1; \
+				fi; \
+				echo -e "\033[0;32m✓ CA removed from macOS System Keychain ($$N instance(s))\033[0m"; \
+			fi;; \
+		linux-arch) \
+			BEFORE=$$(trust list 2>/dev/null | grep -c "label: Zappzarapp Internal CA" || true); \
+			if [ "$$BEFORE" -eq 0 ]; then \
+				echo -e "\033[0;32m✓ No Zappzarapp CA in the trust store — nothing to remove\033[0m"; \
+			else \
+				echo -e "\033[0;34mRemoving CA via p11-kit trust anchor (requires sudo)...\033[0m"; \
+				N=0; \
+				while [ $$N -lt 10 ] && trust list 2>/dev/null | grep -q "label: Zappzarapp Internal CA"; do \
+					sudo trust anchor --remove "pkcs11:object=Zappzarapp%20Internal%20CA" 2>/dev/null || break; \
+					N=$$((N+1)); \
+				done; \
+				if trust list 2>/dev/null | grep -q "label: Zappzarapp Internal CA"; then \
+					if [ -f docker/certs/ca/ca.crt ]; then sudo trust anchor --remove docker/certs/ca/ca.crt || true; fi; \
+				fi; \
+				REMAINING=$$(trust list 2>/dev/null | grep -c "label: Zappzarapp Internal CA" || true); \
+				if [ "$$REMAINING" -gt 0 ]; then \
+					echo -e "\033[0;31m⚠ $$REMAINING trust anchor(s) could not be removed (see 'trust list')\033[0m"; exit 1; \
+				fi; \
+				echo -e "\033[0;32m✓ CA removed from trust anchors ($$((BEFORE-REMAINING)) instance(s))\033[0m"; \
+			fi;; \
+		linux-debian) \
+			echo -e "\033[0;34mRemoving CA from Debian/Ubuntu trust store (requires sudo)...\033[0m"; \
+			sudo rm -f /usr/local/share/ca-certificates/zappzarapp-ca.crt && \
+			sudo update-ca-certificates --fresh >/dev/null && \
+			echo -e "\033[0;32m✓ CA removed from system store\033[0m";; \
+		linux-rhel) \
+			echo -e "\033[0;34mRemoving CA from RHEL/Fedora trust store (requires sudo)...\033[0m"; \
+			sudo rm -f /etc/pki/ca-trust/source/anchors/zappzarapp-ca.crt && \
+			sudo update-ca-trust && \
+			echo -e "\033[0;32m✓ CA removed from system store\033[0m";; \
+		linux-suse) \
+			echo -e "\033[0;34mRemoving CA from openSUSE trust store (requires sudo)...\033[0m"; \
+			sudo rm -f /etc/pki/trust/anchors/zappzarapp-ca.crt && \
+			sudo update-ca-certificates && \
+			echo -e "\033[0;32m✓ CA removed from system store\033[0m";; \
+		*) \
+			echo -e "\033[0;33mUnsupported OS/distro combination.\033[0m"; \
+			make --silent ssl-untrust-ca-help; \
+			exit 0;; \
+	esac
+	@echo ""
+	@echo -e "\033[0;34mNote: if you imported the CA into Firefox manually, remove it there\033[0m"
+	@echo -e "\033[0;34mtoo: Settings > Privacy > Certificates > 'Zappzarapp Internal CA'.\033[0m"
+
+ssl-untrust-ca-help: ## Show manual instructions to remove the internal CA from the trust store
+	@echo "============================================================================"
+	@echo "To remove the internal CA from your system trust store:"
+	@echo "============================================================================"
+	@echo ""
+	@echo "Linux (Arch/Manjaro):"
+	@echo "  sudo trust anchor --remove docker/certs/ca/ca.crt"
+	@echo "  # or, if the file is already gone:"
+	@echo "  sudo trust anchor --remove \"pkcs11:object=Zappzarapp%20Internal%20CA\""
+	@echo ""
+	@echo "Linux (Debian/Ubuntu):"
+	@echo "  sudo rm /usr/local/share/ca-certificates/zappzarapp-ca.crt"
+	@echo "  sudo update-ca-certificates --fresh"
+	@echo ""
+	@echo "Linux (RHEL/Fedora):"
+	@echo "  sudo rm /etc/pki/ca-trust/source/anchors/zappzarapp-ca.crt"
+	@echo "  sudo update-ca-trust"
+	@echo ""
+	@echo "Linux (openSUSE):"
+	@echo "  sudo rm /etc/pki/trust/anchors/zappzarapp-ca.crt"
+	@echo "  sudo update-ca-certificates"
+	@echo ""
+	@echo "macOS:"
+	@echo "  sudo security delete-certificate -c \"Zappzarapp Internal CA\" /Library/Keychains/System.keychain"
+	@echo ""
+	@echo "Windows:"
+	@echo "  Remove 'Zappzarapp Internal CA' from 'Trusted Root Certification Authorities'"
 	@echo "============================================================================"
 
 ssl-letsencrypt: ## Setup Let's Encrypt SSL certificate (production)
@@ -4526,6 +4656,8 @@ ssl-clean: ## Remove all SSL certificates (WARNING: Destructive!)
 		rm -rf docker/certs/ca docker/certs/nginx docker/certs/internal; \
 		rm -rf docker/certs/*.srl docker/certs/letsencrypt; \
 		echo -e "\033[0;32mSSL certificates removed!\033[0m"; \
+		echo -e "\033[0;36m  Hint: if you ran 'make ssl-trust-ca', the system trust store still\033[0m"; \
+		echo -e "\033[0;36m  trusts the removed CA — run 'make ssl-untrust-ca' to clean it up.\033[0m"; \
 	else \
 		echo -e "\033[0;34mOperation cancelled.\033[0m"; \
 	fi
