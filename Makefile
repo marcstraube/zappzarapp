@@ -29,15 +29,17 @@ SQLFLUFF_IMAGE ?= sqlfluff/sqlfluff:4.2.2
 # 1. .env (team defaults)
 # 2. .env.production (if ENV=production)
 # 3. .env.local (local overrides)
+# A missing .env is tolerated here so targets fall back to defaults;
+# validate-env is the place that reports it loudly.
 define LOAD_ENV
-. ./.env; \
+[ -f .env ] && . ./.env || true; \
 [ "$${ENV:-development}" = "production" ] && [ -f .env.production ] && . ./.env.production || true; \
 [ -f .env.local ] && . ./.env.local || true
 endef
 
 # Helper to check development mode (guards dev-only targets)
 define require_development
-	@if [ -f .env ]; then . ./.env; fi && \
+	@$(LOAD_ENV) && \
 	if [ "$${ENV:-development}" = "production" ]; then \
 		echo -e "\033[0;31mError: $(1) is only available in development mode\033[0m"; \
 		echo -e "\033[0;33mSet ENV=development in .env to enable\033[0m"; \
@@ -103,7 +105,7 @@ composer-install: ## Install Composer dependencies (Docker - guaranteed consiste
 	@echo -e "\033[0;33mInstalling Composer dependencies (Docker)...\033[0m"
 	@# Fix bind mount bug: if lockfile is directory or has wrong ownership, fix via Docker
 	@# Note: Use USER_ID/GROUP_ID from .env (not host user) for Docker container compatibility
-	@. ./.env && \
+	@$(LOAD_ENV) && \
 	if [ -d composer.lock ] || [ ! -f composer.lock ] || [ -f composer.lock -a ! -s composer.lock ]; then \
 		docker run --rm -v "$(PWD):/app" -w /app $(ALPINE_IMAGE) sh -c \
 			"rm -rf composer.lock && echo '{}' > composer.lock && chown $${USER_ID:-1000}:$${GROUP_ID:-1000} composer.lock"; \
@@ -196,7 +198,7 @@ setup: ## Create directories, install dependencies (BOILERPLATE=1 to force file 
 	@# Fix ownership FIRST if root-owned (from container test/coverage operations)
 	@# Note: Use USER_ID/GROUP_ID from .env (not host user) for Docker container compatibility
 	@if [ -d build ] && find build -user root 2>/dev/null | grep -q .; then \
-		. ./.env && docker run --rm -v "$(PWD)/build:/build" $(ALPINE_IMAGE) chown -R $${USER_ID:-1000}:$${GROUP_ID:-1000} /build; \
+		$(LOAD_ENV) && docker run --rm -v "$(PWD)/build:/build" $(ALPINE_IMAGE) chown -R $${USER_ID:-1000}:$${GROUP_ID:-1000} /build; \
 	fi
 	@mkdir -p build/coverage/{php,node} build/vitest-report dist
 
@@ -207,7 +209,7 @@ setup: ## Create directories, install dependencies (BOILERPLATE=1 to force file 
 	@# Fix bind mount bug: remove if directories, ensure files exist with correct ownership
 	@# Note: Use USER_ID/GROUP_ID from .env (not host user) for Docker container compatibility
 	@if [ -d composer.lock ] || [ -d pnpm-lock.yaml ] || [ ! -f composer.lock ] || [ ! -f pnpm-lock.yaml ]; then \
-		. ./.env && \
+		$(LOAD_ENV) && \
 		docker run --rm -v "$(PWD):/app" -w /app $(ALPINE_IMAGE) sh -c \
 			"rm -rf composer.lock pnpm-lock.yaml && touch composer.lock pnpm-lock.yaml && chown $${USER_ID:-1000}:$${GROUP_ID:-1000} composer.lock pnpm-lock.yaml"; \
 	fi
@@ -219,20 +221,20 @@ setup: ## Create directories, install dependencies (BOILERPLATE=1 to force file 
 	@mkdir -p docs/api/{php,node} tools
 
 	# Storage (Runtime data) - Set permissions
-	@. ./.env && mkdir -p $${STORAGE_DIR:-./storage}/{app/{uploads,generated},cache,sessions,logs}
+	@$(LOAD_ENV) && mkdir -p $${STORAGE_DIR:-./storage}/{app/{uploads,generated},cache,sessions,logs}
 	@# Fix ownership if root-owned (from container operations) - only for default ./storage
 	@# Note: Use USER_ID/GROUP_ID from .env (not host user) for Docker container compatibility
 	@if [ -d storage ] && find storage -user root 2>/dev/null | grep -q .; then \
-		. ./.env && docker run --rm -v "$(PWD)/storage:/storage" $(ALPINE_IMAGE) chown -R $${USER_ID:-1000}:$${GROUP_ID:-1000} /storage; \
+		$(LOAD_ENV) && docker run --rm -v "$(PWD)/storage:/storage" $(ALPINE_IMAGE) chown -R $${USER_ID:-1000}:$${GROUP_ID:-1000} /storage; \
 	fi
-	@. ./.env && chmod 770 $${STORAGE_DIR:-./storage} -R 2>/dev/null || true
+	@$(LOAD_ENV) && chmod 770 $${STORAGE_DIR:-./storage} -R 2>/dev/null || true
 
 	# Backups directory (encrypted backups for all services)
 	@mkdir -p backups/{db,seaweedfs,rabbitmq,elasticsearch}
 	@# Fix ownership if root-owned (from container backup operations)
 	@# Note: Use USER_ID/GROUP_ID from .env (not host user) for Docker container compatibility
 	@if find backups -user root 2>/dev/null | grep -q .; then \
-		. ./.env && docker run --rm -v "$(PWD)/backups:/backups" $(ALPINE_IMAGE) chown -R $${USER_ID:-1000}:$${GROUP_ID:-1000} /backups; \
+		$(LOAD_ENV) && docker run --rm -v "$(PWD)/backups:/backups" $(ALPINE_IMAGE) chown -R $${USER_ID:-1000}:$${GROUP_ID:-1000} /backups; \
 	fi
 	@chmod 700 backups backups/* 2>/dev/null || true
 
@@ -587,7 +589,7 @@ build: ## Build Docker images (optionally specify service names: make build php 
 	if [ -n "$$SERVICES" ]; then \
 		echo -e "\033[0;33mBuilding images: $$SERVICES...\033[0m"; \
 		if [ -f .env ]; then \
-			. ./.env && if [ "$$ENV" = "production" ]; then \
+			$(LOAD_ENV) && if [ "$$ENV" = "production" ]; then \
 				NODE_TARGET_AUTO="assets"; \
 				NODE_BACKEND_TARGET_AUTO="api"; \
 				NGINX_TARGET_AUTO="production"; \
@@ -612,7 +614,7 @@ build: ## Build Docker images (optionally specify service names: make build php 
 	else \
 		echo -e "\033[0;33mBuilding Docker images...\033[0m"; \
 		if [ -f .env ]; then \
-			. ./.env && \
+			$(LOAD_ENV) && \
 			if [ "$${ENV:-development}" != "production" ]; then \
 				DEV_INFO=""; \
 				if [ "$${ENABLE_NODE}" = "false" ]; then \
@@ -683,7 +685,7 @@ build-no-cache: ## Build Docker images without cache (optionally specify service
 	if [ -n "$$SERVICES" ]; then \
 		echo -e "\033[0;33mBuilding images (no cache): $$SERVICES...\033[0m"; \
 		if [ -f .env ]; then \
-			. ./.env && if [ "$$ENV" = "production" ]; then \
+			$(LOAD_ENV) && if [ "$$ENV" = "production" ]; then \
 				NODE_TARGET_AUTO="assets"; \
 				NODE_BACKEND_TARGET_AUTO="api"; \
 				NGINX_TARGET_AUTO="production"; \
@@ -708,7 +710,7 @@ build-no-cache: ## Build Docker images without cache (optionally specify service
 	else \
 		echo -e "\033[0;33mBuilding Docker images (no cache)...\033[0m"; \
 		if [ -f .env ]; then \
-			. ./.env && \
+			$(LOAD_ENV) && \
 			PROFILES=""; \
 			if [ "$${ENABLE_DATABASE:-true}" = "true" ]; then \
 				PROFILES="$$PROFILES --profile $${DB_TYPE:-postgres}"; \
@@ -763,7 +765,7 @@ build-no-cache: ## Build Docker images without cache (optionally specify service
 clean: ## Remove containers, networks and dangling images (keeps data volumes)
 	@echo -e "\033[0;33mCleaning up...\033[0m"
 	@if [ -f .env ]; then \
-		. ./.env && \
+		$(LOAD_ENV) && \
 		PROFILES=""; \
 		if [ "$${ENABLE_DATABASE:-true}" = "true" ]; then \
 			PROFILES="$$PROFILES --profile $${DB_TYPE:-postgres}"; \
@@ -801,7 +803,7 @@ down: ## Stop containers (optionally specify service names: make down php nginx)
 	if [ -n "$$SERVICES" ]; then \
 		echo -e "\033[0;33mStopping services: $$SERVICES...\033[0m"; \
 		if [ -f .env ]; then \
-			. ./.env && if [ "$$ENV" = "production" ]; then \
+			$(LOAD_ENV) && if [ "$$ENV" = "production" ]; then \
 				$(DC) -f compose.yaml -f compose.production.yaml stop $$SERVICES; \
 			else \
 				$(DC) stop $$SERVICES; \
@@ -813,7 +815,7 @@ down: ## Stop containers (optionally specify service names: make down php nginx)
 		echo -e "\033[0;33mStopping containers...\033[0m"; \
 		ALL_PROFILES="--profile postgres --profile mariadb --profile php --profile node --profile node-backend --profile redis --profile mercure --profile meilisearch --profile elasticsearch --profile mailpit --profile seaweedfs --profile rabbitmq --profile adminer --profile pgadmin"; \
 		if [ -f .env ]; then \
-			. ./.env && if [ "$$ENV" = "production" ]; then \
+			$(LOAD_ENV) && if [ "$$ENV" = "production" ]; then \
 				$(DC) -f compose.yaml -f compose.production.yaml $$ALL_PROFILES down --remove-orphans; \
 			else \
 				$(DC) $$ALL_PROFILES down --remove-orphans; \
@@ -835,7 +837,7 @@ logs: ## Show logs (optionally specify service names: make logs php nginx)
 	@SERVICES="$(filter-out $@,$(MAKECMDGOALS))"; \
 	if [ -n "$$SERVICES" ]; then \
 		if [ -f .env ]; then \
-			. ./.env && if [ "$$ENV" = "production" ]; then \
+			$(LOAD_ENV) && if [ "$$ENV" = "production" ]; then \
 				docker compose -f compose.yaml -f compose.production.yaml logs -f $$SERVICES; \
 			else \
 				docker compose logs -f $$SERVICES; \
@@ -845,7 +847,7 @@ logs: ## Show logs (optionally specify service names: make logs php nginx)
 		fi; \
 	else \
 		if [ -f .env ]; then \
-			. ./.env && \
+			$(LOAD_ENV) && \
 			PROFILES=""; \
 			if [ "$${ENABLE_DATABASE:-true}" = "true" ]; then \
 				PROFILES="$$PROFILES --profile $${DB_TYPE:-postgres}"; \
@@ -871,7 +873,7 @@ logs: ## Show logs (optionally specify service names: make logs php nginx)
 
 logs-nginx: ## Show Nginx logs only
 	@if [ -f .env ]; then \
-		. ./.env && if [ "$$ENV" = "production" ]; then \
+		$(LOAD_ENV) && if [ "$$ENV" = "production" ]; then \
 			docker compose -f compose.yaml -f compose.production.yaml logs -f nginx; \
 		else \
 			docker compose logs -f nginx; \
@@ -882,7 +884,7 @@ logs-nginx: ## Show Nginx logs only
 
 logs-node: ## Show Node.js logs only
 	@if [ -f .env ]; then \
-		. ./.env && if [ "$$ENV" = "production" ]; then \
+		$(LOAD_ENV) && if [ "$$ENV" = "production" ]; then \
 			docker compose -f compose.yaml -f compose.production.yaml logs -f node; \
 		else \
 			docker compose logs -f node; \
@@ -893,7 +895,7 @@ logs-node: ## Show Node.js logs only
 
 logs-php: ## Show PHP logs only
 	@if [ -f .env ]; then \
-		. ./.env && if [ "$$ENV" = "production" ]; then \
+		$(LOAD_ENV) && if [ "$$ENV" = "production" ]; then \
 			docker compose -f compose.yaml -f compose.production.yaml logs -f php; \
 		else \
 			docker compose logs -f php; \
@@ -904,7 +906,7 @@ logs-php: ## Show PHP logs only
 
 logs-mariadb: ## Show MariaDB logs only
 	@if [ -f .env ]; then \
-		. ./.env && if [ "$$ENV" = "production" ]; then \
+		$(LOAD_ENV) && if [ "$$ENV" = "production" ]; then \
 			docker compose -f compose.yaml -f compose.production.yaml logs -f mariadb; \
 		else \
 			docker compose logs -f mariadb; \
@@ -915,7 +917,7 @@ logs-mariadb: ## Show MariaDB logs only
 
 logs-postgres: ## Show PostgreSQL logs only
 	@if [ -f .env ]; then \
-		. ./.env && if [ "$$ENV" = "production" ]; then \
+		$(LOAD_ENV) && if [ "$$ENV" = "production" ]; then \
 			docker compose -f compose.yaml -f compose.production.yaml logs -f postgres; \
 		else \
 			docker compose logs -f postgres; \
@@ -926,7 +928,7 @@ logs-postgres: ## Show PostgreSQL logs only
 
 logs-redis: ## Show Redis logs only
 	@if [ -f .env ]; then \
-		. ./.env && if [ "$$ENV" = "production" ]; then \
+		$(LOAD_ENV) && if [ "$$ENV" = "production" ]; then \
 			docker compose -f compose.yaml -f compose.production.yaml logs -f redis; \
 		else \
 			docker compose logs -f redis; \
@@ -937,7 +939,7 @@ logs-redis: ## Show Redis logs only
 
 logs-elasticsearch: ## Show Elasticsearch logs only
 	@if [ -f .env ]; then \
-		. ./.env && if [ "$$ENV" = "production" ]; then \
+		$(LOAD_ENV) && if [ "$$ENV" = "production" ]; then \
 			docker compose -f compose.yaml -f compose.production.yaml logs -f elasticsearch; \
 		else \
 			docker compose logs -f elasticsearch; \
@@ -948,7 +950,7 @@ logs-elasticsearch: ## Show Elasticsearch logs only
 
 logs-mailpit: ## Show Mailpit logs only
 	@if [ -f .env ]; then \
-		. ./.env && if [ "$$ENV" = "production" ]; then \
+		$(LOAD_ENV) && if [ "$$ENV" = "production" ]; then \
 			docker compose -f compose.yaml -f compose.production.yaml logs -f mailpit; \
 		else \
 			docker compose logs -f mailpit; \
@@ -959,7 +961,7 @@ logs-mailpit: ## Show Mailpit logs only
 
 logs-meilisearch: ## Show Meilisearch logs only
 	@if [ -f .env ]; then \
-		. ./.env && if [ "$$ENV" = "production" ]; then \
+		$(LOAD_ENV) && if [ "$$ENV" = "production" ]; then \
 			docker compose -f compose.yaml -f compose.production.yaml logs -f meilisearch; \
 		else \
 			docker compose logs -f meilisearch; \
@@ -970,7 +972,7 @@ logs-meilisearch: ## Show Meilisearch logs only
 
 logs-mercure: ## Show Mercure logs only
 	@if [ -f .env ]; then \
-		. ./.env && if [ "$$ENV" = "production" ]; then \
+		$(LOAD_ENV) && if [ "$$ENV" = "production" ]; then \
 			docker compose -f compose.yaml -f compose.production.yaml logs -f mercure; \
 		else \
 			docker compose logs -f mercure; \
@@ -981,7 +983,7 @@ logs-mercure: ## Show Mercure logs only
 
 logs-rabbitmq: ## Show RabbitMQ logs only
 	@if [ -f .env ]; then \
-		. ./.env && if [ "$$ENV" = "production" ]; then \
+		$(LOAD_ENV) && if [ "$$ENV" = "production" ]; then \
 			docker compose -f compose.yaml -f compose.production.yaml logs -f rabbitmq; \
 		else \
 			docker compose logs -f rabbitmq; \
@@ -992,7 +994,7 @@ logs-rabbitmq: ## Show RabbitMQ logs only
 
 logs-seaweedfs: ## Show SeaweedFS logs only
 	@if [ -f .env ]; then \
-		. ./.env && if [ "$$ENV" = "production" ]; then \
+		$(LOAD_ENV) && if [ "$$ENV" = "production" ]; then \
 			docker compose -f compose.yaml -f compose.production.yaml logs -f seaweedfs; \
 		else \
 			docker compose logs -f seaweedfs; \
@@ -1086,14 +1088,14 @@ pnpm: ## Execute pnpm command (e.g. make pnpm CMD="add -D vue")
 
 prune: ## Remove untagged/dangling images related to this project
 	@echo -e "\033[0;33mPruning dangling images...\033[0m"
-	@. ./.env && docker image prune -f --filter "label=com.docker.compose.project=$$COMPOSE_PROJECT_NAME"
+	@$(LOAD_ENV) && docker image prune -f --filter "label=com.docker.compose.project=$$COMPOSE_PROJECT_NAME"
 
 restart: ## Restart containers (optionally specify service names: make restart php nginx)
 	@SERVICES="$(filter-out $@,$(MAKECMDGOALS))"; \
 	if [ -n "$$SERVICES" ]; then \
 		echo -e "\033[0;33mRestarting services: $$SERVICES...\033[0m"; \
 		if [ -f .env ]; then \
-			. ./.env && if [ "$$ENV" = "production" ]; then \
+			$(LOAD_ENV) && if [ "$$ENV" = "production" ]; then \
 				$(DC) -f compose.yaml -f compose.production.yaml restart $$SERVICES; \
 			else \
 				$(DC) restart $$SERVICES; \
@@ -1223,14 +1225,14 @@ up: ## Start containers (optionally specify service names: make up php nginx)
 	@SERVICES="$(filter-out $@,$(MAKECMDGOALS))"; \
 	if [ -n "$$SERVICES" ]; then \
 		echo -e "\033[0;33mStarting services: $$SERVICES...\033[0m"; \
-		. ./.env && if [ "$$ENV" = "production" ]; then \
+		$(LOAD_ENV) && if [ "$$ENV" = "production" ]; then \
 			$(DC) -f compose.yaml -f compose.production.yaml start $$SERVICES; \
 		else \
 			$(DC) start $$SERVICES; \
 		fi; \
 		echo -e "\033[0;32mServices started!\033[0m"; \
 	else \
-		. ./.env && [ -f .env.local ] && . ./.env.local; \
+		$(LOAD_ENV); \
 		if [ "$${ENABLE_MAILPIT:-false}" = "true" ] && [ "$${ENV:-development}" = "production" ]; then \
 			echo -e "\033[0;33m⚠️  WARNING: Mailpit is enabled but ENV=production.\033[0m"; \
 			echo -e "\033[0;33m   Mailpit won't start (compose.production.yaml sets replicas: 0).\033[0m"; \
@@ -1333,7 +1335,7 @@ k8s-deploy: ## Deploy to Kubernetes using Helm
 		exit 1; \
 	fi
 	@echo -e "\033[0;33mDeploying to Kubernetes...\033[0m"
-	@. ./.env 2>/dev/null && \
+	@$(LOAD_ENV) && \
 	NAMESPACE="$${KUBE_NAMESPACE:-zappzarapp}" && \
 	VALUES_FILE="kubernetes/values.yaml" && \
 	if [ "$${ENV:-development}" = "production" ]; then \
@@ -1376,7 +1378,7 @@ k8s-build: ## Build the images the Helm chart will deploy (enabled services deri
 		echo -e "\033[0;31mError: helm is required for 'make k8s-build'\033[0m"; \
 		exit 1; \
 	fi
-	@. ./.env 2>/dev/null; \
+	@$(LOAD_ENV); \
 	VALUES_FILE="kubernetes/values.yaml"; \
 	[ "$${ENV:-development}" = "production" ] && VALUES_FILE="kubernetes/values.production.yaml"; \
 	SERVICES=$$(helm template zappzarapp ./kubernetes -f "$$VALUES_FILE" 2>/dev/null | grep -E '^[[:space:]]*image:' | grep -oE 'zappzarapp-[a-z0-9-]+' | sed 's/^zappzarapp-//' | sort -u | tr '\n' ' '); \
@@ -1432,14 +1434,14 @@ k8s-build: ## Build the images the Helm chart will deploy (enabled services deri
 	fi
 
 k8s-remove: ## Remove deployment from Kubernetes
-	@. ./.env 2>/dev/null && \
+	@$(LOAD_ENV) && \
 	NAMESPACE="$${KUBE_NAMESPACE:-zappzarapp}" && \
 	echo -e "\033[0;33mRemoving deployment from Kubernetes...\033[0m" && \
 	helm uninstall zappzarapp --namespace "$$NAMESPACE" 2>/dev/null || echo "Release not found" && \
 	echo -e "\033[0;32mDeployment removed!\033[0m"
 
 k8s-status: ## Show Kubernetes deployment status
-	@. ./.env 2>/dev/null && \
+	@$(LOAD_ENV) && \
 	NAMESPACE="$${KUBE_NAMESPACE:-zappzarapp}" && \
 	echo -e "\033[0;34mNamespace: $$NAMESPACE\033[0m" && \
 	echo "" && \
@@ -1454,7 +1456,7 @@ k8s-status: ## Show Kubernetes deployment status
 
 k8s-logs: ## Show Kubernetes logs: make k8s-logs [pod]
 	@POD="$(filter-out $@,$(MAKECMDGOALS))"; \
-	. ./.env 2>/dev/null && \
+	$(LOAD_ENV) && \
 	NAMESPACE="$${KUBE_NAMESPACE:-zappzarapp}" && \
 	if [ -n "$$POD" ]; then \
 		kubectl logs -f "$$POD" -n "$$NAMESPACE"; \
@@ -1478,7 +1480,7 @@ test-production: ## Test production build with ENV-configured services (smart, r
 	@# Check ENV: Prefer environment variable (CI context), fall back to .env (local context)
 	@CURRENT_ENV="$${ENV}"; \
 	if [ -z "$$CURRENT_ENV" ]; then \
-		CURRENT_ENV=$$(. ./.env && echo "$${ENV:-development}"); \
+		CURRENT_ENV=$$($(LOAD_ENV) && echo "$${ENV:-development}"); \
 	fi; \
 	if [ "$$CURRENT_ENV" != "production" ]; then \
 		echo -e "\033[0;31mError: ENV must be 'production'\033[0m"; \
@@ -1488,7 +1490,7 @@ test-production: ## Test production build with ENV-configured services (smart, r
 	fi
 	@echo ""
 	@echo -e "\033[0;36mℹ️  Services activated based on .env configuration:\033[0m"
-	@. ./.env && \
+	@$(LOAD_ENV) && \
 	echo -e "   \033[0;32m✓\033[0m nginx (always)" && \
 	if [ "$${ENABLE_PHP:-true}" = "true" ]; then echo -e "   \033[0;32m✓\033[0m php"; fi && \
 	if [ "$${ENABLE_NODE:-true}" = "true" ]; then \
@@ -1507,7 +1509,7 @@ test-production: ## Test production build with ENV-configured services (smart, r
 	if [ "$${ENABLE_RABBITMQ:-false}" = "true" ]; then echo -e "   \033[0;32m✓\033[0m rabbitmq"; fi
 	@echo ""
 	@# Build profile list (same logic as 'make up')
-	@. ./.env && \
+	@$(LOAD_ENV) && \
 	PROFILES=""; \
 	if [ "$${ENABLE_DATABASE:-true}" = "true" ]; then \
 		PROFILES="$$PROFILES --profile $${DB_TYPE:-postgres}"; \
@@ -1599,7 +1601,7 @@ test-production-minimal: ## Test production build with minimal services (nginx +
 	fi
 	@echo ""
 	@echo -e "\033[0;36mℹ️  Starting minimal core services:\033[0m"
-	@. ./.env && \
+	@$(LOAD_ENV) && \
 	echo -e "   \033[0;32m✓\033[0m nginx" && \
 	if [ "$${ENABLE_PHP:-true}" = "true" ]; then echo -e "   \033[0;32m✓\033[0m php"; fi && \
 	if [ "$${ENABLE_NODE:-true}" = "true" ]; then \
@@ -1610,7 +1612,7 @@ test-production-minimal: ## Test production build with minimal services (nginx +
 	fi && \
 	echo -e "   \033[0;32m✓\033[0m $${DB_TYPE:-postgres} (database)"
 	@echo ""
-	@. ./.env && \
+	@$(LOAD_ENV) && \
 	PROFILES="--profile $${DB_TYPE:-postgres}"; \
 	if [ "$${ENABLE_PHP:-true}" = "true" ]; then PROFILES="$$PROFILES --profile php"; fi; \
 	if [ "$${ENABLE_NODE:-true}" = "true" ]; then \
@@ -1784,7 +1786,7 @@ pnpm-install: ## Install Node.js dependencies (Docker - guaranteed consistency)
 	@echo -e "\033[0;33mInstalling Node.js dependencies (Docker)...\033[0m"
 	@# Fix bind mount bug: if lockfile is directory or missing, fix via Docker
 	@# Note: Use USER_ID/GROUP_ID from .env (not host user) for Docker container compatibility
-	@. ./.env && \
+	@$(LOAD_ENV) && \
 	if [ -d pnpm-lock.yaml ] || [ ! -f pnpm-lock.yaml ]; then \
 		docker run --rm -v "$(PWD):/app" -w /app $(ALPINE_IMAGE) sh -c \
 			"rm -rf pnpm-lock.yaml && touch pnpm-lock.yaml && chown $${USER_ID:-1000}:$${GROUP_ID:-1000} pnpm-lock.yaml"; \
@@ -2037,12 +2039,12 @@ redis-monitor: ## Monitor Redis commands in real-time
 	@docker compose exec redis redis-cli MONITOR
 
 postgres-cli: ## Open PostgreSQL CLI (psql)
-	@. ./.env && . ./docker/scripts/parse-db-url.sh && \
+	@$(LOAD_ENV) && . ./docker/scripts/parse-db-url.sh && \
 		docker compose exec postgres psql -U "$$DB_USER" -d "$$DB_NAME"
 
 postgres-dump: ## Create database backup (dump.sql)
 	@echo -e "\033[0;33mCreating database backup...\033[0m"
-	@. ./.env && . ./docker/scripts/parse-db-url.sh && \
+	@$(LOAD_ENV) && . ./docker/scripts/parse-db-url.sh && \
 		docker compose exec postgres pg_dump -U "$$DB_USER" -d "$$DB_NAME" > dump.sql
 	@echo -e "\033[0;32mBackup saved to dump.sql\033[0m"
 
@@ -2052,17 +2054,17 @@ postgres-restore: ## Restore database from dump.sql
 		exit 1; \
 	fi
 	@echo -e "\033[0;33mRestoring database from dump.sql...\033[0m"
-	@. ./.env && . ./docker/scripts/parse-db-url.sh && \
+	@$(LOAD_ENV) && . ./docker/scripts/parse-db-url.sh && \
 		docker compose exec -T postgres psql -U "$$DB_USER" -d "$$DB_NAME" < dump.sql
 	@echo -e "\033[0;32mDatabase restored!\033[0m"
 
 mariadb-cli: ## Open MariaDB CLI
-	@. ./.env && . ./docker/scripts/parse-db-url.sh && \
+	@$(LOAD_ENV) && . ./docker/scripts/parse-db-url.sh && \
 		docker compose exec mariadb mariadb -u "$$DB_USER" -p"$$DB_PASSWORD" "$$DB_NAME"
 
 mariadb-dump: ## Create MariaDB database backup (dump.sql)
 	@echo -e "\033[0;33mCreating MariaDB database backup...\033[0m"
-	@. ./.env && . ./docker/scripts/parse-db-url.sh && \
+	@$(LOAD_ENV) && . ./docker/scripts/parse-db-url.sh && \
 		docker compose exec mariadb mariadb-dump -u "$$DB_USER" -p"$$DB_PASSWORD" "$$DB_NAME" > dump.sql
 	@echo -e "\033[0;32mBackup saved to dump.sql\033[0m"
 
@@ -2072,7 +2074,7 @@ mariadb-restore: ## Restore MariaDB database from dump.sql
 		exit 1; \
 	fi
 	@echo -e "\033[0;33mRestoring MariaDB database from dump.sql...\033[0m"
-	@. ./.env && . ./docker/scripts/parse-db-url.sh && \
+	@$(LOAD_ENV) && . ./docker/scripts/parse-db-url.sh && \
 		docker compose exec -T mariadb mariadb -u "$$DB_USER" -p"$$DB_PASSWORD" "$$DB_NAME" < dump.sql
 	@echo -e "\033[0;32mMariaDB database restored!\033[0m"
 
@@ -2110,12 +2112,12 @@ db-tools-down: ## Stop all database tools
 
 postgres-cli-enhanced: ## Open PostgreSQL CLI with auto-complete (pgcli)
 	$(call require_development,pgcli)
-	@. ./.env && . ./docker/scripts/parse-db-url.sh && \
+	@$(LOAD_ENV) && . ./docker/scripts/parse-db-url.sh && \
 		docker compose exec php pgcli -h postgres -U "$$DB_USER" -d "$$DB_NAME"
 
 mariadb-cli-enhanced: ## Open MariaDB CLI with auto-complete (mycli)
 	$(call require_development,mycli)
-	@. ./.env && . ./docker/scripts/parse-db-url.sh && \
+	@$(LOAD_ENV) && . ./docker/scripts/parse-db-url.sh && \
 		docker compose exec php mycli -h mariadb -u "$$DB_USER" -p"$$DB_PASSWORD" "$$DB_NAME"
 
 sqlite-cli: ## Open SQLite CLI - Usage: make sqlite-cli FILE=storage/app.sqlite
@@ -2158,28 +2160,28 @@ es-api-key: ## Show Elasticsearch API key
 
 backup-all: ## Create backups of all enabled services (database, seaweedfs, rabbitmq, elasticsearch)
 	@echo -e "\033[0;33m=== Creating backups of all enabled services ===${NC}\033[0m"
-	@. ./.env && \
+	@$(LOAD_ENV) && \
 	if [ "$${ENABLE_DATABASE:-true}" = "true" ]; then \
 		echo -e "\033[0;34m[1/4] Database backup...\033[0m"; \
 		bash docker/scripts/backup-databases.sh; \
 	else \
 		echo -e "\033[0;37m[1/4] Database: skipped (disabled)\033[0m"; \
 	fi
-	@. ./.env && \
+	@$(LOAD_ENV) && \
 	if [ "$${ENABLE_SEAWEEDFS:-false}" = "true" ]; then \
 		echo -e "\033[0;34m[2/4] SeaweedFS backup...\033[0m"; \
 		bash docker/scripts/backup-seaweedfs.sh; \
 	else \
 		echo -e "\033[0;37m[2/4] SeaweedFS: skipped (disabled)\033[0m"; \
 	fi
-	@. ./.env && \
+	@$(LOAD_ENV) && \
 	if [ "$${ENABLE_RABBITMQ:-false}" = "true" ]; then \
 		echo -e "\033[0;34m[3/4] RabbitMQ backup...\033[0m"; \
 		bash docker/scripts/backup-rabbitmq.sh; \
 	else \
 		echo -e "\033[0;37m[3/4] RabbitMQ: skipped (disabled)\033[0m"; \
 	fi
-	@. ./.env && \
+	@$(LOAD_ENV) && \
 	if [ "$${ENABLE_ELASTICSEARCH:-false}" = "true" ]; then \
 		echo -e "\033[0;34m[4/4] Elasticsearch backup...\033[0m"; \
 		bash docker/scripts/backup-elasticsearch.sh; \
@@ -2309,7 +2311,7 @@ db-migrations: ## Run database migrations (encryption helpers, audit logs)
 		echo -e "\033[0;31mError: .env not found. Run 'make init' first.\033[0m"; \
 		exit 1; \
 	fi
-	@. ./.env && . ./docker/scripts/parse-db-url.sh && \
+	@$(LOAD_ENV) && . ./docker/scripts/parse-db-url.sh && \
 	if [ "$$DB_TYPE" = "postgres" ]; then \
 		echo -e "\033[0;34mRunning PostgreSQL migrations...\033[0m"; \
 		for migration in migrations/postgresql/*.sql; do \
@@ -2338,7 +2340,7 @@ db-cleanup: ## Run retention policy cleanup (delete old logs)
 		echo -e "\033[0;31mError: .env not found. Run 'make init' first.\033[0m"; \
 		exit 1; \
 	fi
-	@. ./.env && . ./docker/scripts/parse-db-url.sh && \
+	@$(LOAD_ENV) && . ./docker/scripts/parse-db-url.sh && \
 	RETENTION_DAYS=$${RETENTION_DAYS:-730}; \
 	if [ "$$DB_TYPE" = "postgres" ]; then \
 		echo -e "\033[0;34mPostgreSQL: Deleting audit_logs older than $$RETENTION_DAYS days...\033[0m"; \
@@ -2359,7 +2361,7 @@ check-health: ## Check application health by container status for all services
 	@echo -e "\033[0;33mChecking Container Health Status...\033[0m\n"
 
 	@echo -e "\033[0;34m📦 PHP-FPM:\033[0m"
-	@if [ -f .env ]; then . ./.env; fi; \
+	@$(LOAD_ENV); \
 	if [ "$${ENABLE_PHP:-true}" = "true" ]; then \
 		if [ "$$(docker inspect --format='{{.State.Health.Status}}' $$(docker compose ps -q php) 2>/dev/null)" = "healthy" ]; then \
 			echo -e "\033[0;32m  ✅ Healthy\033[0m"; \
@@ -2372,7 +2374,7 @@ check-health: ## Check application health by container status for all services
 	@echo ""
 
 	@echo -e "\033[0;34m🟢 Node.js:\033[0m"
-	@if [ -f .env ]; then . ./.env; fi; \
+	@$(LOAD_ENV); \
 	if [ "$${ENABLE_NODE:-true}" = "true" ]; then \
 		if [ "$$(docker inspect --format='{{.State.Health.Status}}' $$(docker compose ps -q node) 2>/dev/null)" = "healthy" ]; then \
 			echo -e "\033[0;32m  ✅ Healthy (mode: $${NODE_MODE:-assets-api})\033[0m"; \
@@ -2385,7 +2387,7 @@ check-health: ## Check application health by container status for all services
 	@echo ""
 
 	@echo -e "\033[0;34m💾 Database:\033[0m"
-	@if [ -f .env ]; then . ./.env; fi; \
+	@$(LOAD_ENV); \
 	if [ "$${ENABLE_DATABASE:-true}" = "true" ]; then \
 		DB_TYPE=$${DB_TYPE:-postgres}; \
 		if [ "$$(docker inspect --format='{{.State.Health.Status}}' $$(docker compose ps -q $$DB_TYPE) 2>/dev/null)" = "healthy" ]; then \
@@ -2399,7 +2401,7 @@ check-health: ## Check application health by container status for all services
 	@echo ""
 
 	@echo -e "\033[0;34m🔴 Redis:\033[0m"
-	@if [ -f .env ]; then . ./.env; fi; \
+	@$(LOAD_ENV); \
 	if [ "$${ENABLE_REDIS:-true}" = "true" ]; then \
 		if [ "$$(docker inspect --format='{{.State.Health.Status}}' $$(docker compose ps -q redis) 2>/dev/null)" = "healthy" ]; then \
 			echo -e "\033[0;32m  ✅ Healthy\033[0m"; \
@@ -2412,7 +2414,7 @@ check-health: ## Check application health by container status for all services
 	@echo ""
 
 	@echo -e "\033[0;34m🌐 Nginx HTTPS:\033[0m"
-	@if [ -f .env ]; then . ./.env; fi; \
+	@$(LOAD_ENV); \
 	NGINX_SSL_PORT=$${NGINX_SSL_PORT:-8443}; \
 	if command -v curl >/dev/null 2>&1; then \
 		HTTP_CODE=$$(curl -sk -o /dev/null -w "%{http_code}" https://localhost:$$NGINX_SSL_PORT 2>/dev/null); \
@@ -2427,7 +2429,7 @@ check-health: ## Check application health by container status for all services
 	@echo ""
 
 	@echo -e "\033[0;34m📡 Mercure (Real-time):\033[0m"
-	@if [ -f .env ]; then . ./.env; fi; \
+	@$(LOAD_ENV); \
 	if [ "$${ENABLE_MERCURE:-false}" = "true" ]; then \
 		if [ "$$(docker inspect --format='{{.State.Health.Status}}' $$(docker compose ps -q mercure) 2>/dev/null)" = "healthy" ]; then \
 			echo -e "\033[0;32m  ✅ Healthy\033[0m"; \
@@ -2440,7 +2442,7 @@ check-health: ## Check application health by container status for all services
 	@echo ""
 
 	@echo -e "\033[0;34m🔍 Meilisearch:\033[0m"
-	@if [ -f .env ]; then . ./.env; fi; \
+	@$(LOAD_ENV); \
 	if [ "$${ENABLE_MEILISEARCH:-false}" = "true" ]; then \
 		if [ "$$(docker inspect --format='{{.State.Health.Status}}' $$(docker compose ps -q meilisearch) 2>/dev/null)" = "healthy" ]; then \
 			echo -e "\033[0;32m  ✅ Healthy\033[0m"; \
@@ -2453,7 +2455,7 @@ check-health: ## Check application health by container status for all services
 	@echo ""
 
 	@echo -e "\033[0;34m🔎 Elasticsearch:\033[0m"
-	@if [ -f .env ]; then . ./.env; fi; \
+	@$(LOAD_ENV); \
 	if [ "$${ENABLE_ELASTICSEARCH:-false}" = "true" ]; then \
 		if [ "$$(docker inspect --format='{{.State.Health.Status}}' $$(docker compose ps -q elasticsearch) 2>/dev/null)" = "healthy" ]; then \
 			echo -e "\033[0;32m  ✅ Healthy\033[0m"; \
@@ -2466,7 +2468,7 @@ check-health: ## Check application health by container status for all services
 	@echo ""
 
 	@echo -e "\033[0;34m📧 Mailpit (Email Testing):\033[0m"
-	@if [ -f .env ]; then . ./.env; fi; \
+	@$(LOAD_ENV); \
 	if [ "$${ENABLE_MAILPIT:-false}" = "true" ]; then \
 		if [ "$$(docker inspect --format='{{.State.Health.Status}}' $$(docker compose ps -q mailpit) 2>/dev/null)" = "healthy" ]; then \
 			echo -e "\033[0;32m  ✅ Healthy\033[0m"; \
@@ -2479,7 +2481,7 @@ check-health: ## Check application health by container status for all services
 	@echo ""
 
 	@echo -e "\033[0;34m📦 SeaweedFS (S3 Storage):\033[0m"
-	@if [ -f .env ]; then . ./.env; fi; \
+	@$(LOAD_ENV); \
 	if [ "$${ENABLE_SEAWEEDFS:-false}" = "true" ]; then \
 		if [ "$$(docker inspect --format='{{.State.Health.Status}}' $$(docker compose ps -q seaweedfs) 2>/dev/null)" = "healthy" ]; then \
 			echo -e "\033[0;32m  ✅ Healthy\033[0m"; \
@@ -2492,7 +2494,7 @@ check-health: ## Check application health by container status for all services
 	@echo ""
 
 	@echo -e "\033[0;34m🐰 RabbitMQ (Message Broker):\033[0m"
-	@if [ -f .env ]; then . ./.env; fi; \
+	@$(LOAD_ENV); \
 	if [ "$${ENABLE_RABBITMQ:-false}" = "true" ]; then \
 		if [ "$$(docker inspect --format='{{.State.Health.Status}}' $$(docker compose ps -q rabbitmq) 2>/dev/null)" = "healthy" ]; then \
 			echo -e "\033[0;32m  ✅ Healthy\033[0m"; \
@@ -2506,11 +2508,11 @@ check-health: ## Check application health by container status for all services
 	@echo ""
 
 open-app: ## Open the application in the browser
-	@if [ -f .env ]; then . ./.env; fi; \
+	@$(LOAD_ENV); \
 	$(OPEN_CMD) "https://localhost:$${NGINX_SSL_PORT:-8443}"
 
 open-dashboard: ## Open the Dev Dashboard in the browser
-	@if [ -f .env ]; then . ./.env; fi; \
+	@$(LOAD_ENV); \
 	$(OPEN_CMD) "https://localhost:$${NGINX_SSL_PORT:-8443}/_dev/"
 
 open-docs: ## Open generated API documentation in the browser (run 'make docs' first)
@@ -2543,7 +2545,7 @@ fresh: ## Complete clean slate rebuild, removing all data volumes (DANGEROUS!)
 	@$(MAKE) --silent goss-cleanup
 	@# Stop ALL containers and rebuild ALL images regardless of profile settings (fresh = complete reset)
 	@if [ -f .env ]; then \
-		. ./.env && if [ "$$ENV" = "production" ]; then \
+		$(LOAD_ENV) && if [ "$$ENV" = "production" ]; then \
 			$(DC) -f compose.yaml -f compose.production.yaml --profile php --profile node --profile redis --profile postgres --profile mariadb --profile mercure --profile meilisearch --profile elasticsearch --profile mailpit --profile seaweedfs --profile rabbitmq --profile adminer --profile pgadmin down -v --rmi all && \
 			echo -e "\033[0;34mBuilding Node images first (node-backend supplies Vite assets to PHP + NGINX)...\033[0m" && \
 			NODE_BACKEND_TARGET="$${NODE_BACKEND_TARGET:-api}"; \
@@ -3686,7 +3688,7 @@ validate-env: ## Validate .env configuration for production readiness
 	@echo -e "\033[0;32m  ✓ .env syntax valid\033[0m"
 	@# Check for required variables
 	@MISSING_VARS=""; \
-	. ./.env; \
+	$(LOAD_ENV); \
 	if [ -z "$$COMPOSE_PROJECT_NAME" ]; then MISSING_VARS="$$MISSING_VARS COMPOSE_PROJECT_NAME"; fi; \
 	if [ -z "$$DB_TYPE" ]; then MISSING_VARS="$$MISSING_VARS DB_TYPE"; fi; \
 	if [ -z "$$DB_HOST" ]; then MISSING_VARS="$$MISSING_VARS DB_HOST"; fi; \
@@ -3696,7 +3698,7 @@ validate-env: ## Validate .env configuration for production readiness
 	fi
 	@echo -e "\033[0;32m  ✓ Required variables present\033[0m"
 	@# Warn if ENV is not production (non-fatal, just informative)
-	@CURRENT_ENV=$$(. ./.env && echo "$${ENV:-development}"); \
+	@CURRENT_ENV=$$($(LOAD_ENV) && echo "$${ENV:-development}"); \
 	if [ "$$CURRENT_ENV" != "production" ]; then \
 		echo -e "\033[0;33m  ⚠ ENV=$$CURRENT_ENV (production builds require ENV=production)\033[0m"; \
 	else \
@@ -3914,7 +3916,7 @@ security-sbom: ## Generate a Software Bill of Materials (SBOM) using Trivy
 	@echo -e "\033[0;33mGenerating SBOM for PHP image...\033[0m"
 	@mkdir -p build
 	@if [ -f .env ]; then \
-		. ./.env && \
+		$(LOAD_ENV) && \
 		PROJECT=$${COMPOSE_PROJECT_NAME:-zappzarapp} && \
 		TAG=$$(docker images --format "{{.Tag}}" "$${PROJECT}-php" 2>/dev/null | grep -E "^(development|latest)$$" | head -1) && \
 		if [ -z "$$TAG" ]; then echo -e "\033[0;31mNo PHP image found (development or latest)\033[0m"; exit 1; fi && \
@@ -3927,7 +3929,7 @@ security-sbom: ## Generate a Software Bill of Materials (SBOM) using Trivy
 
 security-scan: ## Scan all existing Docker images for vulnerabilities
 	@echo -e "\033[0;33mScanning images for vulnerabilities...\033[0m"
-	@if [ -f .env ]; then . ./.env; fi && \
+	@$(LOAD_ENV) && \
 	PROJECT=$${COMPOSE_PROJECT_NAME:-zappzarapp} && \
 	SCANNED=0 && \
 	for IMAGE in php nginx node node-backend \
