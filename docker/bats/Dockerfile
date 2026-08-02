@@ -2,7 +2,7 @@
 # BATS Testing Container
 # Provides BATS test framework for Makefile target testing
 
-ARG ALPINE_VERSION=3.23
+ARG ALPINE_VERSION=3.24
 
 # Version Pinning:
 # - Alpine version pinned for consistency across services
