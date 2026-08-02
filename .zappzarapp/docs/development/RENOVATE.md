@@ -130,7 +130,10 @@ The config lives in `renovate.json` at the project root. Its shape:
   `platformAutomerge: true`, `minimumReleaseAge: "3 days"`, plus `labels` and a
   `schedule`.
 - `packageRules` (order matters — later rules override earlier ones):
-  1. Docker base images — grouped, automerge.
+  1. Docker images — grouped **per image across managers**
+     (`groupName: {{depName}}`), so an image's Dockerfile `ARG` and its
+     `kubernetes/values.yaml` tag always bump in one PR and can't drift apart;
+     automerge.
   2. Composer — grouped, automerge, framework majors excluded.
   3. Node (pnpm) — grouped, automerge; dev dependencies grouped separately.
   4. Patch updates — automerge at any time.
@@ -165,12 +168,13 @@ The config lives in `renovate.json` at the project root. Its shape:
 
 Renovate detects and updates:
 
-| Ecosystem          | Files                     | Notes                              |
-| ------------------ | ------------------------- | ---------------------------------- |
-| **Composer**       | `composer.json`           | PHP dependencies                   |
-| **npm/pnpm**       | `package.json`            | Node.js dependencies (+ workspace) |
-| **Docker**         | `docker/**/Dockerfile`    | Base image tags/digests            |
-| **GitHub Actions** | `.github/workflows/*.yml` | Action versions                    |
+| Ecosystem          | Files                     | Notes                                                          |
+| ------------------ | ------------------------- | -------------------------------------------------------------- |
+| **Composer**       | `composer.json`           | PHP dependencies                                               |
+| **npm/pnpm**       | `package.json`            | Node.js dependencies (+ workspace)                             |
+| **Docker**         | `docker/**/Dockerfile`    | Base image tags/digests                                        |
+| **Kubernetes**     | `kubernetes/values.yaml`  | Helm-values image tags (grouped with the Dockerfile per image) |
+| **GitHub Actions** | `.github/workflows/*.yml` | Action versions                                                |
 
 > Lock files (`composer.lock`, `pnpm-lock.yaml`) are **not** tracked in this
 > repo — CI re-resolves them fresh each run, so in-range (`^`/`~`) patch/minor

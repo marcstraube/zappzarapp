@@ -16,11 +16,11 @@
   "minimumReleaseAge": "3 days",
   "packageRules": [
     {
-      "description": "Docker Base Image Updates (Prefer stable versions)",
-      "matchManagers": [
-        "dockerfile"
+      "description": "Group every docker-image reference per image across managers (Dockerfile ARG + kubernetes/values.yaml) into one PR, so an image's Dockerfile bump and its Kubernetes tag can never drift apart.",
+      "matchDatasources": [
+        "docker"
       ],
-      "groupName": "Docker Base Image Updates",
+      "groupName": "{{{depName}}}",
       "automerge": true
     },
     {
