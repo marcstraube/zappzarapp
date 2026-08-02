@@ -5,7 +5,7 @@
 #
 # Security: Runs as www-data user - NO capabilities needed
 
-FROM adminer:4-standalone
+FROM adminer:5-standalone
 
 # Use the pepa-linha design for better UX
 ENV ADMINER_DESIGN=pepa-linha
