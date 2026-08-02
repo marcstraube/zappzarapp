@@ -16,7 +16,14 @@
   "minimumReleaseAge": "3 days",
   "packageRules": [
     {
-      "description": "Group every docker-image reference per image across managers (Dockerfile ARG + kubernetes/values.yaml) into one PR, so an image's Dockerfile bump and its Kubernetes tag can never drift apart.",
+      "description": "Disable Renovate for first-party built images (zappzarapp-*). These are built from docker/<service>/Dockerfile and referenced by kubernetes/values.yaml; the upstream version is pinned only in the Dockerfile ARG (single source of truth) and tracked by the dockerfile manager. They are not published to any registry, so Renovate cannot and must not look them up.",
+      "matchPackageNames": [
+        "zappzarapp-*"
+      ],
+      "enabled": false
+    },
+    {
+      "description": "Group Docker base-image updates by image name so the same upstream image referenced from more than one Dockerfile (e.g. a shared base or build stage) is bumped in a single PR.",
       "matchDatasources": [
         "docker"
       ],

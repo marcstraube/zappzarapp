@@ -22,7 +22,7 @@ spec:
     spec:
       containers:
         - name: mariadb
-          image: "{{ .Values.mariadb.image.repository }}:{{ .Values.mariadb.image.tag }}"
+          image: "{{ include "zappzarapp.imageRepository" (dict "global" .Values.global "image" .Values.mariadb.image) }}:{{ include "zappzarapp.imageTag" (dict "global" .Values.global "image" .Values.mariadb.image "appVersion" .Chart.AppVersion) }}"
           imagePullPolicy: {{ .Values.global.imagePullPolicy }}
           ports:
             - name: mysql

@@ -22,7 +22,7 @@ spec:
     spec:
       containers:
         - name: meilisearch
-          image: "{{ .Values.meilisearch.image.repository }}:{{ .Values.meilisearch.image.tag }}"
+          image: "{{ include "zappzarapp.imageRepository" (dict "global" .Values.global "image" .Values.meilisearch.image) }}:{{ include "zappzarapp.imageTag" (dict "global" .Values.global "image" .Values.meilisearch.image "appVersion" .Chart.AppVersion) }}"
           imagePullPolicy: {{ .Values.global.imagePullPolicy }}
           ports:
             - name: http

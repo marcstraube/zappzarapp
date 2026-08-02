@@ -22,7 +22,7 @@ spec:
     spec:
       containers:
         - name: rabbitmq
-          image: "{{ .Values.rabbitmq.image.repository }}:{{ .Values.rabbitmq.image.tag }}"
+          image: "{{ include "zappzarapp.imageRepository" (dict "global" .Values.global "image" .Values.rabbitmq.image) }}:{{ include "zappzarapp.imageTag" (dict "global" .Values.global "image" .Values.rabbitmq.image "appVersion" .Chart.AppVersion) }}"
           imagePullPolicy: {{ .Values.global.imagePullPolicy }}
           ports:
             - name: amqp

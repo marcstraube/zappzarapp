@@ -22,7 +22,7 @@ spec:
     spec:
       containers:
         - name: elasticsearch
-          image: "{{ .Values.elasticsearch.image.repository }}:{{ .Values.elasticsearch.image.tag }}"
+          image: "{{ include "zappzarapp.imageRepository" (dict "global" .Values.global "image" .Values.elasticsearch.image) }}:{{ include "zappzarapp.imageTag" (dict "global" .Values.global "image" .Values.elasticsearch.image "appVersion" .Chart.AppVersion) }}"
           imagePullPolicy: {{ .Values.global.imagePullPolicy }}
           ports:
             - name: http

@@ -25,7 +25,7 @@ spec:
     spec:
       containers:
         - name: mailpit
-          image: "{{ .Values.mailpit.image.repository }}:{{ .Values.mailpit.image.tag }}"
+          image: "{{ include "zappzarapp.imageRepository" (dict "global" .Values.global "image" .Values.mailpit.image) }}:{{ include "zappzarapp.imageTag" (dict "global" .Values.global "image" .Values.mailpit.image "appVersion" .Chart.AppVersion) }}"
           imagePullPolicy: {{ .Values.global.imagePullPolicy }}
           ports:
             - name: smtp

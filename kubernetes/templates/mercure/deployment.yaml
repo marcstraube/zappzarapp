@@ -21,7 +21,7 @@ spec:
     spec:
       containers:
         - name: mercure
-          image: "{{ .Values.mercure.image.repository }}:{{ .Values.mercure.image.tag }}"
+          image: "{{ include "zappzarapp.imageRepository" (dict "global" .Values.global "image" .Values.mercure.image) }}:{{ include "zappzarapp.imageTag" (dict "global" .Values.global "image" .Values.mercure.image "appVersion" .Chart.AppVersion) }}"
           imagePullPolicy: {{ .Values.global.imagePullPolicy }}
           ports:
             - name: http

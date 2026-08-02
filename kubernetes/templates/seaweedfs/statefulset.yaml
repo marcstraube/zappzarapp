@@ -22,7 +22,7 @@ spec:
     spec:
       containers:
         - name: seaweedfs
-          image: "{{ .Values.seaweedfs.image.repository }}:{{ .Values.seaweedfs.image.tag }}"
+          image: "{{ include "zappzarapp.imageRepository" (dict "global" .Values.global "image" .Values.seaweedfs.image) }}:{{ include "zappzarapp.imageTag" (dict "global" .Values.global "image" .Values.seaweedfs.image "appVersion" .Chart.AppVersion) }}"
           imagePullPolicy: {{ .Values.global.imagePullPolicy }}
           command:
             - /bin/sh

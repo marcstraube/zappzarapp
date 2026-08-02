@@ -982,6 +982,23 @@ as an explicit decision, not silently changed.
 
 ## Last Updated
 
+2026-08-02 (added: k8s SSOT — Helm optional services (mariadb/redis/mercure/
+meilisearch/elasticsearch/seaweedfs/rabbitmq/mailpit) switched from raw upstream
+images to the hardened `zappzarapp-*` built images, so the upstream version
+lives ONLY in `docker/<svc>/Dockerfile` ARG and never drifts in values.yaml
+again; Compose already built all of these — k8s was the outlier pulling stock
+images = a security regression vs Compose. LATENT BUG surfaced+fixed: the
+db/optional templates built the image string INLINE
+(`{{ .Values.X.image.repository }}:...`) instead of via the
+`zappzarapp.imageRepository` helper, so with global.imageRegistry set they
+rendered WITHOUT the registry prefix (postgres/redis had this latent too) →
+converted all 9 to the helper. Renovate: helm-values still extracts them but a
+`matchPackageNames:["zappzarapp-*"] enabled:false` rule stops lookups of the
+non-published internal images; the old Dockerfile↔k8s grouping rule's raison
+d'être is gone. Optional services sit behind Compose profiles → `make build`
+skips them; enabling one in k8s now requires `make build <svc>` first —
+documented in KUBERNETES.md.)
+
 2026-07-30 (added: container-CVE triage — ignore-unfixed already on so the 1174
 were fixable; apk upgrade + tag bumps got −94%; upstream-only residual baselined
 via .trivyignore.yaml + TRIVY_IGNOREFILE; pnpm 11 drops pnpm.* package.json

@@ -26,11 +26,14 @@ namespace:
 # ============================================================================
 # CORE SERVICES
 # ----------------------------------------------------------------------------
-# Image strategy: core services use locally built images (repository
-# "zappzarapp-<service>", combined with global.imagePullPolicy: Never for
-# minikube). Optional services below pull official upstream images from a
-# registry. Set global.imageRegistry/imageTag to source the core images
-# from a registry instead.
+# Image strategy: ALL services (core and optional) use locally built, hardened
+# images (repository "zappzarapp-<service>"), combined with
+# global.imagePullPolicy: Never for minikube. Every image is built from
+# docker/<service>/Dockerfile, which is the single source of truth for the
+# upstream version (pinned via its ARG) — the Kubernetes manifests never
+# duplicate that version. An empty image.tag falls back to global.imageTag /
+# Chart.appVersion. Set global.imageRegistry/imageTag to source the images
+# from a registry instead (with global.imagePullPolicy: Always).
 # ============================================================================
 
 nginx:
@@ -187,8 +190,8 @@ mariadb:
   enabled: false
   replicaCount: 1
   image:
-    repository: mariadb
-    tag: "11"
+    repository: zappzarapp-mariadb
+    tag: ""
   resources:
     limits:
       cpu: "1"
@@ -218,8 +221,8 @@ redis:
   enabled: true
   replicaCount: 1
   image:
-    repository: redis
-    tag: "7-alpine"
+    repository: zappzarapp-redis
+    tag: ""
   resources:
     limits:
       cpu: "0.5"
@@ -252,8 +255,8 @@ mercure:
   enabled: false
   replicaCount: 1
   image:
-    repository: dunglas/mercure
-    tag: "latest"
+    repository: zappzarapp-mercure
+    tag: ""
   resources:
     limits:
       cpu: "0.5"
@@ -269,8 +272,8 @@ meilisearch:
   enabled: false
   replicaCount: 1
   image:
-    repository: getmeili/meilisearch
-    tag: "v1.6"
+    repository: zappzarapp-meilisearch
+    tag: ""
   resources:
     limits:
       cpu: "1"
@@ -290,8 +293,8 @@ elasticsearch:
   enabled: false
   replicaCount: 1
   image:
-    repository: elasticsearch
-    tag: "8.19.19"
+    repository: zappzarapp-elasticsearch
+    tag: ""
   resources:
     limits:
       cpu: "2"
@@ -311,8 +314,8 @@ seaweedfs:
   enabled: false
   replicaCount: 1
   image:
-    repository: chrislusf/seaweedfs
-    tag: "4.40"
+    repository: zappzarapp-seaweedfs
+    tag: ""
   resources:
     limits:
       cpu: "1"
@@ -335,8 +338,8 @@ rabbitmq:
   enabled: false
   replicaCount: 1
   image:
-    repository: rabbitmq
-    tag: "3-management-alpine"
+    repository: zappzarapp-rabbitmq
+    tag: ""
   resources:
     limits:
       cpu: "1"
@@ -358,8 +361,8 @@ mailpit:
   enabled: false
   replicaCount: 1
   image:
-    repository: axllent/mailpit
-    tag: "latest"
+    repository: zappzarapp-mailpit
+    tag: ""
   resources:
     limits:
       cpu: "0.25"

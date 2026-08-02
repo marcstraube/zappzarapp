@@ -21,7 +21,7 @@ spec:
     spec:
       containers:
         - name: redis
-          image: "{{ .Values.redis.image.repository }}:{{ .Values.redis.image.tag | default .Values.global.imageTag | default .Chart.AppVersion }}"
+          image: "{{ include "zappzarapp.imageRepository" (dict "global" .Values.global "image" .Values.redis.image) }}:{{ include "zappzarapp.imageTag" (dict "global" .Values.global "image" .Values.redis.image "appVersion" .Chart.AppVersion) }}"
           imagePullPolicy: {{ .Values.global.imagePullPolicy }}
           command:
             - redis-server

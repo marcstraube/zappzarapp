@@ -42,6 +42,15 @@ make k8s-deploy
 kubectl port-forward svc/zappzarapp-nginx 8080:80 -n zappzarapp
 ```
 
+> **Image strategy:** Every service — core _and_ optional (Redis, Mercure,
+> Meilisearch, Elasticsearch, SeaweedFS, RabbitMQ, MariaDB, Mailpit) — runs the
+> locally built, hardened `zappzarapp-<service>` image. The upstream version is
+> the single source of truth in `docker/<service>/Dockerfile` (its `ARG`); the
+> Helm values never duplicate it. Because optional services sit behind Compose
+> profiles, `make build` does not build them by default — before enabling one in
+> Kubernetes, build its image explicitly so minikube (or your registry) has it,
+> e.g. `make build mercure`.
+
 ### Production Deployment
 
 ```bash
