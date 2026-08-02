@@ -12,8 +12,10 @@
 # The official entrypoint (docker-entrypoint.sh) drops privileges to the
 # postgres user (uid 70 on Alpine) via gosu before starting postgres.
 
-ARG POSTGRES_VERSION=17.10-alpine3.23
-ARG PG_CRON_VERSION=1.6.4
+ARG POSTGRES_VERSION=18.4-alpine3.23
+# pg_cron >= 1.6.6 is required for PostgreSQL 18 (1.6.7 also fixes compile
+# errors with the stricter default CFLAGS newer PostgreSQL/GCC use)
+ARG PG_CRON_VERSION=1.6.7
 
 # Version Pinning:
 # - Minor version pinned for stability
@@ -21,7 +23,7 @@ ARG PG_CRON_VERSION=1.6.4
 #   multiple ARGs (version + alpine suffix)
 # - To update: check https://hub.docker.com/_/postgres/tags
 # - For SHA digest pinning in production, use:
-#   FROM postgres:17.10-alpine3.23@sha256:<digest>
+#   FROM postgres:18.4-alpine3.23@sha256:<digest>
 
 FROM postgres:${POSTGRES_VERSION} AS builder
 
@@ -39,8 +41,8 @@ RUN apk add --no-cache --virtual .build-deps \
 # Clone and build pg_cron
 RUN git clone --branch v${PG_CRON_VERSION} --depth 1 https://github.com/citusdata/pg_cron.git /tmp/pg_cron \
     && cd /tmp/pg_cron \
-    # PostgreSQL 17 expects LLVM 19 tools, Alpine has LLVM 21
-    # Create compatibility symlinks
+    # PostgreSQL's JIT bitcode build expects versioned LLVM 19 tools that
+    # Alpine ships unversioned - create compatibility symlinks
     && mkdir -p /usr/lib/llvm19/bin \
     && ln -sf /usr/bin/clang /usr/bin/clang-19 \
     && ln -sf /usr/bin/llvm-lto /usr/lib/llvm19/bin/llvm-lto \
