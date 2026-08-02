@@ -1387,9 +1387,14 @@ k8s-deploy: ## Deploy to Kubernetes using Helm
 # application source, so the four multi-target services (nginx, php, node,
 # node-backend) must be built from their PRODUCTION targets (the development
 # targets contain no app code — they expect Compose bind mounts) and retagged
-# to :latest. The target map mirrors the ENV=production branch of `make build`;
-# node-backend builds first because the php/nginx production builds copy its
-# baked assets via the node-backend-assets docker-image context.
+# to :latest. The target map derives from the chart render itself (single
+# source of truth, same as the service list): the node frontend only exists in
+# framework modes, so its presence in the render selects the framework targets
+# (node=framework, nginx=production-proxy, php=production-framework); .env
+# NODE_MODE is deliberately NOT consulted — a Chart/.env mismatch must not
+# produce wrong images. Explicit NODE_TARGET/NGINX_TARGET/PHP_TARGET overrides
+# still win. node-backend builds first because the php/nginx production builds
+# copy its baked assets via the node-backend-assets docker-image context.
 k8s-build: ## Build the images the Helm chart will deploy (enabled services derived from values.yaml)
 	@if ! command -v helm >/dev/null 2>&1; then \
 		echo -e "\033[0;31mError: helm is required for 'make k8s-build'\033[0m"; \
@@ -1420,9 +1425,8 @@ k8s-build: ## Build the images the Helm chart will deploy (enabled services deri
 		NODE_BACKEND_TARGET_AUTO="api"; \
 		NGINX_TARGET_AUTO="production"; \
 		PHP_TARGET_AUTO="production"; \
-		case "$${NODE_MODE:-assets-api}" in \
-			framework) NODE_TARGET_AUTO="framework"; NGINX_TARGET_AUTO="production-proxy"; PHP_TARGET_AUTO="production-framework" ;; \
-			framework-api) NODE_TARGET_AUTO="framework"; NGINX_TARGET_AUTO="production-proxy"; PHP_TARGET_AUTO="production-framework" ;; \
+		case " $$CORE " in \
+			*" node "*) NODE_TARGET_AUTO="framework"; NGINX_TARGET_AUTO="production-proxy"; PHP_TARGET_AUTO="production-framework" ;; \
 		esac; \
 		export NODE_TARGET="$${NODE_TARGET:-$$NODE_TARGET_AUTO}"; \
 		export NODE_BACKEND_TARGET="$${NODE_BACKEND_TARGET:-$$NODE_BACKEND_TARGET_AUTO}"; \

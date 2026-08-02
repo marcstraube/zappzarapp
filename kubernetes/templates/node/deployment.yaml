@@ -1,4 +1,7 @@
 {{- if .Values.node.enabled }}
+{{- if not (has .Values.node.mode (list "framework" "framework-api")) }}
+{{- fail (printf "node.mode must be 'framework' or 'framework-api' (got %q) — the node frontend only exists in framework modes" .Values.node.mode) }}
+{{- end }}
 # Node Frontend Deployment
 # For framework modes (Nuxt/Next.js/Remix) - serves SSR pages on port 3001
 # Enable for: framework, framework-api modes

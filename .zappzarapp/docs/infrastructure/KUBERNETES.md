@@ -52,8 +52,11 @@ kubectl port-forward svc/zappzarapp-nginx 8080:80 -n zappzarapp
 > multi-target services (nginx, php, node, node-backend) are built from their
 > production targets and retagged to `:latest`: the chart mounts no application
 > source, so only the production images (which bake the app in) can run there.
-> As a safety net, `make k8s-deploy` refuses to deploy (in development) when a
-> required image is missing from the local Docker daemon.
+> The target choice derives from the chart as well: `node.enabled` selects the
+> framework targets (node/proxy-nginx/framework-php) — `.env` `NODE_MODE` is not
+> consulted, so a Chart/`.env` mismatch cannot produce wrong images. As a safety
+> net, `make k8s-deploy` refuses to deploy (in development) when a required
+> image is missing from the local Docker daemon.
 
 ### Production Deployment
 

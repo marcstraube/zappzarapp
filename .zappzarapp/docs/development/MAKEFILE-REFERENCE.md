@@ -394,8 +394,12 @@ for the enabled services (including optional ones behind Compose profiles). The
 multi-target services (nginx, php, node, node-backend) are built from their
 production targets and retagged to `:latest` — the chart mounts no application
 source, so the development-target images (which expect Compose bind mounts)
-would not run there. `make k8s-deploy` refuses to deploy in development if a
-required image is missing locally — build it first with `make k8s-build`.
+would not run there. Which production targets are picked also derives from the
+chart: enabling the node frontend (`node.enabled`) selects the framework targets
+(node/proxy-nginx/framework-php); `.env` `NODE_MODE` is not consulted, so a
+Chart/`.env` mismatch cannot produce wrong images. `make k8s-deploy` refuses to
+deploy in development if a required image is missing locally — build it first
+with `make k8s-build`.
 
 **Examples:**
 
