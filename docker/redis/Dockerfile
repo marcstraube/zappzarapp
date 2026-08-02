@@ -3,7 +3,7 @@
 # This is a minimal wrapper around the official Redis image.
 # TLS configuration is handled via command arguments in compose files.
 
-ARG REDIS_VERSION=8.6-alpine3.23
+ARG REDIS_VERSION=8.8-alpine3.23
 
 # Version Pinning:
 # - Minor version pinned for stability
