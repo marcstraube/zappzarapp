@@ -1047,6 +1047,29 @@ as an explicit decision, not silently changed.
   `node-backend-assets` docker-image context, so
   `zappzarapp-node-backend:latest` must exist before those builds start.
 
+### Renovate cannot update FROM tags composed from multiple ARGs (2026-08-02)
+
+- Renovate's dockerfile manager RESOLVES ARG-composed FROM lines fine during
+  extraction (`FROM redis:${REDIS_VERSION}-alpine${ALPINE_VERSION}` is detected
+  as `redis:8.6-alpine3.23` with a correct update available), but the WRITE-BACK
+  fails when the tag is assembled from more than one ARG — or from an ARG plus a
+  literal suffix (`rabbitmq:${RABBITMQ_VERSION}-management-alpine`). Symptom:
+  permanent "Error updating branch: update failure" in the run log, the branch
+  lands under "Errored" on the dependency dashboard forever; debug log shows
+  `expectedValue` vs `foundValue` mismatch ("Value is not updated").
+- The failure is silent about its cause: nothing flags the Dockerfile pattern —
+  found only by reading the debug log of the workflow run.
+- **Fix/convention**: pin the FULL image tag in ONE ARG
+  (`ARG REDIS_VERSION=8.6-alpine3.23` + `FROM redis:${REDIS_VERSION}`). Renovate
+  treats `-alpine3.23`/`-fpm-alpine3.23`/`-management-alpine` as a compatibility
+  suffix and preserves it on updates. Single-ARG full-tag FROMs (goss, mailpit,
+  seaweedfs, …) always worked — only composed ones break.
+- Applied to redis/php/node/postgres/mariadb/rabbitmq (branch
+  `fix/renovate-dockerfile-version-args`); the separate per-service
+  `ARG ALPINE_VERSION` is gone from those six ("consistent Alpine across
+  services" was already fiction — bats had drifted to 3.24). bats/nginx keep
+  `ALPINE_VERSION` because there it IS the full tag of `FROM alpine:…`.
+
 ### `ENV=production make <target>` is CLOBBERED by `.env` sourcing (RESOLVED 2026-08-02)
 
 - Every Makefile recipe sources `.env` (which sets `ENV=development`) AFTER the
