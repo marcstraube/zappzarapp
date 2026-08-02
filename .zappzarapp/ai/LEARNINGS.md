@@ -289,6 +289,18 @@ make up
 
 ## Claude Code Configuration
 
+### `context: fork` skills inherit the live conversation — don't self-test after editing
+
+Live-testing a `context: fork` skill in the same session that just edited its
+SKILL.md contaminates the fork: it inherits the conversation about _building_
+the skill and may reinterpret its job as "implement this spec" instead of
+"execute these checks". Observed 2026-08-02 with `/sync-check` (haiku fork):
+right after a SKILL.md extension it wrote a Python implementation + tests +
+README into the skill directory instead of running the documented checks — the
+files also proved `allowed-tools` (no Write/Edit listed) did not stop file
+creation in the forked context. Test fork-skills in a fresh session, and treat
+their `allowed-tools` as advisory, not a sandbox.
+
 ### Permission Pattern Matching
 
 - **Pattern `Bash(X:*)` matches `X <any args>`**: Subcommands ARE treated as
