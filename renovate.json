@@ -7,6 +7,17 @@
   "automerge": true,
   "platformAutomerge": true,
   "minimumReleaseAge": "3 days",
+  "customManagers": [
+    {
+      "customType": "regex",
+      "description": "Track pg_cron, which is built from a git clone pinned by the PG_CRON_VERSION ARG - no built-in manager sees it (it is not a FROM image).",
+      "managerFilePatterns": ["/^docker/postgres/Dockerfile$/"],
+      "matchStrings": ["ARG PG_CRON_VERSION=(?<currentValue>[0-9.]+)"],
+      "depNameTemplate": "citusdata/pg_cron",
+      "datasourceTemplate": "github-tags",
+      "extractVersionTemplate": "^v(?<version>.*)$"
+    }
+  ],
   "packageRules": [
     {
       "description": "Disable Renovate for first-party built images (zappzarapp-*). These are built from docker/<service>/Dockerfile and referenced by kubernetes/values.yaml; the upstream version is pinned only in the Dockerfile ARG (single source of truth) and tracked by the dockerfile manager. They are not published to any registry, so Renovate cannot and must not look them up.",
