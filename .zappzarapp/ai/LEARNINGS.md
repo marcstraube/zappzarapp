@@ -1026,6 +1026,27 @@ as an explicit decision, not silently changed.
   error branch re-runs `helm template` visibly so the real helm error (e.g. this
   guard) is not swallowed by the `2>/dev/null` derive.
 
+### Chart ↔ Compose image-tag contract: multi-target services never produced `:latest`
+
+- The chart references every image as `zappzarapp-<svc>:latest`, but Compose
+  tags the four multi-target services by BUILD TARGET
+  (`zappzarapp-nginx:${NGINX_TARGET}`, php/node/node-backend likewise, pinned to
+  `:development` by the override) — only the single-target services (postgres,
+  redis, optional) get Compose's implicit `:latest`. So `make k8s-build` built
+  images the chart could never reference and the k8s-deploy preflight flagged
+  nginx/php/node as missing right after building them.
+- The DEVELOPMENT-target images would be the wrong content anyway: only
+  `production-base` COPYs the app source into the image; the development targets
+  expect Compose bind mounts, and the chart mounts config/secrets/tmp but NO
+  source. A dev-tagged image in k8s = a pod without code.
+- **Fix**: `make k8s-build` splits chart-derived services — single-target ones
+  still delegate to `make build`, the multi-target four build via the
+  compose.production.yaml overlay (same NODE_MODE→target map as `make build`'s
+  production branch) and are retagged `<target>` → `:latest`. node-backend
+  builds first: the php/nginx production stages copy its baked assets via the
+  `node-backend-assets` docker-image context, so
+  `zappzarapp-node-backend:latest` must exist before those builds start.
+
 ### `ENV=production make <target>` is CLOBBERED by `.env` sourcing (open, own task)
 
 - Every Makefile recipe sources `.env` (which sets `ENV=development`) AFTER the
@@ -1044,7 +1065,9 @@ as an explicit decision, not silently changed.
 from `{{- else }}` after volumeClaimTemplates; redis Deployment→StatefulSet;
 su-exec needs SETUID/SETGID despite drop:[ALL]; values-driven securityContext
 for optional services; production render fails on resolved `latest` tag;
-`ENV=production make …` clobbered by `.env` sourcing)
+chart↔Compose tag contract — k8s-build now builds the multi-target services from
+production targets and retags to `:latest`; `ENV=production make …` clobbered by
+`.env` sourcing)
 
 2026-08-02 (added: k8s SSOT — Helm optional services (mariadb/redis/mercure/
 meilisearch/elasticsearch/seaweedfs/rabbitmq/mailpit) switched from raw upstream

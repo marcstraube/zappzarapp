@@ -48,8 +48,11 @@ kubectl port-forward svc/zappzarapp-nginx 8080:80 -n zappzarapp
 > the single source of truth in `docker/<service>/Dockerfile` (its `ARG`); the
 > Helm values never duplicate it. Because optional services sit behind Compose
 > profiles, plain `make build` skips them — use `make k8s-build`, which derives
-> the enabled set from the rendered chart and builds exactly those images. As a
-> safety net, `make k8s-deploy` refuses to deploy (in development) when a
+> the enabled set from the rendered chart and builds exactly those images. The
+> multi-target services (nginx, php, node, node-backend) are built from their
+> production targets and retagged to `:latest`: the chart mounts no application
+> source, so only the production images (which bake the app in) can run there.
+> As a safety net, `make k8s-deploy` refuses to deploy (in development) when a
 > required image is missing from the local Docker daemon.
 
 ### Production Deployment

@@ -1363,6 +1363,14 @@ k8s-deploy: ## Deploy to Kubernetes using Helm
 # recursive-make variable, on purpose: GNU make executes recipe lines that
 # reference that variable even under `make -n`, which would invoke helm during a
 # dry run. A literal `make` keeps `make -n k8s-build` inert and CI-safe.
+#
+# The chart references every image as zappzarapp-<service>:latest and mounts no
+# application source, so the four multi-target services (nginx, php, node,
+# node-backend) must be built from their PRODUCTION targets (the development
+# targets contain no app code — they expect Compose bind mounts) and retagged
+# to :latest. The target map mirrors the ENV=production branch of `make build`;
+# node-backend builds first because the php/nginx production builds copy its
+# baked assets via the node-backend-assets docker-image context.
 k8s-build: ## Build the images the Helm chart will deploy (enabled services derived from values.yaml)
 	@if ! command -v helm >/dev/null 2>&1; then \
 		echo -e "\033[0;31mError: helm is required for 'make k8s-build'\033[0m"; \
@@ -1378,7 +1386,50 @@ k8s-build: ## Build the images the Helm chart will deploy (enabled services deri
 		exit 1; \
 	fi; \
 	echo -e "\033[0;33mChart-enabled services:\033[0m $$SERVICES"; \
-	make --no-print-directory build $$SERVICES
+	CORE=""; REST=""; \
+	for svc in $$SERVICES; do \
+		case "$$svc" in \
+			nginx|php|node|node-backend) CORE="$$CORE $$svc" ;; \
+			*) REST="$$REST $$svc" ;; \
+		esac; \
+	done; \
+	if [ -n "$$(echo $$REST | tr -d '[:space:]')" ]; then \
+		make --no-print-directory build $$REST; \
+	fi; \
+	if [ -n "$$(echo $$CORE | tr -d '[:space:]')" ]; then \
+		NODE_TARGET_AUTO="assets"; \
+		NODE_BACKEND_TARGET_AUTO="api"; \
+		NGINX_TARGET_AUTO="production"; \
+		PHP_TARGET_AUTO="production"; \
+		case "$${NODE_MODE:-assets-api}" in \
+			framework) NODE_TARGET_AUTO="framework"; NGINX_TARGET_AUTO="production-proxy"; PHP_TARGET_AUTO="production-framework" ;; \
+			framework-api) NODE_TARGET_AUTO="framework"; NGINX_TARGET_AUTO="production-proxy"; PHP_TARGET_AUTO="production-framework" ;; \
+		esac; \
+		export NODE_TARGET="$${NODE_TARGET:-$$NODE_TARGET_AUTO}"; \
+		export NODE_BACKEND_TARGET="$${NODE_BACKEND_TARGET:-$$NODE_BACKEND_TARGET_AUTO}"; \
+		export NGINX_TARGET="$${NGINX_TARGET:-$$NGINX_TARGET_AUTO}"; \
+		export PHP_TARGET="$${PHP_TARGET:-$$PHP_TARGET_AUTO}"; \
+		PROJECT="$${COMPOSE_PROJECT_NAME:-zappzarapp}"; \
+		echo -e "\033[0;33mBuilding chart images from production targets:\033[0m$$CORE (NODE_TARGET=$$NODE_TARGET, NGINX_TARGET=$$NGINX_TARGET, PHP_TARGET=$$PHP_TARGET)"; \
+		case " $$CORE " in \
+			*" php "*|*" nginx "*|*" node-backend "*) \
+				$(DC) -f compose.yaml -f compose.production.yaml build node-backend || exit 1; \
+				docker tag "$$PROJECT-node-backend:$$NODE_BACKEND_TARGET" zappzarapp-node-backend:latest || exit 1 ;; \
+		esac; \
+		REMAINING="$$(echo " $$CORE " | sed 's/ node-backend / /' )"; \
+		if [ -n "$$(echo $$REMAINING | tr -d '[:space:]')" ]; then \
+			$(DC) -f compose.yaml -f compose.production.yaml build $$REMAINING || exit 1; \
+		fi; \
+		for svc in $$CORE; do \
+			case "$$svc" in \
+				nginx) SRC_TAG="$$NGINX_TARGET" ;; \
+				php) SRC_TAG="$$PHP_TARGET" ;; \
+				node) SRC_TAG="$$NODE_TARGET" ;; \
+				node-backend) continue ;; \
+			esac; \
+			docker tag "$$PROJECT-$$svc:$$SRC_TAG" "zappzarapp-$$svc:latest" || exit 1; \
+		done; \
+	fi
 
 k8s-remove: ## Remove deployment from Kubernetes
 	@. ./.env 2>/dev/null && \

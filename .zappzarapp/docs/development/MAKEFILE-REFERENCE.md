@@ -390,9 +390,12 @@ Deploy to Kubernetes using Helm. See
 | `make k8s-logs [pod]` | View logs from a specific pod          |
 
 `make k8s-build` renders the chart and builds exactly the `zappzarapp-*` images
-for the enabled services (including optional ones behind Compose profiles).
-`make k8s-deploy` refuses to deploy in development if a required image is
-missing locally — build it first with `make k8s-build`.
+for the enabled services (including optional ones behind Compose profiles). The
+multi-target services (nginx, php, node, node-backend) are built from their
+production targets and retagged to `:latest` — the chart mounts no application
+source, so the development-target images (which expect Compose bind mounts)
+would not run there. `make k8s-deploy` refuses to deploy in development if a
+required image is missing locally — build it first with `make k8s-build`.
 
 **Examples:**
 
@@ -403,8 +406,9 @@ make k8s-build
 # Deploy with default values
 make k8s-deploy
 
-# Deploy with production values
-ENV=production make k8s-deploy
+# Deploy with production values (set ENV=production in .env; the recipes
+# source .env, so a command-line ENV=... would be overridden by it)
+make k8s-deploy
 
 # View logs
 make k8s-logs zappzarapp-php-xxxxx
