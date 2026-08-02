@@ -25,16 +25,33 @@ ALPINE_IMAGE ?= alpine:3.21
 # e.g. new rules appearing only in CI - update deliberately, then run lint-sql)
 SQLFLUFF_IMAGE ?= sqlfluff/sqlfluff:4.2.2
 
+# ENV supplied by the caller must win over the env files -- this is the
+# documented `ENV=production make ...` contract. Only the two supported
+# values are honored: a command-line ENV=... with any other value is a
+# hard error (likely a typo), while an unsupported value inherited from
+# the environment is ignored with a warning (POSIX shells use $ENV for a
+# startup-file path, which must not flip the build mode).
+ifneq ($(strip $(ENV)),)
+  ifneq ($(filter $(ENV),development production),)
+    CALLER_ENV := $(ENV)
+  else ifeq ($(origin ENV),command line)
+    $(error Invalid ENV '$(ENV)' (supported: development, production))
+  else
+    $(warning Ignoring ENV='$(ENV)' from the environment (supported: development, production); using .env)
+  endif
+endif
+
 # Load environment files in correct order:
 # 1. .env (team defaults)
 # 2. .env.production (if ENV=production)
 # 3. .env.local (local overrides)
+# A caller-supplied ENV (see CALLER_ENV above) beats all three files.
 # A missing .env is tolerated here so targets fall back to defaults;
 # validate-env is the place that reports it loudly.
 define LOAD_ENV
 [ -f .env ] && . ./.env || true; \
-[ "$${ENV:-development}" = "production" ] && [ -f .env.production ] && . ./.env.production || true; \
-[ -f .env.local ] && . ./.env.local || true
+$(if $(CALLER_ENV),export ENV="$(CALLER_ENV)"; )[ "$${ENV:-development}" = "production" ] && [ -f .env.production ] && . ./.env.production || true; \
+[ -f .env.local ] && . ./.env.local || true$(if $(CALLER_ENV),; export ENV="$(CALLER_ENV)")
 endef
 
 # Helper to check development mode (guards dev-only targets)
@@ -1477,11 +1494,8 @@ test-production: ## Test production build with ENV-configured services (smart, r
 		echo -e "\033[0;31mError: .env file not found\033[0m"; \
 		exit 1; \
 	fi
-	@# Check ENV: Prefer environment variable (CI context), fall back to .env (local context)
-	@CURRENT_ENV="$${ENV}"; \
-	if [ -z "$$CURRENT_ENV" ]; then \
-		CURRENT_ENV=$$($(LOAD_ENV) && echo "$${ENV:-development}"); \
-	fi; \
+	@# LOAD_ENV honors a caller-supplied ENV (CI context) over the env files
+	@CURRENT_ENV=$$($(LOAD_ENV) && echo "$${ENV:-development}"); \
 	if [ "$$CURRENT_ENV" != "production" ]; then \
 		echo -e "\033[0;31mError: ENV must be 'production'\033[0m"; \
 		echo -e "\033[0;33mCurrent: ENV=$$CURRENT_ENV\033[0m"; \

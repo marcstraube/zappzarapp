@@ -50,6 +50,37 @@ load 'helpers/setup'
 }
 
 # =============================================================================
+# Caller ENV Precedence (ENV=production make ...)
+# =============================================================================
+
+@test "caller ENV=production wins over .env" {
+    export ENV=production
+    run make validate-env
+    assert_success
+    assert_output --partial "✓ ENV=production"
+}
+
+@test "without caller ENV the .env value applies" {
+    run make validate-env
+    assert_success
+    assert_output --partial "ENV=development"
+}
+
+@test "unsupported ENV from the environment falls back to .env with a warning" {
+    export ENV=/home/user/.kshrc
+    run make validate-env
+    assert_success
+    assert_output --partial "Ignoring ENV="
+    assert_output --partial "ENV=development"
+}
+
+@test "invalid command-line ENV aborts with an error" {
+    run make validate-env ENV=prod
+    assert_failure
+    assert_output --partial "Invalid ENV"
+}
+
+# =============================================================================
 # .env.local Override
 # =============================================================================
 

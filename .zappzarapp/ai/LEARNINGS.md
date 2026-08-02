@@ -1047,7 +1047,7 @@ as an explicit decision, not silently changed.
   `node-backend-assets` docker-image context, so
   `zappzarapp-node-backend:latest` must exist before those builds start.
 
-### `ENV=production make <target>` is CLOBBERED by `.env` sourcing (open, own task)
+### `ENV=production make <target>` is CLOBBERED by `.env` sourcing (RESOLVED 2026-08-02)
 
 - Every Makefile recipe sources `.env` (which sets `ENV=development`) AFTER the
   caller's environment, so `ENV=production make k8s-build` (and `make build`, as
@@ -1056,6 +1056,16 @@ as an explicit decision, not silently changed.
   nothing warns. Found when a prod-guard verification unexpectedly kicked off a
   full dev image build. Needs a Makefile-wide precedence decision (capture
   caller ENV before sourcing, or fix the docs) — see todo.md.
+- **RESOLVED (branch `fix/make-env-clobbering`):** caller ENV now wins. All ~60
+  inline `. ./.env` sites were consolidated onto `LOAD_ENV` (which also fixed
+  those sites ignoring `.env.production`/`.env.local`), and `LOAD_ENV`
+  re-applies a make-level `CALLER_ENV` after each sourcing step. Guard rails:
+  only `development`/`production` are honored — a command-line `ENV=prod` is a
+  hard `$(error)` (typo protection), an unsupported value inherited from the
+  environment is warned about and ignored (POSIX shells use `$ENV` for a
+  startup-file path; it must not flip the build mode). Precedence: caller ENV >
+  `.env.local` > `.env.production` > `.env`. BATS coverage in `make-env.bats`
+  ("Caller ENV Precedence" section) via `make validate-env` output.
 
 ---
 

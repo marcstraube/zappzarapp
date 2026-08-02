@@ -406,9 +406,9 @@ make k8s-build
 # Deploy with default values
 make k8s-deploy
 
-# Deploy with production values (set ENV=production in .env; the recipes
-# source .env, so a command-line ENV=... would be overridden by it)
-make k8s-deploy
+# Deploy with production values (either set ENV=production in .env or
+# pass it inline -- a caller-supplied ENV wins over the env files)
+ENV=production make k8s-deploy
 
 # View logs
 make k8s-logs zappzarapp-php-xxxxx
@@ -473,7 +473,7 @@ make test-production-full
 
 **Requirements:**
 
-- `ENV=production` must be set in `.env`
+- `ENV=production` must be set in `.env` or passed to make directly
 - Production images must be built first (`ENV=production make build`)
 - Services must be stopped before running tests
 
