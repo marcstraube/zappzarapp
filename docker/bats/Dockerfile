@@ -45,6 +45,10 @@ RUN apk add --no-cache \
     bash \
     curl \
     docker-cli \
+    # buildx is required: Compose v5 (Alpine >= 3.24) no longer ships built-in
+    # BuildKit and silently falls back to the legacy builder without it, which
+    # cannot build the BuildKit-only Dockerfiles (COPY --chmod, syntax=...)
+    docker-cli-buildx \
     docker-cli-compose \
     git \
     jq \
@@ -112,7 +116,8 @@ RUN bats --version \
     && php --version \
     && composer --version \
     && node --version \
-    && pnpm --version
+    && pnpm --version \
+    && docker buildx version
 
 # Final production image
 FROM runtime AS production

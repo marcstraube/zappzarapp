@@ -1047,6 +1047,26 @@ as an explicit decision, not silently changed.
   `node-backend-assets` docker-image context, so
   `zappzarapp-node-backend:latest` must exist before those builds start.
 
+### Compose v5 (Alpine ≥ 3.24) requires the buildx PLUGIN — silent legacy fallback (2026-08-02)
+
+- Alpine 3.24 ships `docker-cli-compose` **5.x** (3.23 had 2.40.x). Compose v2
+  had BuildKit built in; **v5 requires the separate `docker-cli-buildx` plugin
+  and silently falls back to the LEGACY builder without it** (warning: "Docker
+  Compose requires buildx plugin to be installed", then
+  `Sending build context to Docker daemon` spam). The legacy builder cannot
+  process our BuildKit-only Dockerfiles (`COPY --chmod`, `# syntax=`) →
+  `make build` fails.
+- Hit when the alpine 3.24 Renovate bump landed in `docker/bats/Dockerfile`: CI
+  "BATS Integration Tests" red on `make build creates Docker images`, while
+  everything host-side stayed green (host has buildx). The bats image had NEVER
+  contained buildx — Compose 2.x just didn't need it.
+- **Fix**: `docker-cli-buildx` in the bats image apk list +
+  `docker buildx version` in the test-stage self-check so a missing plugin fails
+  the image build instead of the downstream integration job.
+- **Generalization**: any container that drives `docker compose build` via the
+  host socket needs the buildx plugin alongside `docker-cli-compose` once its
+  base ships Compose ≥ 5.
+
 ### Renovate cannot update FROM tags composed from multiple ARGs (2026-08-02)
 
 - Renovate's dockerfile manager RESOLVES ARG-composed FROM lines fine during
