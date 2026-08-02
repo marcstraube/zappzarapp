@@ -17,11 +17,11 @@ configurations:
 | Database    | No       | Dashboard shows connection status if enabled    |
 | Redis       | No       | Dashboard shows connection status if enabled    |
 
-**Note:** In development mode (`ENV=development`, the default), `make up`
-automatically starts Node with `NODE_MODE=assets-api`. This enables both **Vite
-HMR** (instant hot-reload for CSS/JS) and the **Node DevDashboard API**
-(coverage/docs generation). The PHP DevDashboard is self-contained and works
-without Node, but the "Generate Coverage" and "Generate Docs" buttons for
+**Note:** In development mode (`ZAPPZARAPP_ENV=development`, the default),
+`make up` automatically starts Node with `NODE_MODE=assets-api`. This enables
+both **Vite HMR** (instant hot-reload for CSS/JS) and the **Node DevDashboard
+API** (coverage/docs generation). The PHP DevDashboard is self-contained and
+works without Node, but the "Generate Coverage" and "Generate Docs" buttons for
 Node.js require the Node backend to be running.
 
 **To disable Node completely:** Change `ENABLE_NODE=true` to `ENABLE_NODE=false`

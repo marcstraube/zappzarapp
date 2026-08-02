@@ -25,41 +25,41 @@ ALPINE_IMAGE ?= alpine:3.21
 # e.g. new rules appearing only in CI - update deliberately, then run lint-sql)
 SQLFLUFF_IMAGE ?= sqlfluff/sqlfluff:4.2.2
 
-# ENV supplied by the caller must win over the env files -- this is the
-# documented `ENV=production make ...` contract. Only the two supported
-# values are honored: a command-line ENV=... with any other value is a
-# hard error (likely a typo), while an unsupported value inherited from
-# the environment is ignored with a warning (POSIX shells use $ENV for a
-# startup-file path, which must not flip the build mode).
-ifneq ($(strip $(ENV)),)
-  ifneq ($(filter $(ENV),development production),)
-    CALLER_ENV := $(ENV)
-  else ifeq ($(origin ENV),command line)
-    $(error Invalid ENV '$(ENV)' (supported: development, production))
+# ZAPPZARAPP_ENV supplied by the caller must win over the env files -- this is the
+# documented `ZAPPZARAPP_ENV=production make ...` contract. Only the two supported
+# values are honored: a command-line ZAPPZARAPP_ENV=... with any other value is a
+# hard error (likely a typo), while an unsupported value inherited from the
+# environment is ignored with a warning (a stray exported variable must not
+# flip the build mode).
+ifneq ($(strip $(ZAPPZARAPP_ENV)),)
+  ifneq ($(filter $(ZAPPZARAPP_ENV),development production),)
+    CALLER_ENV := $(ZAPPZARAPP_ENV)
+  else ifeq ($(origin ZAPPZARAPP_ENV),command line)
+    $(error Invalid ZAPPZARAPP_ENV '$(ZAPPZARAPP_ENV)' (supported: development, production))
   else
-    $(warning Ignoring ENV='$(ENV)' from the environment (supported: development, production); using .env)
+    $(warning Ignoring ZAPPZARAPP_ENV='$(ZAPPZARAPP_ENV)' from the environment (supported: development, production); using .env)
   endif
 endif
 
 # Load environment files in correct order:
 # 1. .env (team defaults)
-# 2. .env.production (if ENV=production)
+# 2. .env.production (if ZAPPZARAPP_ENV=production)
 # 3. .env.local (local overrides)
-# A caller-supplied ENV (see CALLER_ENV above) beats all three files.
+# A caller-supplied ZAPPZARAPP_ENV (see CALLER_ENV above) beats all three files.
 # A missing .env is tolerated here so targets fall back to defaults;
 # validate-env is the place that reports it loudly.
 define LOAD_ENV
 [ -f .env ] && . ./.env || true; \
-$(if $(CALLER_ENV),export ENV="$(CALLER_ENV)"; )[ "$${ENV:-development}" = "production" ] && [ -f .env.production ] && . ./.env.production || true; \
-[ -f .env.local ] && . ./.env.local || true$(if $(CALLER_ENV),; export ENV="$(CALLER_ENV)")
+$(if $(CALLER_ENV),export ZAPPZARAPP_ENV="$(CALLER_ENV)"; )[ "$${ZAPPZARAPP_ENV:-development}" = "production" ] && [ -f .env.production ] && . ./.env.production || true; \
+[ -f .env.local ] && . ./.env.local || true$(if $(CALLER_ENV),; export ZAPPZARAPP_ENV="$(CALLER_ENV)")
 endef
 
 # Helper to check development mode (guards dev-only targets)
 define require_development
 	@$(LOAD_ENV) && \
-	if [ "$${ENV:-development}" = "production" ]; then \
+	if [ "$${ZAPPZARAPP_ENV:-development}" = "production" ]; then \
 		echo -e "\033[0;31mError: $(1) is only available in development mode\033[0m"; \
-		echo -e "\033[0;33mSet ENV=development in .env to enable\033[0m"; \
+		echo -e "\033[0;33mSet ZAPPZARAPP_ENV=development in .env to enable\033[0m"; \
 		exit 1; \
 	fi
 endef
@@ -606,7 +606,7 @@ build: ## Build Docker images (optionally specify service names: make build php 
 	if [ -n "$$SERVICES" ]; then \
 		echo -e "\033[0;33mBuilding images: $$SERVICES...\033[0m"; \
 		if [ -f .env ]; then \
-			$(LOAD_ENV) && if [ "$$ENV" = "production" ]; then \
+			$(LOAD_ENV) && if [ "$$ZAPPZARAPP_ENV" = "production" ]; then \
 				NODE_TARGET_AUTO="assets"; \
 				NODE_BACKEND_TARGET_AUTO="api"; \
 				NGINX_TARGET_AUTO="production"; \
@@ -632,7 +632,7 @@ build: ## Build Docker images (optionally specify service names: make build php 
 		echo -e "\033[0;33mBuilding Docker images...\033[0m"; \
 		if [ -f .env ]; then \
 			$(LOAD_ENV) && \
-			if [ "$${ENV:-development}" != "production" ]; then \
+			if [ "$${ZAPPZARAPP_ENV:-development}" != "production" ]; then \
 				DEV_INFO=""; \
 				if [ "$${ENABLE_NODE}" = "false" ]; then \
 					echo -e "\033[0;33m⚠️  ENABLE_NODE=false: Vite HMR disabled, no frontend hot-reload.\033[0m"; \
@@ -668,7 +668,7 @@ build: ## Build Docker images (optionally specify service names: make build php 
 			if [ "$${ENABLE_MAILPIT:-false}" = "true" ]; then PROFILES="$$PROFILES --profile mailpit"; fi; \
 			if [ "$${ENABLE_SEAWEEDFS:-false}" = "true" ]; then PROFILES="$$PROFILES --profile seaweedfs"; fi; \
 			if [ "$${ENABLE_RABBITMQ:-false}" = "true" ]; then PROFILES="$$PROFILES --profile rabbitmq"; fi; \
-			if [ "$$ENV" = "production" ]; then \
+			if [ "$$ZAPPZARAPP_ENV" = "production" ]; then \
 				NODE_TARGET_AUTO="assets"; \
 				NODE_BACKEND_TARGET_AUTO="api"; \
 				NGINX_TARGET_AUTO="production"; \
@@ -702,7 +702,7 @@ build-no-cache: ## Build Docker images without cache (optionally specify service
 	if [ -n "$$SERVICES" ]; then \
 		echo -e "\033[0;33mBuilding images (no cache): $$SERVICES...\033[0m"; \
 		if [ -f .env ]; then \
-			$(LOAD_ENV) && if [ "$$ENV" = "production" ]; then \
+			$(LOAD_ENV) && if [ "$$ZAPPZARAPP_ENV" = "production" ]; then \
 				NODE_TARGET_AUTO="assets"; \
 				NODE_BACKEND_TARGET_AUTO="api"; \
 				NGINX_TARGET_AUTO="production"; \
@@ -750,7 +750,7 @@ build-no-cache: ## Build Docker images without cache (optionally specify service
 			if [ "$${ENABLE_MAILPIT:-false}" = "true" ]; then PROFILES="$$PROFILES --profile mailpit"; fi; \
 			if [ "$${ENABLE_SEAWEEDFS:-false}" = "true" ]; then PROFILES="$$PROFILES --profile seaweedfs"; fi; \
 			if [ "$${ENABLE_RABBITMQ:-false}" = "true" ]; then PROFILES="$$PROFILES --profile rabbitmq"; fi; \
-			if [ "$$ENV" = "production" ]; then \
+			if [ "$$ZAPPZARAPP_ENV" = "production" ]; then \
 				NODE_TARGET_AUTO="assets"; \
 				NODE_BACKEND_TARGET_AUTO="api"; \
 				NGINX_TARGET_AUTO="production"; \
@@ -796,7 +796,7 @@ clean: ## Remove containers, networks and dangling images (keeps data volumes)
 		if [ "$${ENABLE_MAILPIT:-false}" = "true" ]; then PROFILES="$$PROFILES --profile mailpit"; fi; \
 		if [ "$${ENABLE_SEAWEEDFS:-false}" = "true" ]; then PROFILES="$$PROFILES --profile seaweedfs"; fi; \
 		if [ "$${ENABLE_RABBITMQ:-false}" = "true" ]; then PROFILES="$$PROFILES --profile rabbitmq"; fi; \
-		if [ "$$ENV" = "production" ]; then \
+		if [ "$$ZAPPZARAPP_ENV" = "production" ]; then \
 			$(DC) -f compose.yaml -f compose.production.yaml $$PROFILES down; \
 		else \
 			$(DC) $$PROFILES down; \
@@ -820,7 +820,7 @@ down: ## Stop containers (optionally specify service names: make down php nginx)
 	if [ -n "$$SERVICES" ]; then \
 		echo -e "\033[0;33mStopping services: $$SERVICES...\033[0m"; \
 		if [ -f .env ]; then \
-			$(LOAD_ENV) && if [ "$$ENV" = "production" ]; then \
+			$(LOAD_ENV) && if [ "$$ZAPPZARAPP_ENV" = "production" ]; then \
 				$(DC) -f compose.yaml -f compose.production.yaml stop $$SERVICES; \
 			else \
 				$(DC) stop $$SERVICES; \
@@ -832,7 +832,7 @@ down: ## Stop containers (optionally specify service names: make down php nginx)
 		echo -e "\033[0;33mStopping containers...\033[0m"; \
 		ALL_PROFILES="--profile postgres --profile mariadb --profile php --profile node --profile node-backend --profile redis --profile mercure --profile meilisearch --profile elasticsearch --profile mailpit --profile seaweedfs --profile rabbitmq --profile adminer --profile pgadmin"; \
 		if [ -f .env ]; then \
-			$(LOAD_ENV) && if [ "$$ENV" = "production" ]; then \
+			$(LOAD_ENV) && if [ "$$ZAPPZARAPP_ENV" = "production" ]; then \
 				$(DC) -f compose.yaml -f compose.production.yaml $$ALL_PROFILES down --remove-orphans; \
 			else \
 				$(DC) $$ALL_PROFILES down --remove-orphans; \
@@ -854,7 +854,7 @@ logs: ## Show logs (optionally specify service names: make logs php nginx)
 	@SERVICES="$(filter-out $@,$(MAKECMDGOALS))"; \
 	if [ -n "$$SERVICES" ]; then \
 		if [ -f .env ]; then \
-			$(LOAD_ENV) && if [ "$$ENV" = "production" ]; then \
+			$(LOAD_ENV) && if [ "$$ZAPPZARAPP_ENV" = "production" ]; then \
 				docker compose -f compose.yaml -f compose.production.yaml logs -f $$SERVICES; \
 			else \
 				docker compose logs -f $$SERVICES; \
@@ -878,7 +878,7 @@ logs: ## Show logs (optionally specify service names: make logs php nginx)
 			if [ "$${ENABLE_MAILPIT:-false}" = "true" ]; then PROFILES="$$PROFILES --profile mailpit"; fi; \
 			if [ "$${ENABLE_SEAWEEDFS:-false}" = "true" ]; then PROFILES="$$PROFILES --profile seaweedfs"; fi; \
 			if [ "$${ENABLE_RABBITMQ:-false}" = "true" ]; then PROFILES="$$PROFILES --profile rabbitmq"; fi; \
-			if [ "$$ENV" = "production" ]; then \
+			if [ "$$ZAPPZARAPP_ENV" = "production" ]; then \
 				docker compose -f compose.yaml -f compose.production.yaml $$PROFILES logs -f; \
 			else \
 				docker compose $$PROFILES logs -f; \
@@ -890,7 +890,7 @@ logs: ## Show logs (optionally specify service names: make logs php nginx)
 
 logs-nginx: ## Show Nginx logs only
 	@if [ -f .env ]; then \
-		$(LOAD_ENV) && if [ "$$ENV" = "production" ]; then \
+		$(LOAD_ENV) && if [ "$$ZAPPZARAPP_ENV" = "production" ]; then \
 			docker compose -f compose.yaml -f compose.production.yaml logs -f nginx; \
 		else \
 			docker compose logs -f nginx; \
@@ -901,7 +901,7 @@ logs-nginx: ## Show Nginx logs only
 
 logs-node: ## Show Node.js logs only
 	@if [ -f .env ]; then \
-		$(LOAD_ENV) && if [ "$$ENV" = "production" ]; then \
+		$(LOAD_ENV) && if [ "$$ZAPPZARAPP_ENV" = "production" ]; then \
 			docker compose -f compose.yaml -f compose.production.yaml logs -f node; \
 		else \
 			docker compose logs -f node; \
@@ -912,7 +912,7 @@ logs-node: ## Show Node.js logs only
 
 logs-php: ## Show PHP logs only
 	@if [ -f .env ]; then \
-		$(LOAD_ENV) && if [ "$$ENV" = "production" ]; then \
+		$(LOAD_ENV) && if [ "$$ZAPPZARAPP_ENV" = "production" ]; then \
 			docker compose -f compose.yaml -f compose.production.yaml logs -f php; \
 		else \
 			docker compose logs -f php; \
@@ -923,7 +923,7 @@ logs-php: ## Show PHP logs only
 
 logs-mariadb: ## Show MariaDB logs only
 	@if [ -f .env ]; then \
-		$(LOAD_ENV) && if [ "$$ENV" = "production" ]; then \
+		$(LOAD_ENV) && if [ "$$ZAPPZARAPP_ENV" = "production" ]; then \
 			docker compose -f compose.yaml -f compose.production.yaml logs -f mariadb; \
 		else \
 			docker compose logs -f mariadb; \
@@ -934,7 +934,7 @@ logs-mariadb: ## Show MariaDB logs only
 
 logs-postgres: ## Show PostgreSQL logs only
 	@if [ -f .env ]; then \
-		$(LOAD_ENV) && if [ "$$ENV" = "production" ]; then \
+		$(LOAD_ENV) && if [ "$$ZAPPZARAPP_ENV" = "production" ]; then \
 			docker compose -f compose.yaml -f compose.production.yaml logs -f postgres; \
 		else \
 			docker compose logs -f postgres; \
@@ -945,7 +945,7 @@ logs-postgres: ## Show PostgreSQL logs only
 
 logs-redis: ## Show Redis logs only
 	@if [ -f .env ]; then \
-		$(LOAD_ENV) && if [ "$$ENV" = "production" ]; then \
+		$(LOAD_ENV) && if [ "$$ZAPPZARAPP_ENV" = "production" ]; then \
 			docker compose -f compose.yaml -f compose.production.yaml logs -f redis; \
 		else \
 			docker compose logs -f redis; \
@@ -956,7 +956,7 @@ logs-redis: ## Show Redis logs only
 
 logs-elasticsearch: ## Show Elasticsearch logs only
 	@if [ -f .env ]; then \
-		$(LOAD_ENV) && if [ "$$ENV" = "production" ]; then \
+		$(LOAD_ENV) && if [ "$$ZAPPZARAPP_ENV" = "production" ]; then \
 			docker compose -f compose.yaml -f compose.production.yaml logs -f elasticsearch; \
 		else \
 			docker compose logs -f elasticsearch; \
@@ -967,7 +967,7 @@ logs-elasticsearch: ## Show Elasticsearch logs only
 
 logs-mailpit: ## Show Mailpit logs only
 	@if [ -f .env ]; then \
-		$(LOAD_ENV) && if [ "$$ENV" = "production" ]; then \
+		$(LOAD_ENV) && if [ "$$ZAPPZARAPP_ENV" = "production" ]; then \
 			docker compose -f compose.yaml -f compose.production.yaml logs -f mailpit; \
 		else \
 			docker compose logs -f mailpit; \
@@ -978,7 +978,7 @@ logs-mailpit: ## Show Mailpit logs only
 
 logs-meilisearch: ## Show Meilisearch logs only
 	@if [ -f .env ]; then \
-		$(LOAD_ENV) && if [ "$$ENV" = "production" ]; then \
+		$(LOAD_ENV) && if [ "$$ZAPPZARAPP_ENV" = "production" ]; then \
 			docker compose -f compose.yaml -f compose.production.yaml logs -f meilisearch; \
 		else \
 			docker compose logs -f meilisearch; \
@@ -989,7 +989,7 @@ logs-meilisearch: ## Show Meilisearch logs only
 
 logs-mercure: ## Show Mercure logs only
 	@if [ -f .env ]; then \
-		$(LOAD_ENV) && if [ "$$ENV" = "production" ]; then \
+		$(LOAD_ENV) && if [ "$$ZAPPZARAPP_ENV" = "production" ]; then \
 			docker compose -f compose.yaml -f compose.production.yaml logs -f mercure; \
 		else \
 			docker compose logs -f mercure; \
@@ -1000,7 +1000,7 @@ logs-mercure: ## Show Mercure logs only
 
 logs-rabbitmq: ## Show RabbitMQ logs only
 	@if [ -f .env ]; then \
-		$(LOAD_ENV) && if [ "$$ENV" = "production" ]; then \
+		$(LOAD_ENV) && if [ "$$ZAPPZARAPP_ENV" = "production" ]; then \
 			docker compose -f compose.yaml -f compose.production.yaml logs -f rabbitmq; \
 		else \
 			docker compose logs -f rabbitmq; \
@@ -1011,7 +1011,7 @@ logs-rabbitmq: ## Show RabbitMQ logs only
 
 logs-seaweedfs: ## Show SeaweedFS logs only
 	@if [ -f .env ]; then \
-		$(LOAD_ENV) && if [ "$$ENV" = "production" ]; then \
+		$(LOAD_ENV) && if [ "$$ZAPPZARAPP_ENV" = "production" ]; then \
 			docker compose -f compose.yaml -f compose.production.yaml logs -f seaweedfs; \
 		else \
 			docker compose logs -f seaweedfs; \
@@ -1028,7 +1028,7 @@ logs-save: ## Export container logs to timestamped directory (SERVICES=php,node 
 	\
 	# Load environment (respects .env → .env.production → .env.local) \
 	$(LOAD_ENV); \
-	if [ "$${ENV:-development}" = "production" ]; then \
+	if [ "$${ZAPPZARAPP_ENV:-development}" = "production" ]; then \
 		DC_CMD="docker compose -f compose.yaml -f compose.production.yaml"; \
 	else \
 		DC_CMD="docker compose"; \
@@ -1068,7 +1068,7 @@ logs-save: ## Export container logs to timestamped directory (SERVICES=php,node 
 	echo "" >> "$$OUTPUT_DIR/metadata.txt"; \
 	\
 	echo "## Environment" >> "$$OUTPUT_DIR/metadata.txt"; \
-	echo "ENV: $${ENV:-development}" >> "$$OUTPUT_DIR/metadata.txt"; \
+	echo "ZAPPZARAPP_ENV: $${ZAPPZARAPP_ENV:-development}" >> "$$OUTPUT_DIR/metadata.txt"; \
 	echo "DB_TYPE: $${DB_TYPE:-postgres}" >> "$$OUTPUT_DIR/metadata.txt"; \
 	echo "NODE_MODE: $${NODE_MODE:-backend}" >> "$$OUTPUT_DIR/metadata.txt"; \
 	echo "" >> "$$OUTPUT_DIR/metadata.txt"; \
@@ -1112,7 +1112,7 @@ restart: ## Restart containers (optionally specify service names: make restart p
 	if [ -n "$$SERVICES" ]; then \
 		echo -e "\033[0;33mRestarting services: $$SERVICES...\033[0m"; \
 		if [ -f .env ]; then \
-			$(LOAD_ENV) && if [ "$$ENV" = "production" ]; then \
+			$(LOAD_ENV) && if [ "$$ZAPPZARAPP_ENV" = "production" ]; then \
 				$(DC) -f compose.yaml -f compose.production.yaml restart $$SERVICES; \
 			else \
 				$(DC) restart $$SERVICES; \
@@ -1173,12 +1173,12 @@ up: ## Start containers (optionally specify service names: make up php nginx)
 	@if [ -d pnpm-lock.yaml ]; then rm -rf pnpm-lock.yaml; fi
 	@if [ ! -f composer.lock ]; then touch composer.lock; fi
 	@if [ ! -f pnpm-lock.yaml ]; then touch pnpm-lock.yaml; fi
-	@$(LOAD_ENV); if [ "$${ENV:-development}" = "production" ]; then \
+	@$(LOAD_ENV); if [ "$${ZAPPZARAPP_ENV:-development}" = "production" ]; then \
 		echo -e "\033[0;33m⚠️  WARNING: Running Compose in production mode.\033[0m"; \
 		echo -e "\033[0;33m   For multi-node deployments, use 'make k8s-deploy' (Kubernetes).\033[0m"; \
 		echo ""; \
 	fi
-	@$(LOAD_ENV); if [ "$${ENV:-development}" = "production" ] && \
+	@$(LOAD_ENV); if [ "$${ZAPPZARAPP_ENV:-development}" = "production" ] && \
 		[ "$${DB_TYPE:-postgres}" = "mariadb" ] && \
 		[ -z "$${DB_SSL_CA}" ]; then \
 		echo -e "\033[0;33m⚠️  WARNING: MariaDB in production without explicit SSL CA.\033[0m"; \
@@ -1194,7 +1194,7 @@ up: ## Start containers (optionally specify service names: make up php nginx)
 	@if [ "$(SKIP_VALIDATION)" != "1" ]; then \
 		$(LOAD_ENV); \
 		PROJECT="$${COMPOSE_PROJECT_NAME:-zappzarapp}"; \
-		TAG="$$([ "$${ENV:-development}" = "production" ] && echo "" || echo ":development")"; \
+		TAG="$$([ "$${ZAPPZARAPP_ENV:-development}" = "production" ] && echo "" || echo ":development")"; \
 		STALE_FILES=""; \
 		CHECKED_IMAGES=0; \
 		for SERVICE in php node nginx; do \
@@ -1242,7 +1242,7 @@ up: ## Start containers (optionally specify service names: make up php nginx)
 	@SERVICES="$(filter-out $@,$(MAKECMDGOALS))"; \
 	if [ -n "$$SERVICES" ]; then \
 		echo -e "\033[0;33mStarting services: $$SERVICES...\033[0m"; \
-		$(LOAD_ENV) && if [ "$$ENV" = "production" ]; then \
+		$(LOAD_ENV) && if [ "$$ZAPPZARAPP_ENV" = "production" ]; then \
 			$(DC) -f compose.yaml -f compose.production.yaml start $$SERVICES; \
 		else \
 			$(DC) start $$SERVICES; \
@@ -1250,8 +1250,8 @@ up: ## Start containers (optionally specify service names: make up php nginx)
 		echo -e "\033[0;32mServices started!\033[0m"; \
 	else \
 		$(LOAD_ENV); \
-		if [ "$${ENABLE_MAILPIT:-false}" = "true" ] && [ "$${ENV:-development}" = "production" ]; then \
-			echo -e "\033[0;33m⚠️  WARNING: Mailpit is enabled but ENV=production.\033[0m"; \
+		if [ "$${ENABLE_MAILPIT:-false}" = "true" ] && [ "$${ZAPPZARAPP_ENV:-development}" = "production" ]; then \
+			echo -e "\033[0;33m⚠️  WARNING: Mailpit is enabled but ZAPPZARAPP_ENV=production.\033[0m"; \
 			echo -e "\033[0;33m   Mailpit won't start (compose.production.yaml sets replicas: 0).\033[0m"; \
 			echo -e "\033[0;33m   Set ENABLE_MAILPIT=false to suppress this warning.\033[0m"; \
 			echo ""; \
@@ -1262,7 +1262,7 @@ up: ## Start containers (optionally specify service names: make up php nginx)
 			echo -e "  \033[0;36mBei Problemen: make goss-cleanup\033[0m"; \
 			echo ""; \
 		fi; \
-		if [ "$${ENV:-development}" != "production" ]; then \
+		if [ "$${ZAPPZARAPP_ENV:-development}" != "production" ]; then \
 			DEV_INFO=""; \
 			if [ "$${ENABLE_NODE}" = "false" ]; then \
 				echo -e "\033[0;33m⚠️  ENABLE_NODE=false: Vite HMR disabled, no frontend hot-reload.\033[0m"; \
@@ -1278,7 +1278,7 @@ up: ## Start containers (optionally specify service names: make up php nginx)
 		fi; \
 		MISSING=""; \
 		PROJECT="$${COMPOSE_PROJECT_NAME:-zappzarapp}"; \
-		TAG="$$([ "$${ENV:-development}" = "production" ] && echo "" || echo ":development")"; \
+		TAG="$$([ "$${ZAPPZARAPP_ENV:-development}" = "production" ] && echo "" || echo ":development")"; \
 		if [ "$${ENABLE_PHP:-true}" = "true" ] && ! docker image inspect $$PROJECT-php$$TAG >/dev/null 2>&1; then \
 			MISSING="$$MISSING php"; \
 		fi; \
@@ -1320,8 +1320,8 @@ up: ## Start containers (optionally specify service names: make up php nginx)
 		if [ "$${ENABLE_RABBITMQ:-false}" = "true" ]; then PROFILES="$$PROFILES --profile rabbitmq"; fi; \
 		if [ "$${ENABLE_ADMINER:-false}" = "true" ]; then PROFILES="$$PROFILES --profile adminer"; fi; \
 		if [ "$${ENABLE_PGADMIN:-false}" = "true" ]; then PROFILES="$$PROFILES --profile pgadmin"; fi; \
-		echo -e "\033[0;33mStarting containers in $${ENV:-development} mode...\033[0m"; \
-		if [ "$$ENV" = "production" ]; then \
+		echo -e "\033[0;33mStarting containers in $${ZAPPZARAPP_ENV:-development} mode...\033[0m"; \
+		if [ "$$ZAPPZARAPP_ENV" = "production" ]; then \
 			NODE_TARGET_AUTO="assets"; \
 			NODE_BACKEND_TARGET_AUTO="api"; \
 			NGINX_TARGET_AUTO="production"; \
@@ -1355,10 +1355,10 @@ k8s-deploy: ## Deploy to Kubernetes using Helm
 	@$(LOAD_ENV) && \
 	NAMESPACE="$${KUBE_NAMESPACE:-zappzarapp}" && \
 	VALUES_FILE="kubernetes/values.yaml" && \
-	if [ "$${ENV:-development}" = "production" ]; then \
+	if [ "$${ZAPPZARAPP_ENV:-development}" = "production" ]; then \
 		VALUES_FILE="kubernetes/values.production.yaml"; \
 	fi && \
-	if [ "$${ENV:-development}" != "production" ] && command -v helm >/dev/null 2>&1; then \
+	if [ "$${ZAPPZARAPP_ENV:-development}" != "production" ] && command -v helm >/dev/null 2>&1; then \
 		MISSING=""; \
 		for img in $$(helm template zappzarapp ./kubernetes -f "$$VALUES_FILE" 2>/dev/null | grep -E '^[[:space:]]*image:' | grep -oE 'zappzarapp-[a-z0-9-]+:[^"]+' | sort -u); do \
 			docker image inspect "$$img" >/dev/null 2>&1 || MISSING="$$MISSING $$img"; \
@@ -1402,7 +1402,7 @@ k8s-build: ## Build the images the Helm chart will deploy (enabled services deri
 	fi
 	@$(LOAD_ENV); \
 	VALUES_FILE="kubernetes/values.yaml"; \
-	[ "$${ENV:-development}" = "production" ] && VALUES_FILE="kubernetes/values.production.yaml"; \
+	[ "$${ZAPPZARAPP_ENV:-development}" = "production" ] && VALUES_FILE="kubernetes/values.production.yaml"; \
 	SERVICES=$$(helm template zappzarapp ./kubernetes -f "$$VALUES_FILE" 2>/dev/null | grep -E '^[[:space:]]*image:' | grep -oE 'zappzarapp-[a-z0-9-]+' | sed 's/^zappzarapp-//' | sort -u | tr '\n' ' '); \
 	if [ -z "$$(echo $$SERVICES | tr -d '[:space:]')" ]; then \
 		echo -e "\033[0;31mError: could not derive any services from the rendered chart\033[0m"; \
@@ -1489,21 +1489,21 @@ k8s-logs: ## Show Kubernetes logs: make k8s-logs [pod]
 
 ##@ Production Testing
 
-test-production: ## Test production build with ENV-configured services (smart, respects .env)
+test-production: ## Test production build with ZAPPZARAPP_ENV-configured services (smart, respects .env)
 	@echo -e "\033[0;34m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\033[0m"
-	@echo -e "\033[0;34m  Production Test: ENV-aware configuration\033[0m"
+	@echo -e "\033[0;34m  Production Test: ZAPPZARAPP_ENV-aware configuration\033[0m"
 	@echo -e "\033[0;34m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\033[0m"
-	@# Ensure we're in production mode (check ENV variable first, then .env file)
+	@# Ensure we're in production mode (check ZAPPZARAPP_ENV variable first, then .env file)
 	@if [ ! -f .env ]; then \
 		echo -e "\033[0;31mError: .env file not found\033[0m"; \
 		exit 1; \
 	fi
-	@# LOAD_ENV honors a caller-supplied ENV (CI context) over the env files
-	@CURRENT_ENV=$$($(LOAD_ENV) && echo "$${ENV:-development}"); \
+	@# LOAD_ENV honors a caller-supplied ZAPPZARAPP_ENV (CI context) over the env files
+	@CURRENT_ENV=$$($(LOAD_ENV) && echo "$${ZAPPZARAPP_ENV:-development}"); \
 	if [ "$$CURRENT_ENV" != "production" ]; then \
-		echo -e "\033[0;31mError: ENV must be 'production'\033[0m"; \
-		echo -e "\033[0;33mCurrent: ENV=$$CURRENT_ENV\033[0m"; \
-		echo -e "\033[0;36mHint: Set ENV=production in .env (local) or as environment variable (CI)\033[0m"; \
+		echo -e "\033[0;31mError: ZAPPZARAPP_ENV must be 'production'\033[0m"; \
+		echo -e "\033[0;33mCurrent: ZAPPZARAPP_ENV=$$CURRENT_ENV\033[0m"; \
+		echo -e "\033[0;36mHint: Set ZAPPZARAPP_ENV=production in .env (local) or as environment variable (CI)\033[0m"; \
 		exit 1; \
 	fi
 	@echo ""
@@ -1550,7 +1550,7 @@ test-production: ## Test production build with ENV-configured services (smart, r
 	if [ "$${ENABLE_SEAWEEDFS:-false}" = "true" ]; then PROFILES="$$PROFILES --profile seaweedfs"; fi; \
 	if [ "$${ENABLE_RABBITMQ:-false}" = "true" ]; then PROFILES="$$PROFILES --profile rabbitmq"; fi; \
 	echo -e "\033[0;33m▶ Starting services...\033[0m"; \
-	ENV=production $(DC) -f compose.yaml -f compose.production.yaml $$PROFILES up -d; \
+	ZAPPZARAPP_ENV=production $(DC) -f compose.yaml -f compose.production.yaml $$PROFILES up -d; \
 	echo -e "\033[0;32m✓ Services started\033[0m"; \
 	echo ""; \
 	echo -e "\033[0;33m▶ Waiting for services to be ready...\033[0m"; \
@@ -1569,7 +1569,7 @@ test-production: ## Test production build with ENV-configured services (smart, r
 	if [ "$${ENABLE_DATABASE:-true}" = "true" ]; then \
 		if [ "$${DB_TYPE:-postgres}" = "postgres" ]; then \
 			echo -n "   postgres... "; \
-			if timeout 30 sh -c 'until ENV=production docker compose -f compose.yaml -f compose.production.yaml exec -T postgres pg_isready -U app > /dev/null 2>&1; do sleep 1; done' 2>/dev/null; then \
+			if timeout 30 sh -c 'until ZAPPZARAPP_ENV=production docker compose -f compose.yaml -f compose.production.yaml exec -T postgres pg_isready -U app > /dev/null 2>&1; do sleep 1; done' 2>/dev/null; then \
 				echo -e "\033[0;32m✓\033[0m"; \
 			else \
 				echo -e "\033[0;31m✗ (timeout)\033[0m"; \
@@ -1577,7 +1577,7 @@ test-production: ## Test production build with ENV-configured services (smart, r
 			fi; \
 		elif [ "$${DB_TYPE}" = "mariadb" ]; then \
 			echo -n "   mariadb... "; \
-			if timeout 30 sh -c 'until ENV=production docker compose -f compose.yaml -f compose.production.yaml exec -T mariadb mariadb -u app -p$${DB_PASSWORD} -e "SELECT 1" > /dev/null 2>&1; do sleep 1; done' 2>/dev/null; then \
+			if timeout 30 sh -c 'until ZAPPZARAPP_ENV=production docker compose -f compose.yaml -f compose.production.yaml exec -T mariadb mariadb -u app -p$${DB_PASSWORD} -e "SELECT 1" > /dev/null 2>&1; do sleep 1; done' 2>/dev/null; then \
 				echo -e "\033[0;32m✓\033[0m"; \
 			else \
 				echo -e "\033[0;31m✗ (timeout)\033[0m"; \
@@ -1587,7 +1587,7 @@ test-production: ## Test production build with ENV-configured services (smart, r
 	fi; \
 	if [ "$${ENABLE_REDIS:-true}" = "true" ]; then \
 		echo -n "   redis... "; \
-		if timeout 30 sh -c 'until ENV=production docker compose -f compose.yaml -f compose.production.yaml exec -T redis redis-cli --tls --insecure ping > /dev/null 2>&1; do sleep 1; done' 2>/dev/null; then \
+		if timeout 30 sh -c 'until ZAPPZARAPP_ENV=production docker compose -f compose.yaml -f compose.production.yaml exec -T redis redis-cli --tls --insecure ping > /dev/null 2>&1; do sleep 1; done' 2>/dev/null; then \
 			echo -e "\033[0;32m✓\033[0m"; \
 		else \
 			echo -e "\033[0;31m✗ (timeout)\033[0m"; \
@@ -1640,7 +1640,7 @@ test-production-minimal: ## Test production build with minimal services (nginx +
 		esac; \
 	fi; \
 	echo -e "\033[0;33m▶ Starting services...\033[0m"; \
-	ENV=production $(DC) -f compose.yaml -f compose.production.yaml $$PROFILES up -d; \
+	ZAPPZARAPP_ENV=production $(DC) -f compose.yaml -f compose.production.yaml $$PROFILES up -d; \
 	echo -e "\033[0;32m✓ Services started\033[0m"; \
 	echo ""; \
 	echo -e "\033[0;33m▶ Waiting for services to be ready...\033[0m"; \
@@ -1658,7 +1658,7 @@ test-production-minimal: ## Test production build with minimal services (nginx +
 	fi; \
 	if [ "$${DB_TYPE:-postgres}" = "postgres" ]; then \
 		echo -n "   postgres... "; \
-		if timeout 30 sh -c 'until ENV=production docker compose -f compose.yaml -f compose.production.yaml exec -T postgres pg_isready -U app > /dev/null 2>&1; do sleep 1; done' 2>/dev/null; then \
+		if timeout 30 sh -c 'until ZAPPZARAPP_ENV=production docker compose -f compose.yaml -f compose.production.yaml exec -T postgres pg_isready -U app > /dev/null 2>&1; do sleep 1; done' 2>/dev/null; then \
 			echo -e "\033[0;32m✓\033[0m"; \
 		else \
 			echo -e "\033[0;31m✗ (timeout)\033[0m"; \
@@ -1666,7 +1666,7 @@ test-production-minimal: ## Test production build with minimal services (nginx +
 		fi; \
 	elif [ "$${DB_TYPE}" = "mariadb" ]; then \
 		echo -n "   mariadb... "; \
-		if timeout 30 sh -c 'until ENV=production docker compose -f compose.yaml -f compose.production.yaml exec -T mariadb mariadb -u app -p$${DB_PASSWORD} -e "SELECT 1" > /dev/null 2>&1; do sleep 1; done' 2>/dev/null; then \
+		if timeout 30 sh -c 'until ZAPPZARAPP_ENV=production docker compose -f compose.yaml -f compose.production.yaml exec -T mariadb mariadb -u app -p$${DB_PASSWORD} -e "SELECT 1" > /dev/null 2>&1; do sleep 1; done' 2>/dev/null; then \
 			echo -e "\033[0;32m✓\033[0m"; \
 		else \
 			echo -e "\033[0;31m✗ (timeout)\033[0m"; \
@@ -1707,7 +1707,7 @@ test-production-full: ## Test production build with ALL services (comprehensive,
 	@echo -e "   \033[0;32m✓\033[0m seaweedfs"
 	@echo ""
 	@echo -e "\033[0;33m▶ Starting services...\033[0m"
-	@ENV=production $(DC) -f compose.yaml -f compose.production.yaml \
+	@ZAPPZARAPP_ENV=production $(DC) -f compose.yaml -f compose.production.yaml \
 		--profile php \
 		--profile node \
 		--profile node-backend \
@@ -1736,14 +1736,14 @@ test-production-full: ## Test production build with ALL services (comprehensive,
 		FAILED=1; \
 	fi; \
 	echo -n "   postgres... "; \
-	if timeout 30 sh -c 'until ENV=production docker compose -f compose.yaml -f compose.production.yaml exec -T postgres pg_isready -U app > /dev/null 2>&1; do sleep 1; done' 2>/dev/null; then \
+	if timeout 30 sh -c 'until ZAPPZARAPP_ENV=production docker compose -f compose.yaml -f compose.production.yaml exec -T postgres pg_isready -U app > /dev/null 2>&1; do sleep 1; done' 2>/dev/null; then \
 		echo -e "\033[0;32m✓\033[0m"; \
 	else \
 		echo -e "\033[0;31m✗ (timeout)\033[0m"; \
 		FAILED=1; \
 	fi; \
 	echo -n "   redis... "; \
-	if timeout 30 sh -c 'until ENV=production docker compose -f compose.yaml -f compose.production.yaml exec -T redis redis-cli --tls --insecure ping > /dev/null 2>&1; do sleep 1; done' 2>/dev/null; then \
+	if timeout 30 sh -c 'until ZAPPZARAPP_ENV=production docker compose -f compose.yaml -f compose.production.yaml exec -T redis redis-cli --tls --insecure ping > /dev/null 2>&1; do sleep 1; done' 2>/dev/null; then \
 		echo -e "\033[0;32m✓\033[0m"; \
 	else \
 		echo -e "\033[0;31m✗ (timeout)\033[0m"; \
@@ -2563,7 +2563,7 @@ fresh: ## Complete clean slate rebuild, removing all data volumes (DANGEROUS!)
 	@$(MAKE) --silent goss-cleanup
 	@# Stop ALL containers and rebuild ALL images regardless of profile settings (fresh = complete reset)
 	@if [ -f .env ]; then \
-		$(LOAD_ENV) && if [ "$$ENV" = "production" ]; then \
+		$(LOAD_ENV) && if [ "$$ZAPPZARAPP_ENV" = "production" ]; then \
 			$(DC) -f compose.yaml -f compose.production.yaml --profile php --profile node --profile redis --profile postgres --profile mariadb --profile mercure --profile meilisearch --profile elasticsearch --profile mailpit --profile seaweedfs --profile rabbitmq --profile adminer --profile pgadmin down -v --rmi all && \
 			echo -e "\033[0;34mBuilding Node images first (node-backend supplies Vite assets to PHP + NGINX)...\033[0m" && \
 			NODE_BACKEND_TARGET="$${NODE_BACKEND_TARGET:-api}"; \
@@ -3730,12 +3730,12 @@ validate-env: ## Validate .env configuration for production readiness
 		exit 1; \
 	fi
 	@echo -e "\033[0;32m  ✓ Required variables present\033[0m"
-	@# Warn if ENV is not production (non-fatal, just informative)
-	@CURRENT_ENV=$$($(LOAD_ENV) && echo "$${ENV:-development}"); \
+	@# Warn if ZAPPZARAPP_ENV is not production (non-fatal, just informative)
+	@CURRENT_ENV=$$($(LOAD_ENV) && echo "$${ZAPPZARAPP_ENV:-development}"); \
 	if [ "$$CURRENT_ENV" != "production" ]; then \
-		echo -e "\033[0;33m  ⚠ ENV=$$CURRENT_ENV (production builds require ENV=production)\033[0m"; \
+		echo -e "\033[0;33m  ⚠ ZAPPZARAPP_ENV=$$CURRENT_ENV (production builds require ZAPPZARAPP_ENV=production)\033[0m"; \
 	else \
-		echo -e "\033[0;32m  ✓ ENV=production\033[0m"; \
+		echo -e "\033[0;32m  ✓ ZAPPZARAPP_ENV=production\033[0m"; \
 	fi
 	@echo -e "\033[0;32m✓ .env configuration valid\033[0m"
 
@@ -4033,12 +4033,12 @@ security-zap-start: ## Start services in production mode for ZAP scanning (respe
 	if [ "$${ENABLE_SEAWEEDFS:-false}" = "true" ]; then PROFILES="$$PROFILES --profile seaweedfs"; fi; \
 	NODE_BACKEND_TARGET="$${NODE_BACKEND_TARGET:-api}"; \
 	echo -e "\033[0;34mBuilding node-backend image first (NODE_BACKEND_TARGET=$$NODE_BACKEND_TARGET)...\033[0m" && \
-	ENV=production $(DC) -f compose.yaml -f compose.production.yaml $$PROFILES build node-backend && \
+	ZAPPZARAPP_ENV=production $(DC) -f compose.yaml -f compose.production.yaml $$PROFILES build node-backend && \
 	echo -e "\033[0;34mTagging node-backend image as :latest for nginx COPY...\033[0m" && \
 	docker tag $${COMPOSE_PROJECT_NAME:-zappzarapp}-node-backend:$$NODE_BACKEND_TARGET zappzarapp-node-backend:latest && \
 	echo -e "\033[0;32m✓ node-backend image tagged successfully\033[0m" && \
 	echo -e "\033[0;34mStarting all services...\033[0m" && \
-	ENV=production $(DC) -f compose.yaml -f compose.production.yaml $$PROFILES up -d --build --force-recreate
+	ZAPPZARAPP_ENV=production $(DC) -f compose.yaml -f compose.production.yaml $$PROFILES up -d --build --force-recreate
 	@echo -e "\033[0;33mWaiting for services to be ready...\033[0m"
 	@sleep 10
 	@echo -e "\033[0;32m✓ Services ready for ZAP scan\033[0m"
@@ -4055,12 +4055,12 @@ security-zap-full-start: ## Start ALL services for comprehensive ZAP scanning (i
 	PROFILES="--profile php --profile $${DB_TYPE:-postgres} --profile redis --profile node --profile node-backend --profile mercure --profile meilisearch --profile elasticsearch --profile seaweedfs"; \
 	NODE_BACKEND_TARGET="$${NODE_BACKEND_TARGET:-api}"; \
 	echo -e "\033[0;34mBuilding node-backend image first (NODE_BACKEND_TARGET=$$NODE_BACKEND_TARGET)...\033[0m" && \
-	ENV=production $(DC) -f compose.yaml -f compose.production.yaml $$PROFILES build node-backend && \
+	ZAPPZARAPP_ENV=production $(DC) -f compose.yaml -f compose.production.yaml $$PROFILES build node-backend && \
 	echo -e "\033[0;34mTagging node-backend image as :latest for nginx COPY...\033[0m" && \
 	docker tag $${COMPOSE_PROJECT_NAME:-zappzarapp}-node-backend:$$NODE_BACKEND_TARGET zappzarapp-node-backend:latest && \
 	echo -e "\033[0;32m✓ node-backend image tagged successfully\033[0m" && \
 	echo -e "\033[0;34mStarting all services...\033[0m" && \
-	ENV=production $(DC) -f compose.yaml -f compose.production.yaml $$PROFILES up -d --build --force-recreate
+	ZAPPZARAPP_ENV=production $(DC) -f compose.yaml -f compose.production.yaml $$PROFILES up -d --build --force-recreate
 	@echo -e "\033[0;33mWaiting for services to be ready...\033[0m"
 	@sleep 15
 	@echo -e "\033[0;32m✓ All services ready for comprehensive ZAP scan\033[0m"
@@ -4073,8 +4073,8 @@ security-zap-scan: ## Run ZAP scan (requires running services)
 		echo -e "\033[0;33mRun: make security-zap-start\033[0m"; \
 		exit 1; \
 	fi
-	@# Check ENV from running PHP container (most reliable)
-	@CONTAINER_ENV=$$(docker compose exec -T php printenv ENV 2>/dev/null | tr -d '\r\n' || echo "unknown"); \
+	@# Check ZAPPZARAPP_ENV from running PHP container (most reliable)
+	@CONTAINER_ENV=$$(docker compose exec -T php printenv ZAPPZARAPP_ENV 2>/dev/null | tr -d '\r\n' || echo "unknown"); \
 	if [ "$$CONTAINER_ENV" != "production" ]; then \
 		echo -e "\033[0;33m⚠️  WARNING: PHP container is running in $$CONTAINER_ENV mode\033[0m"; \
 		echo -e "\033[0;33m   For accurate CSP testing, restart with: make security-zap-start\033[0m"; \
@@ -4105,7 +4105,7 @@ security-zap-scan: ## Run ZAP scan (requires running services)
 
 security-zap-stop: ## Stop services after ZAP scanning
 	@echo -e "\033[0;33mStopping services...\033[0m"
-	@ENV=production $(MAKE) down
+	@ZAPPZARAPP_ENV=production $(MAKE) down
 	@echo -e "\033[0;32m✓ Services stopped\033[0m"
 
 security-zap: ## ZAP scan lifecycle respecting .env (start -> scan -> stop)
@@ -4499,7 +4499,7 @@ ssl-letsencrypt: ## Setup Let's Encrypt SSL certificate (production)
 	bash docker/certs/setup-letsencrypt.sh $$DOMAIN $$EMAIL
 	@echo -e "\033[0;34mTo enable HTTPS (Production):\033[0m"
 	@echo -e "\033[0;34m  1. Run: make ssl-prod-enable\033[0m"
-	@echo -e "\033[0;34m  2. Deploy: ENV=production make build && make up\033[0m"
+	@echo -e "\033[0;34m  2. Deploy: ZAPPZARAPP_ENV=production make build && make up\033[0m"
 
 ssl-renew: ## Renew Let's Encrypt certificate and reload all SSL services
 	@echo -e "\033[0;33mRenewing Let's Encrypt certificate...\033[0m"
@@ -4644,7 +4644,7 @@ ssl-prod-enable: ## Enable SSL/TLS for production (generates ssl-production.conf
 	@echo -e "\033[0;34m     For internal CA:   make ssl-internal\033[0m"
 	@echo ""
 	@echo -e "\033[0;34m  2. Deploy:\033[0m"
-	@echo -e "\033[0;34m     ENV=production make build && make up\033[0m"
+	@echo -e "\033[0;34m     ZAPPZARAPP_ENV=production make build && make up\033[0m"
 	@echo ""
 	@echo -e "\033[0;34m  3. Setup auto-renewal (cron):\033[0m"
 	@echo -e "\033[0;34m     0 0 * * * cd $(PWD) && make ssl-renew >> /var/log/ssl-renew.log 2>&1\033[0m"

@@ -43,7 +43,7 @@ final class StatusControllerTest extends TestCase
 
     private function clearEnvVars(): void
     {
-        foreach (['ENV', 'ENABLE_NODE', 'ENABLE_DATABASE', 'ENABLE_REDIS'] as $var) {
+        foreach (['ZAPPZARAPP_ENV', 'ENABLE_NODE', 'ENABLE_DATABASE', 'ENABLE_REDIS'] as $var) {
             putenv($var);
             unset($_ENV[$var]);
         }

@@ -261,7 +261,7 @@ for Git hooks. Hooks are installed automatically during `make setup`.
 ### PHP Backend (Default)
 
 ```bash
-ENV=development make up
+ZAPPZARAPP_ENV=development make up
 ```
 
 ### Node.js Development (HMR)
@@ -273,7 +273,7 @@ make node-dev      # Starts Vite dev server on port 5173
 ### Production Build
 
 ```bash
-ENV=production make build
+ZAPPZARAPP_ENV=production make build
 make up
 ```
 

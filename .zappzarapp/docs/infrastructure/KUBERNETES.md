@@ -62,7 +62,7 @@ kubectl port-forward svc/zappzarapp-nginx 8080:80 -n zappzarapp
 
 ```bash
 # Build and push images to registry
-ENV=production make build
+ZAPPZARAPP_ENV=production make build
 docker tag zappzarapp-php:latest registry.example.com/myapp/zappzarapp-php:v1.0.0
 docker push registry.example.com/myapp/zappzarapp-php:v1.0.0
 # Repeat for nginx, node, etc.

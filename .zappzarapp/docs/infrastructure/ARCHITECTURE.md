@@ -209,7 +209,7 @@ Mounted in containers at `/run/secrets/<secret_name>`.
 
 ### Production Hardening
 
-Production mode (`ENV=production`) enables:
+Production mode (`ZAPPZARAPP_ENV=production`) enables:
 
 - Read-only root filesystems
 - Resource limits (CPU, memory)

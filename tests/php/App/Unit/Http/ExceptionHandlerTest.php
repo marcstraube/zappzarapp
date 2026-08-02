@@ -39,15 +39,15 @@ class ExceptionHandlerTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        // Store original ENV value
-        $this->originalEnv    = getenv('ENV') ?: '';
+        // Store original ZAPPZARAPP_ENV value
+        $this->originalEnv    = getenv('ZAPPZARAPP_ENV') ?: '';
         $this->originalServer = $_SERVER;
     }
 
     protected function tearDown(): void
     {
-        // Restore original ENV value
-        putenv('ENV=' . $this->originalEnv);
+        // Restore original ZAPPZARAPP_ENV value
+        putenv('ZAPPZARAPP_ENV=' . $this->originalEnv);
         $_SERVER = $this->originalServer;
         parent::tearDown();
     }
@@ -55,7 +55,7 @@ class ExceptionHandlerTest extends TestCase
     #[Test]
     public function testProductionModeHidesExceptionDetails(): void
     {
-        putenv('ENV=production');
+        putenv('ZAPPZARAPP_ENV=production');
         $_SERVER['HTTP_ACCEPT'] = 'application/json';
 
         $handler   = new ExceptionHandler(new NullLogger());
@@ -84,7 +84,7 @@ class ExceptionHandlerTest extends TestCase
     #[Test]
     public function testDevelopmentModeShowsExceptionDetails(): void
     {
-        putenv('ENV=development');
+        putenv('ZAPPZARAPP_ENV=development');
         $_SERVER['HTTP_ACCEPT'] = 'application/json';
 
         $handler   = new ExceptionHandler(new NullLogger());
@@ -115,7 +115,7 @@ class ExceptionHandlerTest extends TestCase
     #[Test]
     public function testProductionModeHtmlResponse(): void
     {
-        putenv('ENV=production');
+        putenv('ZAPPZARAPP_ENV=production');
         $_SERVER['HTTP_ACCEPT'] = 'text/html';
 
         $handler   = new ExceptionHandler(new NullLogger());
@@ -138,7 +138,7 @@ class ExceptionHandlerTest extends TestCase
     #[Test]
     public function testDevelopmentModeHtmlResponse(): void
     {
-        putenv('ENV=development');
+        putenv('ZAPPZARAPP_ENV=development');
         $_SERVER['HTTP_ACCEPT'] = 'text/html';
 
         $handler   = new ExceptionHandler(new NullLogger());
@@ -161,7 +161,7 @@ class ExceptionHandlerTest extends TestCase
     #[Test]
     public function testContentNegotiationDefaultsToJson(): void
     {
-        putenv('ENV=production');
+        putenv('ZAPPZARAPP_ENV=production');
         unset($_SERVER['HTTP_ACCEPT']);
 
         $handler   = new ExceptionHandler(new NullLogger());
@@ -181,7 +181,7 @@ class ExceptionHandlerTest extends TestCase
     #[Test]
     public function testExceptionHandlingWithNullLogger(): void
     {
-        putenv('ENV=production');
+        putenv('ZAPPZARAPP_ENV=production');
         $_SERVER['HTTP_ACCEPT'] = 'application/json';
 
         $handler   = new ExceptionHandler(new NullLogger());
@@ -205,7 +205,7 @@ class ExceptionHandlerTest extends TestCase
     #[Test]
     public function testHandleWithoutLoggerFallsBackToErrorLog(): void
     {
-        putenv('ENV=production');
+        putenv('ZAPPZARAPP_ENV=production');
         $_SERVER['HTTP_ACCEPT'] = 'application/json';
 
         // No logger → logException() uses error_log() internally.
@@ -229,7 +229,7 @@ class ExceptionHandlerTest extends TestCase
     #[Test]
     public function testHandleWithoutLoggerInDevelopmentUsesErrorLog(): void
     {
-        putenv('ENV=development');
+        putenv('ZAPPZARAPP_ENV=development');
         $_SERVER['HTTP_ACCEPT'] = 'application/json';
 
         ini_set('error_log', '/dev/null');
@@ -253,7 +253,7 @@ class ExceptionHandlerTest extends TestCase
     #[Test]
     public function testRegisterDoesNotThrow(): void
     {
-        putenv('ENV=production');
+        putenv('ZAPPZARAPP_ENV=production');
         $handler = new ExceptionHandler(new NullLogger());
 
         // register() sets global PHP handlers; no exception should be thrown
@@ -270,7 +270,7 @@ class ExceptionHandlerTest extends TestCase
     #[Test]
     public function testRegisterSetsGlobalHandlers(): void
     {
-        putenv('ENV=production');
+        putenv('ZAPPZARAPP_ENV=production');
         $handler = new ExceptionHandler(new NullLogger());
 
         // Before register() there is no custom exception handler (PHP default)
@@ -294,7 +294,7 @@ class ExceptionHandlerTest extends TestCase
     #[Test]
     public function testRegisterErrorHandlerRespectsErrorReportingLevel(): void
     {
-        putenv('ENV=production');
+        putenv('ZAPPZARAPP_ENV=production');
         $handler = new ExceptionHandler(new NullLogger());
         $handler->register();
 
@@ -320,7 +320,7 @@ class ExceptionHandlerTest extends TestCase
     #[Test]
     public function testHandleShutdownDoesNothingWhenNoFatalError(): void
     {
-        putenv('ENV=production');
+        putenv('ZAPPZARAPP_ENV=production');
         $handler = new ExceptionHandler(new NullLogger());
 
         // No fatal error in the error buffer → handleShutdown does nothing

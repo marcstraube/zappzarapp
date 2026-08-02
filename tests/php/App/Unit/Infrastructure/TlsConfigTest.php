@@ -13,16 +13,16 @@ class TlsConfigTest extends TestCase
     protected function tearDown(): void
     {
         // Reset environment after each test
-        putenv('ENV');
+        putenv('ZAPPZARAPP_ENV');
         putenv('TLS_VERIFY_INTERNAL');
         putenv('TLS_CA_PATH');
-        unset($_ENV['ENV'], $_ENV['TLS_CA_PATH']);
+        unset($_ENV['ZAPPZARAPP_ENV'], $_ENV['TLS_CA_PATH']);
     }
 
     #[Test]
     public function testShouldVerifyInProduction(): void
     {
-        $_ENV['ENV'] = 'production';
+        $_ENV['ZAPPZARAPP_ENV'] = 'production';
         putenv('TLS_VERIFY_INTERNAL');
 
         $this->assertTrue(TlsConfig::shouldVerify());
@@ -31,7 +31,7 @@ class TlsConfigTest extends TestCase
     #[Test]
     public function testShouldNotVerifyInDevelopment(): void
     {
-        $_ENV['ENV'] = 'development';
+        $_ENV['ZAPPZARAPP_ENV'] = 'development';
         putenv('TLS_VERIFY_INTERNAL');
 
         $this->assertFalse(TlsConfig::shouldVerify());
@@ -40,7 +40,7 @@ class TlsConfigTest extends TestCase
     #[Test]
     public function testExplicitOverrideToDisable(): void
     {
-        $_ENV['ENV'] = 'production';
+        $_ENV['ZAPPZARAPP_ENV'] = 'production';
         putenv('TLS_VERIFY_INTERNAL=false');
 
         $this->assertFalse(TlsConfig::shouldVerify());
@@ -49,7 +49,7 @@ class TlsConfigTest extends TestCase
     #[Test]
     public function testExplicitOverrideToEnable(): void
     {
-        $_ENV['ENV'] = 'development';
+        $_ENV['ZAPPZARAPP_ENV'] = 'development';
         putenv('TLS_VERIFY_INTERNAL=true');
 
         $this->assertTrue(TlsConfig::shouldVerify());
@@ -58,7 +58,7 @@ class TlsConfigTest extends TestCase
     #[Test]
     public function testDefaultsToProductionWhenEnvNotSet(): void
     {
-        // No ENV set - should default to production (secure by default)
+        // No ZAPPZARAPP_ENV set - should default to production (secure by default)
         $this->assertTrue(TlsConfig::shouldVerify());
     }
 
@@ -82,7 +82,7 @@ class TlsConfigTest extends TestCase
     #[Test]
     public function testGetSslContextOptionsInDevelopment(): void
     {
-        $_ENV['ENV'] = 'development';
+        $_ENV['ZAPPZARAPP_ENV'] = 'development';
         putenv('TLS_VERIFY_INTERNAL');
 
         $options = TlsConfig::getSslContextOptions();
@@ -96,7 +96,7 @@ class TlsConfigTest extends TestCase
     #[Test]
     public function testGetSslContextOptionsInProduction(): void
     {
-        $_ENV['ENV'] = 'production';
+        $_ENV['ZAPPZARAPP_ENV'] = 'production';
         putenv('TLS_VERIFY_INTERNAL');
 
         $options = TlsConfig::getSslContextOptions();
@@ -110,7 +110,7 @@ class TlsConfigTest extends TestCase
     #[Test]
     public function testGetRedisStreamOptionsStructure(): void
     {
-        $_ENV['ENV'] = 'development';
+        $_ENV['ZAPPZARAPP_ENV'] = 'development';
         putenv('TLS_VERIFY_INTERNAL');
 
         $options = TlsConfig::getRedisStreamOptions();

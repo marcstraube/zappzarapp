@@ -32,7 +32,7 @@ return [
 
     // Twig: Template engine with CSP nonce support
     TwigService::class => function () {
-        $isDevelopment = getenv('ENV') === 'development';
+        $isDevelopment = getenv('ZAPPZARAPP_ENV') === 'development';
 
         $service = $isDevelopment
             ? TwigService::createForDevelopment(

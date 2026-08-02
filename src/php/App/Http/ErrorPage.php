@@ -90,7 +90,7 @@ class ErrorPage
     private static function renderTemplate(array $data): string
     {
         // Instantiate Twig inline (static method, no DI available)
-        $isDevelopment = getenv('ENV') === 'development';
+        $isDevelopment = getenv('ZAPPZARAPP_ENV') === 'development';
         $twig          = $isDevelopment
             ? TwigService::createForDevelopment(
                 __DIR__ . '/../../../../templates',

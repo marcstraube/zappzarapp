@@ -132,11 +132,11 @@ teardown_file() {
 # =============================================================================
 
 @test "[Integration] make security-zap-start initializes production environment" {
-    # Skip by default (requires production ENV, takes 5-10 min)
+    # Skip by default (requires production ZAPPZARAPP_ENV, takes 5-10 min)
     skip "ZAP scan integration test - run manually with: bats tests/bats/integration/security.bats -f zap-start"
 
     # Clean up any existing services
-    ENV=production make down || true
+    ZAPPZARAPP_ENV=production make down || true
 
     run timeout 120 make security-zap-start
     assert_success

@@ -268,17 +268,17 @@ load 'helpers/setup'
 }
 
 # =============================================================================
-# ENV: Development vs Production
+# ZAPPZARAPP_ENV: Development vs Production
 # =============================================================================
 
-@test "ENV=development: compose validates" {
-    export ENV=development
+@test "ZAPPZARAPP_ENV=development: compose validates" {
+    export ZAPPZARAPP_ENV=development
     run docker compose config --quiet
     assert_success
 }
 
-@test "ENV=production: compose validates" {
-    export ENV=production
+@test "ZAPPZARAPP_ENV=production: compose validates" {
+    export ZAPPZARAPP_ENV=production
     run docker compose config --quiet
     assert_success
 }

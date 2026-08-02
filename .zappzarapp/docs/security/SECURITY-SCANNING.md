@@ -512,8 +512,8 @@ make security-zap-full
 API) regardless of your `NODE_MODE` setting, ensuring complete platform security
 validation.
 
-**Note:** No need to specify `ENV=production` - it's automatically set by the
-targets to ensure production CSP is always tested.
+**Note:** No need to specify `ZAPPZARAPP_ENV=production` - it's automatically
+set by the targets to ensure production CSP is always tested.
 
 #### Manual Workflow
 
@@ -546,8 +546,9 @@ make security-zap-stop
 **How it works:**
 
 - `security-zap-start` uses `docker compose -f compose.production.yaml` directly
-- Sets `ENV=production` explicitly before starting containers
-- This ensures PHP container receives correct ENV for strict CSP headers
+- Sets `ZAPPZARAPP_ENV=production` explicitly before starting containers
+- This ensures PHP container receives correct ZAPPZARAPP_ENV for strict CSP
+  headers
 - Reads `ENABLE_*` flags from `.env` to determine which services to start
 
 **Scan Modes:**
@@ -689,26 +690,26 @@ includes explicit `Cache-Control: public, max-age=31536000, immutable` headers.
 - Secret detection
 - Fast SAST checks
 
-#### Production ENV Propagation
+#### Production ZAPPZARAPP_ENV Propagation
 
 **Why `compose.production.yaml` is used directly:**
 
 Docker Compose reads `.env` by default and **overrides shell environment
-variables**. This means `ENV=production make up` would still start containers
-with `ENV=development` (from `.env` file).
+variables**. This means `ZAPPZARAPP_ENV=production make up` would still start
+containers with `ZAPPZARAPP_ENV=development` (from `.env` file).
 
 **Solution:**
 
 ```makefile
 # Direct docker compose invocation with production config
-ENV=production docker compose -f compose.yaml -f compose.production.yaml up -d
+ZAPPZARAPP_ENV=production docker compose -f compose.yaml -f compose.production.yaml up -d
 ```
 
 **Verification:**
 
 ```bash
-# Check ENV in PHP container (should show "production")
-docker compose exec php printenv ENV
+# Check ZAPPZARAPP_ENV in PHP container (should show "production")
+docker compose exec php printenv ZAPPZARAPP_ENV
 
 # Check CSP header (should NOT contain unsafe-eval or unsafe-inline)
 curl -skI https://localhost:8443 | grep -i content-security-policy

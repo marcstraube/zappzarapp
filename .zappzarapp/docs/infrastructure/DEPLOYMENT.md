@@ -265,11 +265,11 @@ script:
 
 **Available test targets:**
 
-| Target                         | Description                          | Services                  |
-| ------------------------------ | ------------------------------------ | ------------------------- |
-| `make test-production`         | ENV-aware (respects .env ENABLE\_\*) | Core + activated services |
-| `make test-production-minimal` | Core only                            | nginx + app + db          |
-| `make test-production-full`    | All services (comprehensive)         | Everything                |
+| Target                         | Description                                     | Services                  |
+| ------------------------------ | ----------------------------------------------- | ------------------------- |
+| `make test-production`         | ZAPPZARAPP_ENV-aware (respects .env ENABLE\_\*) | Core + activated services |
+| `make test-production-minimal` | Core only                                       | nginx + app + db          |
+| `make test-production-full`    | All services (comprehensive)                    | Everything                |
 
 **Health checks included:**
 
@@ -298,12 +298,12 @@ make phpmd         # PHPMD
 make rector-check  # Rector
 make test          # All tests
 
-# Production build test (ENV-aware, respects .env)
-ENV=production make build
+# Production build test (ZAPPZARAPP_ENV-aware, respects .env)
+ZAPPZARAPP_ENV=production make build
 make test-production
 
 # Or manually test specific configuration
-ENV=production docker compose -f compose.yaml -f compose.production.yaml up -d
+ZAPPZARAPP_ENV=production docker compose -f compose.yaml -f compose.production.yaml up -d
 curl http://localhost:8080/health
 ```
 
@@ -421,10 +421,10 @@ For single-server deployments, use Docker Compose with production overrides:
 
 ```bash
 # Build production images
-ENV=production make build
+ZAPPZARAPP_ENV=production make build
 
 # Start in production mode
-ENV=production make up
+ZAPPZARAPP_ENV=production make up
 ```
 
 ### Multi-Node Production (Kubernetes)
@@ -434,7 +434,7 @@ For multi-node or cloud deployments, use Kubernetes with Helm.
 1. **Build and push images to registry:**
 
    ```bash
-   ENV=production make build
+   ZAPPZARAPP_ENV=production make build
    docker tag zappzarapp-php:latest registry.example.com/myapp/php:v1.0.0
    docker push registry.example.com/myapp/php:v1.0.0
    ```
@@ -520,7 +520,7 @@ See [KUBERNETES.md](./KUBERNETES.md) for complete documentation.
 
 ```bash
 # .env (Production)
-ENV=production
+ZAPPZARAPP_ENV=production
 XDEBUG_MODE=off
 LOG_LEVEL=warning
 LOG_FORMAT=json

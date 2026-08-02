@@ -130,7 +130,7 @@ Tests environment variable handling:
 
 - `.env` file loading
 - `.env.local` override behavior
-- Default values (DB_TYPE, NODE_MODE, ENV)
+- Default values (DB_TYPE, NODE_MODE, ZAPPZARAPP_ENV)
 - ENABLE\_\* flags
 - Port configuration
 - Environment isolation

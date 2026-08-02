@@ -111,19 +111,19 @@ teardown_file() {
 # Production Environment Validation
 # =============================================================================
 
-@test "[Production] ENV=production is required for test-production" {
-    # This test verifies the ENV check logic exists in Makefile
+@test "[Production] ZAPPZARAPP_ENV=production is required for test-production" {
+    # This test verifies the ZAPPZARAPP_ENV check logic exists in Makefile
 
-    # Extract ENV check from test-production target
+    # Extract ZAPPZARAPP_ENV check from test-production target
     local env_check
     env_check=$(awk '/^test-production:.*##/,/^test-production-minimal:/ { print }' Makefile | \
-        grep "ENV must be 'production'" | head -1)
+        grep "ZAPPZARAPP_ENV must be 'production'" | head -1)
 
     # Verify the check exists
     if [ -n "$env_check" ]; then
-        true  # ENV check exists
+        true  # ZAPPZARAPP_ENV check exists
     else
-        echo "# Expected: test-production should check ENV=production" >&3
+        echo "# Expected: test-production should check ZAPPZARAPP_ENV=production" >&3
         false
     fi
 }
@@ -212,15 +212,15 @@ teardown_file() {
 # =============================================================================
 
 @test "[Production] Postgres entrypoint enforces SSL in production mode" {
-    # Verify entrypoint script has ENV-based SSL enforcement logic
+    # Verify entrypoint script has ZAPPZARAPP_ENV-based SSL enforcement logic
     local entrypoint_content
     entrypoint_content=$(cat docker/postgres/entrypoint.sh)
 
     # Check for production mode detection
-    if echo "$entrypoint_content" | grep -q 'ENV_MODE=.*ENV.*development'; then
-        true  # Found ENV mode detection
+    if echo "$entrypoint_content" | grep -q 'ENV_MODE=.*ZAPPZARAPP_ENV.*development'; then
+        true  # Found ZAPPZARAPP_ENV mode detection
     else
-        echo "# Missing ENV mode detection in postgres entrypoint" >&3
+        echo "# Missing ZAPPZARAPP_ENV mode detection in postgres entrypoint" >&3
         false
     fi
 
@@ -234,15 +234,15 @@ teardown_file() {
 }
 
 @test "[Production] MariaDB entrypoint enforces SSL in production mode" {
-    # Verify entrypoint script has ENV-based SSL enforcement logic
+    # Verify entrypoint script has ZAPPZARAPP_ENV-based SSL enforcement logic
     local entrypoint_content
     entrypoint_content=$(cat docker/mariadb/entrypoint.sh)
 
     # Check for production mode detection
-    if echo "$entrypoint_content" | grep -q 'ENV_MODE=.*ENV.*development'; then
-        true  # Found ENV mode detection
+    if echo "$entrypoint_content" | grep -q 'ENV_MODE=.*ZAPPZARAPP_ENV.*development'; then
+        true  # Found ZAPPZARAPP_ENV mode detection
     else
-        echo "# Missing ENV mode detection in mariadb entrypoint" >&3
+        echo "# Missing ZAPPZARAPP_ENV mode detection in mariadb entrypoint" >&3
         false
     fi
 
@@ -300,15 +300,15 @@ teardown_file() {
 }
 
 @test "[Production] Redis entrypoint enforces SSL in production mode" {
-    # Verify entrypoint script has ENV-based SSL enforcement logic
+    # Verify entrypoint script has ZAPPZARAPP_ENV-based SSL enforcement logic
     local entrypoint_content
     entrypoint_content=$(cat docker/redis/entrypoint.sh)
 
     # Check for production mode detection
-    if echo "$entrypoint_content" | grep -q 'ENV_MODE=.*ENV.*development'; then
-        true  # Found ENV mode detection
+    if echo "$entrypoint_content" | grep -q 'ENV_MODE=.*ZAPPZARAPP_ENV.*development'; then
+        true  # Found ZAPPZARAPP_ENV mode detection
     else
-        echo "# Missing ENV mode detection in redis entrypoint" >&3
+        echo "# Missing ZAPPZARAPP_ENV mode detection in redis entrypoint" >&3
         false
     fi
 
@@ -322,15 +322,15 @@ teardown_file() {
 }
 
 @test "[Production] RabbitMQ entrypoint enforces SSL in production mode" {
-    # Verify entrypoint script has ENV-based SSL enforcement logic
+    # Verify entrypoint script has ZAPPZARAPP_ENV-based SSL enforcement logic
     local entrypoint_content
     entrypoint_content=$(cat docker/rabbitmq/entrypoint.sh)
 
     # Check for production mode detection
-    if echo "$entrypoint_content" | grep -q 'ENV_MODE=.*ENV.*development'; then
-        true  # Found ENV mode detection
+    if echo "$entrypoint_content" | grep -q 'ENV_MODE=.*ZAPPZARAPP_ENV.*development'; then
+        true  # Found ZAPPZARAPP_ENV mode detection
     else
-        echo "# Missing ENV mode detection in rabbitmq entrypoint" >&3
+        echo "# Missing ZAPPZARAPP_ENV mode detection in rabbitmq entrypoint" >&3
         false
     fi
 
@@ -344,15 +344,15 @@ teardown_file() {
 }
 
 @test "[Production] SeaweedFS entrypoint enforces SSL in production mode" {
-    # Verify entrypoint script has ENV-based SSL enforcement logic
+    # Verify entrypoint script has ZAPPZARAPP_ENV-based SSL enforcement logic
     local entrypoint_content
     entrypoint_content=$(cat docker/seaweedfs/entrypoint.sh)
 
     # Check for production mode detection
-    if echo "$entrypoint_content" | grep -q 'ENV_MODE=.*ENV.*development'; then
-        true  # Found ENV mode detection
+    if echo "$entrypoint_content" | grep -q 'ENV_MODE=.*ZAPPZARAPP_ENV.*development'; then
+        true  # Found ZAPPZARAPP_ENV mode detection
     else
-        echo "# Missing ENV mode detection in seaweedfs entrypoint" >&3
+        echo "# Missing ZAPPZARAPP_ENV mode detection in seaweedfs entrypoint" >&3
         false
     fi
 
@@ -366,15 +366,15 @@ teardown_file() {
 }
 
 @test "[Production] Nginx entrypoint enforces SSL in production mode" {
-    # Verify entrypoint script has ENV-based SSL enforcement logic
+    # Verify entrypoint script has ZAPPZARAPP_ENV-based SSL enforcement logic
     local entrypoint_content
     entrypoint_content=$(cat docker/nginx/entrypoint.sh)
 
     # Check for production mode detection
-    if echo "$entrypoint_content" | grep -q 'ENV_MODE=.*ENV.*development'; then
-        true  # Found ENV mode detection
+    if echo "$entrypoint_content" | grep -q 'ENV_MODE=.*ZAPPZARAPP_ENV.*development'; then
+        true  # Found ZAPPZARAPP_ENV mode detection
     else
-        echo "# Missing ENV mode detection in nginx entrypoint" >&3
+        echo "# Missing ZAPPZARAPP_ENV mode detection in nginx entrypoint" >&3
         false
     fi
 

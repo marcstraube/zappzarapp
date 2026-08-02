@@ -27,7 +27,7 @@ readonly class ExceptionHandler
 
     public function __construct(private ?LoggerInterface $logger = null)
     {
-        $this->isDevelopment = getenv('ENV') === 'development';
+        $this->isDevelopment = getenv('ZAPPZARAPP_ENV') === 'development';
     }
 
     /**
@@ -221,7 +221,7 @@ readonly class ExceptionHandler
         <pre>{$trace}</pre>
     </div>
     <p style="color: #858585; font-size: 12px; margin-top: 20px;">
-        💡 This detailed error is only shown in development mode (ENV=development)
+        💡 This detailed error is only shown in development mode (ZAPPZARAPP_ENV=development)
     </p>
 </body>
 </html>

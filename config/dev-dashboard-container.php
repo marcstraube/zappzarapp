@@ -14,7 +14,7 @@ use Zappzarapp\Security\Csp\Nonce\NonceRegistry;
  */
 return [
     TwigService::class => function () {
-        $isDevelopment = getenv('ENV') === 'development';
+        $isDevelopment = getenv('ZAPPZARAPP_ENV') === 'development';
 
         $service = $isDevelopment
             ? TwigService::createForDevelopment(

@@ -452,13 +452,13 @@ sysbench oltp_read_write --mysql-host=localhost --mysql-port=3306 run
 ### Pre-Production
 
 - [ ] Run `make check` (all quality checks pass)
-- [ ] Test with production config: `ENV=production make build`
+- [ ] Test with production config: `ZAPPZARAPP_ENV=production make build`
 - [ ] Profile slow endpoints
 - [ ] Check database query performance
 
 ### Production
 
-- [ ] `ENV=production` in `.env`
+- [ ] `ZAPPZARAPP_ENV=production` in `.env`
 - [ ] `XDEBUG_MODE=off`
 - [ ] Enable OPcache timestamp validation off
 - [ ] Set appropriate resource limits

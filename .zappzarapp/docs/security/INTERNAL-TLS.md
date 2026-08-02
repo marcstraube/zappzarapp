@@ -111,7 +111,7 @@ proxy_ssl_verify on;   # Production (configure separately)
 ### PHP
 
 ```php
-$isProduction = getenv('ENV') === 'production';
+$isProduction = getenv('ZAPPZARAPP_ENV') === 'production';
 $context = [
     'ssl' => [
         'verify_peer' => $isProduction,

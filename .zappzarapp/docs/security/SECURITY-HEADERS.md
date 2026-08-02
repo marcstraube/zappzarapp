@@ -133,8 +133,8 @@ The following findings from OWASP ZAP have been addressed:
 | Sec-Fetch-\* headers missing                  | N/A    | Browser request headers (not server-controlled)     |
 | Storable and Cacheable Content                | N/A    | Expected behavior                                   |
 
-**Note:** ZAP scans run against production configuration (`ENV=production`) to
-validate strict security headers.
+**Note:** ZAP scans run against production configuration
+(`ZAPPZARAPP_ENV=production`) to validate strict security headers.
 
 ## Files
 

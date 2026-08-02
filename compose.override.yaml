@@ -294,7 +294,7 @@ services:
       - "host.docker.internal:host-gateway"
     environment:
       - TZ=${TZ:-UTC}
-      - ENV=development
+      - ZAPPZARAPP_ENV=development
       - COMPOSE_PROJECT_NAME=${COMPOSE_PROJECT_NAME:-zappzarapp}
       - BACKUP_ENCRYPTION_KEY=${BACKUP_ENCRYPTION_KEY:-}
       - LOG_LEVEL=${LOG_LEVEL:-info}

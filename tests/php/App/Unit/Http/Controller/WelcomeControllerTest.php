@@ -50,19 +50,19 @@ final class WelcomeControllerTest extends TestCase
     {
         parent::setUp();
         $this->originalServer = $_SERVER;
-        $this->originalEnv    = getenv('ENV') ?: '';
+        $this->originalEnv    = getenv('ZAPPZARAPP_ENV') ?: '';
         // Clear env vars that affect HealthCheck and ViteHelper defaults
-        putenv('ENV');
+        putenv('ZAPPZARAPP_ENV');
         putenv('ENABLE_NODE');
         putenv('ENABLE_DATABASE');
         putenv('ENABLE_REDIS');
-        unset($_ENV['ENV'], $_ENV['ENABLE_NODE'], $_ENV['ENABLE_DATABASE'], $_ENV['ENABLE_REDIS']);
+        unset($_ENV['ZAPPZARAPP_ENV'], $_ENV['ENABLE_NODE'], $_ENV['ENABLE_DATABASE'], $_ENV['ENABLE_REDIS']);
     }
 
     protected function tearDown(): void
     {
         $_SERVER = $this->originalServer;
-        putenv('ENV=' . $this->originalEnv);
+        putenv('ZAPPZARAPP_ENV=' . $this->originalEnv);
         putenv('ENABLE_NODE');
         putenv('ENABLE_DATABASE');
         putenv('ENABLE_REDIS');
@@ -73,7 +73,7 @@ final class WelcomeControllerTest extends TestCase
      * Build a WelcomeController with real collaborators pointing at the
      * project's own templates directory (available on the host via volume mount).
      *
-     * ViteHelper is instantiated in production mode (ENV not set → defaults to
+     * ViteHelper is instantiated in production mode (ZAPPZARAPP_ENV not set → defaults to
      * 'production') with no manifest file so renderCssTags/renderScriptTags
      * return safe comment placeholders and no network I/O occurs.
      *
@@ -221,14 +221,14 @@ final class WelcomeControllerTest extends TestCase
     }
 
     // =========================================================================
-    // index() — ENV variable propagated to template
+    // index() — ZAPPZARAPP_ENV variable propagated to template
     // =========================================================================
 
     #[RunInSeparateProcess]
     #[Test]
     public function testIndexShowsProductionModeWhenEnvNotSet(): void
     {
-        putenv('ENV=production');
+        putenv('ZAPPZARAPP_ENV=production');
 
         $controller = $this->createController();
 
@@ -257,7 +257,7 @@ final class WelcomeControllerTest extends TestCase
         $output = ob_get_clean();
 
         // Toolbar demo section (only shown in development via Twig) should not appear
-        // (we're in production mode by default — ENV unset → 'production')
+        // (we're in production mode by default — ZAPPZARAPP_ENV unset → 'production')
         $this->assertStringNotContainsString('Developer Toolbar Demo Active', (string) $output);
     }
 

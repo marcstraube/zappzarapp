@@ -7,7 +7,7 @@ metadata:
     {{- include "zappzarapp.labels" . | nindent 4 }}
 data:
   # Environment
-  ENV: {{ .Values.global.env | quote }}
+  ZAPPZARAPP_ENV: {{ .Values.global.env | quote }}
   DOMAIN: {{ .Values.global.domain | quote }}
 
   # Database configuration

@@ -92,7 +92,7 @@ if (!$corsMiddleware->handle()) {
  * The Development Dashboard is accessible at /_dev
  * It provides system info, health checks, logs, quality metrics, and more.
  *
- * IMPORTANT: Only available in development environment (ENV=development)
+ * IMPORTANT: Only available in development environment (ZAPPZARAPP_ENV=development)
  * This is enforced because:
  * - Volume mounts for .git, Node.js configs are DEV-only (compose.override.yaml)
  * - Exposes sensitive information (env vars, phpinfo, database details)
@@ -102,7 +102,7 @@ if (!$corsMiddleware->handle()) {
 $requestPath = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?: '/';
 
 // Development Dashboard - Only enabled in development environment
-$isDevelopment = getenv('ENV') === 'development';
+$isDevelopment = getenv('ZAPPZARAPP_ENV') === 'development';
 
 if ($isDevelopment && str_starts_with($requestPath, '/_dev')) {
     if (file_exists(__DIR__ . '/../src/php/DevDashboard/routes.php')) {
@@ -144,7 +144,7 @@ if ($isDevelopment && str_starts_with($requestPath, '/_dev')) {
 
 // 1. Build and send CSP Header (before any output!)
 try {
-    $isDevelopment = getenv('ENV') === 'development';
+    $isDevelopment = getenv('ZAPPZARAPP_ENV') === 'development';
     $wsHost        = getenv('CSP_DEV_WEBSOCKET_HOST') ?: 'localhost:8443';
 
     // Build CSP directives based on environment

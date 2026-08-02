@@ -11,12 +11,12 @@
 # Environment:
 #   VERBOSE=1    Same as --verbose flag
 #
-# For development presets (ENV=development):
+# For development presets (ZAPPZARAPP_ENV=development):
 #   - Checks if dependencies are installed
 #   - Installs them if missing (composer, pnpm)
 #   - Uses host-mounted volumes
 #
-# For production presets (ENV=production):
+# For production presets (ZAPPZARAPP_ENV=production):
 #   - Uses self-contained images
 #   - No dependency check needed
 
@@ -194,7 +194,7 @@ calculate_profiles
 
 # Determine compose files (needed for dependency installation)
 COMPOSE_FILES="-f compose.yaml"
-if [ "${ENV:-development}" = "production" ]; then
+if [ "${ZAPPZARAPP_ENV:-development}" = "production" ]; then
     COMPOSE_FILES="$COMPOSE_FILES -f compose.production.yaml"
 else
     # Development uses override
@@ -204,7 +204,7 @@ else
 fi
 
 # For development presets: check dependencies before starting
-if [ "${ENV:-development}" = "development" ]; then
+if [ "${ZAPPZARAPP_ENV:-development}" = "development" ]; then
     # Only check dependencies for "up" commands
     if [[ "$COMMAND" == *"up"* ]]; then
         echo -e "${BLUE}[preset-runner] Development mode - checking dependencies...${NC}"
@@ -214,7 +214,7 @@ fi
 
 # Show info only in verbose mode
 if [ "$VERBOSE" = "1" ]; then
-    echo -e "${BLUE}[preset-runner] Preset: $PRESET (${ENV:-development})${NC}"
+    echo -e "${BLUE}[preset-runner] Preset: $PRESET (${ZAPPZARAPP_ENV:-development})${NC}"
     echo -e "${BLUE}[preset-runner] Profiles:$PROFILES${NC}"
 fi
 

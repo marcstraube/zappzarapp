@@ -4,7 +4,7 @@
 variables:
   # Note: COMPOSE_PROJECT_NAME intentionally not set here - uses value from .env
   # to ensure consistency between docker compose build and make up (which sources .env)
-  ENV: development
+  ZAPPZARAPP_ENV: development
   DOCKER_DRIVER: overlay2
   DOCKER_TLS_CERTDIR: ""
   # Use CI-specific compose file (no lockfile bind mounts)
@@ -476,9 +476,9 @@ build:production:
     - docker buildx bake --builder ci -f docker-bake.hcl --load production
     # Stop any existing containers before production test (prevent port/name conflicts)
     - docker compose down -v || true
-    # Test production build using ENV-aware target
+    # Test production build using ZAPPZARAPP_ENV-aware target
     # Tests nginx + app (php/node) + database + activated services
-    - ENV=production make test-production
+    - ZAPPZARAPP_ENV=production make test-production
   after_script:
     - docker compose ps || true
     - docker compose logs --tail=100 || true

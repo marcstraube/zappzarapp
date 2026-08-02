@@ -27,8 +27,8 @@ final class TlsConfig
         }
 
         // Default: verify in production only
-        // Uses ENV variable (project standard), not APP_ENV
-        $env = $_ENV['ENV'] ?? getenv('ENV') ?: 'production';
+        // Uses ZAPPZARAPP_ENV variable (project standard), not APP_ENV
+        $env = $_ENV['ZAPPZARAPP_ENV'] ?? getenv('ZAPPZARAPP_ENV') ?: 'production';
         return $env === 'production';
     }
 

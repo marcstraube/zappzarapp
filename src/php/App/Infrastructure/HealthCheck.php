@@ -39,19 +39,19 @@ class HealthCheck
     {
         // Load environment variables
         $this->env = [
-            'ENV'                  => $_ENV['ENV'] ?? getenv('ENV') ?: 'production',
-            'ENABLE_PHP'           => $this->parseBool($_ENV['ENABLE_PHP'] ?? getenv('ENABLE_PHP') ?: 'true'),
-            'ENABLE_NODE'          => $this->parseBool($_ENV['ENABLE_NODE'] ?? getenv('ENABLE_NODE') ?: 'false'),
-            'ENABLE_DATABASE'      => $this->parseBool($_ENV['ENABLE_DATABASE'] ?? getenv('ENABLE_DATABASE') ?: 'false'),
-            'ENABLE_REDIS'         => $this->parseBool($_ENV['ENABLE_REDIS'] ?? getenv('ENABLE_REDIS') ?: 'false'),
-            'ENABLE_MERCURE'       => $this->parseBool($_ENV['ENABLE_MERCURE'] ?? getenv('ENABLE_MERCURE') ?: 'false'),
-            'ENABLE_MEILISEARCH'   => $this->parseBool($_ENV['ENABLE_MEILISEARCH'] ?? getenv('ENABLE_MEILISEARCH') ?: 'false'),
-            'ENABLE_ELASTICSEARCH' => $this->parseBool($_ENV['ENABLE_ELASTICSEARCH'] ?? getenv('ENABLE_ELASTICSEARCH') ?: 'false'),
-            'ENABLE_MAILPIT'       => $this->parseBool($_ENV['ENABLE_MAILPIT'] ?? getenv('ENABLE_MAILPIT') ?: 'false'),
-            'ENABLE_RABBITMQ'      => $this->parseBool($_ENV['ENABLE_RABBITMQ'] ?? getenv('ENABLE_RABBITMQ') ?: 'false'),
-            'ENABLE_SEAWEEDFS'     => $this->parseBool($_ENV['ENABLE_SEAWEEDFS'] ?? getenv('ENABLE_SEAWEEDFS') ?: 'false'),
-            'DB_TYPE'              => $_ENV['DB_TYPE'] ?? getenv('DB_TYPE') ?: null,
-            'NODE_MODE'            => $_ENV['NODE_MODE'] ?? getenv('NODE_MODE') ?: 'none',
+            'ZAPPZARAPP_ENV'                  => $_ENV['ZAPPZARAPP_ENV'] ?? getenv('ZAPPZARAPP_ENV') ?: 'production',
+            'ENABLE_PHP'                      => $this->parseBool($_ENV['ENABLE_PHP'] ?? getenv('ENABLE_PHP') ?: 'true'),
+            'ENABLE_NODE'                     => $this->parseBool($_ENV['ENABLE_NODE'] ?? getenv('ENABLE_NODE') ?: 'false'),
+            'ENABLE_DATABASE'                 => $this->parseBool($_ENV['ENABLE_DATABASE'] ?? getenv('ENABLE_DATABASE') ?: 'false'),
+            'ENABLE_REDIS'                    => $this->parseBool($_ENV['ENABLE_REDIS'] ?? getenv('ENABLE_REDIS') ?: 'false'),
+            'ENABLE_MERCURE'                  => $this->parseBool($_ENV['ENABLE_MERCURE'] ?? getenv('ENABLE_MERCURE') ?: 'false'),
+            'ENABLE_MEILISEARCH'              => $this->parseBool($_ENV['ENABLE_MEILISEARCH'] ?? getenv('ENABLE_MEILISEARCH') ?: 'false'),
+            'ENABLE_ELASTICSEARCH'            => $this->parseBool($_ENV['ENABLE_ELASTICSEARCH'] ?? getenv('ENABLE_ELASTICSEARCH') ?: 'false'),
+            'ENABLE_MAILPIT'                  => $this->parseBool($_ENV['ENABLE_MAILPIT'] ?? getenv('ENABLE_MAILPIT') ?: 'false'),
+            'ENABLE_RABBITMQ'                 => $this->parseBool($_ENV['ENABLE_RABBITMQ'] ?? getenv('ENABLE_RABBITMQ') ?: 'false'),
+            'ENABLE_SEAWEEDFS'                => $this->parseBool($_ENV['ENABLE_SEAWEEDFS'] ?? getenv('ENABLE_SEAWEEDFS') ?: 'false'),
+            'DB_TYPE'                         => $_ENV['DB_TYPE'] ?? getenv('DB_TYPE') ?: null,
+            'NODE_MODE'                       => $_ENV['NODE_MODE'] ?? getenv('NODE_MODE') ?: 'none',
         ];
     }
 
@@ -72,7 +72,7 @@ class HealthCheck
     {
         $this->status = [
             'timestamp'      => date('c'),
-            'environment'    => $this->env['ENV'],
+            'environment'    => $this->env['ZAPPZARAPP_ENV'],
             'overall_status' => 'ok',
             'services'       => [],
             'features'       => $this->env,
@@ -239,7 +239,7 @@ class HealthCheck
             if ($conn['redis'] === null) {
                 $this->status['services']['redis'] = [
                     'status'  => 'error',
-                    'message' => $this->env['ENV'] === 'production' ? 'Connection failed' : $conn['error'],
+                    'message' => $this->env['ZAPPZARAPP_ENV'] === 'production' ? 'Connection failed' : $conn['error'],
                     'enabled' => true,
                     'tls'     => $conn['useTls'],
                 ];
@@ -379,7 +379,7 @@ class HealthCheck
             'status'      => $overallStatus,
             'timestamp'   => date('c'),
             'service'     => 'php-backend',
-            'environment' => $this->env['ENV'],
+            'environment' => $this->env['ZAPPZARAPP_ENV'],
             'uptime'      => $this->getUptime(),
             'checks'      => $checks,
         ];
@@ -493,7 +493,7 @@ class HealthCheck
             if ($conn['redis'] === null) {
                 return [
                     'status'  => 'unhealthy',
-                    'message' => $this->env['ENV'] === 'production' ? 'Connection failed' : $conn['error'],
+                    'message' => $this->env['ZAPPZARAPP_ENV'] === 'production' ? 'Connection failed' : $conn['error'],
                 ];
             }
 
@@ -762,7 +762,7 @@ class HealthCheck
             return ['connected' => true];
         }
 
-        if ($this->env['ENV'] === 'production') {
+        if ($this->env['ZAPPZARAPP_ENV'] === 'production') {
             return ['connected' => false, 'error' => 'Connection failed'];
         }
 
@@ -818,7 +818,7 @@ class HealthCheck
      */
     private function safeErrorMessage(Throwable $exception): string
     {
-        if ($this->env['ENV'] === 'production') {
+        if ($this->env['ZAPPZARAPP_ENV'] === 'production') {
             $this->logError('[HealthCheck] probe failed: ' . $exception->getMessage());
             return 'Connection failed';
         }

@@ -3,7 +3,7 @@
 #
 # ENVIRONMENT FILES (loaded in order, later files override earlier):
 #   .env              - Team defaults (committed)
-#   .env.production   - Production overrides (committed, loaded if ENV=production)
+#   .env.production   - Production overrides (committed, loaded if ZAPPZARAPP_ENV=production)
 #   .env.local        - Local overrides (gitignored, loaded via Makefile)
 #
 # SECRETS HANDLING:
@@ -96,7 +96,7 @@ services:
       - ./secrets:/run/secrets:ro
     environment:
       - TZ=${TZ:-UTC}
-      - NODE_ENV=${ENV:-production}
+      - NODE_ENV=${ZAPPZARAPP_ENV:-production}
       - LOG_LEVEL=${LOG_LEVEL:-info}
       - LOG_FORMAT=${LOG_FORMAT:-json}
       - CORS_ORIGINS=${CORS_ORIGINS:-}
@@ -150,7 +150,7 @@ services:
       - ./secrets:/run/secrets:ro
     environment:
       - TZ=${TZ:-UTC}
-      - NODE_ENV=${ENV:-production}
+      - NODE_ENV=${ZAPPZARAPP_ENV:-production}
       - LOG_LEVEL=${LOG_LEVEL:-info}
       - LOG_FORMAT=${LOG_FORMAT:-json}
       - CORS_ORIGINS=${CORS_ORIGINS:-}
@@ -203,12 +203,12 @@ services:
         required: false
     environment:
       - TZ=${TZ:-UTC}
-      - ENV=${ENV:-production}
+      - ZAPPZARAPP_ENV=${ZAPPZARAPP_ENV:-production}
       - LOG_LEVEL=${LOG_LEVEL:-info}
       - LOG_FORMAT=${LOG_FORMAT:-json}
       - CORS_ORIGINS=${CORS_ORIGINS:-}
       # DevToolbar explicit on/off switch (fail-closed default). The
-      # DevToolbarGuard also enables on ENV=development, but plumbing this
+      # DevToolbarGuard also enables on ZAPPZARAPP_ENV=development, but plumbing this
       # through makes the documented .env toggle actually take effect.
       - ENABLE_DEV_TOOLBAR=${ENABLE_DEV_TOOLBAR:-false}
       # Service activation flags (for DevDashboard)
@@ -498,7 +498,7 @@ services:
       # Master key for API authentication (required in production)
       MEILI_MASTER_KEY_FILE: /run/secrets/meilisearch_master_key.txt
       # Environment: development or production
-      MEILI_ENV: ${ENV:-development}
+      MEILI_ENV: ${ZAPPZARAPP_ENV:-development}
       # Disable analytics
       MEILI_NO_ANALYTICS: "true"
       # TLS configuration for zero-trust internal HTTPS

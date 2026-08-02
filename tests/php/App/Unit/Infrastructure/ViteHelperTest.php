@@ -17,21 +17,21 @@ final class ViteHelperTest extends TestCase
 {
     protected function setUp(): void
     {
-        putenv('ENV');
-        unset($_ENV['ENV']);
+        putenv('ZAPPZARAPP_ENV');
+        unset($_ENV['ZAPPZARAPP_ENV']);
     }
 
     protected function tearDown(): void
     {
-        putenv('ENV');
-        unset($_ENV['ENV']);
+        putenv('ZAPPZARAPP_ENV');
+        unset($_ENV['ZAPPZARAPP_ENV']);
     }
 
     #[RunInSeparateProcess]
     #[Test]
     public function testIsDevelopmentReturnsTrueInDevelopmentMode(): void
     {
-        putenv('ENV=development');
+        putenv('ZAPPZARAPP_ENV=development');
 
         $vite = new ViteHelper();
 
@@ -43,7 +43,7 @@ final class ViteHelperTest extends TestCase
     #[Test]
     public function testIsDevelopmentReturnsFalseInProductionMode(): void
     {
-        putenv('ENV=production');
+        putenv('ZAPPZARAPP_ENV=production');
 
         $vite = new ViteHelper();
 
@@ -65,7 +65,7 @@ final class ViteHelperTest extends TestCase
     #[Test]
     public function testRenderScriptTagsInDevelopmentMode(): void
     {
-        putenv('ENV=development');
+        putenv('ZAPPZARAPP_ENV=development');
 
         $vite   = new ViteHelper();
         $output = $vite->renderScriptTags('js/app.js');
@@ -79,7 +79,7 @@ final class ViteHelperTest extends TestCase
     #[Test]
     public function testRenderCssTagsInDevelopmentMode(): void
     {
-        putenv('ENV=development');
+        putenv('ZAPPZARAPP_ENV=development');
 
         $vite   = new ViteHelper();
         $output = $vite->renderCssTags('js/app.js');
@@ -91,7 +91,7 @@ final class ViteHelperTest extends TestCase
     #[Test]
     public function testRenderScriptTagsInProductionWithoutManifest(): void
     {
-        putenv('ENV=production');
+        putenv('ZAPPZARAPP_ENV=production');
 
         // Use non-existent path to test missing manifest behavior
         $vite   = new ViteHelper('/nonexistent/manifest.json');
@@ -104,7 +104,7 @@ final class ViteHelperTest extends TestCase
     #[Test]
     public function testRenderCssTagsInProductionWithoutManifest(): void
     {
-        putenv('ENV=production');
+        putenv('ZAPPZARAPP_ENV=production');
 
         // Use non-existent path to test missing manifest behavior
         $vite   = new ViteHelper('/nonexistent/manifest.json');
@@ -117,7 +117,7 @@ final class ViteHelperTest extends TestCase
     #[Test]
     public function testIsViteDevServerRunningReturnsFalseInProduction(): void
     {
-        putenv('ENV=production');
+        putenv('ZAPPZARAPP_ENV=production');
 
         $vite = new ViteHelper();
 
@@ -128,7 +128,7 @@ final class ViteHelperTest extends TestCase
     #[Test]
     public function testAreAssetsAvailableReturnsFalseWhenNoManifestInProduction(): void
     {
-        putenv('ENV=production');
+        putenv('ZAPPZARAPP_ENV=production');
 
         // Use non-existent path to test missing manifest behavior
         $vite = new ViteHelper('/nonexistent/manifest.json');

@@ -245,7 +245,7 @@ docker compose exec php composer require sentry/sentry
 // config/sentry.php
 \Sentry\init([
     'dsn' => getenv('SENTRY_DSN'),
-    'environment' => getenv('ENV'),
+    'environment' => getenv('ZAPPZARAPP_ENV'),
     'traces_sample_rate' => 0.1,
 ]);
 ```

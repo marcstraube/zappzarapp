@@ -57,7 +57,7 @@ body:
       placeholder: |
         OS: ...
         Docker: ... / Compose: ...
-        ENV: development
+        ZAPPZARAPP_ENV: development
     validations:
       required: true
   - type: textarea

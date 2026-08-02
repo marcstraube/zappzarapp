@@ -10,8 +10,8 @@ use Zappzarapp\Security\Csp\Nonce\NonceRegistry;
 /**
  * Vite Helper - Dynamically loads Vite assets based on environment
  *
- * In Development (ENV=development): Loads Vite Dev Server with HMR
- * In Production (ENV=production): Loads built assets with correct hashed filenames
+ * In Development (ZAPPZARAPP_ENV=development): Loads Vite Dev Server with HMR
+ * In Production (ZAPPZARAPP_ENV=production): Loads built assets with correct hashed filenames
  */
 class ViteHelper
 {
@@ -26,8 +26,8 @@ class ViteHelper
 
     public function __construct(?string $manifestPath = null)
     {
-        // Determine environment from ENV variable, default to production
-        $this->env          = $_ENV['ENV'] ?? getenv('ENV') ?: 'production';
+        // Determine environment from ZAPPZARAPP_ENV variable, default to production
+        $this->env          = $_ENV['ZAPPZARAPP_ENV'] ?? getenv('ZAPPZARAPP_ENV') ?: 'production';
         $this->manifestPath = $manifestPath ?? __DIR__ . '/../../../../public/build/.vite/manifest.json';
 
         // Determine Vite Dev Server URL based on request context

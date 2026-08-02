@@ -767,8 +767,8 @@ a `docker buildx bake` contexts key with a colon is silently ignored — see
 
 #### Solution
 
-`make build` with `ENV=production` builds and tags node-backend before
-php/nginx, so this is normally automatic. To build manually, pick one:
+`make build` with `ZAPPZARAPP_ENV=production` builds and tags node-backend
+before php/nginx, so this is normally automatic. To build manually, pick one:
 
 ```bash
 # Option A — docker buildx bake links node-backend as a target (CI uses this):
@@ -778,7 +778,7 @@ docker buildx bake -f docker-bake.hcl --load production
 # additional_contexts declared in compose.production.yaml:
 docker compose --profile node-backend build node-backend
 docker tag <project>-node-backend:api zappzarapp-node-backend:latest
-ENV=production docker compose -f compose.yaml -f compose.production.yaml build php nginx
+ZAPPZARAPP_ENV=production docker compose -f compose.yaml -f compose.production.yaml build php nginx
 ```
 
 ### Out of Disk Space

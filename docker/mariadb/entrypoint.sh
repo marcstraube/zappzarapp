@@ -25,7 +25,7 @@ elif [ -f /tmp/certs/server.crt ] && [ -f /tmp/certs/server.key ]; then
     echo "[entrypoint] Found SSL certificates at /tmp/certs/server.{crt,key}"
 else
     # No SSL certificates found - behavior depends on environment
-    ENV_MODE="${ENV:-development}"
+    ENV_MODE="${ZAPPZARAPP_ENV:-development}"
 
     # Diagnostic information about what was found
     if [ -d /tmp/certs ]; then

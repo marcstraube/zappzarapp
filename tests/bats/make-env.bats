@@ -34,10 +34,10 @@ load 'helpers/setup'
     [[ -n "${NODE_MODE:-}" ]] || [[ "${NODE_MODE:-assets-api}" == "assets-api" ]]
 }
 
-@test "ENV defaults to development" {
+@test "ZAPPZARAPP_ENV defaults to development" {
     clean_test_env
     load_env_file ".env"
-    [[ "${ENV:-development}" == "development" ]]
+    [[ "${ZAPPZARAPP_ENV:-development}" == "development" ]]
 }
 
 @test "COMPOSE_PROJECT_NAME is set" {
@@ -46,34 +46,34 @@ load 'helpers/setup'
 }
 
 # =============================================================================
-# Caller ENV Precedence (ENV=production make ...)
+# Caller ZAPPZARAPP_ENV Precedence (ZAPPZARAPP_ENV=production make ...)
 # =============================================================================
 
-@test "caller ENV=production wins over .env" {
-    export ENV=production
+@test "caller ZAPPZARAPP_ENV=production wins over .env" {
+    export ZAPPZARAPP_ENV=production
     run make validate-env
     assert_success
-    assert_output --partial "✓ ENV=production"
+    assert_output --partial "✓ ZAPPZARAPP_ENV=production"
 }
 
-@test "without caller ENV the .env value applies" {
+@test "without caller ZAPPZARAPP_ENV the .env value applies" {
     run make validate-env
     assert_success
-    assert_output --partial "ENV=development"
+    assert_output --partial "ZAPPZARAPP_ENV=development"
 }
 
-@test "unsupported ENV from the environment falls back to .env with a warning" {
-    export ENV=/home/user/.kshrc
+@test "unsupported ZAPPZARAPP_ENV from the environment falls back to .env with a warning" {
+    export ZAPPZARAPP_ENV=staging
     run make validate-env
     assert_success
-    assert_output --partial "Ignoring ENV="
-    assert_output --partial "ENV=development"
+    assert_output --partial "Ignoring ZAPPZARAPP_ENV="
+    assert_output --partial "ZAPPZARAPP_ENV=development"
 }
 
-@test "invalid command-line ENV aborts with an error" {
-    run make validate-env ENV=prod
+@test "invalid command-line ZAPPZARAPP_ENV aborts with an error" {
+    run make validate-env ZAPPZARAPP_ENV=prod
     assert_failure
-    assert_output --partial "Invalid ENV"
+    assert_output --partial "Invalid ZAPPZARAPP_ENV"
 }
 
 # =============================================================================
@@ -220,9 +220,9 @@ load 'helpers/setup'
 # Production Environment
 # =============================================================================
 
-@test "ENV=production changes behavior" {
-    export ENV=production
-    [[ "$ENV" == "production" ]]
+@test "ZAPPZARAPP_ENV=production changes behavior" {
+    export ZAPPZARAPP_ENV=production
+    [[ "$ZAPPZARAPP_ENV" == "production" ]]
 }
 
 @test ".env.production file may exist" {

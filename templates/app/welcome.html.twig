@@ -7,7 +7,7 @@
     <!--suppress HtmlUnknownTarget -->
     <link rel="icon" type="image/svg+xml" href="/favicon.svg">
 
-    <!-- Vite Assets - Dynamically loaded based on ENV -->
+    <!-- Vite Assets - Dynamically loaded based on ZAPPZARAPP_ENV -->
     {{ vite.renderCssTags('js/app.js')|raw }}
 
 </head>
@@ -26,7 +26,7 @@
     </div>
     {% endif %}
 
-    {% if env.ENV == 'development' %}
+    {% if env.ZAPPZARAPP_ENV == 'development' %}
     <div class="card" style="background: #e7f3ff; border: 2px solid #2196F3; padding: 1rem; margin-bottom: 1rem;">
         <h3 style="color: #1565C0; margin: 0 0 0.5rem 0;">🛠️ Developer Toolbar Demo Active</h3>
         <p style="color: #1565C0; margin: 0; font-size: 0.95em;">
@@ -56,7 +56,7 @@
 
         <div class="card" style="margin-top: 2rem; background: #f0f0f0; padding: 1rem; border-radius: 8px;">
             <h3>Current Environment</h3>
-            <p><strong>ENV:</strong> {{ env.ENV }}</p>
+            <p><strong>ZAPPZARAPP_ENV:</strong> {{ env.ZAPPZARAPP_ENV }}</p>
             <p><strong>Mode:</strong> {% if vite.isDevelopment() %}🔧 Development (Vite HMR){% else %}🚀 Production (Built Assets){% endif %}</p>
             <p><strong>Overall Status:</strong>
                 <span style="color: {% if status.overall_status == 'ok' %}green{% else %}orange{% endif %}; font-weight: bold;">
@@ -107,7 +107,7 @@
     <div class="card">
         <h2>⚙️ Active Features</h2>
         <ul style="list-style: none; padding: 0;">
-            <li>🔧 <strong>Environment:</strong> {{ env.ENV }}</li>
+            <li>🔧 <strong>Environment:</strong> {{ env.ZAPPZARAPP_ENV }}</li>
             <li>📦 <strong>PHP Service:</strong> {% if env.ENABLE_PHP %}✅ Enabled{% else %}❌ Disabled{% endif %}</li>
             <li>🟢 <strong>Node.js Service:</strong> {% if env.ENABLE_NODE %}✅ Enabled ({{ env.NODE_MODE }}){% else %}❌ Disabled{% endif %}</li>
             <li>🔴 <strong>Redis Service:</strong> {% if env.ENABLE_REDIS %}✅ Enabled{% else %}❌ Disabled{% endif %}</li>

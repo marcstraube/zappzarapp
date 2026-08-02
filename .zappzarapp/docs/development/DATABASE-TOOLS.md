@@ -209,15 +209,16 @@ make pgadmin-up   # Start pgAdmin
 ## Security
 
 **Development Only:** These tools are blocked in production mode
-(`ENV=production`).
+(`ZAPPZARAPP_ENV=production`).
 
-All database tool targets check `ENV` and refuse to run in production:
+All database tool targets check `ZAPPZARAPP_ENV` and refuse to run in
+production:
 
 ```bash
 # In production mode, this will fail:
 $ APP_ENV=production make adminer-up
 Error: Adminer is only available in development mode
-Set ENV=development in .env to enable
+Set ZAPPZARAPP_ENV=development in .env to enable
 ```
 
 ## Troubleshooting

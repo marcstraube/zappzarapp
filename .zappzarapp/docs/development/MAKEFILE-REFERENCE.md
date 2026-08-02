@@ -34,7 +34,8 @@ available categories are shown at the end of the output for reference.
 
 ## Development Mode Defaults
 
-In development mode (`ENV=development` or not set), `make up` applies:
+In development mode (`ZAPPZARAPP_ENV=development` or not set), `make up`
+applies:
 
 | Default                | Condition                   | Purpose                    |
 | ---------------------- | --------------------------- | -------------------------- |
@@ -54,24 +55,24 @@ DevDashboard for coverage and documentation generation.
 
 Commands for initial project setup and configuration.
 
-| Command                         | Description                                                               |
-| ------------------------------- | ------------------------------------------------------------------------- |
-| `make setup`                    | Full setup (directories, secrets, build, install) - entry point           |
-| `make customize`                | List shipped templates that still contain customization placeholders      |
-| `make init`                     | Create `.env.local` with USER_ID/GROUP_ID (called interactively by setup) |
-| `make composer-install`         | Install/update Composer dependencies via Docker (guaranteed consistency)  |
-| `make composer-install-local`   | Install Composer dependencies locally (for IDE code completion)           |
-| `make pnpm-install`             | Install Node.js dependencies via Docker (requires ENV=development)        |
-| `make pnpm-install-local`       | Install Node.js dependencies locally (for IDE code completion)            |
-| `make hooks-install`            | Install Git hooks using CaptainHook                                       |
-| `make ide-config`               | Configure all IDE database connections (PHPStorm + VS Code)               |
-| `make ide-config-full`          | Update all IDE configs with custom ports from `.env.local`                |
-| `make ide-config-phpstorm`      | Configure PHPStorm only (`.idea/dataSources.local.xml`)                   |
-| `make ide-config-vscode`        | Configure VS Code only (`.vscode/settings.json`)                          |
-| `make ide-config-phpstorm-full` | Update PHPStorm shared config with custom ports                           |
-| `make ide-config-vscode-full`   | Update VS Code config with custom ports                                   |
-| `make ide-lock`                 | Lock IDE config files from git (auto-run by ide-config)                   |
-| `make ide-unlock`               | Unlock IDE config files for committing (zappzarapp contributors)          |
+| Command                         | Description                                                                   |
+| ------------------------------- | ----------------------------------------------------------------------------- |
+| `make setup`                    | Full setup (directories, secrets, build, install) - entry point               |
+| `make customize`                | List shipped templates that still contain customization placeholders          |
+| `make init`                     | Create `.env.local` with USER_ID/GROUP_ID (called interactively by setup)     |
+| `make composer-install`         | Install/update Composer dependencies via Docker (guaranteed consistency)      |
+| `make composer-install-local`   | Install Composer dependencies locally (for IDE code completion)               |
+| `make pnpm-install`             | Install Node.js dependencies via Docker (requires ZAPPZARAPP_ENV=development) |
+| `make pnpm-install-local`       | Install Node.js dependencies locally (for IDE code completion)                |
+| `make hooks-install`            | Install Git hooks using CaptainHook                                           |
+| `make ide-config`               | Configure all IDE database connections (PHPStorm + VS Code)                   |
+| `make ide-config-full`          | Update all IDE configs with custom ports from `.env.local`                    |
+| `make ide-config-phpstorm`      | Configure PHPStorm only (`.idea/dataSources.local.xml`)                       |
+| `make ide-config-vscode`        | Configure VS Code only (`.vscode/settings.json`)                              |
+| `make ide-config-phpstorm-full` | Update PHPStorm shared config with custom ports                               |
+| `make ide-config-vscode-full`   | Update VS Code config with custom ports                                       |
+| `make ide-lock`                 | Lock IDE config files from git (auto-run by ide-config)                       |
+| `make ide-unlock`               | Unlock IDE config files for committing (zappzarapp contributors)              |
 
 ### Setup Workflow
 
@@ -244,7 +245,7 @@ reflected because cached images are being used.
 - `docker/*/Dockerfile` - Container build definitions
 - `docker/*/entrypoint*.sh` - Startup scripts
 - `compose.yaml`, `compose.override.yaml` - Service configuration
-- `.env` - Environment variables (NODE_MODE, ENV, etc.)
+- `.env` - Environment variables (NODE_MODE, ZAPPZARAPP_ENV, etc.)
 
 **Behavior:**
 
@@ -375,7 +376,7 @@ logs/2026-01-20-1430/
 
 - Export timestamp and time filter
 - Git branch and last commit hash
-- Environment settings (ENV, DB_TYPE, NODE_MODE)
+- Environment settings (ZAPPZARAPP_ENV, DB_TYPE, NODE_MODE)
 - Active COMPOSE_PROFILES
 - Current container status (`docker compose ps`)
 
@@ -424,9 +425,9 @@ make k8s-build
 # Deploy with default values
 make k8s-deploy
 
-# Deploy with production values (either set ENV=production in .env or
-# pass it inline -- a caller-supplied ENV wins over the env files)
-ENV=production make k8s-deploy
+# Deploy with production values (either set ZAPPZARAPP_ENV=production in .env or
+# pass it inline -- a caller-supplied ZAPPZARAPP_ENV wins over the env files)
+ZAPPZARAPP_ENV=production make k8s-deploy
 
 # View logs
 make k8s-logs zappzarapp-php-xxxxx
@@ -441,11 +442,11 @@ Test production builds with different service configurations. These targets
 start containers in production mode and run health checks to validate
 functionality.
 
-| Command                        | Description                                                |
-| ------------------------------ | ---------------------------------------------------------- |
-| `make test-production`         | Test with ENV-configured services (smart, respects `.env`) |
-| `make test-production-minimal` | Test with minimal services (nginx + app + db only)         |
-| `make test-production-full`    | Test with ALL services (comprehensive, ignores `.env`)     |
+| Command                        | Description                                                           |
+| ------------------------------ | --------------------------------------------------------------------- |
+| `make test-production`         | Test with ZAPPZARAPP_ENV-configured services (smart, respects `.env`) |
+| `make test-production-minimal` | Test with minimal services (nginx + app + db only)                    |
+| `make test-production-full`    | Test with ALL services (comprehensive, ignores `.env`)                |
 
 **test-production (Recommended):**
 
@@ -491,8 +492,8 @@ make test-production-full
 
 **Requirements:**
 
-- `ENV=production` must be set in `.env` or passed to make directly
-- Production images must be built first (`ENV=production make build`)
+- `ZAPPZARAPP_ENV=production` must be set in `.env` or passed to make directly
+- Production images must be built first (`ZAPPZARAPP_ENV=production make build`)
 - Services must be stopped before running tests
 
 See [DEPLOYMENT.md](../infrastructure/DEPLOYMENT.md) for detailed documentation.
@@ -884,7 +885,7 @@ make restart
 # Production (Let's Encrypt)
 make ssl-letsencrypt  # Follow prompts for domain/email
 make ssl-prod-enable
-ENV=production make build && make up
+ZAPPZARAPP_ENV=production make build && make up
 ```
 
 ### Supported OS for ssl-trust-ca
@@ -963,7 +964,7 @@ make down && make fresh
 Override environment variables inline:
 
 ```bash
-ENV=production make build
+ZAPPZARAPP_ENV=production make build
 XDEBUG_MODE=debug make up
 NODE_TARGET=app-server make up
 ```
@@ -1011,7 +1012,7 @@ make test-php-debug                      # Run tests with debugger
 
 ```bash
 # Before release: Test production configuration
-ENV=production make build
+ZAPPZARAPP_ENV=production make build
 make test-production
 
 # Quick smoke test

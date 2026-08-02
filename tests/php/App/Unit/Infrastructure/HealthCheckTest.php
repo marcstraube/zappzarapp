@@ -44,7 +44,7 @@ final class HealthCheckTest extends TestCase
     private function clearEnvVars(): void
     {
         foreach ([
-            'ENV',
+            'ZAPPZARAPP_ENV',
             'ENABLE_PHP',
             'ENABLE_NODE',
             'ENABLE_DATABASE',
@@ -71,10 +71,10 @@ final class HealthCheckTest extends TestCase
         // Default to development so that existing detailed-message assertions keep
         // passing after safeErrorMessage() was introduced (production returns generic
         // 'Connection failed'; tests run in development to see real messages).
-        // Only putenv, not $_ENV: individual tests override ENV via putenv (e.g.
+        // Only putenv, not $_ENV: individual tests override ZAPPZARAPP_ENV via putenv (e.g.
         // 'staging', 'production'), and the constructor prefers $_ENV over getenv —
         // setting $_ENV here would shadow those per-test putenv overrides.
-        putenv('ENV=development');
+        putenv('ZAPPZARAPP_ENV=development');
     }
 
     // =========================================================================
@@ -85,15 +85,15 @@ final class HealthCheckTest extends TestCase
     #[Test]
     public function testDefaultEnvironmentValues(): void
     {
-        // Unset ENV explicitly to exercise the constructor's 'production' fallback
+        // Unset ZAPPZARAPP_ENV explicitly to exercise the constructor's 'production' fallback
         // (clearEnvVars sets development as the test baseline for message assertions)
-        putenv('ENV');
-        unset($_ENV['ENV']);
+        putenv('ZAPPZARAPP_ENV');
+        unset($_ENV['ZAPPZARAPP_ENV']);
 
         $check = new HealthCheck();
         $env   = $check->getEnvironment();
 
-        $this->assertSame('production', $env['ENV']);
+        $this->assertSame('production', $env['ZAPPZARAPP_ENV']);
         $this->assertTrue($env['ENABLE_PHP']);
         $this->assertFalse($env['ENABLE_NODE']);
         $this->assertFalse($env['ENABLE_DATABASE']);
@@ -939,19 +939,19 @@ final class HealthCheckTest extends TestCase
     }
 
     // =========================================================================
-    // getEnvironment() — ENV variable
+    // getEnvironment() — ZAPPZARAPP_ENV variable
     // =========================================================================
 
     #[RunInSeparateProcess]
     #[Test]
     public function testGetEnvironmentReturnsCorrectEnv(): void
     {
-        putenv('ENV=staging');
+        putenv('ZAPPZARAPP_ENV=staging');
 
         $check = new HealthCheck();
         $env   = $check->getEnvironment();
 
-        $this->assertSame('staging', $env['ENV']);
+        $this->assertSame('staging', $env['ZAPPZARAPP_ENV']);
     }
 
     // =========================================================================
@@ -1223,8 +1223,8 @@ final class HealthCheckTest extends TestCase
     #[Test]
     public function testProductionNodeBackendExceptionReturnsGenericMessage(): void
     {
-        putenv('ENV=production');
-        $_ENV['ENV'] = 'production';
+        putenv('ZAPPZARAPP_ENV=production');
+        $_ENV['ZAPPZARAPP_ENV'] = 'production';
         putenv('ENABLE_NODE=true');
         putenv('NODE_MODE=api');
 
@@ -1253,8 +1253,8 @@ final class HealthCheckTest extends TestCase
     #[Test]
     public function testProductionNodeBackendWithLatencyExceptionReturnsGenericMessage(): void
     {
-        putenv('ENV=production');
-        $_ENV['ENV'] = 'production';
+        putenv('ZAPPZARAPP_ENV=production');
+        $_ENV['ZAPPZARAPP_ENV'] = 'production';
         putenv('ENABLE_NODE=true');
         putenv('NODE_MODE=backend');
 
@@ -1283,8 +1283,8 @@ final class HealthCheckTest extends TestCase
     #[Test]
     public function testProductionRedisExceptionReturnsGenericMessage(): void
     {
-        putenv('ENV=production');
-        $_ENV['ENV'] = 'production';
+        putenv('ZAPPZARAPP_ENV=production');
+        $_ENV['ZAPPZARAPP_ENV'] = 'production';
         putenv('ENABLE_REDIS=true');
 
         $throwingRedis = $this->createStub(Redis::class);
@@ -1310,8 +1310,8 @@ final class HealthCheckTest extends TestCase
     #[Test]
     public function testProductionRedisConnectionNullReturnsGenericMessage(): void
     {
-        putenv('ENV=production');
-        $_ENV['ENV'] = 'production';
+        putenv('ZAPPZARAPP_ENV=production');
+        $_ENV['ZAPPZARAPP_ENV'] = 'production';
         putenv('ENABLE_REDIS=true');
 
         $fake = $this->makeFakeHealthCheck(redisConnectionReturn: [
@@ -1334,8 +1334,8 @@ final class HealthCheckTest extends TestCase
     #[Test]
     public function testProductionRedisWithLatencyConnectionNullReturnsGenericMessage(): void
     {
-        putenv('ENV=production');
-        $_ENV['ENV'] = 'production';
+        putenv('ZAPPZARAPP_ENV=production');
+        $_ENV['ZAPPZARAPP_ENV'] = 'production';
         putenv('ENABLE_REDIS=true');
 
         $fake = $this->makeFakeHealthCheck(redisConnectionReturn: [
@@ -1358,8 +1358,8 @@ final class HealthCheckTest extends TestCase
     #[Test]
     public function testProductionDatabaseExceptionReturnsGenericMessage(): void
     {
-        putenv('ENV=production');
-        $_ENV['ENV'] = 'production';
+        putenv('ZAPPZARAPP_ENV=production');
+        $_ENV['ZAPPZARAPP_ENV'] = 'production';
         putenv('ENABLE_DATABASE=true');
         putenv('DB_TYPE=mysql');
         putenv('DB_PASSWORD=testpass');
@@ -1389,8 +1389,8 @@ final class HealthCheckTest extends TestCase
     #[Test]
     public function testProductionTcpSocketErrorReturnsGenericMessage(): void
     {
-        putenv('ENV=production');
-        $_ENV['ENV'] = 'production';
+        putenv('ZAPPZARAPP_ENV=production');
+        $_ENV['ZAPPZARAPP_ENV'] = 'production';
         putenv('ENABLE_MERCURE=true');
 
         $fake = new class extends HealthCheck {

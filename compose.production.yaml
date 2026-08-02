@@ -2,7 +2,7 @@
 # Docker Compose Production Environment
 #
 # Usage:
-#   Single-server: make up (with ENV=production)
+#   Single-server: make up (with ZAPPZARAPP_ENV=production)
 #   Multi-node:    make k8s-deploy (Kubernetes/Helm)
 #
 # SECRETS HANDLING:
@@ -169,7 +169,7 @@ services:
       - ALL
     # NO cap_add needed - runs entirely as unprivileged www-data user
     environment:
-      - ENV=production
+      - ZAPPZARAPP_ENV=production
     logging:
       driver: "json-file"
       options:

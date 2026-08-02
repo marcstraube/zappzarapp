@@ -16,7 +16,7 @@ concurrency:
 env:
   # Note: COMPOSE_PROJECT_NAME intentionally not set here - uses value from .env
   # to ensure consistency between docker compose build and make up (which sources .env)
-  ENV: development
+  ZAPPZARAPP_ENV: development
   # Use CI-specific compose file (no lockfile bind mounts)
   COMPOSE_FILE: compose.yaml:compose.ci.yaml
 
@@ -723,9 +723,9 @@ jobs:
 
       - name: Test production build
         run: |
-          # Use ENV-aware production test (respects .env configuration)
+          # Use ZAPPZARAPP_ENV-aware production test (respects .env configuration)
           # Tests nginx + app (php/node) + database + activated services
-          ENV=production make test-production
+          ZAPPZARAPP_ENV=production make test-production
 
       - name: Show container status
         if: always()

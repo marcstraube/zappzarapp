@@ -120,8 +120,9 @@ The project uses a 3-tier environment file structure:
 | `.env.local`      | Your local overrides       | Gitignored |
 
 Make targets load the files in that order, so later files override earlier ones.
-An `ENV` passed to make itself (`ENV=production make build`) beats all three
-files; only the values `development` and `production` are accepted.
+A `ZAPPZARAPP_ENV` passed to make itself
+(`ZAPPZARAPP_ENV=production make build`) beats all three files; only the values
+`development` and `production` are accepted.
 
 `make setup` will interactively offer to create `.env.local` with your
 USER_ID/GROUP_ID. You can also run `make init` separately at any time.

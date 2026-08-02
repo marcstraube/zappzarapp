@@ -56,7 +56,7 @@ if [[ -f "$SSL_CERT" ]] && [[ -f "$SSL_KEY" ]]; then
     echo "[entrypoint] Key: $SSL_KEY"
 else
     # No SSL certificates found - behavior depends on environment
-    ENV_MODE="${ENV:-development}"
+    ENV_MODE="${ZAPPZARAPP_ENV:-development}"
 
     # Diagnostic information about what was found
     if [[ -d /etc/rabbitmq/certs ]]; then
