@@ -11,7 +11,7 @@
 # - For SHA digest pinning in production, use:
 #   FROM ghcr.io/goss-org/goss:<tag>@sha256:<digest>
 
-ARG GOSS_VERSION=v0.4.9
+ARG GOSS_VERSION=v0.4.10
 
 FROM ghcr.io/goss-org/goss:${GOSS_VERSION}
 
