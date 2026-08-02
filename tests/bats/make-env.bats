@@ -13,13 +13,9 @@ load 'helpers/setup'
     assert_success
 }
 
-@test ".env.example or .env.template file exists" {
-    # Check for either .env.example or .env.template
-    if [[ -f .env.example ]] || [[ -f .env.template ]]; then
-        true
-    else
-        skip "No .env.example or .env.template file present"
-    fi
+@test ".env.local.example template exists" {
+    run test -f .env.local.example
+    assert_success
 }
 
 # =============================================================================
