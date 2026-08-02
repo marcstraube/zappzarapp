@@ -4,9 +4,12 @@ This project ships a **Renovate** configuration (`renovate.json`) that manages
 dependency updates across PHP (Composer), Node.js (pnpm), Docker, and GitHub
 Actions.
 
-Renovate is activated via the self-hosted [workflow](#activation) shipped in
-`.github/workflows/renovate.yml`. Use [`make renovate`](#local-dry-run) to
-preview what it would do without opening PRs.
+The zero-setup way to [activate](#activation) Renovate is the hosted Mend
+Renovate App (GitHub only). A self-hosted workflow ships in
+`.github/workflows/renovate.yml` as the cross-platform alternative — its weekly
+schedule is **opt-in** and stays dormant until enabled. Use
+[`make renovate`](#local-dry-run) to preview what Renovate would do without
+opening PRs.
 
 ## Overview
 
@@ -36,7 +39,15 @@ For detailed options, see the
 
 Two ways to run Renovate. **Pick one — running both opens duplicate PRs.**
 
-### Self-hosted workflow (shipped, cross-platform)
+### Mend Renovate GitHub App (zero-setup default, GitHub only)
+
+For a GitHub-only project the fastest path is the hosted
+[Mend Renovate App](https://github.com/apps/renovate): install it on the repo
+and it reads `renovate.json` — no PAT, no CI minutes, native app auth. It does
+**not** cover GitLab. The shipped `renovate.yml` stays dormant unless you opt in
+(see below), so it does not conflict with the App.
+
+### Self-hosted workflow (shipped, cross-platform, opt-in)
 
 `.github/workflows/renovate.yml` runs Renovate in CI (the same
 `renovate/renovate` used locally and drivable on GitLab). No third-party app
@@ -54,21 +65,21 @@ gets repo access; you keep full control of the version and schedule. Setup:
    ```
 
 3. Trigger the first run manually (Actions → Renovate → _Run workflow_, or
-   `gh workflow run renovate.yml`). Manual runs default to **automerge off** so
-   you can review the initial PRs; the weekly schedule then lets `renovate.json`
-   govern (automerge on). Renovate posts a **Dependency Dashboard** issue
-   summarising everything it sees.
+   `gh workflow run renovate.yml`). Manual runs always work and default to
+   **automerge off** so you can review the initial PRs. Renovate posts a
+   **Dependency Dashboard** issue summarising everything it sees.
+4. Enable the weekly schedule by setting the repository variable:
+
+   ```bash
+   gh variable set RENOVATE_SELF_HOSTED --body 'true'
+   ```
+
+   Without the variable the scheduled job **skips** (by design — the shipped
+   workflow must not fail red every week on repos that never configured a
+   token). Scheduled runs let `renovate.json` govern (automerge on).
 
 The workflow costs CI minutes and needs the PAT — that is the trade for not
 granting a hosted SaaS write access.
-
-### Mend Renovate GitHub App (zero-setup, GitHub only)
-
-For a GitHub-only project the fastest path is the hosted
-[Mend Renovate App](https://github.com/apps/renovate): install it on the repo
-and it reads `renovate.json` — no PAT, no CI minutes, native app auth. It does
-**not** cover GitLab. If you use the App, delete `renovate.yml` to avoid
-duplicate runs.
 
 ### GitLab
 

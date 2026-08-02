@@ -51,7 +51,8 @@
             "#\\.zappzarapp/ai/templates/#",
             "#\\.claude/sessions/#",
             "#querySelectorAll<HTMLElement>#",
-            "#fetchMock\\.mock\\.calls#"
+            "#fetchMock\\.mock\\.calls#",
+            "#RENOVATE_SELF_HOSTED#"
           ]
         },
         "config": {

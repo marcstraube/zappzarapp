@@ -1,11 +1,16 @@
 name: Renovate
 
-# Self-hosted Renovate runner.
+# Self-hosted Renovate runner — OPT-IN.
 #
-# This is the cross-platform / no-third-party-SaaS activation path: the same
-# renovate/renovate that `make renovate` uses locally and that .gitlab-ci.yml can
-# drive on GitLab. The Mend Renovate GitHub App is the zero-setup alternative for
-# GitHub-only users (see docs/development/RENOVATE.md).
+# The zero-setup default for GitHub-only repos is the hosted Mend Renovate App
+# (see docs/development/RENOVATE.md). This workflow is the cross-platform /
+# no-third-party-SaaS alternative: the same renovate/renovate that
+# `make renovate` uses locally and that .gitlab-ci.yml can drive on GitLab.
+#
+# The weekly schedule only runs when the repository variable
+# RENOVATE_SELF_HOSTED is set to "true" — without the opt-in the job skips
+# instead of failing red every week on repos that never configured a token.
+# Manual runs (workflow_dispatch) always work.
 #
 # Requires a RENOVATE_TOKEN repository secret — a fine-grained PAT scoped to THIS
 # repo with: Contents RW, Pull requests RW, Issues RW (Dependency Dashboard),
@@ -35,6 +40,8 @@ concurrency:
 jobs:
   renovate:
     name: Renovate
+    # Schedule is opt-in via repo variable; manual dispatch always runs.
+    if: github.event_name == 'workflow_dispatch' || vars.RENOVATE_SELF_HOSTED == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
