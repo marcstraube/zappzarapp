@@ -1,7 +1,7 @@
 # zappzarapp - Changelog
 
-**Erstellt:** 2025-12-19 **Letzte Aktualisierung:** 2026-01-22 (Setup/Reset
-Fixes) **Version:** 3.79
+**Erstellt:** 2025-12-19 **Letzte Aktualisierung:** 2026-08-02 (k8s chart
+hardening) **Version:** 3.79
 
 ---
 
@@ -10,6 +10,33 @@ Fixes) **Version:** 3.79
 ### Unreleased
 
 #### Added
+
+- **Production image-tag guard (Helm)**: the `zappzarapp.imageTag` helper fails
+  the render when `global.env` is `production` and the resolved tag is `latest`
+  (with `imagePullPolicy: Always` that would deploy whatever the registry
+  currently holds). `values.production.yaml` and KUBERNETES.md document the
+  pinning requirement
+- **`make k8s-build` + deploy preflight**: `k8s-build` derives the enabled
+  services from the rendered chart and builds exactly those images (optional
+  services sit behind Compose profiles, so plain `make build` skips them);
+  `make k8s-deploy` fail-fasts in development when a required `zappzarapp-*`
+  image is missing locally. BATS gained k8s dry-run + help coverage (the targets
+  had none)
+- **`make ci` + `make audit`**: `ci` is the faithful local CI gate (static
+  checks + PHP/Node coverage runs with coverage strictness + dependency audit);
+  `audit` runs `composer audit` + `pnpm audit` (matches the CI job); `check` is
+  now the fast pre-check (static + tests, no coverage)
+- **Renovate, actually running**: `renovate.json` modernized
+  (`config:recommended`, automerge scoped to patch/minor — majors never,
+  `minimumReleaseAge: 3 days`), a pinned local dry-run via `make renovate`
+  (optional `GITHUB_COM_TOKEN` passthrough), and a self-hosted GitHub workflow
+  (`renovate.yml`, `workflow_dispatch` + weekly schedule, `RENOVATE_TOKEN`
+  secret; manual runs default to automerge-off)
+- **`make customize` + Claude context split**: marker-driven first-run helper
+  (`zappzarapp:customize` markers, `git grep`-based — no hardcoded file list);
+  `.claude/context/zappzarapp.md` (platform context, synced from upstream) is
+  now separate from `.claude/context/project.md` (app context, swapped by
+  `make setup` like CLAUDE.md/AGENTS.md)
 
 - **Root `AGENTS.md`**: tool-neutral agent guidance (commands, standards,
   workflow, documentation entry points) — makes the documented `AGENTS.md`
@@ -20,6 +47,17 @@ Fixes) **Version:** 3.79
   `boilerplate-sync`. Mounted into dev-tools for linting
 
 #### Removed
+
+- **`standard-version` release tooling**: dropped entirely (5 `make release*`
+  targets, devDep, `.versionrc.json`, docs, BATS) — a boilerplate must not
+  prescribe a release workflow (release-please / GitHub Releases / manual is the
+  user's call). Not migrated to a successor
+- **Claude tooling, final cleanup round**: `/optimize` skill (config maintenance
+  happens organically), `change-watch.sh` (noise) and the branch-check hook
+  (language-bound, not shareable) removed;
+  reviewer/security-auditor/plan-architect agents replaced by the built-in
+  `/review`, `/security-review` and `/plan`; ntfy remnants dropped. Final skill
+  set: `/tasks` + `/sync-check`; agents: coder-php/node/sql/infra + docs-auditor
 
 - **Knowledge Files DECISIONS.md / REFERENCES.md**: the monolithic
   `DECISIONS.md` was migrated to one-document-per-ADR under
@@ -81,6 +119,34 @@ Fixes) **Version:** 3.79
 
 #### Fixed
 
+- **Helm: duplicate pod `volumes:` key when persistence is disabled**: every
+  StatefulSet emitted its data-emptyDir fallback via an `{{- else }}` after
+  `volumeClaimTemplates`, producing a second `volumes:` key at pod-spec level
+  (postgres/mariadb/meilisearch/rabbitmq — pod loses its tmp/secret volumes or
+  the manifest is rejected). The fallback now lives inside the pod volumes list
+  as `{{- if not }}`, same shape across all six StatefulSets
+- **Helm: redis is now a StatefulSet**: it was the only persistent service
+  modeled as a Deployment with a standalone RWO PVC — a rolling update cannot
+  mount the volume while the old pod holds it. Converted to
+  `volumeClaimTemplates` (mariadb/postgres shape); the PVC name changes, an
+  existing redis volume is not re-attached (cache + AOF only)
+- **Helm: image strings without registry prefix**: nine DB/optional templates
+  built the image reference inline instead of via the
+  `zappzarapp.imageRepository` helper, so `global.imageRegistry` was ignored in
+  production renders. All templates use the helper now
+- **Helm: seaweedfs could not start when enabled**: its entrypoint drops to uid
+  1000 via su-exec, which needs CAP_SETUID/SETGID — the hardcoded
+  securityContext dropped ALL with no adds (root does not bypass dropped
+  capabilities). elasticsearch now runs `runAsNonRoot: true` (its Dockerfile
+  pins `USER 1000:0`)
+- **k8s docs: production example deployed an image the chart never references**:
+  it pushed a shortened repository name and no pinned tag; the chart prefixes
+  the registry onto the unchanged `zappzarapp-<service>` name, and the example
+  now sets `global.imageTag`
+- **Stale `make init` / `.env.example` references**: `.env.example` was removed
+  long ago (`.env` is committed); the validate-env hint now says
+  `git restore .env`, and CONTRIBUTING/DEPENDENCIES point at `.env.local`
+
 - **Inline PostToolUse reminders matched the raw payload**: the config-file and
   package-manager reminders grepped the entire hook JSON (including file content
   and command output), so they fired on any file that merely _mentioned_
@@ -119,6 +185,42 @@ Fixes) **Version:** 3.79
   gracefully with a notice (`docker/hooks/install-worktree-guard.sh`)
 
 #### Changed
+
+- **k8s images: single source of truth**: all eight optional Helm services
+  (mariadb/redis/mercure/meilisearch/elasticsearch/seaweedfs/rabbitmq/mailpit)
+  now deploy the hardened `zappzarapp-*` built images instead of raw upstream
+  images — the upstream version lives only in the `docker/<service>/Dockerfile`
+  ARG, values.yaml can no longer drift (Compose already built all of them; k8s
+  was the outlier pulling stock images). Renovate stops looking up the
+  non-published internal names via a `zappzarapp-*` disable rule
+- **`make k8s-build` builds chart-compatible tags**: the chart references every
+  image as `:latest`, but Compose tags the four multi-target services by build
+  target — and the development-target images contain no app code (only the
+  production stages bake the source in; the chart mounts none). k8s-build now
+  builds nginx/php/node/node-backend from their production targets (node-backend
+  first — php/nginx copy its baked assets) and retags them to `:latest`
+- **Optional-service securityContext is values-driven**: mercure, mailpit,
+  meilisearch, elasticsearch, seaweedfs and rabbitmq read
+  readOnlyRootFilesystem/runAsNonRoot/capabilities from values.yaml like the
+  core services, instead of hardcoded template blocks (not tunable, no
+  runAsNonRoot, drift-prone)
+- **CI path-gating for docs**: a standalone `docs-lint` job (GitHub + GitLab)
+  lints Markdown/Prettier natively, and `**/*.md` left the node/app path filters
+  — docs-only pushes no longer trigger the heavy Node/build jobs. `make lint-md`
+  runs natively over git-tracked Markdown including `.claude/` (the containers
+  never saw it)
+- **`make outdated` covers both ecosystems**: split into `outdated-php`
+  (`composer outdated`) and `outdated-node` (`pnpm -r outdated`, informational),
+  with `outdated` aggregating
+- **`COPY --chmod` consolidation**: 24 `COPY` + `RUN chmod` pairs across 11
+  Dockerfiles collapsed into `COPY --chmod=0755/0644` (BuildKit-native builds
+  made this safe again); includes the goss binary copies and drops pgadmin's
+  `USER root` chmod dance. Recursive app-dir chmods and the setuid strip stay as
+  `RUN`
+- **Dependency majors + pnpm supply-chain policy**: dev-dependency major bumps
+  (commitizen/conventional-changelog chain removed along the way) and a stricter
+  pnpm policy (`minimumReleaseAge` alignment); TypeScript stays on 5.x until
+  typescript-eslint/typedoc support v7
 
 - **BuildKit-native cross-image builds (`docker buildx bake`)**: retired every
   `DOCKER_BUILDKIT=0`. A new root `docker-bake.hcl` builds goss / node-backend /
