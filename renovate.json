@@ -76,6 +76,16 @@
         "major"
       ],
       "automerge": false
+    },
+    {
+      "description": "Hold TypeScript 7 majors: typescript-eslint and typedoc do not support v7.0 yet. Remove this rule once TypeScript 7.1 lands with ecosystem support.",
+      "matchPackageNames": [
+        "typescript"
+      ],
+      "matchUpdateTypes": [
+        "major"
+      ],
+      "enabled": false
     }
   ]
 }
