@@ -39,6 +39,12 @@ load 'helpers/setup'
     assert_output --partial "customize"
 }
 
+@test "make help lists the k8s-build target" {
+    run make help
+    assert_success
+    assert_output --partial "k8s-build"
+}
+
 @test "make help shows BATS category" {
     run make help
     assert_success

@@ -1002,7 +1002,17 @@ Helm-fullname prefix on secrets/configmaps/PVCs pollutes the match — then
 delegates to `make build <svcs>`) + a `make k8s-deploy` preflight guard that
 fail-fasts in development when a required `zappzarapp-*:tag` image is absent
 from the local daemon (instead of a late ImagePullBackOff). Guard skips in
-production — registry is authoritative there.)
+production — registry is authoritative there. BATS: k8s targets had ZERO
+coverage — added dry-run tests (k8s-build/deploy/remove/status) + help-presence.
+GOTCHA that forced a Makefile tweak: GNU make EXECUTES recipe lines containing
+the recursive-make variable even under `make -n` (recursive- make special case),
+so `make -n k8s-build` actually ran `helm` → in the helm-less BATS image it hit
+the guard's `exit 1` and the dry-run test failed. Fix: call the delegated build
+with a LITERAL `make` (not the variable) so the whole recipe line is
+printed-not-executed under `-n` → inert & CI-safe. Corollary: never put the
+recursive-make variable in a recipe line — not even in a trailing comment — if
+you want `make -n` to stay inert; make scans the raw line for it before the
+shell sees the comment. goss N/A here — no image/ Dockerfile change.)
 
 2026-07-30 (added: container-CVE triage — ignore-unfixed already on so the 1174
 were fixable; apk upgrade + tag bumps got −94%; upstream-only residual baselined

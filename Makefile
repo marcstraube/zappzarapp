@@ -1359,6 +1359,10 @@ k8s-deploy: ## Deploy to Kubernetes using Helm
 	echo -e "\033[0;32mDeployed to Kubernetes!\033[0m" && \
 	echo -e "\033[0;34mView status with: make k8s-status\033[0m"
 
+# NOTE: the delegating build call below uses a literal `make`, not the usual
+# recursive-make variable, on purpose: GNU make executes recipe lines that
+# reference that variable even under `make -n`, which would invoke helm during a
+# dry run. A literal `make` keeps `make -n k8s-build` inert and CI-safe.
 k8s-build: ## Build the images the Helm chart will deploy (enabled services derived from values.yaml)
 	@if ! command -v helm >/dev/null 2>&1; then \
 		echo -e "\033[0;31mError: helm is required for 'make k8s-build'\033[0m"; \
@@ -1373,7 +1377,7 @@ k8s-build: ## Build the images the Helm chart will deploy (enabled services deri
 		exit 1; \
 	fi; \
 	echo -e "\033[0;33mChart-enabled services:\033[0m $$SERVICES"; \
-	$(MAKE) --no-print-directory build $$SERVICES
+	make --no-print-directory build $$SERVICES
 
 k8s-remove: ## Remove deployment from Kubernetes
 	@. ./.env 2>/dev/null && \

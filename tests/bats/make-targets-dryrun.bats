@@ -922,6 +922,30 @@ load 'helpers/setup'
 }
 
 # =============================================================================
+# Kubernetes Deployment Targets
+# =============================================================================
+
+@test "make k8s-build --dry-run validates" {
+    run make -n k8s-build
+    assert_success
+}
+
+@test "make k8s-deploy --dry-run validates" {
+    run make -n k8s-deploy
+    assert_success
+}
+
+@test "make k8s-remove --dry-run validates" {
+    run make -n k8s-remove
+    assert_success
+}
+
+@test "make k8s-status --dry-run validates" {
+    run make -n k8s-status
+    assert_success
+}
+
+# =============================================================================
 # Reset/Cleanup Targets (Dry-Run Only - Destructive!)
 # =============================================================================
 
