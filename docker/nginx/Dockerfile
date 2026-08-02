@@ -2,7 +2,7 @@
 #
 # Security: Runs entirely as nginx user (uid 101) - NO root, NO capabilities needed
 
-ARG ALPINE_VERSION=3.23
+ARG ALPINE_VERSION=3.24
 
 # Version Pinning:
 # - Alpine version pinned for consistency across services
