@@ -31,9 +31,9 @@ chmod +x minikube-linux-amd64 && sudo mv minikube-linux-amd64 /usr/local/bin/min
 # Start minikube
 minikube start
 
-# Build and load images
+# Build and load images (builds exactly the services the chart will deploy)
 eval $(minikube docker-env)
-make build
+make k8s-build
 
 # Deploy
 make k8s-deploy
@@ -47,9 +47,10 @@ kubectl port-forward svc/zappzarapp-nginx 8080:80 -n zappzarapp
 > locally built, hardened `zappzarapp-<service>` image. The upstream version is
 > the single source of truth in `docker/<service>/Dockerfile` (its `ARG`); the
 > Helm values never duplicate it. Because optional services sit behind Compose
-> profiles, `make build` does not build them by default — before enabling one in
-> Kubernetes, build its image explicitly so minikube (or your registry) has it,
-> e.g. `make build mercure`.
+> profiles, plain `make build` skips them — use `make k8s-build`, which derives
+> the enabled set from the rendered chart and builds exactly those images. As a
+> safety net, `make k8s-deploy` refuses to deploy (in development) when a
+> required image is missing from the local Docker daemon.
 
 ### Production Deployment
 

@@ -40,6 +40,7 @@
             "#BRANCH=\\$\\(git branch --show-current#",
             "#\\$PROJECT_DIR\\$/vendor/#",
             "#zappzarapp/docs#",
+            "#values\\.production\\.yaml#",
             "#KNOWN-VULNERABILITIES#",
             "#GHSA-[a-z0-9]{4}-[a-z0-9]{4}-[a-z0-9]{4}#",
             "#CVE-[0-9]{4}-[0-9]+#",

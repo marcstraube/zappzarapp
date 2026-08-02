@@ -381,16 +381,25 @@ logs/2026-01-20-1430/
 Deploy to Kubernetes using Helm. See
 [KUBERNETES.md](../infrastructure/KUBERNETES.md) for details.
 
-| Command               | Description                          |
-| --------------------- | ------------------------------------ |
-| `make k8s-deploy`     | Deploy to Kubernetes using Helm      |
-| `make k8s-remove`     | Remove deployment from Kubernetes    |
-| `make k8s-status`     | Show pods, services, and Helm status |
-| `make k8s-logs [pod]` | View logs from a specific pod        |
+| Command               | Description                            |
+| --------------------- | -------------------------------------- |
+| `make k8s-build`      | Build the images the chart will deploy |
+| `make k8s-deploy`     | Deploy to Kubernetes using Helm        |
+| `make k8s-remove`     | Remove deployment from Kubernetes      |
+| `make k8s-status`     | Show pods, services, and Helm status   |
+| `make k8s-logs [pod]` | View logs from a specific pod          |
+
+`make k8s-build` renders the chart and builds exactly the `zappzarapp-*` images
+for the enabled services (including optional ones behind Compose profiles).
+`make k8s-deploy` refuses to deploy in development if a required image is
+missing locally — build it first with `make k8s-build`.
 
 **Examples:**
 
 ```bash
+# Build the enabled services' images (into minikube: eval $(minikube docker-env) first)
+make k8s-build
+
 # Deploy with default values
 make k8s-deploy
 

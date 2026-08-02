@@ -1339,12 +1339,41 @@ k8s-deploy: ## Deploy to Kubernetes using Helm
 	if [ "$${ENV:-development}" = "production" ]; then \
 		VALUES_FILE="kubernetes/values.production.yaml"; \
 	fi && \
+	if [ "$${ENV:-development}" != "production" ] && command -v helm >/dev/null 2>&1; then \
+		MISSING=""; \
+		for img in $$(helm template zappzarapp ./kubernetes -f "$$VALUES_FILE" 2>/dev/null | grep -E '^[[:space:]]*image:' | grep -oE 'zappzarapp-[a-z0-9-]+:[^"]+' | sort -u); do \
+			docker image inspect "$$img" >/dev/null 2>&1 || MISSING="$$MISSING $$img"; \
+		done; \
+		if [ -n "$$MISSING" ]; then \
+			echo -e "\033[0;31mError: image(s) not found in the local Docker daemon:\033[0m$$MISSING"; \
+			echo -e "\033[0;33mThe chart deploys the hardened zappzarapp-* built images. Build the\033[0m"; \
+			echo -e "\033[0;33menabled ones first with 'make k8s-build'. For minikube, run\033[0m"; \
+			echo -e "\033[0;33m'eval \$$(minikube docker-env)' beforehand so the images land in the cluster.\033[0m"; \
+			exit 1; \
+		fi; \
+	fi && \
 	helm upgrade --install zappzarapp ./kubernetes \
 		--namespace "$$NAMESPACE" \
 		--create-namespace \
 		-f "$$VALUES_FILE" && \
 	echo -e "\033[0;32mDeployed to Kubernetes!\033[0m" && \
 	echo -e "\033[0;34mView status with: make k8s-status\033[0m"
+
+k8s-build: ## Build the images the Helm chart will deploy (enabled services derived from values.yaml)
+	@if ! command -v helm >/dev/null 2>&1; then \
+		echo -e "\033[0;31mError: helm is required for 'make k8s-build'\033[0m"; \
+		exit 1; \
+	fi
+	@. ./.env 2>/dev/null; \
+	VALUES_FILE="kubernetes/values.yaml"; \
+	[ "$${ENV:-development}" = "production" ] && VALUES_FILE="kubernetes/values.production.yaml"; \
+	SERVICES=$$(helm template zappzarapp ./kubernetes -f "$$VALUES_FILE" 2>/dev/null | grep -E '^[[:space:]]*image:' | grep -oE 'zappzarapp-[a-z0-9-]+' | sed 's/^zappzarapp-//' | sort -u | tr '\n' ' '); \
+	if [ -z "$$(echo $$SERVICES | tr -d '[:space:]')" ]; then \
+		echo -e "\033[0;31mError: could not derive any services from the rendered chart\033[0m"; \
+		exit 1; \
+	fi; \
+	echo -e "\033[0;33mChart-enabled services:\033[0m $$SERVICES"; \
+	$(MAKE) --no-print-directory build $$SERVICES
 
 k8s-remove: ## Remove deployment from Kubernetes
 	@. ./.env 2>/dev/null && \

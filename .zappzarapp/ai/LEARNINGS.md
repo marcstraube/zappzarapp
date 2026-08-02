@@ -995,9 +995,14 @@ rendered WITHOUT the registry prefix (postgres/redis had this latent too) →
 converted all 9 to the helper. Renovate: helm-values still extracts them but a
 `matchPackageNames:["zappzarapp-*"] enabled:false` rule stops lookups of the
 non-published internal images; the old Dockerfile↔k8s grouping rule's raison
-d'être is gone. Optional services sit behind Compose profiles → `make build`
-skips them; enabling one in k8s now requires `make build <svc>` first —
-documented in KUBERNETES.md.)
+d'être is gone. Optional services sit behind Compose profiles → plain
+`make build` skips them; automated via new `make k8s-build` (derives the enabled
+set from `helm template` — image lines only, else the `zappzarapp-`
+Helm-fullname prefix on secrets/configmaps/PVCs pollutes the match — then
+delegates to `make build <svcs>`) + a `make k8s-deploy` preflight guard that
+fail-fasts in development when a required `zappzarapp-*:tag` image is absent
+from the local daemon (instead of a late ImagePullBackOff). Guard skips in
+production — registry is authoritative there.)
 
 2026-07-30 (added: container-CVE triage — ignore-unfixed already on so the 1174
 were fixable; apk upgrade + tag bumps got −94%; upstream-only residual baselined
