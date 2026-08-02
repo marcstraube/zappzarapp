@@ -55,10 +55,13 @@ spec:
           resources:
             {{- toYaml .Values.mercure.resources | nindent 12 }}
           securityContext:
-            readOnlyRootFilesystem: true
+            readOnlyRootFilesystem: {{ .Values.mercure.securityContext.readOnlyRootFilesystem }}
+            runAsNonRoot: {{ .Values.mercure.securityContext.runAsNonRoot }}
             capabilities:
               drop:
-                - ALL
+                {{- toYaml .Values.mercure.securityContext.capabilities.drop | nindent 16 }}
+              add:
+                {{- toYaml .Values.mercure.securityContext.capabilities.add | nindent 16 }}
           volumeMounts:
             - name: tmp
               mountPath: /tmp

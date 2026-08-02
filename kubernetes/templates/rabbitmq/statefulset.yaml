@@ -55,10 +55,13 @@ spec:
           resources:
             {{- toYaml .Values.rabbitmq.resources | nindent 12 }}
           securityContext:
-            readOnlyRootFilesystem: false
+            readOnlyRootFilesystem: {{ .Values.rabbitmq.securityContext.readOnlyRootFilesystem }}
+            runAsNonRoot: {{ .Values.rabbitmq.securityContext.runAsNonRoot }}
             capabilities:
               drop:
-                - ALL
+                {{- toYaml .Values.rabbitmq.securityContext.capabilities.drop | nindent 16 }}
+              add:
+                {{- toYaml .Values.rabbitmq.securityContext.capabilities.add | nindent 16 }}
           volumeMounts:
             - name: data
               mountPath: /var/lib/rabbitmq

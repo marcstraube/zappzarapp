@@ -53,10 +53,13 @@ spec:
           resources:
             {{- toYaml .Values.elasticsearch.resources | nindent 12 }}
           securityContext:
-            readOnlyRootFilesystem: false
+            readOnlyRootFilesystem: {{ .Values.elasticsearch.securityContext.readOnlyRootFilesystem }}
+            runAsNonRoot: {{ .Values.elasticsearch.securityContext.runAsNonRoot }}
             capabilities:
               drop:
-                - ALL
+                {{- toYaml .Values.elasticsearch.securityContext.capabilities.drop | nindent 16 }}
+              add:
+                {{- toYaml .Values.elasticsearch.securityContext.capabilities.add | nindent 16 }}
           volumeMounts:
             - name: data
               mountPath: /usr/share/elasticsearch/data

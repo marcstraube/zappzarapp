@@ -50,10 +50,13 @@ spec:
           resources:
             {{- toYaml .Values.meilisearch.resources | nindent 12 }}
           securityContext:
-            readOnlyRootFilesystem: false
+            readOnlyRootFilesystem: {{ .Values.meilisearch.securityContext.readOnlyRootFilesystem }}
+            runAsNonRoot: {{ .Values.meilisearch.securityContext.runAsNonRoot }}
             capabilities:
               drop:
-                - ALL
+                {{- toYaml .Values.meilisearch.securityContext.capabilities.drop | nindent 16 }}
+              add:
+                {{- toYaml .Values.meilisearch.securityContext.capabilities.add | nindent 16 }}
           volumeMounts:
             - name: data
               mountPath: /meili_data

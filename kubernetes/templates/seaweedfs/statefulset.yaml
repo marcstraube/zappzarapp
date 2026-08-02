@@ -72,10 +72,13 @@ spec:
           resources:
             {{- toYaml .Values.seaweedfs.resources | nindent 12 }}
           securityContext:
-            readOnlyRootFilesystem: false
+            readOnlyRootFilesystem: {{ .Values.seaweedfs.securityContext.readOnlyRootFilesystem }}
+            runAsNonRoot: {{ .Values.seaweedfs.securityContext.runAsNonRoot }}
             capabilities:
               drop:
-                - ALL
+                {{- toYaml .Values.seaweedfs.securityContext.capabilities.drop | nindent 16 }}
+              add:
+                {{- toYaml .Values.seaweedfs.securityContext.capabilities.add | nindent 16 }}
           volumeMounts:
             - name: data
               mountPath: /data

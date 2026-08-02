@@ -49,10 +49,13 @@ spec:
           resources:
             {{- toYaml .Values.mailpit.resources | nindent 12 }}
           securityContext:
-            readOnlyRootFilesystem: true
+            readOnlyRootFilesystem: {{ .Values.mailpit.securityContext.readOnlyRootFilesystem }}
+            runAsNonRoot: {{ .Values.mailpit.securityContext.runAsNonRoot }}
             capabilities:
               drop:
-                - ALL
+                {{- toYaml .Values.mailpit.securityContext.capabilities.drop | nindent 16 }}
+              add:
+                {{- toYaml .Values.mailpit.securityContext.capabilities.add | nindent 16 }}
           volumeMounts:
             - name: tmp
               mountPath: /tmp
