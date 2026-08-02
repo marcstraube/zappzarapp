@@ -44,7 +44,9 @@ gets repo access; you keep full control of the version and schedule. Setup:
 
 1. Create a **fine-grained PAT** scoped to this repository with permissions:
    Contents **RW**, Pull requests **RW**, Issues **RW** (Dependency Dashboard),
-   Workflows **RW** (Renovate updates `.github/workflows/*`).
+   Commit statuses **RW** (the `minimumReleaseAge` stability check — without it
+   Renovate aborts before opening PRs), Workflows **RW** (Renovate updates
+   `.github/workflows/*`).
 2. Store it as a repository secret:
 
    ```bash

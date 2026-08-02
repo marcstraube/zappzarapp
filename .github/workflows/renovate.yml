@@ -9,7 +9,8 @@ name: Renovate
 #
 # Requires a RENOVATE_TOKEN repository secret — a fine-grained PAT scoped to THIS
 # repo with: Contents RW, Pull requests RW, Issues RW (Dependency Dashboard),
-# Workflows RW (Renovate updates .github/workflows/*). Config: ./renovate.json.
+# Commit statuses RW (minimumReleaseAge stability check), Workflows RW (Renovate
+# updates .github/workflows/*). Config: ./renovate.json.
 #
 # Manual runs default to automerge OFF so the first rounds can be reviewed before
 # anything merges itself; scheduled runs let renovate.json govern (automerge on).
