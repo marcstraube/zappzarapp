@@ -958,3 +958,20 @@ load 'helpers/setup'
     run make -n reset-full
     assert_success
 }
+
+@test "make _reset-core --dry-run cleans project-scoped Docker resources" {
+    run make -n _reset-core
+    assert_success
+    assert_output --partial 'reference=zappzarapp-*'
+    assert_output --partial 'buildx prune --builder'
+}
+
+@test "make _reset-core --dry-run keeps the system-wide prune behind PRUNE_SYSTEM" {
+    run make -n _reset-core
+    assert_success
+    # every system-prune occurrence must sit inside the PRUNE_SYSTEM=1 guard;
+    # make -n prints backslash-continuations as separate physical lines, so
+    # join them before checking the guard is on the same logical line
+    run bash -c "make -n _reset-core | sed -e ':a' -e '/\\\\\$/N; s/\\\\\\n//; ta' | grep 'docker system prune' | grep -v 'PRUNE_SYSTEM'"
+    assert_failure
+}

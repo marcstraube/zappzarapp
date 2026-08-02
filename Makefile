@@ -2623,22 +2623,35 @@ _reset-core:
 	@rm -rf build dist public/build docs/api tools 2>/dev/null || true
 	@rm -f .env.local 2>/dev/null || true
 	@rm -rf .ai 2>/dev/null || true
-	@echo -e "\033[0;33m[5/5] Stopping and removing all Docker resources...\033[0m"
+	@echo -e "\033[0;33m[5/5] Stopping and removing project Docker resources...\033[0m"
 	@# Stop and remove all project containers, volumes, images, networks (including orphans)
 	@$(DC) --profile php --profile node --profile node-backend --profile redis --profile postgres --profile mariadb --profile mercure --profile meilisearch --profile elasticsearch --profile mailpit --profile seaweedfs --profile rabbitmq down -v --rmi all --remove-orphans 2>/dev/null || true
-	@# Remove any remaining containers from this project
-	@docker ps -aq --filter "label=com.docker.compose.project=zappzarapp" 2>/dev/null | xargs -r docker rm -f 2>/dev/null || true
-	@# Clear all unused Docker resources (images, containers, networks, volumes)
-	@docker system prune -af --volumes 2>/dev/null || true
-	@# Clear build cache to remove stale layer references
-	@docker builder prune -af 2>/dev/null || true
+	@# Project-scoped cleanup of what compose down cannot see: leftover labeled
+	@# containers/volumes/networks plus the project-named images (retagged
+	@# zappzarapp-*:latest for k8s, bats/goss tool images). Resources of other
+	@# projects on this host are deliberately left untouched.
+	@$(LOAD_ENV) && \
+	PROJECT="$${COMPOSE_PROJECT_NAME:-zappzarapp}" && \
+	{ docker ps -aq --filter "label=com.docker.compose.project=$$PROJECT" 2>/dev/null | xargs -r docker rm -f 2>/dev/null || true; } && \
+	{ docker volume ls -q --filter "label=com.docker.compose.project=$$PROJECT" 2>/dev/null | xargs -r docker volume rm -f 2>/dev/null || true; } && \
+	{ docker network ls -q --filter "label=com.docker.compose.project=$$PROJECT" 2>/dev/null | xargs -r docker network rm 2>/dev/null || true; } && \
+	{ { docker images -q --filter "reference=$$PROJECT-*"; docker images -q --filter "reference=zappzarapp-*"; } 2>/dev/null | sort -u | xargs -r docker rmi -f 2>/dev/null || true; }
+	@# Clear the project builder's build cache (named buildx builder only — the
+	@# host's shared classic builder cache is not this project's to wipe)
+	@docker buildx prune --builder $(BUILDX_BUILDER) -af 2>/dev/null || true
+	@# PRUNE_SYSTEM=1 escape hatch: restore the old system-wide wipe
+	@if [ "$${PRUNE_SYSTEM:-0}" = "1" ]; then \
+		echo -e "\033[0;33m  PRUNE_SYSTEM=1: pruning ALL unused Docker resources system-wide...\033[0m"; \
+		docker system prune -af --volumes 2>/dev/null || true; \
+		docker builder prune -af 2>/dev/null || true; \
+	fi
 
 reset: ## Reset Docker and generated files (keeps secrets/certs)
 	@echo -e "\033[0;33m╔══════════════════════════════════════════════════════════════════╗\033[0m"
 	@echo -e "\033[0;33m║  RESET - Remove Docker resources and generated files             ║\033[0m"
 	@echo -e "\033[0;33m╠══════════════════════════════════════════════════════════════════╣\033[0m"
 	@echo -e "\033[0;33m║  This will remove:                                               ║\033[0m"
-	@echo -e "\033[0;33m║  • All Docker containers, images, volumes, networks              ║\033[0m"
+	@echo -e "\033[0;33m║  • This project's Docker containers/images/volumes/networks      ║\033[0m"
 	@echo -e "\033[0;33m║  • All Goss test resources                                       ║\033[0m"
 	@echo -e "\033[0;33m║  • storage/ contents (uploads, cache) - if not a mountpoint      ║\033[0m"
 	@echo -e "\033[0;33m║  • vendor/, node_modules/, .pnpm-store/ (dependencies)           ║\033[0m"
@@ -2647,7 +2660,7 @@ reset: ## Reset Docker and generated files (keeps secrets/certs)
 	@echo -e "\033[0;33m║  • build/, dist/, public/build/, docs/api/, tools/ (generated)   ║\033[0m"
 	@echo -e "\033[0;33m║  • .ai/ (project AI knowledge created by setup)                  ║\033[0m"
 	@echo -e "\033[0;33m╠══════════════════════════════════════════════════════════════════╣\033[0m"
-	@echo -e "\033[0;33m║  KEEPS: secrets/, docker/certs/, source code                     ║\033[0m"
+	@echo -e "\033[0;33m║  KEEPS: secrets/, docker/certs/, source code, other projects     ║\033[0m"
 	@echo -e "\033[0;33m║  Use 'make reset-full' to also remove secrets and reset code.    ║\033[0m"
 	@echo -e "\033[0;33m╚══════════════════════════════════════════════════════════════════╝\033[0m"
 	@echo ""

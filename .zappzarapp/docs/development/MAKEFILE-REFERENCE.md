@@ -283,26 +283,36 @@ Two levels of reset are available for returning to a clean state:
 
 **`make reset`** - Removes generated files but keeps your source code:
 
-- Docker containers, images, volumes, networks
+- This project's Docker containers, images, volumes, networks and the project
+  builder's build cache — resources of **other projects on the same host are
+  left untouched** (opt back into the old system-wide wipe with
+  `PRUNE_SYSTEM=1 make reset`)
 - Goss test resources
-- `secrets/` (generated secrets)
-- `docker/certs/*.crt, *.key, *.pem` (generated certificates)
 - `storage/` contents (if not a mountpoint)
 - `vendor/`, `node_modules/` (dependencies)
 - `composer.lock`, `pnpm-lock.yaml` (lockfiles)
 - `.env.local` (local overrides)
 - `build/`, `public/build/`, `docs/api/`, `tools/` (generated files)
 
-**`make reset-full`** - Same as above, PLUS resets source code to boilerplate:
+Keeps: `secrets/`, `docker/certs/`, source code.
 
-- Runs `make reset` first
-- Then `git checkout -- src/ tests/ resources/ config/ templates/`
+**`make reset-full`** - Same as above, PLUS:
+
+- `secrets/` (generated secrets)
+- `docker/certs/{ca,nginx,internal}/` (generated certificates)
+- Source code reset via
+  `git checkout -- src/ tests/ resources/ config/ templates/`
+- `README.md`, `CHANGELOG.md`, `AGENTS.md`, `.claude/` docs reset to boilerplate
+  state
 
 **Safety features:**
 
 - Mountpoint detection: Directories that are mountpoints (e.g., NFS) are skipped
-- Confirmation required: Must type `RESET` to proceed
+- Confirmation required: Must type `RESET` (or `RESET-FULL`) to proceed
 - Source code preserved: `make reset` never touches `src/`, `tests/`, etc.
+- Docker cleanup is project-scoped: only `com.docker.compose.project`-labeled
+  resources, project-named images, and the named buildx builder cache are
+  removed
 
 **When to use:**
 
