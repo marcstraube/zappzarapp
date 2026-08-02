@@ -1,6 +1,6 @@
 {{- if .Values.redis.enabled }}
 apiVersion: apps/v1
-kind: Deployment
+kind: StatefulSet
 metadata:
   name: {{ include "zappzarapp.fullname" . }}-redis
   namespace: {{ include "zappzarapp.namespace" . }}
@@ -8,6 +8,7 @@ metadata:
     {{- include "zappzarapp.labels" . | nindent 4 }}
     app.kubernetes.io/component: redis
 spec:
+  serviceName: {{ include "zappzarapp.fullname" . }}-redis
   replicas: {{ .Values.redis.replicaCount }}
   selector:
     matchLabels:
@@ -74,12 +75,21 @@ spec:
         - name: tmp
           emptyDir:
             sizeLimit: 64Mi
-        {{- if .Values.redis.persistence.enabled }}
-        - name: data
-          persistentVolumeClaim:
-            claimName: {{ include "zappzarapp.fullname" . }}-redis-data
-        {{- else }}
+        {{- if not .Values.redis.persistence.enabled }}
         - name: data
           emptyDir: {}
         {{- end }}
+  {{- if .Values.redis.persistence.enabled }}
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        {{- if .Values.redis.persistence.storageClass }}
+        storageClassName: {{ .Values.redis.persistence.storageClass | quote }}
+        {{- end }}
+        resources:
+          requests:
+            storage: {{ .Values.redis.persistence.size }}
+  {{- end }}
 {{- end }}
