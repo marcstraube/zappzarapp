@@ -1,90 +1,58 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "description": "Renovate All-Purpose Config for PHP/Node/Docker projects. For detailed help and options, see: https://docs.renovatebot.com/",
-  "extends": [
-    "config:recommended"
-  ],
-  "schedule": [
-    "at any time"
-  ],
-  "labels": [
-    "renovate",
-    "dependencies"
-  ],
+  "extends": ["config:recommended"],
+  "schedule": ["at any time"],
+  "labels": ["renovate", "dependencies"],
   "automerge": true,
   "platformAutomerge": true,
   "minimumReleaseAge": "3 days",
   "packageRules": [
     {
       "description": "Disable Renovate for first-party built images (zappzarapp-*). These are built from docker/<service>/Dockerfile and referenced by kubernetes/values.yaml; the upstream version is pinned only in the Dockerfile ARG (single source of truth) and tracked by the dockerfile manager. They are not published to any registry, so Renovate cannot and must not look them up.",
-      "matchPackageNames": [
-        "zappzarapp-*"
-      ],
+      "matchPackageNames": ["zappzarapp-*"],
       "enabled": false
     },
     {
       "description": "Group Docker base-image updates by image name so the same upstream image referenced from more than one Dockerfile (e.g. a shared base or build stage) is bumped in a single PR.",
-      "matchDatasources": [
-        "docker"
-      ],
+      "matchDatasources": ["docker"],
       "groupName": "{{{depName}}}",
       "automerge": true
     },
     {
       "description": "PHP Composer Updates - Exclude major application frameworks for individual review.",
-      "matchManagers": [
-        "composer"
-      ],
+      "matchManagers": ["composer"],
       "groupName": "PHP Composer Dependencies",
       "automerge": true,
-      "excludePackageNames": [
-        "laravel/framework",
-        "symfony/framework-bundle"
-      ]
+      "matchPackageNames": ["!laravel/framework", "!symfony/framework-bundle"]
     },
     {
       "description": "Node.js (PNPM) Updates",
-      "matchManagers": [
-        "pnpm"
-      ],
+      "matchManagers": ["pnpm"],
       "groupName": "Node Dependencies",
       "automerge": true
     },
     {
       "description": "Node.js Dev Dependencies Grouping",
-      "matchManagers": [
-        "pnpm"
-      ],
-      "matchDepTypes": [
-        "devDependencies"
-      ],
+      "matchManagers": ["pnpm"],
+      "matchDepTypes": ["devDependencies"],
       "groupName": "Node Dev Dependencies"
     },
     {
       "description": "Immediate merge of security patches (High Priority)",
-      "matchUpdateTypes": [
-        "patch"
-      ],
-      "schedule": [
-        "at any time"
-      ],
+      "matchUpdateTypes": ["patch"],
+      "schedule": ["at any time"],
       "automerge": true
     },
     {
       "description": "Never automerge major updates - always require manual review (last rule wins).",
-      "matchUpdateTypes": [
-        "major"
-      ],
+      "matchUpdateTypes": ["major"],
       "automerge": false
     },
     {
       "description": "Hold TypeScript 7 majors: typescript-eslint and typedoc do not support v7.0 yet. Remove this rule once TypeScript 7.1 lands with ecosystem support.",
-      "matchPackageNames": [
-        "typescript"
-      ],
-      "matchUpdateTypes": [
-        "major"
-      ],
+      "matchPackageNames": ["typescript"],
+      "matchUpdateTypes": ["major"],
       "enabled": false
     }
   ]
