@@ -177,8 +177,10 @@ class HealthCheck
     private function checkNodeBackend(): void
     {
         try {
-            // Use internal Docker network hostname with TLS
-            $url     = 'https://node-backend:3000/health';
+            // Use internal Docker network hostname with TLS. /ready (readiness)
+            // carries the fields consumed below (node_version, uptime,
+            // environment) — the /health liveness payload does not.
+            $url     = 'https://node-backend:3000/ready';
             $context = stream_context_create([
                 'http' => [
                     'timeout'       => 2,

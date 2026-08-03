@@ -26,7 +26,7 @@ architecture, including components, data flows, and design decisions.
 │  ┌───────────────────────────┐    ┌───────────────────────────────────────┐  │
 │  │         PHP-FPM           │    │             NODE.JS                   │  │
 │  │  • Unix Socket Connection │    │  • Vite Dev Server (HMR, port 5173)   │  │
-│  │  • PHP 8.4                │    │  • Express API (port 3000)            │  │
+│  │  • PHP 8.5                │    │  • Express API (port 3000)            │  │
 │  │  • Xdebug Support         │    │  • PM2 Process Manager                │  │
 │  │  • DevDashboard           │    │  • DevDashboard (dev only)            │  │
 │  └───────────┬───────────────┘    └──────────────┬────────────────────────┘  │
@@ -51,7 +51,7 @@ architecture, including components, data flows, and design decisions.
 | Service      | Technology        | Purpose                                       | Network(s)        |
 | ------------ | ----------------- | --------------------------------------------- | ----------------- |
 | **nginx**    | Nginx 1.28 Alpine | Reverse proxy, SSL termination, static assets | frontend, backend |
-| **php**      | PHP 8.4-FPM       | Backend application server                    | backend, database |
+| **php**      | PHP 8.5-FPM       | Backend application server                    | backend, database |
 | **node**     | Node.js 24.13 LTS | Frontend (Vite) + Backend (Express)           | backend, database |
 | **postgres** | PostgreSQL 18+    | Primary database (default)                    | database          |
 | **mariadb**  | MariaDB 12+       | Alternative database                          | database          |

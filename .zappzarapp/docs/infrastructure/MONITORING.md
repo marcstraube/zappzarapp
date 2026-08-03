@@ -23,7 +23,7 @@ poll.
   "services": {
     "php-fpm": {
       "status": "ok",
-      "version": "8.4.15",
+      "version": "8.5.9",
       "enabled": true
     },
     "node-backend": {

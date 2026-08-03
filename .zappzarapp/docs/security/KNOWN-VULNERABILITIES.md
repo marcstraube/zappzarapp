@@ -98,11 +98,11 @@ us** — the vulnerable component is a compiled binary, a bundled library, or a
 language runtime baked into an upstream image, and only an upstream release
 changes it:
 
-| Source                                                                                                                              | Category                          | Fixable by                                                  |
-| ----------------------------------------------------------------------------------------------------------------------------------- | --------------------------------- | ----------------------------------------------------------- |
-| Bundled Java JARs in the Elasticsearch distribution (netty, jackson-databind, jakarta.mail, commons-lang3, reactor-netty, lz4-java) | `trivy-elasticsearch`             | Elastic release (already on newest maintained 8.x, 8.19.19) |
-| Go stdlib / modules compiled into upstream `gosu` / Caddy binaries                                                                  | `trivy-postgres`, `trivy-mercure` | Upstream image rebuild                                      |
-| Node.js runtime + bundled npm (`undici`, `tar`) and `pnpm`                                                                          | `trivy-node`                      | Node release; pnpm bumped to 11.18.0 (re-scan pending)      |
+| Source                                                                                                                              | Category                          | Fixable by                                             |
+| ----------------------------------------------------------------------------------------------------------------------------------- | --------------------------------- | ------------------------------------------------------ |
+| Bundled Java JARs in the Elasticsearch distribution (netty, jackson-databind, jakarta.mail, commons-lang3, reactor-netty, lz4-java) | `trivy-elasticsearch`             | Elastic release (image tracks the current major)       |
+| Go stdlib / modules compiled into upstream `gosu` / Caddy binaries                                                                  | `trivy-postgres`, `trivy-mercure` | Upstream image rebuild                                 |
+| Node.js runtime + bundled npm (`undici`, `tar`) and `pnpm`                                                                          | `trivy-node`                      | Node release; pnpm bumped to 11.18.0 (re-scan pending) |
 
 ### Decision: ACCEPTED (filtered by package at scan time)
 

@@ -18,6 +18,7 @@
  *   "timestamp": "...",
  *   "service": "node-backend",
  *   "environment": "development",
+ *   "node_version": "v24.13.0",
  *   "uptime": 12345,
  *   "checks": {
  *     "database": { "status": "ok", "type": "postgres", "latency_ms": 5 },
@@ -68,6 +69,8 @@ export interface ReadinessResponse {
   timestamp: string;
   service: string;
   environment: string;
+  /** Node.js runtime version — consumed by the PHP health aggregator as node_version */
+  node_version: string;
   uptime: number;
   checks: Record<string, ServiceCheckResult>;
 }
@@ -288,6 +291,7 @@ export class HealthCheckService {
       timestamp: new Date().toISOString(),
       service: this.serviceName,
       environment: this.config.environment,
+      node_version: process.version,
       uptime: Math.round(process.uptime()),
       checks,
     };
