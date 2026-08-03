@@ -48,8 +48,13 @@ build:images:
   stage: build
   script:
     - docker compose build php node nginx
-    - docker build -t ${COMPOSE_PROJECT_NAME}-postgres:scan -f docker/postgres/Dockerfile docker/postgres
-    - docker build -t ${COMPOSE_PROJECT_NAME}-mariadb:scan -f docker/mariadb/Dockerfile docker/mariadb
+    # Build only cross-image-COPY-free stages (mirrors .github/workflows/
+    # security-scan.yml): `--target final` skips the CI-only goss test stage,
+    # whose tagless `COPY --from=goss` resolves only inside the bake context
+    # graph. Both Dockerfiles COPY repo-root-relative paths, so the build
+    # context must be the repo root.
+    - docker build --target final -t ${COMPOSE_PROJECT_NAME}-postgres:scan -f docker/postgres/Dockerfile .
+    - docker build -t ${COMPOSE_PROJECT_NAME}-mariadb:scan -f docker/mariadb/Dockerfile .
   rules:
     - if: $CI_PIPELINE_SOURCE == "schedule"
     - if: $CI_PIPELINE_SOURCE == "web"
