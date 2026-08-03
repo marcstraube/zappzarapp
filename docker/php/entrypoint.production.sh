@@ -8,9 +8,14 @@ set -e
 
 # Configure PHP timezone from TZ environment variable
 # Note: PHP does NOT automatically use the TZ env var for date.timezone
-# We must explicitly configure it via INI file
+# We must explicitly configure it via INI file.
+# The production container runs with a read-only root filesystem, so the INI
+# goes to /tmp (tmpfs) and is appended to the compiled-in conf.d via
+# PHP_INI_SCAN_DIR (the leading colon keeps the default scan directory).
 if [ -n "${TZ:-}" ]; then
-    echo "date.timezone = ${TZ}" > /usr/local/etc/php/conf.d/99-timezone.ini
+    mkdir -p /tmp/php-conf.d
+    echo "date.timezone = ${TZ}" > /tmp/php-conf.d/99-timezone.ini
+    export PHP_INI_SCAN_DIR=":/tmp/php-conf.d"
     echo "[entrypoint.production] Configured PHP timezone: ${TZ}"
 fi
 
