@@ -230,8 +230,8 @@ scan:zap:
         SCAN_MODE="normal"
       fi
 
-    - echo "Repository: $CI_PROJECT_PATH"
-    - echo "Scan mode: $SCAN_MODE"
+    - 'echo "Repository: $CI_PROJECT_PATH"'
+    - 'echo "Scan mode: $SCAN_MODE"'
 
     # Start application with appropriate configuration
     - |
