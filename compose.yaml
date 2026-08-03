@@ -436,8 +436,8 @@ services:
       ES_JAVA_OPTS: '-Xms${ELASTICSEARCH_HEAP_SIZE:-512m} -Xmx${ELASTICSEARCH_HEAP_SIZE:-512m}'
       # Disable machine learning (reduces memory footprint)
       xpack.ml.enabled: 'false'
-      # Disable telemetry/monitoring data collection
-      xpack.monitoring.collection.enabled: 'false'
+      # Monitoring data collection stays at its default (disabled); setting
+      # xpack.monitoring.collection.enabled explicitly is deprecated in ES 9
       # Snapshot repository path (required for backups)
       path.repo: /usr/share/elasticsearch/backup
     expose:
