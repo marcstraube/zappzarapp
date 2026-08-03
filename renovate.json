@@ -26,6 +26,15 @@
     },
     {
       "customType": "regex",
+      "description": "Trivy pin in the standalone GitLab security-scan pipeline. The TRIVY_VERSION variable feeds both the aquasec/trivy job image (referenced as aquasec/trivy:${TRIVY_VERSION}, invisible to the gitlabci docker manager) and the release-binary install in the dind-based image-scan jobs, so it needs its own tracker.",
+      "managerFilePatterns": ["/^\\.gitlab/security-scan\\.gitlab-ci\\.yml$/"],
+      "matchStrings": ["TRIVY_VERSION: \"(?<currentValue>[0-9.]+)\""],
+      "depNameTemplate": "aquasecurity/trivy",
+      "datasourceTemplate": "github-releases",
+      "extractVersionTemplate": "^v(?<version>.*)$"
+    },
+    {
+      "customType": "regex",
       "description": "PECL release watcher for gmagick, which is built from a commit-pinned fork because no PECL release compiles against PHP >= 8.5. The baseline ARG is watch-only: a PR bumping it signals that PECL lists a newer release worth reviewing for a switch back to `pecl install`.",
       "managerFilePatterns": ["/^docker/php/Dockerfile$/"],
       "matchStrings": ["ARG GMAGICK_PECL_BASELINE=(?<currentValue>.+)"],
