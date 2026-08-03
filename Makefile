@@ -4072,13 +4072,19 @@ security-zap-full-start: ## Start ALL services for comprehensive ZAP scanning (i
 
 security-zap-scan: ## Run ZAP scan (requires running services)
 	@echo -e "\033[0;33mChecking if services are running...\033[0m"
-	@if ! docker compose ps | grep -q "Up"; then \
+	@# LOAD_ENV: a bare `docker compose` inherits the caller's
+	@# COMPOSE_PROJECT_NAME (CI pipelines set their own) and looks at the wrong
+	@# project, while start/stop resolve the project through the env files.
+	@# The -q/--status form is also robust against STATUS column wording.
+	@$(LOAD_ENV); \
+	if [ -z "$$(docker compose ps -q --status running 2>/dev/null)" ]; then \
 		echo -e "\033[0;31mError: No services running\033[0m"; \
 		echo -e "\033[0;33mRun: make security-zap-start\033[0m"; \
 		exit 1; \
 	fi
 	@# Check ZAPPZARAPP_ENV from running PHP container (most reliable)
-	@CONTAINER_ENV=$$(docker compose exec -T php printenv ZAPPZARAPP_ENV 2>/dev/null | tr -d '\r\n' || echo "unknown"); \
+	@$(LOAD_ENV); \
+	CONTAINER_ENV=$$(docker compose exec -T php printenv ZAPPZARAPP_ENV 2>/dev/null | tr -d '\r\n' || echo "unknown"); \
 	if [ "$$CONTAINER_ENV" != "production" ]; then \
 		echo -e "\033[0;33m⚠️  WARNING: PHP container is running in $$CONTAINER_ENV mode\033[0m"; \
 		echo -e "\033[0;33m   For accurate CSP testing, restart with: make security-zap-start\033[0m"; \
