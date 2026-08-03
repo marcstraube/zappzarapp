@@ -4,10 +4,13 @@ ARG PHP_VERSION=8.5-fpm-alpine3.23
 # gmagick has no PECL release that compiles against PHP >= 8.5 (2.0.6RC1 is
 # the latest, upstream has been dormant since 2021). Build the pinned commit
 # of the maintained PHP-8.5 fix branch instead (vitoc/gmagick#59 from the
-# remicollet fork, branch issue-pointers). Renovate does not track this pin —
-# revisit manually and switch back to `pecl install gmagick-<version>` once a
-# PECL release with PHP 8.5 support ships:
-# https://pecl.php.net/package/gmagick
+# remicollet fork, branch issue-pointers).
+# GMAGICK_PECL_BASELINE is watch-only and not used by the build: a Renovate
+# custom manager compares it against https://pecl.php.net/package/gmagick and
+# opens a PR (never automerged) once PECL lists a newer release — the signal
+# to review switching back to `pecl install gmagick-<version>`. Verify PHP 8.5
+# support before switching.
+ARG GMAGICK_PECL_BASELINE=2.0.6RC1
 ARG GMAGICK_REPO=https://github.com/remicollet/gmagick.git
 ARG GMAGICK_COMMIT=2fed131a3e4a52b9cd9ef07d400ee16915d23d2a
 ARG COMPOSER_VERSION=2

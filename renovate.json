@@ -7,6 +7,13 @@
   "automerge": true,
   "platformAutomerge": true,
   "minimumReleaseAge": "3 days",
+  "customDatasources": {
+    "pecl-gmagick": {
+      "description": "Latest gmagick release on PECL (plain text endpoint, e.g. `2.0.6RC1`).",
+      "defaultRegistryUrlTemplate": "https://pecl.php.net/rest/r/gmagick/latest.txt",
+      "format": "plain"
+    }
+  },
   "customManagers": [
     {
       "customType": "regex",
@@ -16,6 +23,15 @@
       "depNameTemplate": "citusdata/pg_cron",
       "datasourceTemplate": "github-tags",
       "extractVersionTemplate": "^v(?<version>.*)$"
+    },
+    {
+      "customType": "regex",
+      "description": "PECL release watcher for gmagick, which is built from a commit-pinned fork because no PECL release compiles against PHP >= 8.5. The baseline ARG is watch-only: a PR bumping it signals that PECL lists a newer release worth reviewing for a switch back to `pecl install`.",
+      "managerFilePatterns": ["/^docker/php/Dockerfile$/"],
+      "matchStrings": ["ARG GMAGICK_PECL_BASELINE=(?<currentValue>.+)"],
+      "depNameTemplate": "gmagick",
+      "datasourceTemplate": "custom.pecl-gmagick",
+      "versioningTemplate": "regex:^(?<major>\\d+)\\.(?<minor>\\d+)\\.(?<patch>\\d+)(?<prerelease>[A-Za-z]+\\d*)?$"
     }
   ],
   "packageRules": [
@@ -71,6 +87,13 @@
       "matchFileNames": ["pnpm-workspace.yaml"],
       "matchUpdateTypes": ["major"],
       "enabled": false
+    },
+    {
+      "description": "The gmagick PECL watcher PR is a review signal (check PHP >= 8.5 support before switching back from the commit-pinned fork build) - never automerge, regardless of update type. RC releases count too (a new RC is the most likely shape of a PHP-8.5-capable release from the dormant upstream), so unstable versions must not be filtered. The plain-text datasource carries no releaseTimestamp, so the global minimumReleaseAge would hold the update as pending forever - disable it here.",
+      "matchDatasources": ["custom.pecl-gmagick"],
+      "automerge": false,
+      "ignoreUnstable": false,
+      "minimumReleaseAge": "0 days"
     }
   ]
 }
