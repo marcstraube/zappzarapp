@@ -4082,15 +4082,25 @@ security-zap-scan: ## Run ZAP scan (requires running services)
 		echo -e "\033[0;33mRun: make security-zap-start\033[0m"; \
 		exit 1; \
 	fi
-	@# Check ZAPPZARAPP_ENV from running PHP container (most reliable)
+	@# Check ZAPPZARAPP_ENV from running PHP container (most reliable).
+	@# The ||-fallback must sit OUTSIDE the pipe: a failed exec piped through
+	@# tr still exits 0 (tr's code), which would silently yield "" instead of
+	@# "unknown". Non-interactive callers (CI) get a hard abort instead of a
+	@# read prompt that cannot be answered.
 	@$(LOAD_ENV); \
-	CONTAINER_ENV=$$(docker compose exec -T php printenv ZAPPZARAPP_ENV 2>/dev/null | tr -d '\r\n' || echo "unknown"); \
+	CONTAINER_ENV=$$(docker compose exec -T php printenv ZAPPZARAPP_ENV 2>/dev/null | tr -d '\r\n'); \
+	CONTAINER_ENV=$${CONTAINER_ENV:-unknown}; \
 	if [ "$$CONTAINER_ENV" != "production" ]; then \
 		echo -e "\033[0;33m⚠️  WARNING: PHP container is running in $$CONTAINER_ENV mode\033[0m"; \
 		echo -e "\033[0;33m   For accurate CSP testing, restart with: make security-zap-start\033[0m"; \
-		read -p "Continue anyway? [y/N] " -n 1 -r; \
-		echo; \
-		if [[ ! $$REPLY =~ ^[Yy]$$ ]]; then \
+		if [ -t 0 ]; then \
+			read -p "Continue anyway? [y/N] " -n 1 -r; \
+			echo; \
+			if [[ ! $$REPLY =~ ^[Yy]$$ ]]; then \
+				exit 1; \
+			fi; \
+		else \
+			echo -e "\033[0;31mNon-interactive session — aborting (services must run in production mode; use make security-zap-full-start)\033[0m"; \
 			exit 1; \
 		fi; \
 	fi
