@@ -1,7 +1,15 @@
 # PHP Multi-Stage Dockerfile
 
 ARG PHP_VERSION=8.4-fpm-alpine3.23
-ARG GMAGICK_VERSION=2.0.6RC1
+# gmagick has no PECL release that compiles against PHP >= 8.5 (2.0.6RC1 is
+# the latest, upstream has been dormant since 2021). Build the pinned commit
+# of the maintained PHP-8.5 fix branch instead (vitoc/gmagick#59 from the
+# remicollet fork, branch issue-pointers). Renovate does not track this pin —
+# revisit manually and switch back to `pecl install gmagick-<version>` once a
+# PECL release with PHP 8.5 support ships:
+# https://pecl.php.net/package/gmagick
+ARG GMAGICK_REPO=https://github.com/remicollet/gmagick.git
+ARG GMAGICK_COMMIT=2fed131a3e4a52b9cd9ef07d400ee16915d23d2a
 ARG COMPOSER_VERSION=2
 
 # Version Pinning:
@@ -19,8 +27,9 @@ FROM composer:${COMPOSER_VERSION} AS composer-image
 # This stage installs all build dependencies and compiles the extensions.
 FROM php:${PHP_VERSION} AS php-builder
 
-# Redeclare ARG (global scope ARGs don't persist after FROM)
-ARG GMAGICK_VERSION
+# Redeclare ARGs (global scope ARGs don't persist after FROM)
+ARG GMAGICK_REPO
+ARG GMAGICK_COMMIT
 
 # Install ALL necessary dependencies to compile extensions
 # We do NOT use --virtual here, as we will discard the builder stage later.
@@ -30,6 +39,8 @@ RUN apk add --no-cache \
     libtool \
     linux-headers \
     libgomp \
+    # git for the gmagick source build (builder stage is discarded)
+    git \
     # Dependencies for GD (Extension)
     freetype \
     freetype-dev \
@@ -59,16 +70,23 @@ RUN apk add --no-cache \
     rabbitmq-c \
     rabbitmq-c-dev \
     # Compilation and installation of extensions
-    && docker-php-ext-install exif intl opcache zip pdo_pgsql pdo_mysql soap bcmath sockets pcntl \
+    && docker-php-ext-install exif intl zip pdo_pgsql pdo_mysql soap bcmath sockets pcntl \
+    # OPcache is built into PHP >= 8.5; only compile it where it still ships
+    # as a buildable shared extension (PHP <= 8.4)
+    && { php -r "exit(extension_loaded('Zend OPcache') ? 0 : 1);" \
+         || docker-php-ext-install opcache; } \
     && docker-php-ext-configure gd \
         --with-freetype \
         --with-jpeg \
         --with-webp \
         --with-avif \
     && docker-php-ext-install -j$(nproc) gd \
-    # gmagick 2.0.6RC1 is the only version supporting PHP 8.4 (no stable release yet)
-    # Check https://pecl.php.net/package/gmagick for updates
-    && pecl install gmagick-${GMAGICK_VERSION} \
+    # gmagick: built from the pinned fix-branch commit (see the ARG note at
+    # the top of this file)
+    && git clone ${GMAGICK_REPO} /tmp/gmagick \
+    && git -C /tmp/gmagick checkout ${GMAGICK_COMMIT} \
+    && cd /tmp/gmagick && phpize && ./configure && make -j$(nproc) && make install \
+    && cd / && rm -rf /tmp/gmagick \
     && pecl install redis \
     && pecl install amqp \
     && docker-php-ext-enable gmagick redis amqp \
@@ -132,6 +150,12 @@ COPY --chmod=0644 docker/php/conf.d/soap.ini /usr/local/etc/php/conf.d/
 COPY --chmod=0644 docker/php/conf.d/sockets.ini /usr/local/etc/php/conf.d/
 COPY --chmod=0644 docker/php/conf.d/sodium.ini /usr/local/etc/php/conf.d/
 COPY --chmod=0644 docker/php/conf.d/zip.ini /usr/local/etc/php/conf.d/
+
+# opcache ships as a loadable extension only on PHP <= 8.4 (built into the
+# engine since 8.5); generate the load directive only where the shared object
+# exists, otherwise PHP would warn about the missing .so on every startup
+RUN [ ! -f "$(php -r 'echo ini_get("extension_dir");')/opcache.so" ] \
+    || echo 'zend_extension=opcache' > /usr/local/etc/php/conf.d/opcache-load.ini
 
 # Health Check (Unix Socket)
 HEALTHCHECK --interval=30s --timeout=3s --start-period=40s --retries=3 \
