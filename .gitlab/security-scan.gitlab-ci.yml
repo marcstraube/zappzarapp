@@ -118,6 +118,12 @@ scan:dependencies:
   <<: *docker-setup
   stage: scan
   rules: *heavy-scan-rules
+  variables:
+    # The dev entrypoints refuse to start while dependencies are missing —
+    # exactly what this job installs via exec afterwards. idle mode and the
+    # skip flag are the designed CI escape hatches for that.
+    NODE_MODE: "idle"
+    PHP_SKIP_DEPENDENCY_CHECK: "1"
   script:
     - docker compose up -d --build php node
     - docker compose exec -T php composer install --no-progress --no-interaction
@@ -288,17 +294,21 @@ security-report:
       echo "| Scan Type | Status |" >> security-summary.md
       echo "|-----------|--------|" >> security-summary.md
 
-      # Check each scan result (must match the scan:image matrix list)
+      # Check each scan result (must match the scan:image matrix list).
+      # No ${scan^} capitalization: that is a bashism, and this runs in
+      # alpine's /bin/sh ("bad substitution").
       for scan in php node nginx postgres mariadb redis elasticsearch meilisearch rabbitmq mercure mailpit seaweedfs; do
         if [ -f "trivy-${scan}-report.json" ]; then
-          count=$(jq '.Results[]?.Vulnerabilities // [] | length' "trivy-${scan}-report.json" 2>/dev/null | paste -sd+ | bc 2>/dev/null || echo "0")
+          # jq-only sum: bc is not installed in the alpine job image, and the
+          # ||-fallback would silently turn every count into 0 ("Clean")
+          count=$(jq '[.Results[]?.Vulnerabilities // [] | length] | add // 0' "trivy-${scan}-report.json" 2>/dev/null || echo "0")
           if [ "$count" -gt 0 ]; then
-            echo "| ${scan^} Image | :warning: ${count} vulnerabilities |" >> security-summary.md
+            echo "| ${scan} image | :warning: ${count} vulnerabilities |" >> security-summary.md
           else
-            echo "| ${scan^} Image | :white_check_mark: Clean |" >> security-summary.md
+            echo "| ${scan} image | :white_check_mark: Clean |" >> security-summary.md
           fi
         else
-          echo "| ${scan^} Image | :grey_question: Not scanned |" >> security-summary.md
+          echo "| ${scan} image | :grey_question: Not scanned |" >> security-summary.md
         fi
       done
 
