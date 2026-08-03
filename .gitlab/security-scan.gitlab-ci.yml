@@ -27,10 +27,9 @@ variables:
   SEVERITY: "HIGH,CRITICAL"
   DOCKER_DRIVER: overlay2
   DOCKER_TLS_CERTDIR: ""
-  # Baseline of upstream-only, not-fixable-by-us CVEs (see .trivyignore.yaml).
-  # Trivy honours TRIVY_IGNOREFILE; entries only match vuln IDs, so config/
-  # secret scans are unaffected.
-  TRIVY_IGNOREFILE: ".trivyignore.yaml"
+  # Upstream-only, not-fixable-by-us findings are filtered by the package-level
+  # policy .trivy/ignore-policy.rego (passed via --ignore-policy). Do NOT set
+  # TRIVY_IGNOREFILE here: trivy hard-fails when the named file is absent.
   # Single Trivy pin for both consumption forms: the aquasec/trivy job image
   # (filesystem/config/secret scans) and the release binary installed into the
   # dind-based image-scan jobs. Renovate tracks this via a regex customManager
@@ -223,8 +222,11 @@ scan:zap:
     # unset/empty defaults to "normal" (respects .env). No repo auto-detection.
     ZAP_SCAN_MODE: ""
   before_script:
-    # openssl: required by `make secrets` / `make ssl-internal`
-    - apk add --no-cache docker-compose curl bash make git openssl
+    # openssl: required by `make secrets` / `make ssl-internal`. acl: provides
+    # setfacl, which `make ssl-internal` uses to grant the unprivileged
+    # production containers (redis, php, rabbitmq) read access to the 600-mode
+    # TLS keys — without it they crash on startup and never turn healthy.
+    - apk add --no-cache docker-compose curl bash make git openssl acl
     - make init
     - make secrets
     - make ssl-internal
