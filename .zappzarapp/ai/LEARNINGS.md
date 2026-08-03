@@ -1197,9 +1197,85 @@ as an explicit decision, not silently changed.
   `.env.local` > `.env.production` > `.env`. BATS coverage in `make-env.bats`
   ("Caller ENV Precedence" section) via `make validate-env` output.
 
+### Renovate custom plain-text datasource: three defaults silently kill the watcher (2026-08-03)
+
+- Context: PECL-release watcher for gmagick (`customDatasources` on
+  `https://pecl.php.net/rest/r/gmagick/latest.txt`, format `plain`, regex
+  customManager on a watch-only `ARG GMAGICK_PECL_BASELINE` in
+  `docker/php/Dockerfile`). Three independent defaults each would have made it a
+  dead letter — all three only surfaced in `make renovate` dry-runs:
+- **`composer` versioning rejects PECL's separator-less RC form**: `2.0.6RC1` →
+  "unsupported/unversioned value", dep skipped entirely. Fix: a `regex:`
+  versioning with a `prerelease` group, which orders `2.0.6RC1 < 2.0.6 < 2.0.7`
+  correctly.
+- **`ignoreUnstable` (default true) filters new RCs**: from a stable-looking
+  current value, a future `2.0.7RC1` would be silently dropped — but a new RC is
+  the most likely shape of the next release from a dormant upstream. Set
+  `ignoreUnstable: false` in the package rule.
+- **`minimumReleaseAge` + plain datasource = pending forever**: plain-text
+  datasources carry no `releaseTimestamp`, and the default
+  `minimumReleaseAgeBehaviour=timestamp-required` marks timestamp-less releases
+  as pending — the update never leaves the pending state, so no PR is ever
+  created (log line: "Marking 1 release(s) as pending"). Set
+  `minimumReleaseAge: "0 days"` in the package rule.
+- **Verification pattern**: falsification test — lower the baseline ARG to an
+  older version, dry-run must now propose the real latest (proves the live
+  fetch + versioning + comparison chain), then restore. `updates: []` alone
+  proves nothing.
+
+### GitLab CI: jobs do NOT share a Docker daemon — build-then-scan across jobs is a mirage (2026-08-03)
+
+- Every job gets its own `docker:dind` service; images built in a `build` stage
+  job are GONE in the scan jobs (the trivy jobs did not even have a dind service
+  — `trivy image <name>` had no daemon at all). The standalone security-scan
+  file's build:images → scan:*-image design could never work.
+- **Fix pattern** (mirrors the GitHub matrix): one `parallel: matrix:` job per
+  image that builds exactly what it scans inside its own dind (cross-ref-free
+  `--target`, repo-root context) and installs the pinned trivy release binary. A
+  single `TRIVY_VERSION` variable feeds both the job image
+  (`aquasec/trivy:${TRIVY_VERSION}` — gitlabci docker manager skips it as
+  contains-variable) and the binary download → one regex customManager on
+  github-releases is the SSOT.
+- **ENTRYPOINT gotcha**: images that ship their tool as ENTRYPOINT
+  (aquasec/trivy, zricethezav/gitleaks) get the GitLab job script passed to that
+  entrypoint → `unknown command "sh" for "trivy"`. Needs
+  `image: {name: …, entrypoint: [""]}`.
+- **`make secrets` empty-file gotcha**: the generators pipe
+  `openssl | tr | head > file`; the pipeline exit code is head's, so a missing
+  openssl "generated" EMPTY secret files with a green message (seen in the
+  alpine docker:29-cli job before openssl was added to the apk list). Guard
+  added: `secrets` now fails fast when openssl is absent.
+- **needs on rules-filtered jobs**: `needs: [build:images]` where build:images
+  is excluded by rules (e.g. include-usage on a push pipeline) makes pipeline
+  creation fail — heavy jobs carry their own rules instead of needs-chains.
+
+### GitLab CI: unquoted `key: value` colon inside a script line = config rejected (2026-08-03)
+
+- `- echo "Repository: $CI_PROJECT_PATH"` in a `script:` list is parsed by YAML
+  as a single-entry MAPPING (`{'echo "Repository': '$CI_PROJECT_PATH"'}`), not a
+  string. GitLab then refuses to create the pipeline: "jobs:...:script config
+  should be a string or a nested array of strings" — pipeline record exists with
+  `status=failed`, zero jobs, `yaml_errors=null`; the actual message is only in
+  GraphQL `pipeline.errorMessages`.
+- Bit us in `.gitlab/security-scan.gitlab-ci.yml` (`scan:zap`): the file is not
+  included in the main pipeline, so it was never validated until its first
+  standalone run — a lint gap for any standalone CI file. Quick local check:
+  parse the YAML and assert every `script`/`before_script`/`after_script` item
+  is a string.
+
 ---
 
 ## Last Updated
+
+2026-08-03 (added: Renovate plain-datasource watcher — composer versioning
+rejects `2.0.6RC1`, ignoreUnstable filters new RCs, timestamp-less releases pend
+forever under minimumReleaseAge; falsification-test pattern for watchers; GitLab
+standalone CI file rejected at creation over an unquoted colon in an echo line,
+error only visible via GraphQL errorMessages; standalone security-scan never-ran
+rot — jobs don't share a Docker daemon so build-then-scan across jobs can't work
+→ self-building parallel:matrix rework, ENTRYPOINT images need entrypoint:[""],
+`make secrets` silently wrote empty files when openssl was missing → fail-fast
+guard)
 
 2026-08-02 session 2 (added: k8s chart hardening — duplicate pod `volumes:` key
 from `{{- else }}` after volumeClaimTemplates; redis Deployment→StatefulSet;
