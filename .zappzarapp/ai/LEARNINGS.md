@@ -750,6 +750,41 @@ as an explicit decision, not silently changed.
   `cache-from`). Works on free gitlab.com (dind + free-tier registry). Verified
   2026-07-28.
 
+### PHP major bumps: check what the engine absorbed and what PECL abandoned
+
+- **PHP 8.5 builds OPcache into the engine** — `docker-php-ext-install opcache`
+  then fails with the cryptic `cp: can't stat 'modules/*'` (configure runs,
+  nothing compiles) and aborts the WHOLE chained extension layer; the failure
+  surfaced after the last successful extension in the log (intl), not naming the
+  guilty one. Isolate by looping `docker-php-ext-install <ext>` per extension in
+  a throwaway container. Fix pattern (version-robust, keeps 8.4 buildable):
+  conditional install via
+  `php -r "exit(extension_loaded('Zend OPcache') ? 0 : 1);"` (pipe-free —
+  hadolint DL4006) plus generating the `zend_extension=opcache` load ini at
+  image build time only where the `.so` exists.
+- **A red extension build can shadow a second one:** gmagick 2.0.6RC1 does not
+  compile against PHP 8.5 either (upstream dormant since 2021, no release
+  coming). Working fix lives in the open upstream PR's source branch
+  (`remicollet/gmagick@issue-pointers`, vitoc/gmagick#59) — built from a
+  commit-SHA pin instead of `pecl install`. GraphicsMagick kept over imagick
+  deliberately (smaller attack surface) although imagick 3.8.1 builds fine on
+  8.5; libvips is the designated opt-in successor (post-1.0).
+- Also swept: `intl.error_level` is deprecated since 8.5 (startup warning) —
+  dropped; `intl.use_exceptions` is the modern path.
+
+### DB-major image bumps invalidate local dev volumes (postgres 17 → 18)
+
+- After Renovate bumped postgres to 18.x, the local `zappzarapp-postgres-data`
+  volume (initialized by 17) put the container into a restart loop
+  (`database files are incompatible with server`) — and the goss RUNTIME tests
+  in the pre-push hook then block every Docker-touching push with seemingly
+  unrelated `pg_isready` failures. Check `docker compose ps` and the postgres
+  logs first when goss suddenly fails on postgres.
+- Dev remedy: drop the volume (`docker volume rm zappzarapp-postgres-data`) and
+  let the new major initialize fresh; data worth keeping must be dumped with the
+  OLD major's image BEFORE the bump. Boilerplate users will hit this on every PG
+  major — candidate for TROUBLESHOOTING.md at the next docs pass.
+
 ### Shipped scheduled workflows: a job-level `if:` cannot suppress the run entry
 
 - A `schedule:` trigger ALWAYS creates a workflow run; a job-level
