@@ -16,7 +16,7 @@ PHP interpreter and quality tools configuration:
 - **PHPStan**: Level 5 static analysis
 - **PHPMD**: Mess detection with custom ruleset
 - **PHPUnit**: Test framework configuration
-- **Xdebug**: Version 3.5.0 debugging support
+- **Xdebug**: Debugging support
 
 #### `dataSources.xml`
 
@@ -115,7 +115,7 @@ The Docker Compose interpreter is pre-configured. Verify it's working:
 2. Select: `Docker PHP` (should point to `compose.yaml`)
 3. Click `...` to view interpreter details
 4. Verify the PHP version matches the `PHP_VERSION` ARG in `docker/php/Dockerfile`
-5. Check Xdebug is loaded: Version 3.5.0
+5. Check Xdebug is loaded
 
 ### 2. Database Tools
 
