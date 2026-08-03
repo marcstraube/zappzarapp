@@ -1,6 +1,6 @@
 # PHP Multi-Stage Dockerfile
 
-ARG PHP_VERSION=8.4-fpm-alpine3.23
+ARG PHP_VERSION=8.5-fpm-alpine3.23
 # gmagick has no PECL release that compiles against PHP >= 8.5 (2.0.6RC1 is
 # the latest, upstream has been dormant since 2021). Build the pinned commit
 # of the maintained PHP-8.5 fix branch instead (vitoc/gmagick#59 from the
