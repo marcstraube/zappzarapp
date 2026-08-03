@@ -3742,6 +3742,10 @@ validate-env: ## Validate .env configuration for production readiness
 ##@ Security
 
 secrets: ## Generate missing Docker Secrets (idempotent)
+	@# Fail fast: the generators below pipe openssl through tr/head, so the
+	@# pipeline exit code is head's — a missing openssl would silently produce
+	@# EMPTY secret files while still printing "generated".
+	@command -v openssl >/dev/null 2>&1 || { echo -e "\033[0;31mERROR: openssl is required to generate secrets\033[0m"; exit 1; }
 	@mkdir -p secrets
 	# Mode 755: Directory readable by all (needed for bind-mount in Docker Compose)
 	# For stricter security, use Kubernetes with native K8s Secrets + securityContext.fsGroup
