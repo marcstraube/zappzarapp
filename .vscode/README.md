@@ -48,7 +48,7 @@ Workspace settings including:
 
 **PHP Configuration:**
 
-- Intelephense with PHP 8.4 support
+- Intelephense with PHP 8.5 support
 - PHP CS Fixer integration (PER-CS standard)
 - PHPStan Level 5
 - PHPMD integration

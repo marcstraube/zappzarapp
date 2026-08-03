@@ -11,7 +11,7 @@ zappzarapp project.
 
 PHP interpreter and quality tools configuration:
 
-- **Docker Compose Interpreter**: PHP 8.4 via `compose.yaml`
+- **Docker Compose Interpreter**: PHP 8.5 via `compose.yaml`
 - **PHP CS Fixer**: PER-CS standard with risky rules
 - **PHPStan**: Level 5 static analysis
 - **PHPMD**: Mess detection with custom ruleset
@@ -114,7 +114,7 @@ The Docker Compose interpreter is pre-configured. Verify it's working:
 1. Go to: `Settings → PHP → CLI Interpreter`
 2. Select: `Docker PHP` (should point to `compose.yaml`)
 3. Click `...` to view interpreter details
-4. Verify PHP version: 8.4.15
+4. Verify the PHP version matches the `PHP_VERSION` ARG in `docker/php/Dockerfile`
 5. Check Xdebug is loaded: Version 3.5.0
 
 ### 2. Database Tools

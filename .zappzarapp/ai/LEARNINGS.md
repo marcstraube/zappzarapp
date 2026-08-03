@@ -772,6 +772,22 @@ as an explicit decision, not silently changed.
 - Also swept: `intl.error_level` is deprecated since 8.5 (startup warning) —
   dropped; `intl.use_exceptions` is the modern path.
 
+### Long pre-push hooks get killed by the push's SSH connection timeout
+
+- `git push` opens the SSH connection to GitHub BEFORE running the pre-push hook
+  and keeps it idle while the hook runs. With a cold buildx cache the
+  goss-test-build exceeds the server's idle window, the connection drops, and
+  git kills the hook mid-build — captainhook reports the misleading
+  `failed to execute: ./docker/hooks/pre-push-quality.sh` with the output cut
+  mid-stream (looks like a hook crash, is a timeout).
+- Remedy: run `./docker/hooks/pre-push-quality.sh` DIRECTLY first (no SSH window
+  pressure) to warm the cache and see real results; the subsequent push then
+  re-runs it fast, well inside the window. Symptom fingerprint: the same push
+  "fails" at a random point mid-build on each attempt.
+- Corollary: `docker builder prune` right before a Docker-touching push trades
+  disk space for exactly this failure mode — prune images, keep the builder
+  cache when a push is imminent.
+
 ### DB-major image bumps invalidate local dev volumes (postgres 17 → 18)
 
 - After Renovate bumped postgres to 18.x, the local `zappzarapp-postgres-data`

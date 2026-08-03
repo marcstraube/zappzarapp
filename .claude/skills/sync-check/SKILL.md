@@ -12,7 +12,7 @@ allowed-tools:
   - Bash(diff:*)
   - Bash(ls:*)
   - AskUserQuestion
-argument-hint: '[--fix] [--category <docker|env|k8s|all>]'
+argument-hint: '[--fix] [--category <docker|env|k8s|versions|all>]'
 ---
 
 # Sync Check
@@ -36,7 +36,8 @@ to `.env` but not `.env.production`.
 Parse `$ARGUMENTS`:
 
 - `--fix`: Offer to fix simple, safe gaps (with confirmation)
-- `--category <name>`: Only check one category (`docker`, `env`, `k8s`, `all`)
+- `--category <name>`: Only check one category (`docker`, `env`, `k8s`,
+  `versions`, `all`)
 
 ```bash
 /sync-check                    # Check everything
@@ -128,6 +129,29 @@ Compare the toggles (production overlay `values.production.yaml` may override
 (`ENABLE_DEV_TOOLBAR`, `ENABLE_ADMINER`, `ENABLE_PGADMIN`) and `nginx` (always
 on in Compose, `nginx.enabled` in the chart).
 
+## Category: versions
+
+Versions live in **one** Renovate-managed place per tool — the Dockerfile `ARG`s
+(plus the dind tag in `.gitlab-ci.yml`). Everything else is a _reference_ that
+drifts silently when a major lands. Docs state at most **major.minor** and never
+patch versions (a patch version in prose is itself a finding — link the ARG
+instead).
+
+Extract the major(.minor) from each source and flag references that disagree:
+
+| Source of truth (ARG)                        | References to check                                                                                                                                                         |
+| -------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `docker/php/Dockerfile` `PHP_VERSION`        | `composer.json` `config.platform.php` · `.vscode/settings.json` `intelephense…phpVersion` · `.idea/php.xml` `php_language_level` · `PHP X.Y` in `*.md` + `.claude/context/` |
+| `docker/node/Dockerfile` `NODE_VERSION`      | `Node.js NN` / `Node NN` in `*.md` + `.claude/context/`                                                                                                                     |
+| `docker/nginx/Dockerfile` `NGINX_VERSION`    | `Nginx X.Y` in `*.md`                                                                                                                                                       |
+| `.gitlab-ci.yml` `docker:NN-dind`            | `docker:NN-…` snippets in `*.md`                                                                                                                                            |
+| other `docker/*/Dockerfile` `*_VERSION` ARGs | major mentions in `*.md` (redis, postgres, elasticsearch, …)                                                                                                                |
+
+**Skip:** `CHANGELOG.md`, `.zappzarapp/ai/LEARNINGS.md`, `.zappzarapp/docs/adr/`
+(history), and PHP-feature provenance notes like "PHP 8.4 asymmetric visibility"
+in `standards/php.md` (the feature's origin version is a fact, not a reference).
+Report drift as `[WARN]` — version drift is never intentional.
+
 ## Output
 
 ```text
@@ -139,6 +163,7 @@ Sync Check Results
 | docker   | 5      | 4   | 1      |
 | env      | 1      | 0   | 1      |
 | k8s      | 11     | 10  | 1      |
+| versions | 5      | 4   | 1      |
 
 [WARN] docker: compose.production.yaml declares service 'mercury' — not in compose.yaml (renamed to 'mercure'?)
   -> fix the overlay service name to match the base
@@ -146,6 +171,8 @@ Sync Check Results
   -> add NEW_FEATURE_FLAG to .env.production
 [INFO] k8s: ENABLE_REDIS=true but redis.enabled=false in kubernetes/values.yaml
   -> intentional divergence is fine (the chart leads for k8s); align if not
+[WARN] versions: ARCHITECTURE.md says "PHP 8.4" but docker/php/Dockerfile pins 8.5
+  -> update the doc reference (docs state major.minor only)
 ```
 
 Severity: `[CRIT]` breaks the environment · `[WARN]` should be fixed · `[INFO]`
@@ -156,6 +183,9 @@ minor.
 Offer to auto-fix only safe, mechanical gaps, each with confirmation:
 
 - Add a missing env key to the other file with a placeholder value
+- Bump the three mechanical PHP-version references (`composer.json`
+  `config.platform.php`, `.vscode/settings.json` `phpVersion`, `.idea/php.xml`
+  `php_language_level`) to the Dockerfile ARG's major.minor
 
 Never auto-fix: differing values, an overlay service name (could be an
 intentional rename either way), a `.env` ↔ chart toggle divergence (may be
@@ -176,6 +206,13 @@ grep -E '^[A-Z_]+=' .env.production | cut -d= -f1 | sort
 # Service toggles: .env side and chart side (top-level key + its enabled flag)
 grep -E '^(ENABLE_[A-Z_]+|NODE_MODE|DB_TYPE)=' .env
 awk '/^[a-z]/{svc=$1} /^  enabled:/{print svc, $2}' kubernetes/values.yaml
+
+# Version ARGs (source of truth) and their references
+grep -h '^ARG [A-Z_]*VERSION=' docker/*/Dockerfile
+grep -oE '"php": "[0-9.]+"' composer.json                 # config.platform
+grep -oE 'phpVersion": "[0-9.]+"' .vscode/settings.json
+grep -oE 'php_language_level="[0-9.]+"' .idea/php.xml
+git grep -nE '(PHP|Node\.js|Nginx) [0-9]+\.?[0-9]*' -- '*.md' .claude/context/
 ```
 
 Run this after changing any paired/overlaid config, before opening a PR.

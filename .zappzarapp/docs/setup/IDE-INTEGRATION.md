@@ -17,7 +17,7 @@ Both IDEs are configured with:
 
 ### Docker Integration
 
-- PHP 8.4 via Docker Compose
+- PHP 8.5 via Docker Compose
 - Automatic container management
 - Path mappings for debugging
 - Remote interpreter support

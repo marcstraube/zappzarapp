@@ -10,13 +10,13 @@ Claude can assume in any zappzarapp repo.
 
 ## Platform Overview
 
-- Dual-language web development platform: PHP 8.4 (PHP-FPM) + Node.js 24
+- Dual-language web development platform: PHP 8.5 (PHP-FPM) + Node.js 24
 - Security-by-design, GDPR-ready, production-ready from day one
 - Docker-based; every service runs in its own container
 
 ## Tech Stack
 
-- Backend: PHP 8.4 (PHP-FPM), Node.js 24
+- Backend: PHP 8.5 (PHP-FPM), Node.js 24
 - Frontend: Vite, TypeScript, HMR
 - Web server: Nginx (reverse proxy, SSL/TLS)
 - Databases: PostgreSQL (default), MariaDB (optional)
