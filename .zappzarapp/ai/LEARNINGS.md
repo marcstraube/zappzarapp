@@ -1248,6 +1248,22 @@ as an explicit decision, not silently changed.
 - **needs on rules-filtered jobs**: `needs: [build:images]` where build:images
   is excluded by rules (e.g. include-usage on a push pipeline) makes pipeline
   creation fail — heavy jobs carry their own rules instead of needs-chains.
+- **Round 2 of the same catalogue (first run with working jobs)**:
+  - Stale `TRIVY_IGNOREFILE: .trivyignore.yaml` variable — the file was retired
+    for `.trivy/ignore-policy.rego`, and trivy HARD-FAILS when an explicitly
+    named ignore file is absent (the default `.trivyignore` is skipped
+    silently). Killed every trivy invocation in one stroke.
+  - `make security-zap-scan`'s service check ran a BARE `docker compose ps` (no
+    `$(LOAD_ENV)`): with the pipeline's own `COMPOSE_PROJECT_NAME` in the
+    environment it queried the WRONG project ("No services running" while all
+    containers were up under the .env project name). Any recipe line that talks
+    to compose must go through `$(LOAD_ENV)`; check via `ps -q --status running`
+    instead of grepping STATUS text.
+  - `make ssl-internal` on alpine without the `acl` package only WARNS about
+    missing setfacl — then the unprivileged production containers (redis, php,
+    rabbitmq) cannot read the 600-mode TLS keys and crash at startup, surfacing
+    as instantly-"unhealthy" optional dependencies in compose up. CI images need
+    `acl` alongside openssl.
 
 ### GitLab CI: unquoted `key: value` colon inside a script line = config rejected (2026-08-03)
 
@@ -1275,7 +1291,9 @@ error only visible via GraphQL errorMessages; standalone security-scan never-ran
 rot — jobs don't share a Docker daemon so build-then-scan across jobs can't work
 → self-building parallel:matrix rework, ENTRYPOINT images need entrypoint:[""],
 `make secrets` silently wrote empty files when openssl was missing → fail-fast
-guard)
+guard; round 2: stale TRIVY_IGNOREFILE hard-fails every trivy call, zap-scan's
+bare `docker compose ps` queried the wrong project without LOAD_ENV, missing
+acl/setfacl crashes unprivileged prod containers on 600-mode TLS keys)
 
 2026-08-02 session 2 (added: k8s chart hardening — duplicate pod `volumes:` key
 from `{{- else }}` after volumeClaimTemplates; redis Deployment→StatefulSet;
