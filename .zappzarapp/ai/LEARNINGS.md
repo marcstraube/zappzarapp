@@ -1264,6 +1264,26 @@ as an explicit decision, not silently changed.
     rabbitmq) cannot read the 600-mode TLS keys and crash at startup, surfacing
     as instantly-"unhealthy" optional dependencies in compose up. CI images need
     `acl` alongside openssl.
+- **Round 3 — the php production container could NEVER start**: the production
+  entrypoint wrote the timezone INI into `/usr/local/etc/php/conf.d/`, but
+  production runs `read_only: true` and compose always sets `TZ` (`${TZ:-UTC}`)
+  → the write fails, `set -e` kills the container instantly, compose reports an
+  "unhealthy" optional dependency. Repro:
+  `docker run --rm --read-only --tmpfs /tmp -u 82:82 -e TZ=UTC zappzarapp-php:production true`.
+  Fix: write the INI to /tmp (tmpfs) and append it via
+  `PHP_INI_SCAN_DIR=":/tmp/php-conf.d"` (leading colon keeps the compiled-in
+  conf.d). Related CI/make traps fixed alongside:
+  - `exec | tr || echo unknown` swallows the exec failure (pipe exit code is
+    tr's) → probe yields "" instead of "unknown"; and a `read -p` prompt in a
+    non-interactive CI shell dies cryptically → tty-guard with a hard abort.
+  - scan:dependencies chicken-and-egg: the dev entrypoints refuse to start while
+    dependencies are missing — which is what the job installs via exec.
+    `NODE_MODE=idle` + `PHP_SKIP_DEPENDENCY_CHECK=1` are the designed CI escape
+    hatches.
+  - security-report summary: `${scan^}` is a bashism (alpine /bin/sh: "bad
+    substitution"), and `paste | bc` counted on a bc that alpine does not ship —
+    the `|| echo 0` fallback would have reported every image as "Clean".
+    Replaced with a jq-only sum.
 
 ### GitLab CI: unquoted `key: value` colon inside a script line = config rejected (2026-08-03)
 
@@ -1293,7 +1313,11 @@ rot — jobs don't share a Docker daemon so build-then-scan across jobs can't wo
 `make secrets` silently wrote empty files when openssl was missing → fail-fast
 guard; round 2: stale TRIVY_IGNOREFILE hard-fails every trivy call, zap-scan's
 bare `docker compose ps` queried the wrong project without LOAD_ENV, missing
-acl/setfacl crashes unprivileged prod containers on 600-mode TLS keys)
+acl/setfacl crashes unprivileged prod containers on 600-mode TLS keys; round 3:
+php production container could NEVER start — timezone-INI write vs read_only
+rootfs → PHP_INI_SCAN_DIR/tmpfs fix; exec|tr pipe swallows probe failure, read
+-p dies non-interactively, NODE_MODE=idle + PHP_SKIP_DEPENDENCY_CHECK=1 for the
+dependency-audit chicken-and-egg, ${scan^}/bc report bashisms)
 
 2026-08-02 session 2 (added: k8s chart hardening — duplicate pod `volumes:` key
 from `{{- else }}` after volumeClaimTemplates; redis Deployment→StatefulSet;
