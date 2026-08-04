@@ -119,15 +119,25 @@ scan:dependencies:
   stage: scan
   rules: *heavy-scan-rules
   variables:
-    # The dev entrypoints refuse to start while dependencies are missing —
-    # exactly what this job installs via exec afterwards. idle mode and the
-    # skip flag are the designed CI escape hatches for that.
-    NODE_MODE: "idle"
-    PHP_SKIP_DEPENDENCY_CHECK: "1"
+    # Mirror the main pipeline's dependency-audit job: the CI overlay ships
+    # CI-safe entrypoint settings (idle node mode, php dependency-check skip)
+    # and mounts NO lockfiles — the lockfiles are not committed, and a
+    # single-file bind mount of a missing host file materializes as a
+    # directory inside the container. They are generated fresh in-container
+    # instead, which is also why pnpm must not run with --frozen-lockfile.
+    COMPOSE_FILE: "compose.yaml:compose.ci.yaml"
+  before_script:
+    # openssl/acl: for `make secrets` / `make ssl-internal` — the CI overlay
+    # bind-mounts the generated certs and secrets into php/node.
+    - apk add --no-cache docker-compose curl bash make openssl acl
+    - make init
+    - make secrets
+    - make ssl-internal
   script:
     - docker compose up -d --build php node
+    - sleep 5
     - docker compose exec -T php composer install --no-progress --no-interaction
-    - docker compose exec -T node pnpm install --frozen-lockfile
+    - docker compose exec -T node pnpm install
     - echo "=== PHP Dependencies ===" | tee dependency-audit.txt
     - docker compose exec -T php composer audit --format=summary | tee -a dependency-audit.txt || true
     - docker compose exec -T php composer audit --format=json > composer-audit.json || true
