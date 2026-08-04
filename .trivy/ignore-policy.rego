@@ -34,7 +34,7 @@ ignore_packages := {
 	"github.com/caddyserver/caddy/v2",
 	"github.com/google/cel-go",
 	# Java libraries bundled in the Elasticsearch distribution.
-	"com.fasterxml.jackson.core:jackson-databind",
+	# (the jackson family is covered by a prefix rule below)
 	"com.sun.mail:jakarta.mail",
 	"org.apache.commons:commons-lang3",
 	"io.projectreactor.netty:reactor-netty-http",
@@ -57,4 +57,11 @@ ignore {
 # Ignore the netty family (io.netty:netty-codec-http, -codec, -codec-http2, ...).
 ignore {
 	startswith(input.PkgName, "io.netty:")
+}
+
+# Ignore the jackson family bundled in the Elasticsearch distribution
+# (jackson-databind, jackson-core, jackson-annotations, jackson-dataformat-*;
+# 2026-08: jackson-core surfaced inside the bundled parquet-hadoop JAR).
+ignore {
+	startswith(input.PkgName, "com.fasterxml.jackson.")
 }
