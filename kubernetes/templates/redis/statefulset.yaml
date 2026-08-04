@@ -20,6 +20,8 @@ spec:
         {{- include "zappzarapp.selectorLabels" . | nindent 8 }}
         app.kubernetes.io/component: redis
     spec:
+      securityContext:
+        {{- toYaml .Values.redis.podSecurityContext | nindent 8 }}
       containers:
         - name: redis
           image: "{{ include "zappzarapp.imageRepository" (dict "global" .Values.global "image" .Values.redis.image) }}:{{ include "zappzarapp.imageTag" (dict "global" .Values.global "image" .Values.redis.image "appVersion" .Chart.AppVersion) }}"

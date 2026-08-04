@@ -19,6 +19,8 @@ spec:
         {{- include "zappzarapp.selectorLabels" . | nindent 8 }}
         app.kubernetes.io/component: node-backend
     spec:
+      securityContext:
+        {{- toYaml .Values.nodeBackend.podSecurityContext | nindent 8 }}
       containers:
         - name: node-backend
           image: "{{ include "zappzarapp.imageRepository" (dict "global" .Values.global "image" .Values.nodeBackend.image) }}:{{ include "zappzarapp.imageTag" (dict "global" .Values.global "image" .Values.nodeBackend.image "appVersion" .Chart.AppVersion) }}"

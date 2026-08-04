@@ -20,6 +20,8 @@ spec:
         {{- include "zappzarapp.selectorLabels" . | nindent 8 }}
         app.kubernetes.io/component: seaweedfs
     spec:
+      securityContext:
+        {{- toYaml .Values.seaweedfs.podSecurityContext | nindent 8 }}
       containers:
         - name: seaweedfs
           image: "{{ include "zappzarapp.imageRepository" (dict "global" .Values.global "image" .Values.seaweedfs.image) }}:{{ include "zappzarapp.imageTag" (dict "global" .Values.global "image" .Values.seaweedfs.image "appVersion" .Chart.AppVersion) }}"

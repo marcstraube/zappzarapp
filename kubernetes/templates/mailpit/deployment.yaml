@@ -23,6 +23,8 @@ spec:
         {{- include "zappzarapp.selectorLabels" . | nindent 8 }}
         app.kubernetes.io/component: mailpit
     spec:
+      securityContext:
+        {{- toYaml .Values.mailpit.podSecurityContext | nindent 8 }}
       containers:
         - name: mailpit
           image: "{{ include "zappzarapp.imageRepository" (dict "global" .Values.global "image" .Values.mailpit.image) }}:{{ include "zappzarapp.imageTag" (dict "global" .Values.global "image" .Values.mailpit.image "appVersion" .Chart.AppVersion) }}"

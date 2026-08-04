@@ -53,6 +53,11 @@ nginx:
     type: ClusterIP
     port: 80
     httpsPort: 443
+  # Pod-level context: RuntimeDefault seccomp = the runtime's standard syscall
+  # filter (Pod Security Standard "restricted" expects it on every pod)
+  podSecurityContext:
+    seccompProfile:
+      type: RuntimeDefault
   securityContext:
     readOnlyRootFilesystem: true
     runAsNonRoot: false  # nginx needs root for initial setup
@@ -81,6 +86,9 @@ php:
   service:
     type: ClusterIP
     port: 9000
+  podSecurityContext:
+    seccompProfile:
+      type: RuntimeDefault
   securityContext:
     readOnlyRootFilesystem: true
     runAsNonRoot: false  # needs root for secrets copying
@@ -112,6 +120,9 @@ node:
   service:
     type: ClusterIP
     port: 3001  # Frontend frameworks run on 3001
+  podSecurityContext:
+    seccompProfile:
+      type: RuntimeDefault
   securityContext:
     readOnlyRootFilesystem: true
     runAsNonRoot: false  # needs root for secrets copying, then drops to node
@@ -140,6 +151,9 @@ nodeBackend:
   service:
     type: ClusterIP
     port: 3000  # Express API runs on 3000
+  podSecurityContext:
+    seccompProfile:
+      type: RuntimeDefault
   securityContext:
     readOnlyRootFilesystem: true
     runAsNonRoot: false  # needs root for secrets copying, then drops to node
@@ -174,8 +188,17 @@ postgres:
   service:
     type: ClusterIP
     port: 5432
+  # fsGroup 70 keeps the data volume writable by the postgres group (the
+  # container starts as root, the entrypoint switches to postgres)
+  podSecurityContext:
+    fsGroup: 70
+    seccompProfile:
+      type: RuntimeDefault
   securityContext:
-    readOnlyRootFilesystem: false
+    # The StatefulSet mounts emptyDirs for /tmp and /run/postgresql and the
+    # data volume for PGDATA — everything postgres writes — so the root
+    # filesystem itself can be immutable.
+    readOnlyRootFilesystem: true
     runAsNonRoot: false
     capabilities:
       drop:
@@ -206,6 +229,9 @@ mariadb:
   service:
     type: ClusterIP
     port: 3306
+  podSecurityContext:
+    seccompProfile:
+      type: RuntimeDefault
   securityContext:
     readOnlyRootFilesystem: false
     runAsNonRoot: false
@@ -237,6 +263,9 @@ redis:
   service:
     type: ClusterIP
     port: 6379
+  podSecurityContext:
+    seccompProfile:
+      type: RuntimeDefault
   securityContext:
     readOnlyRootFilesystem: true
     runAsNonRoot: false
@@ -267,6 +296,9 @@ mercure:
   service:
     type: ClusterIP
     port: 80
+  podSecurityContext:
+    seccompProfile:
+      type: RuntimeDefault
   securityContext:
     readOnlyRootFilesystem: true
     runAsNonRoot: false  # upstream image runs caddy as root
@@ -295,6 +327,9 @@ meilisearch:
   service:
     type: ClusterIP
     port: 7700
+  podSecurityContext:
+    seccompProfile:
+      type: RuntimeDefault
   securityContext:
     readOnlyRootFilesystem: false
     runAsNonRoot: false  # upstream image runs as root
@@ -323,6 +358,9 @@ elasticsearch:
   service:
     type: ClusterIP
     port: 9200
+  podSecurityContext:
+    seccompProfile:
+      type: RuntimeDefault
   securityContext:
     readOnlyRootFilesystem: false
     runAsNonRoot: true  # Dockerfile sets USER 1000:0
@@ -354,6 +392,9 @@ seaweedfs:
     masterPort: 9333
     volumePort: 8080
     filerPort: 8888
+  podSecurityContext:
+    seccompProfile:
+      type: RuntimeDefault
   securityContext:
     readOnlyRootFilesystem: false
     runAsNonRoot: false  # entrypoint starts as root, drops via su-exec
@@ -385,6 +426,9 @@ rabbitmq:
     type: ClusterIP
     port: 5672
     managementPort: 15672
+  podSecurityContext:
+    seccompProfile:
+      type: RuntimeDefault
   securityContext:
     readOnlyRootFilesystem: false
     runAsNonRoot: false  # upstream image runs as root
@@ -411,6 +455,9 @@ mailpit:
     type: ClusterIP
     smtpPort: 1025
     webPort: 8025
+  podSecurityContext:
+    seccompProfile:
+      type: RuntimeDefault
   securityContext:
     readOnlyRootFilesystem: true
     runAsNonRoot: false  # upstream image runs as root

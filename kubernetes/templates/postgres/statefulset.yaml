@@ -20,10 +20,10 @@ spec:
         {{- include "zappzarapp.selectorLabels" . | nindent 8 }}
         app.kubernetes.io/component: postgres
     spec:
-      # fsGroup ensures volume is writable by postgres group (gid 70)
-      # Container starts as root, entrypoint switches to postgres user
+      # fsGroup (in values) keeps the data volume writable by the postgres
+      # group; the container starts as root, the entrypoint switches user
       securityContext:
-        fsGroup: 70
+        {{- toYaml .Values.postgres.podSecurityContext | nindent 8 }}
       containers:
         - name: postgres
           image: "{{ include "zappzarapp.imageRepository" (dict "global" .Values.global "image" .Values.postgres.image) }}:{{ include "zappzarapp.imageTag" (dict "global" .Values.global "image" .Values.postgres.image "appVersion" .Chart.AppVersion) }}"

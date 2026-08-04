@@ -25,6 +25,8 @@ spec:
         {{- include "zappzarapp.selectorLabels" . | nindent 8 }}
         app.kubernetes.io/component: node
     spec:
+      securityContext:
+        {{- toYaml .Values.node.podSecurityContext | nindent 8 }}
       containers:
         - name: node
           image: "{{ include "zappzarapp.imageRepository" (dict "global" .Values.global "image" .Values.node.image) }}:{{ include "zappzarapp.imageTag" (dict "global" .Values.global "image" .Values.node.image "appVersion" .Chart.AppVersion) }}"

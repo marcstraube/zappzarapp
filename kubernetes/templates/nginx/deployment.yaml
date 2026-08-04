@@ -19,6 +19,8 @@ spec:
         {{- include "zappzarapp.selectorLabels" . | nindent 8 }}
         app.kubernetes.io/component: nginx
     spec:
+      securityContext:
+        {{- toYaml .Values.nginx.podSecurityContext | nindent 8 }}
       containers:
         - name: nginx
           image: "{{ include "zappzarapp.imageRepository" (dict "global" .Values.global "image" .Values.nginx.image) }}:{{ include "zappzarapp.imageTag" (dict "global" .Values.global "image" .Values.nginx.image "appVersion" .Chart.AppVersion) }}"

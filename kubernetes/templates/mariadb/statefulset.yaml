@@ -20,6 +20,8 @@ spec:
         {{- include "zappzarapp.selectorLabels" . | nindent 8 }}
         app.kubernetes.io/component: mariadb
     spec:
+      securityContext:
+        {{- toYaml .Values.mariadb.podSecurityContext | nindent 8 }}
       containers:
         - name: mariadb
           image: "{{ include "zappzarapp.imageRepository" (dict "global" .Values.global "image" .Values.mariadb.image) }}:{{ include "zappzarapp.imageTag" (dict "global" .Values.global "image" .Values.mariadb.image "appVersion" .Chart.AppVersion) }}"

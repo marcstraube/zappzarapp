@@ -20,6 +20,8 @@ spec:
         {{- include "zappzarapp.selectorLabels" . | nindent 8 }}
         app.kubernetes.io/component: elasticsearch
     spec:
+      securityContext:
+        {{- toYaml .Values.elasticsearch.podSecurityContext | nindent 8 }}
       containers:
         - name: elasticsearch
           image: "{{ include "zappzarapp.imageRepository" (dict "global" .Values.global "image" .Values.elasticsearch.image) }}:{{ include "zappzarapp.imageTag" (dict "global" .Values.global "image" .Values.elasticsearch.image "appVersion" .Chart.AppVersion) }}"
