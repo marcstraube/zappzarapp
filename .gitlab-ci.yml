@@ -104,6 +104,8 @@ default:
   - resources/**/*
   - package.json
   - pnpm-lock.yaml
+  # Carries the overrides + supply-chain policy the dependency audit resolves against
+  - pnpm-workspace.yaml
   - "**/Dockerfile*"
   - docker/**/*
   - compose*.yaml

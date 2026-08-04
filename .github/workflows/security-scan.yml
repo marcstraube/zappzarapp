@@ -27,6 +27,9 @@ on:
       - 'composer.lock'
       - 'package.json'
       - 'pnpm-lock.yaml'
+      # Carries the overrides + supply-chain policy (minimumReleaseAge etc.)
+      # that the dependency scan resolves against.
+      - 'pnpm-workspace.yaml'
       # Env templates (secret scanning) and the scan config / baselines itself,
       # so changing a baseline or the workflow re-runs the scan (otherwise the
       # new config never gets exercised on push).
