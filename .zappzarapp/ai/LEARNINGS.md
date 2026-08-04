@@ -1065,6 +1065,36 @@ as an explicit decision, not silently changed.
   line — harmless in CI (no committed lockfile → non-frozen install), but it
   will bite anyone testing a pnpm-major bump against a stale local lockfile.
 
+### ZAP WARN triage (2026-08-04): dev toolbar rendered in production
+
+- **Product bug #3 of the ZAP campaign** (after the php-production start failure
+  and the empty-secrets bug): the production welcome page carried the full
+  DevToolbar payload — `$_SERVER` dump (container IPs via
+  `SERVER_ADDR`/`REMOTE_ADDR`), request timestamps, profiling timeline, ~200 KB
+  page weight. Four of the six ZAP WARN groups (Private IP, Unix timestamps,
+  "Java" source disclosure = minified toolbar JS, page bloat) were symptoms of
+  this one bug.
+- **Cause chain**: committed `.env` sets `ENABLE_DEV_TOOLBAR=true` (dev
+  convenience) → `compose.yaml` interpolates `${ENABLE_DEV_TOOLBAR:-false}`, so
+  the fail-closed default never applies → `compose.production.yaml` overrode
+  only `ZAPPZARAPP_ENV`, not the toolbar flag → in the devtoolbar package's
+  guard the EXPLICIT switch takes precedence over the environment gate (by
+  design, for staging-with-toolbar setups) → toolbar on in production.
+- **Lesson**: an env default in compose (`:-false`) is NOT fail-closed when the
+  committed `.env` sets the variable — every security-relevant flag needs an
+  explicit hard-off in the production overlay. Audit pattern: for each
+  `${VAR:-safe}` in compose.yaml, check whether `.env` overrides it and whether
+  compose.production.yaml pins it.
+- **Fix**: `compose.production.yaml` php env now pins
+  `ENABLE_DEV_TOOLBAR=false`; `.env` comment corrected (it falsely claimed
+  "automatically disabled in production"). Verified live: page 205 KB → 9 KB,
+  zero toolbar markers/IPs.
+- **Remaining ZAP WARNs were benign** and got documented IGNOREs in
+  `.zap/rules.tsv`: 90005 (Sec-Fetch headers are request-side — the scanner
+  omits them, not a server issue), 10094 (the flagged base64 is the per-request
+  CSP nonce), 10049 (the cacheable content is the deliberate 1y-cached 301
+  HTTP→HTTPS redirect).
+
 ## Kubernetes / Helm Chart
 
 ### A template `{{- else }}` after volumeClaimTemplates emits a DUPLICATE pod `volumes:` key
@@ -1325,6 +1355,11 @@ as an explicit decision, not silently changed.
 ---
 
 ## Last Updated
+
+2026-08-04 (added: ZAP WARN triage — dev toolbar rendered in production:
+committed-.env value defeats the compose `:-false` default and the guard's
+explicit switch outranks its environment gate → security flags need a hard-off
+pin in the production overlay; benign rest got documented rules.tsv IGNOREs)
 
 2026-08-04 (added: findings triage — gitleaks allowlist regexTarget
 secret-vs-line + history-aware allowlisting; KSV-0118 = pod-level SC missing →

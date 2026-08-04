@@ -170,6 +170,11 @@ services:
     # NO cap_add needed - runs entirely as unprivileged www-data user
     environment:
       - ZAPPZARAPP_ENV=production
+      # Hard-off in production: the committed .env enables the toolbar for
+      # development, and the guard's explicit switch takes precedence over its
+      # environment gate - without this override the toolbar (a full $_SERVER
+      # dump incl. container IPs) renders on production pages (ZAP finding).
+      - ENABLE_DEV_TOOLBAR=false
     logging:
       driver: "json-file"
       options:

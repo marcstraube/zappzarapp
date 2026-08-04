@@ -4,7 +4,8 @@
 # See: https://www.zaproxy.org/docs/docker/baseline-scan/
 #
 # Security-by-design: All security headers are configured by default.
-# No rules are ignored - if ZAP reports an issue, investigate it.
+# Rules are only ignored after investigation, with the verdict documented
+# below - if ZAP reports anything else, investigate it first.
 #
 # Configured headers (see docker/nginx/snippets/security-headers.conf):
 # - X-Content-Type-Options: nosniff
@@ -16,3 +17,14 @@
 # - server_tokens: off (nginx.conf)
 # - expose_php: Off (php.ini)
 # - CORS: restricted via CORS_ORIGINS env var
+#
+# Ignored after investigation (2026-08-04 full-scan triage):
+# - 90005: ZAP's own requests omit the browser-only Sec-Fetch-* headers;
+#   the alert reflects the scanner's requests, not a server misconfiguration.
+# - 10094: the flagged base64 string is the per-request CSP nonce
+#   (32 random bytes, by design - see public/index.php nonce generation).
+# - 10049: the flagged max-age=31536000 responses are the deliberate
+#   cacheable 301 HTTP->HTTPS redirects (documented in the nginx templates).
+90005	IGNORE	(Sec-Fetch headers are request-side; scanner requests lack them by nature)
+10094	IGNORE	(Base64 finding is the per-request CSP nonce, by design)
+10049	IGNORE	(Cacheable content is the deliberate 1y-cached 301 redirect)
