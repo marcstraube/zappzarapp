@@ -55,3 +55,12 @@ verifyDepsBeforeRun: false
 # floor (e.g. `^6` not `^6.31.0`) so pnpm picks the newest AGED version.
 minimumReleaseAge: 1440
 minimumReleaseAgeStrict: true
+# Exempt exact-pinned platform-binding siblings from the age gate. rolldown@X
+# requires @rolldown/binding-*@X (exact, no range), so a binding can never be
+# pulled in "fresh" on its own — but the bindings are published minutes AFTER
+# their parent, so on release day the parent can be mature while its bindings
+# are not, and strict resolution hard-fails
+# (ERR_PNPM_NO_MATURE_MATCHING_VERSION). The parent package stays fully gated.
+# Extend only with families whose parent pins them exactly.
+minimumReleaseAgeExclude:
+  - '@rolldown/binding-*'
