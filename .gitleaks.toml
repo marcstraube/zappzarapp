@@ -1,0 +1,40 @@
+# Gitleaks configuration (picked up automatically by `gitleaks detect`).
+#
+# Extends the built-in default rules with an allowlist for the repo's known
+# false positives. Every entry here matches NON-secret content only — runtime
+# secret reads and documented test fixtures. Never allowlist a real credential
+# shape; fix the finding instead.
+
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Repo-known false positives (incl. historical revisions — gitleaks scans commit history)"
+# Match the regexes against the whole line: the default target is the captured
+# secret alone, which for curl-auth-user is just the password token and far
+# too generic to allowlist safely.
+regexTarget = "line"
+regexes = [
+  # Runtime secret reads: `curl -u "user:$(cat /run/secrets/...)"` in
+  # Makefile/Dockerfiles/goss/docs trip the curl-auth-user rule, but the
+  # credential is resolved from the secrets mount at runtime — no literal.
+  # Historical revisions used the path without the /run prefix.
+  '''\$\(cat (/run/)?secrets/[A-Za-z0-9_.-]+''',
+  # Make-escaped shell variable (historical Makefile/docs revisions):
+  # the credential is an env var, not a literal.
+  '''\$\$BOOTSTRAP_PW''',
+  # RabbitMQ's well-known default guest account in backup documentation
+  # examples (historical revisions) — public upstream default, not a secret.
+  '''curl -u guest:guest''',
+  # pgcrypto cipher parameter in the encryption-helper migrations: the
+  # generic-api-key rule matches the `encryption_key` argument next to the
+  # quoted cipher spec — a function parameter name, not a value.
+  '''cipher-algo=aes256''',
+  # Shared dummy key of the PHP/Node encryption-service unit tests.
+  '''test-encryption-key-32-bytes-long''',
+]
+paths = [
+  # Historical debug request dump (removed from the tree): its GPG_KEYS field
+  # lists the php-docker images' PUBLIC release-manager key fingerprints.
+  '''devtoolbar-request-.*\.json''',
+]
