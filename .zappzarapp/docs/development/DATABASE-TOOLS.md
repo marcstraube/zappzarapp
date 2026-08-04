@@ -216,7 +216,7 @@ production:
 
 ```bash
 # In production mode, this will fail:
-$ APP_ENV=production make adminer-up
+$ ZAPPZARAPP_ENV=production make adminer-up
 Error: Adminer is only available in development mode
 Set ZAPPZARAPP_ENV=development in .env to enable
 ```

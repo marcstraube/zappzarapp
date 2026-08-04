@@ -142,7 +142,7 @@ ENABLE_DEV_DASHBOARD=false
 The dashboard automatically disables in production unless explicitly enabled:
 
 ```bash
-APP_ENV=production
+ZAPPZARAPP_ENV=production
 ENABLE_DEV_DASHBOARD=false  # Dashboard disabled
 ```
 

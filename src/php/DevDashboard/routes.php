@@ -22,7 +22,7 @@ use Exception;
 require_once __DIR__ . '/helpers.php';
 
 // Only enable dashboard in development or when explicitly enabled
-$isProduction     = (getenv('APP_ENV') ?: 'development') === 'production';
+$isProduction     = (getenv('ZAPPZARAPP_ENV') ?: 'development') === 'production';
 $dashboardEnabled = getenv('ENABLE_DEV_DASHBOARD') !== 'false';
 
 if ($isProduction && !$dashboardEnabled) {

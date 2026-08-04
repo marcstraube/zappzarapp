@@ -27,7 +27,7 @@ final readonly class CorsMiddleware
         if ($this->allowedOrigins === '*') {
             error_log('[CORS WARNING] Wildcard origin (*) configured - credentials disabled for browser compatibility');
 
-            if (getenv('APP_ENV') === 'production') {
+            if (getenv('ZAPPZARAPP_ENV') === 'production') {
                 error_log('[CORS CRITICAL] ⚠️  SECURITY RISK: CORS_ORIGINS=* in production! Set specific origins immediately.');
             }
         }
@@ -56,7 +56,7 @@ final readonly class CorsMiddleware
 
             // Credentials: Always in production, conditional in development
             // Wildcard (*) + credentials = browser rejection, so we disable credentials for wildcard
-            $appEnv = getenv('APP_ENV') ?: 'development';
+            $appEnv = getenv('ZAPPZARAPP_ENV') ?: 'development';
             if ($appEnv === 'production' || $this->allowedOrigins !== '*') {
                 header('Access-Control-Allow-Credentials: true');
             }

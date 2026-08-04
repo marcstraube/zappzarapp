@@ -25,7 +25,7 @@ final class CorsMiddlewareTest extends TestCase
     /** @var array<string, mixed> Original SERVER values to restore */
     private array $originalServer = [];
 
-    /** @var string Original APP_ENV value */
+    /** @var string Original ZAPPZARAPP_ENV value */
     private string $originalAppEnv = '';
 
     /** @var string Original CORS_ORIGINS value */
@@ -35,14 +35,14 @@ final class CorsMiddlewareTest extends TestCase
     {
         parent::setUp();
         $this->originalServer      = $_SERVER;
-        $this->originalAppEnv      = getenv('APP_ENV') ?: '';
+        $this->originalAppEnv      = getenv('ZAPPZARAPP_ENV') ?: '';
         $this->originalCorsOrigins = getenv('CORS_ORIGINS') ?: '';
     }
 
     protected function tearDown(): void
     {
         $_SERVER = $this->originalServer;
-        putenv('APP_ENV=' . $this->originalAppEnv);
+        putenv('ZAPPZARAPP_ENV=' . $this->originalAppEnv);
         putenv('CORS_ORIGINS=' . $this->originalCorsOrigins);
         parent::tearDown();
     }
@@ -272,7 +272,7 @@ final class CorsMiddlewareTest extends TestCase
         $this->assertTrue($result);
     }
 
-    // ===== APP_ENV-dependent credentials logic (verified via return value) =====
+    // ===== ZAPPZARAPP_ENV-dependent credentials logic (verified via return value) =====
     // Note: headers_list() always returns [] in PHP CLI mode; header() calls
     // inside handle() cannot be asserted in PHPUnit. Logic coverage for the
     // credentials / wildcard branches is achieved by verifying the return value
@@ -282,7 +282,7 @@ final class CorsMiddlewareTest extends TestCase
     #[Test]
     public function testHandleReturnsTrueForMatchingOriginInDevelopmentWithSpecificOrigin(): void
     {
-        putenv('APP_ENV=development');
+        putenv('ZAPPZARAPP_ENV=development');
         $middleware                = new CorsMiddleware('https://example.com');
         $_SERVER['REQUEST_METHOD'] = 'GET';
         $_SERVER['HTTP_ORIGIN']    = 'https://example.com';
@@ -297,7 +297,7 @@ final class CorsMiddlewareTest extends TestCase
     #[Test]
     public function testHandleReturnsTrueForMatchingOriginInProduction(): void
     {
-        putenv('APP_ENV=production');
+        putenv('ZAPPZARAPP_ENV=production');
         $middleware                = new CorsMiddleware('https://example.com');
         $_SERVER['REQUEST_METHOD'] = 'GET';
         $_SERVER['HTTP_ORIGIN']    = 'https://example.com';
@@ -311,7 +311,7 @@ final class CorsMiddlewareTest extends TestCase
     #[Test]
     public function testHandleReturnsTrueForWildcardInDevelopment(): void
     {
-        putenv('APP_ENV=development');
+        putenv('ZAPPZARAPP_ENV=development');
         // Wildcard + development: no credentials header, but GET continues
         ini_set('error_log', '/dev/null');
         $middleware = new CorsMiddleware('*');
@@ -329,7 +329,7 @@ final class CorsMiddlewareTest extends TestCase
     #[Test]
     public function testHandleReturnsTrueForWildcardInProduction(): void
     {
-        putenv('APP_ENV=production');
+        putenv('ZAPPZARAPP_ENV=production');
         // Wildcard + production: credentials header emitted, GET continues
         ini_set('error_log', '/dev/null');
         $middleware = new CorsMiddleware('*');

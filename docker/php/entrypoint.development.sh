@@ -39,7 +39,7 @@ if [ "$1" = "php-fpm" ]; then
         echo "[entrypoint.development] WARNING: CORS_ORIGINS is set to wildcard (*)" >&2
         echo "[entrypoint.development] Wildcard origin allows requests from ANY domain (development mode)" >&2
         echo "[entrypoint.development] Credentials header disabled for browser compatibility" >&2
-        if [ "${APP_ENV:-development}" = "production" ]; then
+        if [ "${ZAPPZARAPP_ENV:-development}" = "production" ]; then
             echo "[entrypoint.development] CRITICAL: Wildcard CORS in production environment detected!" >&2
             echo "[entrypoint.development] Fix: Set specific origins in .env.production" >&2
         fi

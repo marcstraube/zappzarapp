@@ -20,10 +20,10 @@ if [ -n "${TZ:-}" ]; then
 fi
 
 # Production Environment Validation
-# Ensure APP_ENV is explicitly set to "production"
-if [ "${APP_ENV:-}" != "production" ]; then
-    echo "[entrypoint] SECURITY WARNING: APP_ENV is not set to 'production'" >&2
-    echo "[entrypoint] Current value: ${APP_ENV:-<not set>}" >&2
+# Ensure ZAPPZARAPP_ENV is explicitly set to "production"
+if [ "${ZAPPZARAPP_ENV:-}" != "production" ]; then
+    echo "[entrypoint] SECURITY WARNING: ZAPPZARAPP_ENV is not set to 'production'" >&2
+    echo "[entrypoint] Current value: ${ZAPPZARAPP_ENV:-<not set>}" >&2
     echo "[entrypoint] This may enable debug features or insecure defaults" >&2
     echo "[entrypoint]" >&2
 fi
