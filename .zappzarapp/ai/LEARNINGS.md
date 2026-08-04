@@ -1285,6 +1285,29 @@ as an explicit decision, not silently changed.
     the `|| echo 0` fallback would have reported every image as "Clean".
     Replaced with a jq-only sum.
 
+### Security-scan findings triage: scanner-config gotchas (2026-08-04)
+
+- **gitleaks allowlist regexes match the extracted SECRET, not the line** —
+  default `regexTarget` is the captured secret token (for curl-auth-user just
+  the password, e.g. `guest`), so line-shaped allowlist patterns silently don't
+  match. Set `regexTarget = "line"` in the allowlist. Also: gitleaks scans
+  COMMIT HISTORY, so allowlists must cover historical revisions of a line (old
+  paths, old variable names), and a shallow CI clone (depth 20) reports fewer
+  findings than a local full-history run.
+- **KSV-0118 means the POD-level securityContext is missing** even when every
+  container has a complete hardened securityContext — fixed chart-wide with a
+  values-driven `podSecurityContext` (seccompProfile RuntimeDefault; postgres
+  carries its fsGroup there now). KSV findings only surface for ENABLED
+  services: the default-values render hid five latent KSV-0014s in the optional
+  stateful services (todo).
+- **trivy image scans via docker socket need the java DB (~700 MB) besides the
+  vuln DB (~100 MB)** — with `--rm` containers, mount a cache dir or every run
+  re-downloads; on this machine /var is chronically tight, so the cache belongs
+  under build/tmp (home volume).
+- **The ignore-policy covers package FAMILIES via startswith** — a new sibling
+  package (jackson-core after jackson-databind) slips past an exact- name list;
+  the jackson family is a prefix rule now, like io.netty.
+
 ### GitLab CI: unquoted `key: value` colon inside a script line = config rejected (2026-08-03)
 
 - `- echo "Repository: $CI_PROJECT_PATH"` in a `script:` list is parsed by YAML
@@ -1302,6 +1325,12 @@ as an explicit decision, not silently changed.
 ---
 
 ## Last Updated
+
+2026-08-04 (added: findings triage — gitleaks allowlist regexTarget
+secret-vs-line + history-aware allowlisting; KSV-0118 = pod-level SC missing →
+chart-wide values-driven podSecurityContext (seccomp RuntimeDefault) + postgres
+readOnlyRootFilesystem flip; trivy java-DB cache placement; ignore-policy
+family-prefix rule for jackson)
 
 2026-08-03 (added: Renovate plain-datasource watcher — composer versioning
 rejects `2.0.6RC1`, ignoreUnstable filters new RCs, timestamp-less releases pend
