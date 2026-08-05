@@ -132,19 +132,17 @@ The PHP DevDashboard's Quality page integrates with these endpoints to provide
 
 ### Environment Variables
 
-**Disable in Production:**
+**Disable in Development:**
 
 ```bash
 # .env
 ENABLE_DEV_DASHBOARD=false
 ```
 
-The dashboard automatically disables in production unless explicitly enabled:
-
-```bash
-ZAPPZARAPP_ENV=production
-ENABLE_DEV_DASHBOARD=false  # Dashboard disabled
-```
+In production the dashboard is never served, independent of this flag:
+`public/index.php` only routes `/_dev` in development, the dashboard routes
+return early when `ZAPPZARAPP_ENV=production`, and `compose.production.yaml`
+pins `ENABLE_DEV_DASHBOARD=false`.
 
 ## Security
 
@@ -160,11 +158,16 @@ The dashboard automatically masks sensitive environment variables:
 
 ### Production Safety
 
+**Layered protection (built in):**
+
+1. `public/index.php` routes `/_dev` only in development
+2. The dashboard routes return early when `ZAPPZARAPP_ENV=production`
+3. `compose.production.yaml` pins `ENABLE_DEV_DASHBOARD=false`
+
 **Recommendations:**
 
-1. Set `ENABLE_DEV_DASHBOARD=false` in production `.env`
-2. Use firewall rules to block `/_dev` routes in production
-3. Never expose development dashboard to public internet
+1. Use firewall rules to block `/_dev` routes in production
+2. Never expose the development dashboard to the public internet
 
 ## Architecture
 

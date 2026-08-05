@@ -21,11 +21,16 @@ use Exception;
 // Load DevDashboard helper functions
 require_once __DIR__ . '/helpers.php';
 
-// Only enable dashboard in development or when explicitly enabled
-$isProduction     = (getenv('ZAPPZARAPP_ENV') ?: 'development') === 'production';
-$dashboardEnabled = getenv('ENABLE_DEV_DASHBOARD') !== 'false';
+// Defense in depth: public/index.php only routes /_dev here in development,
+// and the dashboard's data sources (.git, Node tooling) are dev-only volume
+// mounts - never serve the dashboard in production.
+$isProduction = (getenv('ZAPPZARAPP_ENV') ?: 'development') === 'production';
+if ($isProduction) {
+    return;
+}
 
-if ($isProduction && !$dashboardEnabled) {
+// Development opt-out: ENABLE_DEV_DASHBOARD=false disables the dashboard.
+if (getenv('ENABLE_DEV_DASHBOARD') === 'false') {
     return;
 }
 

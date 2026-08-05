@@ -175,6 +175,9 @@ services:
       # environment gate - without this override the toolbar (a full $_SERVER
       # dump incl. container IPs) renders on production pages (ZAP finding).
       - ENABLE_DEV_TOOLBAR=false
+      # Same hard-off for the DevDashboard (belt to the dev-only routing in
+      # public/index.php and the early return in DevDashboard/routes.php)
+      - ENABLE_DEV_DASHBOARD=false
     logging:
       driver: "json-file"
       options:
