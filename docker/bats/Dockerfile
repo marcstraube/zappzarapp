@@ -18,20 +18,34 @@ RUN apk add --no-cache \
     git \
     make
 
-# Install BATS core (v1.11.1)
-ARG BATS_VERSION=1.11.1
-RUN git clone --depth 1 --branch v${BATS_VERSION} \
-    https://github.com/bats-core/bats-core.git /tmp/bats \
+# Install BATS core, pinned by commit SHA. A shallow fetch of a commit avoids
+# the benign-but-noisy warning git emits when shallow-cloning an annotated tag,
+# and a SHA cannot be moved after the fact (supply-chain pin).
+# BATS_COMMIT is the commit behind tag v1.11.1.
+ARG BATS_COMMIT=b640ec3cf2c7c9cfc9e6351479261186f76eeec8
+RUN git init -q /tmp/bats \
+    && git -C /tmp/bats fetch --depth 1 \
+       https://github.com/bats-core/bats-core.git ${BATS_COMMIT} \
+    && git -C /tmp/bats checkout -q FETCH_HEAD \
     && /tmp/bats/install.sh /usr/local
 
-# Install BATS helper libraries
+# Install BATS helper libraries, pinned by commit SHA (they were previously
+# floating on the default branch; SHAs snapshot that state as of 2026-08-04)
+ARG BATS_SUPPORT_COMMIT=0954abb9925cad550424cebca2b99255d4eabe96
+ARG BATS_ASSERT_COMMIT=697471b7a89d3ab38571f38c6c7c4b460d1f5e35
+ARG BATS_FILE_COMMIT=6bee58bec7c2f4aed1a7425ccd4bdc42b4a84599
 RUN mkdir -p /usr/local/lib/bats \
-    && git clone --depth 1 https://github.com/bats-core/bats-support.git \
-       /usr/local/lib/bats/bats-support \
-    && git clone --depth 1 https://github.com/bats-core/bats-assert.git \
-       /usr/local/lib/bats/bats-assert \
-    && git clone --depth 1 https://github.com/bats-core/bats-file.git \
-       /usr/local/lib/bats/bats-file
+    && for lib in \
+       "bats-support ${BATS_SUPPORT_COMMIT}" \
+       "bats-assert ${BATS_ASSERT_COMMIT}" \
+       "bats-file ${BATS_FILE_COMMIT}"; do \
+       set -- $lib; \
+       git init -q "/usr/local/lib/bats/$1" \
+       && git -C "/usr/local/lib/bats/$1" fetch --depth 1 \
+          "https://github.com/bats-core/$1.git" "$2" \
+       && git -C "/usr/local/lib/bats/$1" checkout -q FETCH_HEAD \
+       || exit 1; \
+    done
 
 # Final runtime image
 FROM alpine:${ALPINE_VERSION} AS runtime
