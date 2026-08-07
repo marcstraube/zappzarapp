@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Infrastructure;
 
 use InvalidArgumentException;
-use PDO;
+use Pdo\Mysql;
 use RuntimeException;
 
 /**
@@ -153,8 +153,8 @@ final class DatabaseConfig implements DatabaseConfigInterface
         }
 
         return [
-            PDO::MYSQL_ATTR_SSL_CA                 => $this->sslCa,
-            PDO::MYSQL_ATTR_SSL_VERIFY_SERVER_CERT => $this->sslVerify,
+            Mysql::ATTR_SSL_CA                 => $this->sslCa,
+            Mysql::ATTR_SSL_VERIFY_SERVER_CERT => $this->sslVerify,
         ];
     }
 

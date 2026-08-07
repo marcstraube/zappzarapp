@@ -152,37 +152,33 @@ class MercurePublisher implements MercureInterface
             return ['status' => 0, 'body' => '', 'error' => 'Failed to initialize cURL'];
         }
 
-        try {
-            curl_setopt($curl, CURLOPT_URL, $url);
-            curl_setopt($curl, CURLOPT_CUSTOMREQUEST, $method);
-            curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
-            curl_setopt($curl, CURLOPT_TIMEOUT, self::REQUEST_TIMEOUT);
-            curl_setopt($curl, CURLOPT_CONNECTTIMEOUT, self::CONNECT_TIMEOUT);
+        curl_setopt($curl, CURLOPT_URL, $url);
+        curl_setopt($curl, CURLOPT_CUSTOMREQUEST, $method);
+        curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($curl, CURLOPT_TIMEOUT, self::REQUEST_TIMEOUT);
+        curl_setopt($curl, CURLOPT_CONNECTTIMEOUT, self::CONNECT_TIMEOUT);
 
-            if ($body !== null) {
-                curl_setopt($curl, CURLOPT_POSTFIELDS, $body);
-            }
-
-            if ($headers !== []) {
-                curl_setopt($curl, CURLOPT_HTTPHEADER, $headers);
-            }
-
-            $this->configureTls($curl);
-
-            $responseBody = curl_exec($curl);
-
-            if ($responseBody === false) {
-                return ['status' => 0, 'body' => '', 'error' => curl_error($curl) ?: 'Unknown cURL error'];
-            }
-
-            return [
-                'status' => curl_getinfo($curl, CURLINFO_HTTP_CODE),
-                'body'   => is_string($responseBody) ? $responseBody : '',
-                'error'  => null,
-            ];
-        } finally {
-            curl_close($curl);
+        if ($body !== null) {
+            curl_setopt($curl, CURLOPT_POSTFIELDS, $body);
         }
+
+        if ($headers !== []) {
+            curl_setopt($curl, CURLOPT_HTTPHEADER, $headers);
+        }
+
+        $this->configureTls($curl);
+
+        $responseBody = curl_exec($curl);
+
+        if ($responseBody === false) {
+            return ['status' => 0, 'body' => '', 'error' => curl_error($curl) ?: 'Unknown cURL error'];
+        }
+
+        return [
+            'status' => curl_getinfo($curl, CURLINFO_HTTP_CODE),
+            'body'   => is_string($responseBody) ? $responseBody : '',
+            'error'  => null,
+        ];
     }
 
     /**

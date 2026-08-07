@@ -782,14 +782,4 @@ final class S3Storage implements StorageInterface
 
         return $this->curlHandle;
     }
-
-    /**
-     * Clean up cURL handle on destruction
-     */
-    public function __destruct()
-    {
-        if ($this->curlHandle instanceof CurlHandle) {
-            curl_close($this->curlHandle);
-        }
-    }
 }

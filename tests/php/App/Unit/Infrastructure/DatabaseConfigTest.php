@@ -6,7 +6,7 @@ namespace Tests\App\Unit\Infrastructure;
 
 use App\Infrastructure\DatabaseConfig;
 use InvalidArgumentException;
-use PDO;
+use Pdo\Mysql;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\RunInSeparateProcess;
@@ -442,10 +442,10 @@ final class DatabaseConfigTest extends TestCase
 
         $options = $config->getPdoSslOptions();
 
-        $this->assertArrayHasKey(PDO::MYSQL_ATTR_SSL_CA, $options);
-        $this->assertArrayHasKey(PDO::MYSQL_ATTR_SSL_VERIFY_SERVER_CERT, $options);
-        $this->assertEquals(__FILE__, $options[PDO::MYSQL_ATTR_SSL_CA]);
-        $this->assertFalse($options[PDO::MYSQL_ATTR_SSL_VERIFY_SERVER_CERT]);
+        $this->assertArrayHasKey(Mysql::ATTR_SSL_CA, $options);
+        $this->assertArrayHasKey(Mysql::ATTR_SSL_VERIFY_SERVER_CERT, $options);
+        $this->assertEquals(__FILE__, $options[Mysql::ATTR_SSL_CA]);
+        $this->assertFalse($options[Mysql::ATTR_SSL_VERIFY_SERVER_CERT]);
     }
 
     #[RunInSeparateProcess]
