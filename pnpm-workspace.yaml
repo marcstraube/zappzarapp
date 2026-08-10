@@ -21,13 +21,10 @@ overrides:
   'js-yaml@>=4.0.0 <4.3.1': '>=4.3.1 <5.0.0'
   'js-yaml@>=5.0.0 <5.2.2': '>=5.2.2'
   'fast-uri@>=3.0.0 <3.1.5': '>=3.1.5'
-
-# `pnpm audit` exceptions (documented in
-# .zappzarapp/docs/security/KNOWN-VULNERABILITIES.md). pnpm 11 reads
-# `auditConfig` from here (not from package.json's `pnpm` key).
-auditConfig:
-  ignoreGhsas:
-    - GHSA-mh99-v99m-4gvg
+  'brace-expansion@<1.1.17': '>=1.1.17 <2.0.0'
+  'brace-expansion@>=2.0.0 <2.1.3': '>=2.1.3 <3.0.0'
+  'brace-expansion@>=3.0.0 <3.0.3': '>=3.0.3 <4.0.0'
+  'brace-expansion@>=5.0.0 <5.0.8': '>=5.0.8'
 
 # Build-script approvals. pnpm blocks dependency build scripts by default and
 # pnpm 11 hard-fails (ERR_PNPM_IGNORED_BUILDS) on unapproved ones. pnpm 11

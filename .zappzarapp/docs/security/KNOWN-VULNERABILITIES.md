@@ -28,7 +28,7 @@ been reviewed and accepted as low risk. Each entry includes:
 | Type     | Denial of Service (unbounded expansion length, out-of-memory crash) |
 | Severity | **HIGH** (CVSS 7.5)                                                 |
 | Affected | All versions ≤5.0.7 (every major line)                              |
-| Patched  | 5.0.8 only - no per-major backports available yet                   |
+| Patched  | 1.1.17 (1.x) / 2.1.3 (2.x) / 3.0.3 (3.x) / 5.0.8 (5.x)              |
 
 **Vulnerability Details:**
 
@@ -45,38 +45,30 @@ excessive memory allocation and an out-of-memory process crash.
 |                | processes local repository configuration                  |
 | CVSS Score     | 7.5 (High) - context-adjusted to low                      |
 
-#### Decision: ACCEPTED (temporary)
+#### Decision: RESOLVED
 
-Justification:
+Per-major backports were released (2026-08-10). The temporary audit exception
+has been replaced with per-major override floors in `pnpm-workspace.yaml`:
 
-1. **Development-only**: brace-expansion is reached only through depcheck, a
-   `devDependency` that never ships to production
-2. **No safe fix**: the only patched release is 5.0.8; forcing 1.x consumers
-   onto 5.x via a pnpm override would cross semver majors - such an override is
-   a compatibility rewrite, not a security floor (one floor per major line is
-   the project rule)
-3. **No untrusted input**: depcheck expands globs from local project
-   configuration, not from external sources
-4. **Backports expected**: the previous brace-expansion advisory
-   (GHSA-v6h2-p8h4-qcjw) received per-major backports (1.1.12, 2.0.2, 3.0.1,
-   4.0.1) after initial publication
+```yaml
+'brace-expansion@<1.1.17': '>=1.1.17 <2.0.0'
+'brace-expansion@>=2.0.0 <2.1.3': '>=2.1.3 <3.0.0'
+'brace-expansion@>=3.0.0 <3.0.3': '>=3.0.3 <4.0.0'
+'brace-expansion@>=5.0.0 <5.0.8': '>=5.0.8'
+```
+
+Note: no 4.x backport was released; the advisory skips from 3.0.3 to 5.0.8.
 
 **Mitigation:**
 
-- Ignored via `auditConfig.ignoreGhsas` in `pnpm-workspace.yaml` (pnpm 11 no
-  longer reads the `pnpm` field from `package.json`)
+- Override floors enforce the patched minimum within each major line
+- `GHSA-mh99-v99m-4gvg` removed from `auditConfig.ignoreGhsas`
 - depcheck runs only in trusted development and CI environments
-
-**Monitoring:**
-
-- Advisory page: <https://github.com/advisories/GHSA-mh99-v99m-4gvg>
-- When per-major backports appear: remove `GHSA-mh99-v99m-4gvg` from
-  `ignoreGhsas` (now in `pnpm-workspace.yaml`) and add per-major override floors
-  instead
 
 | Review Date | Reviewer     | Status                                    |
 | ----------- | ------------ | ----------------------------------------- |
 | 2026-07-25  | Claude Agent | Accepted (temporary) - awaiting backports |
+| 2026-08-10  | Claude Agent | Resolved - backports landed, floors added |
 
 ---
 
