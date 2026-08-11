@@ -59,16 +59,17 @@ spec:
               value: "1"
             - name: WEED_MASTER_VOLUME_GROWTH_COPY_OTHER
               value: "1"
+          # weed server has no plain /status endpoint (that path is routed to
+          # the volume server and returns 404), so probe the ports over TCP:
+          # the master accepts connections once up, the S3 API once serving.
           livenessProbe:
-            httpGet:
-              path: /status
+            tcpSocket:
               port: master
             initialDelaySeconds: 30
             periodSeconds: 10
           readinessProbe:
-            httpGet:
-              path: /status
-              port: master
+            tcpSocket:
+              port: s3
             initialDelaySeconds: 10
             periodSeconds: 5
           resources:
@@ -84,11 +85,15 @@ spec:
           volumeMounts:
             - name: data
               mountPath: /data
+            - name: tmp
+              mountPath: /tmp
             - name: seaweedfs-config
               mountPath: /run/secrets/s3_config.json
               subPath: s3_config.json
               readOnly: true
       volumes:
+        - name: tmp
+          emptyDir: {}
         - name: seaweedfs-config
           secret:
             secretName: {{ .Values.secrets.existingSecrets.seaweedfsAccessKey | default (printf "%s-seaweedfs-credentials" (include "zappzarapp.fullname" .)) }}

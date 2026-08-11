@@ -22,6 +22,25 @@ spec:
     spec:
       securityContext:
         {{- toYaml .Values.elasticsearch.podSecurityContext | nindent 8 }}
+      {{- if .Values.elasticsearch.securityContext.readOnlyRootFilesystem }}
+      # With a read-only root filesystem Elasticsearch cannot write the keystore
+      # into its baked-in config directory. Seed a writable emptyDir from the
+      # image config so the main container can mount it over config/.
+      initContainers:
+        - name: copy-config
+          image: "{{ include "zappzarapp.imageRepository" (dict "global" .Values.global "image" .Values.elasticsearch.image) }}:{{ include "zappzarapp.imageTag" (dict "global" .Values.global "image" .Values.elasticsearch.image "appVersion" .Chart.AppVersion) }}"
+          imagePullPolicy: {{ .Values.global.imagePullPolicy }}
+          command: ["sh", "-c", "cp -r /usr/share/elasticsearch/config/. /mnt/config/"]
+          securityContext:
+            readOnlyRootFilesystem: true
+            runAsNonRoot: {{ .Values.elasticsearch.securityContext.runAsNonRoot }}
+            capabilities:
+              drop:
+                {{- toYaml .Values.elasticsearch.securityContext.capabilities.drop | nindent 16 }}
+          volumeMounts:
+            - name: config
+              mountPath: /mnt/config
+      {{- end }}
       containers:
         - name: elasticsearch
           image: "{{ include "zappzarapp.imageRepository" (dict "global" .Values.global "image" .Values.elasticsearch.image) }}:{{ include "zappzarapp.imageTag" (dict "global" .Values.global "image" .Values.elasticsearch.image "appVersion" .Chart.AppVersion) }}"
@@ -65,10 +84,28 @@ spec:
           volumeMounts:
             - name: data
               mountPath: /usr/share/elasticsearch/data
-      {{- if not .Values.elasticsearch.persistence.enabled }}
+            {{- if .Values.elasticsearch.securityContext.readOnlyRootFilesystem }}
+            - name: config
+              mountPath: /usr/share/elasticsearch/config
+            - name: logs
+              mountPath: /usr/share/elasticsearch/logs
+            - name: tmp
+              mountPath: /tmp
+            {{- end }}
+      {{- if or .Values.elasticsearch.securityContext.readOnlyRootFilesystem (not .Values.elasticsearch.persistence.enabled) }}
       volumes:
+        {{- if .Values.elasticsearch.securityContext.readOnlyRootFilesystem }}
+        - name: config
+          emptyDir: {}
+        - name: logs
+          emptyDir: {}
+        - name: tmp
+          emptyDir: {}
+        {{- end }}
+        {{- if not .Values.elasticsearch.persistence.enabled }}
         - name: data
           emptyDir: {}
+        {{- end }}
       {{- end }}
   {{- if .Values.elasticsearch.persistence.enabled }}
   volumeClaimTemplates:

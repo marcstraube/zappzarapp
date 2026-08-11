@@ -233,6 +233,10 @@ mariadb:
     seccompProfile:
       type: RuntimeDefault
   securityContext:
+    # readOnlyRootFilesystem stays false: MariaDB's data-dir init creates
+    # mode-0700 system directories that the non-root mysql user cannot
+    # traverse under a read-only root fs (fsGroup does not help mode 0700).
+    # Making this read-only needs an ownership init-container - see todo.
     readOnlyRootFilesystem: false
     runAsNonRoot: false
     capabilities:
@@ -331,7 +335,7 @@ meilisearch:
     seccompProfile:
       type: RuntimeDefault
   securityContext:
-    readOnlyRootFilesystem: false
+    readOnlyRootFilesystem: true
     runAsNonRoot: false  # upstream image runs as root
     capabilities:
       drop:
@@ -362,7 +366,7 @@ elasticsearch:
     seccompProfile:
       type: RuntimeDefault
   securityContext:
-    readOnlyRootFilesystem: false
+    readOnlyRootFilesystem: true
     runAsNonRoot: true  # Dockerfile sets USER 1000:0
     capabilities:
       drop:
@@ -396,7 +400,7 @@ seaweedfs:
     seccompProfile:
       type: RuntimeDefault
   securityContext:
-    readOnlyRootFilesystem: false
+    readOnlyRootFilesystem: true
     runAsNonRoot: false  # entrypoint starts as root, drops via su-exec
     capabilities:
       drop:
@@ -430,8 +434,12 @@ rabbitmq:
     seccompProfile:
       type: RuntimeDefault
   securityContext:
+    # readOnlyRootFilesystem stays false: the image ships a broken contract
+    # in this chart (deprecated RABBITMQ_DEFAULT_USER_FILE/PASS_FILE env vars
+    # that the current image rejects), so rabbitmq never starts here - a
+    # prerequisite bug to fix before read-only can be validated. See todo.
     readOnlyRootFilesystem: false
-    runAsNonRoot: false  # upstream image runs as root
+    runAsNonRoot: false  # upstream image runs as root, drops to rabbitmq
     capabilities:
       drop:
         - ALL
