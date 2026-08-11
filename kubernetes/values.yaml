@@ -432,13 +432,15 @@ rabbitmq:
   podSecurityContext:
     seccompProfile:
       type: RuntimeDefault
+    # Run directly as the rabbitmq user (uid 999): the official entrypoint
+    # then skips its root-only chown/su-exec phase, so no capabilities are
+    # needed. fsGroup keeps the data volume writable for the Erlang VM.
+    runAsUser: 999
+    runAsGroup: 999
+    fsGroup: 999
   securityContext:
-    # readOnlyRootFilesystem stays false: the image ships a broken contract
-    # in this chart (deprecated RABBITMQ_DEFAULT_USER_FILE/PASS_FILE env vars
-    # that the current image rejects), so rabbitmq never starts here - a
-    # prerequisite bug to fix before read-only can be validated. See todo.
-    readOnlyRootFilesystem: false
-    runAsNonRoot: false  # upstream image runs as root, drops to rabbitmq
+    readOnlyRootFilesystem: true
+    runAsNonRoot: true  # pod runs as the rabbitmq user (uid 999)
     capabilities:
       drop:
         - ALL

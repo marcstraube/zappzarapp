@@ -33,11 +33,6 @@ spec:
             - name: management
               containerPort: 15672
               protocol: TCP
-          env:
-            - name: RABBITMQ_DEFAULT_USER_FILE
-              value: /run/secrets/rabbitmq_user
-            - name: RABBITMQ_DEFAULT_PASS_FILE
-              value: /run/secrets/rabbitmq_password
           livenessProbe:
             exec:
               command:
@@ -67,6 +62,11 @@ spec:
           volumeMounts:
             - name: data
               mountPath: /var/lib/rabbitmq
+            - name: tmp
+              mountPath: /tmp
+            # The image entrypoint reads these files and exports
+            # RABBITMQ_DEFAULT_USER / RABBITMQ_DEFAULT_PASS for the server
+            # (the *_FILE env variants are rejected by RabbitMQ 4.x images).
             - name: rabbitmq-credentials
               mountPath: /run/secrets/rabbitmq_user
               subPath: rabbitmq_user
@@ -76,6 +76,9 @@ spec:
               subPath: rabbitmq_password
               readOnly: true
       volumes:
+        - name: tmp
+          emptyDir:
+            sizeLimit: 256Mi
         - name: rabbitmq-credentials
           secret:
             secretName: {{ .Values.secrets.existingSecrets.rabbitmqUser | default (printf "%s-rabbitmq-credentials" (include "zappzarapp.fullname" .)) }}
