@@ -20,8 +20,8 @@ spec:
         {{- include "zappzarapp.selectorLabels" . | nindent 8 }}
         app.kubernetes.io/component: postgres
     spec:
-      # fsGroup (in values) keeps the data volume writable by the postgres
-      # group; the container starts as root, the entrypoint switches user
+      # runAsUser/fsGroup (in values) run the whole pod as the postgres
+      # user and keep the data volume writable for it
       securityContext:
         {{- toYaml .Values.postgres.podSecurityContext | nindent 8 }}
       containers:

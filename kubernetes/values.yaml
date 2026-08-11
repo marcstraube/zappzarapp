@@ -187,9 +187,13 @@ postgres:
   service:
     type: ClusterIP
     port: 5432
-  # fsGroup 70 keeps the data volume writable by the postgres group (the
-  # container starts as root, the entrypoint switches to postgres)
+  # Run directly as the postgres user (uid 70): the official entrypoint then
+  # skips its root-only chown/gosu phase, so no capabilities are needed.
+  # fsGroup keeps the data volume writable by the postgres group; the
+  # entrypoint creates the PGDATA subdirectory inside it as uid 70.
   podSecurityContext:
+    runAsUser: 70
+    runAsGroup: 70
     fsGroup: 70
     seccompProfile:
       type: RuntimeDefault
@@ -198,15 +202,11 @@ postgres:
     # data volume for PGDATA — everything postgres writes — so the root
     # filesystem itself can be immutable.
     readOnlyRootFilesystem: true
-    runAsNonRoot: false
+    runAsNonRoot: true  # pod runs as the postgres user (uid 70)
     capabilities:
       drop:
         - ALL
-      add:
-        - CHOWN
-        - SETUID
-        - SETGID
-        - FOWNER
+      add: []
 
 mariadb:
   enabled: false

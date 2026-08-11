@@ -91,8 +91,15 @@ if [ -d "$PGDATA" ] && [ -f "$PGDATA/PG_VERSION" ]; then
         for _ in $(seq 1 60); do
             if pg_isready -U "${POSTGRES_USER:-app}" -q 2>/dev/null; then
                 echo "[entrypoint] PostgreSQL ready, running initialization..."
-                # Run as postgres user using gosu
-                gosu postgres /docker-entrypoint-initdb.d/10-init-db.sh || true
+                # Run as the postgres user: gosu needs root privileges, so it
+                # only applies on the root startup path; an unprivileged
+                # container already runs as postgres and calls the script
+                # directly.
+                if [ "$(id -u)" = "0" ]; then
+                    gosu postgres /docker-entrypoint-initdb.d/10-init-db.sh || true
+                else
+                    /docker-entrypoint-initdb.d/10-init-db.sh || true
+                fi
                 break
             fi
             sleep 1
