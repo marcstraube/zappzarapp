@@ -91,8 +91,10 @@ data:
     {{- end }}
 
     server {
-        listen 80;
-        listen [::]:80;
+        # Unprivileged port: the container runs as the nginx user (uid 101),
+        # which cannot bind ports below 1024. TLS terminates at the Ingress.
+        listen 8080;
+        listen [::]:8080;
         server_name _;
 
         root /var/www/html/public;

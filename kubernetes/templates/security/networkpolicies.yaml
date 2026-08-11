@@ -25,9 +25,7 @@ spec:
     - from: []  # Allow from anywhere (Ingress controller)
       ports:
         - protocol: TCP
-          port: 80
-        - protocol: TCP
-          port: 443
+          port: 8080
   egress:
     {{- if .Values.php.enabled }}
     - to:

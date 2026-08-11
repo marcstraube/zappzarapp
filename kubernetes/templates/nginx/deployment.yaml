@@ -25,12 +25,17 @@ spec:
         - name: nginx
           image: "{{ include "zappzarapp.imageRepository" (dict "global" .Values.global "image" .Values.nginx.image) }}:{{ include "zappzarapp.imageTag" (dict "global" .Values.global "image" .Values.nginx.image "appVersion" .Chart.AppVersion) }}"
           imagePullPolicy: {{ .Values.global.imagePullPolicy }}
+          # Start nginx directly instead of the image entrypoint: the chart
+          # supplies the complete nginx configuration via ConfigMap (nginx.conf
+          # + default.conf), while the entrypoint renders Compose-oriented
+          # artifacts (SSL config from templates, health-check snippets) into
+          # /run and enforces the Compose production TLS policy. In Kubernetes
+          # TLS terminates at the Ingress, so none of that applies here.
+          command: ["nginx"]
+          args: ["-g", "daemon off;"]
           ports:
             - name: http
-              containerPort: 80
-              protocol: TCP
-            - name: https
-              containerPort: 443
+              containerPort: 8080
               protocol: TCP
           envFrom:
             - configMapRef:

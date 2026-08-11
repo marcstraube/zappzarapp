@@ -52,23 +52,22 @@ nginx:
   service:
     type: ClusterIP
     port: 80
-    httpsPort: 443
   # Pod-level context: RuntimeDefault seccomp = the runtime's standard syscall
-  # filter (Pod Security Standard "restricted" expects it on every pod)
+  # filter (Pod Security Standard "restricted" expects it on every pod).
+  # Numeric runAsUser/runAsGroup: the image's `USER nginx` is symbolic, and
+  # the kubelet can only verify runAsNonRoot against a numeric UID.
   podSecurityContext:
+    runAsUser: 101
+    runAsGroup: 101
     seccompProfile:
       type: RuntimeDefault
   securityContext:
     readOnlyRootFilesystem: true
-    runAsNonRoot: false  # nginx needs root for initial setup
+    runAsNonRoot: true  # production image runs as the nginx user (uid 101)
     capabilities:
       drop:
         - ALL
-      add:
-        - DAC_READ_SEARCH
-        - CHOWN
-        - SETUID
-        - SETGID
+      add: []
 
 php:
   enabled: true
