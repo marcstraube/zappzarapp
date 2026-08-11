@@ -85,19 +85,20 @@ php:
   service:
     type: ClusterIP
     port: 9000
+  # Numeric runAsUser/runAsGroup: the image's `USER www-data` is symbolic,
+  # and the kubelet can only verify runAsNonRoot against a numeric UID.
   podSecurityContext:
+    runAsUser: 82
+    runAsGroup: 82
     seccompProfile:
       type: RuntimeDefault
   securityContext:
     readOnlyRootFilesystem: true
-    runAsNonRoot: false  # needs root for secrets copying
+    runAsNonRoot: true  # production image runs as the www-data user (uid 82)
     capabilities:
       drop:
         - ALL
-      add:
-        - CHOWN
-        - SETUID
-        - SETGID
+      add: []
 
 # Node Frontend (Nuxt/Next.js/Remix) - Only for framework/framework-api modes
 node:
@@ -119,18 +120,20 @@ node:
   service:
     type: ClusterIP
     port: 3001  # Frontend frameworks run on 3001
+  # Numeric runAsUser/runAsGroup: the image's `USER node` is symbolic, and
+  # the kubelet can only verify runAsNonRoot against a numeric UID.
   podSecurityContext:
+    runAsUser: 50000
+    runAsGroup: 50000
     seccompProfile:
       type: RuntimeDefault
   securityContext:
     readOnlyRootFilesystem: true
-    runAsNonRoot: false  # needs root for secrets copying, then drops to node
+    runAsNonRoot: true  # production image runs as the node user (uid 50000)
     capabilities:
       drop:
         - ALL
-      add:
-        - SETUID    # required for su-exec to switch user
-        - SETGID    # required for su-exec to switch groups
+      add: []
 
 # Node Backend (Express API) - For api, assets-api, framework-api modes
 nodeBackend:
@@ -150,18 +153,20 @@ nodeBackend:
   service:
     type: ClusterIP
     port: 3000  # Express API runs on 3000
+  # Numeric runAsUser/runAsGroup: the image's `USER node` is symbolic, and
+  # the kubelet can only verify runAsNonRoot against a numeric UID.
   podSecurityContext:
+    runAsUser: 50000
+    runAsGroup: 50000
     seccompProfile:
       type: RuntimeDefault
   securityContext:
     readOnlyRootFilesystem: true
-    runAsNonRoot: false  # needs root for secrets copying, then drops to node
+    runAsNonRoot: true  # production image runs as the node user (uid 50000)
     capabilities:
       drop:
         - ALL
-      add:
-        - SETUID    # required for su-exec to switch user
-        - SETGID    # required for su-exec to switch groups
+      add: []
 
 # ============================================================================
 # DATABASE SERVICES
@@ -269,18 +274,22 @@ redis:
   service:
     type: ClusterIP
     port: 6379
+  # The image entrypoint execs redis-server directly, so the pod can run as
+  # the redis user (uid 999) with no capabilities. fsGroup keeps the data
+  # volume writable.
   podSecurityContext:
+    runAsUser: 999
+    runAsGroup: 999
+    fsGroup: 999
     seccompProfile:
       type: RuntimeDefault
   securityContext:
     readOnlyRootFilesystem: true
-    runAsNonRoot: false
+    runAsNonRoot: true  # pod runs as the redis user (uid 999)
     capabilities:
       drop:
         - ALL
-      add:
-        - SETUID
-        - SETGID
+      add: []
 
 # ============================================================================
 # OPTIONAL SERVICES
@@ -302,12 +311,18 @@ mercure:
   service:
     type: ClusterIP
     port: 80
+  # Caddy binds the unprivileged port 8080 (SERVER_NAME in the Deployment)
+  # and writes only to its emptyDir-mounted /data and /config, so the pod
+  # can run as an arbitrary non-root uid.
   podSecurityContext:
+    runAsUser: 1000
+    runAsGroup: 1000
+    fsGroup: 1000
     seccompProfile:
       type: RuntimeDefault
   securityContext:
     readOnlyRootFilesystem: true
-    runAsNonRoot: false  # upstream image runs caddy as root
+    runAsNonRoot: true  # pod runs as uid 1000
     capabilities:
       drop:
         - ALL
@@ -333,12 +348,17 @@ meilisearch:
   service:
     type: ClusterIP
     port: 7700
+  # meilisearch writes only to /meili_data; fsGroup keeps the data volume
+  # writable, so the pod can run as an arbitrary non-root uid.
   podSecurityContext:
+    runAsUser: 1000
+    runAsGroup: 1000
+    fsGroup: 1000
     seccompProfile:
       type: RuntimeDefault
   securityContext:
     readOnlyRootFilesystem: true
-    runAsNonRoot: false  # upstream image runs as root
+    runAsNonRoot: true  # pod runs as uid 1000
     capabilities:
       drop:
         - ALL
@@ -398,18 +418,22 @@ seaweedfs:
     masterPort: 9333
     volumePort: 8080
     filerPort: 8888
+  # The StatefulSet execs weed directly with the secret-mounted S3 config
+  # (not the image entrypoint), so the pod can run as the seaweedfs user
+  # (uid 1000) with no capabilities. fsGroup keeps the data volume writable.
   podSecurityContext:
+    runAsUser: 1000
+    runAsGroup: 1000
+    fsGroup: 1000
     seccompProfile:
       type: RuntimeDefault
   securityContext:
     readOnlyRootFilesystem: true
-    runAsNonRoot: false  # entrypoint starts as root, drops via su-exec
+    runAsNonRoot: true  # pod runs as the seaweedfs user (uid 1000)
     capabilities:
       drop:
         - ALL
-      add:
-        - SETUID    # required for su-exec to switch user
-        - SETGID    # required for su-exec to switch groups
+      add: []
 
 rabbitmq:
   enabled: false
@@ -467,12 +491,16 @@ mailpit:
     type: ClusterIP
     smtpPort: 1025
     webPort: 8025
+  # mailpit listens on unprivileged ports (1025/8025) and keeps its message
+  # store in memory, so the pod can run as an arbitrary non-root uid.
   podSecurityContext:
+    runAsUser: 1000
+    runAsGroup: 1000
     seccompProfile:
       type: RuntimeDefault
   securityContext:
     readOnlyRootFilesystem: true
-    runAsNonRoot: false  # upstream image runs as root
+    runAsNonRoot: true  # pod runs as uid 1000
     capabilities:
       drop:
         - ALL

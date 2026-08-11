@@ -27,7 +27,9 @@ spec:
           imagePullPolicy: {{ .Values.global.imagePullPolicy }}
           ports:
             - name: http
-              containerPort: 80
+              # Unprivileged port: the pod runs as a non-root user, which
+              # cannot bind ports below 1024
+              containerPort: 8080
               protocol: TCP
           env:
             - name: MERCURE_PUBLISHER_JWT_KEY
@@ -41,7 +43,7 @@ spec:
                   name: {{ .Values.secrets.existingSecrets.mercureJwtSecret | default (printf "%s-mercure-jwt" (include "zappzarapp.fullname" .)) }}
                   key: mercure_jwt_secret
             - name: SERVER_NAME
-              value: ":80"
+              value: ":8080"
           livenessProbe:
             httpGet:
               path: /healthz
@@ -67,8 +69,21 @@ spec:
           volumeMounts:
             - name: tmp
               mountPath: /tmp
+            # Caddy state directories (XDG_DATA_HOME / XDG_CONFIG_HOME in the
+            # image): Caddy persists its autosave config and runtime state
+            # there, which the read-only root filesystem would reject
+            - name: caddy-data
+              mountPath: /data
+            - name: caddy-config
+              mountPath: /config
       volumes:
         - name: tmp
           emptyDir:
             sizeLimit: 64Mi
+        - name: caddy-data
+          emptyDir:
+            sizeLimit: 64Mi
+        - name: caddy-config
+          emptyDir:
+            sizeLimit: 16Mi
 {{- end }}
