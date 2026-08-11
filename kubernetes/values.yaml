@@ -228,23 +228,26 @@ mariadb:
   service:
     type: ClusterIP
     port: 3306
+  # Run directly as the mysql user (uid 999): the official entrypoint then
+  # skips its root-only chown/gosu phase, so no capabilities are needed, and
+  # the data-dir init creates its mode-0700 system directories owned by the
+  # user that later traverses them. fsGroup keeps the data volume writable.
   podSecurityContext:
+    runAsUser: 999
+    runAsGroup: 999
+    fsGroup: 999
     seccompProfile:
       type: RuntimeDefault
   securityContext:
-    # readOnlyRootFilesystem stays false: MariaDB's data-dir init creates
-    # mode-0700 system directories that the non-root mysql user cannot
-    # traverse under a read-only root fs (fsGroup does not help mode 0700).
-    # Making this read-only needs an ownership init-container - see todo.
-    readOnlyRootFilesystem: false
-    runAsNonRoot: false
+    # The StatefulSet mounts emptyDirs for /tmp and /var/run/mysqld and the
+    # data volume for /var/lib/mysql — everything mariadb writes — so the
+    # root filesystem itself can be immutable.
+    readOnlyRootFilesystem: true
+    runAsNonRoot: true  # pod runs as the mysql user (uid 999)
     capabilities:
       drop:
         - ALL
-      add:
-        - CHOWN
-        - SETUID
-        - SETGID
+      add: []
 
 redis:
   enabled: true
