@@ -46,6 +46,9 @@ data:
   {{- if .Values.node.enabled }}
   NODE_MODE: {{ .Values.node.mode | quote }}
   NODE_PORT: {{ .Values.config.node.frontendPort | quote }}
+  # The backend's readiness check probes the frontend through its Service
+  NODE_FRONTEND_HOST: {{ printf "%s-node" (include "zappzarapp.fullname" .) | quote }}
+  NODE_FRONTEND_PORT: {{ .Values.config.node.frontendPort | quote }}
   {{- end }}
 
   # Optional services URLs (only if enabled)

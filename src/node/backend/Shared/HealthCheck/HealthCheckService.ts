@@ -95,6 +95,8 @@ interface HealthCheckConfig {
   enableRabbitmq: boolean;
   enableSeaweedfs: boolean;
   enableNodeFrontend: boolean;
+  nodeFrontendHost: string;
+  nodeFrontendPort: number;
   nodeMode: string;
   environment: string;
   redisUrl: string;
@@ -174,6 +176,10 @@ function loadConfig(): HealthCheckConfig {
     enableRabbitmq: parseBool(process.env.ENABLE_RABBITMQ, false),
     enableSeaweedfs: parseBool(process.env.ENABLE_SEAWEEDFS, false),
     enableNodeFrontend,
+    // The frontend hostname differs per orchestrator (Compose service name
+    // vs. the release-prefixed Kubernetes Service), so it must be injectable
+    nodeFrontendHost: getEnv('NODE_FRONTEND_HOST', 'node'),
+    nodeFrontendPort: Number(getEnv('NODE_FRONTEND_PORT', '3001')),
     nodeMode,
     environment: getEnv('NODE_ENV', 'production'),
     redisUrl: getEnv('REDIS_URL', 'redis://redis:6379'),
@@ -636,8 +642,8 @@ export class HealthCheckService {
         return new Promise<void>((resolve, reject) => {
           // Use HTTPS for internal TLS
           const options = {
-            hostname: 'node',
-            port: 3001,
+            hostname: this.config.nodeFrontendHost,
+            port: this.config.nodeFrontendPort,
             path: '/',
             method: 'HEAD',
             timeout: HTTP_TIMEOUT_MS,
