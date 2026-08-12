@@ -33,16 +33,22 @@ spec:
             - configMapRef:
                 name: {{ include "zappzarapp.fullname" . }}-config
           env:
+            - name: PORT
+              value: {{ .Values.config.node.backendPort | quote }}
             - name: DB_PASSWORD_FILE
               value: /run/secrets/db_password
             - name: ENCRYPTION_KEY_FILE
               value: /run/secrets/encryption_key
             - name: BACKUP_ENCRYPTION_KEY_FILE
               value: /run/secrets/backup_encryption_key
+          # The backend serves HTTPS only (TLS certificates below), so the
+          # probes must speak it; certificate verification is skipped for
+          # self-signed internal certificates by the kubelet.
           livenessProbe:
             httpGet:
               path: /health
               port: http
+              scheme: HTTPS
             initialDelaySeconds: 15
             periodSeconds: 10
             timeoutSeconds: 5
@@ -51,6 +57,7 @@ spec:
             httpGet:
               path: /ready
               port: http
+              scheme: HTTPS
             initialDelaySeconds: 10
             periodSeconds: 5
             timeoutSeconds: 3
@@ -72,6 +79,15 @@ spec:
               mountPath: /tmp
             - name: cache
               mountPath: /home/node/.cache
+            # TLS certificate paths the server expects (HTTPS-only listener)
+            - name: internal-tls
+              mountPath: /etc/ssl/certs/cert.crt
+              subPath: tls.crt
+              readOnly: true
+            - name: internal-tls
+              mountPath: /etc/ssl/private/cert.key
+              subPath: tls.key
+              readOnly: true
             - name: db-password
               mountPath: /run/secrets/db_password
               subPath: db_password
@@ -91,6 +107,9 @@ spec:
         - name: cache
           emptyDir:
             sizeLimit: 256Mi
+        - name: internal-tls
+          secret:
+            secretName: {{ .Values.secrets.existingSecrets.sslCert | default (printf "%s-internal-tls" (include "zappzarapp.fullname" .)) }}
         - name: db-password
           secret:
             secretName: {{ .Values.secrets.existingSecrets.dbPassword | default (printf "%s-db-password" (include "zappzarapp.fullname" .)) }}

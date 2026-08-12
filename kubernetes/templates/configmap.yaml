@@ -8,6 +8,9 @@ metadata:
 data:
   # Environment
   ZAPPZARAPP_ENV: {{ .Values.global.env | quote }}
+  # Node reads its own convention; anything except production must map to
+  # development, or the node services default to production behavior
+  NODE_ENV: {{ if eq .Values.global.env "production" }}"production"{{ else }}"development"{{ end }}
   DOMAIN: {{ .Values.global.domain | quote }}
 
   # Database configuration
