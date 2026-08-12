@@ -446,8 +446,13 @@ services:
     cap_drop:
       - ALL
     environment:
-      # Production: Restrict CORS to specific origins (default: allow all)
-      MERCURE_EXTRA_DIRECTIVES: 'cors_origins "${CORS_ORIGINS:-*}"'
+      # Production: no anonymous subscribers - only cors_origins remains,
+      # which the entrypoint builds from CORS_ORIGINS
+      MERCURE_EXTRA_DIRECTIVES: ""
+      # Restrict CORS to specific origins (default: allow all); the
+      # entrypoint translates this comma-separated canonical list into
+      # Mercure's space-separated cors_origins directive
+      CORS_ORIGINS: ${CORS_ORIGINS:-*}
     logging:
       driver: "json-file"
       options:
