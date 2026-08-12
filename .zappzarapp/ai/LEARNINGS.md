@@ -1097,6 +1097,68 @@ as an explicit decision, not silently changed.
 
 ## Kubernetes / Helm Chart
 
+### Chart securityContext lagged the unprivileged image refactor (2026-08-12)
+
+- The values-side securityContext comments ("needs root for secrets copying",
+  "nginx needs root for initial setup") described an older image generation:
+  every production image already ships a `USER` directive (nginx 100, www-data
+  82, node 50000) or an entrypoint that needs no root, so the `capabilities.add`
+  lists (CHOWN/SETUID/SETGID/...) were inert — **capability adds never enter the
+  effective set of a non-root process**. Worse, the services whose k8s manifests
+  bypass the image entrypoint (redis execs redis-server directly, seaweedfs
+  execs weed with a secret-mounted S3 config) silently ran their servers **as
+  root**.
+- Lesson: derive the chart securityContext from the image reality (verify via
+  `kubectl exec ... -- id` / the image's `/etc/passwd`), not from entrypoint
+  comments. All chart services now run runAsNonRoot with numeric
+  runAsUser/runAsGroup (the kubelet cannot verify runAsNonRoot against a
+  symbolic image `USER`), `drop: [ALL]`, no adds.
+
+### nginx pod had two latent startup kills under the k8s config (2026-08-12)
+
+- The chart ConfigMap listened on port 80, which uid 101 cannot bind without
+  NET_BIND_SERVICE, and the image entrypoint writes /run/nginx/* while the chart
+  mounted its emptyDir on /var/run — in Alpine `/var/run` is a symlink to
+  `/run`, and a mount ON the symlink path replaces the symlink, leaving the real
+  `/run` on the read-only root fs.
+- Fix: listen on 8080 (Service keeps external port 80 via named targetPort) and
+  start nginx directly (`command: ["nginx"]`): the chart ships the full config,
+  so the entrypoint's Compose artifacts (SSL template rendering, health
+  snippets) are unused in k8s, and its Compose production TLS requirement would
+  kill pods in clusters where TLS terminates at the Ingress. Same pattern for
+  mercure: Caddy's SERVER_NAME moved to :8080 and /data + /config need emptyDirs
+  for its autosave state.
+
+### Non-root DB pods: run as the image's db user instead of root + caps (2026-08-12)
+
+- postgres/mariadb/rabbitmq official entrypoints all skip their root-only
+  chown/gosu/su-exec phase when started unprivileged — running the pod as the db
+  uid (postgres 70, mysql 999, rabbitmq 100) with fsGroup makes the whole
+  capability wiring unnecessary and fixes real bugs: mariadb's restart crash was
+  the root startup `find` being unable to descend into the mode-0700 system dirs
+  it doesn't own once all capabilities are dropped (root does NOT bypass dropped
+  caps); as the mysql user those dirs are owned by the traversing user.
+- gosu/su-exec fail as non-root at setgroups (EPERM), and `|| true` swallows
+  that silently — wrapper entrypoints need a `[ "$(id -u)" = "0" ]` guard around
+  privilege-drop calls (postgres existing-volume init).
+- postgres initdb under fsGroup works via the PGDATA **subdirectory** pattern
+  (mkdir as uid 70 inside the group-writable mount, chmod 700 own dir).
+
+### Verify image uids from /etc/passwd, never assume Debian defaults (2026-08-12)
+
+- Alpine rabbitmq ships rabbitmq as **uid 100, gid 101** (999 is the Debian
+  variant's uid; gid 999 in Alpine is the `ping` group). With runAsUser 999 the
+  first boot worked (no cookie yet) but every restart crashed: the wrapper's
+  `chown rabbitmq:rabbitmq .erlang.cookie` resolves the NAME to uid 100 →
+  non-root chown to a foreign uid → EPERM → `set -e` kill.
+- The tell: `kubectl exec ... -- id` printing a bare numeric uid without a name
+  means the chosen uid has no passwd entry — check the image before wiring
+  runAsUser.
+- Same sweep caught two more: the Alpine **nginx** package creates nginx as
+  **uid 100, gid 101** (101/101 is the Debian nginx image), and Alpine **redis**
+  is **uid 999, gid 1000**. Every runAsUser/runAsGroup in the chart is now
+  verified against the built image's /etc/passwd.
+
 ### A template `{{- else }}` after volumeClaimTemplates emits a DUPLICATE pod `volumes:` key
 
 - **The bug (5 of 6 StatefulSets affected, latent until persistence is
@@ -1355,6 +1417,11 @@ as an explicit decision, not silently changed.
 ---
 
 ## Last Updated
+
+2026-08-12 (added: chart-wide non-root — securityContext lagged the unprivileged
+images, cap adds inert for non-root; nginx port-80/`/var/run` symlink-mount
+startup kills; DB pods as image db-user instead of root+caps, gosu/su-exec need
+uid-0 guards; Alpine rabbitmq uid 100:101 — verify image uids from /etc/passwd)
 
 2026-08-04 (added: ZAP WARN triage — dev toolbar rendered in production:
 committed-.env value defeats the compose `:-false` default and the guard's

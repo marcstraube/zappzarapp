@@ -16,3 +16,4 @@ decisions keep their file and are marked in the status line of both documents.
 | [0008](0008-remove-session-file-system.md)                              | Remove Session-File System                              | 2026-07-25 | Accepted   |
 | [0009](0009-one-document-per-adr.md)                                    | One Document per ADR                                    | 2026-07-25 | Accepted   |
 | [0010](0010-zappzarapp-env-variable-name.md)                            | Environment Mode Variable Named ZAPPZARAPP_ENV          | 2026-08-03 | Accepted   |
+| [0011](0011-k8s-chart-runs-every-service-non-root.md)                   | Kubernetes Chart Runs Every Service as a Non-Root User  | 2026-08-12 | Accepted   |
