@@ -44,8 +44,11 @@ EXPOSE 8333 9333 8080 8888
 HEALTHCHECK --interval=10s --timeout=5s --start-period=15s --retries=3 \
     CMD wget -q -O /dev/null http://127.0.0.1:9333/cluster/status || exit 1
 
-# Run as root initially so entrypoint can read secrets and setup config
-# SeaweedFS will be started as seaweedfs user via su-exec in entrypoint
+# No USER directive - the entrypoint supports both startup paths: started as
+# root (development preset) it sets up config/certs and drops to the
+# seaweedfs user (uid 1000) via su-exec; started unprivileged (production
+# preset sets user: "1000:1000") it writes into uid-1000 tmpfs mounts and
+# execs weed directly.
 ENTRYPOINT ["/entrypoint.sh"]
 
 # Default command: run all-in-one server with S3 API

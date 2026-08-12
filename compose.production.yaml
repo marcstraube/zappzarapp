@@ -11,13 +11,23 @@
 #   Secret files are created with mode 0644 by 'make setup'.
 #   For production with stricter security, use Kubernetes (native secrets with fsGroup).
 #
-# UIDs reference (from container images):
-#   nginx:    101 (nginx user in Alpine)
-#   php:      82  (www-data in Alpine)
-#   node:     50000 (custom node user)
-#   redis:    999 (redis user)
-#   postgres: 70  (postgres user in Alpine)
-#   mariadb:  999 (mysql user)
+# UIDs reference (verified against the built images' /etc/passwd — Alpine
+# uids differ from the Debian variants):
+#   nginx:       100:101 (nginx user in Alpine)
+#   php:         82:82   (www-data in Alpine)
+#   node:        50000:50000 (custom node user)
+#   postgres:    70:70   (postgres user in Alpine)
+#   mariadb:     999:999 (mysql user)
+#   redis:       999:1000 (redis user in Alpine)
+#   rabbitmq:    100:101 (rabbitmq user in Alpine)
+#   seaweedfs:   1000:1000 (image user)
+#   meilisearch/mercure/mailpit: 1000:1000 (no dedicated image user; data
+#     directories are chowned to 1000 in the Dockerfiles)
+#   elasticsearch: 1000:0 (USER directive in the image)
+#
+# Every service runs unprivileged (user: directive or image USER) with
+# cap_drop: ALL and no capability adds; the official DB/broker entrypoints
+# skip their root-only chown/gosu/su-exec phase when started unprivileged.
 #
 # SERVICE ORDER: Core → Data → Optional (alphabetically within each category)
 #   Core:     nginx, node, node-backend, php
@@ -199,22 +209,28 @@ services:
   # ═══════════════════════════════════════════════════════════════════════════
 
   mariadb:
-    read_only: false
+    # Run directly as the mysql user: the official entrypoint skips its
+    # root-only chown/gosu phase, so no capabilities are needed. Secrets are
+    # 0644 and the cert key carries a read ACL for uid 999 (set by
+    # docker/certs/generate-internal.sh).
+    user: "999:999"
+    environment:
+      # Arms the entrypoint's fail-fast: missing SSL certificates abort startup
+      ZAPPZARAPP_ENV: production
+    read_only: true
     tmpfs:
+      # All tmpfs owned by the mysql user (uid 999) - no root needed
       - /var/run/mysqld:mode=0770,uid=999,gid=999,size=64M
+      - /tmp:mode=0770,uid=999,gid=999,size=256M
+      # Cert destination (entrypoint copies the key here so it is owned by
+      # the server user, as mariadbd requires)
+      - /etc/mysql/certs:mode=0770,uid=999,gid=999,size=1M
+      # Slow query log target (see --slow-query-log-file below)
+      - /var/log/mysql:mode=0770,uid=999,gid=999,size=64M
     security_opt:
       - no-new-privileges:true
     cap_drop:
       - ALL
-    cap_add:
-      # REQUIRED: user switch to mysql and cert ownership
-      - CHOWN
-      - SETUID
-      - SETGID
-      # FOWNER: allows chmod on files not owned by root (for cert permissions)
-      - FOWNER
-      # Note: DAC_OVERRIDE not needed - secrets are 0644, cert keys carry a
-      # read ACL for uid 0 (set by docker/certs/generate-internal.sh)
     shm_size: 256mb
     volumes:
       - mariadb-data:/var/lib/mysql
@@ -251,22 +267,25 @@ services:
           memory: 512M
 
   postgres:
-    read_only: false
+    # Run directly as the postgres user: the official entrypoint skips its
+    # root-only chown/gosu phase, so no capabilities are needed. Secrets are
+    # 0644 and the cert key carries a read ACL for uid 70 (set by
+    # docker/certs/generate-internal.sh).
+    user: "70:70"
+    environment:
+      # Arms the entrypoint's fail-fast: missing SSL certificates abort startup
+      ZAPPZARAPP_ENV: production
+    read_only: true
     tmpfs:
+      # Socket dir + cert destination (entrypoint copies the key into
+      # /run/postgresql/certs so it is owned by the server user, as
+      # postgres requires) - owned by uid 70, no root needed
       - /run/postgresql:mode=0770,uid=70,gid=70,size=64M
+      - /tmp:mode=0770,uid=70,gid=70,size=256M
     security_opt:
       - no-new-privileges:true
     cap_drop:
       - ALL
-    cap_add:
-      # REQUIRED: SSL cert ownership and user switch
-      - CHOWN
-      - SETUID
-      - SETGID
-      # FOWNER: allows chmod on files not owned by root (for cert permissions)
-      - FOWNER
-      # Note: DAC_OVERRIDE not needed - secrets are 0644, cert keys carry a
-      # read ACL for uid 0 (set by docker/certs/generate-internal.sh)
     shm_size: 256mb
     volumes:
       - postgres-data:/var/lib/postgresql/data
@@ -292,8 +311,8 @@ services:
       -c logging_collector=off
       -c log_min_duration_statement=1000
       -c ssl=on
-      -c ssl_cert_file=/var/lib/postgresql/server.crt
-      -c ssl_key_file=/var/lib/postgresql/server.key
+      -c ssl_cert_file=/run/postgresql/certs/server.crt
+      -c ssl_key_file=/run/postgresql/certs/server.key
       -c ssl_min_protocol_version=TLSv1.2
       -c shared_preload_libraries=pg_cron
       -c cron.database_name=${DB_NAME:-app}
@@ -406,7 +425,14 @@ services:
       replicas: 0
 
   meilisearch:
-    read_only: false
+    # Run as uid 1000 (no dedicated image user; /meili_data is chowned to
+    # 1000 in the Dockerfile so the named volume inherits that ownership).
+    # Secrets are 0644 and the cert key carries a read ACL for uid 1000
+    # (set by docker/certs/generate-internal.sh).
+    user: "1000:1000"
+    read_only: true
+    tmpfs:
+      - /tmp:mode=0770,uid=1000,gid=1000,size=64M
     volumes:
       # Secrets (bind mount)
       - ./secrets:/run/secrets:ro
@@ -435,9 +461,20 @@ services:
           memory: 256M
 
   mercure:
+    # Run as uid 1000 (no dedicated image user; /data and /config are
+    # chowned to 1000 in the Dockerfile so the named volume inherits that
+    # ownership). Secrets are 0644 and the cert key carries a read ACL for
+    # uid 1000 (set by docker/certs/generate-internal.sh).
+    user: "1000:1000"
+    # Caddy binds :443 as an unprivileged user inside the container netns
+    sysctls:
+      net.ipv4.ip_unprivileged_port_start: 0
     read_only: true
     tmpfs:
-      - /tmp:mode=0770,size=64M
+      # All tmpfs owned by uid 1000 - no root needed
+      - /tmp:mode=0770,uid=1000,gid=1000,size=64M
+      # Caddy config autosave dir (XDG_CONFIG_HOME)
+      - /config:mode=0770,uid=1000,gid=1000,size=16M
     volumes:
       # Secrets (bind mount)
       - ./secrets:/run/secrets:ro
@@ -469,17 +506,23 @@ services:
           memory: 64M
 
   rabbitmq:
-    read_only: false
+    # Run directly as the rabbitmq user (uid 100, gid 101 in the Alpine
+    # image): the official entrypoint skips its root-only chown/su-exec
+    # phase, so no capabilities are needed. Secrets are 0644 and the cert
+    # key carries a read ACL for uid 100 (set by
+    # docker/certs/generate-internal.sh).
+    user: "100:101"
+    environment:
+      # Arms the entrypoint's fail-fast: missing SSL certificates abort startup
+      ZAPPZARAPP_ENV: production
+    read_only: true
+    tmpfs:
+      # Owned by the rabbitmq user (uid 100) - no root needed
+      - /tmp:mode=0770,uid=100,gid=101,size=256M
     security_opt:
       - no-new-privileges:true
     cap_drop:
       - ALL
-    cap_add:
-      # REQUIRED: RabbitMQ entrypoint uses chown/chmod for cookie permissions
-      - CHOWN
-      - SETUID
-      - SETGID
-      # Note: DAC_READ_SEARCH not needed - healthcheck uses su-exec to run as rabbitmq user
     volumes:
       - rabbitmq-data:/var/lib/rabbitmq
       # RabbitMQ TLS configuration (production - TLS only)
@@ -505,7 +548,21 @@ services:
           memory: 128M
 
   seaweedfs:
-    read_only: false
+    # Run directly as the seaweedfs user (uid 1000): the entrypoint skips its
+    # root-only chown/su-exec phase, so no capabilities are needed. Secrets
+    # are 0644 and the cert key carries a read ACL for uid 1000 (set by
+    # docker/certs/generate-internal.sh).
+    user: "1000:1000"
+    environment:
+      # Arms the entrypoint's fail-fast: missing SSL certificates abort startup
+      ZAPPZARAPP_ENV: production
+    read_only: true
+    tmpfs:
+      # All tmpfs owned by the seaweedfs user (uid 1000) - no root needed
+      - /tmp:mode=0770,uid=1000,gid=1000,size=64M
+      # Entrypoint-written S3 credentials config and cert copies
+      - /etc/seaweedfs/config:mode=0770,uid=1000,gid=1000,size=1M
+      - /etc/seaweedfs/certs:mode=0770,uid=1000,gid=1000,size=1M
     security_opt:
       - no-new-privileges:true
     cap_drop:

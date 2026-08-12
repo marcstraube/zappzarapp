@@ -27,13 +27,17 @@ fi
 # The cookie is created by the original entrypoint, but we ensure permissions here
 # so that rabbitmq-diagnostics (healthcheck) can read it without DAC_READ_SEARCH capability
 COOKIE_FILE="/var/lib/rabbitmq/.erlang.cookie"
-if [[ -f "$COOKIE_FILE" ]]; then
-    chown rabbitmq:rabbitmq "$COOKIE_FILE"
-    chmod 400 "$COOKIE_FILE"
-elif [[ ! -f "$COOKIE_FILE" ]] && [[ -n "$RABBITMQ_ERLANG_COOKIE" ]]; then
-    # Create cookie with correct permissions if RABBITMQ_ERLANG_COOKIE is set
+if [[ ! -f "$COOKIE_FILE" ]] && [[ -n "$RABBITMQ_ERLANG_COOKIE" ]]; then
+    # Create cookie if RABBITMQ_ERLANG_COOKIE is set
     echo "$RABBITMQ_ERLANG_COOKIE" > "$COOKIE_FILE"
-    chown rabbitmq:rabbitmq "$COOKIE_FILE"
+fi
+if [[ -f "$COOKIE_FILE" ]]; then
+    # Only the root startup path can and needs to chown; on the unprivileged
+    # path (production preset runs as uid 100) the cookie is created by the
+    # rabbitmq user itself, so only the mode needs fixing.
+    if [[ "$(id -u)" = "0" ]]; then
+        chown rabbitmq:rabbitmq "$COOKIE_FILE"
+    fi
     chmod 400 "$COOKIE_FILE"
 fi
 

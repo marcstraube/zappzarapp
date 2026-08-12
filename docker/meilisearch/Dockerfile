@@ -6,6 +6,11 @@ ARG MEILISEARCH_VERSION=1.51
 
 FROM getmeili/meilisearch:v${MEILISEARCH_VERSION}
 
+# The image has no dedicated service user; the production preset runs the
+# container as uid 1000. Chown the data directory so named volumes inherit
+# that ownership on first creation.
+RUN mkdir -p /meili_data && chown -R 1000:1000 /meili_data
+
 # Copy entrypoint script for secrets handling
 COPY --chmod=0755 docker/meilisearch/entrypoint.sh /entrypoint.sh
 

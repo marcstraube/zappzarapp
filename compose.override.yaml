@@ -449,8 +449,8 @@ services:
       -c log_statement=all
       -c log_min_duration_statement=0
       -c ssl=on
-      -c ssl_cert_file=/var/lib/postgresql/server.crt
-      -c ssl_key_file=/var/lib/postgresql/server.key
+      -c ssl_cert_file=/run/postgresql/certs/server.crt
+      -c ssl_key_file=/run/postgresql/certs/server.key
       -c shared_preload_libraries=pg_cron
       -c cron.database_name=${DB_NAME:-app}
 

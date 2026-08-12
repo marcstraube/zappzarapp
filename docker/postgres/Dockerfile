@@ -4,13 +4,15 @@
 # Usage: CREATE EXTENSION pg_cron;
 # See: .zappzarapp/docs/security/RETENTION-POLICY.md
 #
-# Security Note: No USER directive is set because PostgreSQL requires root
-# privileges during container startup for:
-# - Data directory initialization (/var/lib/postgresql/data)
-# - SSL certificate permission setup
-# - Locale and encoding configuration
-# The official entrypoint (docker-entrypoint.sh) drops privileges to the
-# postgres user (uid 70 on Alpine) via gosu before starting postgres.
+# Security Note: No USER directive is set - the image supports both startup
+# paths:
+# - Root start (development preset): the official entrypoint
+#   (docker-entrypoint.sh) initializes the data directory, fixes cert
+#   permissions, and drops privileges to the postgres user (uid 70 on
+#   Alpine) via gosu before starting postgres.
+# - Unprivileged start (production preset sets user: "70:70"): the official
+#   entrypoint skips its root-only chown/gosu phase; writable paths come
+#   from uid-70 tmpfs mounts and the data volume.
 
 ARG POSTGRES_VERSION=18.4-alpine3.23
 # pg_cron >= 1.6.6 is required for PostgreSQL 18 (1.6.7 also fixes compile

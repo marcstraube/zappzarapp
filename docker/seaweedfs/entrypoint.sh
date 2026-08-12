@@ -50,7 +50,12 @@ cat > /etc/seaweedfs/config/s3.json << EOF
 }
 EOF
 
-chown 1000:1000 /etc/seaweedfs/config/s3.json
+# Only the root startup path can and needs to chown; on the unprivileged
+# path (production preset runs as uid 1000) the file is created by the
+# seaweedfs user itself.
+if [ "$(id -u)" = "0" ]; then
+    chown 1000:1000 /etc/seaweedfs/config/s3.json
+fi
 chmod 600 /etc/seaweedfs/config/s3.json
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -65,7 +70,10 @@ SSL_KEY="/etc/ssl/private/cert.key"
 if [ -f "$SSL_CERT" ] && [ -f "$SSL_KEY" ]; then
     cp "$SSL_CERT" /etc/seaweedfs/certs/s3.crt
     cp "$SSL_KEY" /etc/seaweedfs/certs/s3.key
-    chown 1000:1000 /etc/seaweedfs/certs/s3.crt /etc/seaweedfs/certs/s3.key
+    # Only the root startup path can and needs to chown (see s3.json above)
+    if [ "$(id -u)" = "0" ]; then
+        chown 1000:1000 /etc/seaweedfs/certs/s3.crt /etc/seaweedfs/certs/s3.key
+    fi
     chmod 644 /etc/seaweedfs/certs/s3.crt
     chmod 600 /etc/seaweedfs/certs/s3.key
 
@@ -113,18 +121,27 @@ else
 fi
 
 # ─────────────────────────────────────────────────────────────────────────────
-# Ensure data directory has correct ownership
+# Ensure data directory has correct ownership (root startup path only)
 # ─────────────────────────────────────────────────────────────────────────────
 
-chown -R 1000:1000 /data 2>/dev/null || true
+if [ "$(id -u)" = "0" ]; then
+    chown -R 1000:1000 /data 2>/dev/null || true
+fi
 
 # ─────────────────────────────────────────────────────────────────────────────
-# Start SeaweedFS
+# Start SeaweedFS as the seaweedfs user (uid 1000)
 # ─────────────────────────────────────────────────────────────────────────────
 
-# Build the command with S3 config
+# Root startup path (development): drop privileges via su-exec.
+# Unprivileged path (production preset runs as uid 1000): already the
+# seaweedfs user - su-exec would fail at setgroups, so exec directly.
 # shellcheck disable=SC2086
-# Run as UID 1000 (seaweedfs user)
-exec su-exec 1000:1000 weed "$@" \
-    -s3.config=/etc/seaweedfs/config/s3.json \
-    ${TLS_ARGS}
+if [ "$(id -u)" = "0" ]; then
+    exec su-exec 1000:1000 weed "$@" \
+        -s3.config=/etc/seaweedfs/config/s3.json \
+        ${TLS_ARGS}
+else
+    exec weed "$@" \
+        -s3.config=/etc/seaweedfs/config/s3.json \
+        ${TLS_ARGS}
+fi

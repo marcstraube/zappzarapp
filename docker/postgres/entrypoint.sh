@@ -7,7 +7,9 @@ set -e
 # Make secrets readable by postgres user
 # Docker Compose file-based secrets are mounted as root:root with 600 permissions
 # PostgreSQL needs to read them as the postgres user (uid 70)
-if [ -d /run/secrets ]; then
+# Only the root startup path can adjust ownership; an unprivileged container
+# (production preset runs as uid 70) reads the 0644 bind-mounted files directly.
+if [ "$(id -u)" = "0" ] && [ -d /run/secrets ]; then
     for secret in /run/secrets/*; do
         if [ -f "$secret" ]; then
             chmod 640 "$secret" 2>/dev/null || true
@@ -72,11 +74,19 @@ fi
 
 if [ -n "$SSL_CERT" ] && [ -n "$SSL_KEY" ]; then
     echo "[entrypoint] Setting up SSL certificates with correct ownership..."
-    cat "$SSL_CERT" > /var/lib/postgresql/server.crt
-    cat "$SSL_KEY" > /var/lib/postgresql/server.key
-    chown postgres:postgres /var/lib/postgresql/server.crt /var/lib/postgresql/server.key
-    chmod 644 /var/lib/postgresql/server.crt
-    chmod 600 /var/lib/postgresql/server.key
+    # Destination lives under /run/postgresql: writable on both startup paths
+    # (image directory for the root path, uid-70 tmpfs in the production
+    # preset, which runs unprivileged with a read-only root filesystem).
+    # PostgreSQL requires the key to be owned by the server user (or root
+    # with 0640); the copy gives it the correct owner on either path.
+    mkdir -p /run/postgresql/certs
+    cat "$SSL_CERT" > /run/postgresql/certs/server.crt
+    cat "$SSL_KEY" > /run/postgresql/certs/server.key
+    if [ "$(id -u)" = "0" ]; then
+        chown postgres:postgres /run/postgresql/certs/server.crt /run/postgresql/certs/server.key
+    fi
+    chmod 644 /run/postgresql/certs/server.crt
+    chmod 600 /run/postgresql/certs/server.key
     echo "[entrypoint] SSL certificates configured successfully."
 fi
 

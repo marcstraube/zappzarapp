@@ -8,6 +8,44 @@ periodic triage (`/optimize --learnings`) and are removed from this file.
 
 ## Docker & Containers
 
+### Compose production non-root (ADR 0012, 2026-08-12)
+
+- **Compose production preset now mirrors the k8s "restricted" posture**: every
+  service runs with `user:`/image `USER`, `read_only: true`, `cap_drop: ALL`, no
+  capability adds. Everything a service writes must be a named volume or a
+  uid-owned tmpfs — the `uid=`/`gid=` tmpfs options are load-bearing (a
+  `mode=0770` tmpfs without them is root-owned and unwritable for the service
+  user).
+- **postgres cert destination moved to `/run/postgresql/certs`**: the previous
+  destination `/var/lib/postgresql` is read-only rootfs once the container runs
+  unprivileged with `read_only: true`; `/run/postgresql` is writable on both
+  startup paths (image dir for root, uid-70 tmpfs in production). The ssl paths
+  in BOTH command overlays (dev + production) must match the entrypoint
+  destination.
+- **`ZAPPZARAPP_ENV` never reached the DB/broker containers in Compose**: only
+  php got it set explicitly, so the postgres/mariadb/rabbitmq/seaweedfs
+  entrypoint fail-fast (mandatory TLS in production) silently ran in development
+  mode under the production preset. Env vars used by entrypoints must be passed
+  per-service in the overlay — compose interpolation context (`.env`) does not
+  populate container env.
+- **Mercure `cors_origins` expects SPACE-separated origins**: the canonical
+  `CORS_ORIGINS` format is comma-separated (shared with PHP/Node), and passing
+  it straight into `MERCURE_EXTRA_DIRECTIVES` makes Caddy fail config provision
+  (`invalid origin`) → crash loop. Production mercure could never start with a
+  multi-origin list. Fixed by translating commas to spaces in the mercure
+  entrypoint (`CORS_ORIGINS` env → `cors_origins` directive).
+- **Cert-key ACLs on the host can be older than generate-internal.sh**: the
+  script grants per-uid read ACLs at generation time; keys generated before an
+  ACL-list change keep the OLD list (observed: u:101 from an earlier script
+  revision, no u:70/u:100). After changing the ACL list, re-run
+  `make ssl-internal` or apply `setfacl` to existing keys — a green script diff
+  proves nothing about the files on disk.
+- **Preset switch on existing named volumes**: volumes created by a root-started
+  service (dev meilisearch/mercure/mailpit) are root-owned and unwritable for
+  uid 1000 in the production preset; recreate the volume when switching. DB
+  volumes are unaffected (data files are written by the service user on both
+  paths).
+
 ### Build & Targets
 
 - **Multi-stage builds need explicit targets**: `NODE_TARGET`, `NGINX_TARGET`,

@@ -4,13 +4,15 @@
 # It adds a custom entrypoint script to set up SSL certificates
 # with correct permissions before starting MariaDB.
 #
-# Security Note: No USER directive is set because MariaDB requires root
-# privileges during container startup for:
-# - Data directory initialization (/var/lib/mysql)
-# - SSL certificate permission setup
-# - Socket directory creation
-# The official entrypoint (docker-entrypoint.sh) drops privileges to the
-# mysql user (uid 999) via gosu before starting mariadbd.
+# Security Note: No USER directive is set - the image supports both startup
+# paths:
+# - Root start (development preset): the official entrypoint
+#   (docker-entrypoint.sh) initializes the data directory, fixes cert/socket
+#   permissions, and drops privileges to the mysql user (uid 999) via gosu
+#   before starting mariadbd.
+# - Unprivileged start (production preset sets user: "999:999"): the official
+#   entrypoint skips its root-only chown/gosu phase; writable paths come from
+#   uid-999 tmpfs mounts and the data volume.
 #
 # Version Pinning:
 # - Exact version pinned for stability
@@ -49,7 +51,8 @@ COPY --chmod=0755 docker/mariadb/entrypoint.sh /entrypoint-wrapper.sh
 # Runs on first init AND on existing volumes (via entrypoint)
 COPY --chmod=0755 docker/mariadb/init-db.sh /docker-entrypoint-initdb.d/10-init-db.sh
 
-# Copy custom healthcheck (uses gosu to run as mysql user)
+# Copy custom healthcheck (runs as the mysql user - via gosu on the root
+# path, directly on the unprivileged path)
 # This avoids needing DAC_OVERRIDE capability to read .my-healthcheck.cnf
 COPY --chmod=0755 docker/mariadb/healthcheck.sh /custom-healthcheck.sh
 

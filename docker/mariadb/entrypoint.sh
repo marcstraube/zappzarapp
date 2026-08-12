@@ -61,9 +61,15 @@ fi
 
 if [ -n "$SSL_CERT" ] && [ -n "$SSL_KEY" ]; then
     echo "[entrypoint] Setting up SSL certificates with correct ownership..."
+    # MariaDB requires the key to be owned by the mysql user or root; the
+    # copy gives it the correct owner on both startup paths (root here in
+    # development, uid 999 writing into a uid-999 tmpfs in the production
+    # preset - only the root path can and needs to chown).
     cp "$SSL_CERT" /etc/mysql/certs/server.crt
     cp "$SSL_KEY" /etc/mysql/certs/server.key
-    chown mysql:mysql /etc/mysql/certs/server.crt /etc/mysql/certs/server.key
+    if [ "$(id -u)" = "0" ]; then
+        chown mysql:mysql /etc/mysql/certs/server.crt /etc/mysql/certs/server.key
+    fi
     chmod 644 /etc/mysql/certs/server.crt
     chmod 600 /etc/mysql/certs/server.key
     echo "[entrypoint] SSL certificates configured successfully."
