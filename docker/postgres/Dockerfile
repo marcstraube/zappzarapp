@@ -56,7 +56,15 @@ FROM postgres:${POSTGRES_VERSION} AS final
 
 # Apply available OS security patches within the pinned Alpine line (Trivy runs
 # with ignore-unfixed, so reported CVEs have a fix available here).
-RUN apk upgrade --no-cache
+#
+# The mkdir/chown creates the data-volume mount point postgres-owned: the
+# image ships without /var/lib/postgresql/data, so a fresh named volume
+# would otherwise be created root-owned - and the unprivileged production
+# preset (user 70:70) must be able to run initdb in it. Kubernetes covers
+# the same requirement with fsGroup.
+RUN apk upgrade --no-cache \
+    && mkdir -p /var/lib/postgresql/data \
+    && chown postgres:postgres /var/lib/postgresql/data
 
 # Copy compiled extension from builder
 COPY --from=builder /usr/local/lib/postgresql/pg_cron.so /usr/local/lib/postgresql/
