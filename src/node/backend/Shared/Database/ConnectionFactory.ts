@@ -26,8 +26,8 @@ import type {
   PoolConnection as MySqlConnection,
   ResultSetHeader,
 } from 'mysql2/promise';
-import type { DatabaseConnection, Row } from '../Repository/RepositoryInterface';
-import { getDatabaseConfig, isPostgres } from './DatabaseConfig';
+import type { DatabaseConnection, Row } from '../Repository/RepositoryInterface.js';
+import { getDatabaseConfig, isPostgres } from './DatabaseConfig.js';
 
 /**
  * Database type identifier

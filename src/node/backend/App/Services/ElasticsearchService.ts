@@ -42,7 +42,7 @@
  * ```
  */
 
-import { loadCredential } from '../../Shared/Config/credentials';
+import { loadCredential } from '../../Shared/Config/credentials.js';
 
 /**
  * Search hit structure

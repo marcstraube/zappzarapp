@@ -40,8 +40,8 @@
 import * as http from 'http';
 import * as https from 'https';
 import { createHmac } from 'crypto';
-import { loadCredential } from '../../Shared/Config/credentials';
-import { getHttpsTlsOptions } from '../../Shared/Config/TlsConfig';
+import { loadCredential } from '../../Shared/Config/credentials.js';
+import { getHttpsTlsOptions } from '../../Shared/Config/TlsConfig.js';
 
 /** Default internal hub publish endpoint (Caddy on :443, zero-trust TLS) */
 const DEFAULT_URL = 'https://mercure/.well-known/mercure';

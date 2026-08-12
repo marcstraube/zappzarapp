@@ -30,7 +30,7 @@ import {
   hasSsl,
   isPostgres,
   DatabaseConfig,
-} from './DatabaseConfig';
+} from './DatabaseConfig.js';
 
 // Pool singleton
 let pool: Pool | null = null;

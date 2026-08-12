@@ -22,8 +22,8 @@
  * @package Infrastructure/Repository
  */
 
-import { AbstractRepository, type AbstractRepositoryOptions } from './AbstractRepository';
-import type { Row } from './RepositoryInterface';
+import { AbstractRepository, type AbstractRepositoryOptions } from './AbstractRepository.js';
+import type { Row } from './RepositoryInterface.js';
 
 /**
  * User record type

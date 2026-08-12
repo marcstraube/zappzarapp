@@ -14,12 +14,17 @@
  * @package Infrastructure/Repository
  */
 
-import type { RepositoryInterface, Row, Criteria, RepositoryOptions } from './RepositoryInterface';
+import type {
+  RepositoryInterface,
+  Row,
+  Criteria,
+  RepositoryOptions,
+} from './RepositoryInterface.js';
 import {
   ConnectionFactory,
   getConnectionFactory,
   type ExtendedDatabaseConnection,
-} from '../Database/ConnectionFactory';
+} from '../Database/ConnectionFactory.js';
 import { AuditLogEntry, type AuditLoggerInterface } from '@zappzarapp/audit-logger';
 import { existsSync, readFileSync } from 'fs';
 

@@ -46,7 +46,7 @@
  */
 
 import { Meilisearch } from 'meilisearch';
-import { loadCredential } from '../../Shared/Config/credentials';
+import { loadCredential } from '../../Shared/Config/credentials.js';
 
 /**
  * Search result structure

@@ -47,7 +47,7 @@
  */
 
 import { randomBytes } from 'node:crypto';
-import type { CacheServiceInterface } from './CacheService';
+import type { CacheServiceInterface } from './CacheService.js';
 
 /**
  * Session data structure

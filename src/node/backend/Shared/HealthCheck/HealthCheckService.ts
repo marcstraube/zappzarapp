@@ -33,7 +33,7 @@ import { createClient, RedisClientType } from 'redis';
 import * as http from 'http';
 import * as https from 'https';
 import * as net from 'net';
-import { getHttpsTlsOptions, getTlsSocketOptions } from '../Config/TlsConfig';
+import { getHttpsTlsOptions, getTlsSocketOptions } from '../Config/TlsConfig.js';
 
 /**
  * Service check result

@@ -43,7 +43,7 @@
  */
 
 import { createHmac } from 'node:crypto';
-import { loadCredential } from '../../Shared/Config/credentials';
+import { loadCredential } from '../../Shared/Config/credentials.js';
 
 /**
  * Object metadata structure

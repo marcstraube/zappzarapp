@@ -23,7 +23,7 @@
  */
 
 import nodemailer, { type Transporter } from 'nodemailer';
-import { loadCredential } from '../../Shared/Config/credentials';
+import { loadCredential } from '../../Shared/Config/credentials.js';
 
 /** Default sender used when a message omits its "from" address */
 const DEFAULT_FROM = 'no-reply@localhost';
