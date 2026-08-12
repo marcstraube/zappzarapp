@@ -559,6 +559,11 @@ config:
     user: app
     host: postgres  # or mariadb if using MariaDB
 
+  # Allowed CORS origins (comma-separated). Empty derives
+  # https://<global.domain>; the application treats the wildcard * as a
+  # security incident in production, so it is never a default here.
+  corsOrigins: ""
+
   # Logging
   logLevel: debug
   logFormat: text

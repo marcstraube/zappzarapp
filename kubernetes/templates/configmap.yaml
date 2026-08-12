@@ -12,6 +12,9 @@ data:
   # development, or the node services default to production behavior
   NODE_ENV: {{ if eq .Values.global.env "production" }}"production"{{ else }}"development"{{ end }}
   DOMAIN: {{ .Values.global.domain | quote }}
+  # PHP and node both read this; without it the node backend falls back to
+  # the wildcard, which it flags as a security incident in production
+  CORS_ORIGINS: {{ .Values.config.corsOrigins | default (printf "https://%s" .Values.global.domain) | quote }}
 
   # Database configuration
   DB_NAME: {{ .Values.config.database.name | quote }}
