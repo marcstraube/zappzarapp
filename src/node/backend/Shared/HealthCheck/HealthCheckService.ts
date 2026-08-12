@@ -403,6 +403,10 @@ export class HealthCheckService {
           url: this.config.redisUrl,
           socket: {
             connectTimeout: CHECK_TIMEOUT_MS,
+            // A health probe must fail fast: without this, the client's
+            // default strategy retries a dead endpoint indefinitely and
+            // connect() never settles, so the readiness response hangs
+            reconnectStrategy: false,
             ...(useTls && getTlsSocketOptions()),
           },
         });
