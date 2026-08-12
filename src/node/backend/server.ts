@@ -11,6 +11,7 @@
 import { createServer as createHttpsServer, Server } from 'https';
 import { readFileSync, statSync } from 'fs';
 import { createApp, logger } from './app.js';
+import { getPool } from './Shared/Database/pool.js';
 import { fileURLToPath } from 'url';
 
 export const PORT = process.env.PORT ?? '3000';
@@ -31,7 +32,11 @@ process.env.NODE_TLS_REJECT_UNAUTHORIZED = tlsRejectUnauthorized ? '1' : '0';
  * Create and start the HTTPS server
  */
 export function startServer(): Server {
-  const app = createApp();
+  // The readiness endpoint can only probe the database through a live pool;
+  // the pg pool applies to the postgres backend only.
+  const enableDatabase = (process.env.ENABLE_DATABASE ?? 'false').toLowerCase() === 'true';
+  const usePool = enableDatabase && (process.env.DB_TYPE ?? 'postgres') === 'postgres';
+  const app = createApp({ pool: usePool ? getPool() : null });
 
   // Verify certificates exist and are files (not directories from Docker bind mount bug)
   const isFile = (path: string): boolean => {
