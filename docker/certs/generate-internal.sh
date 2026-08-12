@@ -85,12 +85,12 @@ chmod 600 "$INTERNAL_DIR/cert.key" "$NGINX_DIR/cert.key"
 # world-read nor DAC_OVERRIDE is available):
 #   u:0    root entrypoints with dropped capabilities (postgres/mariadb copy
 #          certs from /tmp/certs without DAC_OVERRIDE)
-#   u:101  nginx (production preset runs as 101:101)
+#   u:100  nginx (production preset runs as 100:101, the Alpine nginx user)
 #   u:999  redis (production preset) and rabbitmq
 #   u:1000 default container USER_ID (CI hosts may generate certs as a
 #          different UID, e.g. 1001 on GitHub runners)
 if command -v setfacl >/dev/null 2>&1; then
-    setfacl -m u:0:r,u:101:r,u:999:r,u:1000:r \
+    setfacl -m u:0:r,u:100:r,u:999:r,u:1000:r \
         "$INTERNAL_DIR/cert.key" "$NGINX_DIR/cert.key"
 else
     echo "WARNING: setfacl not found - keys are mode 600 without ACLs."
