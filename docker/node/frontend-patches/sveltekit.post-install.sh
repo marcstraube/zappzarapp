@@ -288,7 +288,24 @@ cat > static/favicon.png << 'EOF'
 EOF
 # Note: Users should replace with their own favicon
 
-# 12. Create .gitignore
+# 12. Create the /health endpoint (container orchestrator probes hit it;
+#     a +server.ts route answers without rendering any page)
+echo "[sveltekit] Creating src/routes/health/+server.ts..."
+mkdir -p src/routes/health
+cat > src/routes/health/+server.ts << 'EOF'
+// Lightweight liveness/readiness endpoint for container orchestrators.
+import { json } from '@sveltejs/kit';
+
+export function GET() {
+  return json({
+    status: 'ok',
+    service: 'node-frontend',
+    timestamp: new Date().toISOString(),
+  });
+}
+EOF
+
+# 13. Create .gitignore
 echo "[sveltekit] Creating .gitignore..."
 cat > .gitignore << 'EOF'
 # SvelteKit build output
@@ -309,6 +326,18 @@ node_modules
 # Editor
 .idea
 .vscode
+EOF
+
+# 14. Approve dependency build scripts (pnpm blocks them by default and
+#     hard-fails the install with ERR_PNPM_IGNORED_BUILDS on unapproved ones)
+echo "[sveltekit] Creating pnpm-workspace.yaml..."
+cat > pnpm-workspace.yaml << 'EOF'
+# Build-script approvals: pnpm blocks dependency build scripts by default
+# and hard-fails (ERR_PNPM_IGNORED_BUILDS) on unapproved ones. These ship
+# prebuilt binaries, so their scripts are safe to run.
+allowBuilds:
+  '@parcel/watcher': true
+  esbuild: true
 EOF
 
 echo "[sveltekit] Configuration complete!"

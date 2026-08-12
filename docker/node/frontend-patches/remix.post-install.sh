@@ -114,7 +114,32 @@ export default function Home({ loaderData }: Route.ComponentProps) {
 }
 EOF
 
-# 4. Update .gitignore
+# 4. Create the /health resource route and register it (container
+#    orchestrator probes hit it; a loader-only route answers without
+#    rendering any page)
+echo "[react-router] Creating app/routes/health.ts..."
+cat > app/routes/health.ts << 'EOF'
+// Lightweight liveness/readiness endpoint for container orchestrators.
+export async function loader() {
+  return Response.json({
+    status: 'ok',
+    service: 'node-frontend',
+    timestamp: new Date().toISOString(),
+  });
+}
+EOF
+
+echo "[react-router] Registering routes in app/routes.ts..."
+cat > app/routes.ts << 'EOF'
+import { type RouteConfig, index, route } from '@react-router/dev/routes';
+
+export default [
+  index('routes/home.tsx'),
+  route('health', 'routes/health.ts'),
+] satisfies RouteConfig;
+EOF
+
+# 5. Update .gitignore
 echo "[react-router] Updating .gitignore..."
 cat > .gitignore << 'EOF'
 # React Router build output
@@ -135,6 +160,18 @@ node_modules
 # Editor
 .idea
 .vscode
+EOF
+
+# 6. Approve dependency build scripts (pnpm blocks them by default and
+#    hard-fails the install with ERR_PNPM_IGNORED_BUILDS on unapproved ones)
+echo "[react-router] Creating pnpm-workspace.yaml..."
+cat > pnpm-workspace.yaml << 'EOF'
+# Build-script approvals: pnpm blocks dependency build scripts by default
+# and hard-fails (ERR_PNPM_IGNORED_BUILDS) on unapproved ones. These ship
+# prebuilt binaries, so their scripts are safe to run.
+allowBuilds:
+  '@parcel/watcher': true
+  esbuild: true
 EOF
 
 echo "[react-router] Configuration complete!"

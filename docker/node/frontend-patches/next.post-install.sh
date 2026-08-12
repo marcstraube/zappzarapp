@@ -297,7 +297,25 @@ cat > tsconfig.json << 'EOF'
 }
 EOF
 
-# 10. Create .gitignore
+# 10. Create the /health route handler (container orchestrator probes hit
+#     it; force-dynamic keeps it a live handler instead of a build-time
+#     prerender with a frozen timestamp)
+echo "[next] Creating app/health/route.ts..."
+mkdir -p app/health
+cat > app/health/route.ts << 'EOF'
+// Lightweight liveness/readiness endpoint for container orchestrators.
+export const dynamic = 'force-dynamic';
+
+export function GET(): Response {
+  return Response.json({
+    status: 'ok',
+    service: 'node-frontend',
+    timestamp: new Date().toISOString(),
+  });
+}
+EOF
+
+# 11. Create .gitignore
 echo "[next] Creating .gitignore..."
 cat > .gitignore << 'EOF'
 # Next.js build output
@@ -324,6 +342,19 @@ yarn-error.log*
 # TypeScript
 *.tsbuildinfo
 next-env.d.ts
+EOF
+
+# 12. Approve dependency build scripts (pnpm blocks them by default and
+#     hard-fails the install with ERR_PNPM_IGNORED_BUILDS on unapproved ones)
+echo "[next] Creating pnpm-workspace.yaml..."
+cat > pnpm-workspace.yaml << 'EOF'
+# Build-script approvals: pnpm blocks dependency build scripts by default
+# and hard-fails (ERR_PNPM_IGNORED_BUILDS) on unapproved ones. These ship
+# prebuilt binaries, so their scripts are safe to run.
+allowBuilds:
+  '@parcel/watcher': true
+  esbuild: true
+  sharp: true
 EOF
 
 echo "[next] Configuration complete!"

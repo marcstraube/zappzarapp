@@ -151,8 +151,10 @@ COPY --chmod=0755 docker/node/entrypoint.production.sh /usr/local/bin/entrypoint
 # Build as node user for security
 USER node
 
-# Copy frontend package files (frontend has its own package.json)
-COPY --chown=node:node src/node/frontend/package.json src/node/frontend/pnpm-lock.yaml* ./
+# Copy frontend package files (frontend has its own package.json; the
+# pnpm-workspace.yaml carries the build-script approvals pnpm needs to
+# install without ERR_PNPM_IGNORED_BUILDS)
+COPY --chown=node:node src/node/frontend/package.json src/node/frontend/pnpm-workspace.yaml* src/node/frontend/pnpm-lock.yaml* ./
 
 # Install dependencies
 RUN pnpm install --frozen-lockfile || pnpm install

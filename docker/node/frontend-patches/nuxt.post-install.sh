@@ -200,7 +200,20 @@ h2 {
 </style>
 EOF
 
-# 5. Create/update tsconfig.json to be minimal (Nuxt generates .nuxt/tsconfig.json)
+# 5. Create the /health server route (container orchestrator probes hit it;
+#    a Nitro server route answers without rendering any SSR page)
+echo "[nuxt] Creating server/routes/health.get.ts..."
+mkdir -p server/routes
+cat > server/routes/health.get.ts << 'EOF'
+// Lightweight liveness/readiness endpoint for container orchestrators.
+export default defineEventHandler(() => ({
+  status: 'ok',
+  service: 'node-frontend',
+  timestamp: new Date().toISOString(),
+}));
+EOF
+
+# 6. Create/update tsconfig.json to be minimal (Nuxt generates .nuxt/tsconfig.json)
 echo "[nuxt] Creating tsconfig.json..."
 cat > tsconfig.json << 'EOF'
 {
@@ -208,7 +221,7 @@ cat > tsconfig.json << 'EOF'
 }
 EOF
 
-# 6. Create .gitignore
+# 7. Create .gitignore
 echo "[nuxt] Creating .gitignore..."
 cat > .gitignore << 'EOF'
 # Nuxt dev/build outputs
@@ -230,6 +243,18 @@ node_modules
 # Local env files
 .env.local
 .env.*.local
+EOF
+
+# 8. Approve dependency build scripts (pnpm blocks them by default and
+#    hard-fails the install with ERR_PNPM_IGNORED_BUILDS on unapproved ones)
+echo "[nuxt] Creating pnpm-workspace.yaml..."
+cat > pnpm-workspace.yaml << 'EOF'
+# Build-script approvals: pnpm blocks dependency build scripts by default
+# and hard-fails (ERR_PNPM_IGNORED_BUILDS) on unapproved ones. These ship
+# prebuilt binaries, so their scripts are safe to run.
+allowBuilds:
+  '@parcel/watcher': true
+  esbuild: true
 EOF
 
 echo "[nuxt] Configuration complete!"
