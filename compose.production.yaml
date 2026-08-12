@@ -39,8 +39,9 @@ services:
       # tagless ref via bake `contexts` (see docker-bake.hcl).
       additional_contexts:
         - "node-backend-assets=docker-image://zappzarapp-node-backend:latest"
-    # Run as nginx user (uid 101) - completely unprivileged
-    user: "101:101"
+    # Run as nginx user (uid 100, gid 101 in the Alpine image) - completely
+    # unprivileged
+    user: "100:101"
     environment:
       - DOMAIN=${DOMAIN:-localhost}
       - ENABLE_PHP=${ENABLE_PHP:-true}

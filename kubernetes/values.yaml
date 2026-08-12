@@ -55,15 +55,16 @@ nginx:
   # Pod-level context: RuntimeDefault seccomp = the runtime's standard syscall
   # filter (Pod Security Standard "restricted" expects it on every pod).
   # Numeric runAsUser/runAsGroup: the image's `USER nginx` is symbolic, and
-  # the kubelet can only verify runAsNonRoot against a numeric UID.
+  # the kubelet can only verify runAsNonRoot against a numeric UID. The
+  # Alpine nginx package creates nginx as uid 100, gid 101.
   podSecurityContext:
-    runAsUser: 101
+    runAsUser: 100
     runAsGroup: 101
     seccompProfile:
       type: RuntimeDefault
   securityContext:
     readOnlyRootFilesystem: true
-    runAsNonRoot: true  # production image runs as the nginx user (uid 101)
+    runAsNonRoot: true  # production image runs as the nginx user (uid 100)
     capabilities:
       drop:
         - ALL
@@ -275,12 +276,12 @@ redis:
     type: ClusterIP
     port: 6379
   # The image entrypoint execs redis-server directly, so the pod can run as
-  # the redis user (uid 999) with no capabilities. fsGroup keeps the data
-  # volume writable.
+  # the redis user (uid 999, gid 1000 in the Alpine image) with no
+  # capabilities. fsGroup keeps the data volume writable.
   podSecurityContext:
     runAsUser: 999
-    runAsGroup: 999
-    fsGroup: 999
+    runAsGroup: 1000
+    fsGroup: 1000
     seccompProfile:
       type: RuntimeDefault
   securityContext:
@@ -459,15 +460,17 @@ rabbitmq:
   podSecurityContext:
     seccompProfile:
       type: RuntimeDefault
-    # Run directly as the rabbitmq user (uid 999): the official entrypoint
-    # then skips its root-only chown/su-exec phase, so no capabilities are
-    # needed. fsGroup keeps the data volume writable for the Erlang VM.
-    runAsUser: 999
-    runAsGroup: 999
-    fsGroup: 999
+    # Run directly as the rabbitmq user (uid 100, gid 101 in the Alpine
+    # image): the official entrypoint then skips its root-only chown/su-exec
+    # phase, so no capabilities are needed, and the wrapper's cookie
+    # chown resolves to the process's own user. fsGroup keeps the data
+    # volume writable for the Erlang VM.
+    runAsUser: 100
+    runAsGroup: 101
+    fsGroup: 101
   securityContext:
     readOnlyRootFilesystem: true
-    runAsNonRoot: true  # pod runs as the rabbitmq user (uid 999)
+    runAsNonRoot: true  # pod runs as the rabbitmq user (uid 100)
     capabilities:
       drop:
         - ALL
