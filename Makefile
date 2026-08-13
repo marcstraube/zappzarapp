@@ -1100,6 +1100,8 @@ pnpm: ## Execute pnpm command (e.g. make pnpm CMD="add -D vue")
 		cp /app/src/node/frontend/package.json /tmp/pnpm-cmd/src/node/frontend/package.json && \
 		cd /tmp/pnpm-cmd && pnpm $(CMD) && \
 		cat /tmp/pnpm-cmd/package.json > /app/package.json && \
+		cat /tmp/pnpm-cmd/src/node/backend/package.json > /app/src/node/backend/package.json && \
+		cat /tmp/pnpm-cmd/src/node/frontend/package.json > /app/src/node/frontend/package.json && \
 		{ [ -s /tmp/pnpm-cmd/pnpm-lock.yaml ] && cat /tmp/pnpm-cmd/pnpm-lock.yaml > /app/pnpm-lock.yaml || true; } \
 	'
 
