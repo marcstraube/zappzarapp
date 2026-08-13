@@ -52,12 +52,17 @@ jobs:
     if: github.event_name == 'workflow_dispatch' || vars.RENOVATE_SELF_HOSTED == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    env:
+      # A step-level if cannot read the secrets context - lift the presence
+      # check into a job env flag; the secret values themselves stay scoped
+      # to the token step below.
+      HAS_RENOVATE_APP: ${{ secrets.RENOVATE_APP_ID != '' && secrets.RENOVATE_APP_PRIVATE_KEY != '' }}
     steps:
       # Runs only when the GitHub App secrets are configured (see the header);
       # without them the step skips and Renovate falls back to the PAT.
       - name: Generate GitHub App token
         id: app-token
-        if: ${{ secrets.RENOVATE_APP_ID != '' && secrets.RENOVATE_APP_PRIVATE_KEY != '' }}
+        if: ${{ env.HAS_RENOVATE_APP == 'true' }}
         uses: actions/create-github-app-token@v3.2.0 # full pin, matching the action pin below; Renovate bumps this
         with:
           app-id: ${{ secrets.RENOVATE_APP_ID }}
