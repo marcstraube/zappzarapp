@@ -8,8 +8,8 @@
 import express, { Express, Request, Response, NextFunction } from 'express';
 import pino from 'pino';
 import pinoHttp from 'pino-http';
-import { Pool } from 'pg';
 import { HealthCheckService } from './Shared/HealthCheck/HealthCheckService.js';
+import type { ConnectionFactory } from './Shared/Database/ConnectionFactory.js';
 import { createAppRouter } from './App/index.js';
 import { createDevDashboardRouter } from './DevDashboard/index.js';
 
@@ -44,7 +44,8 @@ export const logger = pino({
  * @public Boilerplate API — shipped for consumers, no in-tree importer expected.
  */
 export interface AppOptions {
-  pool?: Pool | null;
+  /** Connection factory for the readiness database probe (both engines) */
+  connectionFactory?: ConnectionFactory | null;
 }
 
 export function createApp(options: AppOptions = {}): Express {
@@ -53,7 +54,7 @@ export function createApp(options: AppOptions = {}): Express {
   const CORS_ORIGINS = process.env.CORS_ORIGINS ?? '*';
 
   const app: Express = express();
-  const healthCheckService = new HealthCheckService(options.pool ?? null);
+  const healthCheckService = new HealthCheckService(options.connectionFactory ?? null);
 
   // CORS Configuration Warnings
   if (CORS_ORIGINS === '*') {

@@ -28,12 +28,12 @@
  * ```
  */
 
-import { Pool } from 'pg';
 import { createClient, RedisClientType } from 'redis';
 import * as http from 'http';
 import * as https from 'https';
 import * as net from 'net';
 import { getHttpsTlsOptions, getTlsSocketOptions } from '../Config/TlsConfig.js';
+import type { ConnectionFactory } from '../Database/ConnectionFactory.js';
 
 /**
  * Service check result
@@ -206,21 +206,22 @@ async function measureLatency<T>(fn: () => Promise<T>): Promise<{ result: T; lat
  * Health Check Service
  *
  * Provides methods for liveness and readiness checks.
- * Can be used with or without a database pool.
+ * Can be used with or without a database connection factory.
  */
 export class HealthCheckService {
   private readonly config: HealthCheckConfig;
-  private readonly pool: Pool | null;
+  private readonly connectionFactory: ConnectionFactory | null;
   private readonly serviceName = 'node-backend';
 
   /**
    * Create a new HealthCheckService
    *
-   * @param pool Optional PostgreSQL connection pool for database checks
+   * @param connectionFactory Optional connection factory for database checks
+   *   (serves both the postgres and mariadb backends)
    */
-  constructor(pool: Pool | null = null) {
+  constructor(connectionFactory: ConnectionFactory | null = null) {
     this.config = loadConfig();
-    this.pool = pool;
+    this.connectionFactory = connectionFactory;
   }
 
   /**
@@ -341,32 +342,35 @@ export class HealthCheckService {
 
   /**
    * Check database connection
+   *
+   * Probes through the connection factory's unified API, so the check works
+   * against both the postgres and mariadb backends.
    */
   private async checkDatabase(): Promise<ServiceCheckResult> {
     if (!this.config.enableDatabase) {
       return { status: 'disabled' };
     }
 
-    if (!this.pool) {
+    if (!this.connectionFactory) {
       return {
         status: 'unhealthy',
         type: this.config.databaseType,
-        message: 'Database pool not configured',
+        message: 'Database connection not configured',
       };
     }
 
     try {
       const { latency_ms } = await measureLatency(async () => {
-        const client = await Promise.race([
-          this.pool!.connect(),
+        const connection = await Promise.race([
+          this.connectionFactory!.create(),
           new Promise<never>((_, reject) =>
             setTimeout(() => reject(new Error('Connection timeout')), CHECK_TIMEOUT_MS)
           ),
         ]);
         try {
-          await client.query('SELECT 1');
+          await connection.query('SELECT 1');
         } finally {
-          client.release();
+          connection.release?.();
         }
       });
 

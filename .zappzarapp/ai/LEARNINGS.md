@@ -6,6 +6,39 @@ periodic triage (`/optimize --learnings`) and are removed from this file.
 
 ---
 
+## Node Backend
+
+### Database readiness probe serves both engines (2026-08-12)
+
+- **HealthCheckService probes through ConnectionFactory** (unified API), so the
+  readiness database check works for postgres AND mariadb; `createApp` takes
+  `connectionFactory` for injection (tests wrap mock pools via
+  `new ConnectionFactory({ dbType, pool })`).
+- **mysql2 negotiates TLS only when an `ssl` option is present** — pg tries TLS
+  on its own. Against a MariaDB with `require_secure_transport=ON`, a mysql2
+  pool without ssl options fails with "Connections using insecure transport are
+  prohibited". The ConnectionFactory now wires `getSslConfig()`/`hasSsl()` into
+  the mysql2 pool; set `DB_SSL_CA=/etc/ssl/certs/internal-ca.crt` (mounted in
+  the node containers) to enable it.
+- **No import-time config resolution in DatabaseConfig**: the module-scope
+  `export const databaseConfig = getDatabaseConfig()` singletons crashed any
+  importer (tests, tooling) in an environment without DB variables — config is
+  resolved via the functions at call time.
+- **Compose DB env defaults are postgres-shaped**: mariadb deployments must set
+  DB_HOST=mariadb and DB_PORT=3306 in .env (the compose defaults pass
+  postgres/5432 into the containers explicitly).
+- **Workspace imports need workspace declarations**: mysql2 was declared only in
+  the ROOT package.json while the backend workspace imported 'mysql2/promise' —
+  it resolved via root-hoisting (tsc/eslint run from the root and never flag
+  it), but the IDE inspects per-workspace manifests and reports the undeclared
+  dependency. Declare runtime imports in the workspace package.json that
+  contains the importing code.
+- **`make pnpm` copies workspace manifests back since 2026-08-13**: the temp
+  workspace recipe copies package.json + lockfile back after the pnpm run —
+  including src/node/backend and src/node/frontend package.json, so
+  `--filter <workspace> add` changes land on the host (they were silently
+  discarded when only the root manifest came back).
+
 ## Docker & Containers
 
 ### Compose production non-root (ADR 0012, 2026-08-12)

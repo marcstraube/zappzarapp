@@ -7,6 +7,7 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import request from 'supertest';
 import { createApp } from '@backend/app';
+import { ConnectionFactory } from '@backend/Shared/Database/ConnectionFactory';
 import type { Express } from 'express';
 import { createMockPgPool } from '../fixtures/mockConnections';
 
@@ -30,14 +31,14 @@ describe('Express App Factory', () => {
       expect(typeof app).toBe('function');
     });
 
-    it('should accept pool option for dependency injection', () => {
-      const mockPool = createMockPgPool();
-      app = createApp({ pool: mockPool });
+    it('should accept a connection factory for dependency injection', () => {
+      const factory = new ConnectionFactory({ dbType: 'postgres', pool: createMockPgPool() });
+      app = createApp({ connectionFactory: factory });
       expect(app).toBeDefined();
     });
 
-    it('should work with null pool option', () => {
-      app = createApp({ pool: null });
+    it('should work with a null connection factory', () => {
+      app = createApp({ connectionFactory: null });
       expect(app).toBeDefined();
     });
   });

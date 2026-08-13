@@ -23,11 +23,13 @@ data:
   DB_PORT: {{ include "zappzarapp.databasePort" . | quote }}
   {{- if .Values.postgres.enabled }}
   DB_TYPE: "postgres"
-  # The node backend's readiness endpoint probes the database through its
-  # pg pool, so the flag applies to the postgres backend only
-  ENABLE_DATABASE: "true"
   {{- else if .Values.mariadb.enabled }}
   DB_TYPE: "mariadb"
+  {{- end }}
+  {{- if or .Values.postgres.enabled .Values.mariadb.enabled }}
+  # The node backend's readiness endpoint probes the database through its
+  # connection factory, which serves both engines
+  ENABLE_DATABASE: "true"
   {{- end }}
 
   # Redis configuration (the node backend's health check reads the URL form)

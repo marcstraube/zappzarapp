@@ -167,7 +167,9 @@ describe('Database Configuration', () => {
       });
 
       it('should throw error when no password is configured', async () => {
-        await expect(loadDatabaseConfig({})).rejects.toThrow('Database password not configured');
+        const { getDatabaseConfig } = await loadDatabaseConfig({});
+
+        expect(() => getDatabaseConfig()).toThrow('Database password not configured');
       });
 
       it('should use default values when password is set', async () => {
@@ -397,18 +399,11 @@ describe('Database Configuration', () => {
     });
   });
 
-  describe('databaseConfig singleton', () => {
-    it('should export a pre-configured singleton', async () => {
-      const { databaseConfig, getDatabaseConfig } = await loadDatabaseConfig({
-        DB_TYPE: 'postgres',
-        DB_HOST: 'singletonhost',
-        DB_PASSWORD: 'testpass',
-      });
+  describe('import-time behavior', () => {
+    it('should load without database env configured (no import-time config resolution)', async () => {
+      const module = await loadDatabaseConfig({});
 
-      expect(databaseConfig).toBeDefined();
-      expect(databaseConfig.type).toBe('postgres');
-      expect(databaseConfig.host).toBe('singletonhost');
-      expect(databaseConfig).toEqual(getDatabaseConfig());
+      expect(module.getDatabaseConfig).toBeDefined();
     });
   });
 
@@ -716,11 +711,11 @@ describe('Database Configuration', () => {
     });
 
     it('should throw error when file does not exist and no env var', async () => {
-      await expect(
-        loadDatabaseConfig({
-          DB_PASSWORD_FILE: '/nonexistent/path/to/password.txt',
-        })
-      ).rejects.toThrow('Database password not configured');
+      const { getDatabaseConfig } = await loadDatabaseConfig({
+        DB_PASSWORD_FILE: '/nonexistent/path/to/password.txt',
+      });
+
+      expect(() => getDatabaseConfig()).toThrow('Database password not configured');
     });
 
     it('should fall back to env var when _FILE path is empty', async () => {

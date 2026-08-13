@@ -5,11 +5,20 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { EventEmitter } from 'node:events';
 import { HealthCheckService } from '@backend/Shared/HealthCheck/HealthCheckService';
+import { ConnectionFactory } from '@backend/Shared/Database/ConnectionFactory';
 import { Pool, PoolClient } from 'pg';
+import type { Pool as MySqlPool } from 'mysql2/promise';
 import { createClient } from 'redis';
 import * as http from 'http';
 import * as https from 'https';
 import * as net from 'net';
+
+/**
+ * Wrap a mock pg pool in a ConnectionFactory for injection into the service.
+ */
+function pgFactory(pool: Pool): ConnectionFactory {
+  return new ConnectionFactory({ dbType: 'postgres', pool });
+}
 
 // Mock the redis module
 vi.mock('redis', () => ({
@@ -192,14 +201,14 @@ describe('HealthCheckService', () => {
       expect(result.checks['database']?.status).toBe('disabled');
     });
 
-    it('should return unhealthy when pool is not provided', async () => {
+    it('should return unhealthy when no connection factory is provided', async () => {
       process.env.ENABLE_DATABASE = 'true';
 
       const service = new HealthCheckService(null);
       const result = await service.checkReadiness();
 
       expect(result.checks['database']?.status).toBe('unhealthy');
-      expect(result.checks['database']?.message).toBe('Database pool not configured');
+      expect(result.checks['database']?.message).toBe('Database connection not configured');
     });
 
     it('should return ok when database query succeeds', async () => {
@@ -216,7 +225,7 @@ describe('HealthCheckService', () => {
         connect: vi.fn().mockResolvedValue(mockClient),
       } as unknown as Pool;
 
-      const service = new HealthCheckService(mockPool);
+      const service = new HealthCheckService(pgFactory(mockPool));
       const result = await service.checkReadiness();
 
       expect(result.checks['database']?.status).toBe('ok');
@@ -231,7 +240,7 @@ describe('HealthCheckService', () => {
         connect: vi.fn().mockRejectedValue(new Error('Connection refused')),
       } as unknown as Pool;
 
-      const service = new HealthCheckService(mockPool);
+      const service = new HealthCheckService(pgFactory(mockPool));
       const result = await service.checkReadiness();
 
       expect(result.checks['database']?.status).toBe('unhealthy');
@@ -251,10 +260,50 @@ describe('HealthCheckService', () => {
         connect: vi.fn().mockResolvedValue(mockClient),
       } as unknown as Pool;
 
-      const service = new HealthCheckService(mockPool);
+      const service = new HealthCheckService(pgFactory(mockPool));
       const result = await service.checkReadiness();
 
       expect(result.checks['database']?.type).toBe('postgres');
+    });
+
+    it('should probe a mariadb backend through the mysql connection', async () => {
+      process.env.ENABLE_DATABASE = 'true';
+      process.env.DB_TYPE = 'mariadb';
+
+      const releaseMock = vi.fn();
+      const mockConnection = {
+        query: vi.fn().mockResolvedValue([[{ '1': 1 }], []]),
+        release: releaseMock,
+      };
+
+      const mockPool = {
+        getConnection: vi.fn().mockResolvedValue(mockConnection),
+      } as unknown as MySqlPool;
+
+      const factory = new ConnectionFactory({ dbType: 'mysql', pool: mockPool });
+      const service = new HealthCheckService(factory);
+      const result = await service.checkReadiness();
+
+      expect(result.checks['database']?.status).toBe('ok');
+      expect(result.checks['database']?.type).toBe('mariadb');
+      expect(mockConnection.query).toHaveBeenCalledWith('SELECT 1', undefined);
+      expect(releaseMock).toHaveBeenCalled();
+    });
+
+    it('should return unhealthy when the mariadb connection fails', async () => {
+      process.env.ENABLE_DATABASE = 'true';
+      process.env.DB_TYPE = 'mariadb';
+
+      const mockPool = {
+        getConnection: vi.fn().mockRejectedValue(new Error('Connection refused')),
+      } as unknown as MySqlPool;
+
+      const factory = new ConnectionFactory({ dbType: 'mysql', pool: mockPool });
+      const service = new HealthCheckService(factory);
+      const result = await service.checkReadiness();
+
+      expect(result.checks['database']?.status).toBe('unhealthy');
+      expect(result.checks['database']?.message).toBe('Connection refused');
     });
   });
 
@@ -294,7 +343,7 @@ describe('HealthCheckService', () => {
         connect: vi.fn().mockResolvedValue(mockClient),
       } as unknown as Pool;
 
-      const service = new HealthCheckService(mockPool);
+      const service = new HealthCheckService(pgFactory(mockPool));
       const result = await service.checkReadiness();
 
       expect(result.status).toBe('ok');
@@ -308,7 +357,7 @@ describe('HealthCheckService', () => {
         connect: vi.fn().mockRejectedValue(new Error('Connection failed')),
       } as unknown as Pool;
 
-      const service = new HealthCheckService(mockPool);
+      const service = new HealthCheckService(pgFactory(mockPool));
       const result = await service.checkReadiness();
 
       expect(result.status).toBe('degraded');
@@ -640,7 +689,7 @@ describe('HealthCheckService', () => {
         connect: vi.fn().mockResolvedValue(mockClient),
       } as unknown as Pool;
 
-      const service = new HealthCheckService(mockPool);
+      const service = new HealthCheckService(pgFactory(mockPool));
       const result = await service.checkStatus();
 
       expect(result.services['database']?.status).toBe('ok');
@@ -694,7 +743,7 @@ describe('HealthCheckService', () => {
         connect: vi.fn().mockRejectedValue(new Error('ECONNREFUSED 10.0.0.1:5432')),
       } as unknown as Pool;
 
-      const service = new HealthCheckService(mockPool);
+      const service = new HealthCheckService(pgFactory(mockPool));
       const result = await service.checkReadiness();
 
       expect(result.checks['database']?.status).toBe('unhealthy');

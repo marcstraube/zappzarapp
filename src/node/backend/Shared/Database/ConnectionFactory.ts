@@ -20,6 +20,7 @@
  * @package Infrastructure/Database
  */
 
+import { readFileSync } from 'fs';
 import type { Pool as PgPool, PoolClient as PgClient } from 'pg';
 import type {
   Pool as MySqlPool,
@@ -27,7 +28,13 @@ import type {
   ResultSetHeader,
 } from 'mysql2/promise';
 import type { DatabaseConnection, Row } from '../Repository/RepositoryInterface.js';
-import { getDatabaseConfig, isPostgres } from './DatabaseConfig.js';
+import {
+  getDatabaseConfig,
+  getSslConfig,
+  hasSsl,
+  isPostgres,
+  type DatabaseConfig,
+} from './DatabaseConfig.js';
 
 /**
  * Database type identifier
@@ -46,6 +53,28 @@ export interface ConnectionFactoryOptions {
   dbType?: DatabaseType;
   /** Inject a pool for testing */
   pool?: PgPool | MySqlPool;
+}
+
+/**
+ * Build the TLS options for the mysql2 pool.
+ *
+ * mysql2 negotiates TLS only when an ssl option is present (pg tries TLS on
+ * its own), and MariaDB with require-secure-transport rejects plaintext
+ * connections. Returns undefined when no CA is configured, matching a
+ * TLS-less development database.
+ */
+function buildMysqlSslOptions(
+  config: DatabaseConfig
+): { ca: string; rejectUnauthorized: boolean } | undefined {
+  if (!hasSsl(config)) {
+    return undefined;
+  }
+
+  const ssl = getSslConfig(config);
+  return {
+    ca: readFileSync(ssl.ca, 'utf-8'),
+    rejectUnauthorized: ssl.verify,
+  };
 }
 
 /**
@@ -292,6 +321,7 @@ export class ConnectionFactory {
         database: config.name,
         waitForConnections: true,
         connectionLimit: 10,
+        ssl: buildMysqlSslOptions(config),
       });
     }
 

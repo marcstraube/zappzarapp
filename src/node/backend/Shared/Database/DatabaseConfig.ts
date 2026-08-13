@@ -214,7 +214,3 @@ export function getPostgresSslMode(dbConfig?: DatabaseConfig): string {
   // SSL CA configured - enforce SSL with appropriate verification
   return ssl.verify ? 'verify-full' : 'require';
 }
-
-// Export singleton config for convenience
-export const databaseConfig = getDatabaseConfig();
-export const sslConfig = getSslConfig();
