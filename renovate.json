@@ -6,7 +6,6 @@
   "labels": ["renovate", "dependencies"],
   "automerge": true,
   "platformAutomerge": true,
-  "platformCommit": "enabled",
   "minimumReleaseAge": "3 days",
   "customDatasources": {
     "pecl-gmagick": {
