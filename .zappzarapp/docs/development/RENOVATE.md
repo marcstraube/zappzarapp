@@ -57,28 +57,51 @@ gets repo access; you keep full control of the version and schedule. Setup:
    Contents **RW**, Pull requests **RW**, Issues **RW** (Dependency Dashboard),
    Commit statuses **RW** (the `minimumReleaseAge` stability check — without it
    Renovate aborts before opening PRs), Workflows **RW** (Renovate updates
-   `.github/workflows/*`).
+   `.github/workflows/*`), Dependabot alerts **RO** (vulnerability-alert
+   prioritisation — without it the Dependency Dashboard warns "Cannot access
+   vulnerability alerts").
 2. Store it as a repository secret:
 
    ```bash
    gh secret set RENOVATE_TOKEN --body '<your-fine-grained-pat>'
    ```
 
-   **Alternative — GitHub App (verified commits):** instead of the PAT, register
-   a GitHub App with the same repository permissions, install it on the repo,
-   and store its credentials:
+   **Alternative — GitHub App (verified commits):** with App auth the workflow
+   authenticates via an installation token and Renovate creates its branch
+   commits through the GitHub API: GitHub signs them (**Verified** badge) and
+   attributes them to the app's bot identity. On the PAT path the commits are
+   created via git and are unsigned — platform commits stay off there, because
+   under PAT auth they would only switch the attribution to the token owner
+   without gaining a signature. Setup:
 
-   ```bash
-   gh secret set RENOVATE_APP_ID --body '<app id>'
-   gh secret set RENOVATE_APP_PRIVATE_KEY < app-private-key.pem
-   ```
+   1. Register a GitHub App (Settings → Developer settings → GitHub Apps → _New
+      GitHub App_; a webhook is not needed — untick _Active_) with the
+      **Repository permissions**: Contents **RW**, Pull requests **RW**, Issues
+      **RW**, Commit statuses **RW**, Workflows **RW**, Dependabot alerts
+      **RO**.
+   2. Install the App on the repository (App settings → _Install App_).
+   3. Generate a **private key** in the App settings and store the credentials
+      as repository secrets (RENOVATE_APP_ID takes the numeric App ID or the
+      client ID from the App's settings page — both are valid):
 
-   The workflow then authenticates with an installation token and Renovate
-   creates its branch commits through the GitHub API: GitHub signs them
-   (**Verified** badge) and attributes them to the app's bot identity. On the
-   PAT path the commits are created via git and are unsigned — platform commits
-   stay off there, because under PAT auth they would only switch the attribution
-   to the token owner without gaining a signature.
+      ```bash
+      gh secret set RENOVATE_APP_ID --body '<app id>'
+      gh secret set RENOVATE_APP_PRIVATE_KEY < app-private-key.pem
+      ```
+
+   With both secrets present the workflow picks the App automatically; without
+   them it falls back to the PAT. Two operational notes:
+
+   - **Permission changes need installation approval:** when you add permissions
+     to an existing App, the installation must approve them (Settings →
+     Applications → Installed GitHub Apps → _Configure_ → review request) —
+     until then the added permission is not active and Renovate keeps warning
+     (e.g. "Cannot access vulnerability alerts").
+   - **Switching from PAT to App orphans existing Renovate PRs/branches:**
+     Renovate only recognises PRs created by its current identity and skips
+     branches whose commits carry another author. Close the open `renovate/*`
+     PRs and delete their branches once — the next run recreates them under the
+     App identity.
 
 3. Trigger the first run manually (Actions → Renovate → _Run workflow_, or
    `gh workflow run renovate.yml`). Manual runs always work and default to

@@ -19,7 +19,24 @@ periodic triage (`/optimize --learnings`) and are removed from this file.
   RENOVATE_APP_ID/RENOVATE_APP_PRIVATE_KEY secrets it generates an installation
   token and enables platform commits; without them it falls back to the
   RENOVATE_TOKEN PAT with platform commits off. The base branch history stays
-  fully verified regardless (squash merges are web-flow signed).
+  fully verified regardless (squash merges are web-flow signed). Verified
+  end-to-end: App-path branch commits show verified=true with committer GitHub,
+  authored by the app's bot identity.
+- **Switching the Renovate auth identity orphans existing PRs/branches**:
+  Renovate only recognizes PRs created by its current identity ("Open PR Count:
+  0") and refuses to touch branches whose commits carry another author ("Branch
+  has been edited but found no PR - skipping"). After a PAT→App switch, close
+  the old renovate PRs and delete the renovate/* branches once — the next run
+  recreates everything under the new identity.
+- **A step-level `if` cannot read the `secrets` context** — GitHub rejects the
+  workflow at dispatch ("Unrecognized named-value: 'secrets'"). Lift the
+  presence check into a job `env` flag (env expressions may reference secrets)
+  and gate the step on `env.FLAG == 'true'`; the secret values themselves go
+  only into the step's `with:`.
+- **Renovate's vulnerability-alerts feature reads Dependabot alerts**: the auth
+  identity needs the repository permission "Dependabot alerts: Read-only"
+  (GitHub App and fine-grained PAT alike), or Renovate warns "Cannot access
+  vulnerability alerts" in the Dependency Dashboard.
 
 ## Node Backend
 
