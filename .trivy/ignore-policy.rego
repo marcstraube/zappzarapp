@@ -39,12 +39,16 @@ ignore_packages := {
 	"org.apache.commons:commons-lang3",
 	"io.projectreactor.netty:reactor-netty-http",
 	"at.yawk.lz4:lz4-java",
+	"org.apache.httpcomponents.core5:httpcore5",
+	"org.jsoup:jsoup",
+	"io.opentelemetry:opentelemetry-api",
 	# Bundled with the Node.js runtime / npm (npm is unused at runtime; we use pnpm).
 	"undici",
 	"tar",
 	"brace-expansion",
 	"minimatch",
 	"picomatch",
+	"ip-address",
 }
 
 default ignore = false
