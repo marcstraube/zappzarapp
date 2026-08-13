@@ -73,6 +73,26 @@ periodic triage (`/optimize --learnings`) and are removed from this file.
 
 ## Docker & Containers
 
+### node-backend crash loop in the Compose production preset (2026-08-13)
+
+- **The internal cert-key ACL list must cover EVERY production service uid**:
+  node/node-backend run as uid 50000 in the production preset and read
+  `docker/certs/internal/cert.key` (HTTPS server / NITRO_SSL_KEY), but the
+  `generate-internal.sh` ACL list stopped at u:1000 → `readFileSync` threw
+  EACCES → exit 1 → `restart: unless-stopped` crash loop. Invisible for three
+  reasons: dev runs node as uid 1000 (in the ACL), k8s mounts certs as native
+  Secrets with `fsGroup`, and `make test-production` only health-checked
+  nginx/db/redis. Fixed: u:50000 in the ACL list, node-backend checks in all
+  three test-production targets, and the server start-up check now verifies
+  readability (`accessSync R_OK`) — `statSync().isFile()` succeeds on an
+  unreadable mode-600 key, so the old check produced a bare stack trace instead
+  of the TLS hint.
+- **`docker compose logs` in CI diagnostics only shows services whose profiles
+  are active in the CURRENT environment**: the "Show container status" step runs
+  with `COMPOSE_FILE=compose.yaml:compose.ci.yaml` and no profiles, so
+  `docker compose ps` lists all project containers but `logs` printed only nginx
+  — the crash-looping container's output never reached the CI log.
+
 ### Compose production non-root (ADR 0012, 2026-08-12)
 
 - **Compose production preset now mirrors the k8s "restricted" posture**: every

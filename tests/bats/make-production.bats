@@ -91,6 +91,22 @@ teardown_file() {
     fi
 }
 
+@test "[Production] Node backend health check uses production compose files" {
+    # Extract node-backend health check command
+    local node_backend_check
+    node_backend_check=$(awk '/^test-production:.*##/,/^test-production-minimal:/ { print }' Makefile | \
+        grep "node-backend curl" | head -1)
+
+    # Verify it includes production compose files
+    if echo "$node_backend_check" | grep -q "compose.yaml.*compose.production.yaml"; then
+        true  # Success
+    else
+        echo "# node-backend health check: $node_backend_check" >&3
+        echo "# Expected: Should include -f compose.yaml -f compose.production.yaml" >&3
+        false
+    fi
+}
+
 @test "[Production] MariaDB health check uses production compose files" {
     # Extract mariadb health check command
     local mariadb_check
@@ -193,6 +209,22 @@ teardown_file() {
         echo "# Expected: docker/certs/internal mounted to /tmp/certs" >&3
         false
     fi
+}
+
+@test "[Production] Cert-key ACL list covers all production service uids" {
+    # The internal/nginx keys are mode 600; unprivileged production containers
+    # read them only through the per-uid ACLs granted at generation time.
+    local acl_line
+    acl_line=$(grep -A1 "setfacl -m" docker/certs/generate-internal.sh | tr -d ' \\\n')
+
+    # uid 70 (postgres), 100 (nginx/rabbitmq), 999 (redis/mariadb),
+    # 1000 (seaweedfs/meilisearch/mercure/elasticsearch), 50000 (node/node-backend)
+    for uid in 0 70 100 999 1000 50000; do
+        if ! echo "$acl_line" | grep -q "u:$uid:r"; then
+            echo "# Missing u:$uid:r in generate-internal.sh setfacl list" >&3
+            false
+        fi
+    done
 }
 
 @test "[Production] Internal certificates are readable" {
