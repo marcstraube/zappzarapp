@@ -23,8 +23,8 @@ security problems before they are fixed.
 
 ## Supported Versions
 
-Until the 1.0 release, only the latest state of the default branch is supported.
-After 1.0, the latest minor release receives security fixes.
+The latest minor release receives security fixes. Older releases do not receive
+backports — upgrade to the latest release to stay supported.
 
 ## Security Model
 

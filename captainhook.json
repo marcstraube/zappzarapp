@@ -52,7 +52,8 @@
             "#\\.claude/sessions/#",
             "#querySelectorAll<HTMLElement>#",
             "#fetchMock\\.mock\\.calls#",
-            "#RENOVATE_SELF_HOSTED#"
+            "#RENOVATE_SELF_HOSTED#",
+            "#img\\.shields\\.io/badge/#"
           ]
         },
         "config": {

@@ -3,8 +3,10 @@ apiVersion: v2
 name: zappzarapp
 description: A Helm chart for deploying the zappzarapp application stack
 type: application
-version: 0.1.0
-appVersion: "3.43"
+# The chart ships inside the application repository and is released together
+# with it, so the chart version tracks the application version.
+version: 1.0.0
+appVersion: "1.0.0"
 keywords:
   - php
   - nodejs

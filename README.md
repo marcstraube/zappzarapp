@@ -2,6 +2,10 @@
 
 # ⚡ zappzarapp
 
+[![CI](https://github.com/marcstraube/zappzarapp/actions/workflows/ci.yml/badge.svg)](https://github.com/marcstraube/zappzarapp/actions/workflows/ci.yml)
+[![codecov](https://codecov.io/gh/marcstraube/zappzarapp/graph/badge.svg)](https://codecov.io/gh/marcstraube/zappzarapp)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+
 **zappzarapp** · /ˈt͡sapt͡saˈʁap/
 
 > German colloquial for "in a flash" — from Russian цап-царап: grab it and go.
