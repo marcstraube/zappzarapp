@@ -92,8 +92,11 @@ chmod 600 "$INTERNAL_DIR/cert.key" "$NGINX_DIR/cert.key"
 #   u:1000 seaweedfs/meilisearch/mercure/elasticsearch (uid 1000) and the
 #          default container USER_ID (CI hosts may generate certs as a
 #          different UID, e.g. 1001 on GitHub runners)
+#   u:50000 node/node-backend (production preset runs as 50000:50000; the
+#          servers read the internal key for HTTPS via NITRO_SSL_KEY and
+#          /etc/ssl/private/cert.key)
 if command -v setfacl >/dev/null 2>&1; then
-    setfacl -m u:0:r,u:70:r,u:100:r,u:999:r,u:1000:r \
+    setfacl -m u:0:r,u:70:r,u:100:r,u:999:r,u:1000:r,u:50000:r \
         "$INTERNAL_DIR/cert.key" "$NGINX_DIR/cert.key"
 else
     echo "WARNING: setfacl not found - keys are mode 600 without ACLs."

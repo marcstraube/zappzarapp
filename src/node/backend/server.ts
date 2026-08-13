@@ -9,7 +9,7 @@
  */
 
 import { createServer as createHttpsServer, Server } from 'https';
-import { readFileSync, statSync } from 'fs';
+import { accessSync, constants, readFileSync, statSync } from 'fs';
 import { createApp, logger } from './app.js';
 import { getConnectionFactory } from './Shared/Database/ConnectionFactory.js';
 import { fileURLToPath } from 'url';
@@ -38,23 +38,30 @@ export function startServer(): Server {
   const enableDatabase = (process.env.ENABLE_DATABASE ?? 'false').toLowerCase() === 'true';
   const app = createApp({ connectionFactory: enableDatabase ? getConnectionFactory() : null });
 
-  // Verify certificates exist and are files (not directories from Docker bind mount bug)
-  const isFile = (path: string): boolean => {
+  // Verify certificates are readable files: statSync catches missing paths and
+  // directories (Docker creates a directory when a bind-mount source is
+  // absent), accessSync catches key files the container user cannot read
+  // (mode 600 keys rely on a host ACL entry for this uid).
+  const isReadableFile = (path: string): boolean => {
     try {
-      return statSync(path).isFile();
+      if (!statSync(path).isFile()) {
+        return false;
+      }
+      accessSync(path, constants.R_OK);
+      return true;
     } catch {
       return false;
     }
   };
 
-  if (!isFile(CERT_PATH) || !isFile(KEY_PATH)) {
+  if (!isReadableFile(CERT_PATH) || !isReadableFile(KEY_PATH)) {
     const hint =
       NODE_ENV === 'production'
-        ? 'Ensure TLS certificates are properly mounted, then restart the container.'
+        ? 'Ensure TLS certificates are mounted and readable by the container user (see docker/certs/generate-internal.sh for the key ACLs), then restart the container.'
         : 'Run "make ssl-internal", then restart with "make up".';
     logger.error(
       { certPath: CERT_PATH, keyPath: KEY_PATH },
-      `TLS certificates not found or invalid. ${hint}`
+      `TLS certificates not found or not readable. ${hint}`
     );
     process.exit(1);
   }

@@ -1596,6 +1596,18 @@ test-production: ## Test production build with ZAPPZARAPP_ENV-configured service
 			FAILED=1; \
 		fi; \
 	fi; \
+	if [ "$${ENABLE_NODE:-true}" = "true" ]; then \
+		case "$${NODE_MODE:-assets-api}" in \
+			api|assets-api|framework-api) \
+				echo -n "   node-backend... "; \
+				if timeout 30 sh -c 'until ZAPPZARAPP_ENV=production docker compose -f compose.yaml -f compose.production.yaml exec -T node-backend curl -sf --insecure https://localhost:3000/health > /dev/null 2>&1; do sleep 1; done' 2>/dev/null; then \
+					echo -e "\033[0;32m✓\033[0m"; \
+				else \
+					echo -e "\033[0;31m✗ (timeout)\033[0m"; \
+					FAILED=1; \
+				fi;; \
+		esac; \
+	fi; \
 	echo ""; \
 	if [ $$FAILED -eq 0 ]; then \
 		echo -e "\033[0;32m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\033[0m"; \
@@ -1675,6 +1687,15 @@ test-production-minimal: ## Test production build with minimal services (nginx +
 			FAILED=1; \
 		fi; \
 	fi; \
+	if [ "$${ENABLE_NODE:-true}" = "true" ] && [ "$${NODE_MODE:-assets-api}" = "api" ]; then \
+		echo -n "   node-backend... "; \
+		if timeout 30 sh -c 'until ZAPPZARAPP_ENV=production docker compose -f compose.yaml -f compose.production.yaml exec -T node-backend curl -sf --insecure https://localhost:3000/health > /dev/null 2>&1; do sleep 1; done' 2>/dev/null; then \
+			echo -e "\033[0;32m✓\033[0m"; \
+		else \
+			echo -e "\033[0;31m✗ (timeout)\033[0m"; \
+			FAILED=1; \
+		fi; \
+	fi; \
 	echo ""; \
 	if [ $$FAILED -eq 0 ]; then \
 		echo -e "\033[0;32m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\033[0m"; \
@@ -1746,6 +1767,13 @@ test-production-full: ## Test production build with ALL services (comprehensive,
 	fi; \
 	echo -n "   redis... "; \
 	if timeout 30 sh -c 'until ZAPPZARAPP_ENV=production docker compose -f compose.yaml -f compose.production.yaml exec -T redis redis-cli --tls --insecure ping > /dev/null 2>&1; do sleep 1; done' 2>/dev/null; then \
+		echo -e "\033[0;32m✓\033[0m"; \
+	else \
+		echo -e "\033[0;31m✗ (timeout)\033[0m"; \
+		FAILED=1; \
+	fi; \
+	echo -n "   node-backend... "; \
+	if timeout 30 sh -c 'until ZAPPZARAPP_ENV=production docker compose -f compose.yaml -f compose.production.yaml exec -T node-backend curl -sf --insecure https://localhost:3000/health > /dev/null 2>&1; do sleep 1; done' 2>/dev/null; then \
 		echo -e "\033[0;32m✓\033[0m"; \
 	else \
 		echo -e "\033[0;31m✗ (timeout)\033[0m"; \
