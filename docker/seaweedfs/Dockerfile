@@ -8,7 +8,7 @@
 # - For SHA digest pinning in production, use:
 #   FROM chrislusf/seaweedfs:<tag>@sha256:<digest>
 
-ARG SEAWEEDFS_VERSION=4.40
+ARG SEAWEEDFS_VERSION=4.41
 
 FROM chrislusf/seaweedfs:${SEAWEEDFS_VERSION}
 
