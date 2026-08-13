@@ -289,7 +289,7 @@ scan:zap:
 # jobs, whose generated names a static needs list cannot reference. Rules-
 # filtered jobs (heavy scans on push pipelines) simply contribute nothing.
 security-report:
-  image: alpine:3.23
+  image: alpine:3.24
   stage: report
   script:
     - apk add --no-cache jq
