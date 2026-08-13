@@ -6,6 +6,21 @@ periodic triage (`/optimize --learnings`) and are removed from this file.
 
 ---
 
+## Renovate
+
+### platformCommit requires GitHub App auth for verified commits (2026-08-13)
+
+- **`platformCommit: "enabled"` does not produce signed commits under PAT
+  auth**: with a fine-grained PAT (`isGHApp=false` in Renovate's platform
+  config) Renovate keeps committing via git — branch commits stay unsigned and
+  only the attribution switches from the bot identity to the token owner.
+  API-created (GitHub-signed, "Verified") commits require GitHub App
+  authentication. The self-hosted workflow supports both auth paths: with
+  RENOVATE_APP_ID/RENOVATE_APP_PRIVATE_KEY secrets it generates an installation
+  token and enables platform commits; without them it falls back to the
+  RENOVATE_TOKEN PAT with platform commits off. The base branch history stays
+  fully verified regardless (squash merges are web-flow signed).
+
 ## Node Backend
 
 ### Database readiness probe serves both engines (2026-08-12)

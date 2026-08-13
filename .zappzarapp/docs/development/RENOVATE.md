@@ -64,6 +64,22 @@ gets repo access; you keep full control of the version and schedule. Setup:
    gh secret set RENOVATE_TOKEN --body '<your-fine-grained-pat>'
    ```
 
+   **Alternative — GitHub App (verified commits):** instead of the PAT, register
+   a GitHub App with the same repository permissions, install it on the repo,
+   and store its credentials:
+
+   ```bash
+   gh secret set RENOVATE_APP_ID --body '<app id>'
+   gh secret set RENOVATE_APP_PRIVATE_KEY < app-private-key.pem
+   ```
+
+   The workflow then authenticates with an installation token and Renovate
+   creates its branch commits through the GitHub API: GitHub signs them
+   (**Verified** badge) and attributes them to the app's bot identity. On the
+   PAT path the commits are created via git and are unsigned — platform commits
+   stay off there, because under PAT auth they would only switch the attribution
+   to the token owner without gaining a signature.
+
 3. Trigger the first run manually (Actions → Renovate → _Run workflow_, or
    `gh workflow run renovate.yml`). Manual runs always work and default to
    **automerge off** so you can review the initial PRs. Renovate posts a
@@ -78,8 +94,8 @@ gets repo access; you keep full control of the version and schedule. Setup:
    workflow must not fail red every week on repos that never configured a
    token). Scheduled runs let `renovate.json` govern (automerge on).
 
-The workflow costs CI minutes and needs the PAT — that is the trade for not
-granting a hosted SaaS write access.
+The workflow costs CI minutes and needs the PAT or the App credentials — that is
+the trade for not granting a hosted SaaS write access.
 
 ### GitLab
 
