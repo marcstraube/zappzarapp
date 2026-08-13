@@ -34,7 +34,7 @@ variables:
   # (filesystem/config/secret scans) and the release binary installed into the
   # dind-based image-scan jobs. Renovate tracks this via a regex customManager
   # on the github-releases datasource.
-  TRIVY_VERSION: "0.72.0"
+  TRIVY_VERSION: "0.73.0"
 
 stages:
   - scan
