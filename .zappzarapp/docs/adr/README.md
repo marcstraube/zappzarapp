@@ -15,3 +15,4 @@ decisions keep their file and are marked in the status line of both documents.
 | [0007](0007-zappzarapp-env-variable-name.md)                          | Environment Mode Variable Named ZAPPZARAPP_ENV                  | 2026-08-03 | Accepted |
 | [0008](0008-k8s-chart-runs-every-service-non-root.md)                 | Kubernetes Chart Runs Every Service as a Non-Root User          | 2026-08-12 | Accepted |
 | [0009](0009-compose-production-preset-runs-every-service-non-root.md) | Compose Production Preset Runs Every Service as a Non-Root User | 2026-08-12 | Accepted |
+| [0010](0010-gitflow-branching-model.md)                               | Simplified Gitflow Branching Model                              | 2026-08-14 | Accepted |

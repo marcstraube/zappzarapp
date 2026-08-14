@@ -77,9 +77,10 @@ If tasks share files or depend on each other, run them sequentially instead.
 
 ## Feature Branches
 
-Each task is developed on its own branch off the base branch, reviewed as a
-whole, then merged (one merge per feature). Branch names follow the Conventional
-Commits types defined in `commitlint.config.js`:
+Each task is developed on its own branch off the base branch (`develop` — see
+the branching model in `.claude/CLAUDE.md`), reviewed as a whole, then merged
+(one merge per feature). Branch names follow the Conventional Commits types
+defined in `commitlint.config.js`:
 
 | Type     | Example                       |
 | -------- | ----------------------------- |

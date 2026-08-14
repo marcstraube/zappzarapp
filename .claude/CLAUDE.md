@@ -26,6 +26,21 @@ ask what to work on.
 
 ---
 
+## Branching Model (Gitflow, simplified)
+
+- `develop` — integration branch; all feature/fix/chore/docs PRs target it
+- `master` — releases and hotfixes only, always release-quality (template users
+  start from it); release tags live here
+- **Milestone release**: merge `develop` → `master` with a merge commit — never
+  squash; release-please reads the individual Conventional Commits on `master`
+  to build the release
+- **Hotfix**: branch from `master`, PR to `master` (becomes a patch release),
+  then merge `master` back into `develop`
+- **Feature PRs into `develop`**: squash or merge per PR — squash noisy
+  branches, keep a real merge when the individual commits carry value
+- `gh pr merge --auto` only on branches protected with Required Checks (without
+  them it merges immediately instead of waiting for CI)
+
 ## Feature-Branch Workflow
 
 **Before starting any implementation task:**
