@@ -274,6 +274,10 @@ setup: ## Create directories, install dependencies (BOILERPLATE=1 to force file 
 	# Auto-detect: origin OR upstream → marcstraube/zappzarapp = contributor mode
 	# Note: zappzarapp remote is for boilerplate users (added by boilerplate-sync)
 	# Override: BOILERPLATE=1 make setup → force boilerplate mode (do swaps)
+	# The README marker also gates the release-tag cleanup: the marker only exists
+	# on a pristine clone, where every local tag is inherited from the boilerplate.
+	# Boilerplate tags would collide with the project's own release tags and
+	# confuse release tooling; later setup runs never touch project tags.
 	@IS_BOILERPLATE_MODE=""; \
 	IS_CONTRIBUTOR_MODE=""; \
 	if [ "$(BOILERPLATE)" = "1" ]; then \
@@ -289,6 +293,16 @@ setup: ## Create directories, install dependencies (BOILERPLATE=1 to force file 
 		IS_BOILERPLATE_MODE="true"; \
 	fi; \
 	if [ -n "$$IS_BOILERPLATE_MODE" ]; then \
+		if grep -q "zappzarapp-boilerplate-readme" README.md 2>/dev/null \
+			&& git rev-parse --git-dir >/dev/null 2>&1; then \
+			INHERITED_TAGS=$$(git tag); \
+			if [ -n "$$INHERITED_TAGS" ]; then \
+				echo -e "\033[0;33mRemoving inherited boilerplate release tags...\033[0m"; \
+				for tag in $$INHERITED_TAGS; do \
+					git tag -d "$$tag" >/dev/null && echo -e "\033[0;32m  Removed tag: $$tag\033[0m"; \
+				done; \
+			fi; \
+		fi; \
 		if grep -q "zappzarapp-boilerplate-readme" README.md 2>/dev/null; then \
 			echo -e "\033[0;33mSetting up project README...\033[0m"; \
 			cp .zappzarapp/README.template.md README.md; \
@@ -337,8 +351,14 @@ setup: ## Create directories, install dependencies (BOILERPLATE=1 to force file 
 				echo -e "\033[0;32mRemoved maintainer-only file: $$maint\033[0m"; \
 			fi; \
 		done; \
-	fi; \
-	if [ -n "$$IS_CONTRIBUTOR_MODE" ]; then \
+	fi
+
+	# Contributor mode: unlock IDE config files. Kept as its own recipe line:
+	# a line containing $(MAKE) runs even under `make -n`, and sharing a line
+	# with the swap block above would execute the swaps during a dry run.
+	@if [ "$(BOILERPLATE)" != "1" ] \
+		&& { git remote get-url origin 2>/dev/null | grep -qE 'marcstraube/zappzarapp' \
+			|| git remote get-url upstream 2>/dev/null | grep -qE 'marcstraube/zappzarapp'; }; then \
 		$(MAKE) --silent ide-unlock; \
 		echo -e "\033[0;36mℹ️  Contributor mode: IDE config files unlocked for committing\033[0m"; \
 	fi
@@ -2804,11 +2824,15 @@ boilerplate-sync: ## Sync infrastructure from zappzarapp upstream (preserves pro
 	@# Ensure zappzarapp remote exists
 	@if ! git remote get-url zappzarapp >/dev/null 2>&1; then \
 		echo -e "\033[0;33mAdding zappzarapp remote...\033[0m"; \
-		git remote add zappzarapp $(ZAPPZARAPP_UPSTREAM); \
+		git remote add --no-tags zappzarapp $(ZAPPZARAPP_UPSTREAM); \
 		echo -e "\033[0;32m✓ Remote 'zappzarapp' added\033[0m"; \
 	else \
 		echo -e "\033[0;32m✓ Remote 'zappzarapp' exists\033[0m"; \
 	fi
+	@# Boilerplate release tags must never enter the project (they would collide
+	@# with the project's own release tags); this also covers remotes added
+	@# without --no-tags
+	@git config remote.zappzarapp.tagOpt --no-tags
 	@echo ""
 	@echo -e "\033[0;33mFetching from zappzarapp...\033[0m"
 	@git fetch zappzarapp $(ZAPPZARAPP_BRANCH)
@@ -2888,8 +2912,10 @@ boilerplate-diff: ## Show diff between local and zappzarapp upstream (dry-run)
 	@# Ensure remote exists
 	@if ! git remote get-url zappzarapp >/dev/null 2>&1; then \
 		echo -e "\033[0;33mAdding zappzarapp remote...\033[0m"; \
-		git remote add zappzarapp $(ZAPPZARAPP_UPSTREAM); \
+		git remote add --no-tags zappzarapp $(ZAPPZARAPP_UPSTREAM); \
 	fi
+	@# Keep boilerplate release tags out of the project (see boilerplate-sync)
+	@git config remote.zappzarapp.tagOpt --no-tags
 	@git fetch zappzarapp $(ZAPPZARAPP_BRANCH) 2>/dev/null
 	@echo -e "\033[0;36mDifferences from zappzarapp/$(ZAPPZARAPP_BRANCH):\033[0m"
 	@echo ""

@@ -114,6 +114,33 @@ require_git_access() {
 # Remote management
 # =============================================================================
 
+@test "freshly added zappzarapp remote fetches without tags" {
+    require_git_access
+
+    # Remove remote so boilerplate-diff re-adds it
+    git remote remove zappzarapp 2>/dev/null || true
+
+    run timeout 60 make boilerplate-diff
+
+    run git config --get remote.zappzarapp.tagOpt
+    assert_success
+    assert_output -- "--no-tags"
+}
+
+@test "existing zappzarapp remote is upgraded to fetch without tags" {
+    require_git_access
+
+    # Simulate a remote configured without the tag opt-out
+    make boilerplate-diff >/dev/null 2>&1 || true
+    git config --unset remote.zappzarapp.tagOpt 2>/dev/null || true
+
+    run timeout 60 make boilerplate-diff
+
+    run git config --get remote.zappzarapp.tagOpt
+    assert_success
+    assert_output -- "--no-tags"
+}
+
 @test "zappzarapp remote points to correct URL" {
     require_git_access
 

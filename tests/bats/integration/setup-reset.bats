@@ -61,6 +61,18 @@ setup() {
     fi
 }
 
+@test "[Phase 1] Snapshot local tags, create inherited-tag sentinel" {
+    # Protects the developer's local tags: setup's tag cleanup deletes ALL
+    # local tags on a pristine clone. Snapshot them here, restore in Phase 6.
+    git show-ref --tags > "${BATS_TMPDIR}/zappzarapp-tags-snapshot" 2>/dev/null || true
+
+    # Sentinel simulates a release tag inherited from the boilerplate clone
+    # (unsigned: developer machines may enforce tag signing via hardware key)
+    git -c tag.gpgSign=false tag v99.99.99-bats-sentinel
+    run git tag -l v99.99.99-bats-sentinel
+    assert_output "v99.99.99-bats-sentinel"
+}
+
 # =============================================================================
 # Phase 2: Setup Creates Files
 # =============================================================================
@@ -184,6 +196,13 @@ setup() {
     assert_output --partial "needing customization"
 }
 
+@test "[Phase 2] Verify: inherited boilerplate tags removed" {
+    # First setup on a pristine clone deletes all local tags (they are
+    # inherited boilerplate release tags by definition)
+    run git tag
+    assert_output ""
+}
+
 @test "[Phase 2] Verify: CHANGELOG.md replaced (no boilerplate marker)" {
     # After setup, CHANGELOG.md should NOT contain the boilerplate marker
     run grep -q "zappzarapp - Changelog" CHANGELOG.md
@@ -298,6 +317,21 @@ setup() {
     [[ -f ".ai/LEARNINGS.md" ]]
 }
 
+@test "[Phase 4] Verify: project tags survive setup re-runs" {
+    # After the first setup the README marker is gone, so the tag cleanup
+    # must never touch tags the project creates later
+    # (unsigned: developer machines may enforce tag signing via hardware key)
+    git -c tag.gpgSign=false tag v0.0.1-bats-project
+
+    run bash -c "echo 'c' | timeout 120 make setup CI_TEST=1 BOILERPLATE=1"
+    assert_success
+
+    run git tag -l v0.0.1-bats-project
+    assert_output "v0.0.1-bats-project"
+
+    git tag -d v0.0.1-bats-project
+}
+
 # =============================================================================
 # Phase 5: Docker Bind Mount Edge Cases
 # Note: Tests 43-44 test Docker operations that don't work in DinD environments
@@ -406,4 +440,18 @@ setup() {
     assert_success
 
     echo "# Setup-reset cycle test complete" >&3
+}
+
+@test "[Phase 6] Restore snapshotted local tags" {
+    # Restore the developer's tags captured in Phase 1
+    if [[ -s "${BATS_TMPDIR}/zappzarapp-tags-snapshot" ]]; then
+        while read -r sha ref; do
+            git update-ref "$ref" "$sha"
+        done < "${BATS_TMPDIR}/zappzarapp-tags-snapshot"
+    fi
+    rm -f "${BATS_TMPDIR}/zappzarapp-tags-snapshot"
+
+    # The sentinel and the project test tag must not survive the cycle
+    run git tag -l 'v99.99.99-bats-sentinel' 'v0.0.1-bats-project'
+    assert_output ""
 }

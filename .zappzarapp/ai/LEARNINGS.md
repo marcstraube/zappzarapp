@@ -6,6 +6,24 @@ periodic triage (`/optimize --learnings`) and are removed from this file.
 
 ---
 
+## Make
+
+### `make -n setup` executes the boilerplate file swaps for real (2026-08-14)
+
+- GNU make runs any recipe line containing `$(MAKE)` even under `-n`
+  (`--just-print`). The `setup` target's boilerplate-swap block used to be ONE
+  multiline shell command whose contributor branch called
+  `$(MAKE) --silent ide-unlock` — so a "dry run" executed the entire swap block
+  for real: README/CLAUDE/AGENTS/CHANGELOG replaced, boilerplate copies in
+  `.zappzarapp/`, `.ai/` created. Recovery: `git checkout` the swapped tracked
+  files, delete the created copies. Fixed by extracting the contributor-mode
+  `$(MAKE)` call into its own recipe line.
+- Standing rule: never put `$(MAKE)` into a compound recipe line whose other
+  commands mutate state — `make -n` (used by the BATS dry-run suite) will run
+  all of it. Sub-makes on their own lines are safe (they inherit `-n`). Verify
+  recipes that mutate the repo in a scratch clone under `build/tmp/`, not in the
+  dev repo.
+
 ## Renovate
 
 ### platformCommit requires GitHub App auth for verified commits (2026-08-13)
