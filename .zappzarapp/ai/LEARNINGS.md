@@ -8,6 +8,21 @@ periodic triage (`/optimize --learnings`) and are removed from this file.
 
 ## Configuration
 
+### Per-character entropy cannot separate hex secrets from identifiers (2026-08-14)
+
+- The BlockSecrets entropy detector compares per-character Shannon entropy
+  against `entropyThreshold`. Hex strings cap at 4.0 and 24-char generated
+  passwords at ~4.58 — the configured 4.8 can never flag them. Lowering to 3.5
+  catches them but drowns in real code: one ordinary commit produced 20
+  false-positive files (`proxy_ssl_trusted_certificate`,
+  `ZAPPZARAPP_ENV=production`, compose mount paths all exceed 3.5). There is no
+  usable threshold in between.
+- Division of labor that actually works: 4.8 catches long base64 secrets
+  (32-byte keys ≈ 5.2); hex and short-alphanumeric secrets are covered by GitHub
+  Push Protection, TruffleHog in CI, and the prefix-based suppliers
+  (AWS/GitHub/Google/Stripe/GitLab). Don't tune the threshold again — measured
+  2026-08-14 against a real diff.
+
 ### A config file's existence proves nothing - verify the wiring (2026-08-14)
 
 - `docker/php/conf.d/security.ini` shipped for seven months as dead config:

@@ -44,8 +44,9 @@ describe('API Integration Tests', () => {
   const originalEnv = process.env;
 
   beforeAll(() => {
-    // Set NODE_ENV to development to test development-specific behavior
-    process.env = { ...originalEnv, NODE_ENV: 'development' };
+    // Set NODE_ENV to development to test development-specific behavior;
+    // CORS is opt-in via CORS_ORIGINS (no headers when unset)
+    process.env = { ...originalEnv, NODE_ENV: 'development', CORS_ORIGINS: '*' };
     app = createApp();
   });
 

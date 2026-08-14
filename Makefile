@@ -1599,7 +1599,7 @@ test-production: ## Test production build with ZAPPZARAPP_ENV-configured service
 			fi; \
 		elif [ "$${DB_TYPE}" = "mariadb" ]; then \
 			echo -n "   mariadb... "; \
-			if timeout 30 sh -c 'until ZAPPZARAPP_ENV=production docker compose -f compose.yaml -f compose.production.yaml exec -T mariadb mariadb -u app -p$${DB_PASSWORD} -e "SELECT 1" > /dev/null 2>&1; do sleep 1; done' 2>/dev/null; then \
+			if timeout 30 sh -c 'until ZAPPZARAPP_ENV=production docker compose -f compose.yaml -f compose.production.yaml exec -T -e MYSQL_PWD=$${DB_PASSWORD} mariadb mariadb -u app -e "SELECT 1" > /dev/null 2>&1; do sleep 1; done' 2>/dev/null; then \
 				echo -e "\033[0;32m✓\033[0m"; \
 			else \
 				echo -e "\033[0;31m✗ (timeout)\033[0m"; \
@@ -1700,7 +1700,7 @@ test-production-minimal: ## Test production build with minimal services (nginx +
 		fi; \
 	elif [ "$${DB_TYPE}" = "mariadb" ]; then \
 		echo -n "   mariadb... "; \
-		if timeout 30 sh -c 'until ZAPPZARAPP_ENV=production docker compose -f compose.yaml -f compose.production.yaml exec -T mariadb mariadb -u app -p$${DB_PASSWORD} -e "SELECT 1" > /dev/null 2>&1; do sleep 1; done' 2>/dev/null; then \
+		if timeout 30 sh -c 'until ZAPPZARAPP_ENV=production docker compose -f compose.yaml -f compose.production.yaml exec -T -e MYSQL_PWD=$${DB_PASSWORD} mariadb mariadb -u app -e "SELECT 1" > /dev/null 2>&1; do sleep 1; done' 2>/dev/null; then \
 			echo -e "\033[0;32m✓\033[0m"; \
 		else \
 			echo -e "\033[0;31m✗ (timeout)\033[0m"; \
@@ -2128,12 +2128,12 @@ postgres-restore: ## Restore database from dump.sql
 
 mariadb-cli: ## Open MariaDB CLI
 	@$(LOAD_ENV) && . ./docker/scripts/parse-db-url.sh && \
-		docker compose exec mariadb mariadb -u "$$DB_USER" -p"$$DB_PASSWORD" "$$DB_NAME"
+		docker compose exec -e MYSQL_PWD="$$DB_PASSWORD" mariadb mariadb -u "$$DB_USER" "$$DB_NAME"
 
 mariadb-dump: ## Create MariaDB database backup (dump.sql)
 	@echo -e "\033[0;33mCreating MariaDB database backup...\033[0m"
 	@$(LOAD_ENV) && . ./docker/scripts/parse-db-url.sh && \
-		docker compose exec mariadb mariadb-dump -u "$$DB_USER" -p"$$DB_PASSWORD" "$$DB_NAME" > dump.sql
+		docker compose exec -e MYSQL_PWD="$$DB_PASSWORD" mariadb mariadb-dump -u "$$DB_USER" "$$DB_NAME" > dump.sql
 	@echo -e "\033[0;32mBackup saved to dump.sql\033[0m"
 
 mariadb-restore: ## Restore MariaDB database from dump.sql
@@ -2143,7 +2143,7 @@ mariadb-restore: ## Restore MariaDB database from dump.sql
 	fi
 	@echo -e "\033[0;33mRestoring MariaDB database from dump.sql...\033[0m"
 	@$(LOAD_ENV) && . ./docker/scripts/parse-db-url.sh && \
-		docker compose exec -T mariadb mariadb -u "$$DB_USER" -p"$$DB_PASSWORD" "$$DB_NAME" < dump.sql
+		docker compose exec -T -e MYSQL_PWD="$$DB_PASSWORD" mariadb mariadb -u "$$DB_USER" "$$DB_NAME" < dump.sql
 	@echo -e "\033[0;32mMariaDB database restored!\033[0m"
 
 ##@ Database Tools
@@ -2393,7 +2393,7 @@ db-migrations: ## Run database migrations (encryption helpers, audit logs)
 		for migration in migrations/mariadb/*.sql; do \
 			if [ -f "$$migration" ]; then \
 				echo -e "  Applying: $$(basename $$migration)"; \
-				docker compose exec -T mariadb mariadb -u "$$DB_USER" -p"$$DB_PASSWORD" "$$DB_NAME" < "$$migration" 2>&1 | grep -v "^$$" || true; \
+				docker compose exec -T -e MYSQL_PWD="$$DB_PASSWORD" mariadb mariadb -u "$$DB_USER" "$$DB_NAME" < "$$migration" 2>&1 | grep -v "^$$" || true; \
 			fi; \
 		done; \
 	else \
@@ -2417,7 +2417,7 @@ db-cleanup: ## Run retention policy cleanup (delete old logs)
 			echo -e "\033[0;31mError: Run 'make db-migrations' first to create retention functions.\033[0m"; \
 	elif [ "$$DB_TYPE" = "mariadb" ]; then \
 		echo -e "\033[0;34mMariaDB: Deleting audit_logs older than $$RETENTION_DAYS days...\033[0m"; \
-		docker compose exec -T mariadb mariadb -u "$$DB_USER" -p"$$DB_PASSWORD" "$$DB_NAME" \
+		docker compose exec -T -e MYSQL_PWD="$$DB_PASSWORD" mariadb mariadb -u "$$DB_USER" "$$DB_NAME" \
 			-e "CALL delete_old_logs('audit_logs', $$RETENTION_DAYS, @deleted); SELECT @deleted AS deleted_rows;" 2>/dev/null || \
 			echo -e "\033[0;31mError: Run 'make db-migrations' first to create retention procedures.\033[0m"; \
 	fi

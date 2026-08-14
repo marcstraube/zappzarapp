@@ -330,7 +330,8 @@ final class CorsMiddlewareTest extends TestCase
     public function testHandleReturnsTrueForWildcardInProduction(): void
     {
         putenv('ZAPPZARAPP_ENV=production');
-        // Wildcard + production: credentials header emitted, GET continues
+        // Wildcard + production: no credentials header (the wildcard never
+        // gets credentials in any environment), GET continues
         ini_set('error_log', '/dev/null');
         $middleware = new CorsMiddleware('*');
         ini_restore('error_log');

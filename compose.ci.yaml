@@ -230,6 +230,8 @@ services:
       # SSL certificates (bind mount)
       - ./docker/certs/nginx/cert.crt:/etc/nginx/certs/cert.crt:ro
       - ./docker/certs/nginx/cert.key:/etc/nginx/certs/cert.key:ro
+      # Internal CA for verifying upstream TLS (nginx -> node proxies)
+      - ${CERT_CA_PATH:-./docker/certs/internal/ca.crt}:/etc/nginx/internal-ca.crt:ro
       # === CI-specific / Development mounts ===
       - ./public:/var/www/html/public:ro
       - ./docs:/var/www/html/docs:ro

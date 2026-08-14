@@ -703,6 +703,21 @@ final class HealthCheckTest extends TestCase
 
     #[RunInSeparateProcess]
     #[Test]
+    public function testCheckReadinessOmitsDeploymentDetailsInProduction(): void
+    {
+        putenv('ZAPPZARAPP_ENV=production');
+
+        $check  = new HealthCheck();
+        $result = $check->checkReadiness();
+
+        $this->assertSame('ok', $result['status']);
+        $this->assertArrayHasKey('checks', $result);
+        $this->assertArrayNotHasKey('environment', $result);
+        $this->assertArrayNotHasKey('uptime', $result);
+    }
+
+    #[RunInSeparateProcess]
+    #[Test]
     public function testCheckReadinessWithNodeBackendEnabled(): void
     {
         putenv('ENABLE_NODE=true');

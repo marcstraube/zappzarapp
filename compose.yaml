@@ -46,6 +46,8 @@ services:
       - php-fpm-socket:/var/run/php-fpm
       # SSL certificates (bind mount)
       - ${CERT_PATH_NGINX:-./docker/certs/nginx}:/etc/nginx/certs:ro
+      # Internal CA for verifying upstream TLS (nginx -> node proxies)
+      - ${CERT_CA_PATH:-./docker/certs/internal/ca.crt}:/etc/nginx/internal-ca.crt:ro
     depends_on:
       node:
         condition: service_started

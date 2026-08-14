@@ -36,8 +36,15 @@ mkdir -p "$INTERNAL_DIR" "$NGINX_DIR"
 # certs via bind mounts; the keys are protected by file mode + ACLs
 chmod 755 "$INTERNAL_DIR" "$NGINX_DIR"
 
-# Internal services SAN list
-INTERNAL_SANS="DNS:localhost,DNS:nginx,DNS:node,DNS:node-backend,DNS:php,DNS:mariadb,DNS:postgres,DNS:redis,DNS:elasticsearch,DNS:mailpit,DNS:meilisearch,DNS:mercure,DNS:rabbitmq,DNS:seaweedfs,IP:127.0.0.1"
+# Internal services SAN list - built from the shared hostname list so the
+# SANs always stay inside the CA's nameConstraints
+# shellcheck source=docker/certs/internal-hostnames.sh
+. "$CERT_DIR/internal-hostnames.sh"
+INTERNAL_SANS=""
+for host in $INTERNAL_HOSTNAMES; do
+    INTERNAL_SANS="${INTERNAL_SANS:+$INTERNAL_SANS,}DNS:$host"
+done
+INTERNAL_SANS="$INTERNAL_SANS,IP:$INTERNAL_IP"
 
 # Generate internal services certificate
 echo "Generating internal services certificate..."

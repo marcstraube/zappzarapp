@@ -51,7 +51,8 @@ export interface AppOptions {
 export function createApp(options: AppOptions = {}): Express {
   // Read environment at call time to support test overrides
   const NODE_ENV = process.env.NODE_ENV ?? 'production';
-  const CORS_ORIGINS = process.env.CORS_ORIGINS ?? '*';
+  // Default is same-origin only - cross-origin access is an explicit opt-in
+  const CORS_ORIGINS = process.env.CORS_ORIGINS ?? '';
 
   const app: Express = express();
   // Framework fingerprinting: never advertise Express in response headers
@@ -110,12 +111,24 @@ export function createApp(options: AppOptions = {}): Express {
   // CORS - configurable via CORS_ORIGINS environment variable
   // In production, set CORS_ORIGINS to your allowed domains (comma-separated)
   // Example: CORS_ORIGINS=https://example.com,https://app.example.com
+  // Empty/unset: no CORS headers at all (same-origin only)
   app.use((req: Request, res: Response, next: NextFunction): void => {
+    if (CORS_ORIGINS === '') {
+      next();
+      return;
+    }
+
     const origin = req.headers.origin ?? '';
     const allowedOrigins = CORS_ORIGINS.split(',').map((o) => o.trim());
 
+    // Responses differ per Origin in allowlist mode - shared caches must
+    // never serve one origin's CORS response to another
+    if (CORS_ORIGINS !== '*') {
+      res.header('Vary', 'Origin');
+    }
+
     // Check if origin is allowed (or if wildcard is used)
-    if (CORS_ORIGINS === '*' || allowedOrigins.includes(origin)) {
+    if (CORS_ORIGINS === '*' || (origin !== '' && allowedOrigins.includes(origin))) {
       // The origin is reflected only after it passed the allowlist check above;
       // the wildcard ('*') is an explicit opt-in via CORS_ORIGINS.
       // nosemgrep: cors-misconfiguration
@@ -125,9 +138,10 @@ export function createApp(options: AppOptions = {}): Express {
     res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
     res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
 
-    // Credentials: Always in production, conditional in development
-    // Wildcard (*) + credentials = browser rejection, so we disable credentials for wildcard
-    if (NODE_ENV === 'production' || CORS_ORIGINS !== '*') {
+    // Credentials never combine with the wildcard: browsers reject the pair,
+    // and a permissive origin with credentials would be a misconfiguration in
+    // any environment
+    if (CORS_ORIGINS !== '*') {
       res.header('Access-Control-Allow-Credentials', 'true');
     }
 

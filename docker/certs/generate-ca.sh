@@ -17,7 +17,19 @@ umask 077
 
 CERT_DIR="$(cd "$(dirname "$0")" && pwd)"
 CA_DIR="$CERT_DIR/ca"
-DAYS=3650  # 10 years for CA
+DAYS=1095  # 3 years - regeneration is a single `make ssl-internal`
+
+# shellcheck source=docker/certs/internal-hostnames.sh
+. "$CERT_DIR/internal-hostnames.sh"
+
+# Name constraints (critical): even a leaked CA key can only mint
+# certificates for the internal service names, never for arbitrary
+# domains - the CA may end up in system trust stores via ssl-trust-ca
+NAME_CONSTRAINTS="critical"
+for host in $INTERNAL_HOSTNAMES; do
+    NAME_CONSTRAINTS="$NAME_CONSTRAINTS,permitted;DNS:$host"
+done
+NAME_CONSTRAINTS="$NAME_CONSTRAINTS,permitted;IP:$INTERNAL_IP/255.255.255.255"
 
 echo "============================================================================"
 echo "Generating Internal Certificate Authority"
@@ -38,7 +50,8 @@ openssl req -x509 -new -nodes \
     -key "$CA_DIR/ca.key" \
     -sha256 -days $DAYS \
     -out "$CA_DIR/ca.crt" \
-    -subj "/C=DE/ST=Development/L=Local/O=Zappzarapp/OU=Internal CA/CN=Zappzarapp Internal CA"
+    -subj "/C=DE/ST=Development/L=Local/O=Zappzarapp/OU=Internal CA/CN=Zappzarapp Internal CA" \
+    -addext "nameConstraints=$NAME_CONSTRAINTS"
 
 # Set permissions
 chmod 644 "$CA_DIR/ca.crt"

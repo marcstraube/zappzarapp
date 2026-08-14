@@ -128,6 +128,19 @@ generation (development only, requires `NODE_MODE=assets-api`):
 The PHP DevDashboard's Quality page integrates with these endpoints to provide
 "Generate" buttons for Node.js coverage and documentation.
 
+### Cross-Site Protection for POST Endpoints
+
+All mutating dashboard endpoints (PHP `/_dev/api/*` and Node
+`/dev-dashboard/node/*` POSTs) reject cross-site requests: the dashboard has no
+authentication, so without this check any website could trigger backup restores
+or generators from your browser. Browsers pass the check automatically
+(`Sec-Fetch-Site: same-origin`). Scripted clients must opt in explicitly:
+
+```bash
+curl -k -X POST -H "X-Requested-With: XMLHttpRequest" \
+  https://localhost:8443/_dev/api/docs/generate?type=php
+```
+
 ## Configuration
 
 ### Environment Variables

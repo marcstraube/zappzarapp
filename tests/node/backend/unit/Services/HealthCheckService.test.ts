@@ -161,6 +161,18 @@ describe('HealthCheckService', () => {
 
       expect(result.environment).toBe('test');
     });
+
+    it('should omit deployment details in production', async () => {
+      process.env.NODE_ENV = 'production';
+
+      const service = new HealthCheckService();
+      const result = await service.checkReadiness();
+
+      expect(result.environment).toBeUndefined();
+      expect(result.node_version).toBeUndefined();
+      expect(result.uptime).toBeUndefined();
+      expect(result.checks).toBeDefined();
+    });
   });
 
   describe('checkStatus', () => {

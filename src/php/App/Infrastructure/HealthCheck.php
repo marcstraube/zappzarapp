@@ -377,14 +377,21 @@ class HealthCheck
             $checks['node-frontend'] = ['status' => 'disabled'];
         }
 
-        return [
-            'status'      => $overallStatus,
-            'timestamp'   => date('c'),
-            'service'     => 'php-backend',
-            'environment' => $this->env['ZAPPZARAPP_ENV'],
-            'uptime'      => $this->getUptime(),
-            'checks'      => $checks,
+        $payload = [
+            'status'    => $overallStatus,
+            'timestamp' => date('c'),
+            'service'   => 'php-backend',
+            'checks'    => $checks,
         ];
+
+        // Deployment details (environment, uptime) are reconnaissance aids on
+        // the publicly reachable endpoint and stay out of production payloads
+        if ($this->env['ZAPPZARAPP_ENV'] !== 'production') {
+            $payload['environment'] = $this->env['ZAPPZARAPP_ENV'];
+            $payload['uptime']      = $this->getUptime();
+        }
+
+        return $payload;
     }
 
     /**

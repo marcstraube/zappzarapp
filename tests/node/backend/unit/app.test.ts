@@ -68,12 +68,14 @@ describe('Express App Factory', () => {
   });
 
   describe('CORS Configuration', () => {
-    it('should allow wildcard origin by default', async () => {
+    it('should send no CORS headers when CORS_ORIGINS is unset', async () => {
       delete process.env.CORS_ORIGINS; // Ensure it's truly unset
       app = createApp();
       const response = await request(app).get('/health').set('Origin', 'https://example.com');
 
-      expect(response.headers['access-control-allow-origin']).toBe('*');
+      expect(response.headers['access-control-allow-origin']).toBeUndefined();
+      expect(response.headers['access-control-allow-methods']).toBeUndefined();
+      expect(response.headers['access-control-allow-credentials']).toBeUndefined();
     });
 
     it('should allow specific origins when configured', async () => {
@@ -94,7 +96,17 @@ describe('Express App Factory', () => {
       expect(response.headers['access-control-allow-origin']).toBeUndefined();
     });
 
+    it('should vary responses by Origin in allowlist mode', async () => {
+      process.env.CORS_ORIGINS = 'https://example.com';
+      app = createApp();
+
+      const response = await request(app).get('/health').set('Origin', 'https://evil.com');
+
+      expect(response.headers['vary']).toContain('Origin');
+    });
+
     it('should handle OPTIONS preflight requests', async () => {
+      process.env.CORS_ORIGINS = '*';
       app = createApp();
       const response = await request(app).options('/api/hello');
 
@@ -102,6 +114,7 @@ describe('Express App Factory', () => {
     });
 
     it('should set CORS headers for allowed methods', async () => {
+      process.env.CORS_ORIGINS = '*';
       app = createApp();
       const response = await request(app).get('/health');
 
@@ -109,26 +122,17 @@ describe('Express App Factory', () => {
       expect(response.headers['access-control-allow-methods']).toContain('POST');
     });
 
-    it('should NOT set credentials header with wildcard origin in development', async () => {
-      process.env.NODE_ENV = 'development';
-      process.env.CORS_ORIGINS = '*';
-      app = createApp();
+    it('should never set the credentials header with the wildcard origin', async () => {
+      for (const env of ['development', 'production']) {
+        process.env.NODE_ENV = env;
+        process.env.CORS_ORIGINS = '*';
+        app = createApp();
 
-      const response = await request(app).get('/health').set('Origin', 'https://example.com');
+        const response = await request(app).get('/health').set('Origin', 'https://example.com');
 
-      expect(response.headers['access-control-allow-origin']).toBe('*');
-      expect(response.headers['access-control-allow-credentials']).toBeUndefined();
-    });
-
-    it('should set credentials header with wildcard origin in production', async () => {
-      process.env.NODE_ENV = 'production';
-      process.env.CORS_ORIGINS = '*';
-      app = createApp();
-
-      const response = await request(app).get('/health').set('Origin', 'https://example.com');
-
-      expect(response.headers['access-control-allow-origin']).toBe('*');
-      expect(response.headers['access-control-allow-credentials']).toBe('true');
+        expect(response.headers['access-control-allow-origin']).toBe('*');
+        expect(response.headers['access-control-allow-credentials']).toBeUndefined();
+      }
     });
 
     it('should always set credentials header with specific origins', async () => {

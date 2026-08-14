@@ -166,13 +166,13 @@ elif [[ "$DB_TYPE" == "mariadb" ]]; then
     if docker compose ps mariadb 2>/dev/null | grep -q "Up"; then
         # Docker mode
         if [[ "$ENCRYPT" == true ]]; then
-            docker compose exec -T mariadb mariadb-dump -u "$DB_USER" -p"$DB_PASSWORD" "$DB_NAME" --single-transaction --routines --triggers \
+            docker compose exec -T -e MYSQL_PWD="$DB_PASSWORD" mariadb mariadb-dump -u "$DB_USER" "$DB_NAME" --single-transaction --routines --triggers \
                 | gzip -9 \
                 | openssl enc -aes-256-cbc -salt -pbkdf2 -pass env:BACKUP_ENCRYPTION_KEY \
                 > "$OUTPUT_DIR/${BACKUP_NAME}.sql.gz.enc"
             BACKUP_FILE="${BACKUP_NAME}.sql.gz.enc"
         else
-            docker compose exec -T mariadb mariadb-dump -u "$DB_USER" -p"$DB_PASSWORD" "$DB_NAME" --single-transaction --routines --triggers \
+            docker compose exec -T -e MYSQL_PWD="$DB_PASSWORD" mariadb mariadb-dump -u "$DB_USER" "$DB_NAME" --single-transaction --routines --triggers \
                 | gzip -9 \
                 > "$OUTPUT_DIR/${BACKUP_NAME}.sql.gz"
             BACKUP_FILE="${BACKUP_NAME}.sql.gz"

@@ -261,11 +261,33 @@ describe('DevDashboard Integration Tests', () => {
       // but it should at least accept the request and return a valid response structure
       const response = await request(app)
         .post('/dev-dashboard/node/docs/generate')
-        .set('Content-Type', 'application/json');
+        .set('Content-Type', 'application/json')
+        // Mutating dashboard endpoints require a same-origin marker
+        .set('Sec-Fetch-Site', 'same-origin');
 
       // Response should have the correct structure regardless of success/failure
       expect(response.body).toHaveProperty('success');
       expect(response.body).toHaveProperty('message');
+    });
+
+    it('should reject cross-site POST requests', async () => {
+      const response = await request(app)
+        .post('/dev-dashboard/node/docs/generate')
+        .set('Content-Type', 'application/json')
+        .set('Sec-Fetch-Site', 'cross-site')
+        // Sec-Fetch-Site decides even when the opt-in header is present
+        .set('X-Requested-With', 'XMLHttpRequest');
+
+      expect(response.status).toBe(403);
+      expect(response.body).toHaveProperty('error', 'Cross-site request rejected');
+    });
+
+    it('should reject POST requests without any same-origin marker', async () => {
+      const response = await request(app)
+        .post('/dev-dashboard/node/docs/generate')
+        .set('Content-Type', 'application/json');
+
+      expect(response.status).toBe(403);
     });
   });
 });

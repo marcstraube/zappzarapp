@@ -68,10 +68,15 @@ export interface ReadinessResponse {
   status: 'ok' | 'degraded' | 'unhealthy';
   timestamp: string;
   service: string;
-  environment: string;
-  /** Node.js runtime version — consumed by the PHP health aggregator as node_version */
-  node_version: string;
-  uptime: number;
+  /** Omitted in production: deployment details stay off the public endpoint */
+  environment?: string;
+  /**
+   * Node.js runtime version — consumed by the PHP health aggregator as
+   * node_version. Omitted in production (see environment).
+   */
+  node_version?: string;
+  /** Omitted in production (see environment) */
+  uptime?: number;
   checks: Record<string, ServiceCheckResult>;
 }
 
@@ -293,15 +298,23 @@ export class HealthCheckService {
       }
     }
 
-    return {
+    const payload: ReadinessResponse = {
       status: overallStatus,
       timestamp: new Date().toISOString(),
       service: this.serviceName,
-      environment: this.config.environment,
-      node_version: process.version,
-      uptime: Math.round(process.uptime()),
       checks,
     };
+
+    // Deployment details (environment, runtime version, uptime) are
+    // reconnaissance aids on the publicly reachable endpoint and stay out
+    // of production payloads
+    if (this.config.environment !== 'production') {
+      payload.environment = this.config.environment;
+      payload.node_version = process.version;
+      payload.uptime = Math.round(process.uptime());
+    }
+
+    return payload;
   }
 
   /**

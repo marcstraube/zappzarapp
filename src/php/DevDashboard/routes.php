@@ -35,6 +35,41 @@ if (getenv('ENABLE_DEV_DASHBOARD') === 'false') {
 }
 
 /**
+ * Cross-site request protection for the mutating dashboard endpoints
+ *
+ * The dashboard has no authentication, so without this check any website
+ * could fire POSTs (backup restore/delete, generators) at it from the
+ * developer's browser. Modern browsers label every request with
+ * Sec-Fetch-Site; when that header exists it alone decides (a cross-site
+ * fetch can still carry custom headers after a CORS preflight, so
+ * X-Requested-With must not override it). Legacy clients without the header
+ * fall back to an Origin comparison, and header-less scripted clients
+ * (curl) opt in explicitly via X-Requested-With: XMLHttpRequest.
+ */
+function isSameOriginRequest(): bool
+{
+    $fetchSite = $_SERVER['HTTP_SEC_FETCH_SITE'] ?? '';
+    if ($fetchSite !== '') {
+        return in_array($fetchSite, ['same-origin', 'none'], true);
+    }
+
+    $origin = $_SERVER['HTTP_ORIGIN'] ?? '';
+    if ($origin !== '') {
+        $scheme = (($_SERVER['HTTPS'] ?? '') !== '' && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
+        return $origin === $scheme . '://' . ($_SERVER['HTTP_HOST'] ?? '');
+    }
+
+    return ($_SERVER['HTTP_X_REQUESTED_WITH'] ?? '') === 'XMLHttpRequest';
+}
+
+if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST' && !isSameOriginRequest()) {
+    http_response_code(403);
+    header('Content-Type: application/json');
+    echo json_encode(['error' => 'Cross-site request rejected']); // @phpstan-ignore-line echo needed for error response
+    exit; // @phpstan-ignore-line Intentional exit after rejecting the request
+}
+
+/**
  * Simple routing handler for development dashboard
  * Matches routes and calls appropriate controller methods
  *

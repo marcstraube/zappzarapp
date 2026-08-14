@@ -47,6 +47,12 @@ final readonly class CorsMiddleware
 
         $origin = $_SERVER['HTTP_ORIGIN'] ?? '';
 
+        // Responses differ per Origin in allowlist mode - shared caches must
+        // never serve one origin's CORS response to another
+        if ($this->allowedOrigins !== '*') {
+            header('Vary: Origin', false);
+        }
+
         // Check if origin is allowed
         if ($this->isOriginAllowed($origin)) {
             $allowOrigin = $this->allowedOrigins === '*' ? '*' : $origin;
@@ -54,10 +60,10 @@ final readonly class CorsMiddleware
             header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS');
             header('Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-With');
 
-            // Credentials: Always in production, conditional in development
-            // Wildcard (*) + credentials = browser rejection, so we disable credentials for wildcard
-            $appEnv = getenv('ZAPPZARAPP_ENV') ?: 'development';
-            if ($appEnv === 'production' || $this->allowedOrigins !== '*') {
+            // Credentials never combine with the wildcard: browsers reject
+            // the pair, and a permissive origin with credentials would be a
+            // misconfiguration in any environment
+            if ($this->allowedOrigins !== '*') {
                 header('Access-Control-Allow-Credentials: true');
             }
 

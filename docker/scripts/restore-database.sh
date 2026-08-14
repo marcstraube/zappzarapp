@@ -216,10 +216,10 @@ elif [[ "$DB_TYPE" == "mariadb" ]]; then
         if [[ "$ENCRYPTED" == true ]]; then
             openssl enc -aes-256-cbc -d -salt -pbkdf2 -pass env:BACKUP_ENCRYPTION_KEY -in "$BACKUP_FILE" \
                 | gunzip \
-                | docker compose exec -T mariadb mariadb -u "$DB_USER" -p"$DB_PASSWORD" "$DB_NAME"
+                | docker compose exec -T -e MYSQL_PWD="$DB_PASSWORD" mariadb mariadb -u "$DB_USER" "$DB_NAME"
         else
             gunzip -c "$BACKUP_FILE" \
-                | docker compose exec -T mariadb mariadb -u "$DB_USER" -p"$DB_PASSWORD" "$DB_NAME"
+                | docker compose exec -T -e MYSQL_PWD="$DB_PASSWORD" mariadb mariadb -u "$DB_USER" "$DB_NAME"
         fi
     else
         echo -e "${RED}Error: MariaDB container is not running.${NC}"

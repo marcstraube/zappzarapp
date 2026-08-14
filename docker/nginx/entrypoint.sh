@@ -124,7 +124,10 @@ location = /health {
     access_log off;
     set $upstream_backend node-backend:3000;
     proxy_pass https://$upstream_backend/health;
-    proxy_ssl_verify off;
+    proxy_ssl_verify on;
+    proxy_ssl_trusted_certificate /etc/nginx/internal-ca.crt;
+    proxy_ssl_verify_depth 2;
+    proxy_ssl_name node-backend;
     proxy_ssl_server_name on;
     proxy_http_version 1.1;
     proxy_set_header Host $host;
@@ -144,7 +147,10 @@ location = /ready {
     access_log off;
     set $upstream_backend node-backend:3000;
     proxy_pass https://$upstream_backend/ready;
-    proxy_ssl_verify off;
+    proxy_ssl_verify on;
+    proxy_ssl_trusted_certificate /etc/nginx/internal-ca.crt;
+    proxy_ssl_verify_depth 2;
+    proxy_ssl_name node-backend;
     proxy_ssl_server_name on;
     proxy_http_version 1.1;
     proxy_set_header Host $host;
@@ -156,7 +162,10 @@ location = /ready {
 location = /status {
     set $upstream_backend node-backend:3000;
     proxy_pass https://$upstream_backend/status;
-    proxy_ssl_verify off;
+    proxy_ssl_verify on;
+    proxy_ssl_trusted_certificate /etc/nginx/internal-ca.crt;
+    proxy_ssl_verify_depth 2;
+    proxy_ssl_name node-backend;
     proxy_ssl_server_name on;
     proxy_http_version 1.1;
     proxy_set_header Host $host;
