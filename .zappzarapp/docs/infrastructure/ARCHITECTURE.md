@@ -199,7 +199,7 @@ Sensitive data is managed via Docker Secrets:
 └── backup_encryption_key.txt # Backup encryption key
 ```
 
-Mounted in containers at `/run/secrets/<secret_name>`.
+Mounted in containers at `/run/secrets/<secret_name>.txt`.
 
 ### SSL/TLS
 

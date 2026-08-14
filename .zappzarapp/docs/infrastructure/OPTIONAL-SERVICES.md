@@ -122,7 +122,7 @@ MEILISEARCH_PORT=7700
 ```php
 use Meilisearch\Client;
 
-$client = new Client('http://meilisearch:7700', file_get_contents('/run/secrets/meilisearch_master_key'));
+$client = new Client('http://meilisearch:7700', file_get_contents('/run/secrets/meilisearch_master_key.txt'));
 
 // Index documents
 $client->index('products')->addDocuments([
@@ -142,7 +142,10 @@ import { readFileSync } from 'fs';
 
 const client = new MeiliSearch({
   host: 'http://meilisearch:7700',
-  apiKey: readFileSync('/run/secrets/meilisearch_master_key', 'utf8').trim(),
+  apiKey: readFileSync(
+    '/run/secrets/meilisearch_master_key.txt',
+    'utf8'
+  ).trim(),
 });
 
 // Search
@@ -427,8 +430,8 @@ $client = new S3Client([
     'endpoint' => 'https://seaweedfs:8333',
     'use_path_style_endpoint' => true,  // Required for SeaweedFS
     'credentials' => [
-        'key' => trim(file_get_contents('/run/secrets/seaweedfs_admin_user')),
-        'secret' => trim(file_get_contents('/run/secrets/seaweedfs_admin_password'))
+        'key' => trim(file_get_contents('/run/secrets/seaweedfs_access_key.txt')),
+        'secret' => trim(file_get_contents('/run/secrets/seaweedfs_secret_key.txt'))
     ]
 ]);
 
@@ -452,11 +455,11 @@ const client = new S3Client({
   forcePathStyle: true, // Required for SeaweedFS
   credentials: {
     accessKeyId: readFileSync(
-      '/run/secrets/seaweedfs_admin_user',
+      '/run/secrets/seaweedfs_access_key.txt',
       'utf8'
     ).trim(),
     secretAccessKey: readFileSync(
-      '/run/secrets/seaweedfs_admin_password',
+      '/run/secrets/seaweedfs_secret_key.txt',
       'utf8'
     ).trim(),
   },
@@ -557,8 +560,8 @@ use PhpAmqpLib\Message\AMQPMessage;
 $connection = new AMQPStreamConnection(
     'rabbitmq',
     5672,
-    trim(file_get_contents('/run/secrets/rabbitmq_user')),
-    trim(file_get_contents('/run/secrets/rabbitmq_password'))
+    trim(file_get_contents('/run/secrets/rabbitmq_user.txt')),
+    trim(file_get_contents('/run/secrets/rabbitmq_password.txt'))
 );
 
 $channel = $connection->channel();
@@ -574,8 +577,11 @@ $channel->basic_publish($msg, '', 'task_queue');
 import amqp from 'amqplib';
 import { readFileSync } from 'fs';
 
-const user = readFileSync('/run/secrets/rabbitmq_user', 'utf8').trim();
-const password = readFileSync('/run/secrets/rabbitmq_password', 'utf8').trim();
+const user = readFileSync('/run/secrets/rabbitmq_user.txt', 'utf8').trim();
+const password = readFileSync(
+  '/run/secrets/rabbitmq_password.txt',
+  'utf8'
+).trim();
 
 const connection = await amqp.connect(
   `amqp://${user}:${password}@rabbitmq:5672`

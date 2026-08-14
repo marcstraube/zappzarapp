@@ -58,7 +58,7 @@ file:
       - '"accessKey"'
       - '"secretKey"'
 
-  # Secrets (bind mount)
+  # Secrets (per-service file secrets)
   /run/secrets/seaweedfs_access_key.txt:
     exists: true
   /run/secrets/seaweedfs_secret_key.txt:

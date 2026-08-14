@@ -1189,7 +1189,10 @@ status: ## Show running containers status and image disk usage
 	@echo -e "\033[0;33m\nImage Disk Usage:\033[0m"
 	@docker images | grep "$(COMPOSE_PROJECT_NAME:-zappzarapp)"
 
-up: ## Start containers (optionally specify service names: make up php nginx)
+# Secrets preflight on every start: compose declares per-service file
+# secrets, and container creation aborts when a source file is missing -
+# generate missing secrets and re-enforce their permissions/ACLs first
+up: secrets ## Start containers (optionally specify service names: make up php nginx)
 	@# Ensure lockfiles exist as files (not directories) to prevent Docker bind mount issues
 	@if [ -d composer.lock ]; then rm -rf composer.lock; fi
 	@if [ -d pnpm-lock.yaml ]; then rm -rf pnpm-lock.yaml; fi
@@ -1511,7 +1514,7 @@ k8s-logs: ## Show Kubernetes logs: make k8s-logs [pod]
 
 ##@ Production Testing
 
-test-production: ## Test production build with ZAPPZARAPP_ENV-configured services (smart, respects .env)
+test-production: secrets ## Test production build with ZAPPZARAPP_ENV-configured services (smart, respects .env)
 	@echo -e "\033[0;34m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\033[0m"
 	@echo -e "\033[0;34m  Production Test: ZAPPZARAPP_ENV-aware configuration\033[0m"
 	@echo -e "\033[0;34m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\033[0m"
@@ -1643,7 +1646,7 @@ test-production: ## Test production build with ZAPPZARAPP_ENV-configured service
 		exit 1; \
 	fi
 
-test-production-minimal: ## Test production build with minimal services (nginx + app + db only)
+test-production-minimal: secrets ## Test production build with minimal services (nginx + app + db only)
 	@echo -e "\033[0;34m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\033[0m"
 	@echo -e "\033[0;34m  Production Test: Minimal (Core Services)\033[0m"
 	@echo -e "\033[0;34m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\033[0m"
@@ -1731,7 +1734,7 @@ test-production-minimal: ## Test production build with minimal services (nginx +
 		exit 1; \
 	fi
 
-test-production-full: ## Test production build with ALL services (comprehensive, ignores ENABLE_*)
+test-production-full: secrets ## Test production build with ALL services (comprehensive, ignores ENABLE_*)
 	@echo -e "\033[0;34m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\033[0m"
 	@echo -e "\033[0;34m  Production Test: Full (All Services)\033[0m"
 	@echo -e "\033[0;34m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\033[0m"
@@ -2158,7 +2161,7 @@ adminer-down: ## Stop Adminer
 	$(call require_development,Adminer)
 	@$(DC) --profile adminer stop adminer
 
-pgadmin-up: ## Start pgAdmin PostgreSQL UI (development only)
+pgadmin-up: secrets ## Start pgAdmin PostgreSQL UI (development only)
 	$(call require_development,pgAdmin)
 	@echo -e "\033[0;34mStarting pgAdmin...\033[0m"
 	@$(DC) --profile pgadmin up -d pgadmin
@@ -2209,6 +2212,12 @@ es-setup-api-key: ## Generate Elasticsearch API key (run after ES is healthy)
 		-H "Content-Type: application/json" \
 		-d '{"name": "zappzarapp-dev", "role_descriptors": {"all_access": {"cluster": ["all"], "indices": [{"names": ["*"], "privileges": ["all"]}]}}}' \
 		| jq -r '.encoded' > secrets/elasticsearch_api_key.txt
+	@# Same permission model as 'make secrets': owner-only plus read ACLs
+	@# for the application containers (php uid 82, node uid 50000)
+	@chmod 600 secrets/elasticsearch_api_key.txt
+	@if command -v setfacl >/dev/null 2>&1; then \
+		setfacl -b -m u:82:r,u:50000:r secrets/elasticsearch_api_key.txt; \
+	fi
 	@echo -e "\033[0;32mAPI key saved to secrets/elasticsearch_api_key.txt\033[0m"
 
 es-health: ## Check Elasticsearch cluster health
@@ -3429,7 +3438,7 @@ goss-test-rabbitmq: ## Test RabbitMQ container (runtime)
 	@tests/goss/runtime-tests.sh rabbitmq
 
 # Preset test targets (build + start + runtime test + stop)
-goss-test-preset: ## Test a preset (PRESET=dev-fullstack, VERBOSE=1 for details)
+goss-test-preset: secrets ## Test a preset (PRESET=dev-fullstack, VERBOSE=1 for details)
 	@if [ -z "$(PRESET)" ]; then \
 		echo -e "\033[0;31mError: PRESET not specified. Usage: make goss-test-preset PRESET=fullstack\033[0m"; \
 		exit 1; \
@@ -3803,14 +3812,15 @@ secrets: ## Generate missing Docker Secrets (idempotent)
 	@# EMPTY secret files while still printing "generated".
 	@command -v openssl >/dev/null 2>&1 || { echo -e "\033[0;31mERROR: openssl is required to generate secrets\033[0m"; exit 1; }
 	@mkdir -p secrets
-	# Mode 755: Directory readable by all (needed for bind-mount in Docker Compose)
-	# For stricter security, use Kubernetes with native K8s Secrets + securityContext.fsGroup
-	@chmod 755 secrets
+	@# Owner-only directory: the application containers traverse it via the
+	@# rx ACLs applied below; the per-service file secrets are resolved by the
+	@# Docker daemon (root) and need no directory access from the containers
+	@chmod 700 secrets
 	@echo -e "\033[0;33mChecking Docker Secrets...\033[0m"
 	@if [ ! -f secrets/db_password.txt ]; then \
 		echo -e "\033[0;34mGenerating db_password secret...\033[0m"; \
 		openssl rand -base64 24 | tr -dc 'a-zA-Z0-9' | head -c 24 > secrets/db_password.txt; \
-		chmod 644 secrets/db_password.txt; \
+		chmod 600 secrets/db_password.txt; \
 		echo -e "\033[0;32mdb_password secret generated.\033[0m"; \
 	else \
 		echo -e "\033[0;32mdb_password secret already exists.\033[0m"; \
@@ -3818,7 +3828,7 @@ secrets: ## Generate missing Docker Secrets (idempotent)
 	@if [ ! -f secrets/db_root_password.txt ]; then \
 		echo -e "\033[0;34mGenerating db_root_password secret...\033[0m"; \
 		openssl rand -base64 24 | tr -dc 'a-zA-Z0-9' | head -c 24 > secrets/db_root_password.txt; \
-		chmod 644 secrets/db_root_password.txt; \
+		chmod 600 secrets/db_root_password.txt; \
 		echo -e "\033[0;32mdb_root_password secret generated.\033[0m"; \
 	else \
 		echo -e "\033[0;32mdb_root_password secret already exists.\033[0m"; \
@@ -3826,7 +3836,7 @@ secrets: ## Generate missing Docker Secrets (idempotent)
 	@if [ ! -f secrets/encryption_key.txt ]; then \
 		echo -e "\033[0;34mGenerating encryption_key secret...\033[0m"; \
 		openssl rand -base64 32 > secrets/encryption_key.txt; \
-		chmod 644 secrets/encryption_key.txt; \
+		chmod 600 secrets/encryption_key.txt; \
 		echo -e "\033[0;32mencryption_key secret generated.\033[0m"; \
 	else \
 		echo -e "\033[0;32mencryption_key secret already exists.\033[0m"; \
@@ -3834,7 +3844,7 @@ secrets: ## Generate missing Docker Secrets (idempotent)
 	@if [ ! -f secrets/backup_encryption_key.txt ]; then \
 		echo -e "\033[0;34mGenerating backup_encryption_key secret...\033[0m"; \
 		openssl rand -base64 32 > secrets/backup_encryption_key.txt; \
-		chmod 644 secrets/backup_encryption_key.txt; \
+		chmod 600 secrets/backup_encryption_key.txt; \
 		echo -e "\033[0;32mbackup_encryption_key secret generated.\033[0m"; \
 	else \
 		echo -e "\033[0;32mbackup_encryption_key secret already exists.\033[0m"; \
@@ -3842,7 +3852,7 @@ secrets: ## Generate missing Docker Secrets (idempotent)
 	@if [ ! -f secrets/meilisearch_master_key.txt ]; then \
 		echo -e "\033[0;34mGenerating meilisearch_master_key secret...\033[0m"; \
 		openssl rand -base64 32 | tr -dc 'a-zA-Z0-9' | head -c 32 > secrets/meilisearch_master_key.txt; \
-		chmod 644 secrets/meilisearch_master_key.txt; \
+		chmod 600 secrets/meilisearch_master_key.txt; \
 		echo -e "\033[0;32mmeilisearch_master_key secret generated.\033[0m"; \
 	else \
 		echo -e "\033[0;32mmeilisearch_master_key secret already exists.\033[0m"; \
@@ -3850,7 +3860,7 @@ secrets: ## Generate missing Docker Secrets (idempotent)
 	@if [ ! -f secrets/seaweedfs_access_key.txt ]; then \
 		echo -e "\033[0;34mGenerating seaweedfs_access_key secret...\033[0m"; \
 		openssl rand -base64 16 | tr -dc 'a-zA-Z0-9' | head -c 20 > secrets/seaweedfs_access_key.txt; \
-		chmod 644 secrets/seaweedfs_access_key.txt; \
+		chmod 600 secrets/seaweedfs_access_key.txt; \
 		echo -e "\033[0;32mseaweedfs_access_key secret generated.\033[0m"; \
 	else \
 		echo -e "\033[0;32mseaweedfs_access_key secret already exists.\033[0m"; \
@@ -3858,7 +3868,7 @@ secrets: ## Generate missing Docker Secrets (idempotent)
 	@if [ ! -f secrets/seaweedfs_secret_key.txt ]; then \
 		echo -e "\033[0;34mGenerating seaweedfs_secret_key secret...\033[0m"; \
 		openssl rand -base64 32 | tr -dc 'a-zA-Z0-9' | head -c 40 > secrets/seaweedfs_secret_key.txt; \
-		chmod 644 secrets/seaweedfs_secret_key.txt; \
+		chmod 600 secrets/seaweedfs_secret_key.txt; \
 		echo -e "\033[0;32mseaweedfs_secret_key secret generated.\033[0m"; \
 	else \
 		echo -e "\033[0;32mseaweedfs_secret_key secret already exists.\033[0m"; \
@@ -3866,7 +3876,7 @@ secrets: ## Generate missing Docker Secrets (idempotent)
 	@if [ ! -f secrets/rabbitmq_user.txt ]; then \
 		echo -e "\033[0;34mGenerating rabbitmq_user secret...\033[0m"; \
 		echo "app" > secrets/rabbitmq_user.txt; \
-		chmod 644 secrets/rabbitmq_user.txt; \
+		chmod 600 secrets/rabbitmq_user.txt; \
 		echo -e "\033[0;32mrabbitmq_user secret generated.\033[0m"; \
 	else \
 		echo -e "\033[0;32mrabbitmq_user secret already exists.\033[0m"; \
@@ -3874,7 +3884,7 @@ secrets: ## Generate missing Docker Secrets (idempotent)
 	@if [ ! -f secrets/rabbitmq_password.txt ]; then \
 		echo -e "\033[0;34mGenerating rabbitmq_password secret...\033[0m"; \
 		openssl rand -base64 24 | tr -dc 'a-zA-Z0-9' | head -c 24 > secrets/rabbitmq_password.txt; \
-		chmod 644 secrets/rabbitmq_password.txt; \
+		chmod 600 secrets/rabbitmq_password.txt; \
 		echo -e "\033[0;32mrabbitmq_password secret generated.\033[0m"; \
 	else \
 		echo -e "\033[0;32mrabbitmq_password secret already exists.\033[0m"; \
@@ -3882,7 +3892,7 @@ secrets: ## Generate missing Docker Secrets (idempotent)
 	@if [ ! -f secrets/pgadmin_password.txt ]; then \
 		echo -e "\033[0;34mGenerating pgadmin_password secret...\033[0m"; \
 		openssl rand -base64 24 | tr -dc 'a-zA-Z0-9' | head -c 24 > secrets/pgadmin_password.txt; \
-		chmod 644 secrets/pgadmin_password.txt; \
+		chmod 600 secrets/pgadmin_password.txt; \
 		echo -e "\033[0;32mpgadmin_password secret generated.\033[0m"; \
 	else \
 		echo -e "\033[0;32mpgadmin_password secret already exists.\033[0m"; \
@@ -3890,7 +3900,7 @@ secrets: ## Generate missing Docker Secrets (idempotent)
 	@if [ ! -f secrets/mercure_jwt_secret.txt ]; then \
 		echo -e "\033[0;34mGenerating mercure_jwt_secret secret...\033[0m"; \
 		openssl rand -base64 32 > secrets/mercure_jwt_secret.txt; \
-		chmod 644 secrets/mercure_jwt_secret.txt; \
+		chmod 600 secrets/mercure_jwt_secret.txt; \
 		echo -e "\033[0;32mmercure_jwt_secret secret generated.\033[0m"; \
 	else \
 		echo -e "\033[0;32mmercure_jwt_secret secret already exists.\033[0m"; \
@@ -3903,6 +3913,37 @@ secrets: ## Generate missing Docker Secrets (idempotent)
 		echo -e "\033[0;34m  Note: API key must be generated after ES starts: make es-setup-api-key\033[0m"; \
 	else \
 		echo -e "\033[0;32melasticsearch_bootstrap_password secret already exists.\033[0m"; \
+	fi
+	@# Enforce owner-only modes plus per-secret read ACLs on every secret
+	@# file, including pre-existing ones (idempotent). Consumer uids:
+	@#   82 php (www-data) and 50000 node = application containers;
+	@#   70 postgres, 999 mariadb, 100 rabbitmq, 5050 pgadmin,
+	@#   1000 elasticsearch/meilisearch/mercure/seaweedfs
+	@if command -v setfacl >/dev/null 2>&1; then \
+		set -e; \
+		apply() { if [ -f "secrets/$$1" ]; then chmod 600 "secrets/$$1"; setfacl -b -m "$$2" "secrets/$$1"; fi; }; \
+		setfacl -b -m u:82:rx,u:50000:rx secrets; \
+		APP=u:82:r,u:50000:r; \
+		apply db_password.txt "$$APP,u:70:r,u:999:r"; \
+		apply db_root_password.txt "u:999:r"; \
+		apply encryption_key.txt "$$APP"; \
+		apply backup_encryption_key.txt "$$APP"; \
+		apply elasticsearch_api_key.txt "$$APP"; \
+		apply elasticsearch_bootstrap_password.txt "u:1000:r"; \
+		apply mail_password.txt "$$APP"; \
+		apply meilisearch_master_key.txt "$$APP,u:1000:r"; \
+		apply mercure_jwt_secret.txt "$$APP,u:1000:r"; \
+		apply pgadmin_password.txt "u:5050:r"; \
+		apply rabbitmq_user.txt "$$APP,u:100:r"; \
+		apply rabbitmq_password.txt "$$APP,u:100:r"; \
+		apply seaweedfs_access_key.txt "$$APP,u:1000:r"; \
+		apply seaweedfs_secret_key.txt "$$APP,u:1000:r"; \
+		echo -e "\033[0;32mSecret permissions enforced (0600 + per-secret read ACLs).\033[0m"; \
+	else \
+		chmod 600 secrets/*.txt; \
+		echo -e "\033[0;33mWARNING: setfacl not found - secrets are mode 600 without ACLs.\033[0m"; \
+		echo -e "\033[0;33m         Unprivileged container users cannot read them. Install the\033[0m"; \
+		echo -e "\033[0;33m         'acl' package and re-run 'make secrets'.\033[0m"; \
 	fi
 	@echo -e "\033[0;32mSecrets check completed!\033[0m"
 
@@ -4063,7 +4104,7 @@ security-audit-node: ## Scan Node.js dependencies for known vulnerabilities
 	@echo -e "\033[0;33mScanning Node.js dependencies with pnpm audit...\033[0m"
 	@$(DC) run --rm -T dev-tools pnpm audit
 
-security-zap-start: ## Start services in production mode for ZAP scanning (respects .env ENABLE_* flags)
+security-zap-start: secrets ## Start services in production mode for ZAP scanning (respects .env ENABLE_* flags)
 	@echo -e "\033[0;33mStopping any running containers...\033[0m"
 	@$(LOAD_ENV); \
 	PROFILES=""; \
@@ -4118,7 +4159,7 @@ security-zap-start: ## Start services in production mode for ZAP scanning (respe
 	@echo -e "\033[0;32m✓ Services ready for ZAP scan\033[0m"
 	@echo -e "\033[0;36mℹ️  Run: make security-zap-scan\033[0m"
 
-security-zap-full-start: ## Start ALL services for comprehensive ZAP scanning (ignores .env, forces all ENABLE_*)
+security-zap-full-start: secrets ## Start ALL services for comprehensive ZAP scanning (ignores .env, forces all ENABLE_*)
 	@echo -e "\033[0;33mStopping any running containers...\033[0m"
 	@$(LOAD_ENV); \
 	PROFILES="--profile php --profile $${DB_TYPE:-postgres} --profile redis --profile node --profile node-backend --profile mercure --profile meilisearch --profile elasticsearch --profile seaweedfs"; \

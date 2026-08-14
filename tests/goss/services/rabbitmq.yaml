@@ -45,7 +45,7 @@ file:
   /etc/rabbitmq/rabbitmq.conf:
     exists: true
 
-  # Secrets (bind mount)
+  # Secrets (per-service file secrets)
   /run/secrets/rabbitmq_user.txt:
     exists: true
   /run/secrets/rabbitmq_password.txt:

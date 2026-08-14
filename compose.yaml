@@ -7,10 +7,17 @@
 #   .env.local        - Local overrides (gitignored, loaded via Makefile)
 #
 # SECRETS HANDLING:
-#   Uses bind mounts (./secrets:/run/secrets:ro) instead of Docker secrets.
-#   Docker Compose (standalone) does NOT support uid/gid/mode for secrets.
-#   Secret files are created with mode 0644 by 'make setup'.
-#   For stricter security, use Kubernetes with native K8s Secrets + securityContext.fsGroup.
+#   Infrastructure services use top-level file secrets: each service lists only
+#   the secrets it reads, with .txt targets so the /run/secrets/<name>.txt
+#   paths match the secrets directory layout. The application containers (php,
+#   node, node-backend) mount the whole ./secrets directory instead - they
+#   consume most credentials, including optional ones that only exist after
+#   later setup steps (elasticsearch_api_key.txt, mail_password.txt), and a
+#   file secret whose source is missing would abort container creation.
+#   Secret files are 0600 with per-secret read ACLs for the consuming
+#   container uids (set by 'make secrets'). Compose (standalone) ignores
+#   uid/gid/mode on secrets - host permissions apply through the bind mount.
+#   For stricter isolation, use Kubernetes with native K8s Secrets + securityContext.fsGroup.
 #
 # SERVICE ORDER: Core → Data → Optional (alphabetically within each category)
 #   Core:     nginx, node, node-backend, php
@@ -296,8 +303,11 @@ services:
       # ─────────────────────────────────────────────────────────────────
     volumes:
       - mariadb-data:/var/lib/mysql
-      # Secrets (bind mount)
-      - ./secrets:/run/secrets:ro
+    secrets:
+      - source: db_password
+        target: db_password.txt
+      - source: db_root_password
+        target: db_root_password.txt
     networks:
       - database
     healthcheck:
@@ -346,8 +356,9 @@ services:
       PGDATA: /var/lib/postgresql/data/pgdata
     volumes:
       - postgres-data:/var/lib/postgresql/data
-      # Secrets (bind mount)
-      - ./secrets:/run/secrets:ro
+    secrets:
+      - source: db_password
+        target: db_password.txt
     networks:
       - database
     healthcheck:
@@ -457,8 +468,9 @@ services:
       # TLS certificates for internal HTTPS
       - ${CERT_PATH_INTERNAL:-./docker/certs/internal}/cert.crt:/usr/share/elasticsearch/config/certs/cert.crt:ro
       - ${CERT_PATH_INTERNAL:-./docker/certs/internal}/cert.key:/usr/share/elasticsearch/config/certs/cert.key:ro
-      # Secrets (bind mount)
-      - ./secrets:/run/secrets:ro
+    secrets:
+      - source: elasticsearch_bootstrap_password
+        target: elasticsearch_bootstrap_password.txt
     networks:
       - database
     # Health check defined in Dockerfile
@@ -516,11 +528,12 @@ services:
       - "7700"
     volumes:
       - meilisearch-data:/meili_data
-      # Secrets (bind mount)
-      - ./secrets:/run/secrets:ro
       # TLS certificates for internal HTTPS
       - ${CERT_PATH_INTERNAL:-./docker/certs/internal}/cert.crt:/etc/ssl/certs/cert.crt:ro
       - ${CERT_PATH_INTERNAL:-./docker/certs/internal}/cert.key:/etc/ssl/private/cert.key:ro
+    secrets:
+      - source: meilisearch_master_key
+        target: meilisearch_master_key.txt
     networks:
       - database
     # Health check defined in Dockerfile
@@ -550,11 +563,12 @@ services:
       - "443"
     volumes:
       - mercure-data:/data
-      # Secrets (bind mount)
-      - ./secrets:/run/secrets:ro
       # TLS certificates for internal HTTPS
       - ${CERT_PATH_INTERNAL:-./docker/certs/internal}/cert.crt:/etc/mercure/certs/cert.crt:ro
       - ${CERT_PATH_INTERNAL:-./docker/certs/internal}/cert.key:/etc/mercure/certs/cert.key:ro
+    secrets:
+      - source: mercure_jwt_secret
+        target: mercure_jwt_secret.txt
     networks:
       - backend
     # Health check defined in Dockerfile
@@ -586,7 +600,9 @@ services:
       - "80"
     volumes:
       - pgadmin-data:/var/lib/pgadmin
-      - ./secrets:/run/secrets:ro
+    secrets:
+      - source: pgadmin_password
+        target: pgadmin_password.txt
     networks:
       - database
       - backend
@@ -612,8 +628,11 @@ services:
       - "15672"
     volumes:
       - rabbitmq-data:/var/lib/rabbitmq
-      # Secrets (bind mount)
-      - ./secrets:/run/secrets:ro
+    secrets:
+      - source: rabbitmq_user
+        target: rabbitmq_user.txt
+      - source: rabbitmq_password
+        target: rabbitmq_password.txt
     networks:
       - backend
     # Health check defined in Dockerfile
@@ -641,14 +660,44 @@ services:
       # Internal ports (master: 9333, volume: 8080, filer: 8888)
     volumes:
       - seaweedfs-data:/data
-      # Secrets (bind mount)
-      - ./secrets:/run/secrets:ro
       # TLS certificates for internal HTTPS (zero-trust architecture)
       - ${CERT_PATH_INTERNAL:-./docker/certs/internal}/cert.crt:/etc/ssl/certs/cert.crt:ro
       - ${CERT_PATH_INTERNAL:-./docker/certs/internal}/cert.key:/etc/ssl/private/cert.key:ro
+    secrets:
+      - source: seaweedfs_access_key
+        target: seaweedfs_access_key.txt
+      - source: seaweedfs_secret_key
+        target: seaweedfs_secret_key.txt
     networks:
       - backend
     # Health check defined in Dockerfile
+
+secrets:
+  # File-provider secrets, bind-mounted per service. Generated by
+  # 'make secrets' (mode 0600 + per-secret read ACLs for the consuming
+  # container uids). The application containers read additional optional
+  # secrets through their ./secrets directory mount - see the SECRETS
+  # HANDLING note at the top of this file.
+  db_password:
+    file: ./secrets/db_password.txt
+  db_root_password:
+    file: ./secrets/db_root_password.txt
+  elasticsearch_bootstrap_password:
+    file: ./secrets/elasticsearch_bootstrap_password.txt
+  meilisearch_master_key:
+    file: ./secrets/meilisearch_master_key.txt
+  mercure_jwt_secret:
+    file: ./secrets/mercure_jwt_secret.txt
+  pgadmin_password:
+    file: ./secrets/pgadmin_password.txt
+  rabbitmq_user:
+    file: ./secrets/rabbitmq_user.txt
+  rabbitmq_password:
+    file: ./secrets/rabbitmq_password.txt
+  seaweedfs_access_key:
+    file: ./secrets/seaweedfs_access_key.txt
+  seaweedfs_secret_key:
+    file: ./secrets/seaweedfs_secret_key.txt
 
 networks:
   # 3-Network Security Architecture for GDPR Compliance

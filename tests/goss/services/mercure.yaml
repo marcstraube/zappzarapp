@@ -29,8 +29,8 @@ file:
     exists: true
     filetype: directory
 
-  # Secrets (bind mount)
-  /run/secrets/mercure_jwt_key.txt:
+  # JWT secret (per-service file secret)
+  /run/secrets/mercure_jwt_secret.txt:
     exists: true
 
 # ============================================================================

@@ -35,7 +35,7 @@ file:
   /etc/mysql/certs/server.key:
     exists: true
 
-  # Secrets (bind mount)
+  # Secrets (per-service file secrets)
   /run/secrets/db_password.txt:
     exists: true
   /run/secrets/db_root_password.txt:

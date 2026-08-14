@@ -6,10 +6,13 @@
 #   Multi-node:    make k8s-deploy (Kubernetes/Helm)
 #
 # SECRETS HANDLING:
-#   Docker Compose (standalone) does NOT support uid/gid/mode for secrets.
-#   We use bind mounts instead: ./secrets:/run/secrets:ro
-#   Secret files are created with mode 0644 by 'make setup'.
-#   For production with stricter security, use Kubernetes (native secrets with fsGroup).
+#   Infrastructure services receive per-service file secrets from
+#   compose.yaml; the application containers (php, node, node-backend) mount
+#   the whole ./secrets directory (see the SECRETS HANDLING note there).
+#   Secret files are 0600 with per-secret read ACLs for the consuming
+#   container uids (set by 'make secrets') - the unprivileged users below
+#   read them through those ACLs.
+#   For production with stricter isolation, use Kubernetes (native secrets with fsGroup).
 #
 # UIDs reference (verified against the built images' /etc/passwd — Alpine
 # uids differ from the Debian variants):
@@ -102,7 +105,7 @@ services:
       - /tmp:mode=1777,size=256M
       - /home/node/.cache:mode=0770,uid=50000,gid=50000,size=256M
     volumes:
-      # Secrets (bind mount, readable by all container users)
+      # Secrets (directory bind mount; files carry read ACLs for uid 50000)
       - ./secrets:/run/secrets:ro
     security_opt:
       - no-new-privileges:true
@@ -131,7 +134,7 @@ services:
       - /tmp:mode=1777,size=256M
       - /home/node/.cache:mode=0770,uid=50000,gid=50000,size=256M
     volumes:
-      # Secrets (bind mount, readable by all container users)
+      # Secrets (directory bind mount; files carry read ACLs for uid 50000)
       - ./secrets:/run/secrets:ro
     security_opt:
       - no-new-privileges:true
@@ -168,7 +171,7 @@ services:
       - php-fpm-socket:/var/run/php-fpm
       # Persistent Storage for Uploads and generated files
       - ${STORAGE_DIR:-./storage}:/var/www/html/storage:rw
-      # Secrets (bind mount, readable by all container users - mode 0644)
+      # Secrets (directory bind mount; files carry read ACLs for uid 82)
       - ./secrets:/run/secrets:ro
     read_only: true
     tmpfs:
@@ -212,9 +215,9 @@ services:
 
   mariadb:
     # Run directly as the mysql user: the official entrypoint skips its
-    # root-only chown/gosu phase, so no capabilities are needed. Secrets are
-    # 0644 and the cert key carries a read ACL for uid 999 (set by
-    # docker/certs/generate-internal.sh).
+    # root-only chown/gosu phase, so no capabilities are needed. The secrets
+    # and the cert key carry read ACLs for uid 999 (set by 'make secrets'
+    # and docker/certs/generate-internal.sh).
     user: "999:999"
     environment:
       # Arms the entrypoint's fail-fast: missing SSL certificates abort startup
@@ -236,8 +239,6 @@ services:
     shm_size: 256mb
     volumes:
       - mariadb-data:/var/lib/mysql
-      # Secrets (bind mount)
-      - ./secrets:/run/secrets:ro
       # SSL certificates (mounted to /tmp/certs, entrypoint copies with correct ownership)
       - ./docker/certs/internal:/tmp/certs:ro
     command: >
@@ -270,9 +271,9 @@ services:
 
   postgres:
     # Run directly as the postgres user: the official entrypoint skips its
-    # root-only chown/gosu phase, so no capabilities are needed. Secrets are
-    # 0644 and the cert key carries a read ACL for uid 70 (set by
-    # docker/certs/generate-internal.sh).
+    # root-only chown/gosu phase, so no capabilities are needed. The secrets
+    # and the cert key carry read ACLs for uid 70 (set by 'make secrets'
+    # and docker/certs/generate-internal.sh).
     user: "70:70"
     environment:
       # Arms the entrypoint's fail-fast: missing SSL certificates abort startup
@@ -291,8 +292,6 @@ services:
     shm_size: 256mb
     volumes:
       - postgres-data:/var/lib/postgresql/data
-      # Secrets (bind mount)
-      - ./secrets:/run/secrets:ro
       # SSL certificates (mounted to /tmp/certs, entrypoint copies with correct ownership)
       - ./docker/certs/internal:/tmp/certs:ro
     command: >
@@ -429,15 +428,12 @@ services:
   meilisearch:
     # Run as uid 1000 (no dedicated image user; /meili_data is chowned to
     # 1000 in the Dockerfile so the named volume inherits that ownership).
-    # Secrets are 0644 and the cert key carries a read ACL for uid 1000
-    # (set by docker/certs/generate-internal.sh).
+    # The master-key secret and the cert key carry read ACLs for uid 1000
+    # (set by 'make secrets' and docker/certs/generate-internal.sh).
     user: "1000:1000"
     read_only: true
     tmpfs:
       - /tmp:mode=0770,uid=1000,gid=1000,size=64M
-    volumes:
-      # Secrets (bind mount)
-      - ./secrets:/run/secrets:ro
     security_opt:
       - no-new-privileges:true
     cap_drop:
@@ -465,8 +461,8 @@ services:
   mercure:
     # Run as uid 1000 (no dedicated image user; /data and /config are
     # chowned to 1000 in the Dockerfile so the named volume inherits that
-    # ownership). Secrets are 0644 and the cert key carries a read ACL for
-    # uid 1000 (set by docker/certs/generate-internal.sh).
+    # ownership). The JWT secret and the cert key carry read ACLs for
+    # uid 1000 (set by 'make secrets' and docker/certs/generate-internal.sh).
     user: "1000:1000"
     # Caddy binds :443 as an unprivileged user inside the container netns
     sysctls:
@@ -477,9 +473,6 @@ services:
       - /tmp:mode=0770,uid=1000,gid=1000,size=64M
       # Caddy config autosave dir (XDG_CONFIG_HOME)
       - /config:mode=0770,uid=1000,gid=1000,size=16M
-    volumes:
-      # Secrets (bind mount)
-      - ./secrets:/run/secrets:ro
     security_opt:
       - no-new-privileges:true
     cap_drop:
@@ -510,8 +503,8 @@ services:
   rabbitmq:
     # Run directly as the rabbitmq user (uid 100, gid 101 in the Alpine
     # image): the official entrypoint skips its root-only chown/su-exec
-    # phase, so no capabilities are needed. Secrets are 0644 and the cert
-    # key carries a read ACL for uid 100 (set by
+    # phase, so no capabilities are needed. The secrets and the cert key
+    # carry read ACLs for uid 100 (set by 'make secrets' and
     # docker/certs/generate-internal.sh).
     user: "100:101"
     environment:
@@ -529,8 +522,6 @@ services:
       - rabbitmq-data:/var/lib/rabbitmq
       # RabbitMQ TLS configuration (production - TLS only)
       - ./docker/rabbitmq/rabbitmq-production.conf:/etc/rabbitmq/rabbitmq.conf:ro
-      # Secrets (bind mount)
-      - ./secrets:/run/secrets:ro
       # SSL certificates (bind mount)
       - ./docker/certs/internal/cert.crt:/etc/rabbitmq/certs/server.crt:ro
       - ./docker/certs/internal/cert.key:/etc/rabbitmq/certs/server.key:ro
@@ -551,9 +542,9 @@ services:
 
   seaweedfs:
     # Run directly as the seaweedfs user (uid 1000): the entrypoint skips its
-    # root-only chown/su-exec phase, so no capabilities are needed. Secrets
-    # are 0644 and the cert key carries a read ACL for uid 1000 (set by
-    # docker/certs/generate-internal.sh).
+    # root-only chown/su-exec phase, so no capabilities are needed. The S3
+    # credential secrets and the cert key carry read ACLs for uid 1000 (set
+    # by 'make secrets' and docker/certs/generate-internal.sh).
     user: "1000:1000"
     environment:
       # Arms the entrypoint's fail-fast: missing SSL certificates abort startup
@@ -571,8 +562,6 @@ services:
       - ALL
     volumes:
       - seaweedfs-data:/data
-      # Secrets (bind mount)
-      - ./secrets:/run/secrets:ro
       # SSL certificates (TLS is configured via entrypoint)
       - ./docker/certs/internal/cert.crt:/etc/ssl/certs/cert.crt:ro
       - ./docker/certs/internal/cert.key:/etc/ssl/private/cert.key:ro
