@@ -539,6 +539,9 @@ secrets:
     dbRootPassword: ""
     encryptionKey: ""
     backupEncryptionKey: ""
+    # TLS secret for the node-backend HTTPS listener. When set, the secret
+    # must carry tls.crt, tls.key AND ca.crt - nginx verifies the upstream
+    # against ca.crt.
     sslCert: ""
     sslKey: ""
     mercureJwtSecret: ""

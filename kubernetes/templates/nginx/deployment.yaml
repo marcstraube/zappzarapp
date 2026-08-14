@@ -76,6 +76,13 @@ spec:
             - name: nginx-config
               mountPath: /etc/nginx/conf.d/default.conf
               subPath: default.conf
+            {{- if .Values.nodeBackend.enabled }}
+            # CA for verifying the node-backend upstream TLS
+            - name: internal-ca
+              mountPath: /etc/nginx/internal-ca.crt
+              subPath: ca.crt
+              readOnly: true
+            {{- end }}
             - name: cache
               mountPath: /var/cache/nginx
             - name: run
@@ -90,6 +97,14 @@ spec:
         - name: nginx-config
           configMap:
             name: {{ include "zappzarapp.fullname" . }}-nginx-config
+        {{- if .Values.nodeBackend.enabled }}
+        - name: internal-ca
+          secret:
+            secretName: {{ .Values.secrets.existingSecrets.sslCert | default (printf "%s-internal-tls" (include "zappzarapp.fullname" .)) }}
+            items:
+              - key: ca.crt
+                path: ca.crt
+        {{- end }}
         - name: cache
           emptyDir:
             sizeLimit: 64Mi

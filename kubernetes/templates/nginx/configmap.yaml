@@ -122,12 +122,16 @@ data:
 
         {{- if .Values.nodeBackend.enabled }}
         # Node.js Backend API Proxy (/api/node/* -> node-backend:3000)
-        # The backend serves HTTPS only; its internal certificate is
-        # self-signed, so upstream verification is disabled
+        # The backend serves HTTPS only; the upstream is verified against
+        # the chart's internal CA (ca.crt in the internal-tls secret) with
+        # the expected identity pinned
         location ~ ^/api/node/(.*)$ {
             limit_req zone=api burst=10 nodelay;
             proxy_pass https://node-backend/api/$1$is_args$args;
-            proxy_ssl_verify off;
+            proxy_ssl_verify on;
+            proxy_ssl_trusted_certificate /etc/nginx/internal-ca.crt;
+            proxy_ssl_verify_depth 2;
+            proxy_ssl_name {{ include "zappzarapp.fullname" . }}-node-backend;
             proxy_http_version 1.1;
             proxy_set_header Host $host;
             proxy_set_header X-Real-IP $remote_addr;
@@ -144,7 +148,10 @@ data:
         location = /api/node/health {
             access_log off;
             proxy_pass https://node-backend/health;
-            proxy_ssl_verify off;
+            proxy_ssl_verify on;
+            proxy_ssl_trusted_certificate /etc/nginx/internal-ca.crt;
+            proxy_ssl_verify_depth 2;
+            proxy_ssl_name {{ include "zappzarapp.fullname" . }}-node-backend;
             proxy_http_version 1.1;
             proxy_set_header Host $host;
         }
