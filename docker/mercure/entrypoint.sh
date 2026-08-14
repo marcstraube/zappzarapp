@@ -18,15 +18,44 @@ fi
 # Translate the canonical comma-separated CORS_ORIGINS list (shared with the
 # PHP/Node services) into Mercure's cors_origins directive, which expects
 # space-separated origins ("*" passes through unchanged).
+# Every entry is validated first: the value ends up as raw Caddyfile config
+# (via MERCURE_EXTRA_DIRECTIVES), so anything that is not a well-formed
+# origin - whitespace, newlines, stray directives - would be config
+# injection and must abort the start instead.
 if [ -n "${CORS_ORIGINS:-}" ]; then
-    cors_directive="cors_origins $(printf '%s' "$CORS_ORIGINS" | tr ',' ' ')"
-    if [ -n "${MERCURE_EXTRA_DIRECTIVES:-}" ]; then
-        MERCURE_EXTRA_DIRECTIVES="$MERCURE_EXTRA_DIRECTIVES
+    validated=""
+    # set -f: the unquoted split below must not glob (a "*" entry would
+    # otherwise expand to the files in the working directory)
+    set -f
+    IFS=','
+    for origin in $CORS_ORIGINS; do
+        [ -z "$origin" ] && continue
+        case "$origin" in
+            *[!A-Za-z0-9:/.*-]*)
+                echo "[entrypoint] FATAL: CORS_ORIGINS entry contains characters invalid in an origin: '$origin'" >&2
+                exit 1
+                ;;
+            \*|http://?*|https://?*)
+                validated="${validated:+$validated }$origin"
+                ;;
+            *)
+                echo "[entrypoint] FATAL: CORS_ORIGINS entry is not an origin (expected http(s)://host[:port] or *): '$origin'" >&2
+                exit 1
+                ;;
+        esac
+    done
+    unset IFS
+    set +f
+    if [ -n "$validated" ]; then
+        cors_directive="cors_origins $validated"
+        if [ -n "${MERCURE_EXTRA_DIRECTIVES:-}" ]; then
+            MERCURE_EXTRA_DIRECTIVES="$MERCURE_EXTRA_DIRECTIVES
 $cors_directive"
-    else
-        MERCURE_EXTRA_DIRECTIVES="$cors_directive"
+        else
+            MERCURE_EXTRA_DIRECTIVES="$cors_directive"
+        fi
+        export MERCURE_EXTRA_DIRECTIVES
     fi
-    export MERCURE_EXTRA_DIRECTIVES
 fi
 
 # Execute the original Mercure entrypoint

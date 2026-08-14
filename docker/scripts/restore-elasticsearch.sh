@@ -37,6 +37,8 @@ fi
 
 # Get encryption key
 BACKUP_ENCRYPTION_KEY="${BACKUP_ENCRYPTION_KEY:-}"
+# Exported so openssl can read it via -pass env: (keeps the key out of argv/ps)
+export BACKUP_ENCRYPTION_KEY
 if [[ -z "$BACKUP_ENCRYPTION_KEY" && -f "$PROJECT_ROOT/secrets/backup_encryption_key.txt" ]]; then
     BACKUP_ENCRYPTION_KEY=$(cat "$PROJECT_ROOT/secrets/backup_encryption_key.txt")
 fi
@@ -104,7 +106,7 @@ TEMP_DIR=$(mktemp -d)
 # Extract backup
 echo -e "${YELLOW}Extracting backup...${NC}"
 if [[ "$IS_ENCRYPTED" == true ]]; then
-    openssl enc -aes-256-cbc -d -pbkdf2 -pass pass:"$BACKUP_ENCRYPTION_KEY" -in "$BACKUP_FILE" \
+    openssl enc -aes-256-cbc -d -pbkdf2 -pass env:BACKUP_ENCRYPTION_KEY -in "$BACKUP_FILE" \
         | tar -xzf - -C "$TEMP_DIR"
 else
     tar -xzf "$BACKUP_FILE" -C "$TEMP_DIR"

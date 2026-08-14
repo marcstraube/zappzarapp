@@ -47,6 +47,9 @@ env:
   # which repeatedly failed with i/o timeouts. Tracked by a Renovate
   # customManager (renovate.json), like TRIVY_VERSION in the GitLab pipeline.
   DOCKLE_VERSION: "0.4.15"
+  # sha256 of dockle_<version>_Linux-64bit.tar.gz from the release's
+  # dockle_<version>_checksums.txt - bump together with DOCKLE_VERSION
+  DOCKLE_SHA256: "8bfc9183d1d3d67800edb45bea4bb63ddf1d28bec5f89944075a07007d79caad"
   # Dockle rule-level ignores (CIS-DI-0001, DKL-DI-0004, CIS-DI-0010) live in
   # .dockleignore. Upstream-only container CVEs are filtered by package in
   # .trivy/ignore-policy.rego (see docs/security/KNOWN-VULNERABILITIES.md).
@@ -382,6 +385,9 @@ jobs:
           curl -sSfL --retry 3 --retry-delay 10 \
             -o /tmp/dockle.tar.gz \
             "https://github.com/goodwithtech/dockle/releases/download/v${DOCKLE_VERSION}/dockle_${DOCKLE_VERSION}_Linux-64bit.tar.gz"
+          # Integrity check: the binary is installed with sudo, so the
+          # downloaded artifact must match the pinned release checksum
+          echo "${DOCKLE_SHA256}  /tmp/dockle.tar.gz" | sha256sum -c -
           tar -xzf /tmp/dockle.tar.gz -C /tmp dockle
           sudo install /tmp/dockle /usr/local/bin/dockle
           dockle --version

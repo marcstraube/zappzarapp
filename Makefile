@@ -3931,9 +3931,23 @@ secrets-rotate: ## Rotate ALL secrets (DANGER: breaks existing backups!)
 	@echo -e "\033[0;31m╚══════════════════════════════════════════════════════════════════════╝\033[0m"
 	@read -p "Are you sure? (yes/no): " confirm && [ "$$confirm" = "yes" ] || (echo "Aborted."; exit 1)
 	@echo -e "\033[0;33mRotating secrets...\033[0m"
-	@rm -f secrets/db_password.txt secrets/db_root_password.txt secrets/encryption_key.txt secrets/backup_encryption_key.txt
+	@rm -f \
+		secrets/db_password.txt \
+		secrets/db_root_password.txt \
+		secrets/encryption_key.txt \
+		secrets/backup_encryption_key.txt \
+		secrets/meilisearch_master_key.txt \
+		secrets/mercure_jwt_secret.txt \
+		secrets/pgadmin_password.txt \
+		secrets/rabbitmq_password.txt \
+		secrets/seaweedfs_access_key.txt \
+		secrets/seaweedfs_secret_key.txt \
+		secrets/elasticsearch_bootstrap_password.txt \
+		secrets/elasticsearch_api_key.txt
 	@$(MAKE) --silent secrets
 	@echo -e "\033[0;33mSecrets rotated. Run 'make down && make up' to apply changes.\033[0m"
+	@echo -e "\033[0;33mElasticsearch (if enabled): old API keys stay registered in the cluster -\033[0m"
+	@echo -e "\033[0;33mafter restart, invalidate them and run: make es-setup-api-key\033[0m"
 
 .PHONY: check-cors
 check-cors: ## Show current CORS configuration

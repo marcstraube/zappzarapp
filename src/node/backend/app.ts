@@ -54,6 +54,8 @@ export function createApp(options: AppOptions = {}): Express {
   const CORS_ORIGINS = process.env.CORS_ORIGINS ?? '*';
 
   const app: Express = express();
+  // Framework fingerprinting: never advertise Express in response headers
+  app.disable('x-powered-by');
   const healthCheckService = new HealthCheckService(options.connectionFactory ?? null);
 
   // CORS Configuration Warnings
@@ -141,7 +143,8 @@ export function createApp(options: AppOptions = {}): Express {
   app.use((_req: Request, res: Response, next: NextFunction): void => {
     res.setHeader('X-Content-Type-Options', 'nosniff');
     res.setHeader('X-Frame-Options', 'SAMEORIGIN');
-    res.setHeader('X-XSS-Protection', '1; mode=block');
+    // "0" per OWASP: the legacy XSS auditor enables XS-Leaks in old browsers
+    res.setHeader('X-XSS-Protection', '0');
     res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
     // Cross-Origin Isolation Headers (Spectre mitigation)
     res.setHeader('Cross-Origin-Opener-Policy', 'same-origin');

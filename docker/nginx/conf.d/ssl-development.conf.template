@@ -84,6 +84,7 @@ server {
     location ~ ^/(robots\.txt|sitemap\.xml)$ {
         try_files $uri =404;
         add_header Cache-Control "public, max-age=3600" always;
+        include /etc/nginx/snippets/security-headers.conf;
         access_log off;
     }
 
@@ -93,6 +94,7 @@ server {
         try_files $uri $uri/ ${TRY_FILES_FALLBACK};
         # HTML/PHP responses should not be cached by default
         add_header Cache-Control "no-cache, no-store, must-revalidate, private" always;
+        include /etc/nginx/snippets/security-headers.conf;
     }
 
     # API Endpoints - Stricter Rate Limiting, JSON errors (no HTML error pages)
@@ -101,6 +103,7 @@ server {
         try_files $uri /index.php?$query_string;
         # API responses should not be cached
         add_header Cache-Control "no-cache, no-store, must-revalidate, private" always;
+        include /etc/nginx/snippets/security-headers.conf;
 
         # Nested PHP handler for API - keeps JSON error responses
         location ~ \.php$ {
@@ -126,6 +129,7 @@ server {
         limit_req zone=assets burst=100 nodelay;
         expires -1;
         add_header Cache-Control "no-cache";
+        include /etc/nginx/snippets/security-headers.conf;
         access_log off;
         try_files $uri =404;
     }

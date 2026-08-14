@@ -15,6 +15,11 @@ concurrency:
   group: mirror-gitlab
   cancel-in-progress: false
 
+# Least privilege: the mirror only reads the repo; pushing to GitLab uses
+# GITLAB_MIRROR_TOKEN, not GITHUB_TOKEN
+permissions:
+  contents: read
+
 jobs:
   mirror:
     name: Push mirror to GitLab

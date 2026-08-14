@@ -13,6 +13,12 @@ concurrency:
   group: ci-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: ${{ github.ref != 'refs/heads/master' }}
 
+# Least privilege for GITHUB_TOKEN: jobs run package-manager lifecycle
+# scripts and third-party actions, so never rely on the repository default
+# (which may be read-write). Jobs needing more declare it themselves.
+permissions:
+  contents: read
+
 env:
   # Note: COMPOSE_PROJECT_NAME intentionally not set here - uses value from .env
   # to ensure consistency between docker compose build and make up (which sources .env)
@@ -353,7 +359,10 @@ jobs:
         run: |
           cd ..
           npm init -y >/dev/null 2>&1
-          npm install --no-audit --no-fund \
+          # --ignore-scripts: lint tools need no build hooks; transitive
+          # dependencies resolve fresh here, so their lifecycle scripts must
+          # never execute
+          npm install --no-audit --no-fund --ignore-scripts \
             markdownlint-cli2@0.23.1 prettier@3.9.6 prettier-plugin-toml@2.0.6
 
       - name: Markdownlint

@@ -67,6 +67,8 @@ source "$SCRIPT_DIR/parse-db-url.sh"
 RETENTION_DAYS="${BACKUP_RETENTION_DAYS:-30}"
 
 BACKUP_ENCRYPTION_KEY="${BACKUP_ENCRYPTION_KEY:-}"
+# Exported so openssl can read it via -pass env: (keeps the key out of argv/ps)
+export BACKUP_ENCRYPTION_KEY
 
 # Help message
 show_help() {
@@ -142,7 +144,7 @@ if [[ "$DB_TYPE" == "postgres" ]]; then
         if [[ "$ENCRYPT" == true ]]; then
             docker compose exec -T postgres pg_dump -U "$DB_USER" -d "$DB_NAME" --no-owner --no-acl \
                 | gzip -9 \
-                | openssl enc -aes-256-cbc -salt -pbkdf2 -pass pass:"$BACKUP_ENCRYPTION_KEY" \
+                | openssl enc -aes-256-cbc -salt -pbkdf2 -pass env:BACKUP_ENCRYPTION_KEY \
                 > "$OUTPUT_DIR/${BACKUP_NAME}.sql.gz.enc"
             BACKUP_FILE="${BACKUP_NAME}.sql.gz.enc"
         else
@@ -166,7 +168,7 @@ elif [[ "$DB_TYPE" == "mariadb" ]]; then
         if [[ "$ENCRYPT" == true ]]; then
             docker compose exec -T mariadb mariadb-dump -u "$DB_USER" -p"$DB_PASSWORD" "$DB_NAME" --single-transaction --routines --triggers \
                 | gzip -9 \
-                | openssl enc -aes-256-cbc -salt -pbkdf2 -pass pass:"$BACKUP_ENCRYPTION_KEY" \
+                | openssl enc -aes-256-cbc -salt -pbkdf2 -pass env:BACKUP_ENCRYPTION_KEY \
                 > "$OUTPUT_DIR/${BACKUP_NAME}.sql.gz.enc"
             BACKUP_FILE="${BACKUP_NAME}.sql.gz.enc"
         else
@@ -198,7 +200,7 @@ if [[ "$RETENTION_DAYS" -gt 0 ]]; then
     DELETED_COUNT=0
     while IFS= read -r -d '' old_backup; do
         rm -f "$old_backup"
-        ((DELETED_COUNT++))
+        DELETED_COUNT=$((DELETED_COUNT + 1))
         echo -e "  Deleted: $(basename "$old_backup")"
     done < <(find "$OUTPUT_DIR" -name "${DB_TYPE}_${DB_NAME}_*.sql.gz*" -type f -mtime +"$RETENTION_DAYS" -print0 2>/dev/null)
 

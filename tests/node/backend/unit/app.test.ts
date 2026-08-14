@@ -158,9 +158,14 @@ describe('Express App Factory', () => {
       expect(response.headers['x-frame-options']).toBe('SAMEORIGIN');
     });
 
-    it('should set X-XSS-Protection header', async () => {
+    it('should disable the legacy XSS auditor via X-XSS-Protection', async () => {
       const response = await request(app).get('/health');
-      expect(response.headers['x-xss-protection']).toBe('1; mode=block');
+      expect(response.headers['x-xss-protection']).toBe('0');
+    });
+
+    it('should not advertise the framework via X-Powered-By', async () => {
+      const response = await request(app).get('/health');
+      expect(response.headers['x-powered-by']).toBeUndefined();
     });
 
     it('should set Referrer-Policy header', async () => {

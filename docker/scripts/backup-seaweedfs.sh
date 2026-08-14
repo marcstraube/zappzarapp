@@ -47,6 +47,8 @@ RETENTION_DAYS="${BACKUP_RETENTION_DAYS:-30}"
 
 # Encryption key
 BACKUP_ENCRYPTION_KEY="${BACKUP_ENCRYPTION_KEY:-}"
+# Exported so openssl can read it via -pass env: (keeps the key out of argv/ps)
+export BACKUP_ENCRYPTION_KEY
 
 # Try to read from secrets if not set
 if [[ -z "$BACKUP_ENCRYPTION_KEY" && -f "$PROJECT_ROOT/secrets/backup_encryption_key.txt" ]]; then
@@ -141,7 +143,7 @@ docker compose exec -T seaweedfs sh -c "rm -rf /tmp/backup-export" 2>/dev/null |
 echo -e "${YELLOW}Creating compressed archive...${NC}"
 if [[ "$ENCRYPT" == true ]]; then
     tar -czf - -C "$TEMP_DIR" . \
-        | openssl enc -aes-256-cbc -salt -pbkdf2 -pass pass:"$BACKUP_ENCRYPTION_KEY" \
+        | openssl enc -aes-256-cbc -salt -pbkdf2 -pass env:BACKUP_ENCRYPTION_KEY \
         > "$OUTPUT_DIR/${BACKUP_NAME}.tar.gz.enc"
     BACKUP_FILE="${BACKUP_NAME}.tar.gz.enc"
 else
@@ -167,7 +169,7 @@ if [[ "$RETENTION_DAYS" -gt 0 ]]; then
     DELETED_COUNT=0
     while IFS= read -r -d '' old_backup; do
         rm -f "$old_backup"
-        ((DELETED_COUNT++))
+        DELETED_COUNT=$((DELETED_COUNT + 1))
         echo -e "  Deleted: $(basename "$old_backup")"
     done < <(find "$OUTPUT_DIR" -name "seaweedfs_*.tar.gz*" -type f -mtime +"$RETENTION_DAYS" -print0 2>/dev/null)
 

@@ -61,6 +61,8 @@ RETENTION_DAYS="${BACKUP_RETENTION_DAYS:-30}"
 RABBITMQ_USER="${RABBITMQ_USER:-}"
 RABBITMQ_PASSWORD="${RABBITMQ_PASSWORD:-}"
 BACKUP_ENCRYPTION_KEY="${BACKUP_ENCRYPTION_KEY:-}"
+# Exported so openssl can read it via -pass env: (keeps the key out of argv/ps)
+export BACKUP_ENCRYPTION_KEY
 
 # Try to read from secrets if not set
 if [[ -z "$RABBITMQ_USER" && -f "$PROJECT_ROOT/secrets/rabbitmq_user.txt" ]]; then
@@ -145,7 +147,7 @@ echo -e "${YELLOW}Exporting RabbitMQ definitions...${NC}"
 if [[ "$ENCRYPT" == true ]]; then
     docker compose exec -T rabbitmq sh -c "
         curl -s -u '$RABBITMQ_USER:$RABBITMQ_PASSWORD' http://localhost:15672/api/definitions
-    " | openssl enc -aes-256-cbc -salt -pbkdf2 -pass pass:"$BACKUP_ENCRYPTION_KEY" \
+    " | openssl enc -aes-256-cbc -salt -pbkdf2 -pass env:BACKUP_ENCRYPTION_KEY \
       > "$OUTPUT_DIR/${BACKUP_NAME}.json.enc"
     BACKUP_FILE="${BACKUP_NAME}.json.enc"
 else
@@ -179,7 +181,7 @@ if [[ "$RETENTION_DAYS" -gt 0 ]]; then
     DELETED_COUNT=0
     while IFS= read -r -d '' old_backup; do
         rm -f "$old_backup"
-        ((DELETED_COUNT++))
+        DELETED_COUNT=$((DELETED_COUNT + 1))
         echo -e "  Deleted: $(basename "$old_backup")"
     done < <(find "$OUTPUT_DIR" -name "rabbitmq_*.json*" -type f -mtime +"$RETENTION_DAYS" -print0 2>/dev/null)
 

@@ -35,6 +35,8 @@ fi
 
 # Get encryption key
 BACKUP_ENCRYPTION_KEY="${BACKUP_ENCRYPTION_KEY:-}"
+# Exported so openssl can read it via -pass env: (keeps the key out of argv/ps)
+export BACKUP_ENCRYPTION_KEY
 if [[ -z "$BACKUP_ENCRYPTION_KEY" && -f "$PROJECT_ROOT/secrets/backup_encryption_key.txt" ]]; then
     BACKUP_ENCRYPTION_KEY=$(cat "$PROJECT_ROOT/secrets/backup_encryption_key.txt")
 fi
@@ -102,7 +104,7 @@ fi
 # Decrypt if needed
 echo -e "${YELLOW}Restoring RabbitMQ definitions...${NC}"
 if [[ "$IS_ENCRYPTED" == true ]]; then
-    DEFINITIONS=$(openssl enc -aes-256-cbc -d -pbkdf2 -pass pass:"$BACKUP_ENCRYPTION_KEY" -in "$BACKUP_FILE")
+    DEFINITIONS=$(openssl enc -aes-256-cbc -d -pbkdf2 -pass env:BACKUP_ENCRYPTION_KEY -in "$BACKUP_FILE")
 else
     DEFINITIONS=$(cat "$BACKUP_FILE")
 fi

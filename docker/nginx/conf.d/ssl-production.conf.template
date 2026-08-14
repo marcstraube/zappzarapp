@@ -73,11 +73,9 @@ server {
     # Rate Limiting & Logging (shared)
     include /etc/nginx/snippets/server-defaults.conf;
 
-    # Security Headers (shared)
-    include /etc/nginx/snippets/security-headers.conf;
-
-    # HSTS (HTTP Strict Transport Security) - 1 year (production only)
-    add_header Strict-Transport-Security "max-age=31536000; includeSubDomains; preload" always;
+    # Security Headers + HSTS (re-included in every location that sets its
+    # own add_header — nginx discards inherited headers there)
+    include /etc/nginx/snippets/security-headers-production.conf;
 
     # Content-Security-Policy is set dynamically by PHP (public/index.php)
     # This allows nonce-based CSP with per-request unique nonces for maximum security
@@ -96,6 +94,7 @@ server {
     location ~ ^/(robots\.txt|sitemap\.xml)$ {
         try_files $uri =404;
         add_header Cache-Control "public, max-age=3600" always;
+        include /etc/nginx/snippets/security-headers-production.conf;
         access_log off;
     }
 
@@ -105,6 +104,7 @@ server {
         try_files $uri $uri/ ${TRY_FILES_FALLBACK};
         # HTML/PHP responses should not be cached by default
         add_header Cache-Control "no-cache, no-store, must-revalidate, private" always;
+        include /etc/nginx/snippets/security-headers-production.conf;
     }
 
     # API Endpoints - Stricter Rate Limiting, JSON errors (no HTML error pages)
@@ -113,6 +113,7 @@ server {
         try_files $uri /index.php?$query_string;
         # API responses should not be cached
         add_header Cache-Control "no-cache, no-store, must-revalidate, private" always;
+        include /etc/nginx/snippets/security-headers-production.conf;
 
         # Nested PHP handler for API - keeps JSON error responses
         location ~ \.php$ {
@@ -138,6 +139,7 @@ server {
         limit_req zone=assets burst=100 nodelay;
         expires 1y;
         add_header Cache-Control "public, immutable";
+        include /etc/nginx/snippets/security-headers-production.conf;
         access_log off;
         try_files $uri =404;
     }

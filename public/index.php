@@ -62,10 +62,13 @@ try {
     $containerBuilder->addDefinitions(__DIR__ . '/../config/container.php');
     $container = $containerBuilder->build();
 } catch (Exception $e) {
+    // Runs before the ExceptionHandler is registered: log the detail, never
+    // send exception internals (paths, class names) to the client
+    error_log('Container initialization failed: ' . $e->getMessage());
     http_response_code(500);
     header('Content-Type: application/json');
     // @phpstan-ignore-next-line - Entry point error handling requires echo/exit
-    echo json_encode(['error' => 'Container initialization failed', 'message' => $e->getMessage()]);
+    echo json_encode(['error' => 'Container initialization failed']);
     // @phpstan-ignore-next-line - Entry point error handling requires echo/exit
     exit(1);
 }

@@ -91,10 +91,9 @@ form-action 'self';
 
 ### PHP
 
-Production error settings (`docker/php/conf.d/security.ini`):
+Error settings (`docker/php/php.ini`):
 
 - `display_errors = Off` - Never show errors to users
-- `display_startup_errors = Off` - Hide startup errors
 - `log_errors = On` - Log errors to stderr
 - `expose_php = Off` - Hide PHP version
 
@@ -143,6 +142,6 @@ The following findings from OWASP ZAP have been addressed:
 | `docker/nginx/snippets/security-headers.conf`       | Shared security headers  |
 | `docker/nginx/conf.d/ssl-development.conf.template` | Development CSP          |
 | `docker/nginx/conf.d/ssl-production.conf.template`  | Production CSP + HSTS    |
-| `docker/php/conf.d/security.ini`                    | PHP security settings    |
+| `docker/php/php.ini`                                | PHP security settings    |
 | `src/node/backend/app.ts`                           | Node.js security headers |
 | `docker/nginx/errors/`                              | Custom error pages       |

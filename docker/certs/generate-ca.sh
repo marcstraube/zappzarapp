@@ -10,6 +10,11 @@
 
 set -e
 
+# Private keys must never be world-readable, not even between creation and
+# the final chmod: create everything 0600/0700, public certs are opened up
+# explicitly below
+umask 077
+
 CERT_DIR="$(cd "$(dirname "$0")" && pwd)"
 CA_DIR="$CERT_DIR/ca"
 DAYS=3650  # 10 years for CA
@@ -19,6 +24,9 @@ echo "Generating Internal Certificate Authority"
 echo "============================================================================"
 
 mkdir -p "$CA_DIR"
+# Directory stays traversable (the dev container mounts docker/certs read-only);
+# the key itself is protected by its 600 file mode
+chmod 755 "$CA_DIR"
 
 # Generate CA private key
 echo "Generating CA private key..."

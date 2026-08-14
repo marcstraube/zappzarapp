@@ -22,9 +22,10 @@ env:
   # Use CI-specific compose file (no lockfile bind mounts)
   COMPOSE_FILE: compose.yaml:compose.ci.yaml
 
+# Least privilege: issue writing is disabled at the ZAP action
+# (allow_issue_writing: false), so no write scope is granted
 permissions:
   contents: read
-  issues: write
 
 jobs:
   # ============================================================================
@@ -59,13 +60,16 @@ jobs:
         id: scan-type
         env:
           ZAP_SCAN_MODE: ${{ vars.ZAP_SCAN_MODE }}
+          # Inputs reach the shell only via env, never via ${{ }} inside run
+          # (expression interpolation into scripts is the injection pattern)
+          SCAN_MODE_INPUT: ${{ inputs.scan_mode }}
         run: |
           # Scan mode precedence: workflow_dispatch input > repo variable
           # ZAP_SCAN_MODE > "normal". Maintainers set the ZAP_SCAN_MODE repository
           # variable to "full" for a comprehensive scan; forks/projects default to
           # "normal" (respects .env).
           if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
-            MODE="${{ inputs.scan_mode }}"
+            MODE="$SCAN_MODE_INPUT"
           elif [[ -n "$ZAP_SCAN_MODE" ]]; then
             MODE="$ZAP_SCAN_MODE"
           else

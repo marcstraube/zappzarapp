@@ -5,22 +5,48 @@
 
 set -e
 
+# Config and key files must never be world-readable, not even between
+# creation and their explicit chmod below
+umask 077
+
 # ─────────────────────────────────────────────────────────────────────────────
 # Load credentials from secret files
 # ─────────────────────────────────────────────────────────────────────────────
 
-# Default credentials (will be overridden by secrets if available)
-S3_ACCESS_KEY="${SEAWEEDFS_S3_ACCESS_KEY:-admin}"
-S3_SECRET_KEY="${SEAWEEDFS_S3_SECRET_KEY:-admin}"
+S3_ACCESS_KEY="${SEAWEEDFS_S3_ACCESS_KEY:-}"
+S3_SECRET_KEY="${SEAWEEDFS_S3_SECRET_KEY:-}"
 
-# Load access key from secret file if specified
-if [ -n "${SEAWEEDFS_S3_ACCESS_KEY_FILE}" ] && [ -f "${SEAWEEDFS_S3_ACCESS_KEY_FILE}" ]; then
+# A configured-but-missing secret file is a broken deployment - never start
+# with silently degraded credentials
+if [ -n "${SEAWEEDFS_S3_ACCESS_KEY_FILE:-}" ]; then
+    if [ ! -f "${SEAWEEDFS_S3_ACCESS_KEY_FILE}" ]; then
+        echo "[entrypoint] FATAL: SEAWEEDFS_S3_ACCESS_KEY_FILE is set but missing: ${SEAWEEDFS_S3_ACCESS_KEY_FILE}" >&2
+        echo "[entrypoint] Fix: run 'make secrets' and restart the container." >&2
+        exit 1
+    fi
     S3_ACCESS_KEY="$(cat "${SEAWEEDFS_S3_ACCESS_KEY_FILE}")"
 fi
 
-# Load secret key from secret file if specified
-if [ -n "${SEAWEEDFS_S3_SECRET_KEY_FILE}" ] && [ -f "${SEAWEEDFS_S3_SECRET_KEY_FILE}" ]; then
+if [ -n "${SEAWEEDFS_S3_SECRET_KEY_FILE:-}" ]; then
+    if [ ! -f "${SEAWEEDFS_S3_SECRET_KEY_FILE}" ]; then
+        echo "[entrypoint] FATAL: SEAWEEDFS_S3_SECRET_KEY_FILE is set but missing: ${SEAWEEDFS_S3_SECRET_KEY_FILE}" >&2
+        echo "[entrypoint] Fix: run 'make secrets' and restart the container." >&2
+        exit 1
+    fi
     S3_SECRET_KEY="$(cat "${SEAWEEDFS_S3_SECRET_KEY_FILE}")"
+fi
+
+# Without any configured credentials: development falls back to well-known
+# local defaults (loudly), production refuses to start
+if [ -z "$S3_ACCESS_KEY" ] || [ -z "$S3_SECRET_KEY" ]; then
+    if [ "${ZAPPZARAPP_ENV:-development}" = "production" ]; then
+        echo "[entrypoint] FATAL: No S3 credentials configured (env or secret files) in production mode" >&2
+        echo "[entrypoint] Refusing to start object storage with default credentials." >&2
+        exit 1
+    fi
+    echo "[entrypoint] WARNING: No S3 credentials configured - using development defaults (admin/admin)"
+    S3_ACCESS_KEY="${S3_ACCESS_KEY:-admin}"
+    S3_SECRET_KEY="${S3_SECRET_KEY:-admin}"
 fi
 
 # ─────────────────────────────────────────────────────────────────────────────

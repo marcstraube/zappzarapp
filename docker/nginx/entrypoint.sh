@@ -217,7 +217,18 @@ mkdir -p /run/nginx/conf.d
 # Process SSL config template if it exists (development or production)
 # Output goes to /run/nginx/conf.d/ which is writable (tmpfs in production)
 # Note: Running as nginx user, directories already owned by nginx (see Dockerfile)
-if [ -f /etc/nginx/conf.d/ssl-development.conf.template ]; then
+# In production the development template must never win: it exposes dev-only
+# surfaces (DB admin tools, autoindexed docs/build, Vite filesystem proxy).
+if [ "${ZAPPZARAPP_ENV:-}" = "production" ] && [ -f /etc/nginx/conf.d/ssl-development.conf.template ]; then
+    if [ -f /etc/nginx/conf.d/ssl-production.conf.template ]; then
+        echo "WARNING: development template present in production - using the production template"
+    else
+        echo "ERROR: ZAPPZARAPP_ENV=production but only the development nginx template is present." >&2
+        echo "Refusing to start with development-only surfaces exposed." >&2
+        exit 1
+    fi
+fi
+if [ "${ZAPPZARAPP_ENV:-}" != "production" ] && [ -f /etc/nginx/conf.d/ssl-development.conf.template ]; then
     echo "Processing SSL development configuration template..."
     envsubst '${NGINX_SSL_PORT} ${INDEX_DIRECTIVE} ${TRY_FILES_FALLBACK}' < /etc/nginx/conf.d/ssl-development.conf.template > /run/nginx/conf.d/ssl.conf
     echo "SSL configuration generated with NGINX_SSL_PORT=${NGINX_SSL_PORT}, INDEX=${INDEX_DIRECTIVE}"

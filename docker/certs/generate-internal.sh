@@ -10,6 +10,11 @@
 
 set -e
 
+# Private keys must never be world-readable, not even between creation and
+# the final chmod/setfacl: create everything 0600/0700, public certs and the
+# directories are opened up explicitly below
+umask 077
+
 CERT_DIR="$(cd "$(dirname "$0")" && pwd)"
 CA_DIR="$CERT_DIR/ca"
 INTERNAL_DIR="$CERT_DIR/internal"
@@ -27,6 +32,9 @@ echo "Generating Internal Service Certificates"
 echo "============================================================================"
 
 mkdir -p "$INTERNAL_DIR" "$NGINX_DIR"
+# Directories must stay traversable for the container uids that read the
+# certs via bind mounts; the keys are protected by file mode + ACLs
+chmod 755 "$INTERNAL_DIR" "$NGINX_DIR"
 
 # Internal services SAN list
 INTERNAL_SANS="DNS:localhost,DNS:nginx,DNS:node,DNS:node-backend,DNS:php,DNS:mariadb,DNS:postgres,DNS:redis,DNS:elasticsearch,DNS:mailpit,DNS:meilisearch,DNS:mercure,DNS:rabbitmq,DNS:seaweedfs,IP:127.0.0.1"

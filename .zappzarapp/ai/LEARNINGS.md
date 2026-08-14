@@ -6,6 +6,27 @@ periodic triage (`/optimize --learnings`) and are removed from this file.
 
 ---
 
+## Configuration
+
+### A config file's existence proves nothing - verify the wiring (2026-08-14)
+
+- `docker/php/conf.d/security.ini` shipped for seven months as dead config:
+  introduced with a commit message claiming "PHP-FPM socket hardening
+  (security.ini, open_basedir)" while the Dockerfile's explicit COPY list never
+  included it and no compose file mounted it - it was never loaded at any point
+  in its history. A later ZAP-findings fix even added settings to the dead file
+  (the findings disappeared only because the active php.ini sets the same
+  values).
+- Pattern to watch for: config file created, effect claimed in the commit,
+  wiring forgotten. Reviews and grep don't catch it because the file exists and
+  looks complete. When adding or auditing config, verify the LOADER
+  (COPY/mount/include) end-to-end, ideally at runtime (`php --ini`, `nginx -T`,
+  container inspection).
+- nginx `add_header` is NOT additive across levels: a location that sets any
+  add_header of its own silently discards ALL inherited headers (incl. HSTS).
+  Every location with its own add_header must re-include the security-header
+  snippet; verify with a runtime curl, not by reading the config.
+
 ## Make
 
 ### `make -n setup` executes the boilerplate file swaps for real (2026-08-14)

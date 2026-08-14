@@ -66,6 +66,8 @@ fi
 source "$SCRIPT_DIR/parse-db-url.sh"
 
 BACKUP_ENCRYPTION_KEY="${BACKUP_ENCRYPTION_KEY:-}"
+# Exported so openssl can read it via -pass env: (keeps the key out of argv/ps)
+export BACKUP_ENCRYPTION_KEY
 
 # Help message
 show_help() {
@@ -192,7 +194,7 @@ if [[ "$DB_TYPE" == "postgres" ]]; then
     if docker compose ps postgres 2>/dev/null | grep -q "Up"; then
         # Docker mode
         if [[ "$ENCRYPTED" == true ]]; then
-            openssl enc -aes-256-cbc -d -salt -pbkdf2 -pass pass:"$BACKUP_ENCRYPTION_KEY" -in "$BACKUP_FILE" \
+            openssl enc -aes-256-cbc -d -salt -pbkdf2 -pass env:BACKUP_ENCRYPTION_KEY -in "$BACKUP_FILE" \
                 | gunzip \
                 | docker compose exec -T postgres psql -U "$DB_USER" -d "$DB_NAME" --quiet
         else
@@ -212,7 +214,7 @@ elif [[ "$DB_TYPE" == "mariadb" ]]; then
     if docker compose ps mariadb 2>/dev/null | grep -q "Up"; then
         # Docker mode
         if [[ "$ENCRYPTED" == true ]]; then
-            openssl enc -aes-256-cbc -d -salt -pbkdf2 -pass pass:"$BACKUP_ENCRYPTION_KEY" -in "$BACKUP_FILE" \
+            openssl enc -aes-256-cbc -d -salt -pbkdf2 -pass env:BACKUP_ENCRYPTION_KEY -in "$BACKUP_FILE" \
                 | gunzip \
                 | docker compose exec -T mariadb mariadb -u "$DB_USER" -p"$DB_PASSWORD" "$DB_NAME"
         else
