@@ -23,6 +23,16 @@ periodic triage (`/optimize --learnings`) and are removed from this file.
   (AWS/GitHub/Google/Stripe/GitLab). Don't tune the threshold again — measured
   2026-08-14 against a real diff.
 
+### CaptainHook BlockSecrets `allowed` patterns match the token, not the line (2026-08-14)
+
+- The `allowed` regexes are applied to the extracted candidate WORD (e.g.
+  `github/codeql-action/upload-sarif@ff2f1c62...`), not to the full source line
+  — a pattern anchored on the `uses:` key never matches. The action-digest
+  allowlist entry is therefore `#[\w.-]+/[\w.-]+@[0-9a-f]{40}#`.
+- Only tokens above the entropy threshold trip the detector at all: of 14 pinned
+  actions, exactly 3 fired (the mixed-alphabet `owner/repo@sha` string must
+  clear 4.8, which most SHA pins don't).
+
 ### A config file's existence proves nothing - verify the wiring (2026-08-14)
 
 - `docker/php/conf.d/security.ini` shipped for seven months as dead config:
@@ -126,6 +136,34 @@ periodic triage (`/optimize --learnings`) and are removed from this file.
   discarded when only the root manifest came back).
 
 ## Docker & Containers
+
+### Compose file secrets hard-abort on a missing source file (2026-08-14)
+
+- A service that declares a top-level `file:` secret fails container CREATION
+  when the source file is missing
+  (`invalid mount config ... bind source path does not exist`) — and
+  `docker compose config` still validates fine, so the error only surfaces at
+  `up`. Consequence: secrets that legitimately do not exist yet
+  (`elasticsearch_api_key.txt` needs a running cluster, `mail_password.txt` is
+  user-provided) cannot be per-file secrets. Empty placeholder files are no
+  escape either: the zappzarapp/security SecretLoader treats an
+  existing-but-empty secret as a misconfiguration and throws (fail-closed by
+  design).
+- Resulting split: per-service file secrets for the infrastructure services
+  (also the only way to separate the uid-1000 crowd — meilisearch, mercure,
+  seaweedfs, elasticsearch — which file ACLs cannot tell apart), directory mount
+  for the application containers, and `secrets` wired as a prerequisite into
+  every Compose-starting make target so a declared file can never be missing in
+  make flows.
+
+### chmod after setfacl silently disables the ACL (2026-08-14)
+
+- `chmod` on a file with ACLs rewrites the ACL MASK from the group bits:
+  `chmod 600` after `setfacl -m u:82:r` sets the mask to `---` and the named
+  entry stops working while `getfacl` still lists it (with an `#effective:---`
+  hint that is easy to miss). Always chmod FIRST, then `setfacl -m` (which
+  recalculates the mask). The `make secrets` enforcement block relies on this
+  order.
 
 ### node-backend crash loop in the Compose production preset (2026-08-13)
 
