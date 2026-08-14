@@ -12,6 +12,7 @@ Essential documentation for new users and quick reference.
 | ---------------------------------------------------- | ------------------------------ |
 | [QUICKSTART.md](QUICKSTART.md)                       | Get started in under 5 minutes |
 | [CUSTOMIZATION.md](getting-started/CUSTOMIZATION.md) | Project customization guide    |
+| [VERSIONING.md](getting-started/VERSIONING.md)       | Versioning your application    |
 | [TROUBLESHOOTING.md](TROUBLESHOOTING.md)             | Common problems and solutions  |
 
 ## Security & Compliance
@@ -123,7 +124,8 @@ directories):
 │   │   ├── RENOVATE.md
 │   │   └── XDEBUG.md
 │   ├── getting-started/
-│   │   └── CUSTOMIZATION.md
+│   │   ├── CUSTOMIZATION.md
+│   │   └── VERSIONING.md
 │   ├── infrastructure/
 │   │   ├── ARCHITECTURE.md
 │   │   ├── DATABASE.md

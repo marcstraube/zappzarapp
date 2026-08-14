@@ -2,6 +2,7 @@
   - [Home](README.md)
   - [Quickstart](QUICKSTART.md)
   - [Customization](getting-started/CUSTOMIZATION.md)
+  - [Versioning](getting-started/VERSIONING.md)
   - [Troubleshooting](TROUBLESHOOTING.md)
   - [Contributing](CONTRIBUTING.md)
   - [Changelog](../CHANGELOG.md)

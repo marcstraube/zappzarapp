@@ -178,6 +178,7 @@ Detailed documentation is available in [`.zappzarapp/docs/`](.zappzarapp/docs/):
 
 - [Quickstart Guide](.zappzarapp/docs/QUICKSTART.md)
 - [Customization](.zappzarapp/docs/getting-started/CUSTOMIZATION.md)
+- [Versioning](.zappzarapp/docs/getting-started/VERSIONING.md)
 - [Troubleshooting](.zappzarapp/docs/TROUBLESHOOTING.md)
 - [Windows Setup](.zappzarapp/docs/setup/WINDOWS.md)
 
