@@ -15,6 +15,13 @@ spec:
       app.kubernetes.io/component: nginx
   template:
     metadata:
+      {{- if and .Values.nodeBackend.enabled (not .Values.secrets.existingSecrets.sslCert) }}
+      annotations:
+        # The internal-tls pair is regenerated on every upgrade; rolling the
+        # pod on each upgrade keeps the trusted CA in lockstep with the
+        # backend's certificate (a partial restart would split the pair)
+        checksum/internal-tls: {{ include (print $.Template.BasePath "/secrets.yaml") . | sha256sum }}
+      {{- end }}
       labels:
         {{- include "zappzarapp.selectorLabels" . | nindent 8 }}
         app.kubernetes.io/component: nginx
