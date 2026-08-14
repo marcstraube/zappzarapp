@@ -56,6 +56,11 @@ LABEL maintainer="zappzarapp" \
 
 # Install runtime dependencies
 RUN apk add --no-cache \
+    # setfacl: the make targets under test generate secrets/certificates
+    # with per-uid read ACLs - without it the container users (redis
+    # 999:1000 etc.) cannot read the 0600 files and the started stack
+    # crash-loops during suite runs
+    acl \
     bash \
     curl \
     docker-cli \

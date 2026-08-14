@@ -1,7 +1,10 @@
 #!/bin/sh
 # shellcheck shell=sh
-# Redis TLS Health Check
-# Handles both development and production cert paths (bind mounts)
+# Redis TLS Health Check and TLS-aware redis-cli wrapper
+# Handles both development and production cert paths (bind mounts).
+# Extra arguments are passed to redis-cli in place of the default `ping`,
+# so tooling can run commands against the TLS-only port without duplicating
+# the certificate detection (e.g. `healthcheck.sh FLUSHALL`).
 
 # Production paths (bind-mounted to /etc/redis/certs/)
 PROD_CERT="/etc/redis/certs/cert.crt"
@@ -34,7 +37,9 @@ elif [ -f "$DEV_CERT" ] && [ -f "$DEV_KEY" ]; then
     fi
 else
     # Fallback: try without TLS (for non-TLS setups)
-    exec redis-cli ping
+    [ $# -eq 0 ] && set -- ping
+    exec redis-cli "$@"
 fi
 
-exec redis-cli --tls --cert "$CERT" --key "$KEY" --cacert "$CA" ping
+[ $# -eq 0 ] && set -- ping
+exec redis-cli --tls --cert "$CERT" --key "$KEY" --cacert "$CA" "$@"

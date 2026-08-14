@@ -184,86 +184,94 @@ wait_for_containers() {
 }
 
 # =============================================================================
-# Phase 4: SSL Certificates (Create & Delete)
+# Phase 4: Redis Operations (containers still running)
 # =============================================================================
 
-@test "[Phase 4] make ssl-internal generates certificates" {
-    # Remove existing certs first
+@test "[Phase 4] Redis is accessible" {
+    if ! docker compose ps --status running redis 2>/dev/null | grep -q redis; then
+        skip "Redis not running"
+    fi
+    # healthcheck.sh doubles as the TLS-aware redis-cli wrapper (redis
+    # serves TLS-only, plain redis-cli gets a connection reset)
+    run docker compose exec -T redis /usr/local/bin/healthcheck.sh PING
+    assert_success
+    assert_output "PONG"
+}
+
+@test "[Phase 4] make redis-flush clears data" {
+    if ! docker compose ps --status running redis 2>/dev/null | grep -q redis; then
+        skip "Redis not running"
+    fi
+
+    # Add test data (TLS-aware wrapper, see above)
+    docker compose exec -T redis /usr/local/bin/healthcheck.sh SET destructive_test "value" >/dev/null
+
+    # Flush (pipe confirmation for non-interactive execution)
+    run bash -c "echo 'YES' | timeout 30 make redis-flush"
+    assert_success
+
+    # Verify gone
+    run docker compose exec -T redis /usr/local/bin/healthcheck.sh GET destructive_test
+    assert_output ""
+}
+
+# =============================================================================
+# Phase 5: SSL Certificates (Create & Delete)
+# =============================================================================
+
+@test "[Phase 5] make ssl-internal generates certificates" {
+    # Stop all containers first: deleting cert files while containers still
+    # reference them as bind-mount sources makes the Docker daemon recreate
+    # the paths as root-owned DIRECTORIES on the next (crash-loop) restart,
+    # which breaks generation and cleanup with permission errors
+    timeout 120 make down 2>/dev/null || true
+
+    # Remove existing certs
     rm -rf docker/certs/ca docker/certs/nginx docker/certs/internal 2>/dev/null || true
 
     run timeout 60 make ssl-internal
     assert_success
 }
 
-@test "[Phase 4] Verify: CA created" {
+@test "[Phase 5] Verify: CA created" {
     [[ -f "docker/certs/ca/ca.crt" ]]
     [[ -f "docker/certs/ca/ca.key" ]]
 }
 
-@test "[Phase 4] Verify: nginx certificates created" {
+@test "[Phase 5] Verify: nginx certificates created" {
     [[ -f "docker/certs/nginx/cert.crt" ]]
     [[ -f "docker/certs/nginx/cert.key" ]]
 }
 
-@test "[Phase 4] Verify: internal certificates created" {
+@test "[Phase 5] Verify: internal certificates created" {
     [[ -f "docker/certs/internal/cert.crt" ]]
     [[ -f "docker/certs/internal/cert.key" ]]
     [[ -f "docker/certs/internal/ca.crt" ]]
 }
 
-@test "[Phase 4] make ssl-clean removes certificates" {
+@test "[Phase 5] make ssl-clean removes certificates" {
     # Pipe confirmation for non-interactive execution
     run bash -c "echo 'YES' | make ssl-clean"
     assert_success
 }
 
-@test "[Phase 4] Verify: certificate directories removed" {
+@test "[Phase 5] Verify: certificate directories removed" {
     [[ ! -d "docker/certs/ca" ]]
     [[ ! -d "docker/certs/nginx" ]]
     [[ ! -d "docker/certs/internal" ]]
 }
 
 # =============================================================================
-# Phase 5: Documentation Cleanup
+# Phase 6: Documentation Cleanup
 # =============================================================================
 
-@test "[Phase 5] make docs-clean removes documentation" {
+@test "[Phase 6] make docs-clean removes documentation" {
     run make docs-clean
     assert_success
 }
 
-@test "[Phase 5] Verify: docs/api/ removed" {
+@test "[Phase 6] Verify: docs/api/ removed" {
     [[ ! -d "docs/api" ]]
-}
-
-# =============================================================================
-# Phase 6: Redis Operations
-# =============================================================================
-
-@test "[Phase 6] Redis is accessible" {
-    if ! docker compose ps --status running redis 2>/dev/null | grep -q redis; then
-        skip "Redis not running"
-    fi
-    run docker compose exec -T redis redis-cli PING
-    assert_success
-    assert_output "PONG"
-}
-
-@test "[Phase 6] make redis-flush clears data" {
-    if ! docker compose ps --status running redis 2>/dev/null | grep -q redis; then
-        skip "Redis not running"
-    fi
-
-    # Add test data
-    docker compose exec -T redis redis-cli SET destructive_test "value" >/dev/null
-
-    # Flush
-    run timeout 30 make redis-flush
-    assert_success
-
-    # Verify gone
-    run docker compose exec -T redis redis-cli GET destructive_test
-    assert_output ""
 }
 
 # =============================================================================

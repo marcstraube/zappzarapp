@@ -1189,10 +1189,11 @@ status: ## Show running containers status and image disk usage
 	@echo -e "\033[0;33m\nImage Disk Usage:\033[0m"
 	@docker images | grep "$(COMPOSE_PROJECT_NAME:-zappzarapp)"
 
-# Secrets preflight on every start: compose declares per-service file
-# secrets, and container creation aborts when a source file is missing -
-# generate missing secrets and re-enforce their permissions/ACLs first
-up: secrets ## Start containers (optionally specify service names: make up php nginx)
+# Preflights on every start: compose declares per-service file secrets
+# (container creation aborts when a source file is missing), and missing
+# cert files would be auto-created as root-owned directories by the
+# daemon - generate what is missing and re-enforce permissions first
+up: secrets ssl-ensure ## Start containers (optionally specify service names: make up php nginx)
 	@# Ensure lockfiles exist as files (not directories) to prevent Docker bind mount issues
 	@if [ -d composer.lock ]; then rm -rf composer.lock; fi
 	@if [ -d pnpm-lock.yaml ]; then rm -rf pnpm-lock.yaml; fi
@@ -1514,7 +1515,7 @@ k8s-logs: ## Show Kubernetes logs: make k8s-logs [pod]
 
 ##@ Production Testing
 
-test-production: secrets ## Test production build with ZAPPZARAPP_ENV-configured services (smart, respects .env)
+test-production: secrets ssl-ensure ## Test production build with ZAPPZARAPP_ENV-configured services (smart, respects .env)
 	@echo -e "\033[0;34m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\033[0m"
 	@echo -e "\033[0;34m  Production Test: ZAPPZARAPP_ENV-aware configuration\033[0m"
 	@echo -e "\033[0;34m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\033[0m"
@@ -1646,7 +1647,7 @@ test-production: secrets ## Test production build with ZAPPZARAPP_ENV-configured
 		exit 1; \
 	fi
 
-test-production-minimal: secrets ## Test production build with minimal services (nginx + app + db only)
+test-production-minimal: secrets ssl-ensure ## Test production build with minimal services (nginx + app + db only)
 	@echo -e "\033[0;34m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\033[0m"
 	@echo -e "\033[0;34m  Production Test: Minimal (Core Services)\033[0m"
 	@echo -e "\033[0;34m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\033[0m"
@@ -1734,7 +1735,7 @@ test-production-minimal: secrets ## Test production build with minimal services 
 		exit 1; \
 	fi
 
-test-production-full: secrets ## Test production build with ALL services (comprehensive, ignores ENABLE_*)
+test-production-full: secrets ssl-ensure ## Test production build with ALL services (comprehensive, ignores ENABLE_*)
 	@echo -e "\033[0;34m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\033[0m"
 	@echo -e "\033[0;34m  Production Test: Full (All Services)\033[0m"
 	@echo -e "\033[0;34m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\033[0m"
@@ -2100,7 +2101,7 @@ redis-flush: ## Flush all Redis data (DANGEROUS!)
 	@echo -e "\033[0;31m⚠️  WARNING: This will delete ALL data in Redis!\033[0m"
 	@read -p "Type 'YES' to confirm: " CONFIRM; \
 	if [ "$$CONFIRM" = "YES" ]; then \
-		docker compose exec redis redis-cli FLUSHALL; \
+		docker compose exec redis /usr/local/bin/healthcheck.sh FLUSHALL; \
 		echo -e "\033[0;32mRedis flushed!\033[0m"; \
 	else \
 		echo -e "\033[0;34mOperation cancelled.\033[0m"; \
@@ -2161,7 +2162,7 @@ adminer-down: ## Stop Adminer
 	$(call require_development,Adminer)
 	@$(DC) --profile adminer stop adminer
 
-pgadmin-up: secrets ## Start pgAdmin PostgreSQL UI (development only)
+pgadmin-up: secrets ssl-ensure ## Start pgAdmin PostgreSQL UI (development only)
 	$(call require_development,pgAdmin)
 	@echo -e "\033[0;34mStarting pgAdmin...\033[0m"
 	@$(DC) --profile pgadmin up -d pgadmin
@@ -3438,7 +3439,7 @@ goss-test-rabbitmq: ## Test RabbitMQ container (runtime)
 	@tests/goss/runtime-tests.sh rabbitmq
 
 # Preset test targets (build + start + runtime test + stop)
-goss-test-preset: secrets ## Test a preset (PRESET=dev-fullstack, VERBOSE=1 for details)
+goss-test-preset: secrets ssl-ensure ## Test a preset (PRESET=dev-fullstack, VERBOSE=1 for details)
 	@if [ -z "$(PRESET)" ]; then \
 		echo -e "\033[0;31mError: PRESET not specified. Usage: make goss-test-preset PRESET=fullstack\033[0m"; \
 		exit 1; \
@@ -4104,7 +4105,7 @@ security-audit-node: ## Scan Node.js dependencies for known vulnerabilities
 	@echo -e "\033[0;33mScanning Node.js dependencies with pnpm audit...\033[0m"
 	@$(DC) run --rm -T dev-tools pnpm audit
 
-security-zap-start: secrets ## Start services in production mode for ZAP scanning (respects .env ENABLE_* flags)
+security-zap-start: secrets ssl-ensure ## Start services in production mode for ZAP scanning (respects .env ENABLE_* flags)
 	@echo -e "\033[0;33mStopping any running containers...\033[0m"
 	@$(LOAD_ENV); \
 	PROFILES=""; \
@@ -4159,7 +4160,7 @@ security-zap-start: secrets ## Start services in production mode for ZAP scannin
 	@echo -e "\033[0;32m✓ Services ready for ZAP scan\033[0m"
 	@echo -e "\033[0;36mℹ️  Run: make security-zap-scan\033[0m"
 
-security-zap-full-start: secrets ## Start ALL services for comprehensive ZAP scanning (ignores .env, forces all ENABLE_*)
+security-zap-full-start: secrets ssl-ensure ## Start ALL services for comprehensive ZAP scanning (ignores .env, forces all ENABLE_*)
 	@echo -e "\033[0;33mStopping any running containers...\033[0m"
 	@$(LOAD_ENV); \
 	PROFILES="--profile php --profile $${DB_TYPE:-postgres} --profile redis --profile node --profile node-backend --profile mercure --profile meilisearch --profile elasticsearch --profile seaweedfs"; \
@@ -4377,6 +4378,31 @@ ssl-internal: ssl-ca ## Generate internal service certificates (signed by CA)
 	@mkdir -p docker/certs/{nginx,internal}
 	@chmod +x docker/certs/generate-internal.sh
 	@docker/certs/generate-internal.sh
+
+# NOTE: the delegation below uses a literal `make` on purpose: GNU make
+# executes recipe lines that reference the recursive-make variable even
+# under `make -n`, which would regenerate the CA during a dry run.
+ssl-ensure: ## Generate internal certificates only if missing (container-start preflight)
+	@# A compose start without the cert files makes the Docker daemon create
+	@# the missing bind-mount SOURCES as root-owned directories, which then
+	@# breaks generation (chmod) and cleanup (rm) - fail fast with the fix
+	@for p in docker/certs/ca/ca.crt docker/certs/internal/ca.crt \
+		docker/certs/internal/cert.crt docker/certs/internal/cert.key \
+		docker/certs/nginx/cert.crt docker/certs/nginx/cert.key; do \
+		if [ -d "$$p" ]; then \
+			echo -e "\033[0;31mERROR: $$p is a directory - a container start without certificates\033[0m"; \
+			echo -e "\033[0;31mcreates the missing bind-mount sources as root-owned directories.\033[0m"; \
+			echo -e "\033[0;34mRemove them (root-owned, so via container), then re-run:\033[0m"; \
+			echo -e "\033[0;34m  docker run --rm -v \"\$$(pwd)/docker/certs:/c\" alpine rm -rf /c/internal /c/nginx /c/ca\033[0m"; \
+			exit 1; \
+		fi; \
+	done
+	@if [ ! -f docker/certs/ca/ca.crt ] || [ ! -f docker/certs/internal/cert.key ] \
+		|| [ ! -f docker/certs/internal/cert.crt ] || [ ! -f docker/certs/internal/ca.crt ] \
+		|| [ ! -f docker/certs/nginx/cert.crt ] || [ ! -f docker/certs/nginx/cert.key ]; then \
+		echo -e "\033[0;33mInternal certificates missing - generating...\033[0m"; \
+		make --no-print-directory ssl-internal; \
+	fi
 
 # NOTE: the help delegations in ssl-trust-ca/ssl-untrust-ca use a literal
 # `make` on purpose: GNU make executes recipe lines that reference the

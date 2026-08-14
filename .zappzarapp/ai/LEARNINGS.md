@@ -137,6 +137,58 @@ periodic triage (`/optimize --learnings`) and are removed from this file.
 
 ## Docker & Containers
 
+### Missing bind-mount SOURCE files become root-owned directories (2026-08-14)
+
+- When a compose service bind-mounts a host FILE that does not exist, the Docker
+  daemon silently creates the missing source path as a root-owned DIRECTORY on
+  the host (e.g. `docker/certs/internal/ca.crt` as a dir after `make up` on a
+  cert-less tree). Everything downstream then fails in confusing ways: cert
+  generation hits `chmod: Operation not permitted`, cleanup hits
+  `rm: Permission denied`, redis crash-loops on a directory where its TLS key
+  should be — and none of the errors mention the actual cause. (Declared compose
+  `secrets:` behave differently: they fail the container creation instead of
+  creating junk, see the next entry.)
+- Removing the junk needs root; without sudo, a throwaway container works:
+  `docker run --rm -v "$(pwd)/docker/certs:/c" alpine rm -rf /c/internal`.
+- Found by the destructive BATS suite, which runs `make up` before
+  `make ssl-internal` on a factory-reset tree. The `ssl-ensure` preflight
+  (prerequisite of every compose-starting make target) closes the trap: it
+  generates missing certificates before compose runs and fails fast with a
+  cleanup hint when it finds directory-shaped cert paths. `ssl-ensure` is
+  conditional on purpose — `ssl-internal` regenerates the CA unconditionally on
+  every call, so wiring IT directly into `up` would rotate the CA on every
+  start.
+
+### The destructive suite reverts its own uncommitted test edits (2026-08-14)
+
+- `make reset-full` runs
+  `git checkout -- src/ tests/ resources/ config/ templates/ public/index.php` —
+  Phase 1 of the destructive BATS suite therefore reverts any UNCOMMITTED change
+  under those paths, including edits to `destructive.bats` itself. bats parses
+  the file before Phase 1 runs, so the current run still executes the edited
+  version — but the disk copy is reverted mid-run, and the NEXT run silently
+  uses the old tests again. Two debugging rounds ran against stale test code
+  this way.
+- Corollary: anything the suite is supposed to verify must be COMMITTED first,
+  and suite run logs must not live under `build/` (reset-full wipes it — a full
+  run log vanished that way; use /tmp for run logs).
+
+### Factory resets silently disarm the CaptainHook git hooks (2026-08-14)
+
+- CaptainHook runs from the HOST `vendor/bin/captainhook`; the installed git
+  hooks carry a worktree guard that SKIPS the hook with a one-line notice when
+  that binary is missing. `make reset-full` deletes the host `vendor/`, and in
+  development `composer-install` installs into the `php_vendor` named volume,
+  NOT the host directory — so after a factory reset every commit runs hook-less
+  (no secret blocking, no lint) until host vendor is restored.
+- Restore with `make composer-install-local` (host composer with
+  `--ignore-platform-reqs`, the documented IDE/hooks install). Copying the
+  `php_vendor` volume to the host does NOT work: the container-generated
+  `vendor/composer/platform_check.php` demands the container-only PHP extensions
+  (redis, sockets, sodium) and crashes every hook run on the host.
+- After any reset, verify the hooks are armed again: `ls vendor/bin/captainhook`
+  or watch for the `[pre-commit] captainhook missing` skip notice.
+
 ### Compose file secrets hard-abort on a missing source file (2026-08-14)
 
 - A service that declares a top-level `file:` secret fails container CREATION
