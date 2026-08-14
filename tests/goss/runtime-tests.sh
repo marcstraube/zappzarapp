@@ -363,8 +363,10 @@ test_elasticsearch() {
         return
     fi
 
-    # Test cluster health via HTTPS with bootstrap password authentication
-    if $DOCKER_COMPOSE exec -T elasticsearch sh -c 'curl -sfk --max-time '"$TIMEOUT"' -u "elastic:$(cat /run/secrets/elasticsearch_bootstrap_password.txt)" "https://localhost:9200/_cluster/health"' 2>/dev/null | grep -q "status"; then
+    # Test cluster health via HTTPS with bootstrap password authentication.
+    # The credential travels as a curl config on stdin (-K -), never in argv
+    # (command lines are visible to other processes in the container)
+    if $DOCKER_COMPOSE exec -T elasticsearch sh -c 'printf "user = \"elastic:%s\"\n" "$(cat /run/secrets/elasticsearch_bootstrap_password.txt)" | curl -sfk --max-time '"$TIMEOUT"' -K - "https://localhost:9200/_cluster/health"' 2>/dev/null | grep -q "status"; then
         log_pass "elasticsearch: HTTPS cluster health responds with authentication"
     else
         log_fail "elasticsearch: HTTPS cluster health not responding"

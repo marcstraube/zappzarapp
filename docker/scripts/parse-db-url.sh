@@ -24,10 +24,24 @@
 # =============================================================================
 
 # URL-decode a string (handles %XX encoding)
+# Decodes character by character: only a valid %XX sequence is decoded,
+# every other character passes through literally. A plain '+' stays '+'
+# (the query-string space convention does not apply to URL userinfo), and
+# literal backslashes survive (a blanket printf %b would interpret them).
 # Usage: urldecode "encoded%20string"
 urldecode() {
-    local encoded="${1//+/ }"
-    printf '%b' "${encoded//%/\\x}"
+    local encoded="$1" out="" c
+    while [ -n "$encoded" ]; do
+        c="${encoded:0:1}"
+        if [ "$c" = "%" ] && [[ "${encoded:1:2}" =~ ^[0-9A-Fa-f]{2}$ ]]; then
+            printf -v c '%b' "\\x${encoded:1:2}"
+            encoded="${encoded:3}"
+        else
+            encoded="${encoded:1}"
+        fi
+        out+="$c"
+    done
+    printf '%s' "$out"
 }
 
 # Parse DATABASE_URL into individual components

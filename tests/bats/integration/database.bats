@@ -119,10 +119,9 @@ teardown_file() {
         skip "Elasticsearch API key not configured (run: make es-setup-api-key)"
     fi
 
-    # Use HTTPS with API key authentication
-    run timeout 30 docker compose exec -T elasticsearch curl -sk \
-        -H "Authorization: ApiKey $api_key" \
-        "https://localhost:9200/_cluster/health"
+    # Use HTTPS with API key authentication; the credential travels as a
+    # curl config on stdin (-K -), never in argv (visible to other processes)
+    run bash -c "printf 'header = \"Authorization: ApiKey %s\"\n' \"\$(cat secrets/elasticsearch_api_key.txt)\" | timeout 30 docker compose exec -T elasticsearch curl -sk -K - https://localhost:9200/_cluster/health"
     assert_success
     assert_output --partial "status"
 }

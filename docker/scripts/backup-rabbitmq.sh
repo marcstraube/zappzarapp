@@ -144,16 +144,18 @@ echo ""
 echo -e "${YELLOW}Exporting RabbitMQ definitions...${NC}"
 
 # Use curl inside container to access management API
+# Credentials travel as a curl config on stdin (-K -), never in argv
+# (command lines are visible to other processes on host and container)
 if [[ "$ENCRYPT" == true ]]; then
-    docker compose exec -T rabbitmq sh -c "
-        curl -s -u '$RABBITMQ_USER:$RABBITMQ_PASSWORD' http://localhost:15672/api/definitions
-    " | openssl enc -aes-256-cbc -salt -pbkdf2 -pass env:BACKUP_ENCRYPTION_KEY \
+    printf 'user = "%s:%s"\n' "$RABBITMQ_USER" "$RABBITMQ_PASSWORD" | \
+    docker compose exec -T rabbitmq curl -s -K - http://localhost:15672/api/definitions \
+    | openssl enc -aes-256-cbc -salt -pbkdf2 -pass env:BACKUP_ENCRYPTION_KEY \
       > "$OUTPUT_DIR/${BACKUP_NAME}.json.enc"
     BACKUP_FILE="${BACKUP_NAME}.json.enc"
 else
-    docker compose exec -T rabbitmq sh -c "
-        curl -s -u '$RABBITMQ_USER:$RABBITMQ_PASSWORD' http://localhost:15672/api/definitions
-    " > "$OUTPUT_DIR/${BACKUP_NAME}.json"
+    printf 'user = "%s:%s"\n' "$RABBITMQ_USER" "$RABBITMQ_PASSWORD" | \
+    docker compose exec -T rabbitmq curl -s -K - http://localhost:15672/api/definitions \
+    > "$OUTPUT_DIR/${BACKUP_NAME}.json"
     BACKUP_FILE="${BACKUP_NAME}.json"
 fi
 

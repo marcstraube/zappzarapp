@@ -109,13 +109,24 @@ else
     DEFINITIONS=$(cat "$BACKUP_FILE")
 fi
 
-# Import definitions via Management API
-echo "$DEFINITIONS" | docker compose exec -T rabbitmq sh -c "
-    curl -s -X POST -u '$RABBITMQ_USER:$RABBITMQ_PASSWORD' \
-        -H 'Content-Type: application/json' \
+# Import definitions via Management API. stdin carries the definitions, so
+# the credentials travel via environment into a 0600 curl config inside the
+# container - never through argv (visible to other processes), and never
+# interpolated into the sh -c string (a quote in the password would break it)
+echo "$DEFINITIONS" | docker compose exec -T \
+    -e RESTORE_USER="$RABBITMQ_USER" -e RESTORE_PASSWORD="$RABBITMQ_PASSWORD" \
+    rabbitmq sh -c '
+    umask 077
+    printf "user = \"%s:%s\"\n" "$RESTORE_USER" "$RESTORE_PASSWORD" > /tmp/.curl-restore
+    curl -s -X POST -K /tmp/.curl-restore \
+        -H "Content-Type: application/json" \
         http://localhost:15672/api/definitions \
         -d @-
-"
+    rc=$?
+    rm -f /tmp/.curl-restore
+    exit $rc
+'
+
 
 echo -e "${GREEN}=== Restore Complete ===${NC}"
 echo -e "${YELLOW}Note: Messages in queues are not restored (they are transient).${NC}"

@@ -80,6 +80,11 @@ server {
     # Node.js Frontend Framework Proxy (shared)
     include /etc/nginx/snippets/node-frontend-proxy.conf;
 
+    # Deny Rules (shared) - MUST precede every other regex location:
+    # regex locations match in declaration order, so the deny rules
+    # only win over \.php$ and the asset-extension regex from up here
+    include /etc/nginx/snippets/deny-rules.conf;
+
     # Static text files (robots.txt, sitemap.xml) - Cacheable
     location ~ ^/(robots\.txt|sitemap\.xml)$ {
         try_files $uri =404;
@@ -163,6 +168,4 @@ server {
         fastcgi_read_timeout 95;
     }
 
-    # Deny Rules (shared)
-    include /etc/nginx/snippets/deny-rules.conf;
 }

@@ -2206,9 +2206,11 @@ sqlite-cli: ## Open SQLite CLI - Usage: make sqlite-cli FILE=storage/app.sqlite
 
 es-setup-api-key: ## Generate Elasticsearch API key (run after ES is healthy)
 	@echo -e "\033[0;33mGenerating Elasticsearch API key...\033[0m"
+	@# Credentials travel as a curl config on stdin (-K -), never in argv:
+	@# command lines are visible to other processes on host and container
 	@BOOTSTRAP_PW=$$(cat secrets/elasticsearch_bootstrap_password.txt 2>/dev/null || cat secrets/elasticsearch_bootstrap_password.example.txt) && \
-	docker compose exec -T elasticsearch curl -sk \
-		-u "elastic:$$BOOTSTRAP_PW" \
+	printf 'user = "elastic:%s"\n' "$$BOOTSTRAP_PW" | \
+	docker compose exec -T elasticsearch curl -sk -K - \
 		-X POST "https://localhost:9200/_security/api_key" \
 		-H "Content-Type: application/json" \
 		-d '{"name": "zappzarapp-dev", "role_descriptors": {"all_access": {"cluster": ["all"], "indices": [{"names": ["*"], "privileges": ["all"]}]}}}' \
@@ -2227,8 +2229,8 @@ es-health: ## Check Elasticsearch cluster health
 		echo -e "\033[0;31mError: No API key found. Run: make es-setup-api-key\033[0m"; \
 		exit 1; \
 	fi && \
-	docker compose exec -T elasticsearch curl -sk \
-		-H "Authorization: ApiKey $$API_KEY" \
+	printf 'header = "Authorization: ApiKey %s"\n' "$$API_KEY" | \
+	docker compose exec -T elasticsearch curl -sk -K - \
 		"https://localhost:9200/_cluster/health" | jq .
 
 es-api-key: ## Show Elasticsearch API key
@@ -4666,7 +4668,10 @@ ssl-renew: ## Renew Let's Encrypt certificate and reload all SSL services
 		CERT_BEFORE=$$(openssl x509 -in docker/certs/nginx/cert.crt -noout -fingerprint 2>/dev/null || echo ""); \
 	fi; \
 	if command -v certbot >/dev/null 2>&1; then \
-		sudo certbot renew --quiet; \
+		sudo certbot renew --quiet \
+			--config-dir docker/certs/letsencrypt \
+			--work-dir docker/certs/letsencrypt/work \
+			--logs-dir docker/certs/letsencrypt/logs; \
 	else \
 		docker run --rm --name certbot \
 			-v $$(pwd)/docker/certs/letsencrypt:/etc/letsencrypt \

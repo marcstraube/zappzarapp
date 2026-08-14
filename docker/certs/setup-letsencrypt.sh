@@ -27,7 +27,7 @@ if [[ -z "$DOMAIN" ]] || [[ -z "$EMAIL" ]]; then
     exit 1
 fi
 
-PROJECT_ROOT="$(cd "$(dirname "$0")/../../.." && pwd)"
+PROJECT_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 CERT_DIR="$PROJECT_ROOT/docker/certs"
 WEBROOT="$PROJECT_ROOT/public"
 
@@ -68,14 +68,19 @@ echo "This may take a few minutes..."
 echo ""
 
 if [[ "$USE_DOCKER" == "false" ]]; then
-    # Local certbot: use webroot mode (nginx serves challenge files)
+    # Local certbot: use webroot mode (nginx serves challenge files).
+    # --config-dir places the whole letsencrypt tree (live/, renewal/, ...)
+    # under the project cert directory, matching the docker branch and the
+    # nginx symlinks created below.
     sudo certbot certonly --webroot \
         -w "$WEBROOT" \
         -d "$DOMAIN" \
         --email "$EMAIL" \
         --agree-tos \
         --no-eff-email \
-        --cert-path "$CERT_DIR/letsencrypt"
+        --config-dir "$CERT_DIR/letsencrypt" \
+        --work-dir "$CERT_DIR/letsencrypt/work" \
+        --logs-dir "$CERT_DIR/letsencrypt/logs"
 else
     # Docker certbot: use standalone mode (certbot runs own webserver on port 80)
     docker run -it --rm --name certbot \
