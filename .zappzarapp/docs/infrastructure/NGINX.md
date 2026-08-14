@@ -303,7 +303,7 @@ Use case: rewriting custom client paths to backend root paths.
 
 The Vite HMR WebSocket uses a custom client path (`/__vite_hmr__`) that nginx
 rewrites to Vite's root path via the trailing-slash pattern above. See
-[ADR 0004](../adr/0004-vite-hmr-websocket-custom-path-routing.md) for the full
+[ADR 0003](../adr/0003-vite-hmr-websocket-custom-path-routing.md) for the full
 decision and configuration. Key gotcha: Vite's `hmr.path` option only changes
 the **client-side** connection path — the WebSocket server always listens on `/`
 on its dev server port (5173), which is why the nginx rewrite is required.

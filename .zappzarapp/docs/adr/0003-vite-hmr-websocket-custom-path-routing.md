@@ -1,13 +1,12 @@
-# 0004: Vite HMR WebSocket Custom Path Routing
+# 0003: Vite HMR WebSocket Custom Path Routing
 
 **Date:** 2026-01-26
 
 **Status:** Accepted
 
-**Context:** Vite HMR requires WebSocket connection for live reloading. Default
-WebSocket path is `/` (root), which conflicts with PHP routing (index.php
-handles all root requests). Previous attempts to use conditional routing based
-on WebSocket headers were complex and unreliable.
+**Context:** Vite HMR requires a WebSocket connection for live reloading. The
+default WebSocket path is `/` (root), which conflicts with PHP routing
+(index.php handles all root requests).
 
 **Decision:** Use custom WebSocket path with Nginx path rewriting:
 

@@ -93,7 +93,7 @@ periodic triage (`/optimize --learnings`) and are removed from this file.
   `docker compose ps` lists all project containers but `logs` printed only nginx
   — the crash-looping container's output never reached the CI log.
 
-### Compose production non-root (ADR 0012, 2026-08-12)
+### Compose production non-root (ADR 0009, 2026-08-12)
 
 - **Compose production preset now mirrors the k8s "restricted" posture**: every
   service runs with `user:`/image `USER`, `read_only: true`, `cap_drop: ALL`, no

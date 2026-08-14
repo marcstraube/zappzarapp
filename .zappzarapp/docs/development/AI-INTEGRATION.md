@@ -25,7 +25,7 @@ customize it with your project rules; no sync tooling required.
 `LEARNINGS.md` is an inbox: mature entries graduate into the regular
 documentation during periodic triage. ADRs follow the common
 one-document-per-decision practice with an index README and a status lifecycle
-(see `.zappzarapp/docs/adr/0009-one-document-per-adr.md`).
+(see `.zappzarapp/docs/adr/0006-one-document-per-adr.md`).
 
 **Task Management:** Handled via `/tasks` command with automatic storage
 detection (GitHub Issues, GitLab Issues, or local `.ai/TASKS.md`).

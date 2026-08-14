@@ -4,10 +4,11 @@
 
 **Status:** Accepted
 
-**Context:** Single `coding-standards.md` was too large, agents loaded
-unnecessary context.
+**Context:** AI agents work best when they load only the context a task needs. A
+single monolithic coding-standards document forces every agent to carry the
+rules for all languages and roles, spending context on irrelevant material.
 
-**Decision:** Split into granular files:
+**Decision:** Keep standards and workflow documentation granular:
 
 - `.zappzarapp/standards/` — language-specific rules (php, node, sql, markdown,
   docker) — shared across all AI agents
