@@ -111,10 +111,10 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v4
+        uses: docker/setup-buildx-action@bb05f3f5519dd87d3ba754cc423b652a5edd6d2c # v4.2.0
 
       - name: Build goss utility image (dependency)
         run: |
@@ -137,7 +137,7 @@ jobs:
             .
 
       - name: Trivy vulnerability scan (${{ matrix.image.name }})
-        uses: aquasecurity/trivy-action@v0.36.0
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
         with:
           image-ref: ${{ env.COMPOSE_PROJECT_NAME }}-${{ matrix.image.name }}:scan
           format: sarif
@@ -150,7 +150,7 @@ jobs:
           ignore-policy: .trivy/ignore-policy.rego
 
       - name: Upload Trivy results (${{ matrix.image.name }})
-        uses: github/codeql-action/upload-sarif@v4
+        uses: github/codeql-action/upload-sarif@ff2f1c621b7f889edc0d3c761ac2e6a3f8cdb0dd # v4.37.7
         # Code scanning (SARIF upload) requires a public repo or GitHub Advanced
         # Security; skip on private forks so they do not fail the job.
         if: always() && github.event.repository.visibility == 'public'
@@ -159,7 +159,7 @@ jobs:
           category: trivy-${{ matrix.image.name }}
 
       - name: Trivy table output (${{ matrix.image.name }})
-        uses: aquasecurity/trivy-action@v0.36.0
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
         with:
           image-ref: ${{ env.COMPOSE_PROJECT_NAME }}-${{ matrix.image.name }}:scan
           format: table
@@ -179,10 +179,10 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v4
+        uses: docker/setup-buildx-action@bb05f3f5519dd87d3ba754cc423b652a5edd6d2c # v4.2.0
 
       - name: Build goss utility image (dependency)
         run: |
@@ -221,7 +221,7 @@ jobs:
           docker compose exec -T node pnpm audit --json > pnpm-audit.json || true
 
       - name: Upload audit results
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         if: always()
         with:
           name: dependency-audit-results
@@ -243,10 +243,10 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Trivy filesystem scan
-        uses: aquasecurity/trivy-action@v0.36.0
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
         with:
           scan-type: fs
           scan-ref: .
@@ -262,14 +262,14 @@ jobs:
           ignore-policy: .trivy/ignore-policy.rego
 
       - name: Upload filesystem scan results
-        uses: github/codeql-action/upload-sarif@v4
+        uses: github/codeql-action/upload-sarif@ff2f1c621b7f889edc0d3c761ac2e6a3f8cdb0dd # v4.37.7
         if: always() && github.event.repository.visibility == 'public'
         with:
           sarif_file: trivy-fs-results.sarif
           category: trivy-filesystem
 
       - name: Trivy config scan (IaC)
-        uses: aquasecurity/trivy-action@v0.36.0
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
         with:
           scan-type: config
           scan-ref: .
@@ -287,12 +287,12 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0  # Full history for secret scanning
 
       - name: Trivy secret scan
-        uses: aquasecurity/trivy-action@v0.36.0
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
         with:
           scan-type: fs
           scan-ref: .
@@ -301,7 +301,7 @@ jobs:
           severity: ${{ env.SEVERITY }}
 
       - name: TruffleHog secret scan
-        uses: trufflesecurity/trufflehog@v3.96.0
+        uses: trufflesecurity/trufflehog@6f3c981e7b77f235fd2702dd74af25fc4b72bf11 # v3.96.0
         with:
           path: ./
           base: ${{ github.event.repository.default_branch }}
@@ -359,10 +359,10 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v4
+        uses: docker/setup-buildx-action@bb05f3f5519dd87d3ba754cc423b652a5edd6d2c # v4.2.0
 
       - name: Build goss utility image (dependency)
         if: matrix.image.name != 'goss'
@@ -399,7 +399,7 @@ jobs:
             ${{ env.COMPOSE_PROJECT_NAME }}-${{ matrix.image.name }}:scan
 
       - name: Upload Dockle results (${{ matrix.image.name }})
-        uses: github/codeql-action/upload-sarif@v4
+        uses: github/codeql-action/upload-sarif@ff2f1c621b7f889edc0d3c761ac2e6a3f8cdb0dd # v4.37.7
         if: always() && github.event.repository.visibility == 'public'
         with:
           sarif_file: dockle-${{ matrix.image.name }}-results.sarif
@@ -416,10 +416,10 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Trivy license scan (PHP)
-        uses: aquasecurity/trivy-action@v0.36.0
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
         with:
           scan-type: fs
           scan-ref: .
@@ -438,7 +438,7 @@ jobs:
           fi
 
       - name: Upload license results
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         if: always()
         with:
           name: license-scan-results

@@ -53,7 +53,8 @@
             "#querySelectorAll<HTMLElement>#",
             "#fetchMock\\.mock\\.calls#",
             "#RENOVATE_SELF_HOSTED#",
-            "#img\\.shields\\.io/badge/#"
+            "#img\\.shields\\.io/badge/#",
+            "#[\\w.-]+/[\\w.-]+@[0-9a-f]{40}#"
           ]
         },
         "config": {

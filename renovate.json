@@ -1,7 +1,7 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "description": "Renovate All-Purpose Config for PHP/Node/Docker projects. For detailed help and options, see: https://docs.renovatebot.com/",
-  "extends": ["config:recommended"],
+  "extends": ["config:recommended", "helpers:pinGitHubActionDigests"],
   "schedule": ["at any time"],
   "labels": ["renovate", "dependencies"],
   "automerge": true,
