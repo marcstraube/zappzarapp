@@ -308,7 +308,10 @@ export class ConnectionFactory {
     }
 
     if (this.dbType === 'postgres') {
-      const { getPool } = await import('./pool');
+      // Explicit .js extension: Node ESM resolves relative imports strictly
+      // in the compiled dist - without it the runtime fails only in the
+      // built image (Vitest resolves the .ts source and masks it)
+      const { getPool } = await import('./pool.js');
       this.pool = getPool();
     } else {
       const mysql = await import('mysql2/promise');
