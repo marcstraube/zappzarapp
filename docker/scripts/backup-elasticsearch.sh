@@ -11,7 +11,7 @@
 #   -o, --output DIR       Output directory (default: ./backups/elasticsearch)
 #   -r, --retention DAYS   Keep backups for N days (default: 30, 0 = keep all)
 #   -n, --no-encrypt       Skip encryption (not recommended for production)
-#   -i, --indices PATTERN  Indices to backup (default: * = all)
+#   -i, --indices PATTERN  Indices to backup (default: *,-.* = all except system)
 #   -h, --help             Show this help message
 #
 # Environment Variables:
@@ -41,9 +41,22 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 OUTPUT_DIR="$PROJECT_ROOT/backups/elasticsearch"
 ENCRYPT=true
-INDICES="*"
-ES_URL="http://localhost:9200"
+# Default: all application indices, excluding system/dot indices (their
+# restore collides with the live cluster state and they may contain
+# security internals)
+INDICES="*,-.*"
+ES_URL="https://localhost:9200"
 REPO_NAME="backup_repo"
+
+# Authenticated, TLS-aware curl inside the elasticsearch container: the
+# bootstrap password is read from the container-mounted secret and travels
+# as a curl config on stdin (-K -), never in argv (visible to other
+# processes). -k: the internal certificate is self-signed.
+es_curl() {
+    docker compose exec -T elasticsearch sh -c \
+        'printf "user = \"elastic:%s\"\n" "$(cat /run/secrets/elasticsearch_bootstrap_password.txt)" | curl -sk -K - "$@"' \
+        sh "$@"
+}
 
 # Load .env if exists
 if [[ -f "$PROJECT_ROOT/.env" ]]; then
@@ -115,7 +128,7 @@ fi
 # Wait for Elasticsearch to be ready
 echo -e "${YELLOW}Waiting for Elasticsearch to be ready...${NC}"
 for i in {1..30}; do
-    if docker compose exec -T elasticsearch curl -s "$ES_URL/_cluster/health" >/dev/null 2>&1; then
+    if es_curl -f "$ES_URL/_cluster/health" >/dev/null 2>&1; then
         break
     fi
     if [[ $i -eq 30 ]]; then
@@ -141,35 +154,46 @@ echo ""
 
 # Create snapshot repository (if not exists)
 echo -e "${YELLOW}Setting up snapshot repository...${NC}"
-docker compose exec -T elasticsearch sh -c "
-    mkdir -p /usr/share/elasticsearch/backup
-    curl -s -X PUT '$ES_URL/_snapshot/$REPO_NAME' -H 'Content-Type: application/json' -d '{
-        \"type\": \"fs\",
-        \"settings\": {
-            \"location\": \"/usr/share/elasticsearch/backup\",
-            \"compress\": true
-        }
-    }' || true
-" >/dev/null 2>&1
+# Repository mountpoint preflight: the named volume must be writable by
+# the server user (uid 1000). Volumes created before the image carried the
+# owned mountpoint are root-owned - heal that via a root exec (works in
+# development; the production preset drops CAP_CHOWN, there recreate the
+# volume so it inherits the image ownership).
+docker compose exec -T -u root elasticsearch chown 1000:0 /usr/share/elasticsearch/backup 2>/dev/null || true
+if ! docker compose exec -T elasticsearch sh -c 'touch /usr/share/elasticsearch/backup/.write-probe && rm -f /usr/share/elasticsearch/backup/.write-probe'; then
+    echo -e "${RED}Error: /usr/share/elasticsearch/backup is not writable by the server user.${NC}"
+    echo -e "${YELLOW}Recreate the elasticsearch-backup volume (docker volume rm after 'make down') so it inherits the image ownership.${NC}"
+    exit 1
+fi
+
+REPO_RESPONSE=$(es_curl -X PUT "$ES_URL/_snapshot/$REPO_NAME" -H 'Content-Type: application/json' -d '{
+    "type": "fs",
+    "settings": {
+        "location": "/usr/share/elasticsearch/backup",
+        "compress": true
+    }
+}')
+if [[ "$REPO_RESPONSE" == *'"error"'* ]]; then
+    echo -e "${RED}Error: could not register the snapshot repository:${NC}"
+    echo "$REPO_RESPONSE"
+    exit 1
+fi
 
 # Create snapshot
 echo -e "${YELLOW}Creating snapshot of indices: $INDICES${NC}"
-docker compose exec -T elasticsearch sh -c "
-    # Delete old snapshot if exists
-    curl -s -X DELETE '$ES_URL/_snapshot/$REPO_NAME/$SNAPSHOT_NAME' 2>/dev/null || true
-
-    # Create new snapshot
-    curl -s -X PUT '$ES_URL/_snapshot/$REPO_NAME/$SNAPSHOT_NAME?wait_for_completion=true' -H 'Content-Type: application/json' -d '{
-        \"indices\": \"$INDICES\",
-        \"ignore_unavailable\": true,
-        \"include_global_state\": false
-    }'
-"
+# Delete old snapshot if exists, then create the new one
+es_curl -X DELETE "$ES_URL/_snapshot/$REPO_NAME/$SNAPSHOT_NAME" >/dev/null 2>&1 || true
+es_curl -X PUT "$ES_URL/_snapshot/$REPO_NAME/$SNAPSHOT_NAME?wait_for_completion=true" -H 'Content-Type: application/json' -d "{
+    \"indices\": \"$INDICES\",
+    \"ignore_unavailable\": true,
+    \"include_global_state\": false
+}"
 
 # Check snapshot status
-SNAPSHOT_STATUS=$(docker compose exec -T elasticsearch curl -s "$ES_URL/_snapshot/$REPO_NAME/$SNAPSHOT_NAME" | grep -o '"state":"[^"]*"' | head -1 || echo "")
+SNAPSHOT_STATUS=$(es_curl "$ES_URL/_snapshot/$REPO_NAME/$SNAPSHOT_NAME" | grep -o '"state":"[^"]*"' | head -1 || echo "")
 if [[ "$SNAPSHOT_STATUS" != *"SUCCESS"* ]]; then
-    echo -e "${YELLOW}Warning: Snapshot may not have completed successfully.${NC}"
+    echo -e "${RED}Error: snapshot did not complete successfully (state: ${SNAPSHOT_STATUS:-unknown}).${NC}"
+    exit 1
 fi
 
 # Export snapshot to local directory
@@ -178,6 +202,15 @@ TEMP_DIR=$(mktemp -d)
 
 # Copy snapshot data from container
 docker compose cp elasticsearch:/usr/share/elasticsearch/backup "$TEMP_DIR/es-snapshot"
+
+# A snapshot always contains repository metadata (index-N, index.latest,
+# meta/snap files) - an empty export means nothing was written and the
+# backup would be a worthless archive
+if [[ -z "$(ls -A "$TEMP_DIR/es-snapshot" 2>/dev/null)" ]]; then
+    echo -e "${RED}Error: exported snapshot directory is empty - aborting.${NC}"
+    rm -rf "$TEMP_DIR"
+    exit 1
+fi
 
 # Create tarball
 echo -e "${YELLOW}Creating compressed archive...${NC}"

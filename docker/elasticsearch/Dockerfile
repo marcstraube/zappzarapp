@@ -24,11 +24,18 @@ RUN if command -v apt-get >/dev/null 2>&1; then \
     fi \
     # Strip setuid/setgid bits (Dockle CIS-DI-0008); Elasticsearch does not use
     # the base image's OS PAM/shadow helpers.
-    && find / -xdev -type f \( -perm -4000 -o -perm -2000 \) -exec chmod -s {} \;
+    && find / -xdev -type f \( -perm -4000 -o -perm -2000 \) -exec chmod -s {} \; \
+    # Snapshot repository mountpoint (path.repo): must exist in the image
+    # with the server uid as owner, so the named volume mounted here
+    # inherits an ownership Elasticsearch (uid 1000) can write to
+    && mkdir -p /usr/share/elasticsearch/backup \
+    && chown 1000:0 /usr/share/elasticsearch/backup
 USER 1000:0
 
 # Health check for Elasticsearch (HTTPS with bootstrap password authentication)
-# Uses bootstrap password from secrets (available before API key generation)
+# Uses the bootstrap password from secrets (available before API key
+# generation); it travels as a curl config on stdin (-K -), never in argv
+# (command lines are visible to other processes in the container)
 HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=5 \
-    CMD curl -sk -u "elastic:$(cat /run/secrets/elasticsearch_bootstrap_password.txt 2>/dev/null || echo '')" \
-        "https://localhost:9200/_cluster/health" | grep -q '"status"' || exit 1
+    CMD printf 'user = "elastic:%s"\n' "$(cat /run/secrets/elasticsearch_bootstrap_password.txt 2>/dev/null || echo '')" \
+        | curl -sk -K - "https://localhost:9200/_cluster/health" | grep -q '"status"' || exit 1

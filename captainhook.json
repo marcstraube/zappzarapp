@@ -54,7 +54,8 @@
             "#fetchMock\\.mock\\.calls#",
             "#RENOVATE_SELF_HOSTED#",
             "#img\\.shields\\.io/badge/#",
-            "#[\\w.-]+/[\\w.-]+@[0-9a-f]{40}#"
+            "#[\\w.-]+/[\\w.-]+@[0-9a-f]{40}#",
+            "#ES_URL/#"
           ]
         },
         "config": {

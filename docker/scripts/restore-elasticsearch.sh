@@ -26,8 +26,18 @@ NC='\033[0m' # No Color
 # Script paths
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
-ES_URL="http://localhost:9200"
+ES_URL="https://localhost:9200"
 REPO_NAME="backup_repo"
+
+# Authenticated, TLS-aware curl inside the elasticsearch container: the
+# bootstrap password is read from the container-mounted secret and travels
+# as a curl config on stdin (-K -), never in argv (visible to other
+# processes). -k: the internal certificate is self-signed.
+es_curl() {
+    docker compose exec -T elasticsearch sh -c \
+        'printf "user = \"elastic:%s\"\n" "$(cat /run/secrets/elasticsearch_bootstrap_password.txt)" | curl -sk -K - "$@"' \
+        sh "$@"
+}
 
 # Load .env if exists
 if [[ -f "$PROJECT_ROOT/.env" ]]; then
@@ -90,7 +100,7 @@ fi
 # Wait for Elasticsearch to be ready
 echo -e "${YELLOW}Waiting for Elasticsearch to be ready...${NC}"
 for i in {1..30}; do
-    if docker compose exec -T elasticsearch curl -s "$ES_URL/_cluster/health" >/dev/null 2>&1; then
+    if es_curl -f "$ES_URL/_cluster/health" >/dev/null 2>&1; then
         break
     fi
     if [[ $i -eq 30 ]]; then
@@ -114,24 +124,38 @@ fi
 
 # Copy snapshot data to container
 echo -e "${YELLOW}Copying snapshot to Elasticsearch...${NC}"
-docker compose exec -T elasticsearch sh -c "mkdir -p /usr/share/elasticsearch/backup"
+# Repository mountpoint preflight: the named volume must be writable by
+# the server user (uid 1000). Volumes created before the image carried the
+# owned mountpoint are root-owned - heal that via a root exec (works in
+# development; the production preset drops CAP_CHOWN, there recreate the
+# volume so it inherits the image ownership).
+docker compose exec -T -u root elasticsearch chown 1000:0 /usr/share/elasticsearch/backup 2>/dev/null || true
+if ! docker compose exec -T elasticsearch sh -c 'touch /usr/share/elasticsearch/backup/.write-probe && rm -f /usr/share/elasticsearch/backup/.write-probe'; then
+    echo -e "${RED}Error: /usr/share/elasticsearch/backup is not writable by the server user.${NC}"
+    echo -e "${YELLOW}Recreate the elasticsearch-backup volume (docker volume rm after 'make down') so it inherits the image ownership.${NC}"
+    exit 1
+fi
 docker compose cp "$TEMP_DIR/es-snapshot/." elasticsearch:/usr/share/elasticsearch/backup/
 
 # Register snapshot repository
 echo -e "${YELLOW}Registering snapshot repository...${NC}"
-docker compose exec -T elasticsearch sh -c "
-    curl -s -X PUT '$ES_URL/_snapshot/$REPO_NAME' -H 'Content-Type: application/json' -d '{
-        \"type\": \"fs\",
-        \"settings\": {
-            \"location\": \"/usr/share/elasticsearch/backup\",
-            \"compress\": true
-        }
-    }'
-" >/dev/null
+REPO_RESPONSE=$(es_curl -X PUT "$ES_URL/_snapshot/$REPO_NAME" -H 'Content-Type: application/json' -d '{
+    "type": "fs",
+    "settings": {
+        "location": "/usr/share/elasticsearch/backup",
+        "compress": true
+    }
+}')
+if [[ "$REPO_RESPONSE" == *'"error"'* ]]; then
+    echo -e "${RED}Error: could not register the snapshot repository:${NC}"
+    echo "$REPO_RESPONSE"
+    rm -rf "$TEMP_DIR"
+    exit 1
+fi
 
 # Get available snapshots
 echo -e "${YELLOW}Finding snapshot to restore...${NC}"
-SNAPSHOT_NAME=$(docker compose exec -T elasticsearch curl -s "$ES_URL/_snapshot/$REPO_NAME/_all" \
+SNAPSHOT_NAME=$(es_curl "$ES_URL/_snapshot/$REPO_NAME/_all" \
     | grep -o '"snapshot":"[^"]*"' | head -1 | cut -d'"' -f4)
 
 if [[ -z "$SNAPSHOT_NAME" ]]; then
@@ -142,18 +166,30 @@ fi
 
 echo -e "Found snapshot: ${GREEN}$SNAPSHOT_NAME${NC}"
 
-# Close all indices before restore
-echo -e "${YELLOW}Closing indices for restore...${NC}"
-docker compose exec -T elasticsearch curl -s -X POST "$ES_URL/_all/_close?wait_for_active_shards=0" >/dev/null 2>&1 || true
+# Close only the indices contained in the snapshot: a blanket _all/_close
+# fails on data streams and would leave unrelated indices closed
+echo -e "${YELLOW}Closing indices contained in the snapshot...${NC}"
+SNAPSHOT_INDICES=$(es_curl "$ES_URL/_snapshot/$REPO_NAME/$SNAPSHOT_NAME" \
+    | jq -r '.snapshots[0].indices | join(",")' 2>/dev/null || echo "")
+if [[ -n "$SNAPSHOT_INDICES" ]]; then
+    es_curl -X POST "$ES_URL/$SNAPSHOT_INDICES/_close?wait_for_active_shards=0" >/dev/null 2>&1 || true
+fi
 
-# Restore snapshot
+# Restore snapshot (system/dot indices stay excluded even for snapshots
+# taken with an unfiltered pattern - restoring them collides with the
+# live cluster state)
 echo -e "${YELLOW}Restoring snapshot...${NC}"
-docker compose exec -T elasticsearch sh -c "
-    curl -s -X POST '$ES_URL/_snapshot/$REPO_NAME/$SNAPSHOT_NAME/_restore?wait_for_completion=true' -H 'Content-Type: application/json' -d '{
-        \"ignore_unavailable\": true,
-        \"include_global_state\": false
-    }'
-"
+RESTORE_RESPONSE=$(es_curl -X POST "$ES_URL/_snapshot/$REPO_NAME/$SNAPSHOT_NAME/_restore?wait_for_completion=true" -H 'Content-Type: application/json' -d '{
+    "indices": "*,-.*",
+    "ignore_unavailable": true,
+    "include_global_state": false
+}')
+if [[ "$RESTORE_RESPONSE" == *'"error"'* ]]; then
+    echo -e "${RED}Error: restore failed:${NC}"
+    echo "$RESTORE_RESPONSE"
+    rm -rf "$TEMP_DIR"
+    exit 1
+fi
 
 # Cleanup
 rm -rf "$TEMP_DIR"

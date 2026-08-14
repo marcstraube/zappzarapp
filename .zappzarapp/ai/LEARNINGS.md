@@ -137,6 +137,31 @@ periodic triage (`/optimize --learnings`) and are removed from this file.
 
 ## Docker & Containers
 
+### The ES backup scripts were quadruply broken - and reported success (2026-08-14)
+
+- `backup-elasticsearch.sh`/`restore-elasticsearch.sh` talked plain
+  `http://localhost:9200` without auth to the HTTPS+xpack cluster — every curl
+  failed, and the `|| true`/`>/dev/null` wrapping turned that into a
+  "successful" 4K backup containing an empty directory. Four independent bugs
+  stacked: (1) http/no-auth against TLS, (2) the `elasticsearch-backup` named
+  volume was root-owned (the path did not exist in the image, so Docker created
+  it as root; ES runs as 1000:0 and got `access_denied_exception` on snapshot
+  writes — same class as the postgres volume-mountpoint fix), (3) success
+  reporting despite a failed snapshot (warning instead of abort, no empty-export
+  check), (4) `indices: "*"` captured system indices whose restore collides with
+  the live cluster (`.ds-ilm-history-*` already exists), while `_all/_close`
+  cannot close data streams.
+- Fixes: `es_curl` helper (TLS + bootstrap-password auth via curl config on
+  stdin), backup-dir mountpoint owned in the Dockerfile (fresh volumes inherit
+  1000:0) plus a chown preflight for legacy volumes, fail-fast on
+  repo/snapshot/restore errors and empty exports, `*,-.*` as the default index
+  pattern with targeted closes. Verified end-to-end: backup → delete index →
+  restore → document found.
+- Test gotcha: ES refuses shard allocation on restore when the disk is above the
+  low watermark (85% by default) — on a full dev machine the restore "succeeds"
+  but the index stays red/unassigned; a failed snapshot-restore needs a fresh
+  restore, `_cluster/reroute?retry_failed` does not recover it.
+
 ### Missing bind-mount SOURCE files become root-owned directories (2026-08-14)
 
 - When a compose service bind-mounts a host FILE that does not exist, the Docker
