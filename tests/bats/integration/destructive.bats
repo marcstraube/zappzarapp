@@ -89,11 +89,41 @@ wait_for_containers() {
 
 # =============================================================================
 # Phase 2: Build & Create (Verify File Creation)
+#
+# Order matters: dependencies are installed BEFORE `make up` because the php
+# and node containers do not come up without vendor/ and node_modules/. The
+# install targets use `docker compose run --rm` (no running containers needed)
+# and carry their own secrets/ssl-ensure preflights.
 # =============================================================================
 
 @test "[Phase 2] make build creates Docker images" {
     # 10 min timeout for cold build after full reset
     run timeout 600 make build
+    assert_success
+}
+
+@test "[Phase 2] make composer-install installs PHP dependencies" {
+    run timeout 300 make composer-install
+    assert_success
+}
+
+@test "[Phase 2] Verify: vendor/autoload.php exists in the php container" {
+    # In development vendor/ lives in the php_vendor named volume, not on the
+    # host - verify inside the container view (compose run enables the
+    # service's profile automatically, no running containers needed)
+    run timeout 120 docker compose run --rm --no-TTY php sh -c 'test -f vendor/autoload.php'
+    assert_success
+}
+
+@test "[Phase 2] make pnpm-install installs Node dependencies" {
+    run timeout 300 make pnpm-install
+    assert_success
+}
+
+@test "[Phase 2] Verify: node_modules/.pnpm/ exists in the node container" {
+    # In development node_modules/ lives in a named volume, not on the host -
+    # verify inside the container view
+    run timeout 120 docker compose run --rm --no-TTY --entrypoint "" node sh -c 'test -d node_modules/.pnpm'
     assert_success
 }
 
@@ -112,44 +142,6 @@ wait_for_containers() {
     if ! echo "$output" | grep -qE "(nginx|php|node)"; then
         skip "No containers running (environment issue) - dependent tests will be skipped"
     fi
-}
-
-@test "[Phase 2] make composer-install installs PHP dependencies" {
-    # Skip if containers failed to start (environment issue)
-    if ! docker compose ps --status running 2>/dev/null | grep -q "php"; then
-        skip "PHP container not running (environment issue)"
-    fi
-    run timeout 300 make composer-install
-    assert_success
-}
-
-@test "[Phase 2] Verify: vendor/ directory created" {
-    # If vendor/ doesn't exist, composer-install was likely skipped or failed
-    [[ -d "vendor" ]] || skip "vendor/ not created (composer-install likely skipped)"
-}
-
-@test "[Phase 2] Verify: vendor/autoload.php exists" {
-    # If autoload.php doesn't exist, composer-install was likely skipped or failed
-    [[ -f "vendor/autoload.php" ]] || skip "vendor/autoload.php not found (composer-install likely skipped)"
-}
-
-@test "[Phase 2] make pnpm-install installs Node dependencies" {
-    # Skip if containers failed to start (environment issue)
-    if ! docker compose ps --status running 2>/dev/null | grep -q "node"; then
-        skip "Node container not running (environment issue)"
-    fi
-    run timeout 300 make pnpm-install
-    assert_success
-}
-
-@test "[Phase 2] Verify: node_modules/ directory created" {
-    # If node_modules/ doesn't exist, pnpm-install was likely skipped or failed
-    [[ -d "node_modules" ]] || skip "node_modules/ not created (pnpm-install likely skipped)"
-}
-
-@test "[Phase 2] Verify: node_modules/.pnpm/ exists" {
-    # If .pnpm/ doesn't exist, pnpm-install was likely skipped or failed
-    [[ -d "node_modules/.pnpm" ]] || skip "node_modules/.pnpm/ not found (pnpm-install likely skipped)"
 }
 
 # =============================================================================
