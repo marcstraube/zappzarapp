@@ -384,7 +384,8 @@ bats:integration:
     - make composer-install
     - make pnpm-install
     - timeout 120 sh -c 'until make check-health 2>/dev/null; do sleep 5; done'
-    - make bats-test-integration
+    # Opt-in ACME end-to-end suite (Pebble), mirrors the GitHub job
+    - BATS_ENABLE_ACME_E2E=true make bats-test-integration
   after_script:
     - make down || true
     - docker system prune -f || true

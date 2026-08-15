@@ -3684,6 +3684,7 @@ bats-test-integration: ## Run BATS integration tests (requires running container
 			--network host \
 			--user root \
 			-e INTEGRATION_PRESET=$(INTEGRATION_PRESET) \
+			-e BATS_ENABLE_ACME_E2E=$(BATS_ENABLE_ACME_E2E) \
 			$${COMPOSE_FILE:+-e COMPOSE_FILE=$$COMPOSE_FILE} \
 			$(BATS_IMAGE) tests/bats/integration/ | tee "$$LOG"; \
 	else \
@@ -3695,6 +3696,7 @@ bats-test-integration: ## Run BATS integration tests (requires running container
 			--user "$$(id -u):$$(id -g)" \
 			--group-add "$$(stat -c %g /var/run/docker.sock)" \
 			-e INTEGRATION_PRESET=$(INTEGRATION_PRESET) \
+			-e BATS_ENABLE_ACME_E2E=$(BATS_ENABLE_ACME_E2E) \
 			$${COMPOSE_FILE:+-e COMPOSE_FILE=$$COMPOSE_FILE} \
 			$(BATS_IMAGE) tests/bats/integration/ | tee "$$LOG"; \
 	fi; \
@@ -3724,6 +3726,7 @@ bats-test-integration-file: ## Run specific BATS integration test file (FILE=lin
 			--user root \
 			-e INTEGRATION_PRESET=$(INTEGRATION_PRESET) \
 			-e BATS_ENABLE_DESTRUCTIVE=$(BATS_ENABLE_DESTRUCTIVE) \
+			-e BATS_ENABLE_ACME_E2E=$(BATS_ENABLE_ACME_E2E) \
 			$${COMPOSE_FILE:+-e COMPOSE_FILE=$$COMPOSE_FILE} \
 			$(BATS_IMAGE) "tests/bats/integration/$(FILE)" | tee "$$LOG"; \
 	else \
@@ -3736,6 +3739,7 @@ bats-test-integration-file: ## Run specific BATS integration test file (FILE=lin
 			--group-add "$$(stat -c %g /var/run/docker.sock)" \
 			-e INTEGRATION_PRESET=$(INTEGRATION_PRESET) \
 			-e BATS_ENABLE_DESTRUCTIVE=$(BATS_ENABLE_DESTRUCTIVE) \
+			-e BATS_ENABLE_ACME_E2E=$(BATS_ENABLE_ACME_E2E) \
 			$${COMPOSE_FILE:+-e COMPOSE_FILE=$$COMPOSE_FILE} \
 			$(BATS_IMAGE) "tests/bats/integration/$(FILE)" | tee "$$LOG"; \
 	fi; \
@@ -4675,15 +4679,15 @@ ssl-untrust-ca-help: ## Show manual instructions to remove the internal CA from 
 	@echo "  Remove 'Zappzarapp Internal CA' from 'Trusted Root Certification Authorities'"
 	@echo "============================================================================"
 
-ssl-letsencrypt: ## Setup Let's Encrypt SSL certificate (production)
+ssl-letsencrypt: ## Setup Let's Encrypt SSL certificate (production; vars: DOMAIN, EMAIL, STAGING=1, ACME_SERVER, ACME_CA_BUNDLE, HTTP_PORT)
 	@echo -e "\033[0;33mSetting up Let's Encrypt certificate...\033[0m"
 	@if [ ! -f docker/certs/setup-letsencrypt.sh ]; then \
 		echo -e "\033[0;31mError: setup-letsencrypt.sh not found!\033[0m"; \
 		exit 1; \
 	fi
-	@# Check for DOMAIN in .env or prompt for it
-	@DOMAIN=""; \
-	if [ -f .env ] && grep -q "^DOMAIN=" .env; then \
+	@# DOMAIN: CLI variable > .env > interactive prompt
+	@DOMAIN="$(DOMAIN)"; \
+	if [ -z "$$DOMAIN" ] && [ -f .env ] && grep -q "^DOMAIN=" .env; then \
 		DOMAIN=$$(grep "^DOMAIN=" .env | cut -d'=' -f2); \
 		echo -e "\033[0;32m✓ Using domain from .env: $$DOMAIN\033[0m"; \
 	fi; \
@@ -4700,29 +4704,85 @@ ssl-letsencrypt: ## Setup Let's Encrypt SSL certificate (production)
 			echo -e "\033[0;32m✓ DOMAIN saved to .env\033[0m"; \
 		fi; \
 	fi; \
-	read -p "Enter your email (for renewal notifications): " EMAIL; \
-	bash docker/certs/setup-letsencrypt.sh $$DOMAIN $$EMAIL
+	EMAIL="$(EMAIL)"; \
+	if [ -z "$$EMAIL" ]; then \
+		read -p "Enter your email (for renewal notifications): " EMAIL; \
+	fi; \
+	SETUP_ARGS=""; \
+	if [ "$(STAGING)" = "1" ] || [ "$(STAGING)" = "true" ]; then \
+		SETUP_ARGS="$$SETUP_ARGS --staging"; \
+	fi; \
+	if [ -n "$(ACME_SERVER)" ]; then \
+		SETUP_ARGS="$$SETUP_ARGS --server $(ACME_SERVER)"; \
+	fi; \
+	if [ -n "$(ACME_CA_BUNDLE)" ]; then \
+		SETUP_ARGS="$$SETUP_ARGS --ca-bundle $(ACME_CA_BUNDLE)"; \
+	fi; \
+	if [ -n "$(HTTP_PORT)" ]; then \
+		SETUP_ARGS="$$SETUP_ARGS --http-port $(HTTP_PORT)"; \
+	fi; \
+	bash docker/certs/setup-letsencrypt.sh $$DOMAIN $$EMAIL $$SETUP_ARGS
 	@echo -e "\033[0;34mTo enable HTTPS (Production):\033[0m"
 	@echo -e "\033[0;34m  1. Run: make ssl-prod-enable\033[0m"
 	@echo -e "\033[0;34m  2. Deploy: ZAPPZARAPP_ENV=production make build && make up\033[0m"
 
-ssl-renew: ## Renew Let's Encrypt certificate and reload all SSL services
-	@echo -e "\033[0;33mRenewing Let's Encrypt certificate...\033[0m"
-	@CERT_CHANGED=false; \
+ssl-renew: ## Renew Let's Encrypt certificate and reload all SSL services (vars: ACME_CA_BUNDLE, HTTP_PORT)
+	@# Early out without certbot when no renewal configs exist: a certbot
+	@# run would create a root-owned letsencrypt/ tree as a side effect.
+	@# Single shell block so the early exit skips the whole recipe.
+	@if ! ls docker/certs/letsencrypt/renewal/*.conf >/dev/null 2>&1; then \
+		echo -e "\033[0;33mNo Let's Encrypt certificates configured - nothing to renew.\033[0m"; \
+		exit 0; \
+	fi; \
+	echo -e "\033[0;33mRenewing Let's Encrypt certificate...\033[0m"; \
+	CERT_CHANGED=false; \
 	CERT_BEFORE=""; \
 	if [ -f docker/certs/nginx/cert.crt ]; then \
 		CERT_BEFORE=$$(openssl x509 -in docker/certs/nginx/cert.crt -noout -fingerprint 2>/dev/null || echo ""); \
 	fi; \
+	RENEW_ARGS=""; \
+	if [ -n "$(HTTP_PORT)" ]; then \
+		RENEW_ARGS="--http-01-port $(HTTP_PORT)"; \
+	fi; \
 	if command -v certbot >/dev/null 2>&1; then \
-		sudo certbot renew --quiet \
+		SUDO_ENV=""; \
+		if [ -n "$(ACME_CA_BUNDLE)" ]; then \
+			SUDO_ENV="REQUESTS_CA_BUNDLE=$(ACME_CA_BUNDLE)"; \
+		fi; \
+		sudo $$SUDO_ENV certbot renew --quiet $$RENEW_ARGS \
 			--config-dir docker/certs/letsencrypt \
 			--work-dir docker/certs/letsencrypt/work \
 			--logs-dir docker/certs/letsencrypt/logs; \
 	else \
-		docker run --rm --name certbot \
-			-v $$(pwd)/docker/certs/letsencrypt:/etc/letsencrypt \
-			-v $$(pwd)/public:/var/www/html \
-			certbot/certbot renew --quiet; \
+		DOCKER_ARGS="--rm --name certbot"; \
+		if [ "$$(id -u)" != "0" ]; then \
+			DOCKER_ARGS="$$DOCKER_ARGS --user $$(id -u):$$(id -g)"; \
+		fi; \
+		DOCKER_ARGS="$$DOCKER_ARGS -v $$(pwd)/docker/certs/letsencrypt:/etc/letsencrypt"; \
+		DOCKER_ARGS="$$DOCKER_ARGS -v $$(pwd)/public:/var/www/html"; \
+		if [ -n "$(ACME_CA_BUNDLE)" ]; then \
+			DOCKER_ARGS="$$DOCKER_ARGS --network host"; \
+			DOCKER_ARGS="$$DOCKER_ARGS -v $(ACME_CA_BUNDLE):/acme-ca.pem:ro"; \
+			DOCKER_ARGS="$$DOCKER_ARGS -e REQUESTS_CA_BUNDLE=/acme-ca.pem"; \
+		else \
+			PORT="$(HTTP_PORT)"; PORT="$${PORT:-80}"; \
+			DOCKER_ARGS="$$DOCKER_ARGS -p $$PORT:$$PORT"; \
+		fi; \
+		docker run $$DOCKER_ARGS certbot/certbot renew --quiet $$RENEW_ARGS \
+			--work-dir /etc/letsencrypt/work \
+			--logs-dir /etc/letsencrypt/logs; \
+	fi; \
+	if [ -d docker/certs/letsencrypt/live ]; then \
+		DOMAIN=""; \
+		if [ -f .env ] && grep -q "^DOMAIN=" .env; then \
+			DOMAIN=$$(grep "^DOMAIN=" .env | cut -d'=' -f2); \
+		fi; \
+		KEY=$$(ls docker/certs/letsencrypt/live/*/privkey.pem 2>/dev/null | head -1); \
+		if [ "$$(id -u)" = "0" ] || { [ -n "$$KEY" ] && [ -r "$$KEY" ]; }; then \
+			bash docker/certs/install-letsencrypt.sh $$DOMAIN >/dev/null || exit 1; \
+		else \
+			sudo bash docker/certs/install-letsencrypt.sh $$DOMAIN >/dev/null || exit 1; \
+		fi; \
 	fi; \
 	CERT_AFTER=""; \
 	if [ -f docker/certs/nginx/cert.crt ]; then \
@@ -4733,10 +4793,12 @@ ssl-renew: ## Renew Let's Encrypt certificate and reload all SSL services
 	fi; \
 	if [ "$$CERT_CHANGED" = "true" ]; then \
 		echo -e "\033[0;32m✓ Certificate renewed! Reloading services...\033[0m"; \
-		$(MAKE) --silent ssl-reload-services; \
+		make --silent ssl-reload-services; \
 	else \
 		echo -e "\033[0;33mNo certificates were renewed (not due yet).\033[0m"; \
 	fi
+	@# ^ literal make: recipe lines containing the recursive-make variable
+	@# execute even under -n; the dry-run BATS tests need -n to stay inert
 
 ssl-reload-services: ## Reload all SSL-dependent services after certificate renewal
 	@echo -e "\033[0;33mReloading SSL-dependent services...\033[0m"

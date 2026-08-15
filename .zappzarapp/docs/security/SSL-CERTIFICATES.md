@@ -71,12 +71,48 @@ make ssl-renew         # Renew certificate
 make ssl-prod-enable   # Generate production nginx config
 ```
 
+The setup issues the certificate via certbot (local install or Docker fallback)
+and installs a copy as `docker/certs/nginx/cert.{crt,key}` — the directory the
+nginx container bind mounts. A copy is required because nginx only mounts
+`nginx/`; files under `letsencrypt/live/<domain>/` are not visible inside the
+container. `make ssl-renew` re-runs the install step after each renewal and
+reloads the SSL services when the certificate changed, so a single cron entry
+covers the whole renewal:
+
+```bash
+0 0 * * * cd /path/to/project && make ssl-renew >> /var/log/ssl-renew.log 2>&1
+```
+
+### Staging and ACME Test Servers
+
+`ssl-letsencrypt` accepts variables for non-interactive use and alternative ACME
+environments:
+
+```bash
+# Let's Encrypt staging (relaxed rate limits, not browser-trusted) - use this
+# to validate a new deployment before requesting the production certificate
+make ssl-letsencrypt DOMAIN=example.com EMAIL=admin@example.com STAGING=1
+
+# Local ACME test server (Pebble), no public domain required
+make ssl-letsencrypt DOMAIN=test.example EMAIL=admin@test.example \
+    ACME_SERVER=https://localhost:14000/dir \
+    ACME_CA_BUNDLE=/path/to/pebble.minica.pem HTTP_PORT=5002
+```
+
+The Pebble end-to-end flow is covered by the opt-in BATS suite
+`tests/bats/integration/letsencrypt-e2e.bats` (`BATS_ENABLE_ACME_E2E=true`); the
+certificate install logic is covered by
+`tests/bats/integration/letsencrypt.bats`.
+
 ### Custom Certificates
 
 Override certificate paths in `.env` or `.env.production`:
 
 ```bash
-CERT_PATH_NGINX=/etc/letsencrypt/live/example.com
+# Directory must contain cert.crt and cert.key as regular files (nginx
+# mounts it as /etc/nginx/certs; symlink targets outside the directory do
+# not resolve inside the container)
+CERT_PATH_NGINX=/etc/ssl/my-certs
 CERT_PATH_INTERNAL=/etc/ssl/internal
 ```
 
@@ -96,6 +132,7 @@ docker/certs/
 │   └── ca.crt             # CA copy for easy mounting
 ├── generate-ca.sh
 ├── generate-internal.sh
+├── install-letsencrypt.sh # Installs the LE cert into nginx/ (setup + renew)
 └── setup-letsencrypt.sh
 ```
 

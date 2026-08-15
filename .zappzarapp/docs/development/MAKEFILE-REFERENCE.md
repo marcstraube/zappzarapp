@@ -886,6 +886,14 @@ make restart
 make ssl-letsencrypt  # Follow prompts for domain/email
 make ssl-prod-enable
 ZAPPZARAPP_ENV=production make build && make up
+
+# Optional variables for ssl-letsencrypt (non-interactive / testing):
+#   DOMAIN=, EMAIL=      Skip the prompts
+#   STAGING=1            Use the Let's Encrypt staging environment
+#   ACME_SERVER=<url>    Custom ACME directory (e.g. a local Pebble)
+#   ACME_CA_BUNDLE=<pem> CA bundle to verify the ACME server's TLS cert
+#   HTTP_PORT=<n>        Standalone HTTP-01 challenge port (default 80)
+make ssl-letsencrypt DOMAIN=example.com EMAIL=admin@example.com STAGING=1
 ```
 
 ### Supported OS for ssl-trust-ca
