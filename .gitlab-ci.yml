@@ -208,6 +208,10 @@ php:quality:
 # ============================================================================
 # PHP TESTS
 # ============================================================================
+# Coverage runs inside the test job and is gated by make coverage-check-php,
+# mirroring the GitHub php-tests job (no separate coverage job - that would
+# re-run the whole suite). clover feeds the gate, cobertura the GitLab MR
+# diff-coverage view, --coverage-text the `coverage:` keyword.
 php:unit-tests:
   <<: *docker-setup
   stage: test
@@ -220,33 +224,15 @@ php:unit-tests:
     - sleep 5
     - docker compose exec -T php composer install --no-progress --no-interaction
     - timeout 30 sh -c 'until docker compose exec -T postgres pg_isready -U app; do sleep 1; done'
-    - docker compose exec -T php composer test
+    - docker compose exec -T php sh -c 'XDEBUG_MODE=coverage vendor/bin/phpunit --coverage-clover build/coverage/php/clover.xml --coverage-cobertura build/coverage/php/cobertura.xml --coverage-text'
+    - make coverage-check-php
   coverage: '/^\s*Lines:\s*\d+.\d+\%/'
   artifacts:
     reports:
-      junit: build/phpunit-report.xml
       coverage_report:
         coverage_format: cobertura
-        path: build/coverage/cobertura.xml
+        path: build/coverage/php/cobertura.xml
     when: always
-
-php:coverage:
-  <<: *docker-setup
-  stage: test
-  needs: []
-  rules:
-    - if: '$CI_COMMIT_BRANCH == "master" || $CI_COMMIT_BRANCH == "develop"'
-      changes: *php-paths
-  script:
-    - !reference [.buildx-php, script]
-    - docker compose --profile postgres up -d php postgres
-    - sleep 5
-    - docker compose exec -T php composer install --no-progress --no-interaction
-    - docker compose exec -T php sh -c 'XDEBUG_MODE=coverage vendor/bin/phpunit --coverage-html build/coverage --coverage-clover build/coverage/clover.xml'
-  artifacts:
-    paths:
-      - build/coverage/
-    expire_in: 30 days
 
 # ============================================================================
 # NODE.JS QUALITY CHECKS
@@ -292,6 +278,8 @@ docs:lint:
 # ============================================================================
 # NODE.JS TESTS
 # ============================================================================
+# Mirrors the GitHub node-tests job: plain test run on every pipeline, the
+# coverage run (gated by the vitest thresholds) only on master.
 node:tests:
   <<: *docker-setup
   stage: test
@@ -305,21 +293,13 @@ node:tests:
     - docker compose exec -T node pnpm install
     - timeout 30 sh -c 'until docker compose exec -T redis redis-cli --tls --insecure ping; do sleep 1; done'
     - docker compose exec -T node pnpm test
-  coverage: '/All files\s*\|\s*(\d+\.?\d*)\s*\|/'
-  artifacts:
-    reports:
-      junit: build/vitest-report.xml
-      coverage_report:
-        coverage_format: cobertura
-        path: build/coverage/cobertura-coverage.xml
-    when: always
 
 node:coverage:
   <<: *docker-setup
   stage: test
   needs: []
   rules:
-    - if: '$CI_COMMIT_BRANCH == "master" || $CI_COMMIT_BRANCH == "develop"'
+    - if: '$CI_COMMIT_BRANCH == "master"'
       changes: *node-paths
   script:
     - !reference [.buildx-node, script]
@@ -327,6 +307,7 @@ node:coverage:
     - sleep 5
     - docker compose exec -T node pnpm install
     - docker compose exec -T node pnpm test:coverage
+  coverage: '/All files\s*\|\s*(\d+\.?\d*)\s*\|/'
   artifacts:
     paths:
       - build/coverage/
