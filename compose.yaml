@@ -216,11 +216,9 @@ services:
       - LOG_LEVEL=${LOG_LEVEL:-info}
       - LOG_FORMAT=${LOG_FORMAT:-json}
       - CORS_ORIGINS=${CORS_ORIGINS:-}
-      # DevToolbar switch. The guard's environment gate reads APP_ENV/ENV (the
-      # package's generic conventions), NOT ZAPPZARAPP_ENV - so this explicit
-      # switch is what controls the toolbar here, and it takes precedence over
-      # the gate. The committed .env enables it for development;
-      # compose.production.yaml pins it off.
+      # DevToolbar switch - overrides the guard's environment gate (which
+      # reads ZAPPZARAPP_ENV/APP_ENV/ENV). The committed .env enables it for
+      # development; compose.production.yaml pins it off.
       - ENABLE_DEV_TOOLBAR=${ENABLE_DEV_TOOLBAR:-false}
       # DevDashboard (/_dev) opt-out for development; production never serves
       # it (dev-only routing in public/index.php + early return in
