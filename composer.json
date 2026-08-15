@@ -33,7 +33,7 @@
     "symfony/mailer": "^8.0",
     "twig/twig": "^3.0",
     "zappzarapp/audit-logger": "^1.1.0",
-    "zappzarapp/devtoolbar": "^1.0.0",
+    "zappzarapp/devtoolbar": "^1.1.0",
     "zappzarapp/security": "^1.0.0"
   },
   "require-dev": {
