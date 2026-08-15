@@ -72,8 +72,11 @@ RUN apk add --no-cache \
     # Dependencies for amqp (Extension - RabbitMQ)
     rabbitmq-c \
     rabbitmq-c-dev \
+    # Dependencies for ffi (Extension - opt-in libvips image processing)
+    libffi \
+    libffi-dev \
     # Compilation and installation of extensions
-    && docker-php-ext-install exif intl zip pdo_pgsql pdo_mysql soap bcmath sockets pcntl \
+    && docker-php-ext-install exif intl zip pdo_pgsql pdo_mysql soap bcmath sockets pcntl ffi \
     # OPcache is built into PHP >= 8.5; only compile it where it still ships
     # as a buildable shared extension (PHP <= 8.4)
     && { php -r "exit(extension_loaded('Zend OPcache') ? 0 : 1);" \
@@ -120,6 +123,11 @@ RUN apk upgrade --no-cache && \
     postgresql-libs \
     libxml2 \
     rabbitmq-c \
+    # ffi runtime + libvips for the opt-in image-processing path (ADR 0011):
+    # the php-vips binding talks to libvips through FFI, no compiled
+    # extension needed; ffi.enable stays off until the user opts in
+    libffi \
+    vips \
     tzdata
 
 # Remove auto-generated extension INIs from base PHP image (we use our own)
@@ -141,6 +149,7 @@ COPY --from=php-builder /usr/local/lib/php/extensions/ /usr/local/lib/php/extens
 COPY --chmod=0644 docker/php/conf.d/amqp.ini /usr/local/etc/php/conf.d/
 COPY --chmod=0644 docker/php/conf.d/bcmath.ini /usr/local/etc/php/conf.d/
 COPY --chmod=0644 docker/php/conf.d/exif.ini /usr/local/etc/php/conf.d/
+COPY --chmod=0644 docker/php/conf.d/ffi.ini /usr/local/etc/php/conf.d/
 COPY --chmod=0644 docker/php/conf.d/gd.ini /usr/local/etc/php/conf.d/
 COPY --chmod=0644 docker/php/conf.d/gmagick.ini /usr/local/etc/php/conf.d/
 COPY --chmod=0644 docker/php/conf.d/intl.ini /usr/local/etc/php/conf.d/

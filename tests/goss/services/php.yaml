@@ -31,6 +31,12 @@ file:
     exists: true
   /usr/local/etc/php/conf.d/redis.ini:
     exists: true
+  /usr/local/etc/php/conf.d/ffi.ini:
+    exists: true
+
+  # libvips runtime for the opt-in php-vips FFI binding (ADR 0011)
+  /usr/lib/libvips.so.42:
+    exists: true
 
   # Entrypoint
   /entrypoint.production.sh:
@@ -67,6 +73,14 @@ command:
       - "gd"
       - "intl"
       - "zip"
+      - "FFI"
+
+  # FFI is loaded but disabled by default (opt-in libvips path, ADR 0011)
+  php -i | grep 'ffi.enable':
+    exit-status: 0
+    timeout: 5000
+    stdout:
+      - "/ffi.enable => Off/"
 
   # Composer autoload works
   php -r "require '/var/www/html/vendor/autoload.php'; echo 'OK';":
