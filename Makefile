@@ -130,7 +130,11 @@ composer-install: secrets ssl-ensure ## Install Composer dependencies (Docker - 
 		docker run --rm -v "$(PWD):/app" -w /app $(ALPINE_IMAGE) sh -c \
 			"rm -rf composer.lock && echo '{}' > composer.lock && chown $${USER_ID:-1000}:$${GROUP_ID:-1000} composer.lock"; \
 	fi
-	@XDEBUG_MODE=off $(DC_RUN) run --rm --no-TTY php composer install --prefer-dist --no-interaction
+	@# --no-deps: without it compose also creates the depends_on services -
+	@# on a freshly reset tree their single-file bind mounts (pnpm-lock.yaml)
+	@# do not exist yet, and the daemon bakes them into the container as
+	@# root-owned directories that break every later start of that container
+	@XDEBUG_MODE=off $(DC_RUN) run --rm --no-deps --no-TTY php composer install --prefer-dist --no-interaction
 	@echo -e "\033[0;32mDependencies installed!\033[0m"
 
 composer-install-local: ## Install/update Composer dependencies (Local - IDE code completion only)
@@ -150,7 +154,7 @@ composer-install-local: ## Install/update Composer dependencies (Local - IDE cod
 
 composer-sync: ## Sync Composer dependencies (after composer.json changes)
 	@echo -e "\033[0;33mSyncing Composer dependencies...\033[0m"
-	@XDEBUG_MODE=off $(DC_RUN) run --rm --no-TTY php composer install --prefer-dist --no-interaction
+	@XDEBUG_MODE=off $(DC_RUN) run --rm --no-deps --no-TTY php composer install --prefer-dist --no-interaction
 	@echo -e "\033[0;32mDependencies synced!\033[0m"
 
 lockfiles-sync: ## Sync both Composer and pnpm lockfiles (after branch switch, fresh clone)
@@ -1368,7 +1372,7 @@ up: secrets ssl-ensure ## Start containers (optionally specify service names: ma
 			$(DC) -f compose.yaml -f compose.production.yaml $$PROFILES up -d; \
 		else \
 			$(DC) $$PROFILES up -d; \
-		fi; \
+		fi || { echo -e "\033[0;31mError: not all containers started - check 'docker compose ps -a' and container logs\033[0m"; exit 1; }; \
 		echo -e "\033[0;32mContainers started!\033[0m"; \
 		echo -e "\033[0;34mNginx is running at http://localhost:$${NGINX_PORT:-8080}\033[0m"; \
 	fi
@@ -1873,14 +1877,16 @@ pnpm-install: secrets ssl-ensure ## Install Node.js dependencies (Docker - guara
 	@# In CI (compose.ci.yaml), lockfile is not mounted so always use normal install
 	@# Docker bind mounts don't support atomic rename (EBUSY error when pnpm writes lockfile)
 	@# Solution: When generating lockfile, run in temp location and copy back
+	@# --no-deps: keeps compose from creating depends_on services whose
+	@# single-file bind mounts may not exist yet on a freshly reset tree
 	@if echo "$${COMPOSE_FILE:-}" | grep -q "compose.ci.yaml"; then \
 		echo -e "\033[0;33m  CI mode: lockfile not mounted, generating inside container...\033[0m"; \
-		$(DC_RUN) run --rm --no-TTY --user root --entrypoint "" -e CI=true node pnpm install; \
+		$(DC_RUN) run --rm --no-deps --no-TTY --user root --entrypoint "" -e CI=true node pnpm install; \
 	elif [ -s pnpm-lock.yaml ]; then \
-		$(DC_RUN) run --rm --no-TTY --user root --entrypoint "" -e CI=true node pnpm install --frozen-lockfile; \
+		$(DC_RUN) run --rm --no-deps --no-TTY --user root --entrypoint "" -e CI=true node pnpm install --frozen-lockfile; \
 	else \
 		echo -e "\033[0;33m  No valid lockfile found, generating...\033[0m"; \
-		$(DC_RUN) run --rm --no-TTY --user root --entrypoint "" -e CI=true node sh -c ' \
+		$(DC_RUN) run --rm --no-deps --no-TTY --user root --entrypoint "" -e CI=true node sh -c ' \
 			mkdir -p /tmp/pnpm-install/src/node/backend /tmp/pnpm-install/src/node/frontend && \
 			cp /app/package.json /tmp/pnpm-install/ && \
 			cp /app/pnpm-workspace.yaml /tmp/pnpm-install/ && \

@@ -114,7 +114,7 @@ wait_for_containers() {
     # In development vendor/ lives in the php_vendor named volume, not on the
     # host - verify inside the container view (compose run enables the
     # service's profile automatically, no running containers needed)
-    run timeout 120 docker compose run --rm --no-TTY php sh -c 'test -f vendor/autoload.php'
+    run timeout 120 docker compose run --rm --no-deps --no-TTY php sh -c 'test -f vendor/autoload.php'
     assert_success
 }
 
@@ -126,7 +126,7 @@ wait_for_containers() {
 @test "[Phase 2] Verify: node_modules/.pnpm/ exists in the node container" {
     # In development node_modules/ lives in a named volume, not on the host -
     # verify inside the container view
-    run timeout 120 docker compose run --rm --no-TTY --entrypoint "" node sh -c 'test -d node_modules/.pnpm'
+    run timeout 120 docker compose run --rm --no-deps --no-TTY --entrypoint "" node sh -c 'test -d node_modules/.pnpm'
     assert_success
 }
 
