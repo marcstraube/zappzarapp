@@ -7,6 +7,7 @@
 
 # Opt-in / gated suites
 ^Destructive tests disabled
+^ACME E2E tests disabled
 ^ZAP scan integration test - run manually
 ^Long-running test - requires full production build
 

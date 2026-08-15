@@ -56,7 +56,9 @@
             "#img\\.shields\\.io/badge/#",
             "#[\\w.-]+/[\\w.-]+@[0-9a-f]{40}#",
             "#ES_URL/#",
-            "#allowed-skips\\.txt#"
+            "#allowed-skips\\.txt#",
+            "#ghcr\\.io/letsencrypt/#",
+            "#\\$\\{PROJECT_ROOT\\}/docker/certs/#"
           ]
         },
         "config": {

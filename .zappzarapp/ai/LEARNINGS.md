@@ -1751,7 +1751,83 @@ as an explicit decision, not silently changed.
 
 ---
 
+## Let's Encrypt / ACME Testing
+
+### The LE symlink install was doubly dead - copies are the only thing bind mounts can serve (2026-08-15)
+
+- `setup-letsencrypt.sh` symlinked `docker/certs/cert.{crt,key}` →
+  `letsencrypt/live/<domain>/…`, but nginx bind-mounts only
+  `docker/certs/nginx/` — the symlinks were outside the mount and never read.
+  Moving them inside would not have helped either: a symlink inside a bind mount
+  resolves against the CONTAINER tree, and `letsencrypt/` is not mounted. The
+  `ssl-renew` fingerprint check on `nginx/cert.crt` was always correct — nothing
+  ever wrote to the checked path. Fix: an install step
+  (`install-letsencrypt.sh`) that copies fullchain/privkey into `nginx/` on
+  setup and after every renewal; the copy is what makes the renewal check and
+  the reload trigger work.
+- The old ACL (`u:101:r`) targeted the wrong uid — Alpine nginx runs 100:101
+  (`generate-internal.sh` had it right). The Docker renew branch also never
+  published a port, so standalone renewals could not have answered HTTP-01.
+
+### Run the certbot container as the invoking user, not root (2026-08-15)
+
+- `docker run certbot/certbot` as root writes a root-owned `letsencrypt/` tree
+  into the checkout; every later file operation (install step, cleanup, tests)
+  then needs sudo — which the BATS image does not have. Running with
+  `--user "$(id -u):$(id -g)"` plus `--work-dir/--logs-dir` under the mounted
+  config dir (the in-container defaults `/var/lib`, `/var/log` are root-owned)
+  makes the whole flow sudo-free; pre-create the mount so Docker does not create
+  it root-owned. Ports: bridge networking allows port 80 for container non-root
+  (`ip_unprivileged_port_start=0`); under `--network host` the HOST sysctl
+  applies — the Pebble tests use port 5002 for that reason.
+
+### Pebble E2E gotchas (2026-08-15)
+
+- `pebble-challtestsrv` binds its own challenge responders by default (HTTP-01
+  on :5002 — exactly where Pebble validates); when certbot serves the challenge
+  itself, start it DNS-only: `-http01 "" -https01 "" -tlsalpn01 ""`.
+- Pebble deliberately rejects a percentage of valid nonces to exercise client
+  retry logic; certbot's renew path does not always retry — deterministic tests
+  need `PEBBLE_WFE_NONCEREJECT=0` (issuance worked, renewal flaked without it).
+- The ghcr.io Pebble/challtestsrv images ship the binary as entrypoint: pass
+  flags only, not `pebble -config …` (silent usage-dump exit otherwise). The
+  ACME TLS trust anchor lives in the image at `/test/certs/pebble.minica.pem`
+  (`docker cp` it out, feed to certbot via `REQUESTS_CA_BUNDLE`).
+
+### The recursive-make -n trap struck again - and left root-owned artifacts (2026-08-15)
+
+- `ssl-renew` contained `$(MAKE) --silent ssl-reload-services` inside its single
+  continuation-joined shell block → the whole recipe executed under `make -n`,
+  so the "dry-run" BATS test started a REAL certbot container on every suite
+  run. `certbot renew` with no renewal configs exits 0 and scaffolds
+  `renewal-hooks/` etc. in the mounted config dir — that is where the mysterious
+  root-owned `docker/certs/letsencrypt/` tree kept coming from (Docker creates
+  the missing mount point as root, certbot fills it).
+- Fixes: literal `make` in the recipe line (the k8s-build pattern — and the
+  variable must not appear anywhere in the joined block, not even in a comment)
+  plus an early-out before certbot when `letsencrypt/renewal/*.conf` is absent.
+  Diagnosis hook: directory mtimes matched the BATS run times exactly.
+  Root-owned leftovers on a bind mount can be removed without sudo via the image
+  that created them:
+  `docker run --rm -v "$(pwd)/docker/certs:/c" --entrypoint rm certbot/certbot -rf /c/letsencrypt`.
+
+### BATS image is BusyBox + ACL-mask display (2026-08-15)
+
+- BusyBox `find` has no `-printf` and fails silently under `2>/dev/null` — use a
+  glob (`for d in "$dir"/*/`) for portable directory enumeration in scripts that
+  must run in the BATS image.
+- After `chmod 600` + `setfacl -m u:100:r`, `stat -c %a` reports 640: the ACL
+  mask is displayed in the group bits. Assert on `getfacl` entries
+  (`user:100:r--`, `other::---`), not on the numeric mode.
+
+---
+
 ## Last Updated
+
+2026-08-15 (added: LE symlink install doubly dead → copy via install script;
+certbot container as invoking user; recursive-make -n trap in ssl-renew left
+root-owned letsencrypt/ artifacts; Pebble challtestsrv port collision +
+NONCEREJECT; BusyBox find/ACL-mask test gotchas)
 
 2026-08-12 (added: chart-wide non-root — securityContext lagged the unprivileged
 images, cap adds inert for non-root; nginx port-80/`/var/run` symlink-mount
