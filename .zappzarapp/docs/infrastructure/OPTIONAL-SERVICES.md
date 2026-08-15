@@ -728,6 +728,45 @@ routing, guaranteed delivery, or enterprise requirements.
 
 ---
 
+## libvips Image Processing (Opt-In)
+
+Not a compose service, but an optional capability of the PHP image: the default
+image-processing extension is gmagick (GraphicsMagick), and the image
+additionally ships the libvips runtime plus the FFI extension with
+`ffi.enable=false` — prepared but disabled. libvips is a fast, streaming
+image-processing library; its PHP binding `php-vips` talks to it through FFI, so
+it needs no PECL compile step. See ADR 0011 for the strategy.
+
+### Activation
+
+```bash
+# 1. Enable FFI in docker/php/conf.d/ffi.ini:
+#      ffi.enable=true
+
+# 2. Rebuild the PHP image
+make build
+
+# 3. Add the binding to your project
+make composer CMD="require jcupitt/vips"
+```
+
+```php
+use Jcupitt\Vips\Image;
+
+$image = Image::newFromFile('input.jpg');
+$image->resize(0.5)->writeToFile('output.jpg');
+```
+
+Opting in is a conscious security trade: full runtime FFI allows arbitrary
+native calls from PHP, which sidesteps PHP-level hardening such as
+`disable_functions`. PHP's contained mode (`ffi.enable=preload`, bindings fixed
+via `opcache.preload`) does NOT work with php-vips — it builds its bindings at
+runtime via `FFI::cdef`. That containment gap is also why libvips stays opt-in
+instead of becoming the default (see ADR 0011). gmagick remains available
+regardless; the two coexist.
+
+---
+
 ## Troubleshooting
 
 ### Service not starting
