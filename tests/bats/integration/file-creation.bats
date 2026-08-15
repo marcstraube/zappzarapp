@@ -24,80 +24,60 @@ teardown_file() {
 
 # =============================================================================
 # Composer Dependencies
+#
+# vendor/ and node_modules/ are verified through the CONTAINER view: in
+# development they live in named volumes (host paths stay empty), in CI they
+# are bind mounts - the container view is authoritative in both. Never touch
+# the HOST vendor/ here: it holds the captainhook binary the git hooks run
+# from (and composer-install would not repopulate it in development anyway).
 # =============================================================================
 
-@test "make composer-install creates vendor/" {
+@test "make composer-install populates the php vendor volume" {
     require_php
 
-    # Clean via Docker to handle cross-UID ownership issues in CI
-    # Host rm -rf can fail silently if files are owned by container UID
-    docker run --rm -v "$(pwd):/app" -w /app alpine:3.21 rm -rf /app/vendor 2>/dev/null || true
+    # Empty the vendor volume inside the container view, then reinstall
+    docker compose run --rm --no-deps --no-TTY php sh -c \
+        'rm -rf vendor/* vendor/.[!.]*' 2>/dev/null || true
 
     run timeout 300 make composer-install
     assert_success
-
-    [[ -d "vendor" ]]
 }
 
-@test "make composer-install creates vendor/autoload.php" {
+@test "Verify: vendor contents in the php container" {
     require_php
-    [[ -f "vendor/autoload.php" ]]
-}
-
-@test "make composer-install creates vendor/composer/" {
-    require_php
-    [[ -d "vendor/composer" ]]
-}
-
-@test "make composer-install creates vendor/bin/" {
-    require_php
-    [[ -d "vendor/bin" ]]
-}
-
-@test "make composer-install creates vendor/bin/php-cs-fixer" {
-    require_php
-    # Check that the symlink exists and points to a valid target
-    [[ -e "vendor/bin/php-cs-fixer" ]] || {
-        echo "vendor/bin/php-cs-fixer does not exist or is a broken symlink"
-        ls -la vendor/bin/ 2>/dev/null || echo "vendor/bin/ is empty or doesn't exist"
-        false
-    }
-}
-
-@test "make composer-install creates vendor/bin/phpstan" {
-    require_php
-    [[ -e "vendor/bin/phpstan" ]]
-}
-
-@test "make composer-install creates vendor/bin/phpunit" {
-    require_php
-    [[ -e "vendor/bin/phpunit" ]]
+    run timeout 120 docker compose run --rm --no-deps --no-TTY php sh -c '
+        set -e
+        test -f vendor/autoload.php
+        test -d vendor/composer
+        test -d vendor/bin
+        test -e vendor/bin/php-cs-fixer
+        test -e vendor/bin/phpstan
+        test -e vendor/bin/phpunit'
+    assert_success
 }
 
 # =============================================================================
 # Node Dependencies
 # =============================================================================
 
-@test "make pnpm-install creates node_modules/" {
+@test "make pnpm-install populates the node_modules volumes" {
     require_node
 
-    # Clean via Docker to handle cross-UID ownership issues in CI
-    docker run --rm -v "$(pwd):/app" -w /app alpine:3.21 rm -rf /app/node_modules 2>/dev/null || true
+    # Empty the node_modules volume inside the container view, then reinstall
+    docker compose run --rm --no-deps --no-TTY --user root --entrypoint "" node sh -c \
+        'rm -rf node_modules/* node_modules/.[!.]*' 2>/dev/null || true
 
     run timeout 300 make pnpm-install
     assert_success
-
-    [[ -d "node_modules" ]]
 }
 
-@test "make pnpm-install creates node_modules/.pnpm/" {
+@test "Verify: node_modules contents in the node container" {
     require_node
-    [[ -d "node_modules/.pnpm" ]]
-}
-
-@test "make pnpm-install creates node_modules/.modules.yaml" {
-    require_node
-    [[ -f "node_modules/.modules.yaml" ]]
+    run timeout 120 docker compose run --rm --no-deps --no-TTY --entrypoint "" node sh -c '
+        set -e
+        test -d node_modules/.pnpm
+        test -f node_modules/.modules.yaml'
+    assert_success
 }
 
 # =============================================================================

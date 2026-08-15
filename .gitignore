@@ -85,6 +85,9 @@ Thumbs.db
 # Backups (encrypted database dumps)
 /backups/
 
+# Plain database dump from make postgres-dump / postgres-restore
+/dump.sql
+
 # Docker Secrets (sensitive data - never commit!)
 # Actual secrets are ignored in secrets/.gitignore, but example files are kept
 /secrets/*.txt

@@ -157,16 +157,14 @@ run_with_timeout() {
     timeout "$timeout" "$@"
 }
 
-# Check if dependencies are installed
+# Check if dependencies are installed.
+# vendor/ and node_modules/ live in named volumes in development (host paths
+# stay empty there), so the container view is authoritative - checked via
+# exec, which the integration suites can rely on (they require running
+# containers anyway).
 dependencies_installed() {
-    # Check PHP vendor
-    if [[ ! -d "vendor" ]] || [[ ! -f "vendor/autoload.php" ]]; then
-        return 1
-    fi
-    # Check Node modules
-    if [[ ! -d "node_modules" ]] || [[ ! -d "node_modules/.pnpm" ]]; then
-        return 1
-    fi
+    docker compose exec -T php sh -c 'test -f vendor/autoload.php' 2>/dev/null || return 1
+    docker compose exec -T node sh -c 'test -d node_modules/.pnpm' 2>/dev/null || return 1
     return 0
 }
 

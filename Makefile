@@ -835,11 +835,11 @@ clean: ## Remove containers, networks and dangling images (keeps data volumes)
 	@echo -e "\033[0;32mCleanup completed!\033[0m"
 
 composer: ## Execute Composer command (e.g. make composer CMD="require --dev vendor/package")
-	@XDEBUG_MODE=off $(DC_RUN) run --rm --no-TTY php composer $(CMD)
+	@XDEBUG_MODE=off $(DC_RUN) run --rm --no-deps --no-TTY php composer $(CMD)
 
 composer-update: ## Update Composer dependencies (updates composer.lock on host, vendor stays in container)
 	@echo -e "\033[0;33mUpdating Composer dependencies...\033[0m"
-	@XDEBUG_MODE=off $(DC_RUN) run --rm --no-TTY php composer update
+	@XDEBUG_MODE=off $(DC_RUN) run --rm --no-deps --no-TTY php composer update
 	@echo -e "\033[0;32mDependencies updated!\033[0m"
 
 down: ## Stop containers (optionally specify service names: make down php nginx)
@@ -1116,7 +1116,7 @@ pnpm: ## Execute pnpm command (e.g. make pnpm CMD="add -D vue")
 	@# in a temp workspace and copy the results back. pnpm-workspace.yaml must be
 	@# present because pnpm 11 reads overrides/allowBuilds/auditConfig from it -
 	@# which means the workspace package dirs it lists must exist there too.
-	@$(DC_RUN) run --rm --no-TTY node sh -c ' \
+	@$(DC_RUN) run --rm --no-deps --no-TTY node sh -c ' \
 		rm -rf /tmp/pnpm-cmd && \
 		mkdir -p /tmp/pnpm-cmd/src/node/backend /tmp/pnpm-cmd/src/node/frontend && \
 		cp /app/package.json /tmp/pnpm-cmd/package.json && \
@@ -1904,7 +1904,7 @@ pnpm-update: ## Update Node.js dependencies (updates pnpm-lock.yaml on host)
 	@# Docker bind mounts don't support atomic rename (EBUSY error)
 	@# Solution: Run pnpm with lock file in temp location, then copy back
 	@# Must include workspace files for pnpm to resolve all packages
-	@$(DC_RUN) run --rm --no-TTY --user root --entrypoint "" -e CI=true node sh -c ' \
+	@$(DC_RUN) run --rm --no-deps --no-TTY --user root --entrypoint "" -e CI=true node sh -c ' \
 		mkdir -p /tmp/pnpm-update/src/node/backend /tmp/pnpm-update/src/node/frontend && \
 		cp /app/package.json /tmp/pnpm-update/package.json && \
 		cp /app/pnpm-workspace.yaml /tmp/pnpm-update/pnpm-workspace.yaml && \
@@ -1934,7 +1934,7 @@ pnpm-sync: ## Sync Node.js dependencies (after package.json changes, e.g., front
 	@# writes the lockfile), so resolve in a temp location and copy back via cat.
 	@# --no-frozen-lockfile overrides the frozen default that CI=true implies;
 	@# unlike pnpm-update this does not upgrade dependencies within their ranges.
-	@$(DC_RUN) run --rm --no-TTY --user root --entrypoint "" -e CI=true node sh -c ' \
+	@$(DC_RUN) run --rm --no-deps --no-TTY --user root --entrypoint "" -e CI=true node sh -c ' \
 		mkdir -p /tmp/pnpm-sync/src/node/backend /tmp/pnpm-sync/src/node/frontend && \
 		cp /app/package.json /tmp/pnpm-sync/package.json && \
 		cp /app/pnpm-workspace.yaml /tmp/pnpm-sync/pnpm-workspace.yaml && \
@@ -1950,7 +1950,7 @@ pnpm-sync: ## Sync Node.js dependencies (after package.json changes, e.g., front
 pnpm-upgrade: ## Upgrade pnpm package manager to latest version
 	@echo -e "\033[0;33mUpgrading pnpm to latest version...\033[0m"
 	@CURRENT=$$(grep -o '"pnpm@[^"]*"' package.json | tr -d '"') && \
-	$(DC_RUN) run --rm --no-TTY node sh -c ' \
+	$(DC_RUN) run --rm --no-deps --no-TTY node sh -c ' \
 		LATEST=$$(npm view pnpm version) && \
 		npm pkg set packageManager=pnpm@$$LATEST \
 	' && \
@@ -1994,7 +1994,7 @@ node-frontend-clean: ## Remove existing frontend (keeps package.json placeholder
 	fi
 	@echo -e "\033[0;33mCleaning frontend directory...\033[0m"
 	@# Run inside container to handle root-owned files (.nuxt/, .next/, etc.)
-	@$(DC_RUN) run --rm --no-TTY --user root --entrypoint "" node sh -c ' \
+	@$(DC_RUN) run --rm --no-deps --no-TTY --user root --entrypoint "" node sh -c ' \
 		cd /app/src/node/frontend && \
 		find . -mindepth 1 ! -name "package.json" -exec rm -rf {} + 2>/dev/null || true'
 	@# Also clean host-side files not visible to container (e.g., node_modules shadowed by volume)
@@ -2017,7 +2017,7 @@ node-frontend-clean: ## Remove existing frontend (keeps package.json placeholder
 
 node-frontend-nuxt: node-frontend-clean ## Scaffold Nuxt 3 frontend (interactive)
 	@echo -e "\033[0;33mScaffolding Nuxt 3 frontend...\033[0m"
-	@$(DC_RUN) run --rm -it node sh -c '\
+	@$(DC_RUN) run --rm --no-deps -it node sh -c '\
 		cd /app/src/node/frontend && \
 		pnpm dlx nuxi@latest init . --packageManager pnpm --gitInit false --no-install && \
 		sh /app/docker/node/frontend-patches/nuxt.post-install.sh .'
@@ -2025,7 +2025,7 @@ node-frontend-nuxt: node-frontend-clean ## Scaffold Nuxt 3 frontend (interactive
 
 node-frontend-next: node-frontend-clean ## Scaffold Next.js frontend (interactive)
 	@echo -e "\033[0;33mScaffolding Next.js frontend...\033[0m"
-	@$(DC_RUN) run --rm -it node sh -c '\
+	@$(DC_RUN) run --rm --no-deps -it node sh -c '\
 		cd /app/src/node/frontend && \
 		pnpm dlx create-next-app@latest . --use-pnpm --skip-install && \
 		sh /app/docker/node/frontend-patches/next.post-install.sh .'
@@ -2033,7 +2033,7 @@ node-frontend-next: node-frontend-clean ## Scaffold Next.js frontend (interactiv
 
 node-frontend-remix: node-frontend-clean ## Scaffold React Router frontend (formerly Remix v2)
 	@echo -e "\033[0;33mScaffolding React Router frontend...\033[0m"
-	@$(DC_RUN) run --rm -it node sh -c '\
+	@$(DC_RUN) run --rm --no-deps -it node sh -c '\
 		TEMP_DIR=$$(mktemp -d) && \
 		cd "$$TEMP_DIR" && \
 		pnpm dlx create-react-router@latest frontend --no-install && \
@@ -2045,7 +2045,7 @@ node-frontend-remix: node-frontend-clean ## Scaffold React Router frontend (form
 
 node-frontend-sveltekit: node-frontend-clean ## Scaffold SvelteKit frontend (interactive)
 	@echo -e "\033[0;33mScaffolding SvelteKit frontend...\033[0m"
-	@$(DC_RUN) run --rm -it node sh -c '\
+	@$(DC_RUN) run --rm --no-deps -it node sh -c '\
 		TEMP_DIR=$$(mktemp -d) && \
 		cd "$$TEMP_DIR" && \
 		pnpm dlx sv create frontend --template minimal --types ts --no-add-ons --no-install && \
@@ -2059,7 +2059,7 @@ node-build: ## Executes the frontend build inside the Node container
 	@echo -e "\033[0;33mExecuting frontend build...\033[0m"
 	@# Clean Vite temp directory to avoid cross-UID permission issues in CI
 	@rm -rf node_modules/.vite-temp 2>/dev/null || true
-	@$(DC_RUN) run --rm node pnpm run build
+	@$(DC_RUN) run --rm --no-deps node pnpm run build
 
 node-up: ## Starts the Node service alongside the standard stack (Uses the default 'assets' target)
 	@echo -e "\033[0;33mStarting Node service (assets target)...\033[0m"
@@ -3207,7 +3207,7 @@ lint-node-fix: ## Fix ESLint issues automatically (ARGS="path/to/file.ts" for sp
 
 lint-shell: ## Lint shell scripts with ShellCheck
 	@echo -e "\033[0;33mLinting shell scripts (ShellCheck)...\033[0m"
-	@SHELL_FILES=$$(find docker -name "*.sh" -type f 2>/dev/null; find tests/bats -name "*.bash" -type f 2>/dev/null); \
+	@SHELL_FILES=$$(find docker -name "*.sh" -type f 2>/dev/null; find tests/bats \( -name "*.bash" -o -name "*.sh" \) -type f 2>/dev/null); \
 	if [ -n "$$SHELL_FILES" ]; then \
 		docker run --rm -v "$(PWD):/mnt:ro" -w /mnt koalaman/shellcheck:stable \
 			--severity=warning --color=always $$SHELL_FILES \
@@ -3338,7 +3338,7 @@ test-php: ## Run PHPUnit tests (ARGS="--filter testName" for specific tests)
 	@if docker compose ps -q php 2>/dev/null | grep -q .; then \
 		docker compose exec php composer test -- $(ARGS); \
 	else \
-		docker compose run --rm php composer test -- $(ARGS); \
+		docker compose run --rm --no-deps php composer test -- $(ARGS); \
 	fi
 
 test-php-debug: ## Run PHPUnit tests with Xdebug enabled
@@ -3346,7 +3346,7 @@ test-php-debug: ## Run PHPUnit tests with Xdebug enabled
 	@if docker compose ps -q php 2>/dev/null | grep -q .; then \
 		docker compose exec php sh -c 'XDEBUG_MODE=develop,debug composer test'; \
 	else \
-		docker compose run --rm php sh -c 'XDEBUG_MODE=develop,debug composer test'; \
+		docker compose run --rm --no-deps php sh -c 'XDEBUG_MODE=develop,debug composer test'; \
 	fi
 
 test-coverage-php: ## Generate PHPUnit coverage report (ARGS="--filter testName" for specific tests)
@@ -3354,7 +3354,7 @@ test-coverage-php: ## Generate PHPUnit coverage report (ARGS="--filter testName"
 	@if docker compose ps -q php 2>/dev/null | grep -q .; then \
 		docker compose exec php sh -c 'XDEBUG_MODE=coverage vendor/bin/phpunit --coverage-html build/coverage/php --coverage-clover build/coverage/php/clover.xml $(ARGS)'; \
 	else \
-		docker compose run --rm php sh -c 'XDEBUG_MODE=coverage vendor/bin/phpunit --coverage-html build/coverage/php --coverage-clover build/coverage/php/clover.xml $(ARGS)'; \
+		docker compose run --rm --no-deps php sh -c 'XDEBUG_MODE=coverage vendor/bin/phpunit --coverage-html build/coverage/php --coverage-clover build/coverage/php/clover.xml $(ARGS)'; \
 	fi
 	@echo -e "\033[0;32mPHP coverage report generated in build/coverage/php/index.html!\033[0m"
 
@@ -3672,7 +3672,11 @@ bats-test-integration: ## Run BATS integration tests (requires running container
 	@echo -e "\033[0;34mNote: This requires containers to be running (make up)\033[0m"
 	@# In CI: use root (can delete files created by containers)
 	@# Locally: use host user UID/GID (preserves file ownership)
-	@if [ -n "$${CI:-}" ]; then \
+	@# Log via mktemp in /tmp: destructive runs wipe build/ mid-run.
+	@# Skip budget: unexpected skips report "ok" but hide missing coverage.
+	@set -o pipefail; \
+	LOG="$$(mktemp)"; \
+	if [ -n "$${CI:-}" ]; then \
 		docker run --rm \
 			-v /var/run/docker.sock:/var/run/docker.sock \
 			-v "$(PWD):$(PWD)" \
@@ -3681,7 +3685,7 @@ bats-test-integration: ## Run BATS integration tests (requires running container
 			--user root \
 			-e INTEGRATION_PRESET=$(INTEGRATION_PRESET) \
 			$${COMPOSE_FILE:+-e COMPOSE_FILE=$$COMPOSE_FILE} \
-			$(BATS_IMAGE) tests/bats/integration/; \
+			$(BATS_IMAGE) tests/bats/integration/ | tee "$$LOG"; \
 	else \
 		docker run --rm \
 			-v /var/run/docker.sock:/var/run/docker.sock \
@@ -3692,8 +3696,12 @@ bats-test-integration: ## Run BATS integration tests (requires running container
 			--group-add "$$(stat -c %g /var/run/docker.sock)" \
 			-e INTEGRATION_PRESET=$(INTEGRATION_PRESET) \
 			$${COMPOSE_FILE:+-e COMPOSE_FILE=$$COMPOSE_FILE} \
-			$(BATS_IMAGE) tests/bats/integration/; \
-	fi
+			$(BATS_IMAGE) tests/bats/integration/ | tee "$$LOG"; \
+	fi; \
+	RC=$$?; \
+	./tests/bats/check-skips.sh "$$LOG" || RC=1; \
+	rm -f "$$LOG"; \
+	exit $$RC
 	@echo -e "\033[0;32m✓ BATS integration tests complete\033[0m"
 
 bats-test-integration-file: ## Run specific BATS integration test file (FILE=lint.bats)
@@ -3703,7 +3711,11 @@ bats-test-integration-file: ## Run specific BATS integration test file (FILE=lin
 	fi
 	@# In CI: use root (can delete files created by containers)
 	@# Locally: use host user UID/GID (preserves file ownership)
-	@if [ -n "$${CI:-}" ]; then \
+	@# Log via mktemp in /tmp: destructive runs wipe build/ mid-run.
+	@# Skip budget: unexpected skips report "ok" but hide missing coverage.
+	@set -o pipefail; \
+	LOG="$$(mktemp)"; \
+	if [ -n "$${CI:-}" ]; then \
 		docker run --rm \
 			-v /var/run/docker.sock:/var/run/docker.sock \
 			-v "$(PWD):$(PWD)" \
@@ -3713,7 +3725,7 @@ bats-test-integration-file: ## Run specific BATS integration test file (FILE=lin
 			-e INTEGRATION_PRESET=$(INTEGRATION_PRESET) \
 			-e BATS_ENABLE_DESTRUCTIVE=$(BATS_ENABLE_DESTRUCTIVE) \
 			$${COMPOSE_FILE:+-e COMPOSE_FILE=$$COMPOSE_FILE} \
-			$(BATS_IMAGE) "tests/bats/integration/$(FILE)"; \
+			$(BATS_IMAGE) "tests/bats/integration/$(FILE)" | tee "$$LOG"; \
 	else \
 		docker run --rm \
 			-v /var/run/docker.sock:/var/run/docker.sock \
@@ -3725,8 +3737,12 @@ bats-test-integration-file: ## Run specific BATS integration test file (FILE=lin
 			-e INTEGRATION_PRESET=$(INTEGRATION_PRESET) \
 			-e BATS_ENABLE_DESTRUCTIVE=$(BATS_ENABLE_DESTRUCTIVE) \
 			$${COMPOSE_FILE:+-e COMPOSE_FILE=$$COMPOSE_FILE} \
-			$(BATS_IMAGE) "tests/bats/integration/$(FILE)"; \
-	fi
+			$(BATS_IMAGE) "tests/bats/integration/$(FILE)" | tee "$$LOG"; \
+	fi; \
+	RC=$$?; \
+	./tests/bats/check-skips.sh "$$LOG" || RC=1; \
+	rm -f "$$LOG"; \
+	exit $$RC
 
 bats-test-all: ## Run all BATS tests (unit + integration)
 	@echo -e "\033[0;33mRunning all BATS tests...\033[0m"
@@ -3748,7 +3764,11 @@ bats-test-destructive: ## Run BATS destructive tests (⚠️ WARNING: modifies d
 	fi
 	@# In CI: use root (can delete files created by containers)
 	@# Locally: use host user UID/GID (preserves file ownership)
-	@if [ -n "$${CI:-}" ]; then \
+	@# Log via mktemp in /tmp: the destructive run wipes build/ mid-run.
+	@# Skip budget: unexpected skips report "ok" but hide missing coverage.
+	@set -o pipefail; \
+	LOG="$$(mktemp)"; \
+	if [ -n "$${CI:-}" ]; then \
 		docker run --rm \
 			-v /var/run/docker.sock:/var/run/docker.sock \
 			-v "$(PWD):$(PWD)" \
@@ -3757,7 +3777,7 @@ bats-test-destructive: ## Run BATS destructive tests (⚠️ WARNING: modifies d
 			--user root \
 			-e BATS_ENABLE_DESTRUCTIVE=true \
 			$${COMPOSE_FILE:+-e COMPOSE_FILE=$$COMPOSE_FILE} \
-			$(BATS_IMAGE) tests/bats/integration/destructive.bats; \
+			$(BATS_IMAGE) tests/bats/integration/destructive.bats | tee "$$LOG"; \
 	else \
 		docker run --rm \
 			-v /var/run/docker.sock:/var/run/docker.sock \
@@ -3768,8 +3788,12 @@ bats-test-destructive: ## Run BATS destructive tests (⚠️ WARNING: modifies d
 			--group-add "$$(stat -c %g /var/run/docker.sock)" \
 			-e BATS_ENABLE_DESTRUCTIVE=true \
 			$${COMPOSE_FILE:+-e COMPOSE_FILE=$$COMPOSE_FILE} \
-			$(BATS_IMAGE) tests/bats/integration/destructive.bats; \
-	fi
+			$(BATS_IMAGE) tests/bats/integration/destructive.bats | tee "$$LOG"; \
+	fi; \
+	RC=$$?; \
+	./tests/bats/check-skips.sh "$$LOG" || RC=1; \
+	rm -f "$$LOG"; \
+	exit $$RC
 
 deps-validate: ## Validate dependency lockfiles (composer.lock, pnpm-lock.yaml)
 	@echo -e "\033[0;33mValidating Composer configuration...\033[0m"
@@ -4288,16 +4312,8 @@ security-zap-full: ## Comprehensive ZAP scan of ALL services (start-full -> scan
 
 PHPDOC_VERSION := 3.9.1
 PHPDOC_URL := https://github.com/phpDocumentor/phpDocumentor/releases/download/v$(PHPDOC_VERSION)/phpDocumentor.phar
-PHPDOC_PHAR := tools/phpdoc.phar
 
 docs: docs-php docs-node ## Generate all API documentation (PHP + Node)
-
-$(PHPDOC_PHAR):
-	@echo -e "\033[0;33mDownloading phpDocumentor v$(PHPDOC_VERSION)...\033[0m"
-	@mkdir -p tools
-	@curl -L $(PHPDOC_URL) -o $(PHPDOC_PHAR)
-	@chmod +x $(PHPDOC_PHAR)
-	@echo -e "\033[0;32mphpDocumentor downloaded to $(PHPDOC_PHAR)\033[0m"
 
 docs-php: ## Generate PHP API documentation using phpDocumentor
 	@echo -e "\033[0;33mEnsuring phpDocumentor is available...\033[0m"
@@ -4306,7 +4322,7 @@ docs-php: ## Generate PHP API documentation using phpDocumentor
 	@# directory that www-data cannot write to. The trailing chown hands tools/
 	@# back to www-data (remapped to the host UID), so host-side cleanup
 	@# (docs-clean: rm -rf tools/) keeps working.
-	@docker compose exec -u root php sh -c 'mkdir -p tools && { [ -f tools/phpdoc.phar ] || (curl -fsSL "https://github.com/phpDocumentor/phpDocumentor/releases/download/v$(PHPDOC_VERSION)/phpDocumentor.phar" -o tools/phpdoc.phar && chmod +x tools/phpdoc.phar && echo "phpDocumentor v$(PHPDOC_VERSION) downloaded"); } && chown -R www-data:www-data tools'
+	@docker compose exec -u root php sh -c 'mkdir -p tools && { [ -f tools/phpdoc.phar ] || (curl -fsSL "$(PHPDOC_URL)" -o tools/phpdoc.phar && chmod +x tools/phpdoc.phar && echo "phpDocumentor v$(PHPDOC_VERSION) downloaded"); } && chown -R www-data:www-data tools'
 	@echo -e "\033[0;33mGenerating PHP API documentation...\033[0m"
 	@# Ensure output directory exists with proper permissions (cross-UID in CI)
 	@mkdir -p docs/api/php build/tmp && chmod 777 docs/api docs/api/php 2>/dev/null || true
@@ -4351,14 +4367,14 @@ docs-node-backend: ## Generate Node.js Backend API documentation using TypeDoc
 	@# keeps a stale index.html. Removing as root always succeeds.
 	@docker run --rm -v "$$(pwd)/docs:/docs" $(ALPINE_IMAGE) sh -c 'rm -rf /docs/api/node-backend/* /docs/api/node-backend/.[!.]* 2>/dev/null || true'
 	@touch build/tmp/.docs-node-backend.stamp
-	@$(DC_RUN) run --rm node pnpm run docs:backend
+	@$(DC_RUN) run --rm --no-deps node pnpm run docs:backend
 	@# TypeDoc can report success without having written - verify freshness
 	@if [ ! docs/api/node-backend/index.html -nt build/tmp/.docs-node-backend.stamp ]; then \
 		echo -e "\033[0;31mError: docs/api/node-backend/index.html was not regenerated\033[0m"; \
 		exit 1; \
 	fi
 	@echo -e "\033[0;33mSetting dynamic title...\033[0m"
-	@$(DC_RUN) run --rm node sh -c '\
+	@$(DC_RUN) run --rm --no-deps node sh -c '\
 		set -e; \
 		PROJECT_NAME=$$(node -e "console.log(require(\"/app/package.json\").name.split(\"/\").pop().replace(/^./, c => c.toUpperCase()))"); \
 		PROJECT_VERSION=$$(node -e "console.log(require(\"/app/package.json\").version || \"0.0.0\")"); \
@@ -4376,13 +4392,13 @@ docs-node-frontend: ## Generate Node.js Frontend documentation using TypeDoc
 		mkdir -p docs/api/node-frontend build/tmp && chmod 777 docs/api docs/api/node-frontend 2>/dev/null || true; \
 		docker run --rm -v "$$(pwd)/docs:/docs" $(ALPINE_IMAGE) sh -c 'rm -rf /docs/api/node-frontend/* /docs/api/node-frontend/.[!.]* 2>/dev/null || true'; \
 		touch build/tmp/.docs-node-frontend.stamp; \
-		$(DC_RUN) run --rm node pnpm run docs:frontend; \
+		$(DC_RUN) run --rm --no-deps node pnpm run docs:frontend; \
 		if [ ! docs/api/node-frontend/index.html -nt build/tmp/.docs-node-frontend.stamp ]; then \
 			echo -e "\033[0;31mError: docs/api/node-frontend/index.html was not regenerated\033[0m"; \
 			exit 1; \
 		fi; \
 		echo -e "\033[0;33mSetting dynamic title...\033[0m"; \
-		$(DC_RUN) run --rm node sh -c '\
+		$(DC_RUN) run --rm --no-deps node sh -c '\
 			set -e; \
 			PROJECT_NAME=$$(node -e "console.log(require(\"/app/package.json\").name.split(\"/\").pop().replace(/^./, c => c.toUpperCase()))"); \
 			PROJECT_VERSION=$$(node -e "console.log(require(\"/app/package.json\").version || \"0.0.0\")"); \
