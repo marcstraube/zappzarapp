@@ -665,6 +665,10 @@ jobs:
 
       - name: Run BATS integration tests
         run: make bats-test-integration
+        env:
+          # Opt-in ACME end-to-end suite (Pebble): issuance + renewal
+          # through the real ACME protocol, ~1 min extra
+          BATS_ENABLE_ACME_E2E: "true"
 
       - name: Cleanup
         if: always()
