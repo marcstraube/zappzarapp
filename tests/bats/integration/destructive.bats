@@ -34,21 +34,24 @@ setup() {
 # Helper Functions
 # =============================================================================
 
-# Wait for containers to be healthy (max wait time in seconds)
+# Wait for the php container to be running (max wait time in seconds).
+# The later phases (docs, redis) need php specifically - other services come
+# up earlier, so any-container-running is not a sufficient signal and lets
+# the php-dependent tests skip on a cold start.
 wait_for_containers() {
     local max_wait="${1:-120}"
     local elapsed=0
-    echo "# Waiting for containers to be healthy (max ${max_wait}s)..." >&3
+    echo "# Waiting for the php container to be running (max ${max_wait}s)..." >&3
     while [[ $elapsed -lt $max_wait ]]; do
-        # Check for any running container from this project (node-backend is always present)
-        if docker compose ps --status running 2>/dev/null | grep -qE "(node-backend|nginx|php)"; then
-            echo "# Containers healthy after ${elapsed}s" >&3
+        if docker compose ps --status running 2>/dev/null | grep -q "php"; then
+            echo "# php running after ${elapsed}s" >&3
             return 0
         fi
         sleep 5
         elapsed=$((elapsed + 5))
     done
-    echo "# Warning: Containers not fully healthy after ${max_wait}s" >&3
+    echo "# Warning: php container not running after ${max_wait}s" >&3
+    docker compose ps 2>/dev/null | sed 's/^/# /' >&3 || true
     return 1
 }
 
