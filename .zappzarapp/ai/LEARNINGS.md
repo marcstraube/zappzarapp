@@ -184,6 +184,28 @@ periodic triage (`/optimize --learnings`) and are removed from this file.
   every call, so wiring IT directly into `up` would rotate the CA on every
   start.
 
+### compose run without --no-deps creates half-mounted sibling containers (2026-08-15)
+
+- `docker compose run <svc>` also CREATES the depends_on services of `<svc>`
+  (when their profiles are active, as with the Makefile's DC_RUN). On a freshly
+  reset tree this trips the missing-bind-mount trap one level deeper:
+  `make composer-install` created the node container while `pnpm-lock.yaml` did
+  not exist yet — the daemon made the source a root-owned directory AND baked a
+  directory mount target into the container filesystem. After the lockfile was
+  fixed to a file, every restart of that container failed with "not a
+  directory", and php + nginx sat in "Created" forever waiting on it via
+  depends_on. Symptom chain is misleading: the failing service is not the one
+  you invoked, and the error only appears at the NEXT `up`.
+- Fix shipped: install/sync targets and the destructive-suite verify calls run
+  with `--no-deps` (installs need no sibling services). Any new `compose run`
+  call site should default to `--no-deps` unless it provably needs the
+  dependencies.
+- Second bug found on the way: `make up` chained `compose up -d` with `;` into
+  the success echo, so a partial startup failure was invisible (exit 0,
+  "Containers started!"). The up target now fails loudly. Diagnosis gotcha:
+  plain `docker compose ps` hides exited/created containers — always use `ps -a`
+  when hunting for services that "never came up".
+
 ### The destructive suite reverts its own uncommitted test edits (2026-08-14)
 
 - `make reset-full` runs
@@ -212,7 +234,9 @@ periodic triage (`/optimize --learnings`) and are removed from this file.
   `vendor/composer/platform_check.php` demands the container-only PHP extensions
   (redis, sockets, sodium) and crashes every hook run on the host.
 - After any reset, verify the hooks are armed again: `ls vendor/bin/captainhook`
-  or watch for the `[pre-commit] captainhook missing` skip notice.
+  or watch for the `[pre-commit] captainhook missing` skip notice. `make reset`
+  and `make reset-full` print a disarmed-hooks warning with the restore command
+  when the binary is gone (`_reset-hooks-hint`).
 
 ### Compose file secrets hard-abort on a missing source file (2026-08-14)
 

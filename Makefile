@@ -118,7 +118,10 @@ help: ## Show this help (FILTER=? for categories, FILTER=<name> to filter)
 
 ##@ Setup
 
-composer-install: ## Install Composer dependencies (Docker - guaranteed consistency)
+# secrets/ssl-ensure preflights: `run --rm php` creates the container with its
+# cert/secret bind mounts - missing source files would become root-owned
+# directory stubs on the host (e.g. right after a factory reset)
+composer-install: secrets ssl-ensure ## Install Composer dependencies (Docker - guaranteed consistency)
 	@echo -e "\033[0;33mInstalling Composer dependencies (Docker)...\033[0m"
 	@# Fix bind mount bug: if lockfile is directory or has wrong ownership, fix via Docker
 	@# Note: Use USER_ID/GROUP_ID from .env (not host user) for Docker container compatibility
@@ -127,7 +130,11 @@ composer-install: ## Install Composer dependencies (Docker - guaranteed consiste
 		docker run --rm -v "$(PWD):/app" -w /app $(ALPINE_IMAGE) sh -c \
 			"rm -rf composer.lock && echo '{}' > composer.lock && chown $${USER_ID:-1000}:$${GROUP_ID:-1000} composer.lock"; \
 	fi
-	@XDEBUG_MODE=off $(DC_RUN) run --rm --no-TTY php composer install --prefer-dist --no-interaction
+	@# --no-deps: without it compose also creates the depends_on services -
+	@# on a freshly reset tree their single-file bind mounts (pnpm-lock.yaml)
+	@# do not exist yet, and the daemon bakes them into the container as
+	@# root-owned directories that break every later start of that container
+	@XDEBUG_MODE=off $(DC_RUN) run --rm --no-deps --no-TTY php composer install --prefer-dist --no-interaction
 	@echo -e "\033[0;32mDependencies installed!\033[0m"
 
 composer-install-local: ## Install/update Composer dependencies (Local - IDE code completion only)
@@ -147,7 +154,7 @@ composer-install-local: ## Install/update Composer dependencies (Local - IDE cod
 
 composer-sync: ## Sync Composer dependencies (after composer.json changes)
 	@echo -e "\033[0;33mSyncing Composer dependencies...\033[0m"
-	@XDEBUG_MODE=off $(DC_RUN) run --rm --no-TTY php composer install --prefer-dist --no-interaction
+	@XDEBUG_MODE=off $(DC_RUN) run --rm --no-deps --no-TTY php composer install --prefer-dist --no-interaction
 	@echo -e "\033[0;32mDependencies synced!\033[0m"
 
 lockfiles-sync: ## Sync both Composer and pnpm lockfiles (after branch switch, fresh clone)
@@ -1365,7 +1372,7 @@ up: secrets ssl-ensure ## Start containers (optionally specify service names: ma
 			$(DC) -f compose.yaml -f compose.production.yaml $$PROFILES up -d; \
 		else \
 			$(DC) $$PROFILES up -d; \
-		fi; \
+		fi || { echo -e "\033[0;31mError: not all containers started - check 'docker compose ps -a' and container logs\033[0m"; exit 1; }; \
 		echo -e "\033[0;32mContainers started!\033[0m"; \
 		echo -e "\033[0;34mNginx is running at http://localhost:$${NGINX_PORT:-8080}\033[0m"; \
 	fi
@@ -1854,7 +1861,10 @@ node-frontend-start: ## Start Node frontend framework production server
 	@echo -e "\033[0;33mStarting Node frontend framework production server...\033[0m"
 	@docker compose exec node pnpm run frontend:start
 
-pnpm-install: ## Install Node.js dependencies (Docker - guaranteed consistency)
+# secrets/ssl-ensure preflights: `run --rm node` creates the container with its
+# cert/secret bind mounts - missing source files would become root-owned
+# directory stubs on the host (e.g. right after a factory reset)
+pnpm-install: secrets ssl-ensure ## Install Node.js dependencies (Docker - guaranteed consistency)
 	@echo -e "\033[0;33mInstalling Node.js dependencies (Docker)...\033[0m"
 	@# Fix bind mount bug: if lockfile is directory or missing, fix via Docker
 	@# Note: Use USER_ID/GROUP_ID from .env (not host user) for Docker container compatibility
@@ -1867,14 +1877,16 @@ pnpm-install: ## Install Node.js dependencies (Docker - guaranteed consistency)
 	@# In CI (compose.ci.yaml), lockfile is not mounted so always use normal install
 	@# Docker bind mounts don't support atomic rename (EBUSY error when pnpm writes lockfile)
 	@# Solution: When generating lockfile, run in temp location and copy back
+	@# --no-deps: keeps compose from creating depends_on services whose
+	@# single-file bind mounts may not exist yet on a freshly reset tree
 	@if echo "$${COMPOSE_FILE:-}" | grep -q "compose.ci.yaml"; then \
 		echo -e "\033[0;33m  CI mode: lockfile not mounted, generating inside container...\033[0m"; \
-		$(DC_RUN) run --rm --no-TTY --user root --entrypoint "" -e CI=true node pnpm install; \
+		$(DC_RUN) run --rm --no-deps --no-TTY --user root --entrypoint "" -e CI=true node pnpm install; \
 	elif [ -s pnpm-lock.yaml ]; then \
-		$(DC_RUN) run --rm --no-TTY --user root --entrypoint "" -e CI=true node pnpm install --frozen-lockfile; \
+		$(DC_RUN) run --rm --no-deps --no-TTY --user root --entrypoint "" -e CI=true node pnpm install --frozen-lockfile; \
 	else \
 		echo -e "\033[0;33m  No valid lockfile found, generating...\033[0m"; \
-		$(DC_RUN) run --rm --no-TTY --user root --entrypoint "" -e CI=true node sh -c ' \
+		$(DC_RUN) run --rm --no-deps --no-TTY --user root --entrypoint "" -e CI=true node sh -c ' \
 			mkdir -p /tmp/pnpm-install/src/node/backend /tmp/pnpm-install/src/node/frontend && \
 			cp /app/package.json /tmp/pnpm-install/ && \
 			cp /app/pnpm-workspace.yaml /tmp/pnpm-install/ && \
@@ -2708,6 +2720,18 @@ _reset-core:
 		docker builder prune -af 2>/dev/null || true; \
 	fi
 
+# Internal target: warn when installed git hooks lost their captainhook binary.
+# The hooks run from HOST vendor/bin/captainhook and silently skip when it is
+# missing - after a reset every commit would run hook-less (no secret blocking,
+# no lint) until the host vendor/ is restored.
+_reset-hooks-hint:
+	@if [ -f .git/hooks/pre-commit ] && [ ! -f vendor/bin/captainhook ]; then \
+		echo ""; \
+		echo -e "\033[0;33m⚠  Git hooks are disarmed: vendor/bin/captainhook was removed with vendor/.\033[0m"; \
+		echo -e "\033[0;33m   Commits will run WITHOUT hooks (no secret blocking, no lint) until restored.\033[0m"; \
+		echo -e "\033[0;36m   Restore with: make composer-install-local\033[0m"; \
+	fi
+
 reset: ## Reset Docker and generated files (keeps secrets/certs)
 	@echo -e "\033[0;33m╔══════════════════════════════════════════════════════════════════╗\033[0m"
 	@echo -e "\033[0;33m║  RESET - Remove Docker resources and generated files             ║\033[0m"
@@ -2735,6 +2759,7 @@ reset: ## Reset Docker and generated files (keeps secrets/certs)
 	@echo ""
 	@echo -e "\033[0;32m✓ Factory reset complete!\033[0m"
 	@echo -e "\033[0;36mTo start fresh, run: make setup && make up\033[0m"
+	@$(MAKE) --silent _reset-hooks-hint
 
 reset-full: ## Full factory reset - removes EVERYTHING including secrets (DANGEROUS!)
 	@echo -e "\033[0;31m╔══════════════════════════════════════════════════════════════════╗\033[0m"
@@ -2780,6 +2805,7 @@ reset-full: ## Full factory reset - removes EVERYTHING including secrets (DANGER
 	@rm -f .zappzarapp/ai/AGENTS.md 2>/dev/null || true
 	@rm -f .zappzarapp/ai/context-project.md 2>/dev/null || true
 	@echo -e "\033[0;32m✓ Full factory reset complete! Project is now in boilerplate state.\033[0m"
+	@$(MAKE) --silent _reset-hooks-hint
 
 # =============================================================================
 # Boilerplate Sync - Update infrastructure from zappzarapp upstream
@@ -4275,8 +4301,12 @@ $(PHPDOC_PHAR):
 
 docs-php: ## Generate PHP API documentation using phpDocumentor
 	@echo -e "\033[0;33mEnsuring phpDocumentor is available...\033[0m"
-	@# Download phpdoc.phar inside PHP container if not present (run as root for bind mount permissions)
-	@docker compose exec -u root php sh -c '[ -f tools/phpdoc.phar ] || (mkdir -p tools && curl -fsSL "https://github.com/phpDocumentor/phpDocumentor/releases/download/v$(PHPDOC_VERSION)/phpDocumentor.phar" -o tools/phpdoc.phar && chmod +x tools/phpdoc.phar && echo "phpDocumentor v$(PHPDOC_VERSION) downloaded")'
+	@# Download phpdoc.phar inside the PHP container. Runs as root because a
+	@# container start on a tree without tools/ leaves a root-owned bind-mount
+	@# directory that www-data cannot write to. The trailing chown hands tools/
+	@# back to www-data (remapped to the host UID), so host-side cleanup
+	@# (docs-clean: rm -rf tools/) keeps working.
+	@docker compose exec -u root php sh -c 'mkdir -p tools && { [ -f tools/phpdoc.phar ] || (curl -fsSL "https://github.com/phpDocumentor/phpDocumentor/releases/download/v$(PHPDOC_VERSION)/phpDocumentor.phar" -o tools/phpdoc.phar && chmod +x tools/phpdoc.phar && echo "phpDocumentor v$(PHPDOC_VERSION) downloaded"); } && chown -R www-data:www-data tools'
 	@echo -e "\033[0;33mGenerating PHP API documentation...\033[0m"
 	@# Ensure output directory exists with proper permissions (cross-UID in CI)
 	@mkdir -p docs/api/php build/tmp && chmod 777 docs/api docs/api/php 2>/dev/null || true
