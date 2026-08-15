@@ -28,6 +28,13 @@ make up                 # 4. Start containers
 and installs from it. Use `make pnpm-update` only when you want to upgrade
 dependency versions within their ranges.
 
+Each scaffold also generates `tests/goss/services/node-frontend.framework.yaml`
+— a GOSS check that pins the framework's build output (e.g. Nuxt's `.output/`).
+The `test-framework` image stage validates it together with the
+framework-agnostic base spec, so a production framework image whose build
+silently produced nothing fails at build time. Commit the file with the
+scaffold; `make node-frontend-clean` removes it.
+
 ## Switching Frameworks
 
 To remove an existing frontend and scaffold a different one:

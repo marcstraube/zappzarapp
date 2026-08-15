@@ -242,8 +242,10 @@ USER root
 # Copy GOSS binary from centralized image
 COPY --from=goss --chmod=0755 /usr/bin/goss /usr/local/bin/goss
 
-# Copy test specification
-COPY tests/goss/services/node-frontend.yaml /goss.yaml
+# Copy test specifications: the framework-agnostic base spec plus the
+# scaffold-generated framework output check when present (the glob also
+# matches on the bare boilerplate, where only the base spec exists)
+COPY tests/goss/services/node-frontend*.yaml /goss/
 
 # Run GOSS tests (fails build if tests fail)
-RUN goss -g /goss.yaml validate --format documentation
+RUN for spec in /goss/*.yaml; do goss -g "$spec" validate --format documentation || exit 1; done

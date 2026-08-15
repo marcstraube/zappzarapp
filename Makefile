@@ -1999,6 +1999,9 @@ node-frontend-clean: ## Remove existing frontend (keeps package.json placeholder
 		find . -mindepth 1 ! -name "package.json" -exec rm -rf {} + 2>/dev/null || true'
 	@# Also clean host-side files not visible to container (e.g., node_modules shadowed by volume)
 	@find $(FRONTEND_DIR) -mindepth 1 ! -name 'package.json' -exec rm -rf {} + 2>/dev/null || true
+	@# Remove the scaffold-generated GOSS framework check (the next scaffold
+	@# regenerates it; the base spec alone must pass on the bare boilerplate)
+	@rm -f tests/goss/services/node-frontend.framework.yaml
 	@# Warn if host node_modules still exists (root-owned, needs manual cleanup)
 	@if [ -d "$(FRONTEND_DIR)/node_modules" ]; then \
 		echo -e "\033[0;33m⚠️  Warning: $(FRONTEND_DIR)/node_modules could not be deleted (likely root-owned).\033[0m"; \
