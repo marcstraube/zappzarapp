@@ -1,0 +1,47 @@
+# Allowed BATS skip reasons (extended regex, one pattern per line).
+# check-skips.sh matches every "# skip" reason in a suite log against these
+# patterns; anything unmatched fails the run. Deliberately NOT listed are the
+# symptom skips ("... not running", "... not created", "Dependencies not
+# installed") - those report a broken environment as "ok" and silently erode
+# coverage, which is exactly what the budget exists to catch.
+
+# Opt-in / gated suites
+^Destructive tests disabled
+^ZAP scan integration test - run manually
+^Long-running test - requires full production build
+
+# Test-runner environment constraints
+^Requires interactive terminal for confirmation$
+^Requires host Docker execution
+^Git dubious ownership issue in test environment$
+^CI mode: lockfile not bind-mounted$
+
+# Optional host tooling
+^Local composer not installed$
+^Local pnpm not installed$
+^Trivy not available$
+
+# Optional services (ENABLE_* defaults to false) - the core services
+# (nginx, php, node, postgres, redis) are deliberately NOT listed
+^Service (adminer|elasticsearch|mailpit|meilisearch|pgadmin|rabbitmq) not running$
+
+# Repository / configuration dependent
+^Direct contributor setup - not a fork$
+^No zappzarapp upstream remote - test requires fork setup$
+^Not running in zappzarapp origin context$
+^Elasticsearch API key not configured
+^No TypeScript files found$
+^No frontend directory$
+^No host lockfile$
+^pino-pretty not in lockfile$
+
+# State dependent (both directions are legitimate)
+^\.env\.local exists - skipping creation test to avoid data loss$
+^\.env\.local not present
+^\.env\.local\.example not present$
+^\.env\.production not present$
+^Certificates already exist$
+
+# Informational audit results
+^Composer audit found vulnerabilities \(informational\)$
+^pnpm audit found vulnerabilities \(informational\)$

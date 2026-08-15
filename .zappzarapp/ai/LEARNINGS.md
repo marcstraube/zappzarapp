@@ -206,6 +206,25 @@ periodic triage (`/optimize --learnings`) and are removed from this file.
   plain `docker compose ps` hides exited/created containers — always use `ps -a`
   when hunting for services that "never came up".
 
+### BATS skips are findings - the skip budget makes them fail (2026-08-15)
+
+- A skipped bats test still reports `ok … # skip`, so suites look green while
+  their most interesting tests never run. This hid the factory-reset traps for
+  months, doubly masked: the vendor/node_modules host-path checks worked in CI
+  (bind mounts) but silently skipped in development (named volumes) — each
+  environment confirmed half the suite, none saw the whole. The
+  `dependencies_installed()` helper alone silently skipped 47
+  `require_dependencies` call sites across 8 suite files on dev machines.
+- Countermeasure shipped: the integration make targets pipe the bats output
+  through `tests/bats/check-skips.sh`, which fails the run on any skip reason
+  not matching `tests/bats/allowed-skips.txt` (config-dependent skips are
+  listed; symptom skips like "... not running"/"Dependencies not installed"
+  deliberately are not). Escape hatch: `SKIP_BUDGET=off`.
+- Implementation gotchas: preserve the bats exit code around the tee/check
+  pipeline (`set -o pipefail` + explicit RC, otherwise the check masks test
+  failures the same way `make up` once masked compose errors), and keep the log
+  in mktemp under /tmp — the destructive run wipes build/ mid-run.
+
 ### The destructive suite reverts its own uncommitted test edits (2026-08-14)
 
 - `make reset-full` runs

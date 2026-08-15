@@ -3207,7 +3207,7 @@ lint-node-fix: ## Fix ESLint issues automatically (ARGS="path/to/file.ts" for sp
 
 lint-shell: ## Lint shell scripts with ShellCheck
 	@echo -e "\033[0;33mLinting shell scripts (ShellCheck)...\033[0m"
-	@SHELL_FILES=$$(find docker -name "*.sh" -type f 2>/dev/null; find tests/bats -name "*.bash" -type f 2>/dev/null); \
+	@SHELL_FILES=$$(find docker -name "*.sh" -type f 2>/dev/null; find tests/bats \( -name "*.bash" -o -name "*.sh" \) -type f 2>/dev/null); \
 	if [ -n "$$SHELL_FILES" ]; then \
 		docker run --rm -v "$(PWD):/mnt:ro" -w /mnt koalaman/shellcheck:stable \
 			--severity=warning --color=always $$SHELL_FILES \
@@ -3685,7 +3685,7 @@ bats-test-integration: ## Run BATS integration tests (requires running container
 			--user root \
 			-e INTEGRATION_PRESET=$(INTEGRATION_PRESET) \
 			$${COMPOSE_FILE:+-e COMPOSE_FILE=$$COMPOSE_FILE} \
-			$(BATS_IMAGE) tests/bats/integration/; \
+			$(BATS_IMAGE) tests/bats/integration/ | tee "$$LOG"; \
 	else \
 		docker run --rm \
 			-v /var/run/docker.sock:/var/run/docker.sock \
@@ -3696,8 +3696,12 @@ bats-test-integration: ## Run BATS integration tests (requires running container
 			--group-add "$$(stat -c %g /var/run/docker.sock)" \
 			-e INTEGRATION_PRESET=$(INTEGRATION_PRESET) \
 			$${COMPOSE_FILE:+-e COMPOSE_FILE=$$COMPOSE_FILE} \
-			$(BATS_IMAGE) tests/bats/integration/; \
-	fi
+			$(BATS_IMAGE) tests/bats/integration/ | tee "$$LOG"; \
+	fi; \
+	RC=$$?; \
+	./tests/bats/check-skips.sh "$$LOG" || RC=1; \
+	rm -f "$$LOG"; \
+	exit $$RC
 	@echo -e "\033[0;32m✓ BATS integration tests complete\033[0m"
 
 bats-test-integration-file: ## Run specific BATS integration test file (FILE=lint.bats)
@@ -3721,7 +3725,7 @@ bats-test-integration-file: ## Run specific BATS integration test file (FILE=lin
 			-e INTEGRATION_PRESET=$(INTEGRATION_PRESET) \
 			-e BATS_ENABLE_DESTRUCTIVE=$(BATS_ENABLE_DESTRUCTIVE) \
 			$${COMPOSE_FILE:+-e COMPOSE_FILE=$$COMPOSE_FILE} \
-			$(BATS_IMAGE) "tests/bats/integration/$(FILE)"; \
+			$(BATS_IMAGE) "tests/bats/integration/$(FILE)" | tee "$$LOG"; \
 	else \
 		docker run --rm \
 			-v /var/run/docker.sock:/var/run/docker.sock \
@@ -3733,8 +3737,12 @@ bats-test-integration-file: ## Run specific BATS integration test file (FILE=lin
 			-e INTEGRATION_PRESET=$(INTEGRATION_PRESET) \
 			-e BATS_ENABLE_DESTRUCTIVE=$(BATS_ENABLE_DESTRUCTIVE) \
 			$${COMPOSE_FILE:+-e COMPOSE_FILE=$$COMPOSE_FILE} \
-			$(BATS_IMAGE) "tests/bats/integration/$(FILE)"; \
-	fi
+			$(BATS_IMAGE) "tests/bats/integration/$(FILE)" | tee "$$LOG"; \
+	fi; \
+	RC=$$?; \
+	./tests/bats/check-skips.sh "$$LOG" || RC=1; \
+	rm -f "$$LOG"; \
+	exit $$RC
 
 bats-test-all: ## Run all BATS tests (unit + integration)
 	@echo -e "\033[0;33mRunning all BATS tests...\033[0m"
@@ -3769,7 +3777,7 @@ bats-test-destructive: ## Run BATS destructive tests (⚠️ WARNING: modifies d
 			--user root \
 			-e BATS_ENABLE_DESTRUCTIVE=true \
 			$${COMPOSE_FILE:+-e COMPOSE_FILE=$$COMPOSE_FILE} \
-			$(BATS_IMAGE) tests/bats/integration/destructive.bats; \
+			$(BATS_IMAGE) tests/bats/integration/destructive.bats | tee "$$LOG"; \
 	else \
 		docker run --rm \
 			-v /var/run/docker.sock:/var/run/docker.sock \
@@ -3780,8 +3788,12 @@ bats-test-destructive: ## Run BATS destructive tests (⚠️ WARNING: modifies d
 			--group-add "$$(stat -c %g /var/run/docker.sock)" \
 			-e BATS_ENABLE_DESTRUCTIVE=true \
 			$${COMPOSE_FILE:+-e COMPOSE_FILE=$$COMPOSE_FILE} \
-			$(BATS_IMAGE) tests/bats/integration/destructive.bats; \
-	fi
+			$(BATS_IMAGE) tests/bats/integration/destructive.bats | tee "$$LOG"; \
+	fi; \
+	RC=$$?; \
+	./tests/bats/check-skips.sh "$$LOG" || RC=1; \
+	rm -f "$$LOG"; \
+	exit $$RC
 
 deps-validate: ## Validate dependency lockfiles (composer.lock, pnpm-lock.yaml)
 	@echo -e "\033[0;33mValidating Composer configuration...\033[0m"
