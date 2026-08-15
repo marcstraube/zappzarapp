@@ -35,8 +35,11 @@
     },
     {
       "customType": "regex",
-      "description": "Dockle pin in the GitHub security-scan workflow. Dockle is installed from the GitHub release tarball (DOCKLE_VERSION env) instead of the dockle-action container, whose Docker Hub pull repeatedly hit i/o timeouts - no built-in manager sees the version.",
-      "managerFilePatterns": ["/^\\.github/workflows/security-scan\\.yml$/"],
+      "description": "Dockle pin in the GitHub and GitLab security-scan pipelines. Dockle is installed from the GitHub release tarball (DOCKLE_VERSION variable) instead of the dockle-action container, whose Docker Hub pull repeatedly hit i/o timeouts - no built-in manager sees the version. The pinned DOCKLE_SHA256 next to each version must be bumped manually with the release checksum.",
+      "managerFilePatterns": [
+        "/^\\.github/workflows/security-scan\\.yml$/",
+        "/^\\.gitlab/security-scan\\.gitlab-ci\\.yml$/"
+      ],
       "matchStrings": ["DOCKLE_VERSION: \"(?<currentValue>[0-9.]+)\""],
       "depNameTemplate": "goodwithtech/dockle",
       "datasourceTemplate": "github-releases",

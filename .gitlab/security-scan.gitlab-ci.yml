@@ -35,6 +35,13 @@ variables:
   # dind-based image-scan jobs. Renovate tracks this via a regex customManager
   # on the github-releases datasource.
   TRIVY_VERSION: "0.73.0"
+  # Dockle is installed from the GitHub release tarball (same pin as the
+  # GitHub workflow, shared Renovate customManager). Rule-level ignores live
+  # in .dockleignore, which dockle reads from the working directory.
+  DOCKLE_VERSION: "0.4.15"
+  # sha256 of dockle_<version>_Linux-64bit.tar.gz from the release's
+  # dockle_<version>_checksums.txt - bump together with DOCKLE_VERSION
+  DOCKLE_SHA256: "8bfc9183d1d3d67800edb45bea4bb63ddf1d28bec5f89944075a07007d79caad"
 
 stages:
   - scan
@@ -67,13 +74,17 @@ stages:
       - pnpm-workspace.yaml
 
 # ==============================================================================
-# DOCKER IMAGE VULNERABILITY SCANS
+# DOCKER IMAGE VULNERABILITY & BEST-PRACTICES SCANS (Trivy + Dockle)
 # ==============================================================================
 # Mirrors the matrix in .github/workflows/security-scan.yml: build only
 # cross-image-COPY-free stages (dev/base/final/single-stage), so no
 # goss/node-backend bake context is needed. Single-stage Dockerfiles omit
 # SCAN_TARGET. All Dockerfiles are at docker/<image>/Dockerfile and COPY
 # repo-root-relative paths, so the build context is the repo root.
+# Dockle runs inside the same job (GitHub uses a separate dockle-scan job):
+# the image is already built in the job-local dind daemon, and a separate
+# GitLab job would rebuild all twelve images — compute minutes are the
+# scarce resource here.
 scan:image:
   <<: *docker-setup
   stage: scan
@@ -105,9 +116,18 @@ scan:image:
     # cannot patch (bundled binaries/JARs/runtime); see .trivy/ignore-policy.rego.
     - trivy image --severity ${SEVERITY} --ignore-unfixed --ignore-policy .trivy/ignore-policy.rego --format table ${COMPOSE_PROJECT_NAME}-${IMAGE}:scan
     - trivy image --severity ${SEVERITY} --ignore-unfixed --ignore-policy .trivy/ignore-policy.rego --format json --output trivy-${IMAGE}-report.json ${COMPOSE_PROJECT_NAME}-${IMAGE}:scan || true
+    # Dockle best-practices scan against the image built above. The binary is
+    # installed with an integrity check against the pinned release checksum.
+    - curl -sSfL --retry 3 --retry-delay 10 -o /tmp/dockle.tar.gz "https://github.com/goodwithtech/dockle/releases/download/v${DOCKLE_VERSION}/dockle_${DOCKLE_VERSION}_Linux-64bit.tar.gz"
+    - echo "${DOCKLE_SHA256}  /tmp/dockle.tar.gz" | sha256sum -c -
+    - tar -xzf /tmp/dockle.tar.gz -C /usr/local/bin dockle
+    - dockle --version
+    - dockle --exit-code 0 --timeout 10m ${COMPOSE_PROJECT_NAME}-${IMAGE}:scan
+    - dockle --exit-code 0 --timeout 10m -f json -o dockle-${IMAGE}-report.json ${COMPOSE_PROJECT_NAME}-${IMAGE}:scan || true
   artifacts:
     paths:
       - trivy-${IMAGE}-report.json
+      - dockle-${IMAGE}-report.json
     reports:
       container_scanning: trivy-${IMAGE}-report.json
     when: always
@@ -325,6 +345,7 @@ security-report:
         fi
       done
 
+      echo "| Dockle (image best practices) | $(ls dockle-*-report.json >/dev/null 2>&1 && echo ':white_check_mark: Scanned' || echo ':grey_question: Not scanned') |" >> security-summary.md
       echo "| Dependencies | $([ -f composer-audit.json ] && echo ':white_check_mark: Scanned' || echo ':grey_question: Not scanned') |" >> security-summary.md
       echo "| Filesystem | $([ -f trivy-fs-report.json ] && echo ':white_check_mark: Scanned' || echo ':grey_question: Not scanned') |" >> security-summary.md
       echo "| Config | $([ -f trivy-config-report.json ] && echo ':white_check_mark: Scanned' || echo ':grey_question: Not scanned') |" >> security-summary.md
