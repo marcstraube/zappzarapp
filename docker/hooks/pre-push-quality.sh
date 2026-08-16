@@ -50,9 +50,9 @@ run_check() {
     fi
 }
 
-# Check if we're on develop/master
+# Check if we're on develop or the release branch (master or main)
 is_extended_branch() {
-    "$CHANGE_DETECTOR" on-branch develop master
+    "$CHANGE_DETECTOR" on-branch develop master main
 }
 
 # Check if file type changed
@@ -164,7 +164,7 @@ fi
 # ============================================================================
 
 if is_extended_branch; then
-    print_header "Extended: Comprehensive Quality Checks (develop/master only)"
+    print_header "Extended: Comprehensive Quality Checks (develop/master/main only)"
 
     # PHP: Extended checks
     if has_changes php; then

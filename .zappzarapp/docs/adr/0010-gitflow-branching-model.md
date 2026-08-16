@@ -44,3 +44,20 @@ branches:
   disposable where it does not (squashed feature branches)
 - (-) Two long-lived branches to protect and keep in sync (hotfix back-merges)
 - (-) Milestone features reach users only at release time, not continuously
+
+## Amendment (2026-08-16): release branch may be `master` or `main`
+
+The model names the release/default branch `master`, but the name is not
+hard-wired. CI workflows list both `master` and `main` in their triggers, gate
+release-branch-only steps on `github.event.repository.default_branch` (not a
+literal ref), and the hooks match `develop master main`. A project can therefore
+use `main` as its release branch with no config changes — a fresh setup should
+prefer `main` (the modern default for new repositories). `develop` keeps its
+name.
+
+A different _model_ also works but is not first-class: single-trunk (GitHub
+flow, release branch only, no `develop`) degrades gracefully — the `develop`
+triggers simply never fire. The branch-model-specific files (`.github/`
+workflows, `docker/hooks/`) are boilerplate-synced, so running a non-default
+model means owning those files yourself (`make boilerplate-sync` re-imposes them
+otherwise).

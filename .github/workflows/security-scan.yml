@@ -19,7 +19,7 @@ on:
           - LOW,MEDIUM,HIGH,CRITICAL
   # Optional: Run on push to security-related files
   push:
-    branches: [master, develop]
+    branches: [master, main, develop]
     paths:
       - 'docker/**'
       - 'compose*.yaml'

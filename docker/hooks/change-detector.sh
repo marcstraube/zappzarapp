@@ -12,7 +12,7 @@
 #
 # Examples:
 #   ./change-detector.sh has-changes php        → Check if PHP files changed
-#   ./change-detector.sh on-branch develop master → Check if on develop or master
+#   ./change-detector.sh on-branch develop master main → Check if on develop or the release branch
 #   ./change-detector.sh list node              → List changed Node files
 
 set -euo pipefail
