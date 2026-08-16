@@ -34,8 +34,8 @@ argument-hint:
   '--add [--zappzarapp|--upstream|--private] | --list
   [--all|--zappzarapp|--upstream|--private] [--milestone <name>] | --choose
   [--plan|--no-plan] | --milestone <name> <task> | --defer <task> | --close
-  <task> | --add-label <labels> <task> | --remove-label <labels> <task> |
-  --reprioritize | --sync [--dry-run]'
+  <task> | --add-label <labels> <task> | --remove-label <labels> <task> | --sync
+  [--dry-run]'
 ---
 
 # Task Management
@@ -142,7 +142,7 @@ fi
 | Feature       | GitHub               | GitLab              |
 | ------------- | -------------------- | ------------------- |
 | CLI           | `gh`                 | `glab`              |
-| Scoped Labels | `priority:high`      | `priority::high`    |
+| Scoped Labels | `effort:m`           | `effort::m`         |
 | Boards        | Projects (GraphQL)   | Issue Boards (REST) |
 | CI Sync       | `.github/workflows/` | `.gitlab-ci.yml`    |
 
@@ -170,7 +170,6 @@ Parse `$ARGUMENTS`:
 - `--close <task>`: Close task (completed or not planned)
 - `--add-label <labels> <task>`: Add labels to task
 - `--remove-label <labels> <task>`: Remove labels from task
-- `--reprioritize`: Analyze and suggest priority changes
 - `--sync [--dry-run]`: Sync project board status to issue labels (GitHub only)
 
 ---
@@ -525,4 +524,3 @@ gh run view "$RUN_ID" --repo "$TARGET_REPO" --log | grep -E 'Summary|→'
 - Context is crucial - future you needs to understand why
 - Use milestones for release planning, not priority
 - Prioritization emerges from: Milestone -> Type -> Age
-- Review tasks periodically with `/tasks --reprioritize`

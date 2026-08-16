@@ -236,7 +236,6 @@ Issues, plus local file fallback.
 | `--close <task>`               | Close task (completed/not planned)          |
 | `--add-label <labels> <task>`  | Add labels                                  |
 | `--remove-label <labels>`      | Remove labels                               |
-| `--reprioritize`               | Analyze and suggest changes                 |
 | `--sync [--dry-run]`           | Board status → labels (GitHub)              |
 
 **Storage Modes:**
