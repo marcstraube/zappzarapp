@@ -18,6 +18,11 @@ services:
   node:
     build:
       target: development
+      # Build the node user with the host UID/GID so the container can write to
+      # the bind-mounted source tree (e.g. headless framework scaffolds).
+      args:
+        USER_ID: ${USER_ID:-1000}
+        GROUP_ID: ${GROUP_ID:-1000}
     image: ${COMPOSE_PROJECT_NAME:-zappzarapp}-node:development
     # Remove profile restriction - node should always start in CI for BATS tests
     profiles: []

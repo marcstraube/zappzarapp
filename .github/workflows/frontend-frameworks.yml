@@ -47,6 +47,12 @@ jobs:
         run: |
           make init
           make secrets
+          # Expose the runner UID/GID to Compose interpolation so the node image
+          # is built with a matching user. .env.local carries these for local
+          # dev, but Compose only auto-reads .env, so the headless scaffold would
+          # otherwise run as UID 1000 and fail to write the bind-mounted checkout.
+          echo "USER_ID=$(id -u)" >> "$GITHUB_ENV"
+          echo "GROUP_ID=$(id -g)" >> "$GITHUB_ENV"
 
       - name: Prepare lockfile placeholders
         run: |

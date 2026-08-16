@@ -6,6 +6,28 @@ periodic triage (`/optimize --learnings`) and are removed from this file.
 
 ---
 
+## CI
+
+### compose.ci overlay must re-declare the UID/GID build args, or bind-mount writes fail (2026-08-16)
+
+- Compose only auto-reads `.env` (team default `USER_ID=1000`), never
+  `.env.local` where `make init` writes the real host UID — and the Makefile
+  sources `.env.local` without exporting it. Local dev only works because the
+  developer's UID happens to be 1000.
+- The `USER_ID`/`GROUP_ID` build args live in `compose.override.yaml` (the local
+  overlay). CI runs with `COMPOSE_FILE=compose.yaml:compose.ci.yaml`, which
+  excludes the override — so the node image was always built with UID 1000. On a
+  GitHub-hosted runner the checkout is owned by UID 1001, so the headless
+  framework scaffold (running as node = 1000) hit `EACCES` writing into the
+  bind-mounted `src/node/frontend`. All four frameworks failed at the same step,
+  before GOSS.
+- Fix = mirror the local overlay in CI: add `build.args` (`USER_ID`/`GROUP_ID`)
+  to the node service in `compose.ci.yaml` **and** export the runner UID/GID to
+  `$GITHUB_ENV` after `make init` so Compose interpolation resolves them.
+  Backward compatible: without the export the args fall back to 1000, so other
+  CI workflows are unchanged. Verified via `docker compose config` (args resolve
+  to 1001 with export, 1000 without).
+
 ## Configuration
 
 ### Per-character entropy cannot separate hex secrets from identifiers (2026-08-14)
