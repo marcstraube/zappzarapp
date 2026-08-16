@@ -373,6 +373,37 @@ bats:integration:
   timeout: 30m
 
 # ============================================================================
+# FRONTEND FRAMEWORK SCAFFOLDS (scheduled drift test)
+# ============================================================================
+# Mirror of the GitHub "Frontend Framework Scaffolds" workflow: scaffold each
+# framework headless at @latest, build its production image, validate the build
+# output via GOSS. Catches upstream template drift in the post-install patches.
+# Schedule-only + opt-in variable so it does not run on unrelated schedules.
+# UNVERIFIED until September (GitLab minutes paused) — runs in the prerelease phase.
+frontend-frameworks:
+  <<: *docker-setup
+  stage: test
+  needs: []
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "schedule" && $FRONTEND_FRAMEWORKS_TEST == "true"'
+  variables:
+    # CI compose overlay: no lockfile bind mounts (deps resolve fresh in-image)
+    COMPOSE_FILE: "compose.yaml:compose.ci.yaml"
+  parallel:
+    matrix:
+      - FRAMEWORK: [nuxt, next, remix, sveltekit]
+  script:
+    # Warm/load the node dev image so the scaffold container is ready
+    - !reference [.buildx-node, script]
+    # Scaffold the framework headless (FORCE=1: no TTY prompts in CI)
+    - make node-frontend-$FRAMEWORK FORCE=1
+    # A green build IS the passing suite: the test-framework stage runs
+    # `goss validate` on the base spec + the scaffold-generated framework spec.
+    - docker buildx inspect ci >/dev/null 2>&1 || docker buildx create --name ci --driver docker-container
+    - docker buildx bake --builder ci -f docker-bake.hcl node-test-framework
+  timeout: 30m
+
+# ============================================================================
 # SAST ANALYSIS (Semgrep)
 # ============================================================================
 sast:semgrep:

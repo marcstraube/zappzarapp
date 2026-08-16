@@ -355,6 +355,7 @@ allowBuilds:
   '@parcel/watcher': true
   esbuild: true
   sharp: true
+  unrs-resolver: true
 EOF
 
 # 13. Write the framework-specific GOSS output check consumed by the

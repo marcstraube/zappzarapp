@@ -14,6 +14,15 @@ make node-frontend-remix     # React Router (formerly Remix v2)
 make node-frontend-sveltekit # SvelteKit
 ```
 
+Scaffolds run **non-interactively by default** (headless, CI-friendly). Three
+optional knobs:
+
+| Variable         | Effect                                                                                                                                                 | Example                                                              |
+| ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------- |
+| `TEMPLATE=`      | Template/variant for Nuxt, SvelteKit and React Router (Next.js has no template concept — it uses its defaults). Default for Nuxt/SvelteKit: `minimal`. | `make node-frontend-nuxt TEMPLATE=ui`                                |
+| `INTERACTIVE=1`  | Restore the framework CLI's own interactive picker (template **and** every other option). Needs a real TTY.                                            | `make node-frontend-next INTERACTIVE=1`                              |
+| `SCAFFOLD_ARGS=` | Extra flags passed straight through to the framework CLI (headless power-use).                                                                         | `make node-frontend-sveltekit SCAFFOLD_ARGS="--add prettier eslint"` |
+
 Follow this sequence when scaffolding:
 
 ```bash
@@ -41,7 +50,7 @@ To remove an existing frontend and scaffold a different one:
 
 ```bash
 make down                # 1. Stop containers
-make node-frontend-clean # 2. Remove current frontend (asks for confirmation)
+make node-frontend-clean # 2. Remove current frontend (asks for confirmation; FORCE=1 or non-TTY/CI skips it)
 make node-frontend-next  # 3. Scaffold new framework
 make pnpm-sync           # 4. Re-resolve lockfile and install dependencies
 make up                  # 5. Start containers
