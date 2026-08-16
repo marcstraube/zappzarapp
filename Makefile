@@ -1971,24 +1971,35 @@ pnpm-upgrade: ## Upgrade pnpm package manager to latest version
 
 FRONTEND_DIR := src/node/frontend
 FRONTEND_PATCHES := docker/node/frontend-patches
+FRONTEND_FRAMEWORKS := nuxt next remix sveltekit
 
-node-frontend-clean: ## Remove existing frontend (keeps package.json placeholder)
+node-frontend-clean: ## Remove existing frontend, restore package.json placeholder (FORCE=1 or non-TTY skips prompts)
 	@# Check if node container is running (for later restart hint)
 	$(eval NODE_WAS_RUNNING := $(shell docker compose ps --status running 2>/dev/null | grep -q "node" && echo "yes" || echo "no"))
 	@# Warn if node container is running (dev server file watchers might get confused)
-	@if [ "$(NODE_WAS_RUNNING)" = "yes" ]; then \
+	@if [ "$(NODE_WAS_RUNNING)" = "yes" ] && [ -z "$(FORCE)" ]; then \
 		echo -e "\033[0;33m⚠️  Node container is running. Dev server file watchers may cause issues.\033[0m"; \
-		read -p "Continue anyway? [y/N]: " CONTINUE; \
-		[ "$$CONTINUE" = "y" ] || [ "$$CONTINUE" = "Y" ] || exit 1; \
+		if [ -t 0 ]; then \
+			read -p "Continue anyway? [y/N]: " CONTINUE; \
+			[ "$$CONTINUE" = "y" ] || [ "$$CONTINUE" = "Y" ] || exit 1; \
+		else \
+			echo -e "\033[0;31mNode container is running and no TTY to confirm. Pass FORCE=1 to proceed (or stop it with make down).\033[0m"; \
+			exit 1; \
+		fi; \
 	fi
 	@# Check if frontend has scaffolded content (more than just package.json)
 	@FILE_COUNT=$$(find $(FRONTEND_DIR) -mindepth 1 ! -name 'package.json' | wc -l); \
-	if [ "$$FILE_COUNT" -gt 0 ]; then \
+	if [ "$$FILE_COUNT" -gt 0 ] && [ -z "$(FORCE)" ]; then \
 		echo -e "\033[0;31m!!! WARNING: Frontend directory contains scaffolded content. !!!\033[0m"; \
 		ls -la $(FRONTEND_DIR); \
-		read -p "Are you sure you want to delete it? Type 'YES' to confirm: " CONFIRM; \
-		if [ "$$CONFIRM" != "YES" ]; then \
-			echo -e "\033[0;34mOperation cancelled.\033[0m"; \
+		if [ -t 0 ]; then \
+			read -p "Are you sure you want to delete it? Type 'YES' to confirm: " CONFIRM; \
+			if [ "$$CONFIRM" != "YES" ]; then \
+				echo -e "\033[0;34mOperation cancelled.\033[0m"; \
+				exit 1; \
+			fi; \
+		else \
+			echo -e "\033[0;31mRefusing to delete scaffolded content without a TTY. Pass FORCE=1 to proceed.\033[0m"; \
 			exit 1; \
 		fi; \
 	fi
@@ -2007,10 +2018,24 @@ node-frontend-clean: ## Remove existing frontend (keeps package.json placeholder
 		echo -e "\033[0;33m⚠️  Warning: $(FRONTEND_DIR)/node_modules could not be deleted (likely root-owned).\033[0m"; \
 		echo -e "\033[0;33m   To fix: sudo rm -rf $(FRONTEND_DIR)/node_modules\033[0m"; \
 	fi
-	@# Restore placeholder package.json if deleted
-	@if [ ! -f "$(FRONTEND_DIR)/package.json" ]; then \
-		echo '{"name": "@zappzarapp/frontend","version": "0.0.0","private": true,"scripts": {"info": "echo Run make node-frontend-nuxt, node-frontend-next, node-frontend-remix, or node-frontend-sveltekit to scaffold a frontend"}}' > $(FRONTEND_DIR)/package.json; \
-	fi
+	@# Restore the placeholder package.json unconditionally: a scaffold rewrites
+	@# it (framework deps + scripts), so it survives the find above with stale
+	@# content unless reset. Bytes match the committed bare placeholder so a
+	@# clean leaves the working tree pristine.
+	@printf '%s\n' \
+		'{' \
+		'  "name": "@zappzarapp/frontend",' \
+		'  "version": "1.0.0",' \
+		'  "description": "Placeholder for frontend framework (Next.js, Nuxt, Remix, SvelteKit)",' \
+		'  "type": "module",' \
+		'  "private": true,' \
+		'  "scripts": {' \
+		'    "dev": "echo '\''No frontend framework installed. Run: make node-frontend-next|nuxt|remix|sveltekit'\''",' \
+		'    "build": "echo '\''No frontend framework installed'\''",' \
+		'    "start": "echo '\''No frontend framework installed'\''"' \
+		'  }' \
+		'}' \
+		> $(FRONTEND_DIR)/package.json
 	@echo -e "\033[0;32mFrontend directory cleaned!\033[0m"
 	@if [ "$(NODE_WAS_RUNNING)" = "yes" ]; then \
 		echo -e "\033[0;36mNext: make node-frontend-{nuxt|next|remix|sveltekit}, then make pnpm-sync, then make restart\033[0m"; \
@@ -2018,45 +2043,86 @@ node-frontend-clean: ## Remove existing frontend (keeps package.json placeholder
 		echo -e "\033[0;36mNext: make node-frontend-{nuxt|next|remix|sveltekit}, then make pnpm-sync, then make up\033[0m"; \
 	fi
 
-node-frontend-nuxt: node-frontend-clean ## Scaffold Nuxt 3 frontend (interactive)
+node-frontend-nuxt: node-frontend-clean ## Scaffold Nuxt frontend (headless; INTERACTIVE=1 picker, TEMPLATE=, SCAFFOLD_ARGS=)
 	@echo -e "\033[0;33mScaffolding Nuxt 3 frontend...\033[0m"
-	@$(DC_RUN) run --rm --no-deps -it node sh -c '\
+	@$(DC_RUN) run --rm --no-deps $(if $(INTERACTIVE),-it) node sh -c '\
 		cd /app/src/node/frontend && \
-		pnpm dlx nuxi@latest init . --packageManager pnpm --gitInit false --no-install && \
+		if [ -n "$(INTERACTIVE)" ]; then \
+			pnpm dlx nuxi@latest init . --packageManager pnpm --gitInit false --no-install; \
+		else \
+			pnpm dlx nuxi@latest init . --template $(or $(TEMPLATE),minimal) -f --packageManager pnpm --gitInit false --no-install $(SCAFFOLD_ARGS); \
+		fi && \
 		sh /app/docker/node/frontend-patches/nuxt.post-install.sh .'
 	@echo -e "\033[0;32mNuxt 3 scaffolded! Run 'make pnpm-sync' to install dependencies.\033[0m"
 
-node-frontend-next: node-frontend-clean ## Scaffold Next.js frontend (interactive)
+node-frontend-next: node-frontend-clean ## Scaffold Next.js frontend (headless; INTERACTIVE=1 picker, SCAFFOLD_ARGS=)
 	@echo -e "\033[0;33mScaffolding Next.js frontend...\033[0m"
-	@$(DC_RUN) run --rm --no-deps -it node sh -c '\
+	@$(DC_RUN) run --rm --no-deps $(if $(INTERACTIVE),-it) node sh -c '\
+		TEMP_DIR=$$(mktemp -d) && \
+		cd "$$TEMP_DIR" && \
+		if [ -n "$(INTERACTIVE)" ]; then \
+			pnpm dlx create-next-app@latest frontend --use-pnpm --skip-install; \
+		else \
+			pnpm dlx create-next-app@latest frontend --use-pnpm --skip-install --yes --disable-git $(SCAFFOLD_ARGS); \
+		fi && \
+		cp -r frontend/. /app/src/node/frontend/ && \
+		rm -rf "$$TEMP_DIR" && \
 		cd /app/src/node/frontend && \
-		pnpm dlx create-next-app@latest . --use-pnpm --skip-install && \
 		sh /app/docker/node/frontend-patches/next.post-install.sh .'
 	@echo -e "\033[0;32mNext.js scaffolded! Run 'make pnpm-sync' to install dependencies.\033[0m"
 
-node-frontend-remix: node-frontend-clean ## Scaffold React Router frontend (formerly Remix v2)
+node-frontend-remix: node-frontend-clean ## Scaffold React Router frontend (headless; INTERACTIVE=1 picker, TEMPLATE=, SCAFFOLD_ARGS=)
 	@echo -e "\033[0;33mScaffolding React Router frontend...\033[0m"
-	@$(DC_RUN) run --rm --no-deps -it node sh -c '\
+	@$(DC_RUN) run --rm --no-deps $(if $(INTERACTIVE),-it) node sh -c '\
 		TEMP_DIR=$$(mktemp -d) && \
 		cd "$$TEMP_DIR" && \
-		pnpm dlx create-react-router@latest frontend --no-install && \
+		if [ -n "$(INTERACTIVE)" ]; then \
+			pnpm dlx create-react-router@latest frontend --no-install; \
+		else \
+			pnpm dlx create-react-router@latest frontend --no-install --yes --no-git-init $(if $(TEMPLATE),--template $(TEMPLATE)) $(SCAFFOLD_ARGS); \
+		fi && \
 		cp -r frontend/. /app/src/node/frontend/ && \
 		rm -rf "$$TEMP_DIR" && \
 		cd /app/src/node/frontend && \
 		sh /app/docker/node/frontend-patches/remix.post-install.sh .'
 	@echo -e "\033[0;32mReact Router scaffolded! Run 'make pnpm-sync' to install dependencies.\033[0m"
 
-node-frontend-sveltekit: node-frontend-clean ## Scaffold SvelteKit frontend (interactive)
+node-frontend-sveltekit: node-frontend-clean ## Scaffold SvelteKit frontend (headless; INTERACTIVE=1 picker, TEMPLATE=, SCAFFOLD_ARGS=)
 	@echo -e "\033[0;33mScaffolding SvelteKit frontend...\033[0m"
-	@$(DC_RUN) run --rm --no-deps -it node sh -c '\
+	@$(DC_RUN) run --rm --no-deps $(if $(INTERACTIVE),-it) node sh -c '\
 		TEMP_DIR=$$(mktemp -d) && \
 		cd "$$TEMP_DIR" && \
-		pnpm dlx sv create frontend --template minimal --types ts --no-add-ons --no-install && \
+		if [ -n "$(INTERACTIVE)" ]; then \
+			pnpm dlx sv create frontend --no-install; \
+		else \
+			pnpm dlx sv create frontend --template $(or $(TEMPLATE),minimal) --types ts --no-add-ons --no-install $(SCAFFOLD_ARGS); \
+		fi && \
 		cp -r frontend/. /app/src/node/frontend/ && \
 		rm -rf "$$TEMP_DIR" && \
 		cd /app/src/node/frontend && \
 		sh /app/docker/node/frontend-patches/sveltekit.post-install.sh .'
 	@echo -e "\033[0;32mSvelteKit scaffolded! Run 'make pnpm-sync' to install dependencies.\033[0m"
+
+test-frontend-frameworks: .buildx-ensure ## Scaffold each frontend framework headless and validate its production build via GOSS
+	@echo -e "\033[0;33mValidating all frontend framework scaffolds (headless build + GOSS)...\033[0m"
+	@# Rides the framework CLIs at @latest, so this surfaces upstream template
+	@# drift that breaks the post-install patches (run on a schedule, not per-PR).
+	@FAILED=""; \
+	for fw in $(FRONTEND_FRAMEWORKS); do \
+		echo -e "\033[0;34m========== $$fw ==========\033[0m"; \
+		if $(MAKE) --no-print-directory node-frontend-$$fw FORCE=1 && $(BAKE) node-test-framework; then \
+			echo -e "\033[0;32m✓ $$fw: build output validated\033[0m"; \
+		else \
+			echo -e "\033[0;31m✗ $$fw: FAILED\033[0m"; \
+			FAILED="$$FAILED $$fw"; \
+		fi; \
+	done; \
+	$(MAKE) --no-print-directory node-frontend-clean FORCE=1 >/dev/null 2>&1 || true; \
+	if [ -n "$$FAILED" ]; then \
+		echo -e "\033[0;31mFrontend framework validation FAILED for:$$FAILED\033[0m"; \
+		exit 1; \
+	fi; \
+	echo -e "\033[0;32mAll frontend frameworks validated successfully!\033[0m"
 
 node-build: ## Executes the frontend build inside the Node container
 	@echo -e "\033[0;33mExecuting frontend build...\033[0m"

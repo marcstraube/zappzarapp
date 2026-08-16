@@ -1,0 +1,67 @@
+name: Frontend Framework Scaffolds
+
+# Rides the framework CLIs at @latest (nuxi / create-next-app /
+# create-react-router / sv). Each matrix job scaffolds one framework headless,
+# builds its production image and validates the build output via GOSS. Purpose:
+# catch UPSTREAM template drift that breaks the post-install patches (a renamed
+# plugin, a new build script pnpm blocks, a moved output path) — decoupled from
+# PR CI, which would otherwise turn red for reasons unrelated to the change.
+# A failed run IS the drift signal (GitHub notifies on scheduled failures).
+on:
+  schedule:
+    # Weekly on Monday at 6 AM (after security-scan Sat 2 AM / zap Sun 3 AM)
+    - cron: '0 6 * * 1'
+  workflow_dispatch:
+
+env:
+  COMPOSE_PROJECT_NAME: zappzarapp-frontend-ci
+  # CI compose overlay: no lockfile bind mounts (resolved fresh in-image)
+  COMPOSE_FILE: compose.yaml:compose.ci.yaml
+
+# Least privilege: no writes needed — a failed run is the signal.
+permissions:
+  contents: read
+
+concurrency:
+  group: frontend-frameworks-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  scaffold:
+    name: Scaffold & validate (${{ matrix.framework }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        framework: [nuxt, next, remix, sveltekit]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@bb05f3f5519dd87d3ba754cc423b652a5edd6d2c # v4.2.0
+
+      - name: Initialize environment
+        run: |
+          make init
+          make secrets
+
+      - name: Prepare lockfile placeholders
+        run: |
+          # Dockerfile/compose COPY steps expect these to exist; deps resolve fresh
+          [ -f composer.lock ] || echo '{}' > composer.lock
+          [ -f pnpm-lock.yaml ] || touch pnpm-lock.yaml
+
+      - name: Scaffold ${{ matrix.framework }} (headless)
+        run: make node-frontend-${{ matrix.framework }} FORCE=1
+
+      - name: Validate production build output (GOSS)
+        # A green build IS the passing suite: the test-framework stage runs
+        # `goss validate` on the base spec + the scaffold-generated framework spec.
+        run: docker buildx bake -f docker-bake.hcl node-test-framework
+
+      - name: Docker cleanup
+        if: always()
+        uses: ./.github/actions/docker-cleanup
