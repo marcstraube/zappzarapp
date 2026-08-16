@@ -35,6 +35,28 @@ periodic triage (`/optimize --learnings`) and are removed from this file.
   **and** `volumes` between `compose.override.yaml` and `compose.ci.yaml` — the
   CI overlay must re-declare everything the local overlay provides that isn't
   baked into the image.
+- Follow-up: the real root cause was general, not CI-specific — a host with UID
+  ≠ 1000 hit the same class **locally**, and it was never just UID. `make init`
+  writes local overrides (host UID/GID, service toggles) to `.env.local`, but
+  Compose only auto-reads `.env`, and the Makefile sources env files without
+  exporting — so **nothing** in `.env.local` ever reached Compose interpolation
+  (the `ENABLE_ADMINER`/`ENABLE_PGADMIN` toggles were dead too). Reproduced with
+  a fake `.env.local` (`USER_ID=4242`): `source`-without-export → Compose sees
+  1000, with `set -a` → 4242.
+- Root fix:
+  `export COMPOSE_ENV_FILES := .env$(if $(wildcard .env.local),$(comma).env.local)`
+  at the top of the Makefile, so Compose itself reads the same dotenv cascade
+  the Makefile layers (`.env` committed team defaults → `.env.local` gitignored
+  per-machine overrides; later file wins). This covers **every** Compose
+  invocation, including the `DC_RUN` scaffolds that never source env files, and
+  fixes the whole class (not just UID) with no shell-export/clobber games.
+  `.env.local` is appended only when it exists, so fresh clones fall back to
+  `.env`. `compose.ci.yaml` keeps its `build.args` (they _consume_ the value);
+  the CI `$GITHUB_ENV` export in `frontend-frameworks.yml` is removed — CI's
+  `make init` now writes a `.env.local` that Compose actually reads. Requires
+  Compose **2.24+** (`COMPOSE_ENV_FILES` support) → prerequisites bumped to
+  Docker 25.0+. Adminer/pgAdmin stay off because they are `profiles`-gated, not
+  env-gated, so honouring the toggle does not auto-start them.
 
 ## Configuration
 

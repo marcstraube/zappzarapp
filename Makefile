@@ -8,6 +8,14 @@ DC := docker compose --progress=plain
 # This ensures make pnpm/composer/etc. work regardless of .env settings
 DC_RUN := COMPOSE_PROFILES=php,node,node-backend,dev-tools $(DC)
 
+# Make Compose read the same local-override file the Makefile layers, so values
+# in .env.local (host UID/GID written by `make init`, service toggles) reach
+# Compose interpolation for every invocation (up, build, DC_RUN scaffolds).
+# Compose only auto-reads .env otherwise. Later files override earlier ones;
+# .env.local is appended only when present, so fresh clones fall back to .env.
+comma := ,
+export COMPOSE_ENV_FILES := .env$(if $(wildcard .env.local),$(comma).env.local)
+
 # Multi-image builds via docker buildx bake (docker-bake.hcl). Cross-image
 # `COPY --from` resolves through named contexts (target:<name>) on a
 # docker-container builder. The builder is auto-created on first use by

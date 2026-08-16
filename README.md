@@ -114,8 +114,8 @@ All tooling runs in containers — you only need these on your host:
 
 | Tool           | Version | Purpose                      |
 | -------------- | ------- | ---------------------------- |
-| Docker         | 24.0+   | Runs the entire stack        |
-| Docker Compose | v2.0+   | Orchestrates the services    |
+| Docker         | 25.0+   | Runs the entire stack        |
+| Docker Compose | v2.24+  | Orchestrates the services    |
 | GNU Make       | 4.0+    | Entry point for all commands |
 | Git            | 2.x     | Clone + managed git hooks    |
 

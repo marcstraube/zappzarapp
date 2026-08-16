@@ -4,15 +4,15 @@ Get zappzarapp running in under 5 minutes.
 
 ## Prerequisites
 
-- **Docker** 24.0+ with Docker Compose v2
+- **Docker** 25.0+ with Docker Compose v2.24+
 - **Make** (GNU Make)
 - **Git**
 
 ### Verify Installation
 
 ```bash
-docker --version    # Docker version 24.0+
-docker compose version  # Docker Compose v2.x
+docker --version    # Docker version 25.0+
+docker compose version  # Docker Compose v2.24+
 make --version      # GNU Make
 ```
 
