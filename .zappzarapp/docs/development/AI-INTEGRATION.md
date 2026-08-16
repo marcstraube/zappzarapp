@@ -226,18 +226,18 @@ Issues, plus local file fallback.
 
 **Arguments:**
 
-| Argument                       | Purpose                            |
-| ------------------------------ | ---------------------------------- |
-| `--add [--private]`            | Create new task                    |
-| `--list [--milestone <name>]`  | List tasks                         |
-| `--choose [--plan\|--no-plan]` | Select and start a task            |
-| `--milestone <name> <task>`    | Assign task to milestone           |
-| `--defer <task>`               | Move to "Backlog" milestone        |
-| `--close <task>`               | Close task (completed/not planned) |
-| `--add-label <labels> <task>`  | Add labels                         |
-| `--remove-label <labels>`      | Remove labels                      |
-| `--reprioritize`               | Analyze and suggest changes        |
-| `--sync [--dry-run]`           | Board status → labels (GitHub)     |
+| Argument                       | Purpose                                     |
+| ------------------------------ | ------------------------------------------- |
+| `--add [--private]`            | Create new task                             |
+| `--list [--milestone <name>]`  | List tasks                                  |
+| `--choose [--plan\|--no-plan]` | Select a task (sets in-progress + assignee) |
+| `--milestone <name> <task>`    | Assign task to milestone                    |
+| `--defer <task>`               | Move to "Backlog" milestone                 |
+| `--close <task>`               | Close task (completed/not planned)          |
+| `--add-label <labels> <task>`  | Add labels                                  |
+| `--remove-label <labels>`      | Remove labels                               |
+| `--reprioritize`               | Analyze and suggest changes                 |
+| `--sync [--dry-run]`           | Board status → labels (GitHub)              |
 
 **Storage Modes:**
 
@@ -256,6 +256,9 @@ Issues, plus local file fallback.
 - **On-demand board sync** (`--sync` dispatches
   `.github/workflows/project-sync.yml`; GitHub Projects V2 only — no schedule by
   default, uncomment the daily cron in the workflow for background sync)
+- **PR-driven issue status** — opening a PR flips its linked issues
+  (`Closes #N`) to `status:review`, merging clears the status; drafts map to
+  `status:in-progress` (see `.github/workflows/issue-status.yml`)
 - **Platform parity** between GitHub and GitLab
 
 **Setup:**

@@ -1,0 +1,99 @@
+name: Issue Status from PR
+
+# Drives issue `status:*` labels from the pull-request lifecycle, so the issue
+# list reflects reality without manual label juggling. Reads the issues a PR
+# will close ("Closes #N" → closingIssuesReferences) and mirrors the PR state
+# onto their labels:
+#
+#   draft PR opened / converted to draft   → status:in-progress
+#   PR opened non-draft / ready for review  → status:review
+#   PR merged                               → clears status:* (Closes auto-closes the issue)
+#   PR closed without merging               → status:in-progress (work not done)
+#
+# Complements project-sync.yml (board → labels, on demand): that syncs from a
+# Projects V2 board, this reacts to PR events. Both converge on the same
+# single-status invariant (one status:* label at a time).
+on:
+  pull_request:
+    types: [opened, reopened, ready_for_review, converted_to_draft, closed]
+
+# Least privilege: label issues only.
+permissions:
+  contents: read
+  issues: write
+
+concurrency:
+  group: issue-status-${{ github.event.pull_request.number }}
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    name: Sync issue status from PR
+    runs-on: ubuntu-latest
+    # Skip PRs from forks: their GITHUB_TOKEN is read-only, so labeling would
+    # fail. Internal branches (the normal flow) carry a writable token.
+    if: github.event.pull_request.head.repo.full_name == github.repository
+    steps:
+      - name: Apply status labels to linked issues
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        with:
+          script: |
+            const pr = context.payload.pull_request;
+            const STATUS = ['status:in-progress', 'status:review', 'status:blocked'];
+
+            // Map the PR state to the target status label (null = clear all).
+            let target = null;
+            if (pr.merged) {
+              target = null;                    // merged → clear (Closes auto-closes)
+            } else if (pr.state === 'closed') {
+              target = 'status:in-progress';    // abandoned → back to in-progress
+            } else if (pr.draft) {
+              target = 'status:in-progress';    // draft → still being worked on
+            } else {
+              target = 'status:review';         // open & ready → review
+            }
+
+            // Issues the PR closes via "Closes #N" (GraphQL closingIssuesReferences).
+            const query = `query($owner:String!,$repo:String!,$number:Int!){
+              repository(owner:$owner,name:$repo){
+                pullRequest(number:$number){
+                  closingIssuesReferences(first:50){ nodes { number } }
+                }
+              }
+            }`;
+            const data = await github.graphql(query, {
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              number: pr.number,
+            });
+            const issues = data.repository.pullRequest.closingIssuesReferences.nodes.map(n => n.number);
+
+            if (issues.length === 0) {
+              console.log('No closing issue references on this PR; nothing to do.');
+              return;
+            }
+
+            for (const issue_number of issues) {
+              const { data: current } = await github.rest.issues.listLabelsOnIssue({
+                ...context.repo, issue_number,
+              });
+              const names = current.map(l => l.name);
+
+              // Remove any status label that is not the target.
+              for (const label of STATUS) {
+                if (names.includes(label) && label !== target) {
+                  await github.rest.issues.removeLabel({
+                    ...context.repo, issue_number, name: label,
+                  }).catch(() => {}); // tolerate races (label already gone)
+                }
+              }
+
+              // Add the target label if set and not already present.
+              if (target && !names.includes(target)) {
+                await github.rest.issues.addLabels({
+                  ...context.repo, issue_number, labels: [target],
+                });
+              }
+
+              console.log(`#${issue_number}: ${target ? 'status → ' + target : 'status cleared'}`);
+            }

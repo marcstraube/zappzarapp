@@ -163,7 +163,8 @@ Parse `$ARGUMENTS`:
 
 - `--add`: Add a new task
 - `--list [--all]`: List tasks (--all shows all tiers)
-- `--choose [--plan|--no-plan]`: Select and start a task
+- `--choose [--plan|--no-plan]`: Select a task, set it in-progress + assign
+  yourself, then start
 - `--milestone <name> <task>`: Assign task to milestone
 - `--defer <task>`: Move task to "Backlog" milestone
 - `--close <task>`: Close task (completed or not planned)
@@ -341,6 +342,75 @@ Total: 4 open issues
 ### All Tiers (`--list --all`)
 
 Aggregate from all available tiers.
+
+---
+
+## Workflow: Choose (`--choose [--plan|--no-plan]`)
+
+Select the highest-priority open task, mark it started, and begin work.
+
+### Step 1: Select
+
+List open tasks (same prioritization as `--list`: milestone → type → age) and
+pick the top candidate, or let the user choose. Confirm the selection.
+
+### Step 2: Mark started (status + assignee)
+
+Set the task in-progress and assign it to the current user so the issue list
+(and any project board) reflect that it is being worked on. This clears other
+status labels — one `status:*` at a time.
+
+This needs write/triage access on the target repo, so it is **best-effort**.
+Attempt the label + assignee; if it succeeds (maintainer path), also clear the
+other status labels. If it fails with a 403 (external contributor on
+`--upstream` / `--zappzarapp`), do **not** fail — fall back to the contributor
+path below and continue. The PR they open later flips the status via
+`.github/workflows/issue-status.yml`. See CONTRIBUTING.md.
+
+**GitHub — maintainer path (has write):**
+
+```bash
+if gh issue edit <number> --repo "$TARGET_REPO" \
+     --add-label "status:in-progress" --add-assignee "@me" 2>/dev/null; then
+  # Drop the other status labels if present (ignore if absent)
+  gh issue edit <number> --repo "$TARGET_REPO" \
+    --remove-label "status:review" --remove-label "status:blocked" 2>/dev/null || true
+fi
+```
+
+**Contributor path (no write, the `gh issue edit` above failed):** a comment
+does not need write access. First check the issue is not already claimed
+(`gh issue view <number> --repo "$TARGET_REPO" --json assignees,comments`); if
+it is, say so and stop. Otherwise **ask the user** (AskUserQuestion) whether to
+claim it — offer a default comment body (`I'd like to work on this.`) and let
+them edit it via the free-text "Other" option, or decline. Do not post
+unprompted. Post the chosen/edited text:
+
+```bash
+gh issue comment <number> --repo "$TARGET_REPO" --body "$COMMENT"  # default or user-edited
+```
+
+Then continue (work on your fork; declining is fine — just proceed).
+
+**GitLab:** scoped labels are mutually exclusive, so adding
+`status::in-progress` drops any other `status::*`. Same contributor fallback —
+on failure, ask (with an editable default comment), then
+`glab issue note <number> --repo "$TARGET_REPO" --message "$COMMENT"`.
+
+```bash
+glab issue update <number> --repo "$TARGET_REPO" \
+  --label "status::in-progress" --assignee "@me" 2>/dev/null || true
+# Note: some glab versions need the literal username instead of @me.
+```
+
+### Step 3: Plan and start
+
+- `--plan` (default): draft an implementation plan before coding.
+- `--no-plan`: start immediately.
+
+Then create the feature branch (`<type>/<slug>`, per the branching model) and
+begin. The PR you open later flips the issue to `status:review` automatically
+(see `.github/workflows/issue-status.yml`).
 
 ---
 

@@ -17,6 +17,8 @@ make ci          # faithful CI gate simulation (coverage strictness + audit) —
 ```
 
 - Branch from `develop` (`feature/…`, `fix/…`, `chore/…`, `docs/…`)
+- Claim an issue by commenting before you start (external contributors can't
+  self-assign); a PR that `Closes #N` moves it to `status:review` automatically
 - Commit messages follow
   [Conventional Commits](https://www.conventionalcommits.org/) — enforced by a
   git hook

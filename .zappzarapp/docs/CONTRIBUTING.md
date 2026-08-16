@@ -66,6 +66,18 @@ and hooks). See [AI Integration](development/AI-INTEGRATION.md) for details.
 
 ## Development Workflow
 
+### Claiming an Issue
+
+Task status is tracked with `status:*` labels. With write access,
+`/tasks --choose` sets the issue to `status:in-progress` and assigns it to you.
+
+**External contributors** can't set labels or assignees (no write access) — that
+is expected and not an error. To claim a task, **comment on the issue** ("I'd
+like to work on this"), then work on your fork. When you open a PR that closes
+the issue (`Closes #N`), it is flipped to `status:review` automatically and
+cleared on merge; maintainers own the labels. See
+`.github/workflows/issue-status.yml`.
+
 ### IDE Config Files
 
 Some IDE config files (like `.idea/php.xml`) are locked via git's skip-worktree
