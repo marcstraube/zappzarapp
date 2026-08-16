@@ -39,6 +39,8 @@ services:
       # === CI-specific mounts ===
       # Entrypoint Script
       - ./docker/node/entrypoint.development.sh:/usr/local/bin/entrypoint.development.sh:ro
+      # Post-install patch scripts applied by the framework scaffold targets
+      - ./docker/node/frontend-patches:/app/docker/node/frontend-patches:ro
 
       # Package manager config (read-only, lockfile generated inside container)
       - ./package.json:/app/package.json:ro

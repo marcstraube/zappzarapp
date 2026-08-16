@@ -27,6 +27,14 @@ periodic triage (`/optimize --learnings`) and are removed from this file.
   Backward compatible: without the export the args fall back to 1000, so other
   CI workflows are unchanged. Verified via `docker compose config` (args resolve
   to 1001 with export, 1000 without).
+- Same overlay-drift bit twice: `compose.ci.yaml` also omitted the
+  `docker/node/frontend-patches` bind mount that `compose.override.yaml` has, so
+  the scaffold's post-install patch script was `No such file or directory` in CI
+  (the Dockerfile copies the entrypoints but not the patches). Lesson: when a
+  target works locally but not in CI, diff the node service's `build.args`
+  **and** `volumes` between `compose.override.yaml` and `compose.ci.yaml` — the
+  CI overlay must re-declare everything the local overlay provides that isn't
+  baked into the image.
 
 ## Configuration
 
