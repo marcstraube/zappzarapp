@@ -108,6 +108,22 @@ IDEs. See [.idea/README.md](.idea/README.md) and
 Optional services — Redis, Mercure, Meilisearch, Elasticsearch, Mailpit,
 SeaweedFS, RabbitMQ — are pre-configured and one `.env` toggle away.
 
+## Prerequisites
+
+All tooling runs in containers — you only need these on your host:
+
+| Tool           | Version | Purpose                      |
+| -------------- | ------- | ---------------------------- |
+| Docker         | 24.0+   | Runs the entire stack        |
+| Docker Compose | v2.0+   | Orchestrates the services    |
+| GNU Make       | 4.0+    | Entry point for all commands |
+| Git            | 2.x     | Clone + managed git hooks    |
+
+Nothing else is required to run the stack — no local PHP, Node, Composer or
+pnpm. Docker's BuildKit/`buildx bake` is required, so Podman is not a drop-in
+replacement. (Local Composer/pnpm are optional but recommended for IDE indexing
+and host-side git hooks — see [QUICKSTART](.zappzarapp/docs/QUICKSTART.md).)
+
 ## Quick Start
 
 ```bash
@@ -131,8 +147,6 @@ The application is available at:
 
 For daily work afterwards, use `make up` / `make down` to start and stop the
 environment.
-
-Prerequisites: Docker 20.10+, Docker Compose V2, Make, Git.
 
 ## What It Is — and Is Not
 

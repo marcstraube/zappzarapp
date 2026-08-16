@@ -16,6 +16,18 @@ docker compose version  # Docker Compose v2.x
 make --version      # GNU Make
 ```
 
+### Optional: Local Composer / pnpm
+
+The application itself needs neither on your host — `vendor/` and `node_modules`
+live in Docker volumes. Two things still benefit from a local install:
+
+- **Composer** — recommended. Beyond IDE indexing, the Git hooks run through
+  `vendor/bin/captainhook` on the host, so pre-commit/pre-push need local PHP
+  dependencies. `make setup` warns when local Composer is missing; see
+  [CONTRIBUTING](CONTRIBUTING.md) for `make composer-install-local`.
+- **pnpm** — optional. Only improves IDE indexing of Node dependencies; the
+  hooks (lint-staged) run inside Docker and do not need pnpm on the host.
+
 ## Quick Setup
 
 ### 1. Create Your Project
