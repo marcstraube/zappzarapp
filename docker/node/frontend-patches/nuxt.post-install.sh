@@ -32,6 +32,18 @@ echo "[nuxt] Creating nuxt.config.ts..."
 cat > nuxt.config.ts << 'EOF'
 // Nuxt 3 Configuration for zappzarapp
 // https://nuxt.com/docs/api/configuration/nuxt-config
+import { existsSync } from 'node:fs';
+
+// Serve the dev server over HTTPS with the internal certificate mounted into the
+// container. The nginx framework proxy and the container healthcheck both expect
+// HTTPS on port 3001 (zero-trust). Guarded so cert-less contexts (e.g. plain
+// `pnpm dev` on a laptop) fall back to plain HTTP.
+const CERT_PATH = '/etc/ssl/certs/cert.crt';
+const KEY_PATH = '/etc/ssl/private/cert.key';
+const devHttps =
+  existsSync(CERT_PATH) && existsSync(KEY_PATH)
+    ? { https: { key: KEY_PATH, cert: CERT_PATH } }
+    : {};
 
 export default defineNuxtConfig({
   compatibilityDate: '2024-11-01',
@@ -41,6 +53,7 @@ export default defineNuxtConfig({
   devServer: {
     host: '0.0.0.0', // Required for Docker
     port: 3001,      // Frontend port (backend uses 3000)
+    ...devHttps,     // internal TLS when the mounted cert is present
   },
 
   // API Proxy: Route /api/backend/* to Express backend

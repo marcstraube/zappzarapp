@@ -23,14 +23,28 @@ fs.writeFileSync('package.json', JSON.stringify(pkg, null, 2) + '\n');
 # 2. Update vite.config.ts with zappzarapp settings (preserve existing plugins)
 echo "[react-router] Updating vite.config.ts..."
 cat > vite.config.ts << 'EOF'
+import { existsSync, readFileSync } from "node:fs";
 import { reactRouter } from "@react-router/dev/vite";
 import tailwindcss from "@tailwindcss/vite";
 import { defineConfig } from "vite";
+
+// Serve the dev server over HTTPS with the internal certificate mounted into the
+// container. The nginx framework proxy and the container healthcheck both expect
+// HTTPS on port 3001 (zero-trust internal networking). Guarded by existsSync so
+// `vite build` and cert-less contexts (e.g. plain `pnpm dev` on a laptop) still
+// work over plain HTTP.
+const CERT_PATH = "/etc/ssl/certs/cert.crt";
+const KEY_PATH = "/etc/ssl/private/cert.key";
+const https =
+  existsSync(CERT_PATH) && existsSync(KEY_PATH)
+    ? { cert: readFileSync(CERT_PATH), key: readFileSync(KEY_PATH) }
+    : undefined;
 
 export default defineConfig({
   server: {
     host: '0.0.0.0', // Required for Docker
     port: 3001,      // Frontend port (backend uses 3000)
+    https,           // internal TLS when the mounted cert is present
     // API Proxy: Route /api/backend/* to Express backend
     proxy: {
       '/api/backend': {

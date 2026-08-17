@@ -8,6 +8,53 @@ periodic triage (`/optimize --learnings`) and are removed from this file.
 
 ## Nginx / Dev Presets
 
+### Framework dev mode was broken out-of-the-box (2026-08-17)
+
+Found by actually running a scaffolded framework dev server (SvelteKit) — the
+first time the framework _runtime_ (not just `build`) was exercised. CI only
+does scaffold + `vite build` + GOSS, so both bugs were invisible.
+
+- **Bug A — `pnpm-sync --user root` → `vite dev` EACCES.** `make pnpm-sync` runs
+  the container as `--user root`, so scaffolded deps and generated dirs
+  (`node_modules/.vite-temp`, and `.svelte-kit/` in the bind-mounted source) end
+  up owned by root. The dev entrypoint's `fix_workspace_permissions` only chowns
+  when node_modules is _empty_ (`-z "$(ls -A)"`), so on a populated volume the
+  fix is skipped and `vite dev` (uid 1000) crash-loops with `EACCES` writing
+  into the root-owned dirs. Fresh scaffold → framework dev server never starts.
+  Manual `chown -R 1000:1000` on both the `*_frontend_node_modules` volume and
+  the host `src/node/frontend` unblocked it. **FIXED**: `pnpm-sync` now
+  `chown -R node:node`s the workspace after the root install (verified: broke
+  ownership to root, fixed pnpm-sync restored it, `vite dev` started clean).
+- **Bug B — dev server serves HTTP but the whole stack expects HTTPS on :3001.**
+  Every scaffold configures the dev server as plain HTTP on 3001, but
+  `node-frontend-proxy.conf` proxies `https://node:3001`
+  (`proxy_ssl_verify on`), the Dockerfile framework healthcheck curls
+  `https://localhost:3001`, and `runtime-tests.sh` checks
+  `curl -k https://…:3001`. (Note: `NITRO_SSL_*` in compose only affects the
+  **prod** Nitro server, NOT `nuxt dev` — so even Nuxt dev was HTTP.) **B1
+  FIXED**: each post-install now serves the dev server over HTTPS with the
+  mounted internal cert (`/etc/ssl/certs/cert.crt`), guarded by `existsSync` for
+  cert-less laptop use — vite `server.https` (sveltekit/remix), nuxt
+  `devServer.https`, next `--experimental-https`. Verified: SvelteKit and Remix
+  serve HTTPS:3001 + HMR over wss; **Nuxt works end-to-end through nginx
+  `:8443/app` (200, page + `/_nuxt` assets)** because its asset paths are
+  already in the proxy. (Next is blocked before B1 applies — see below — so its
+  `--experimental-https` change is not yet committed.)
+- **B2 outstanding — nginx `/app` routing only covers Nuxt/Next asset paths.**
+  For Vite frameworks (SvelteKit/Remix) the dev assets live at `/@vite`, `/@fs`,
+  `/src`, `/.svelte-kit`, which `node-frontend-proxy.conf` does not route, and
+  `development-vite-hmr.conf` hardcodes those paths to port **5173** (assets
+  mode) while framework Vite runs on **3001**. So SvelteKit/Remix work directly
+  on `https://node:3001` but not yet through nginx. Fix needs a NODE_MODE-aware
+  Vite upstream port (5173 assets / 3001 framework) plus `/src` + `/.svelte-kit`
+  coverage, verified in both modes.
+- **Separate blocker — Next.js scaffold hits `EBUSY` on pnpm-sync.**
+  `make node-frontend-next` + `make pnpm-sync` fails deterministically with
+  `[EBUSY] rename '/app/pnpm-workspace.yaml.<n>' -> '/app/pnpm-workspace.yaml'`
+  (the single-file bind-mount atomic-rename gotcha, triggered by Next's scaffold
+  rewriting the workspace file). Next framework mode is blocked before B1 even
+  applies; the `--experimental-https` dev script is in place but unverified.
+
 ### Dev nginx crash-loops in every preset without a `node` container (2026-08-17)
 
 - `development-api-docs.conf` proxied the DevDashboard route with a **static**
