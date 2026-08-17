@@ -1960,6 +1960,10 @@ pnpm-sync: ## Sync Node.js dependencies (after package.json changes, e.g., front
 	@# writes the lockfile), so resolve in a temp location and copy back via cat.
 	@# --no-frozen-lockfile overrides the frozen default that CI=true implies;
 	@# unlike pnpm-update this does not upgrade dependencies within their ranges.
+	@# Runs as root (bind mounts reject pnpm's atomic lockfile rename otherwise),
+	@# then restores node ownership of the workspace: a root install leaves
+	@# root-owned deps and prepare-script output (.svelte-kit, node_modules/
+	@# .vite-temp), which would make the dev server (uid 1000) crash with EACCES.
 	@$(DC_RUN) run --rm --no-deps --no-TTY --user root --entrypoint "" -e CI=true node sh -c ' \
 		mkdir -p /tmp/pnpm-sync/src/node/backend /tmp/pnpm-sync/src/node/frontend && \
 		cp /app/package.json /tmp/pnpm-sync/package.json && \
@@ -1969,7 +1973,8 @@ pnpm-sync: ## Sync Node.js dependencies (after package.json changes, e.g., front
 		cp /app/src/node/frontend/package.json /tmp/pnpm-sync/src/node/frontend/package.json && \
 		cd /tmp/pnpm-sync && pnpm install --no-frozen-lockfile --lockfile-only && \
 		cat /tmp/pnpm-sync/pnpm-lock.yaml > /app/pnpm-lock.yaml && \
-		cd /app && pnpm install --frozen-lockfile \
+		cd /app && pnpm install --frozen-lockfile && \
+		chown -R node:node /app/node_modules /app/src/node/backend /app/src/node/frontend \
 	'
 	@echo -e "\033[0;32mDependencies synced!\033[0m"
 
