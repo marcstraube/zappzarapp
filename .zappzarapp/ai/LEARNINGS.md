@@ -6,6 +6,29 @@ periodic triage (`/optimize --learnings`) and are removed from this file.
 
 ---
 
+## Nginx / Dev Presets
+
+### Dev nginx crash-loops in every preset without a `node` container (2026-08-17)
+
+- `development-api-docs.conf` proxied the DevDashboard route with a **static**
+  upstream (`proxy_pass https://node:3000/…`). nginx resolves static upstream
+  hostnames at config-load time, so with no `node` service it dies with
+  `[emerg] host not found in upstream "node"` and crash-loops — taking the whole
+  nginx down, not just that one route.
+- Broke 3 of the 7 core dev presets: `dev-php-only`, `dev-minimal` (no node at
+  all) and `dev-node-only` (`NODE_MODE=api` starts only `node-backend`, not the
+  `node` frontend). The presets that passed (fullstack/framework/assets/idle)
+  all happen to run a `node` container, which masked the regression.
+- Fix = the pattern already used by the sibling `development-vite-hmr.conf`:
+  `set $upstream_node node:3000; proxy_pass https://$upstream_node;`. A
+  variabled upstream defers DNS to request time (server block already has
+  `resolver 127.0.0.11`), so nginx boots regardless and the route just 502s when
+  node is absent. Dropping the URI part is safe here — request path == upstream
+  path, so the bare host forwards `$request_uri` unchanged.
+- Meta: CI only runs the **prod** GOSS matrix (`goss-test-matrix-prod`); the dev
+  matrix is local-only, so this dev-only regression shipped unnoticed. Found by
+  running `make goss-test-matrix-dev` end-to-end on a 16-core host.
+
 ## CI
 
 ### compose.ci overlay must re-declare the UID/GID build args, or bind-mount writes fail (2026-08-16)
