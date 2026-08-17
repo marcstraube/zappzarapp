@@ -40,20 +40,43 @@ does scaffold + `vite build` + GOSS, so both bugs were invisible.
   `:8443/app` (200, page + `/_nuxt` assets)** because its asset paths are
   already in the proxy. (Next is blocked before B1 applies — see below — so its
   `--experimental-https` change is not yet committed.)
-- **B2 outstanding — nginx `/app` routing only covers Nuxt/Next asset paths.**
+- **B2 (FIXED) — nginx `/app` routing now covers Vite framework asset paths.**
   For Vite frameworks (SvelteKit/Remix) the dev assets live at `/@vite`, `/@fs`,
-  `/src`, `/.svelte-kit`, which `node-frontend-proxy.conf` does not route, and
+  `/@id`, `/src`, `/.svelte-kit`, `/node_modules`, which
+  `node-frontend-proxy.conf` does not route; the shared
   `development-vite-hmr.conf` hardcodes those paths to port **5173** (assets
-  mode) while framework Vite runs on **3001**. So SvelteKit/Remix work directly
-  on `https://node:3001` but not yet through nginx. Fix needs a NODE_MODE-aware
-  Vite upstream port (5173 assets / 3001 framework) plus `/src` + `/.svelte-kit`
-  coverage, verified in both modes.
-- **Separate blocker — Next.js scaffold hits `EBUSY` on pnpm-sync.**
-  `make node-frontend-next` + `make pnpm-sync` fails deterministically with
-  `[EBUSY] rename '/app/pnpm-workspace.yaml.<n>' -> '/app/pnpm-workspace.yaml'`
-  (the single-file bind-mount atomic-rename gotcha, triggered by Next's scaffold
-  rewriting the workspace file). Next framework mode is blocked before B1 even
-  applies; the `--experimental-https` dev script is in place but unverified.
+  mode) while framework Vite runs on **3001** (HTTPS, internal cert). Same URLs,
+  different upstream + protocol per NODE_MODE — so the fix is a mode-switched
+  snippet, not a variable port. The nginx entrypoint now copies one of two
+  variants to `/run/nginx/snippets/vite-hmr.conf`: `development-vite-hmr.conf`
+  (assets: node:5173 HTTP) or the new `development-vite-framework.conf`
+  (framework: node:3001 HTTPS with internal-CA verify). The framework variant is
+  included _before_ `deny-rules.conf` so its `/.svelte-kit/` route wins over the
+  hidden-file deny rule (nginx matches regex locations in declaration order).
+  Verified on prometheus: SvelteKit's full module graph (9 transitive imports
+  incl. `/@vite/client`, `/.svelte-kit/*`, `/@fs/*`) loads `200 text/javascript`
+  through `:8443/app`; Remix's page + `/@id/…virtual` modules load; assets mode
+  still selects the 5173 variant (entrypoint log + `nginx -t` valid in both).
+  HMR-over-nginx (the Vite ws) is out of scope here — it needs
+  `server.hmr.clientPort` in each framework's Vite config plus a `/` ws route;
+  asset loading + SSR is the delivered goal.
+- **Remix client entry `403`s at the Vite layer (pre-existing, not nginx).**
+  `/@fs/app/node_modules/.pnpm/@react-router+dev@…/…/entry.client.tsx` returns
+  **403 directly from node:3001** (Vite `server.fs.allow` denies the hoisted
+  pnpm-store path; the frontend Vite root is `/app/src/node/frontend` but deps
+  hoist to `/app/node_modules`). nginx forwards faithfully and passes the 403
+  through — SvelteKit's equivalent `@fs` path is allowed and loads 200. This
+  breaks Remix client hydration in dev regardless of the proxy; fix belongs in
+  the Remix `vite.config.ts` patch (`server.fs.allow`), tracked as a follow-up.
+- **Separate blocker (FIXED) — Next.js scaffold hit `EBUSY` on pnpm-sync.**
+  `make node-frontend-next` + `make pnpm-sync` failed deterministically with
+  `[EBUSY] rename '/app/pnpm-workspace.yaml.<n>' -> '/app/pnpm-workspace.yaml'`:
+  the Next scaffold pulls in `unrs-resolver` (napi-rs native), pnpm 11
+  hard-fails `ERR_PNPM_IGNORED_BUILDS` and its attempt to record the approval in
+  the read-only single-file `pnpm-workspace.yaml` mount surfaces as EBUSY. Fixed
+  by adding `unrs-resolver: true` to `allowBuilds`. Next then serves HTTPS:3001
+  via `--experimental-https --experimental-https-key/cert` and works end-to-end
+  through nginx `:8443/app` (its `/_next` assets are already routed).
 
 ### Dev nginx crash-loops in every preset without a `node` container (2026-08-17)
 

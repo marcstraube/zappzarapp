@@ -65,8 +65,10 @@ server {
     # Custom Error Pages (shared)
     include /etc/nginx/snippets/error-pages.conf;
 
-    # Vite HMR Proxy (Development Only)
-    include /etc/nginx/snippets/development-vite-hmr.conf;
+    # Vite dev-server Proxy (Development Only)
+    # Variant selected by the entrypoint from NODE_MODE:
+    #   assets -> node:5173 (HTTP) / framework -> node:3001 (HTTPS)
+    include /run/nginx/snippets/vite-hmr.conf;
 
     # API Documentation (Development Only)
     include /etc/nginx/snippets/development-api-docs.conf;

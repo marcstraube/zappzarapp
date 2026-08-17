@@ -220,6 +220,28 @@ location = /ready {
 HEALTH_STATIC
 fi
 
+# =============================================================================
+# Vite dev-server proxy variant (development)
+# =============================================================================
+# The Vite asset paths (/@vite, /@fs, /src, /.svelte-kit, /node_modules) route
+# to a different upstream depending on NODE_MODE:
+#   - framework / framework-api: the framework IS the Vite dev server on
+#     node:3001 (HTTPS, internal cert) - use the framework variant
+#   - everything else (assets, assets-api, PHP-only dev): standalone Vite on
+#     node:5173 (HTTP) - use the assets variant
+# The dev server block includes /run/nginx/snippets/vite-hmr.conf; the
+# production template does not, so generating it here is a no-op in production.
+case "${NODE_MODE:-idle}" in
+    framework|framework-api)
+        cp /etc/nginx/snippets/development-vite-framework.conf /run/nginx/snippets/vite-hmr.conf
+        echo "[entrypoint] Vite proxy: framework variant (node:3001 HTTPS)"
+        ;;
+    *)
+        cp /etc/nginx/snippets/development-vite-hmr.conf /run/nginx/snippets/vite-hmr.conf
+        echo "[entrypoint] Vite proxy: assets variant (node:5173 HTTP)"
+        ;;
+esac
+
 # Create runtime config directory (for read-only filesystems)
 mkdir -p /run/nginx/conf.d
 
