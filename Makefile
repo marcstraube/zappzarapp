@@ -142,7 +142,16 @@ composer-install: secrets ssl-ensure ## Install Composer dependencies (Docker - 
 	@# on a freshly reset tree their single-file bind mounts (pnpm-lock.yaml)
 	@# do not exist yet, and the daemon bakes them into the container as
 	@# root-owned directories that break every later start of that container
-	@XDEBUG_MODE=off $(DC_RUN) run --rm --no-deps --no-TTY php composer install --prefer-dist --no-interaction
+	@# Retry to ride out transient registry/CDN failures (e.g. GitHub zipball
+	@# HTTP 504); in-container so the download cache survives between attempts.
+	@XDEBUG_MODE=off $(DC_RUN) run --rm --no-deps --no-TTY php sh -c ' \
+		i=1; \
+		while :; do \
+			composer install --prefer-dist --no-interaction && break; \
+			[ $$i -ge 3 ] && { echo "composer install: giving up after $$i attempts"; exit 1; }; \
+			echo "composer install: attempt $$i failed, retrying in $$((i*10))s..."; \
+			sleep $$((i*10)); i=$$((i+1)); \
+		done'
 	@echo -e "\033[0;32mDependencies installed!\033[0m"
 
 composer-install-local: ## Install/update Composer dependencies (Local - IDE code completion only)
@@ -162,7 +171,16 @@ composer-install-local: ## Install/update Composer dependencies (Local - IDE cod
 
 composer-sync: ## Sync Composer dependencies (after composer.json changes)
 	@echo -e "\033[0;33mSyncing Composer dependencies...\033[0m"
-	@XDEBUG_MODE=off $(DC_RUN) run --rm --no-deps --no-TTY php composer install --prefer-dist --no-interaction
+	@# Retry to ride out transient registry/CDN failures (e.g. GitHub zipball
+	@# HTTP 504); in-container so the download cache survives between attempts.
+	@XDEBUG_MODE=off $(DC_RUN) run --rm --no-deps --no-TTY php sh -c ' \
+		i=1; \
+		while :; do \
+			composer install --prefer-dist --no-interaction && break; \
+			[ $$i -ge 3 ] && { echo "composer install: giving up after $$i attempts"; exit 1; }; \
+			echo "composer install: attempt $$i failed, retrying in $$((i*10))s..."; \
+			sleep $$((i*10)); i=$$((i+1)); \
+		done'
 	@echo -e "\033[0;32mDependencies synced!\033[0m"
 
 lockfiles-sync: ## Sync both Composer and pnpm lockfiles (after branch switch, fresh clone)
