@@ -30,11 +30,13 @@ overrides:
 # Build-script approvals. pnpm blocks dependency build scripts by default and
 # pnpm 11 hard-fails (ERR_PNPM_IGNORED_BUILDS) on unapproved ones. pnpm 11
 # replaced the pnpm-10 `onlyBuiltDependencies` list with this `allowBuilds` map
-# (package -> boolean). These two ship prebuilt binaries, so their scripts are
-# safe to run.
+# (package -> boolean). These ship prebuilt binaries, so their scripts are
+# safe to run. unrs-resolver (a napi-rs native resolver pulled in by the
+# Next.js frontend scaffold) selects its prebuilt binary in a postinstall.
 allowBuilds:
   '@parcel/watcher': true
   esbuild: true
+  unrs-resolver: true
 
 # Don't auto-verify/-install dependencies before every `pnpm run` (a pnpm 11
 # default that is not read from .npmrc — it must live here). Dependencies are

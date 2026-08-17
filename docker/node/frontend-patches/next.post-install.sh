@@ -19,7 +19,9 @@ pkg.version = '1.0.0';
 pkg.private = true;
 // Set correct port in dev script
 pkg.scripts = pkg.scripts || {};
-pkg.scripts.dev = 'next dev -H 0.0.0.0 -p 3001';
+// Serve dev over HTTPS with the mounted internal cert (nginx proxy + healthcheck
+// expect HTTPS on 3001); fall back to HTTP when the cert is absent (laptop dev).
+pkg.scripts.dev = 'if [ -f /etc/ssl/certs/cert.crt ]; then next dev -H 0.0.0.0 -p 3001 --experimental-https --experimental-https-key /etc/ssl/private/cert.key --experimental-https-cert /etc/ssl/certs/cert.crt; else next dev -H 0.0.0.0 -p 3001; fi';
 pkg.scripts.build = 'next build';
 pkg.scripts.start = 'next start -H 0.0.0.0 -p 3001';
 pkg.scripts.lint = 'next lint';
