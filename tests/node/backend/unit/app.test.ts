@@ -184,7 +184,7 @@ describe('Express App Factory', () => {
 
     it('should set Cross-Origin-Resource-Policy header', async () => {
       const response = await request(app).get('/health');
-      expect(response.headers['cross-origin-resource-policy']).toBe('same-site');
+      expect(response.headers['cross-origin-resource-policy']).toBe('same-origin');
     });
   });
 

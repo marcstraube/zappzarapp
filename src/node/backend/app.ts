@@ -162,7 +162,7 @@ export function createApp(options: AppOptions = {}): Express {
     res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
     // Cross-Origin Isolation Headers (Spectre mitigation)
     res.setHeader('Cross-Origin-Opener-Policy', 'same-origin');
-    res.setHeader('Cross-Origin-Resource-Policy', 'same-site');
+    res.setHeader('Cross-Origin-Resource-Policy', 'same-origin');
     next();
   });
 
