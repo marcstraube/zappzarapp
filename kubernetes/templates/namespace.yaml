@@ -5,4 +5,15 @@ metadata:
   name: {{ include "zappzarapp.namespace" . }}
   labels:
     {{- include "zappzarapp.labels" . | nindent 4 }}
+    {{- with .Values.namespace.podSecurity }}
+    {{- if .enforce }}
+    pod-security.kubernetes.io/enforce: {{ .enforce | quote }}
+    {{- end }}
+    {{- if .warn }}
+    pod-security.kubernetes.io/warn: {{ .warn | quote }}
+    {{- end }}
+    {{- if .audit }}
+    pod-security.kubernetes.io/audit: {{ .audit | quote }}
+    {{- end }}
+    {{- end }}
 {{- end }}

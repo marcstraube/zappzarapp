@@ -22,6 +22,17 @@ namespace:
   # (avoids "already exists" errors)
   create: false
   name: zappzarapp
+  # Pod Security Standards admission labels for the namespace. These live on
+  # the Namespace object, so they only take effect when namespace.create is
+  # true (Helm --create-namespace creates the namespace without them). Every
+  # chart service already satisfies the "restricted" profile (ADR 0008), so
+  # enforce: restricted is safe to turn on; it is left empty by default to not
+  # assume ownership of an externally managed namespace. warn/audit surface
+  # violations without blocking admission.
+  podSecurity:
+    enforce: ""
+    warn: restricted
+    audit: restricted
 
 # ============================================================================
 # CORE SERVICES
