@@ -50,7 +50,7 @@ Workspace settings including:
 
 - Intelephense with PHP 8.5 support
 - PHP CS Fixer integration (PER-CS standard)
-- PHPStan Level 5
+- PHPStan Level 8
 - PHPMD integration
 - Format on save enabled
 
@@ -240,7 +240,7 @@ This VS Code configuration provides feature parity with the PhpStorm setup:
 | --------------- | --------------- | --------------------- |
 | PHP Interpreter | Docker Compose  | Intelephense + Docker |
 | Code Style      | PHP CS Fixer    | PHP CS Fixer          |
-| Static Analysis | PHPStan Level 5 | PHPStan Level 5       |
+| Static Analysis | PHPStan Level 8 | PHPStan Level 8       |
 | Mess Detection  | PHPMD           | PHPMD                 |
 | Testing         | PHPUnit         | PHPUnit Test Explorer |
 | Debugging       | Xdebug 3.5.0    | Xdebug 3.5.0          |
@@ -254,7 +254,7 @@ This VS Code configuration provides feature parity with the PhpStorm setup:
 ### Intelephense not working
 
 - Ensure PHP files are in workspace
-- Check PHP version in settings (8.4)
+- Check PHP version in settings (8.5)
 - Restart VS Code
 - Check Output panel → Intelephense
 

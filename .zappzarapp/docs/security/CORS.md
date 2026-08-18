@@ -168,7 +168,6 @@ make down && make up
 
 ## Related Documentation
 
-- [Environment Configuration](../infrastructure/ENVIRONMENT.md) - How .env files
-  work
-- [Security Overview](./README.md) - Security best practices
+- [Environment Configuration](../infrastructure/DEPLOYMENT.md#environment-configuration) -
+  How .env files work
 - [Secrets Management](./SECRETS.md) - Managing sensitive data

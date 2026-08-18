@@ -13,7 +13,7 @@ PHP interpreter and quality tools configuration:
 
 - **Docker Compose Interpreter**: PHP 8.5 via `compose.yaml`
 - **PHP CS Fixer**: PER-CS standard with risky rules
-- **PHPStan**: Level 5 static analysis
+- **PHPStan**: Level 8 static analysis
 - **PHPMD**: Mess detection with custom ruleset
 - **PHPUnit**: Test framework configuration
 - **Xdebug**: Debugging support
@@ -266,7 +266,7 @@ This PhpStorm configuration provides feature parity with VS Code:
 | ------------------ | ------------------- | --------------------- |
 | PHP Interpreter    | Docker Compose      | Intelephense + Docker |
 | Code Style         | PHP CS Fixer        | PHP CS Fixer          |
-| Static Analysis    | PHPStan Level 5     | PHPStan Level 5       |
+| Static Analysis    | PHPStan Level 8     | PHPStan Level 8       |
 | Mess Detection     | PHPMD               | PHPMD                 |
 | Testing            | PHPUnit             | PHPUnit Test Explorer |
 | Debugging          | Xdebug 3.5.0        | Xdebug 3.5.0          |

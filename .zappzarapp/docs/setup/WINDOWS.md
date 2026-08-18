@@ -208,6 +208,6 @@ If not found, ensure the installation path is in your PATH environment variable.
 
 ## See Also
 
-- [Main README](../../README.md)
+- [Main README](../../../README.md)
 - [Dev Dashboard](../development/DEV-DASHBOARD.md)
 - [Xdebug Configuration](../development/XDEBUG.md)

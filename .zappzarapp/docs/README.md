@@ -93,10 +93,10 @@ Platform-specific installation and configuration.
 Pre-configured settings for popular IDEs (located in their respective
 directories):
 
-| IDE          | Configuration                             | Description                                     |
-| ------------ | ----------------------------------------- | ----------------------------------------------- |
-| **VS Code**  | [.vscode/README.md](../.vscode/README.md) | Extensions, tasks, launch configs, settings     |
-| **PhpStorm** | [.idea/README.md](../.idea/README.md)     | Run configurations, inspections, database tools |
+| IDE          | Configuration                                | Description                                     |
+| ------------ | -------------------------------------------- | ----------------------------------------------- |
+| **VS Code**  | [.vscode/README.md](../../.vscode/README.md) | Extensions, tasks, launch configs, settings     |
+| **PhpStorm** | [.idea/README.md](../../.idea/README.md)     | Run configurations, inspections, database tools |
 
 ---
 
