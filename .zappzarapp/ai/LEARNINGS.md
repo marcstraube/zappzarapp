@@ -60,14 +60,22 @@ does scaffold + `vite build` + GOSS, so both bugs were invisible.
   HMR-over-nginx (the Vite ws) is out of scope here — it needs
   `server.hmr.clientPort` in each framework's Vite config plus a `/` ws route;
   asset loading + SSR is the delivered goal.
-- **Remix client entry `403`s at the Vite layer (pre-existing, not nginx).**
-  `/@fs/app/node_modules/.pnpm/@react-router+dev@…/…/entry.client.tsx` returns
-  **403 directly from node:3001** (Vite `server.fs.allow` denies the hoisted
-  pnpm-store path; the frontend Vite root is `/app/src/node/frontend` but deps
-  hoist to `/app/node_modules`). nginx forwards faithfully and passes the 403
-  through — SvelteKit's equivalent `@fs` path is allowed and loads 200. This
-  breaks Remix client hydration in dev regardless of the proxy; fix belongs in
-  the Remix `vite.config.ts` patch (`server.fs.allow`), tracked as a follow-up.
+- **Remix client entry `403`ed at the Vite layer (FIXED) — hoisted pnpm store.**
+  `/@fs/app/node_modules/.pnpm/@react-router+dev@…/…/entry.client.tsx` returned
+  **403 directly from node:3001** (nginx forwarded faithfully and passed it
+  through). Root cause: the scaffold writes a framework-local
+  `pnpm-workspace.yaml`, so Vite's `searchForWorkspaceRoot` stops at
+  `/app/src/node/frontend` and its default `server.fs.allow` denies the hoisted
+  deps at `/app/node_modules`. SvelteKit's `@fs` path is allowed because
+  `@sveltejs/kit`'s plugin adds the entries itself; React Router's does not.
+  Fixed in `remix.post-install.sh`: `server.fs.allow: [repoRoot]` where
+  `repoRoot = fileURLToPath(new URL("../../../", import.meta.url))` (three
+  levels up from `src/node/frontend`, i.e. `/app` in-container / repo root on a
+  laptop). Vite's default `server.fs.deny` still blocks `.env`/keys within the
+  widened root, and this is dev-only. Verified: the full Remix module graph
+  (entry.client.tsx, `/@id/…virtual`, `/node_modules/.vite/deps/*`) loads `200`
+  through `:8443/app`. SvelteKit/Nuxt not touched (work as-is); revisit if they
+  hit the same 403 for a future dependency.
 - **Separate blocker (FIXED) — Next.js scaffold hit `EBUSY` on pnpm-sync.**
   `make node-frontend-next` + `make pnpm-sync` failed deterministically with
   `[EBUSY] rename '/app/pnpm-workspace.yaml.<n>' -> '/app/pnpm-workspace.yaml'`:

@@ -24,6 +24,7 @@ fs.writeFileSync('package.json', JSON.stringify(pkg, null, 2) + '\n');
 echo "[react-router] Updating vite.config.ts..."
 cat > vite.config.ts << 'EOF'
 import { existsSync, readFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
 import { reactRouter } from "@react-router/dev/vite";
 import tailwindcss from "@tailwindcss/vite";
 import { defineConfig } from "vite";
@@ -40,11 +41,19 @@ const https =
     ? { cert: readFileSync(CERT_PATH), key: readFileSync(KEY_PATH) }
     : undefined;
 
+// pnpm hoists dependencies to the repo-root node_modules, which sits above this
+// framework's Vite root. Vite's default server.fs.allow (searchForWorkspaceRoot)
+// stops at the framework-local pnpm-workspace.yaml, so it would deny serving the
+// hoisted React Router client entry over /@fs (403). Allow the repo root - three
+// levels up from this config (src/node/frontend) - so those files load.
+const repoRoot = fileURLToPath(new URL("../../../", import.meta.url));
+
 export default defineConfig({
   server: {
     host: '0.0.0.0', // Required for Docker
     port: 3001,      // Frontend port (backend uses 3000)
     https,           // internal TLS when the mounted cert is present
+    fs: { allow: [repoRoot] },
     // API Proxy: Route /api/backend/* to Express backend
     proxy: {
       '/api/backend': {
