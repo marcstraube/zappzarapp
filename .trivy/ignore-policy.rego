@@ -24,12 +24,15 @@ package trivy
 
 # Exact upstream-only package names.
 ignore_packages := {
-	# Go standard library + modules compiled into bundled gosu / Caddy binaries
-	# (postgres, mariadb, mercure, seaweedfs).
+	# Go standard library + modules compiled into upstream Go binaries
+	# (gosu / Caddy in postgres, mariadb, mercure; the seaweedfs and mailpit
+	# server binaries).
 	"stdlib",
 	"golang.org/x/sys",
 	"golang.org/x/net",
 	"golang.org/x/text",
+	"golang.org/x/image",
+	"golang.org/x/mod",
 	"google.golang.org/grpc",
 	"github.com/caddyserver/caddy/v2",
 	"github.com/google/cel-go",
@@ -40,8 +43,11 @@ ignore_packages := {
 	"io.projectreactor.netty:reactor-netty-http",
 	"at.yawk.lz4:lz4-java",
 	"org.apache.httpcomponents.core5:httpcore5",
+	"org.apache.httpcomponents.core5:httpcore5-h2",
+	"org.apache.httpcomponents.client5:httpclient5",
 	"org.jsoup:jsoup",
 	"io.opentelemetry:opentelemetry-api",
+	"org.apache.logging.log4j:log4j-api",
 	# Bundled with the Node.js runtime / npm (npm is unused at runtime; we use pnpm).
 	"undici",
 	"tar",

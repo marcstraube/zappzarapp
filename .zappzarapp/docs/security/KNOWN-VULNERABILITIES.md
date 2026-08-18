@@ -90,11 +90,11 @@ us** — the vulnerable component is a compiled binary, a bundled library, or a
 language runtime baked into an upstream image, and only an upstream release
 changes it:
 
-| Source                                                                                                                                                                   | Category                          | Fixable by                                             |
-| ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | --------------------------------- | ------------------------------------------------------ |
-| Bundled Java JARs in the Elasticsearch distribution (netty, jackson-databind, jakarta.mail, commons-lang3, reactor-netty, lz4-java, httpcore5, jsoup, opentelemetry-api) | `trivy-elasticsearch`             | Elastic release (image tracks the current major)       |
-| Go stdlib / modules compiled into upstream `gosu` / Caddy binaries                                                                                                       | `trivy-postgres`, `trivy-mercure` | Upstream image rebuild                                 |
-| Node.js runtime + bundled npm (`undici`, `tar`, `ip-address`) and `pnpm`                                                                                                 | `trivy-node`                      | Node release; pnpm bumped to 11.18.0 (re-scan pending) |
+| Source                                                                                                                                                                                                         | Category                                                              | Fixable by                                             |
+| -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------- | ------------------------------------------------------ |
+| Bundled Java JARs in the Elasticsearch distribution (netty, jackson-databind, jakarta.mail, commons-lang3, reactor-netty, lz4-java, httpcore5, httpcore5-h2, httpclient5, log4j-api, jsoup, opentelemetry-api) | `trivy-elasticsearch`                                                 | Elastic release (image tracks the current major)       |
+| Go stdlib / modules (`golang.org/x/*`) compiled into upstream Go binaries — `gosu` / Caddy plus the seaweedfs and mailpit servers                                                                              | `trivy-postgres`, `trivy-mercure`, `trivy-seaweedfs`, `trivy-mailpit` | Upstream image rebuild                                 |
+| Node.js runtime + bundled npm (`undici`, `tar`, `ip-address`) and `pnpm`                                                                                                                                       | `trivy-node`                                                          | Node release; pnpm bumped to 11.18.0 (re-scan pending) |
 
 ### Decision: ACCEPTED (filtered by package at scan time)
 
@@ -130,9 +130,10 @@ statements are wanted later.
 - A container CVE in a package **not** on the list appears as a normal Open
   alert → triage it (fix if it is ours, add to the policy if upstream-only).
 
-| Review Date | Reviewer     | Status                                            |
-| ----------- | ------------ | ------------------------------------------------- |
-| 2026-07-30  | Claude Agent | Accepted - upstream-only after all in-scope fixes |
+| Review Date | Reviewer     | Status                                                                                                                                          |
+| ----------- | ------------ | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+| 2026-07-30  | Claude Agent | Accepted - upstream-only after all in-scope fixes                                                                                               |
+| 2026-08-18  | Claude Agent | Added ES `httpcore5-h2`/`httpclient5`/`log4j-api` + `golang.org/x/{image,mod}` (mailpit/seaweedfs) — on latest tags, no Renovate bump available |
 
 ---
 

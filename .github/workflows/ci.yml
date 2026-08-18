@@ -515,7 +515,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     needs: [changes]
-    if: needs.changes.outputs.php == 'true' || needs.changes.outputs.node == 'true' || needs.changes.outputs.ci == 'true'
+    if: needs.changes.outputs.php == 'true' || needs.changes.outputs.node == 'true' || needs.changes.outputs.infra == 'true' || needs.changes.outputs.ci == 'true'
     permissions:
       contents: read
       security-events: write
