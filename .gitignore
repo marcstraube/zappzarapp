@@ -88,6 +88,11 @@ Thumbs.db
 # Plain database dump from make postgres-dump / postgres-restore
 /dump.sql
 
+# ZAP security scan reports (from make security-zap)
+/zap-report.html
+/zap-report.json
+/zap.yaml
+
 # Docker Secrets (sensitive data - never commit!)
 # Actual secrets are ignored in secrets/.gitignore, but example files are kept
 /secrets/*.txt
