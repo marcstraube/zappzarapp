@@ -32,6 +32,7 @@ spec:
           imagePullPolicy: {{ .Values.global.imagePullPolicy }}
           command: ["sh", "-c", "cp -r /usr/share/elasticsearch/config/. /mnt/config/"]
           securityContext:
+            allowPrivilegeEscalation: false
             readOnlyRootFilesystem: true
             runAsNonRoot: {{ .Values.elasticsearch.securityContext.runAsNonRoot }}
             capabilities:
@@ -74,6 +75,7 @@ spec:
           resources:
             {{- toYaml .Values.elasticsearch.resources | nindent 12 }}
           securityContext:
+            allowPrivilegeEscalation: false
             readOnlyRootFilesystem: {{ .Values.elasticsearch.securityContext.readOnlyRootFilesystem }}
             runAsNonRoot: {{ .Values.elasticsearch.securityContext.runAsNonRoot }}
             capabilities:

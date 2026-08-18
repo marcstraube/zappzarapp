@@ -59,6 +59,7 @@ spec:
           resources:
             {{- toYaml .Values.mercure.resources | nindent 12 }}
           securityContext:
+            allowPrivilegeEscalation: false
             readOnlyRootFilesystem: {{ .Values.mercure.securityContext.readOnlyRootFilesystem }}
             runAsNonRoot: {{ .Values.mercure.securityContext.runAsNonRoot }}
             capabilities:

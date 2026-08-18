@@ -75,6 +75,7 @@ spec:
           resources:
             {{- toYaml .Values.seaweedfs.resources | nindent 12 }}
           securityContext:
+            allowPrivilegeEscalation: false
             readOnlyRootFilesystem: {{ .Values.seaweedfs.securityContext.readOnlyRootFilesystem }}
             runAsNonRoot: {{ .Values.seaweedfs.securityContext.runAsNonRoot }}
             capabilities:

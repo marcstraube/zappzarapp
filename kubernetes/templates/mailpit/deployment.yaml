@@ -51,6 +51,7 @@ spec:
           resources:
             {{- toYaml .Values.mailpit.resources | nindent 12 }}
           securityContext:
+            allowPrivilegeEscalation: false
             readOnlyRootFilesystem: {{ .Values.mailpit.securityContext.readOnlyRootFilesystem }}
             runAsNonRoot: {{ .Values.mailpit.securityContext.runAsNonRoot }}
             capabilities:

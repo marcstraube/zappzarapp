@@ -20,8 +20,9 @@ the details: uid 101 cannot bind port 80, the nginx entrypoint writes to /run
 reject the deprecated `RABBITMQ_DEFAULT_*_FILE` env vars.
 
 **Decision:** Run every chart service as a non-root user with
-`readOnlyRootFilesystem: true`, `capabilities.drop: [ALL]` and no capability
-adds — the full Pod Security Standard "restricted" posture. Concretely:
+`allowPrivilegeEscalation: false`, `readOnlyRootFilesystem: true`,
+`capabilities.drop: [ALL]` and no capability adds — the full Pod Security
+Standard "restricted" posture. Concretely:
 
 - Pods run as the image's own service user via numeric `runAsUser`/`runAsGroup`
   in the pod securityContext (numeric because the kubelet cannot verify

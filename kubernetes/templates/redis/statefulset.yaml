@@ -61,6 +61,7 @@ spec:
           resources:
             {{- toYaml .Values.redis.resources | nindent 12 }}
           securityContext:
+            allowPrivilegeEscalation: false
             readOnlyRootFilesystem: {{ .Values.redis.securityContext.readOnlyRootFilesystem }}
             runAsNonRoot: {{ .Values.redis.securityContext.runAsNonRoot }}
             capabilities:

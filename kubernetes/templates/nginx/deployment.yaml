@@ -69,6 +69,7 @@ spec:
           resources:
             {{- toYaml .Values.nginx.resources | nindent 12 }}
           securityContext:
+            allowPrivilegeEscalation: false
             readOnlyRootFilesystem: {{ .Values.nginx.securityContext.readOnlyRootFilesystem }}
             runAsNonRoot: {{ .Values.nginx.securityContext.runAsNonRoot }}
             capabilities:

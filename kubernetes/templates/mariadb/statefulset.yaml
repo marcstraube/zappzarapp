@@ -61,6 +61,7 @@ spec:
           resources:
             {{- toYaml .Values.mariadb.resources | nindent 12 }}
           securityContext:
+            allowPrivilegeEscalation: false
             readOnlyRootFilesystem: {{ .Values.mariadb.securityContext.readOnlyRootFilesystem }}
             runAsNonRoot: {{ .Values.mariadb.securityContext.runAsNonRoot }}
             capabilities:
