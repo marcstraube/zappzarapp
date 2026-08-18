@@ -69,6 +69,11 @@ BACKUP_ENCRYPTION_KEY="${BACKUP_ENCRYPTION_KEY:-}"
 # Exported so openssl can read it via -pass env: (keeps the key out of argv/ps)
 export BACKUP_ENCRYPTION_KEY
 
+# Try to read from secrets if not set
+if [[ -z "$BACKUP_ENCRYPTION_KEY" && -f "$PROJECT_ROOT/secrets/backup_encryption_key.txt" ]]; then
+    BACKUP_ENCRYPTION_KEY=$(cat "$PROJECT_ROOT/secrets/backup_encryption_key.txt")
+fi
+
 # Help message
 show_help() {
     head -35 "$0" | tail -30 | sed 's/^# //' | sed 's/^#//'
@@ -158,7 +163,7 @@ fi
 # Check encryption key if backup is encrypted
 if [[ "$ENCRYPTED" == true && -z "$BACKUP_ENCRYPTION_KEY" ]]; then
     echo -e "${RED}Error: BACKUP_ENCRYPTION_KEY is not set but backup is encrypted.${NC}"
-    echo -e "${YELLOW}Set BACKUP_ENCRYPTION_KEY in .env or as environment variable.${NC}"
+    echo -e "${YELLOW}Set BACKUP_ENCRYPTION_KEY in .env, create secrets/backup_encryption_key.txt, or export it.${NC}"
     exit 1
 fi
 
