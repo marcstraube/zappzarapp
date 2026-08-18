@@ -126,6 +126,12 @@ and host-side git hooks — see [QUICKSTART](.zappzarapp/docs/QUICKSTART.md).)
 
 ## Quick Start
 
+> **Get it via fork or clone, not the release archive.** The GitHub "Source code
+> (zip/tar.gz)" download runs as a one-time snapshot but has no git history, so
+> `make boilerplate-sync` updates won't work there. See
+> [QUICKSTART](.zappzarapp/docs/QUICKSTART.md#1-create-your-project) for fork
+> and clone steps.
+
 ```bash
 # 1. Initialize local config (auto-detects your host UID/GID -> .env.local)
 make init

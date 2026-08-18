@@ -32,6 +32,11 @@ live in Docker volumes. Two things still benefit from a local install:
 
 ### 1. Create Your Project
 
+> **Fork or clone — the release archive can't self-update.** You _can_ run the
+> project from a downloaded GitHub "Source code (zip/tar.gz)" archive, but it
+> has no git history, so `make boilerplate-sync` (infrastructure updates from
+> zappzarapp) won't work there. Fork or clone to stay updatable.
+
 #### Option A: Fork on GitHub (recommended)
 
 1. Fork `marcstraube/zappzarapp` on GitHub
