@@ -107,20 +107,20 @@ make node-dev
 make node-dev-full
 ```
 
-> **Note:** In development mode, Node starts with `NODE_MODE=assets` by default.
-> This enables **Vite HMR** (Hot Module Replacement) for instant CSS/JS
-> hot-reload. Override with `NODE_MODE=assets-api` for full-stack Node.js
-> development.
+> **Note:** In development mode, Node starts with `NODE_MODE=assets-api` by
+> default. This runs **Vite HMR** (Hot Module Replacement) for instant CSS/JS
+> hot-reload alongside the Express API. Use `NODE_MODE=assets` for Vite HMR only
+> (no Express backend).
 
 ### Access URLs
 
-| Service       | URL                          | Description           |
-| ------------- | ---------------------------- | --------------------- |
-| Nginx (HTTP)  | <http://localhost:8080>      | Main entry point      |
-| Nginx (HTTPS) | <https://localhost:8443>     | SSL entry point       |
-| Vite HMR      | <http://localhost:5173>      | Frontend dev server   |
-| Node API      | <http://localhost:3000>      | Express backend       |
-| Dev Dashboard | <http://localhost:8080/_dev> | PHP development tools |
+| Service       | URL                           | Description           |
+| ------------- | ----------------------------- | --------------------- |
+| Nginx (HTTP)  | <http://localhost:8080>       | Main entry point      |
+| Nginx (HTTPS) | <https://localhost:8443>      | SSL entry point       |
+| Vite HMR      | <http://localhost:5173>       | Frontend dev server   |
+| Node API      | <http://localhost:3000>       | Express backend       |
+| Dev Dashboard | <https://localhost:8443/_dev> | PHP development tools |
 
 ### Run Tests
 

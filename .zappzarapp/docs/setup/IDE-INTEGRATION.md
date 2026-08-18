@@ -54,7 +54,7 @@ Pre-configured connections for:
 
 ### Run Configurations / Tasks
 
-25+ pre-configured commands for:
+45 PhpStorm run configurations (44 VS Code tasks) for:
 
 - Docker operations (up, down, restart, rebuild)
 - Quality checks (lint, format, analyze)

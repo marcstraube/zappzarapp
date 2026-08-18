@@ -25,7 +25,7 @@ works without Node, but the "Generate Coverage" and "Generate Docs" buttons for
 Node.js require the Node backend to be running.
 
 **To disable Node completely:** Change `ENABLE_NODE=true` to `ENABLE_NODE=false`
-in `.env` (the default `.env` has `ENABLE_NODE=true` at line ~81). This prevents
+in `.env` (the default `.env` has `ENABLE_NODE=true` at line 101). This prevents
 the Node container from starting. The PHP DevDashboard continues to work, but
 Node-related features show "copy command" buttons instead.
 

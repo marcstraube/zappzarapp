@@ -130,10 +130,8 @@ Minimum coverage requirements (configured in `vitest.config.ts`):
 
 - Lines: 80%
 - Functions: 80%
-- Branches: 80%
+- Branches: 75%
 - Statements: 80%
-
-Similar to PHPUnit's coverage requirements in the PHP stack.
 
 ## Additional Tools
 

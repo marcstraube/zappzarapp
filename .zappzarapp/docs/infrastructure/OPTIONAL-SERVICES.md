@@ -401,7 +401,6 @@ AWS S3 SDK will work seamlessly with both SeaweedFS and real AWS S3.
 # .env
 ENABLE_SEAWEEDFS=true
 SEAWEEDFS_S3_PORT=8333
-SEAWEEDFS_CONSOLE_PORT=8888
 
 # For external S3/SeaweedFS instances (production)
 #S3_ENDPOINT=https://seaweedfs:8333
@@ -411,8 +410,8 @@ SEAWEEDFS_CONSOLE_PORT=8888
 #S3_REGION=us-east-1
 ```
 
-**Credentials:** Auto-generated in `secrets/seaweedfs_admin_user.txt` and
-`secrets/seaweedfs_admin_password.txt` by `make setup`.
+**Credentials:** Auto-generated in `secrets/seaweedfs_access_key.txt` and
+`secrets/seaweedfs_secret_key.txt` by `make setup`.
 
 ### Usage
 

@@ -35,10 +35,10 @@ clone, configure, and go.
 | Category        | Scope                                                                  |
 | --------------- | ---------------------------------------------------------------------- |
 | Docker Services | 16 pre-configured (Nginx, PHP, Node, databases, cache, search, queue…) |
-| Make Targets    | 258 across 17 categories (`make help`)                                 |
+| Make Targets    | 263 across 16 categories (`make help`)                                 |
 | Stack Presets   | 7 modes, from full-stack to static                                     |
 | Kubernetes      | Helm chart for production deployment                                   |
-| Documentation   | 40+ guides in [`.zappzarapp/docs/`](.zappzarapp/docs/)                 |
+| Documentation   | 50+ guides in [`.zappzarapp/docs/`](.zappzarapp/docs/)                 |
 | IDE Configs     | PHPStorm + VS Code, working out of the box                             |
 
 ## Integrated Toolchain
@@ -262,7 +262,7 @@ make open-app      # Open the application in the browser
 ```
 
 See the [Makefile Reference](.zappzarapp/docs/development/MAKEFILE-REFERENCE.md)
-for all 258 targets.
+for all 263 targets.
 
 ## Git Hooks
 

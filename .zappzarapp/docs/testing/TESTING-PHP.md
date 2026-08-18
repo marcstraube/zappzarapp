@@ -162,19 +162,13 @@ PHPUnit configuration is in `phpunit.xml.dist` at the project root.
 Key configurations:
 
 - Test suites: Unit and Feature
-- Coverage thresholds: 80%
 - Test directories: `tests/php/App/Unit/` and `tests/php/App/Feature/`
 
 ## Quality Thresholds
 
-Minimum coverage requirements:
-
-- Lines: 80%
-- Functions: 80%
-- Branches: 80%
-- Statements: 80%
-
-Similar to Vitest's coverage requirements in the Node.js stack.
+Minimum line coverage is **70%**, configured via `PHP_COVERAGE_MIN` in `.env`
+and enforced by `make coverage-check-php`. Unlike Vitest, `phpunit.xml.dist`
+does not define per-metric (lines/functions/branches/statements) thresholds.
 
 ## Additional Tools
 

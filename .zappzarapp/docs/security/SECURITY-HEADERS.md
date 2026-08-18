@@ -15,16 +15,16 @@ web vulnerabilities. Headers are configured at two levels:
 Applied to all responses via
 `include /etc/nginx/snippets/security-headers.conf`:
 
-| Header                         | Value                                      | Purpose                         |
-| ------------------------------ | ------------------------------------------ | ------------------------------- |
-| `X-Frame-Options`              | `SAMEORIGIN`                               | Prevents clickjacking           |
-| `X-Content-Type-Options`       | `nosniff`                                  | Prevents MIME-type sniffing     |
-| `X-XSS-Protection`             | `1; mode=block`                            | XSS filter (legacy browsers)    |
-| `Referrer-Policy`              | `strict-origin-when-cross-origin`          | Controls referrer information   |
-| `Permissions-Policy`           | `geolocation=(), microphone=(), camera=()` | Restricts browser features      |
-| `Cross-Origin-Opener-Policy`   | `same-origin`                              | Spectre mitigation              |
-| `Cross-Origin-Resource-Policy` | `same-origin`                              | Prevents cross-origin embedding |
-| `Cross-Origin-Embedder-Policy` | `require-corp`                             | Enforces CORP for resources     |
+| Header                         | Value                                      | Purpose                                 |
+| ------------------------------ | ------------------------------------------ | --------------------------------------- |
+| `X-Frame-Options`              | `SAMEORIGIN`                               | Prevents clickjacking                   |
+| `X-Content-Type-Options`       | `nosniff`                                  | Prevents MIME-type sniffing             |
+| `X-XSS-Protection`             | `0`                                        | Disables legacy XSS auditor (per OWASP) |
+| `Referrer-Policy`              | `strict-origin-when-cross-origin`          | Controls referrer information           |
+| `Permissions-Policy`           | `geolocation=(), microphone=(), camera=()` | Restricts browser features              |
+| `Cross-Origin-Opener-Policy`   | `same-origin`                              | Spectre mitigation                      |
+| `Cross-Origin-Resource-Policy` | `same-origin`                              | Prevents cross-origin embedding         |
+| `Cross-Origin-Embedder-Policy` | `require-corp`                             | Enforces CORP for resources             |
 
 ### Content Security Policy (CSP)
 

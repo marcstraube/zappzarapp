@@ -1,10 +1,9 @@
 # Developer Toolbar
 
-The Developer Toolbar is no longer part of this repository. It has been
-extracted into the standalone package
+The Developer Toolbar ships as the standalone Composer package
 [`zappzarapp/devtoolbar`](https://packagist.org/packages/zappzarapp/devtoolbar)
-([GitHub](https://github.com/marcstraube/zappzarapp-php-devtoolbar)) and is
-installed via Composer (`zappzarapp/devtoolbar: ^1.0`).
+([GitHub](https://github.com/marcstraube/zappzarapp-php-devtoolbar)), pinned in
+`composer.json` (`zappzarapp/devtoolbar: ^1.1.0`).
 
 For feature documentation (collectors, panels, configuration, security model,
 frontend bundle), see the package's own documentation.
