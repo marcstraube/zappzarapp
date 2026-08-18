@@ -48,11 +48,20 @@ const https =
 // levels up from this config (src/node/frontend) - so those files load.
 const repoRoot = fileURLToPath(new URL("../../../", import.meta.url));
 
+// With the internal cert the dev server runs behind the nginx framework proxy,
+// so the browser reaches HMR through nginx on :8443 (wss) at a custom path that
+// avoids clashing with SSR routing at /. Cert-less laptop dev talks to Vite
+// directly, so HMR keeps its defaults there.
+const hmr = https
+  ? { path: "/__vite_hmr__", clientPort: 8443, protocol: "wss" }
+  : undefined;
+
 export default defineConfig({
   server: {
     host: '0.0.0.0', // Required for Docker
     port: 3001,      // Frontend port (backend uses 3000)
     https,           // internal TLS when the mounted cert is present
+    hmr,             // reach HMR through the nginx proxy when behind it
     fs: { allow: [repoRoot] },
     // API Proxy: Route /api/backend/* to Express backend
     proxy: {

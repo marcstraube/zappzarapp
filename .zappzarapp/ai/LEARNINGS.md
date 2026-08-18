@@ -57,9 +57,31 @@ does scaffold + `vite build` + GOSS, so both bugs were invisible.
   incl. `/@vite/client`, `/.svelte-kit/*`, `/@fs/*`) loads `200 text/javascript`
   through `:8443/app`; Remix's page + `/@id/…virtual` modules load; assets mode
   still selects the 5173 variant (entrypoint log + `nginx -t` valid in both).
-  HMR-over-nginx (the Vite ws) is out of scope here — it needs
-  `server.hmr.clientPort` in each framework's Vite config plus a `/` ws route;
-  asset loading + SSR is the delivered goal.
+  (HMR-over-nginx was a follow-up, now done — see below.)
+- **HMR through the nginx framework proxy (DONE).** In framework mode the Vite
+  dev server is on the unpublished node:3001, so the browser (loading the page
+  from `:8443/app`) cannot reach the HMR WebSocket directly. Mirrored the
+  assets-mode pattern (`vite.config.js`): each framework's Vite config sets
+  `server.hmr = { path: '/__vite_hmr__', clientPort: 8443, protocol: 'wss' }`
+  (guarded on cert presence, so cert-less laptop dev keeps Vite's default direct
+  HMR), and `development-vite-framework.conf` gains a `location /__vite_hmr__`
+  that forwards the ws upgrade to `https://node:3001` (internal-CA verify,
+  `Connection: $connection_upgrade`). The custom path avoids clashing with SSR
+  routing at `/`, which made the `$is_vite_hmr` subprotocol-detection map in
+  `nginx.conf` dead — removed it. Verified on prometheus for both SvelteKit and
+  Remix: `/@vite/client` is injected with `hmrPort = 8443`,
+  `socketProtocol = "wss"`, path `/__vite_hmr__`; a ws handshake to
+  `:8443/__vite_hmr__` returns `101 Switching Protocols` through nginx; asset
+  crawl stays at 0 fails.
+- **Gotcha — switching framework scaffolds leaves pnpm's store "up to date".**
+  After re-scaffolding to a different framework, `pnpm-sync`/`pnpm install`
+  (even `--force`, even after removing only the `*_frontend_node_modules`
+  volume) report "Already up to date" and never relink the new framework's bin
+  (`sh: react-router: not found`, `spawn ENOENT`) — pnpm's virtual store and
+  `.modules.yaml` live in the **root** `*_node_modules` volume and gate the
+  relink. Fix: stop node, remove all three (`zappzarapp_node_modules`,
+  `_backend_node_modules`, `_frontend_node_modules`), recreate node, then
+  `make pnpm-sync` does a clean full install (bin present, `VITE_BIN_OK`).
 - **Remix client entry `403`ed at the Vite layer (FIXED) — hoisted pnpm store.**
   `/@fs/app/node_modules/.pnpm/@react-router+dev@…/…/entry.client.tsx` returned
   **403 directly from node:3001** (nginx forwarded faithfully and passed it
