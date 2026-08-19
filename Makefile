@@ -129,7 +129,7 @@ help: ## Show this help (FILTER=? for categories, FILTER=<name> to filter)
 # secrets/ssl-ensure preflights: `run --rm php` creates the container with its
 # cert/secret bind mounts - missing source files would become root-owned
 # directory stubs on the host (e.g. right after a factory reset)
-composer-install: secrets ssl-ensure ## Install Composer dependencies (Docker - guaranteed consistency)
+composer-install: secrets ssl-ensure config-perms ## Install Composer dependencies (Docker - guaranteed consistency)
 	@echo -e "\033[0;33mInstalling Composer dependencies (Docker)...\033[0m"
 	@# Fix bind mount bug: if lockfile is directory or has wrong ownership, fix via Docker
 	@# Note: Use USER_ID/GROUP_ID from .env (not host user) for Docker container compatibility
@@ -1226,7 +1226,7 @@ status: ## Show running containers status and image disk usage
 # (container creation aborts when a source file is missing), and missing
 # cert files would be auto-created as root-owned directories by the
 # daemon - generate what is missing and re-enforce permissions first
-up: secrets ssl-ensure ## Start containers (optionally specify service names: make up php nginx)
+up: secrets ssl-ensure config-perms ## Start containers (optionally specify service names: make up php nginx)
 	@# Ensure lockfiles exist as files (not directories) to prevent Docker bind mount issues
 	@if [ -d composer.lock ]; then rm -rf composer.lock; fi
 	@if [ -d pnpm-lock.yaml ]; then rm -rf pnpm-lock.yaml; fi
@@ -1548,7 +1548,7 @@ k8s-logs: ## Show Kubernetes logs: make k8s-logs [pod]
 
 ##@ Production Testing
 
-test-production: secrets ssl-ensure ## Test production build with ZAPPZARAPP_ENV-configured services (smart, respects .env)
+test-production: secrets ssl-ensure config-perms ## Test production build with ZAPPZARAPP_ENV-configured services (smart, respects .env)
 	@echo -e "\033[0;34m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\033[0m"
 	@echo -e "\033[0;34m  Production Test: ZAPPZARAPP_ENV-aware configuration\033[0m"
 	@echo -e "\033[0;34m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\033[0m"
@@ -1680,7 +1680,7 @@ test-production: secrets ssl-ensure ## Test production build with ZAPPZARAPP_ENV
 		exit 1; \
 	fi
 
-test-production-minimal: secrets ssl-ensure ## Test production build with minimal services (nginx + app + db only)
+test-production-minimal: secrets ssl-ensure config-perms ## Test production build with minimal services (nginx + app + db only)
 	@echo -e "\033[0;34m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\033[0m"
 	@echo -e "\033[0;34m  Production Test: Minimal (Core Services)\033[0m"
 	@echo -e "\033[0;34m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\033[0m"
@@ -1768,7 +1768,7 @@ test-production-minimal: secrets ssl-ensure ## Test production build with minima
 		exit 1; \
 	fi
 
-test-production-full: secrets ssl-ensure ## Test production build with ALL services (comprehensive, ignores ENABLE_*)
+test-production-full: secrets ssl-ensure config-perms ## Test production build with ALL services (comprehensive, ignores ENABLE_*)
 	@echo -e "\033[0;34m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\033[0m"
 	@echo -e "\033[0;34m  Production Test: Full (All Services)\033[0m"
 	@echo -e "\033[0;34m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\033[0m"
@@ -1890,7 +1890,7 @@ node-frontend-start: ## Start Node frontend framework production server
 # secrets/ssl-ensure preflights: `run --rm node` creates the container with its
 # cert/secret bind mounts - missing source files would become root-owned
 # directory stubs on the host (e.g. right after a factory reset)
-pnpm-install: secrets ssl-ensure ## Install Node.js dependencies (Docker - guaranteed consistency)
+pnpm-install: secrets ssl-ensure config-perms ## Install Node.js dependencies (Docker - guaranteed consistency)
 	@echo -e "\033[0;33mInstalling Node.js dependencies (Docker)...\033[0m"
 	@# Fix bind mount bug: if lockfile is directory or missing, fix via Docker
 	@# Note: Use USER_ID/GROUP_ID from .env (not host user) for Docker container compatibility
@@ -2274,7 +2274,7 @@ adminer-down: ## Stop Adminer
 	$(call require_development,Adminer)
 	@$(DC) --profile adminer stop adminer
 
-pgadmin-up: secrets ssl-ensure ## Start pgAdmin PostgreSQL UI (development only)
+pgadmin-up: secrets ssl-ensure config-perms ## Start pgAdmin PostgreSQL UI (development only)
 	$(call require_development,pgAdmin)
 	@echo -e "\033[0;34mStarting pgAdmin...\033[0m"
 	@$(DC) --profile pgadmin up -d pgadmin
@@ -3567,7 +3567,7 @@ goss-test-rabbitmq: ## Test RabbitMQ container (runtime)
 	@tests/goss/runtime-tests.sh rabbitmq
 
 # Preset test targets (build + start + runtime test + stop)
-goss-test-preset: secrets ssl-ensure ## Test a preset (PRESET=dev-fullstack, VERBOSE=1 for details)
+goss-test-preset: secrets ssl-ensure config-perms ## Test a preset (PRESET=dev-fullstack, VERBOSE=1 for details)
 	@if [ -z "$(PRESET)" ]; then \
 		echo -e "\033[0;31mError: PRESET not specified. Usage: make goss-test-preset PRESET=fullstack\033[0m"; \
 		exit 1; \
@@ -4261,7 +4261,7 @@ security-audit-node: ## Scan Node.js dependencies for known vulnerabilities
 	@echo -e "\033[0;33mScanning Node.js dependencies with pnpm audit...\033[0m"
 	@$(DC) run --rm -T dev-tools pnpm audit
 
-security-zap-start: secrets ssl-ensure ## Start services in production mode for ZAP scanning (respects .env ENABLE_* flags)
+security-zap-start: secrets ssl-ensure config-perms ## Start services in production mode for ZAP scanning (respects .env ENABLE_* flags)
 	@echo -e "\033[0;33mStopping any running containers...\033[0m"
 	@$(LOAD_ENV); \
 	PROFILES=""; \
@@ -4316,7 +4316,7 @@ security-zap-start: secrets ssl-ensure ## Start services in production mode for 
 	@echo -e "\033[0;32m✓ Services ready for ZAP scan\033[0m"
 	@echo -e "\033[0;36mℹ️  Run: make security-zap-scan\033[0m"
 
-security-zap-full-start: secrets ssl-ensure ## Start ALL services for comprehensive ZAP scanning (ignores .env, forces all ENABLE_*)
+security-zap-full-start: secrets ssl-ensure config-perms ## Start ALL services for comprehensive ZAP scanning (ignores .env, forces all ENABLE_*)
 	@echo -e "\033[0;33mStopping any running containers...\033[0m"
 	@$(LOAD_ENV); \
 	PROFILES="--profile php --profile $${DB_TYPE:-postgres} --profile redis --profile node --profile node-backend --profile mercure --profile meilisearch --profile elasticsearch --profile seaweedfs"; \
@@ -4555,6 +4555,18 @@ ssl-ensure: ## Generate internal certificates only if missing (container-start p
 		echo -e "\033[0;33mInternal certificates missing - generating...\033[0m"; \
 		make --no-print-directory ssl-internal; \
 	fi
+
+config-perms: ## Keep bind-mounted configs readable to non-root containers (umask-robust preflight)
+	@# A restrictive host umask (e.g. 077) checks configs out mode 0600. A
+	@# container service that reads its config as a fixed non-root uid AFTER
+	@# dropping privileges (e.g. RabbitMQ, uid 100) then cannot read the
+	@# bind-mounted file and crash-loops ("eacces ... failed_to_parse_
+	@# configuration_file"). These configs carry no secrets (those live in
+	@# secrets/), so normalise them to world-readable. docker/certs is excluded:
+	@# private keys stay 0600 + ACL (managed by ssl-internal).
+	@find docker -type f \( -name '*.conf' -o -name '*.ini' -o -name '*.cnf' \
+		-o -name '*.template' \) -not -path 'docker/certs/*' \
+		-exec chmod a+r {} + 2>/dev/null || true
 
 # NOTE: the help delegations in ssl-trust-ca/ssl-untrust-ca use a literal
 # `make` on purpose: GNU make executes recipe lines that reference the
