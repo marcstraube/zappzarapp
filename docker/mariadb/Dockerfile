@@ -22,7 +22,7 @@
 # - For SHA digest pinning in production, use:
 #   FROM mariadb:<tag>@sha256:<digest>
 
-ARG MARIADB_VERSION=12.3.2
+ARG MARIADB_VERSION=12.3.3
 
 FROM mariadb:${MARIADB_VERSION}
 
