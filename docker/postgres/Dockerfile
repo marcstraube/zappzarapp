@@ -17,7 +17,7 @@
 ARG POSTGRES_VERSION=18.4-alpine3.23
 # pg_cron >= 1.6.6 is required for PostgreSQL 18 (1.6.7 also fixes compile
 # errors with the stricter default CFLAGS newer PostgreSQL/GCC use)
-ARG PG_CRON_VERSION=1.6.7
+ARG PG_CRON_VERSION=1.6.8
 
 # Version Pinning:
 # - Minor version pinned for stability
